@@ -1,0 +1,6 @@
+package com.palmnote.domain.model
+
+enum class LinkType {
+    PART_OF, RELATED_TO, REFERENCES, HAS_CHILD, IS_COPY, FOLLOWS, TRANSITIONED_FROM,
+    LINKED_BILL, LINKED_ASSET, SUBSCRIPTION_BILL
+}

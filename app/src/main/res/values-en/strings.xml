@@ -1,0 +1,1486 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_version">v1.0.0</string>\n    <string name="app_name">Palm Note</string>
+    
+    <!-- Bottom Navigation -->
+    <string name="nav_dashboard">Home</string>
+    <string name="nav_asset">Assets</string>
+    <string name="nav_bill">Bills</string>
+    <string name="nav_life">Life</string>
+    <string name="nav_settings">Mine</string>
+    
+    <!-- Asset -->
+    <string name="asset_title">Assets</string>
+    <string name="asset_add">Add Asset</string>
+    <string name="asset_edit">Edit Asset</string>
+    <string name="asset_detail">Asset Detail</string>
+    <string name="asset_name">Item Name</string>
+    <string name="asset_category">Category</string>
+    <string name="asset_price">Purchase Price</string>
+    <string name="asset_date">Purchase Date</string>
+    <string name="asset_channel">Purchase Channel</string>
+    <string name="asset_location">Storage Location</string>
+    <string name="asset_warranty">Warranty Date</string>
+    <string name="asset_status">Status</string>
+    <string name="asset_description">Notes</string>
+    <string name="asset_cost_mode">Cost Calculation Method</string>
+    <string name="asset_cost_daily">Daily</string>
+    <string name="asset_cost_per_use">Per Use</string>
+    
+    <!-- Asset Status -->
+    <string name="status_active">In Use</string>
+    <string name="status_retired">Retired</string>
+    <string name="status_lost">Lost</string>
+    <string name="status_sold">Sold</string>
+    <string name="asset_held">Held</string>
+    <string name="asset_away">Away</string>
+    <string name="asset_removed">Removed</string>
+    <string name="asset_per_use">Per Use ¥%s</string>
+    <string name="asset_per_use_none">Per Use -</string>
+    <string name="asset_daily_cost">Daily ¥%s</string>
+    <string name="asset_search_hint">Search name, category, description…</string>
+    <string name="asset_clear">Clear</string>
+    <string name="asset_count">%d items</string>
+    <string name="asset_status_filter">Status</string>
+    <string name="asset_all_categories">All Categories</string>
+    <string name="asset_sort_recent">Recent</string>
+    <string name="asset_sort_name">Name</string>
+    <string name="asset_sort_price">Price</string>
+    <string name="asset_sort_daily_cost">Daily Cost</string>
+    <string name="asset_sort_date">Date</string>
+    <string name="asset_sort">Sort</string>
+    <string name="asset_list_view">List View</string>
+    <string name="asset_grid_view">Grid View</string>
+    <string name="asset_not_found">No matching items found</string>
+    <string name="asset_no_items">No Items</string>
+    <string name="asset_try_other_keywords">Try other keywords</string>
+    <string name="asset_add_first_item">Tap the button to add your first item</string>
+    <string name="asset_back_to_top">Back to Top</string>
+    <string name="asset_days_used">Used for %d days</string>
+    <string name="asset_warranty_valid">Warranty</string>
+    <string name="asset_warranty_expired">Expired</string>
+    <string name="asset_used_days">Used %d days</string>
+    <string name="asset_cost_per_use_price">Per Use ¥%s</string>
+    <string name="asset_cost_per_use_none">Per Use -</string>
+    <string name="asset_cost_daily_price">Daily ¥%s</string>
+    
+    <!-- Acquisition Types -->
+    <string name="acquisition_purchase">Purchase</string>
+    <string name="acquisition_gift">Gift</string>
+    <string name="acquisition_lottery">Lottery</string>
+    <string name="acquisition_prize">Prize</string>
+    <string name="acquisition_inheritance">Inheritance</string>
+    <string name="acquisition_other">Other</string>
+    
+    <!-- Bill -->
+    <string name="bill_title">Bills</string>
+    <string name="bill_add">Add Entry</string>
+    <string name="bill_expense">Expense</string>
+    <string name="bill_income">Income</string>
+    <string name="bill_amount">Amount</string>
+    <string name="bill_category">Category</string>
+    <string name="bill_date">Date</string>
+    <string name="bill_note">Notes</string>
+    <string name="bill_trend">Income &amp; Expense Trend</string>
+    <string name="bill_budget">Budget Management</string>
+    <string name="bill_switch_book">Switch Book</string>
+    <string name="bill_book_list">Book List</string>
+    <string name="bill_default">Default</string>
+    <string name="bill_import">Import</string>
+    <string name="bill_all_books">All Books</string>
+    <string name="bill_report">Report</string>
+    <string name="bill_budget_tab">Budget</string>
+    <string name="bill_monthly_expense">Monthly Expense</string>
+    <string name="bill_monthly_income">Monthly Income</string>
+    <string name="bill_balance">Balance</string>
+    <string name="bill_balance_amount">Balance %s</string>
+    <string name="bill_budget_usage">Budget Usage</string>
+    <string name="bill_remaining">Remaining</string>
+    <string name="bill_over_budget">Over Budget</string>
+    <string name="bill_remaining_amount">Remaining %s</string>
+    <string name="bill_over_budget_amount">Over Budget %s</string>
+    <string name="bill_calendar">Calendar</string>
+    <string name="bill_collapse">Collapse</string>
+    <string name="bill_expand">Expand</string>
+    <string name="bill_all">All</string>
+    <string name="bill_expense_category">Expense by Category</string>
+    <string name="bill_detail">Details</string>
+    <string name="bill_count">%d entries</string>
+    <string name="bill_no_records">No Records</string>
+    <string name="bill_start_recording">Tap the button to start recording</string>
+    <string name="bill_reimbursable">Reimbursable</string>
+    <string name="bill_edit_bill">Edit Bill</string>
+    <string name="bill_wallet">Account</string>
+    
+    <!-- Settings -->
+    <string name="settings_title">Mine</string>
+    <string name="settings_appearance">Appearance</string>
+    <string name="settings_theme_system">Follow System</string>
+    <string name="settings_theme_light">Light Mode</string>
+    <string name="settings_theme_dark">Dark Mode</string>
+    <string name="settings_general">General</string>
+    <string name="settings_data">Data Management</string>
+    <string name="settings_about">About Palm Note</string>
+    <string name="settings_backup">Backup Data</string>
+    <string name="settings_export">Export Data</string>
+    <string name="settings_recycle">Recycle Bin</string>
+    <string name="settings_category">Category Management</string>
+    <string name="settings_data_overview">Data Overview</string>
+    <string name="settings_items">Items</string>
+    <string name="settings_goals">Goals</string>
+    <string name="settings_anniversaries">Anniversaries</string>
+    <string name="settings_moments">Moments</string>
+    <string name="settings_profile_edit">Edit Profile</string>
+    <string name="settings_profile_nickname">Nickname</string>
+    <string name="settings_profile_signature">Signature</string>
+    <string name="settings_profile_avatar">Avatar</string>
+    <string name="settings_profile_change_avatar">Change</string>
+    <string name="settings_profile_reset_avatar">Reset</string>
+    <string name="settings_dark_mode">Dark Mode</string>
+    <string name="settings_dark_mode_subtitle">Choose dark mode display</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_language_subtitle">Switch app display language</string>
+    <string name="settings_switch_color">Switch Color</string>
+    <string name="settings_switch_color_subtitle">Customize global switch button color</string>
+    <string name="settings_follow_system">Follow System</string>
+    <string name="settings_default_start_page">Default Start Page</string>
+    <string name="settings_default_start_page_subtitle">Page shown when app opens</string>
+    <string name="settings_default_bill_type">Default Bill Type</string>
+    <string name="settings_default_bill_type_subtitle">Default type when opening bill page</string>
+    <string name="settings_budget_reminder">Budget Reminder</string>
+    <string name="settings_budget_reminder_subtitle">Remind when budget reaches 80%</string>
+    <string name="settings_calendar_sync">Sync Anniversaries to Calendar</string>
+    <string name="settings_calendar_sync_subtitle">Sync anniversaries to system calendar</string>
+    <string name="settings_app_lock">App Lock</string>
+    <string name="settings_app_lock_subtitle">Protect privacy, verify on startup</string>
+    <string name="settings_reminder">Reminders</string>
+    <string name="settings_reminder_daily_section">Daily Reminder</string>
+    <string name="settings_reminder_advance_section">Advance Notice</string>
+    <string name="settings_daily_reminder">Daily Reminder</string>
+    <string name="settings_daily_reminder_subtitle">Daily reminder to check life records</string>
+    <string name="settings_bill_reminder">Bookkeeping Reminder</string>
+    <string name="settings_bill_reminder_subtitle">Daily reminder to record expenses and income</string>
+    <string name="settings_birthday_advance">Birthday Advance Days</string>
+    <string name="settings_birthday_advance_subtitle">Days before birthday to send reminder</string>
+    <string name="settings_anniversary_advance">Anniversary Advance Days</string>
+    <string name="settings_anniversary_advance_subtitle">Days before anniversary to send reminder</string>
+    <string name="settings_account_category">Accounts &amp; Categories</string>
+    <string name="settings_wallet_manage">Account Management</string>
+    <string name="settings_wallet_manage_subtitle">Manage wallets and bank accounts</string>
+    <string name="settings_bill_manage">Book Management</string>
+    <string name="settings_bill_manage_subtitle">Manage bill book categories</string>
+    <string name="settings_category_manage">Category Management</string>
+    <string name="settings_category_manage_subtitle">Manage item and bill categories</string>
+
+    <string name="settings_recycle_bin">Recycle Bin</string>
+    <string name="settings_recycle_bin_subtitle">View deleted records</string>
+    <string name="settings_export_data">Export Data</string>
+    <string name="settings_export_data_subtitle">Export all data as CSV-ZIP</string>
+    <string name="settings_export_file_suffix">_data.zip</string>
+    <string name="settings_import_data">Import Data</string>
+    <string name="settings_import_data_subtitle">Restore data from CSV file</string>
+    <string name="settings_data_backup">Data Backup</string>
+    <string name="settings_data_backup_subtitle">Backup and restore complete data</string>
+    <string name="settings_storage_cleanup">Storage Cleanup</string>
+    <string name="settings_clear_data">Clear Data</string>
+    <string name="settings_clear_data_subtitle">Delete personal data, not recoverable</string>
+    <string name="settings_clear_cache">Clear Cache</string>
+    <string name="settings_clear_cache_subtitle">Clean temporary cache files, safe operation</string>
+    <string name="settings_about_app">About Palm Note</string>
+    <string name="settings_about_version">Version 1.0.0</string>
+    <string name="settings_days">%d days</string>
+    <string name="settings_color_pick_title">Select Switch Color</string>
+    <string name="settings_preset_color">Preset Colors</string>
+    <string name="settings_custom_color">Custom Color</string>
+    <string name="settings_hex_color">HEX Color</string>
+    <string name="settings_hex_color_error">Please enter a valid 6-digit color code</string>
+    <string name="settings_color_done">Done</string>
+    <string name="settings_select_start_page">Default Start Page</string>
+    <string name="settings_select_bill_type">Default Bill Type</string>
+    <string name="settings_select_dark_mode">Dark Mode</string>
+    <string name="settings_select_language">Language</string>
+    <string name="settings_language_chinese">Chinese</string>
+    <string name="settings_cancel">Cancel</string>
+    <string name="settings_clear_cache_title">Clear Cache</string>
+    <string name="settings_clear_cache_confirm">Clear image cache and temporary files? Your personal data will not be affected.</string>
+    <string name="settings_clear_cache_action">Clear</string>
+    <string name="settings_calendar_permission_title">Calendar Permission Required</string>
+    <string name="settings_calendar_permission_text">Syncing anniversaries to the system calendar requires calendar access. Palm Note will not read or modify your other calendar events.</string>
+    <string name="settings_calendar_permission_action">Grant Permission</string>
+    <string name="settings_calendar_permission_denied">Calendar permission was permanently denied. Please go to system settings to grant it manually.</string>
+    <string name="settings_app_lock_pin_title">Set PIN Code</string>
+    <string name="settings_app_lock_pin_text">Please enter a 6-digit PIN code</string>
+    <string name="settings_app_lock_pin_label">PIN Code</string>
+    <string name="settings_app_lock_pin_confirm">Please enter a complete 6-digit PIN code</string>
+    <string name="settings_app_lock_pin_ok">Confirm</string>
+    <string name="settings_birthday_advance_title">Birthday Advance Days</string>
+    <string name="settings_anniversary_advance_title">Anniversary Advance Days</string>
+    <string name="settings_navigate_back">Back</string>
+    <string name="settings_home">Home</string>
+    <string name="settings_bill_expense">Expense</string>
+    <string name="settings_bill_income">Income</string>
+    
+    <!-- Common -->
+    <string name="save">Save</string>
+    <string name="save_changes">Save Changes</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete">Delete</string>
+    <string name="edit">Edit</string>
+    <string name="confirm">Confirm</string>
+    <string name="search">Search</string>
+    <string name="empty_title">No Data</string>
+    <string name="empty_subtitle">Tap button to add</string>
+    <string name="done">Done</string>
+    <string name="back">Back</string>
+    <string name="more">More</string>
+    <string name="balance">Balance</string>
+    <string name="merchant">Merchant</string>
+    <string name="merchant_hint">Merchant name (optional)</string>
+    <string name="note_hint">Add note (optional)</string>
+    
+    <!-- Dashboard Module -->
+    <string name="dashboard_card_manage">Card Management</string>
+    <string name="dashboard_net_worth">Net Worth</string>
+    <string name="dashboard_monthly_expense">Monthly Expense</string>
+    <string name="dashboard_monthly_income">Monthly Income</string>
+    <string name="dashboard_monthly_balance">Monthly Balance %s</string>
+    <string name="dashboard_monthly_over_budget">Monthly Over Budget %s</string>
+    <string name="dashboard_quick_bill">Bill</string>
+    <string name="dashboard_quick_asset">Asset</string>
+    <string name="dashboard_quick_goal">Goal</string>
+    <string name="dashboard_quick_anniversary">Anniversary</string>
+    <string name="dashboard_budget_alert">Budget Alert</string>
+    <string name="dashboard_budget_alert_message">Monthly expense ¥%.2f exceeds 80%% of budget</string>
+    <string name="dashboard_goal_progress">Goal Progress</string>
+    <string name="dashboard_goals_completed">%1$d/%2$d completed</string>
+    <string name="dashboard_no_goals">No goals, tap to add</string>
+    <string name="dashboard_anniversaries_count">%d anniversaries</string>
+    <string name="dashboard_today">Today</string>
+    <string name="dashboard_days_until">%d days left</string>
+    <string name="dashboard_days_passed">%d days passed</string>
+    <string name="dashboard_no_anniversaries">No anniversaries, tap to add</string>
+    <string name="dashboard_asset_distribution">Asset Distribution</string>
+    <plurals name="dashboard_items_count">
+        <item quantity="one">%d item</item>
+        <item quantity="other">%d items</item>
+    </plurals>
+    <string name="dashboard_recorded">Recorded</string>
+    <string name="dashboard_items_recorded">%d items</string>
+    <string name="dashboard_card_net_worth">Net Worth</string>
+    <string name="dashboard_card_quick_actions">Quick Actions</string>
+    <string name="dashboard_card_budget_alert">Budget Alert</string>
+    <string name="dashboard_card_goals">Goal Progress</string>
+    <string name="dashboard_card_anniversaries">Anniversaries</string>
+    <string name="dashboard_card_asset_distribution">Asset Distribution</string>
+    <string name="dashboard_card_today">Today</string>
+    <string name="greeting_night">Late night</string>
+    <string name="greeting_morning">Good morning</string>
+    <string name="greeting_forenoon">Good morning</string>
+    <string name="greeting_noon">Good noon</string>
+    <string name="greeting_afternoon">Good afternoon</string>
+    <string name="greeting_evening">Good evening</string>
+    <string name="weekday_sunday">Sunday</string>
+    <string name="weekday_monday">Monday</string>
+    <string name="weekday_tuesday">Tuesday</string>
+    <string name="weekday_wednesday">Wednesday</string>
+    <string name="weekday_thursday">Thursday</string>
+    <string name="weekday_friday">Friday</string>
+    <string name="weekday_saturday">Saturday</string>
+    
+    <!-- Life Module -->
+    <string name="life_title">Life</string>
+    <string name="life_search">Search life items</string>
+    <string name="life_plan">Plans</string>
+    <string name="life_time">Time</string>
+    <string name="life_record">Records</string>
+    <string name="life_saving">Savings Plan</string>
+    <string name="life_shopping">Shopping Plan</string>
+    <string name="life_todo">To-Do</string>
+    <string name="life_reading">Reading</string>
+    <string name="life_habit">Habit Tracker</string>
+    <string name="life_mood">Mood</string>
+    <string name="life_journal">Journal</string>
+    <string name="life_focus">Focus</string>
+    <string name="life_countdown">Countdown</string>
+    <string name="life_birthday">Birthday</string>
+    <string name="life_empty_title">No Items</string>
+    <string name="life_empty_subtitle">Tap + in the top right to create your first record</string>
+    <string name="life_empty_action">Create</string>
+    <string name="life_ongoing">Ongoing</string>
+    <string name="life_completed">Completed</string>
+    <string name="life_archived">Archived</string>
+    <string name="life_delete_confirm">Confirm delete?</string>
+    <string name="life_delete_hint">You can find it in the recycle bin after deletion</string>
+    <string name="life_archive_success">Archived</string>
+    <string name="life_giveup_confirm">Confirm give up?</string>
+    <string name="life_giveup_hint">Current focus progress will be lost</string>
+    <string name="life_giveup">Give Up</string>
+    <string name="life_continue">Continue Focus</string>
+    <string name="life_deposit">Deposit</string>
+    <string name="life_amount_hint">Enter amount</string>
+    <string name="life_unit_times">times</string>
+    
+    <!-- Life Module - Additional -->
+    <string name="life_error_load_failed">Load failed</string>
+    <string name="life_error_save_failed">Save failed</string>
+    <string name="life_error_delete_failed">Delete failed</string>
+    <string name="life_error_create_failed">Create failed</string>
+    <string name="life_error_checkin_failed">Check-in failed</string>
+    <string name="life_error_operation_failed">Operation failed</string>
+    <string name="life_data_init_error">Data initialization error, sample data skipped</string>
+    <string name="life_data_load_error">Data loading error, please try again later</string>
+    <string name="life_data_temp_unavailable">Focus data temporarily unavailable, pull to refresh</string>
+    
+    <!-- Life Screen -->
+    <string name="life_screen_welcome">Welcome to PalmNote Life</string>
+    <string name="life_screen_start_hint">Choose one to start your life recording</string>
+    <string name="life_screen_write_journal">Write Journal</string>
+    <string name="life_screen_start_checkin">Start Check-in</string>
+    <string name="life_screen_deposit">Deposit</string>
+    <string name="life_screen_retry">Retry</string>
+    <string name="life_screen_search_hint">Search life items…</string>
+    <string name="life_empty_here">Nothing here yet</string>
+    <string name="life_empty_hint">Tap + to start recording your life</string>
+    <string name="life_screen_search_template_not_found">No template matching "%s"</string>
+    <string name="life_screen_overview_today_todos">Today\'s Todos</string>
+    <string name="life_screen_overview_habit_rate">Habit Rate</string>
+    <string name="life_screen_overview_today_focus">Today\'s Focus</string>
+    <string name="life_section_title_plan">Plans</string>
+    <string name="life_section_title_time">Time</string>
+    <string name="life_section_title_record">Records</string>
+    <string name="life_section_count">%d items</string>
+    <string name="life_section_count_time">%d time events</string>
+    <string name="life_section_count_record">%d records</string>
+    
+    <!-- Life Screen - Create Type Selector -->
+    <string name="life_select_type_to_create">Select type to create</string>
+    <string name="life_type_saving">Savings Plan</string>
+    <string name="life_type_shopping">Shopping Plan</string>
+    <string name="life_type_todo">To-Do</string>
+    <string name="life_type_travel">Travel Plan</string>
+    <string name="life_type_reading">Reading</string>
+    <string name="life_type_study">Study Plan</string>
+    <string name="life_type_countdown">Countdown</string>
+    <string name="life_type_countup">Count Up</string>
+    <string name="life_type_birthday">Birthday</string>
+    <string name="life_type_anniversary">Anniversary</string>
+    <string name="life_type_habit">Habit</string>
+    <string name="life_type_mood">Mood</string>
+    <string name="life_type_journal">Journal</string>
+    <string name="life_type_focus">Focus</string>
+    <string name="life_type_subscription">Subscription</string>
+    <string name="life_type_report">Report</string>
+    <string name="life_template_manage">Template Management</string>
+    
+    <!-- Life - Common Actions -->
+    <string name="life_confirm">Confirm</string>
+    <string name="life_cancel">Cancel</string>
+    <string name="life_back">Back</string>
+    <string name="life_new_create">New</string>
+    <string name="life_search_placeholder">Search life items…</string>
+    <string name="life_discard">Discard</string>
+    
+    <!-- Life - Detail Screens -->
+    <string name="life_confirm_delete_record">Confirm delete this record?</string>
+    <string name="life_confirm_delete_this">Confirm delete this record?</string>
+    <string name="life_confirm_delete_this_item">Confirm delete this record?</string>
+    <string name="life_confirm_discard">Discard changes?</string>
+    <string name="life_confirm_discard_hint">You have unsaved changes that will be lost.</string>
+    <string name="life_continue_editing">Continue Editing</string>
+    <string name="life_edit_title">Edit %s</string>
+    <string name="life_create_title">New %s</string>
+    <string name="life_input_title">Enter title</string>
+    <string name="life_save_failed">Save failed</string>
+    
+    <string name="life_item_detail_delete_confirm">Delete?</string>
+    <string name="life_item_detail_delete_hint">You can find it in the recycle bin after deletion</string>
+    <string name="life_item_detail_title">Detail</string>
+    <string name="life_confirm_delete_countup">Delete this count up?</string>
+    <string name="life_confirm_delete_habit">Delete this habit?</string>
+    <string name="life_confirm_delete_todo">Delete this to-do?</string>
+    <string name="life_confirm_delete_subscription">Delete this subscription?</string>
+    <string name="life_confirm_delete_travel">Delete this travel plan?</string>
+    <string name="life_confirm_delete_shopping">Delete this shopping plan?</string>
+    
+    <string name="life_countdown_title">Countdown</string>
+    <string name="life_confirm_delete_countdown">Delete this countdown?</string>
+    <string name="life_empty_countdown">No countdowns yet</string>
+    <string name="life_empty_countdown_subtitle">Tap + in the top right to create your first countdown</string>
+    <string name="life_empty_countdown_action">New Countdown</string>
+    <string name="life_countdown_expired">Expired</string>
+    <string name="life_countdown_day">days</string>
+    <string name="life_countdown_expired_text">Expired · %s</string>
+    <string name="life_countdown_active_text">%s · Tap to view</string>
+    
+    <string name="life_anniversary_title">Anniversary</string>
+    <string name="life_confirm_delete_anniversary">Delete this anniversary?</string>
+    <string name="life_empty_anniversary">No anniversaries yet</string>
+    <string name="life_empty_anniversary_subtitle">Tap + in the top right to record your important anniversaries</string>
+    <string name="life_empty_anniversary_action">New Anniversary</string>
+    <string name="life_anniversary_days_ago">%d days ago</string>
+    
+    <string name="life_birthday_title">Birthday</string>
+    <string name="life_confirm_delete_birthday">Delete this birthday?</string>
+    <string name="life_empty_birthday">No birthdays yet</string>
+    <string name="life_empty_birthday_subtitle">Tap + in the top right to add birthdays</string>
+    <string name="life_empty_birthday_action">Add Birthday</string>
+    <string name="life_birthday_days_after">days left</string>
+    <string name="life_birthday_last_gift">Last gift: %s</string>
+    
+    <string name="life_empty_todo">No to-dos yet</string>
+    <string name="life_empty_todo_subtitle">Tap + in the top right to add a to-do</string>
+    <string name="life_empty_todo_action">New To-Do</string>
+    
+    <string name="life_empty_subscription">No subscriptions yet</string>
+    <string name="life_empty_subscription_subtitle">Tap + in the top right to add a subscription</string>
+    <string name="life_empty_subscription_action">New Subscription</string>
+    
+    <string name="life_empty_travel">No travel plans yet</string>
+    <string name="life_empty_travel_subtitle">Tap + in the top right to plan your trip</string>
+    <string name="life_empty_travel_action">New Travel Plan</string>
+    
+    <string name="life_empty_shopping">No shopping plans yet</string>
+    <string name="life_empty_shopping_subtitle">Tap + in the top right to add a shopping plan</string>
+    <string name="life_empty_shopping_action">New Shopping Plan</string>
+    
+    <string name="life_confirm_delete_reading">Delete this reading plan?</string>
+    <string name="life_empty_reading">No reading plans yet</string>
+    <string name="life_empty_reading_subtitle">Tap + in the top right to start your reading journey</string>
+    <string name="life_empty_reading_action">New Reading Plan</string>
+    
+    <string name="life_reading_title">Reading</string>
+    <string name="life_reading_done">Done</string>
+    <string name="life_reading_reading">Reading</string>
+    <string name="life_reading_page_format">%1$s / %2$s pages</string>
+    
+    <string name="life_subscription_title">Subscriptions</string>
+    <string name="life_subscription_active">Active</string>
+    <string name="life_subscription_cancelled">Cancelled</string>
+    <string name="life_subscription_archived">Archived</string>
+
+    
+    <string name="life_study_title">Study Plan</string>
+    <string name="life_confirm_delete_study">Delete this study plan?</string>
+    <string name="life_empty_study">No study plans yet</string>
+    <string name="life_empty_study_subtitle">Tap + in the top right to create your first study plan</string>
+    <string name="life_empty_study_action">New Study Plan</string>
+    <string name="life_study_done">Completed</string>
+    <string name="life_study_learning">Learning</string>
+    
+    <string name="life_travel_title">Travel Plan</string>
+    
+    <string name="life_shopping_title">Shopping Plan</string>
+    
+    <string name="life_todo_title">To-Do</string>
+    <string name="life_todo_filter_list">List</string>
+    <string name="life_todo_filter_quad">Quadrant</string>
+    <string name="life_todo_filter_calendar">Calendar</string>
+    <string name="life_todo_quad_important_urgent">Important &amp; Urgent</string>
+    <string name="life_todo_quad_important">Important</string>
+    <string name="life_todo_quad_urgent">Urgent</string>
+    <string name="life_todo_quad_normal">Neither</string>
+    <string name="life_todo_calendar_dev">Calendar view in development</string>
+    <string name="life_todo_empty">None</string>
+    
+    <string name="life_journal_title">Journal</string>
+    <string name="life_journal_write">Write Journal</string>
+    <string name="life_journal_empty_first">Record your first journal entry</string>
+    <string name="life_journal_empty_hint">Everyday moments are worth recording</string>
+    <string name="life_journal_write_one">Write one</string>
+    
+    <string name="life_achievement_title">Achievements</string>
+    <string name="life_achievement_unlocked">Unlocked</string>
+    <string name="life_achievement_locked">Locked</string>
+    <string name="life_achievement_close">Close</string>
+    <string name="life_achievement_unlocked_on">Unlocked on %s</string>
+    
+    <string name="life_factor_analysis">Triggers</string>
+    <string name="life_factor_analysis_count">%d times</string>
+    
+    <string name="life_saving_filter_all">All %d</string>
+    <string name="life_saving_filter_active">Active</string>
+    <string name="life_saving_filter_done">Achieved</string>
+    <string name="life_saving_no_match">No matching records</string>
+    <string name="life_saving_deleted">Deleted</string>
+    <string name="life_saving_undo">Undo</string>
+    
+    <string name="life_saving_search_hint">Search savings plans…</string>
+    
+    <!-- Life - Habit -->
+    <string name="life_habit_checkin">Check in</string>
+    <string name="life_habit_checked">Checked</string>
+    <string name="life_habit_month_rate">Monthly Rate</string>
+    <string name="life_habit_streak">%d days</string>
+    <string name="life_habit_streak_label">Consecutive Days</string>
+    <string name="life_habit_total_checkins">%d times</string>
+    <string name="life_habit_total_label">Total Check-ins</string>
+    <string name="life_habit_heatmap">Check-in Heatmap</string>
+    <string name="life_habit_create">New Habit</string>
+    <string name="life_habit_name">Habit Name</string>
+    <string name="life_habit_category">Category</string>
+    <string name="life_habit_category_daily">Daily Habit</string>
+    <string name="life_habit_category_fitness">Fitness</string>
+    <string name="life_habit_category_reading">Reading &amp; Study</string>
+    <string name="life_habit_frequency">Frequency</string>
+    <string name="life_habit_frequency_daily">Daily</string>
+    <string name="life_habit_frequency_weekly">Weekly</string>
+    <string name="life_habit_frequency_monthly">Monthly</string>
+    <string name="life_habit_weekly_target">Weekly Target</string>
+    <string name="life_habit_less">Less</string>
+    <string name="life_habit_more">More</string>
+    <string name="life_habit_filter_stats">Stats</string>
+    <string name="life_habit_filter_timeline">Timeline</string>
+    <string name="life_habit_achievement">Achievements</string>
+    <string name="life_habit_new">New Habit</string>
+    <string name="life_habit_create_btn">Create</string>
+    
+    <!-- Life - CountUp -->
+    <string name="life_countup_title">Count Up</string>
+    <string name="life_countup_days">%d days</string>
+    <string name="life_countup_milestone">%d days to reach</string>
+
+    
+    <!-- Life - Shopping Kanban -->
+    
+    <!-- Life - Subscription -->
+    <string name="life_subscription_tab_active">Active</string>
+    <string name="life_subscription_tab_expired">Expired</string>
+    
+    <!-- Life - Travel -->
+    <string name="life_travel_tab_planning">Planning</string>
+    <string name="life_travel_tab_completed">Completed</string>
+    
+    <!-- Life - Todo -->
+    <string name="life_todo_tab_active">Active</string>
+    <string name="life_todo_tab_completed">Completed</string>
+    
+    <!-- Life - Report -->
+    <string name="life_report_tab_weekly">Weekly</string>
+    <string name="life_report_tab_monthly">Monthly</string>
+    
+    <!-- Life - Focus -->
+    <string name="life_focus_giveup">Give Up</string>
+    <string name="life_focus_giveup_confirm">Confirm give up?</string>
+    <string name="life_focus_giveup_hint">Current focus progress will be lost</string>
+    <string name="life_focus_continue">Continue Focus</string>
+    <string name="life_focus_title">Focus</string>
+    <string name="life_focus_stats">Stats</string>
+    <string name="life_focus_today">Today\'s Focus</string>
+    <string name="life_focus_today_minutes">Total %d minutes</string>
+    <string name="life_focus_today_summary">Today %1$d minutes, total %1$d minutes</string>
+    <string name="life_focus_pause">Pause</string>
+    <string name="life_focus_start">Start</string>
+    <string name="life_focus_complete">Complete</string>
+    
+    <!-- Life - Mood -->
+    <string name="life_mood_save">Save</string>
+    <string name="life_mood_quick_save">Save</string>
+    <string name="life_mood_quick_discard">Discard</string>
+    <string name="life_mood_delete_confirm">Delete this mood record?</string>
+    <string name="life_mood_happy">Happy</string>
+    <string name="life_mood_normal">Calm</string>
+    <string name="life_mood_upset">Down</string>
+    <string name="life_mood_sad">Sad</string>
+    <string name="life_mood_angry">Angry</string>
+    <string name="life_mood_question">How are you feeling?</string>
+    <string name="life_mood_factors">Triggers</string>
+    <string name="life_mood_factor_work">Work</string>
+    <string name="life_mood_factor_health">Health</string>
+    <string name="life_mood_factor_family">Family</string>
+    <string name="life_mood_factor_finance">Finance</string>
+    <string name="life_mood_factor_weather">Weather</string>
+    <string name="life_mood_factor_social">Social</string>
+    <string name="life_mood_content_hint">Write something... (optional)</string>
+    
+    <!-- Life - Journal -->
+    <string name="life_journal_delete_confirm">Delete this journal entry?</string>
+    
+    <!-- Life - Deposit Sheet -->
+    <string name="life_deposit_title">Deposit</string>
+    <string name="life_deposit_save">Save</string>
+    
+    <!-- Life - Delete Confirm -->
+    <string name="life_delete_confirm_default">Confirm delete this record?</string>
+    
+    <!-- Life - Dynamic Form -->
+    <string name="life_dynamic_discard">Discard</string>
+    
+    <!-- Life - Item Detail -->
+    <string name="life_item_delete_confirm">Confirm delete this record?</string>
+    
+    <!-- Life - Template Create -->
+    <string name="life_template_save_error">Save failed, content saved to draft</string>
+    
+    <!-- Life - Create Item Warning -->
+    <string name="life_item_limit_reached">Limit reached (10,000 records), please archive or delete old items</string>
+    <string name="life_item_limit_warning">Approaching limit (%d/10,000), consider archiving</string>
+    <string name="life_item_limit_info">This template has %d records, consider archiving old items</string>
+    
+    <!-- Life - Accu Days related -->
+    <string name="life_accu_days_unit">days</string>
+    
+    <!-- Bill Import Errors -->
+    <string name="bill_import_error_read_file">Unable to read file</string>
+    <string name="bill_import_error_parse_invalid">No valid bill records found</string>
+    <string name="bill_import_error_format_unknown">Unrecognized file format, please confirm it is a WeChat or Alipay bill</string>
+    <string name="bill_import_error_parse_failed">Parse failed: %s</string>
+    <string name="bill_import_error_read_image">Unable to read image</string>
+    <string name="bill_import_error_ocr_invalid">No valid transactions recognized</string>
+    <string name="bill_import_error_ocr_failed">Recognition failed: %s</string>
+    <string name="bill_import_error_invalid_amount">Please enter a valid amount</string>
+    
+    <!-- Bill Import Diagnostics -->
+    <string name="bill_import_diag_file_size">File size: %d bytes</string>
+    <string name="bill_import_diag_format">Format: %s</string>
+    <string name="bill_import_diag_records">Parsed records: %d</string>
+    <string name="bill_import_diag_lines">Text lines: %d</string>
+    <string name="bill_import_diag_first_line">First line: %s</string>
+    <string name="bill_import_diag_detected_format">Detected format: %s</string>
+    <string name="bill_import_diag_encoding">Encoding: %s</string>
+    
+    <!-- Asset Detail Screen -->
+    <string name="asset_detail_page_title">Item Details</string>
+    <string name="asset_sold_price_label">Sold Price</string>
+    <string name="asset_valuation_price">Estimated Price</string>
+    <string name="asset_days_owned">Days Owned</string>
+    <string name="asset_cost_single">Cost per Use</string>
+    <string name="asset_cost_daily_avg">Daily Average</string>
+    <string name="asset_images_count">Images (%d)</string>
+    <string name="asset_basic_info">Basic Info</string>
+    <string name="asset_subcategory">Subcategory</string>
+    <string name="asset_brand">Brand</string>
+    <string name="asset_model_name">Model</string>
+    <string name="asset_serial_number">Serial Number</string>
+    <string name="asset_condition">Condition</string>
+    <string name="asset_condition_new">New</string>
+    <string name="asset_condition_good">Good</string>
+    <string name="asset_condition_fair">Fair</string>
+    <string name="asset_condition_poor">Poor</string>
+    <string name="asset_quantity_label">Quantity</string>
+    <string name="asset_tags_label">Tags</string>
+    <string name="asset_favorite">Favorite</string>
+    <string name="asset_yes">Yes</string>
+    <string name="asset_acquisition_type">Acquisition</string>
+    <string name="asset_purchase_date">Purchase Date</string>
+    <string name="asset_acquisition_date">Acquisition Date</string>
+    <string name="asset_purchase_channel">Purchase Channel</string>
+    <string name="asset_room">Room</string>
+    <string name="asset_value_info">Value Info</string>
+    <string name="asset_current_value">Current Value</string>
+    <string name="asset_depreciation_rate">Annual Depreciation</string>
+    <string name="asset_cost_calculation">Cost Calculation</string>
+    <string name="asset_depreciation">Depreciation</string>
+    <string name="asset_warranty_info">Warranty Info</string>
+    <string name="asset_warranty_expiry_format">Expires: %s</string>
+    <string name="asset_warranty_remaining_days">%d days left</string>
+    <string name="asset_warranty_expired_days">Expired %d days ago</string>
+    <string name="asset_maintenance_info">Maintenance Info</string>
+    <string name="asset_last_maintenance_format">Last maintenance: %s</string>
+    <string name="asset_maintenance_cycle_format">Maintenance cycle: %d days</string>
+    <string name="asset_maintenance_needed">Maintenance Due</string>
+    <string name="asset_days_later_format">in %d days</string>
+    <string name="asset_maintenance_expired">Expired</string>
+    <string name="asset_complete_maintenance">Complete Maintenance</string>
+    <string name="asset_insurance_info">Insurance Info</string>
+    <string name="asset_insurance_company">Insurance Company</string>
+    <string name="asset_insurance_policy">Policy Number</string>
+    <string name="asset_insurance_expiry">Expiry Date</string>
+    <string name="asset_away_info">Away Info</string>
+    <string name="asset_removed_info">Removed Info</string>
+    <string name="asset_status_info_label">Status Info</string>
+    <string name="asset_away_reason">Away Reason</string>
+    <string name="asset_away_date">Away Date</string>
+    <string name="asset_clear_reason">Clear Reason</string>
+    <string name="asset_retire_date">Retire Date</string>
+    <string name="asset_retire_reason">Retire Reason</string>
+    <string name="asset_lost_date">Lost Date</string>
+    <string name="asset_lost_reason">Lost Reason</string>
+    <string name="asset_sold_date">Sold Date</string>
+    <string name="asset_sold_channel">Sold Channel</string>
+    <string name="asset_sold_to">Sold To</string>
+    <string name="asset_profit_loss">Profit/Loss</string>
+    <string name="asset_reactivate">Reactivate</string>
+    <string name="asset_other_info">Other Info</string>
+    <string name="asset_created_at">Created At</string>
+    <string name="asset_updated_at">Updated At</string>
+    <string name="asset_linked_bill">Linked Bill</string>
+    <string name="asset_linked_moment">Linked Moment</string>
+    <string name="asset_usage_records">Usage Records</string>
+    <string name="asset_usage_count_format">%d uses</string>
+    <string name="asset_record_usage">Record Use</string>
+    <string name="asset_no_usage_records">No usage records</string>
+    <string name="asset_click_to_record_usage">Tap the button above to record usage</string>
+    <string name="asset_collapse">Collapse</string>
+    <string name="asset_expand_all_format">Show all %d records</string>
+    <string name="asset_status_change">Status Change</string>
+    <string name="asset_status_held">Held</string>
+    <string name="asset_status_away">Away</string>
+    <string name="asset_status_removed_label">Remove</string>
+    <string name="asset_dialog_away_title">Mark as Away</string>
+    <string name="asset_dialog_away_confirm">Mark \"%s\" as away?</string>
+    <string name="asset_dialog_away_reason_hint">Reason (optional)</string>
+    <string name="asset_dialog_away_action">Confirm Away</string>
+    <string name="asset_preset_scrapped">Scrapped</string>
+    <string name="asset_preset_expired">Expired</string>
+    <string name="asset_preset_damaged">Damaged</string>
+    <string name="asset_preset_upgrade">Upgrade</string>
+    <string name="asset_preset_no_use">No longer used</string>
+    <string name="asset_preset_lost">Lost</string>
+    <string name="asset_preset_stolen">Stolen</string>
+    <string name="asset_preset_forgotten">Forgotten</string>
+    <string name="asset_preset_missing">Missing</string>
+    <string name="asset_preset_xianyu">Sold on Xianyu</string>
+    <string name="asset_preset_secondhand">Second-hand recycling</string>
+    <string name="asset_preset_gift_others">Gifted to others</string>
+    <string name="asset_dialog_clear_title">Clear Item</string>
+    <string name="asset_clear_type_retire">Retire</string>
+    <string name="asset_clear_type_lost">Lost</string>
+    <string name="asset_clear_type_sell">Sell</string>
+    <string name="asset_quick_select">Quick Select</string>
+    <string name="asset_retire_reason_hint">Retire reason (optional)</string>
+    <string name="asset_lost_reason_hint">Lost reason (optional)</string>
+    <string name="asset_remark_hint">Remark (optional)</string>
+    <string name="asset_sell_price">Sell Price</string>
+    <string name="asset_sell_channel_hint">Sell channel (optional)</string>
+    <string name="asset_dialog_delete_title">Delete Item</string>
+    <string name="asset_dialog_delete_confirm">Delete \"%s\"? It can be restored from the recycle bin.</string>
+    <string name="asset_edit_usage_record">Edit Usage Record</string>
+    <string name="asset_saved_to_album">Saved to album</string>
+    <string name="asset_save_to_phone">Save to Phone</string>
+    <string name="asset_close">Close</string>
+
+    <!-- Asset Categories -->
+    <string name="asset_category_digital">Digital</string>
+    <string name="asset_category_appliance">Appliance</string>
+    <string name="asset_category_furniture">Furniture</string>
+    <string name="asset_category_clothing">Clothing</string>
+    <string name="asset_category_sports">Sports</string>
+    <string name="asset_category_books">Books</string>
+    <string name="asset_category_cosmetics">Cosmetics</string>
+    <string name="asset_category_food">Food</string>
+    <string name="asset_category_tools">Tools</string>
+    <string name="asset_category_baby">Baby</string>
+    <string name="asset_category_pet">Pet</string>
+    <string name="asset_category_transport">Transport</string>
+    <string name="asset_category_medical">Medical</string>
+    <string name="asset_category_stationery">Stationery</string>
+    <string name="asset_category_musical">Musical</string>
+    <string name="asset_category_photography">Photography</string>
+    <string name="asset_category_collection">Collection</string>
+    <string name="asset_category_jewelry">Jewelry</string>
+    <string name="asset_category_plants">Plants</string>
+    <string name="asset_category_other">Other</string>
+
+    <!-- Add Asset Screen -->
+    <string name="asset_add_title">Add Item</string>
+    <string name="asset_edit_title">Edit Item</string>
+    <string name="asset_image_section">Item Images</string>
+    <string name="asset_remove_image">Remove</string>
+    <string name="asset_drag_to_reorder">Long press to drag</string>
+    <string name="asset_upload">Upload</string>
+    <string name="asset_image_hint">First image is the cover, up to 4 images</string>
+    <string name="asset_input_name_hint">Enter item name</string>
+    <string name="asset_total_count_format">%d items</string>
+    <string name="asset_custom_acquisition">Custom acquisition</string>
+    <string name="asset_valuation_optional">Estimated value (optional)</string>
+    <string name="asset_custom_location_hint">Enter custom location</string>
+    <string name="asset_warranty_date">Warranty Date</string>
+    <string name="asset_select_warranty_date">Select warranty expiry date (optional)</string>
+    <string name="asset_add_remark_hint">Add notes...</string>
+    <string name="asset_add_button">Add Item</string>
+    <string name="asset_purchase_channel_hint">e.g. JD, Taobao, offline store</string>
+    <string name="location_bedroom">Bedroom</string>
+    <string name="location_living_room">Living Room</string>
+    <string name="location_study">Study</string>
+    <string name="location_kitchen">Kitchen</string>
+    <string name="location_desk">Desk</string>
+    <string name="location_in_car">In Car</string>
+    <string name="acquisition_custom">Custom</string>
+
+    <!-- Report -->
+    <string name="report_year_format">%d</string>
+    <string name="report_total_expense_label">Total Expense</string>
+    <string name="report_total_income_label">Total Income</string>
+
+    <!-- Asset Form Errors -->
+    <string name="asset_error_name_required">Please enter an item name</string>
+    <string name="asset_error_category_required">Please select a category</string>
+    <string name="asset_error_date_required">Please select a purchase date</string>
+    <string name="asset_gallery_folder">PalmNote</string>
+    
+    <!-- Bill Form Errors -->
+    <string name="bill_error_amount_required">Please enter a valid amount</string>
+    <string name="bill_error_category_required">Please select a category</string>
+    
+    <!-- Field Validation -->
+    <string name="field_error_required">%s is required</string>
+    <string name="field_error_invalid_number">Please enter a valid number</string>
+    <string name="field_error_min_value">Minimum: %d</string>
+    <string name="field_error_max_value">Maximum: %d</string>
+    <string name="field_error_invalid_percent">Please enter a valid percentage</string>
+    <string name="field_error_percent_range">Range 0-100</string>
+    <string name="field_error_invalid_rating">Invalid rating</string>
+    <string name="field_error_rating_range">Range 0-10</string>
+    
+    <!-- Date Format -->
+    <string name="date_format_display">MMM dd</string>
+    <string name="date_format_display_year">MMM dd, yyyy</string>
+    <string name="date_format_display_month">MMM yyyy</string>
+    <string name="date_weekday_sunday">Sunday</string>
+    <string name="date_weekday_monday">Monday</string>
+    <string name="date_weekday_tuesday">Tuesday</string>
+    <string name="date_weekday_wednesday">Wednesday</string>
+    <string name="date_weekday_thursday">Thursday</string>
+    <string name="date_weekday_friday">Friday</string>
+    <string name="date_weekday_saturday">Saturday</string>
+    <string name="date_format_weekday_full">%1$s %2$d, %3$s</string>
+    <string name="date_format_week_range_same">%1$s %2$d-%3$d</string>
+    <string name="date_format_week_range_diff">%1$s %2$d - %3$s %4$d</string>
+    <string name="date_weekday_short_mon">Mon</string>
+    <string name="date_weekday_short_tue">Tue</string>
+    <string name="date_weekday_short_wed">Wed</string>
+    <string name="date_weekday_short_thu">Thu</string>
+    <string name="date_weekday_short_fri">Fri</string>
+    <string name="date_weekday_short_sat">Sat</string>
+    <string name="date_weekday_short_sun">Sun</string>
+    
+    <!-- Currency Format -->
+    <string name="currency_format">¥%s</string>
+    <string name="currency_compact_yi">¥%sB</string>
+    <string name="currency_compact_wan">¥%sW</string>
+    
+    <!-- App Lock -->
+    <string name="app_lock_setup_pin">Set PIN Code</string>
+    <string name="app_lock_confirm_pin">Confirm PIN Code</string>
+    <string name="app_lock_enter_pin">Enter PIN to unlock</string>
+    <string name="app_lock_pin_success">PIN code set successfully</string>
+    <string name="app_lock_pin_mismatch">PIN codes do not match</string>
+    <string name="app_lock_pin_wrong">Incorrect PIN</string>
+    <string name="app_lock_delete">Delete</string>
+    <string name="app_lock_biometric">Biometric</string>
+    <string name="app_lock_biometric_title">Biometric Authentication</string>
+    <string name="app_lock_biometric_subtitle">Use fingerprint or face to unlock</string>
+    <string name="app_lock_biometric_cancel">Cancel</string>
+    <string name="app_lock_change_pin">Change PIN</string>
+    <string name="app_lock_forgot_pin">Forgot PIN?</string>
+    <string name="app_lock_forgot_pin_confirm">Clear PIN code? This will remove app lock protection.</string>
+    <string name="app_lock_forgot_pin_action">Clear</string>
+    <string name="app_lock_old_pin">Enter old PIN</string>
+    <string name="app_lock_new_pin">Enter new PIN</string>
+    <string name="app_lock_enter_old_pin">Enter current PIN to verify</string>
+    <string name="app_lock_enter_new_pin">Enter new 6-digit PIN</string>
+    <string name="app_lock_confirm_new_pin">Confirm new PIN</string>
+    <string name="app_lock_old_pin_wrong">Old PIN is incorrect</string>
+    <string name="app_lock_pin_changed">PIN changed successfully</string>
+    
+    <!-- Notifications -->
+    <string name="notification_daily_title">Daily Reminder</string>
+    <string name="notification_daily_message">No life records today yet. Come and record!</string>
+    <string name="notification_bill_title">Bookkeeping Reminder</string>
+    <string name="notification_bill_message">No bills recorded today yet. Come and track your expenses!</string>
+    <string name="notification_birthday_title">Birthday Reminder</string>
+    <string name="notification_birthday_message">"%s"\'s birthday is coming!</string>
+    <string name="notification_anniversary_title">Anniversary Reminder</string>
+    <string name="notification_anniversary_message">"%1$s" %2$d anniversary is approaching</string>
+    <string name="notification_countdown_today_title">Countdown Complete</string>
+    <string name="notification_countdown_today_message">"%s" is today!</string>
+    <string name="notification_countdown_soon_title">Countdown Ending Soon</string>
+    <string name="notification_countdown_soon_message">"%1$s" has %2$d days left</string>
+    <string name="notification_milestone_title">Count Up Milestone</string>
+    <string name="notification_milestone_message">You\'ve kept "%1$s" going for %2$d days!</string>
+    <string name="notification_subscription_title">Subscription Billing Reminder</string>
+    <string name="notification_subscription_message">"%1$s" billing today: %1$s</string>
+    
+    <!-- Notification Channels -->
+    <string name="notification_channel_life">Life Updates</string>
+    <string name="notification_channel_life_desc">Count up milestones, check-in achievements, etc.</string>
+    <string name="notification_channel_checkin">Check-in Reminders</string>
+    <string name="notification_channel_checkin_desc">Habit check-in and to-do reminders</string>
+    <string name="notification_channel_reminder">Event Reminders</string>
+    <string name="notification_channel_reminder_desc">Birthday, anniversary, subscription billing reminders</string>
+    
+    <!-- About Screen -->
+    <string name="about_title">About</string>
+    <string name="about_subtitle">Palm Note</string>
+    <string name="about_description">Personal Life Management Tool</string>
+    <string name="about_description_detail">Palm Note is an elegant personal life management app that helps you track assets, manage bills, set goals, record anniversaries and life moments.</string>
+    <string name="about_features">Features</string>
+    <string name="about_feature_asset">Asset Management - Track items and costs</string>
+    <string name="about_feature_bill">Smart Ledger - Expense analysis and budget management</string>
+    <string name="about_feature_goal">Goal Tracking - Set targets, record progress</string>
+    <string name="about_feature_anniversary">Anniversaries - Never miss important dates</string>
+    <string name="about_feature_moment">Life Moments - Record and cherish memories</string>
+    <string name="about_tech_stack">Tech Stack</string>
+    <string name="about_legal">Legal Information</string>
+    <string name="about_privacy_policy">Privacy Policy</string>
+    <string name="about_terms_of_service">Terms of Service</string>
+
+    <string name="about_made_with">Made with Love</string>
+    <string name="about_privacy_title">Privacy Policy</string>
+    <string name="about_terms_title">Terms of Service</string>
+    
+    <!-- App Lock Settings -->
+    <string name="app_lock_settings_title">App Lock Settings</string>
+    <string name="app_lock_change_pin_title">Change PIN</string>
+    <string name="app_lock_change_pin_subtitle">Change app lock password</string>
+    <string name="app_lock_forgot_pin_title_settings">Forgot Password</string>
+    <string name="app_lock_forgot_pin_subtitle">Clear app data to reset password</string>
+    <string name="app_lock_forgot_pin_confirm_settings">Clear all app data? This will delete all local data and cannot be undone.</string>
+    <string name="app_lock_forgot_pin_action_settings">Clear App Data</string>
+    <string name="app_lock_biometric_enable">Enable Biometric</string>
+    <string name="app_lock_biometric_enable_subtitle">Use fingerprint or face to unlock quickly</string>
+    <string name="app_lock_biometric_enabled">Enabled</string>
+    <string name="app_lock_biometric_disabled">Disabled</string>
+    
+    <!-- Reminder Time -->
+    <string name="settings_reminder_time">Reminder Time</string>
+    <string name="settings_reminder_time_subtitle">Set specific time for daily reminder</string>
+    <string name="settings_reminder_time_bill_subtitle">Set specific time for bookkeeping reminder</string>
+    <string name="settings_reminder_time_format" formatted="false">%02d:%02d</string>
+    <string name="settings_select_reminder_time">Select Reminder Time</string>
+    
+    <!-- Default Book -->
+    <string name="report_all_books">All Books</string>
+    
+    <!-- Bill Detail -->
+    <string name="bill_detail_title">Bill Detail</string>
+    <string name="bill_type">Type</string>
+    <string name="bill_merchant">Merchant</string>
+    <string name="bill_payment_method">Payment Method</string>
+    <string name="bill_sub_category">Sub Category</string>
+    <string name="bill_location">Location</string>
+    <string name="bill_tags">Tags</string>
+    <string name="bill_attachments">Attachments</string>
+    <string name="bill_reimbursement_status">Reimbursement Status</string>
+    <string name="bill_reimbursed">Reimbursed</string>
+    <string name="bill_pending_reimbursement">Pending</string>
+    <string name="bill_record_id">Record ID</string>
+    <string name="bill_created_at">Created At</string>
+    <string name="bill_updated_at">Updated At</string>
+    
+    <!-- Bill Import -->
+    <string name="bill_import_title">Import Bills</string>
+    <string name="bill_import_file">File Import</string>
+    <string name="bill_import_image">Image Recognition</string>
+    <string name="bill_import_parsing">Parsing…</string>
+    <string name="bill_import_importing">Importing…</string>
+    <string name="bill_import_failed">Import Failed</string>
+    <string name="bill_import_select_method">Select Import Method</string>
+    <string name="bill_import_file_desc">Import WeChat/Alipay bill files (CSV/XLSX)</string>
+    <string name="bill_import_image_desc">Take or select transaction screenshots for auto recognition</string>
+    <string name="bill_import_complete">Import Complete</string>
+    <string name="bill_import_success_count">Successfully imported %d bills</string>
+    <string name="bill_import_continue">Continue Import</string>
+    <string name="bill_import_reselect">Reselect</string>
+    <string name="bill_import_select_all">Select All</string>
+    <string name="bill_import_select_none">Deselect All</string>
+    <string name="bill_import_wechat_bill">WeChat Bill</string>
+    <string name="bill_import_alipay_bill">Alipay Bill</string>
+    <string name="bill_import_selected_count">Import %d bills</string>
+    <string name="bill_import_ocr_recognized">Recognized %1$d transactions, %1$d selected</string>
+    <string name="bill_import_ocr_result">Recognition Result</string>
+    <string name="bill_import_amount">Amount</string>
+    <string name="bill_import_merchant">Merchant</string>
+    <string name="bill_import_date">Date</string>
+    <string name="bill_import_category">Category</string>
+    <string name="bill_import_note">Note</string>
+    <string name="bill_import_hide_raw">Hide Original Text</string>
+    <string name="bill_import_show_raw">View Original Text</string>
+    <string name="bill_import_save">Save Bill</string>
+    <string name="bill_import_batch_save">Batch Save (%d)</string>
+    <string name="bill_import_unknown_file">Unknown File</string>
+    <string name="bill_import_screenshot">Screenshot</string>
+    <string name="bill_import_total_records">Total %d records</string>
+    <string name="bill_import_selected_records">%d selected</string>
+    
+    <!-- Budget -->
+    <string name="budget_title">Budget Management</string>
+    <string name="budget_month_format">%s Budget</string>
+    <string name="budget_total">Total Budget</string>
+    <string name="budget_used">Used</string>
+    <string name="budget_remaining">Remaining</string>
+    <string name="budget_over">Over Budget</string>
+    <string name="budget_not_set">No budget set for this month</string>
+    <string name="budget_modify">Modify Budget</string>
+    <string name="budget_set">Set Budget</string>
+    <string name="budget_tips">Budget Tips</string>
+    <string name="budget_tips_content">① Suggest using 50%% of income as living expenses budget\n② Reserve 10%% as emergency fund\n③ You\'ll be reminded when 80%% is used</string>
+    
+    <!-- Report -->
+    <string name="report_title">Statistics</string>
+    <string name="report_previous">Previous</string>
+    <string name="report_next">Next</string>
+    <string name="report_week">Week</string>
+    <string name="report_month">Month</string>
+    <string name="report_year">Year</string>
+    <string name="report_total_expense">Total Expense</string>
+    <string name="report_total_income">Total Income</string>
+    <string name="report_daily_avg">Daily Avg %s</string>
+    <string name="report_count_format">%d transactions</string>
+    <string name="report_other">Other</string>
+    <string name="report_no_records">No records this month</string>
+    <string name="report_category_ranking">Category Ranking</string>
+    <string name="report_collapse">Collapse</string>
+    <string name="report_expand_all">Expand All</string>
+    <string name="report_weekly_trend">Weekly Trend</string>
+    <string name="report_monthly_trend">Monthly Trend</string>
+    <string name="report_yearly_trend">Yearly Trend</string>
+    
+    <!-- Account Book Manage -->
+    <string name="account_book_manage_title">Book Management</string>
+    <string name="account_book_add">Add Book</string>
+    <string name="account_book_my_books">My Books</string>
+    <string name="account_book_count_format">%d books</string>
+    <string name="account_book_empty">No Books</string>
+    <string name="account_book_empty_hint">Tap the button to add a book</string>
+    <string name="account_book_delete_title">Delete Book</string>
+    <string name="account_book_delete_confirm">Delete "%s"? Records in this book will not be deleted.</string>
+    <string name="account_book_set_default">Set as Default</string>
+    <string name="account_book_edit">Edit Book</string>
+    <string name="account_book_new">New Book</string>
+    <string name="account_book_select_type">Select Book Type</string>
+    <string name="account_book_custom">Custom Book</string>
+    <string name="account_book_name">Name</string>
+    <string name="account_book_desc">Description</string>
+    <string name="account_book_icon">Icon</string>
+    <string name="account_book_color">Color</string>
+    <string name="account_book_back_to_template">← Back to Templates</string>
+    <string name="account_book_name_required">Please enter a book name</string>
+    
+    <!-- Default Book Names -->
+    <string name="account_book_all_name">All Books</string>
+    <string name="account_book_all_desc">Summary of all book data</string>
+    <string name="account_book_daily_name">Daily</string>
+    <string name="account_book_daily_desc">Record daily expenses</string>
+    <string name="account_book_travel_name">Travel</string>
+    <string name="account_book_travel_desc">All travel expenses</string>
+    <string name="account_book_work_name">Work</string>
+    <string name="account_book_work_desc">Work-related income and expenses</string>
+    <string name="account_book_family_name">Family</string>
+    <string name="account_book_family_desc">Family shared expenses</string>
+    <string name="account_book_study_name">Study</string>
+    <string name="account_book_study_desc">Education and training expenses</string>
+    <string name="account_book_investment_name">Investment</string>
+    <string name="account_book_investment_desc">Investment records</string>
+    
+    <!-- Asset Status -->
+    <string name="asset_warranty_days">%d days warranty</string>
+    <string name="asset_warranty_active">Under warranty</string>
+    <string name="asset_insurance_active">Insurance valid</string>
+    <string name="asset_insurance_expired">Insurance expired</string>
+    
+    <!-- Life Templates -->
+    <string name="template_savings_name">Savings Plan</string>
+    <string name="template_savings_desc">Set savings goals and track progress</string>
+    <string name="template_shopping_name">Shopping Plan</string>
+    <string name="template_shopping_desc">Manage shopping lists and budget</string>
+    <string name="template_todo_name">To-Do</string>
+    <string name="template_todo_desc">Manage daily tasks</string>
+    <string name="template_travel_name">Travel Plan</string>
+    <string name="template_travel_desc">Plan trips and record memories</string>
+    <string name="template_reading_name">Reading</string>
+    <string name="template_reading_desc">Track reading progress</string>
+    <string name="template_study_name">Study Plan</string>
+    <string name="template_study_desc">Add courses and track learning progress</string>
+    <string name="template_countdown_name">Countdown</string>
+    <string name="template_countdown_desc">Count down to important events</string>
+    <string name="template_countup_name">Count Up</string>
+    <string name="template_countup_desc">Track days since a special date</string>
+    <string name="template_birthday_name">Birthday</string>
+    <string name="template_birthday_desc">Record important dates</string>
+    <string name="template_anniversary_name">Anniversary</string>
+    <string name="template_anniversary_desc">Record memorable days</string>
+    <string name="template_checkin_name">Check-in</string>
+    <string name="template_checkin_desc">Track daily habits</string>
+    <string name="template_mood_name">Mood</string>
+    <string name="template_mood_desc">Record daily mood</string>
+    <string name="template_diary_name">Diary</string>
+    <string name="template_diary_desc">Record daily thoughts and feelings</string>
+    <string name="template_subscription_name">Subscription</string>
+    <string name="template_subscription_desc">Manage your subscriptions</string>
+    <string name="template_report_name">Report</string>
+    <string name="template_report_desc">Auto-generate life data reports</string>
+    
+    <!-- Wallet Type Names -->
+    <string name="wallet_type_cash">Cash</string>
+    <string name="wallet_type_wechat">WeChat</string>
+    <string name="wallet_type_alipay">Alipay</string>
+    <string name="wallet_type_debit_card">Debit Card</string>
+    <string name="wallet_type_credit_card">Credit Card</string>
+    <string name="wallet_type_investment">Investment</string>
+    <string name="wallet_type_top_up">Top-up</string>
+    <string name="wallet_type_other">Other</string>
+    <string name="wallet_type_e_wallet">E-Wallet</string>
+    <string name="wallet_type_bank_card">Bank Card</string>
+    
+    <!-- Bill Categories - Expense -->
+    <string name="category_food">Food</string>
+    <string name="category_snacks">Snacks</string>
+    <string name="category_drinks">Drinks</string>
+    <string name="category_transport">Transport</string>
+    <string name="category_shopping">Shopping</string>
+    <string name="category_clothing">Clothing</string>
+    <string name="category_digital">Digital</string>
+    <string name="category_used">Used</string>
+    <string name="category_housing">Housing</string>
+    <string name="category_furniture">Furniture</string>
+    <string name="category_rent">Rent</string>
+    <string name="category_entertainment">Entertainment</string>
+    <string name="category_travel">Travel</string>
+    <string name="category_sports">Sports</string>
+    <string name="category_medical">Medical</string>
+    <string name="category_fitness">Fitness</string>
+    <string name="category_beauty">Beauty</string>
+    <string name="category_education">Education</string>
+    <string name="category_stationery">Stationery</string>
+    <string name="category_social">Social</string>
+    <string name="category_favors">Favors</string>
+    <string name="category_red_packet">Red Packet</string>
+    <string name="category_gift">Gift</string>
+    <string name="category_communication">Communication</string>
+    <string name="category_housekeeping">Housekeeping</string>
+    <string name="category_delivery">Delivery</string>
+    <string name="category_repair">Repair</string>
+    <string name="category_investment">Investment</string>
+    <string name="category_stocks">Stocks</string>
+    <string name="category_finance">Finance</string>
+    <string name="category_insurance">Insurance</string>
+    <string name="category_pet">Pet</string>
+    <string name="category_baby">Baby</string>
+    <string name="category_tobacco_alcohol">Tobacco &amp; Alcohol</string>
+    <string name="category_donation">Donation</string>
+    <string name="category_fine">Fine</string>
+    <string name="category_fee">Fee</string>
+    <string name="category_other">Other</string>
+    
+    <!-- Bill Categories - Income -->
+    <string name="category_salary">Salary</string>
+    <string name="category_bonus">Bonus</string>
+    <string name="category_part_time">Part-time</string>
+    <string name="category_side_job">Side Job</string>
+    <string name="category_reimbursement">Reimbursement</string>
+    <string name="category_dividend">Dividend</string>
+    <string name="category_interest">Interest</string>
+    <string name="category_refund">Refund</string>
+    <string name="category_lottery">Lottery</string>
+    <string name="category_claim">Insurance Claim</string>
+    <string name="category_inheritance">Inheritance</string>
+    
+    <!-- Payment Methods -->
+    <string name="payment_cash">Cash</string>
+    <string name="payment_wechat">WeChat</string>
+    <string name="payment_alipay">Alipay</string>
+    <string name="payment_card">Bank Card</string>
+    <string name="payment_bank_transfer">Bank Transfer</string>
+    <string name="payment_other">Other</string>
+    
+    <!-- Wallet Screen -->
+    <string name="wallet_title">Account Management</string>
+    <string name="wallet_add">Add Account</string>
+    <string name="wallet_total_assets">Total Assets</string>
+    <string name="wallet_count_format">%d accounts</string>
+    <string name="wallet_empty">No Accounts</string>
+    <string name="wallet_empty_hint">Tap the button to add an account</string>
+    <string name="wallet_delete_title">Delete Account</string>
+    <string name="wallet_delete_confirm">Delete "%s"? Bill records under this account will not be deleted.</string>
+    <string name="wallet_edit">Edit Account</string>
+    <string name="wallet_name">Account Name</string>
+    <string name="wallet_type">Account Type</string>
+    <string name="wallet_bank">Bank</string>
+    <string name="wallet_card_last_four">Last 4 Digits</string>
+    <string name="wallet_balance">Balance</string>
+    <string name="wallet_icon">Icon</string>
+    <string name="wallet_color">Color</string>
+    <string name="wallet_name_required">Please enter an account name</string>
+    <string name="wallet_initial_balance">Initial Balance</string>
+    <string name="wallet_card_number">Card Number</string>
+    <string name="wallet_balance_invalid">Enter a valid number</string>
+    <string name="wallet_balance_negative">Amount cannot be negative</string>
+    
+    <!-- Category Screen -->
+    <string name="category_manage_title">Category Management</string>
+    <string name="category_manage_add">Add Category</string>
+    <string name="category_manage_count_format">%d categories</string>
+    <string name="category_manage_system_default">System Default</string>
+    <string name="category_manage_delete_title">Delete Category</string>
+    <string name="category_manage_delete_confirm">Are you sure you want to delete \"%s\"? Records under this category will not be deleted.</string>
+    <string name="category_manage_enabled">Enabled</string>
+    <string name="category_manage_disabled">Disabled</string>
+    <string name="category_manage_default">Default</string>
+    <string name="category_manage_system_category">System Category</string>
+    <string name="category_manage_enable">Enable</string>
+    <string name="category_manage_disable">Disable</string>
+    <string name="category_manage_edit">Edit Category</string>
+    <string name="category_manage_name">Category Name</string>
+    <string name="category_manage_icon">Icon</string>
+    <string name="category_manage_color">Color</string>
+    <string name="category_manage_name_required">Please enter a category name</string>
+    <string name="category_manage_empty_title">No categories yet</string>
+    <string name="category_manage_empty_hint">Tap + to add your first category</string>
+    
+    <!-- Data Clear -->
+    <string name="data_clear_title">Clear Data</string>
+    <string name="data_clear_select">Select data to clear</string>
+    <string name="data_clear_warning">This action is irreversible. Please proceed with caution. To clear cache only, use the "Clear Cache" option in Settings.</string>
+    <string name="data_clear_asset">Clear Asset Data</string>
+    <string name="data_clear_asset_desc">Delete all asset records</string>
+    <string name="data_clear_bill">Clear Bill Data</string>
+    <string name="data_clear_bill_desc">Delete all bills, budgets, and accounts</string>
+    <string name="data_clear_life">Clear Life Data</string>
+    <string name="data_clear_life_desc">Delete all goals, anniversaries, and moments</string>
+    <string name="data_clear_all">Clear All Data</string>
+    <string name="data_clear_all_desc">Delete all data and reset to initial state</string>
+    <string name="data_clear_confirm_title">Confirm Clear</string>
+    <string name="data_clear_confirm_message">Clear %s? This action is irreversible!</string>
+    <string name="data_clear_action">Clear</string>
+    
+    <!-- Recycle Bin -->
+    <string name="recycle_bin_title">Recycle Bin</string>
+    <string name="recycle_bin_clear_title">Clear Recycle Bin</string>
+    <string name="recycle_bin_clear_confirm">Permanently delete all deleted records? This action is irreversible.</string>
+    <string name="recycle_bin_clear">Clear</string>
+    <string name="recycle_bin_empty">Recycle Bin Empty</string>
+    <string name="recycle_bin_empty_hint">Deleted records will appear here and be auto-cleared after 30 days</string>
+    <string name="recycle_bin_restore">Restore</string>
+    <string name="recycle_bin_delete">Delete</string>
+    <string name="recycle_tab_assets">Assets</string>
+    <string name="recycle_tab_bills">Bills</string>
+    <string name="recycle_tab_goals">Goals</string>
+    <string name="recycle_tab_anniversaries">Anniversaries</string>
+    <string name="recycle_tab_moments">Moments</string>
+    
+    <!-- Search -->
+    <string name="search_placeholder">Search assets, bills, goals, anniversaries, moments…</string>
+    <string name="search_clear">Clear</string>
+    <string name="search_hint">Enter keywords to search all content</string>
+    <string name="search_no_results">No results found</string>
+    <string name="search_section_assets">Assets</string>
+    <string name="search_section_bills">Bills</string>
+    <string name="search_section_goals">Goals</string>
+    <string name="search_section_anniversaries">Anniversaries</string>
+    <string name="search_section_moments">Moments</string>
+    
+    <!-- Backup -->
+    <string name="backup_title">Data Backup</string>
+    <string name="backup_operation_success">Operation successful</string>
+    <string name="backup_create">Create Backup</string>
+    <string name="backup_create_desc">Package all data as .palmnote file, saved to Downloads/PalmNote/</string>
+    <string name="backup_backing_up">Backing up…</string>
+    <string name="backup_now">Backup Now</string>
+    <string name="backup_existing">Existing Backups</string>
+    <string name="backup_empty">No Backups</string>
+    <string name="backup_empty_hint">Tap the button above to create your first backup</string>
+    <string name="backup_restore_title">Restore Backup</string>
+    <string name="backup_restore_confirm">Restore will overwrite all current data. This action cannot be undone. Continue?</string>
+    <string name="backup_restore">Restore</string>
+    <string name="backup_delete">Delete</string>
+    
+    <!-- Common Components -->
+    <string name="common_more">More</string>
+    <string name="common_select_category">Select Category</string>
+    <string name="common_manage_categories">Manage Categories</string>
+    <string name="common_custom_tag">Custom Tag</string>
+    <string name="common_select_tag">Select Tag</string>
+    <string name="common_previous_month">Previous Month</string>
+    <string name="common_next_month">Next Month</string>
+    <string name="common_save">Save</string>
+    
+    <!-- Icon Picker Categories -->
+    <string name="icon_category_all">All</string>
+    <string name="icon_category_study">Study</string>
+    <string name="icon_category_sports">Sports</string>
+    <string name="icon_category_life">Life</string>
+    <string name="icon_category_work">Work</string>
+    <string name="icon_category_health">Health</string>
+    <string name="icon_category_travel">Travel</string>
+    <string name="icon_category_creative">Creative</string>
+    <string name="icon_category_finance">Finance</string>
+    <string name="icon_category_goals">Goals</string>
+    <string name="icon_category_mood">Mood</string>
+    <string name="icon_category_other">Other</string>
+    
+    <!-- Field Components -->
+    <string name="field_input_hint">Type and press Enter to add</string>
+    <string name="field_select_date">Select Date</string>
+    <string name="field_start">Start</string>
+    <string name="field_end">End</string>
+    <string name="field_decrease">Decrease</string>
+    <string name="field_increase">Increase</string>
+    <string name="field_add_image">Add Image</string>
+    
+    <!-- Asset Tags -->
+    <string name="tag_own">Own</string>
+    <string name="tag_gifted">Gifted</string>
+    <string name="tag_borrowed">Borrowed</string>
+    <string name="tag_rented">Rented</string>
+    <string name="tag_homemade">Homemade</string>
+    <string name="tag_found">Found</string>
+    <string name="tag_temporary">Temporary</string>
+    <string name="tag_lent">Lent</string>
+    <string name="tag_rented_out">Rented Out</string>
+    <string name="tag_under_repair">Under Repair</string>
+    <string name="tag_inspection">Inspection</string>
+    <string name="tag_modified">Modified</string>
+    <string name="tag_maintenance">Maintenance</string>
+    <string name="tag_returned">Returned</string>
+    <string name="tag_shipping">Shipping</string>
+    <string name="tag_exhibited">Exhibited</string>
+    <string name="tag_sold">Sold</string>
+    <string name="tag_transferred">Transferred</string>
+    <string name="tag_given">Given</string>
+    <string name="tag_donated">Donated</string>
+    <string name="tag_refunded">Refunded</string>
+    <string name="tag_discarded">Discarded</string>
+    <string name="tag_scrapped">Scrapped</string>
+    <string name="tag_lost">Lost</string>
+    <string name="tag_stolen">Stolen</string>
+    <string name="tag_expired">Expired</string>
+    <string name="tag_other">Other</string>
+    
+    <!-- Settings Messages -->
+    <string name="settings_sync_success">Synced %d anniversaries to system calendar</string>
+    <string name="settings_sync_failed">Sync failed: %s</string>
+    <string name="settings_sync_cleared">Calendar sync cleared</string>
+    <string name="settings_export_failed">Export failed: %s</string>
+    <string name="settings_import_success">Import successful, %d records total</string>
+    <string name="settings_import_no_data">No importable data found</string>
+    <string name="settings_import_failed">Import failed: %s</string>
+    <string name="settings_cache_cleared">Cache cleared</string>
+    <string name="settings_cache_clear_failed">Clear failed: %s</string>
+    <string name="close">Close</string>
+    <string name="settings_appearance_subtitle">Theme, language, accent color</string>
+    <string name="settings_general_subtitle">Start page, bill type, budget reminder</string>
+    <string name="settings_reminder_subtitle">Daily, bill, birthday reminders</string>
+    <string name="settings_data_subtitle">Export, import, recycle bin</string>
+    <string name="life_saving_title">Saving Plans</string>
+    <string name="life_empty_habit_start">Start checking in</string>
+    <string name="life_empty_habit_hint">Build good habits</string>
+    <string name="life_empty_countup">No count-up yet</string>
+    <string name="life_empty_countup_subtitle">Record memorable days</string>
+    <string name="life_empty_countup_action">Create count-up</string>
+    
+    <!-- Life - Template Empty States -->
+    <string name="life_empty_saving_title">No saving plans yet</string>
+    <string name="life_empty_saving_subtitle">Set a goal and start saving</string>
+    <string name="life_empty_shopping_title">Wishlist is empty</string>
+
+    <string name="life_empty_travel_title">No travel plans yet</string>
+
+    <string name="life_empty_reading_title">Bookshelf is empty</string>
+
+    <string name="life_empty_study_title">No study plans yet</string>
+
+    <string name="life_empty_todo_title">No to-do items</string>
+
+    <string name="life_empty_countup_title">No count up yet</string>
+
+    <string name="life_empty_countdown_title">No countdowns yet</string>
+
+    <string name="life_empty_birthday_title">No birthdays yet</string>
+
+    <string name="life_empty_anniversary_title">No anniversaries yet</string>
+
+    <string name="life_empty_subscription_title">No subscriptions yet</string>
+
+    <string name="life_empty_habit_title">Start your first habit</string>
+    <string name="life_empty_habit_subtitle">Choose a habit and check in daily</string>
+    <string name="life_empty_mood_title">No mood recorded today</string>
+    <string name="life_empty_mood_subtitle">Record how you feel right now</string>
+    <string name="life_empty_journal_title">No journal yet</string>
+    <string name="life_empty_journal_subtitle">Write about what happened today</string>
+    <string name="life_empty_focus_title">No focus records yet</string>
+    <string name="life_empty_focus_subtitle">Start a focused session</string>
+    <string name="life_empty_report_title">No report data yet</string>
+    <string name="life_empty_report_subtitle">Reports are generated automatically as data accumulates</string>
+    <string name="life_empty_default_title">No data</string>
+    <string name="life_empty_default_subtitle">Tap + to add</string>
+    <string name="life_habit_times">times</string>
+    <string name="settings_notification_permission_title">Enable Notification Permission</string>
+    <string name="settings_notification_permission_text">Notification permission is required for timely reminders. We won\'t send spam.</string>
+    <string name="settings_notification_permission_allow">Allow</string>
+    <string name="settings_notification_denied_title">Permission Denied</string>
+    <string name="settings_notification_denied_text">Notification permission has been permanently denied. Please enable it in system settings.</string>
+    <string name="settings_notification_denied_go_settings">Go to Settings</string>
+    <string name="privacy_dialog_title">User Agreement &amp; Privacy Policy</string>
+    <string name="privacy_dialog_text">Thank you for using PalmNote. Before proceeding, please read and agree to our User Agreement and Privacy Policy. We collect necessary data to provide app functionality and will not share your personal information without authorization.</string>
+    <string name="privacy_dialog_agree">Agree</string>
+    <string name="privacy_dialog_disagree">Disagree</string>
+    <string name="privacy_dialog_view_policy">View Privacy Policy</string>
+    <string name="privacy_dialog_view_terms">View Terms of Service</string>
+    <string name="privacy_dialog_view_links">Full User Agreement and Privacy Policy can be viewed in the About page.</string>
+    <string name="privacy_policy_content">PalmNote respects and protects user privacy. We do not collect any personal information. All data is stored locally on your device. We do not share your data with any third parties. Third-party SDKs (e.g., Coil image loader) may be used to provide core functionality and do not collect personal information. If you have any questions, please contact us through the channels provided in the app.</string>
+    <string name="terms_content">Welcome to PalmNote. This app is a local record-keeping tool. All data is stored locally on your device. Users should use this app responsibly and not engage in illegal activities. The app is provided "as is" without any warranty. To the maximum extent permitted by law, the developer shall not be liable for any direct or indirect damages arising from the use of this app. We reserve the right to modify these terms at any time.</string>
+
+    <string name="field_select_time">Select Time</string>
+    <string name="field_enabled">Enabled</string>
+    <string name="field_disabled">Disabled</string>
+    <string name="field_option">Option %s</string>
+    <string name="field_url_placeholder">https://</string>
+    <string name="field_email_placeholder">example@email.com</string>
+    <string name="field_phone_placeholder">Phone Number</string>
+    <string name="field_color_placeholder">#HEX</string>
+    <string name="field_image_placeholder">Enter image URL or path</string>
+    <string name="field_image_helper">Supports local paths and web URLs</string>
+    <string name="field_location_placeholder">Enter location name or address</string>
+    <string name="field_duration_format">HH:mm</string>
+
+    <string name="life_preset_templates">Preset Templates</string>
+    <string name="life_custom_templates">Custom Templates</string>
+    <string name="life_no_custom_templates">No custom templates</string>
+    <string name="life_preset">Preset</string>
+
+    <string name="life_create_template">Create Template</string>
+
+    <!-- Trigger Engine Notifications -->
+    <string name="trigger_saving_goal_title">Savings Goal Achieved</string>
+    <string name="trigger_saving_goal_message">Congratulations on achieving your goal \"%s\"!</string>
+    <string name="trigger_status_updated_title">Status Updated</string>
+    <string name="trigger_status_updated_message">\"%s\" has been completed</string>
+    
+    <!-- Default Goal Categories -->
+    <string name="goal_category_fitness">Fitness</string>
+    <string name="goal_category_reading">Reading &amp; Study</string>
+    <string name="goal_category_skill">Skill Improvement</string>
+    <string name="goal_category_habit">Daily Habits</string>
+    <string name="goal_category_project">Project Plan</string>
+    <string name="goal_category_savings">Savings &amp; Finance</string>
+    <string name="goal_category_custom">Custom</string>
+    
+    <!-- Default Anniversary Types -->
+    <string name="anniversary_type_birthday">Birthday</string>
+    <string name="anniversary_type_wedding">Wedding Anniversary</string>
+    <string name="anniversary_type_meeting">Meeting Anniversary</string>
+    <string name="anniversary_type_graduation">Graduation Anniversary</string>
+    <string name="anniversary_type_work">Work Anniversary</string>
+    <string name="anniversary_type_travel">Travel Anniversary</string>
+    <string name="anniversary_type_baby">Baby Anniversary</string>
+    <string name="anniversary_type_pet">Pet Anniversary</string>
+    <string name="anniversary_type_custom">Custom</string>
+    
+    <!-- Default Moment Categories -->
+    <string name="moment_category_travel">Travel</string>
+    <string name="moment_category_food">Food</string>
+    <string name="moment_category_family">Family</string>
+    <string name="moment_category_work">Work</string>
+    <string name="moment_category_friends">Friends</string>
+    <string name="moment_category_hobby">Hobbies</string>
+    <string name="moment_category_nature">Nature</string>
+    <string name="moment_category_pet">Pets</string>
+    <string name="moment_category_custom">Custom</string>
+    
+    <!-- Default Tags -->
+    <string name="tag_default_important">Important</string>
+    <string name="tag_default_daily">Daily</string>
+    <string name="tag_default_work">Work</string>
+    <string name="tag_default_life">Life</string>
+    <string name="tag_default_study">Study</string>
+    <string name="tag_default_entertainment">Entertainment</string>
+    <string name="tag_default_travel">Travel</string>
+    <string name="tag_default_food">Food</string>
+    <string name="tag_default_family">Family</string>
+    <string name="tag_default_friends">Friends</string>
+    <string name="tag_default_health">Health</string>
+    <string name="tag_default_finance">Finance</string>
+    <string name="tag_default_shopping">Shopping</string>
+    <string name="tag_default_gift">Gift</string>
+</resources>

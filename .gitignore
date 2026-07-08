@@ -1,0 +1,15 @@
+*.iml
+.gradle
+/local.properties
+/.idea
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+.openclaw
+release.jks
+app/build/
+C*UsersBion.sshknown_hosts
+.github/
