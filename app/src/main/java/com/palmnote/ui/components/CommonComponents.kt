@@ -1049,3 +1049,40 @@ fun getCategoryName(key: String, context: android.content.Context): String = whe
     else -> context.getString(R.string.asset_category_other)
 }
 
+fun getLocalizedWalletDisplayName(wallet: com.palmnote.data.db.entity.Wallet, context: android.content.Context): String {
+    val typeNames = mapOf(
+        "CASH" to context.getString(R.string.wallet_type_cash),
+        "E_WALLET" to context.getString(R.string.wallet_type_e_wallet),
+        "BANK_CARD" to context.getString(R.string.wallet_type_bank_card),
+        "CREDIT_CARD" to context.getString(R.string.wallet_type_credit_card),
+        "DEBIT_CARD" to context.getString(R.string.wallet_type_debit_card),
+        "INVESTMENT" to context.getString(R.string.wallet_type_investment),
+        "TOP_UP" to context.getString(R.string.wallet_type_top_up),
+        "OTHER" to context.getString(R.string.wallet_type_other)
+    )
+    val localizedName = typeNames[wallet.type] ?: wallet.name
+    // If the wallet name matches a known Chinese type name, use the localized version
+    val allChineseNames = listOf(
+        "现金", "微信", "支付宝", "储蓄卡", "信用卡", "投资账户", "充值账户", "其他", "电子钱包", "银行卡"
+    )
+    val allLocalizedNames = typeNames.values.toList()
+    val isDefaultName = allChineseNames.any { wallet.name == it } || allLocalizedNames.any { wallet.name == it }
+    return if (isDefaultName) {
+        when (wallet.name) {
+            "微信", "WeChat" -> context.getString(R.string.wallet_type_wechat)
+            "支付宝", "Alipay" -> context.getString(R.string.wallet_type_alipay)
+            "现金", "Cash" -> context.getString(R.string.wallet_type_cash)
+            "储蓄卡", "Debit Card" -> context.getString(R.string.wallet_type_debit_card)
+            "信用卡", "Credit Card" -> context.getString(R.string.wallet_type_credit_card)
+            "投资账户", "Investment" -> context.getString(R.string.wallet_type_investment)
+            "充值账户", "Top-up" -> context.getString(R.string.wallet_type_top_up)
+            "电子钱包", "E-Wallet" -> context.getString(R.string.wallet_type_e_wallet)
+            "银行卡", "Bank Card" -> context.getString(R.string.wallet_type_bank_card)
+            "其他", "Other" -> context.getString(R.string.wallet_type_other)
+            else -> localizedName
+        }
+    } else {
+        wallet.displayName
+    }
+}
+

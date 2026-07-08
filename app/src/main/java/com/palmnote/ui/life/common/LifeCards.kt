@@ -11,10 +11,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.palmnote.R
 import com.palmnote.data.db.entity.LifeItem
 import com.palmnote.data.db.entity.LifeTemplate
 import com.palmnote.ui.theme.*
@@ -24,11 +27,12 @@ import kotlinx.serialization.json.*
 
 @Composable
 fun PlanCard(tpl: LifeTemplate, previews: List<LifeItem>, iconColor: Color, onClick: () -> Unit) {
+    val context = LocalContext.current
     val tplColor = try { Color(android.graphics.Color.parseColor(tpl.color)) } catch (_: Exception) { iconColor }
     val previewItem = previews.firstOrNull()
     val itemStatus = previewItem?.status ?: "ACTIVE"
     val isDone = itemStatus == "COMPLETED" || itemStatus == "ARCHIVED"
-    val statusLabel = when (itemStatus) { "COMPLETED" -> "\u5DF2\u5B8C\u6210"; "ARCHIVED" -> "\u5DF2\u5F52\u6863"; else -> "\u8FDB\u884C\u4E2D" }
+    val statusLabel = when (itemStatus) { "COMPLETED" -> stringResource(R.string.life_card_status_completed); "ARCHIVED" -> stringResource(R.string.life_card_status_archived); else -> stringResource(R.string.life_card_status_ongoing) }
     val statusColor = when (itemStatus) { "COMPLETED" -> MaterialTheme.colorScheme.tertiary; "ARCHIVED" -> MaterialTheme.colorScheme.outline; else -> tplColor }
     Card(
         modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp).clip(MaterialTheme.shapes.large).clickable(onClick = onClick).alpha(if (isDone) 0.6f else 1f),
@@ -49,7 +53,7 @@ fun PlanCard(tpl: LifeTemplate, previews: List<LifeItem>, iconColor: Color, onCl
                 }
                 if (previews.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(8.dp))
-                    val fieldSummary = previewItem?.let { extractFieldSummary(it, tpl) } ?: previews.joinToString(" \u00B7 ") { it.title }
+                    val fieldSummary = previewItem?.let { extractFieldSummary(context, it, tpl) } ?: previews.joinToString(" \u00B7 ") { it.title }
                     Text(fieldSummary, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Spacer(modifier = Modifier.height(8.dp))
                     val progress = previewItem?.let { calcProgress(it) } ?: 0f
@@ -64,14 +68,15 @@ fun PlanCard(tpl: LifeTemplate, previews: List<LifeItem>, iconColor: Color, onCl
 
 @Composable
 fun TimeCard(tpl: LifeTemplate, previews: List<LifeItem>, iconColor: Color, onClick: () -> Unit) {
+    val context = LocalContext.current
     val tplColor = try { Color(android.graphics.Color.parseColor(tpl.color)) } catch (_: Exception) { iconColor }
     val nearestDay = previews.firstOrNull()?.let { calcDays(it) }
     val dayText = when {
         nearestDay == null -> "--"
         nearestDay > 0 -> "${nearestDay}"
-        nearestDay == 0L -> "\u4ECA\u5929"
-        nearestDay > -1000 -> "\u5DF2\u8FC7${-nearestDay}"
-        else -> "\u5DF2\u8FC7999+"
+        nearestDay == 0L -> stringResource(R.string.life_card_today)
+        nearestDay > -1000 -> "${stringResource(R.string.life_card_expired_prefix)}${-nearestDay}"
+        else -> "${stringResource(R.string.life_card_expired_prefix)}${stringResource(R.string.life_card_expired_overflow)}"
     }
     Card(
         modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp).clip(MaterialTheme.shapes.large).clickable(onClick = onClick),
@@ -88,18 +93,18 @@ fun TimeCard(tpl: LifeTemplate, previews: List<LifeItem>, iconColor: Color, onCl
                 }
                 val moreCount = previews.size - 1
                 val dateStr = previews.firstOrNull()?.let { extractDateSummary(it) } ?: ""
-                Text(if (dateStr.isNotEmpty()) dateStr else if (moreCount > 0) "${previews.firstOrNull()?.title ?: "\u70B9\u51FB\u67E5\u770B"}\uFF08\u8FD8\u6709${moreCount}\u4E2A\u4E8B\u4EF6\uFF09" else (previews.firstOrNull()?.title ?: "\u70B9\u51FB\u67E5\u770B"), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(if (dateStr.isNotEmpty()) dateStr else if (moreCount > 0) "${previews.firstOrNull()?.title ?: stringResource(R.string.life_card_tap_to_view)}${stringResource(R.string.life_card_more_events, moreCount)}" else (previews.firstOrNull()?.title ?: stringResource(R.string.life_card_tap_to_view)), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
             Spacer(modifier = Modifier.width(12.dp))
             Row(verticalAlignment = Alignment.Bottom) {
                 Text(dayText, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = tplColor, maxLines = 1)
-                Text("\u5929", fontSize = 12.sp, color = MaterialTheme.colorScheme.outline, modifier = Modifier.padding(start = 2.dp, bottom = 2.dp))
+                Text(stringResource(R.string.life_card_days_unit), fontSize = 12.sp, color = MaterialTheme.colorScheme.outline, modifier = Modifier.padding(start = 2.dp, bottom = 2.dp))
             }
         }
     }
 }
 
-private fun extractFieldSummary(item: LifeItem, tpl: LifeTemplate): String {
+private fun extractFieldSummary(context: android.content.Context, item: LifeItem, tpl: LifeTemplate): String {
     return try {
         val obj = Json.decodeFromString<JsonObject>(item.fieldsData)
         val parts = mutableListOf<String>()
@@ -107,19 +112,19 @@ private fun extractFieldSummary(item: LifeItem, tpl: LifeTemplate): String {
             when (key) {
                 "targetAmount", "target_amount" -> { val v = value.jsonPrimitive.content; parts.add("\u00A5${v}") }
                 "currentAmount", "saved_amount" -> { val v = value.jsonPrimitive.content; parts.add("\u00A5${v}") }
-                "deadline" -> { val v = value.jsonPrimitive.content.toLongOrNull(); if (v != null) { val d = LocalDate.ofEpochDay(v / 86400000L); parts.add("\u76EE\u6807 ${d.year}-${d.monthValue}") } }
-                "totalPages", "total_pages" -> parts.add("${value.jsonPrimitive.content} \u9875")
-                "currentPage", "current_page" -> parts.add("${value.jsonPrimitive.content} \u9875")
+                "deadline" -> { val v = value.jsonPrimitive.content.toLongOrNull(); if (v != null) { val d = LocalDate.ofEpochDay(v / 86400000L); parts.add("${context.getString(R.string.life_card_goal)} ${d.year}-${d.monthValue}") } }
+                "totalPages", "total_pages" -> parts.add("${value.jsonPrimitive.content} ${context.getString(R.string.life_card_pages)}")
+                "currentPage", "current_page" -> parts.add("${value.jsonPrimitive.content} ${context.getString(R.string.life_card_pages)}")
                 "author" -> parts.add(value.jsonPrimitive.content)
-                "budget" -> parts.add("\u9884\u7B97 \u00A5${value.jsonPrimitive.content}")
+                "budget" -> parts.add("${context.getString(R.string.life_card_budget)} \u00A5${value.jsonPrimitive.content}")
                 "destination" -> parts.add(value.jsonPrimitive.content)
                 "startDate", "start_date" -> { val v = value.jsonPrimitive.content.toLongOrNull(); if (v != null) { val d = LocalDate.ofEpochDay(v / 86400000L); parts.add(d.toString()) } }
                 "content" -> { val v = value.jsonPrimitive.content; parts.add(v.take(30) + if (v.length > 30) "..." else "") }
-                "currentStreak" -> { val v = value.jsonPrimitive.content; parts.add("\u8FDE\u7EED${v}\u5929") }
-                "targetDays" -> { val v = value.jsonPrimitive.content; parts.add("\u76EE\u6807${v}\u5929") }
+                "currentStreak" -> { val v = value.jsonPrimitive.content; parts.add(context.getString(R.string.life_card_streak_days, v.toIntOrNull() ?: 0)) }
+                "targetDays" -> { val v = value.jsonPrimitive.content; parts.add(context.getString(R.string.life_card_target_days, v.toIntOrNull() ?: 0)) }
                 "courseName" -> parts.add(value.jsonPrimitive.content)
-                "completedLessons" -> { val v = value.jsonPrimitive.content; parts.add("\u5DF2\u5B8C\u6210${v}\u8282") }
-                "totalLessons" -> { val v = value.jsonPrimitive.content; parts.add("\u5171${v}\u8282") }
+                "completedLessons" -> { val v = value.jsonPrimitive.content; parts.add(context.getString(R.string.life_card_completed_lessons, v.toIntOrNull() ?: 0)) }
+                "totalLessons" -> { val v = value.jsonPrimitive.content; parts.add(context.getString(R.string.life_card_total_lessons, v.toIntOrNull() ?: 0)) }
                 "price" -> { val v = value.jsonPrimitive.content; parts.add("\u00A5${v}") }
                 "billingCycle" -> parts.add(value.jsonPrimitive.content)
                 "store" -> parts.add(value.jsonPrimitive.content)

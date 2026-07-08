@@ -567,7 +567,7 @@
     <string name="life_focus_stats">Stats</string>
     <string name="life_focus_today">Today\'s Focus</string>
     <string name="life_focus_today_minutes">Total %d minutes</string>
-    <string name="life_focus_today_summary">Today %1$d minutes, total %1$d minutes</string>
+    <string name="life_focus_today_summary">Today %1$d minutes, total %2$d minutes</string>
     <string name="life_focus_pause">Pause</string>
     <string name="life_focus_start">Start</string>
     <string name="life_focus_complete">Complete</string>
@@ -628,6 +628,11 @@
     <string name="bill_import_error_ocr_invalid">No valid transactions recognized</string>
     <string name="bill_import_error_ocr_failed">Recognition failed: %s</string>
     <string name="bill_import_error_invalid_amount">Please enter a valid amount</string>
+    
+    <!-- Widget -->
+    <string name="widget_app_name">Palm Note</string>
+    <string name="widget_monthly_expense">Monthly Expense</string>
+    <string name="widget_monthly_income">Monthly Income</string>
     
     <!-- Bill Import Diagnostics -->
     <string name="bill_import_diag_file_size">File size: %d bytes</string>
@@ -812,6 +817,19 @@
     <string name="bill_error_amount_required">Please enter a valid amount</string>
     <string name="bill_error_category_required">Please select a category</string>
     
+    <!-- Backup Error Messages -->
+    <string name="backup_error_corrupted">Backup file is corrupted or empty</string>
+    <string name="backup_error_create_failed">Backup failed</string>
+    <string name="backup_error_restore_failed">Restore failed</string>
+    
+    <!-- Calendar Sync -->
+    <string name="calendar_sync_name">Palm Note</string>
+    <string name="calendar_sync_display_name">Palm Note Sync</string>
+    <string name="calendar_sync_error_create_failed">Cannot create calendar</string>
+    <string name="calendar_sync_error_permission_missing">Missing calendar permission</string>
+    <string name="calendar_event_anniversary">Anniversary</string>
+    <string name="calendar_event_person_format">Person: %s</string>
+    
     <!-- Field Validation -->
     <string name="field_error_required">%s is required</string>
     <string name="field_error_invalid_number">Please enter a valid number</string>
@@ -889,7 +907,7 @@
     <string name="notification_milestone_title">Count Up Milestone</string>
     <string name="notification_milestone_message">You\'ve kept "%1$s" going for %2$d days!</string>
     <string name="notification_subscription_title">Subscription Billing Reminder</string>
-    <string name="notification_subscription_message">"%1$s" billing today: %1$s</string>
+    <string name="notification_subscription_message">"%1$s" billing today: %2$s</string>
     
     <!-- Notification Channels -->
     <string name="notification_channel_life">Life Updates</string>
@@ -1483,4 +1501,175 @@
     <string name="tag_default_finance">Finance</string>
     <string name="tag_default_shopping">Shopping</string>
     <string name="tag_default_gift">Gift</string>
+    
+    <!-- TimeAgo & Relative Time -->
+    <string name="time_just_now">Just now</string>
+    <string name="time_minutes_ago">%d min ago</string>
+    <string name="time_hours_ago">%d hr ago</string>
+    <string name="time_days_ago">%d days ago</string>
+    <string name="time_weeks_ago">%d weeks ago</string>
+    <string name="time_months_ago">%d months ago</string>
+    <string name="time_years_ago">%d years ago</string>
+    <string name="time_today">Today %s</string>
+    <string name="time_yesterday">Yesterday %s</string>
+    
+    <!-- Life Cards -->
+    <string name="life_card_status_completed">Completed</string>
+    <string name="life_card_status_archived">Archived</string>
+    <string name="life_card_status_ongoing">Ongoing</string>
+    <string name="life_card_today">Today</string>
+    <string name="life_card_expired_prefix">Expired</string>
+    <string name="life_card_expired_overflow">999+</string>
+    <string name="life_card_tap_to_view">Tap to view</string>
+    <string name="life_card_more_events">(and %d more)</string>
+    <string name="life_card_days_unit">days</string>
+    <string name="life_card_goal">Goal</string>
+    <string name="life_card_pages">pages</string>
+    <string name="life_card_budget">Budget</string>
+    <string name="life_card_streak_days">%d days streak</string>
+    <string name="life_card_target_days">Target %d days</string>
+    <string name="life_card_completed_lessons">%d lessons done</string>
+    <string name="life_card_total_lessons">%d lessons</string>
+    
+    <!-- Life Item Detail -->
+    <string name="life_item_more">More</string>
+    <string name="life_item_delete">Delete</string>
+    <string name="life_item_data_not_found">Data not found</string>
+    <string name="life_item_updated_to">Updated to \"%s\"</string>
+    <string name="life_item_progress">Progress</string>
+    <string name="life_item_notes">Notes</string>
+    <string name="life_item_linked_data">Linked Data</string>
+    <string name="life_item_link_count">%d items</string>
+    <string name="life_item_no_links">No linked data</string>
+    <string name="life_item_add_link_hint">Tap to link a bill or asset</string>
+    <string name="life_item_time">Time</string>
+    <string name="life_item_created_at">Created %s</string>
+    <string name="life_item_updated_at">Updated %s</string>
+    <string name="life_item_deposit">Deposit</string>
+    <string name="life_item_archived_hint">Item archived, find it in Recycle Bin</string>
+    <string name="life_item_archive">Archive</string>
+    
+    <!-- Life Dynamic Form -->
+    <string name="life_form_save_failed">Save failed, please try again</string>
+    <string name="life_form_save_success">Saved</string>
+    <string name="life_form_saved">Saved</string>
+    <string name="life_form_save_changes">Save Changes</string>
+    <string name="life_form_save">Save</string>
+    
+    <!-- Life Link Selector -->
+    <string name="life_link_title">Linked Data</string>
+    <string name="life_link_bills">Bills</string>
+    <string name="life_link_no_bills">No bills</string>
+    <string name="life_link_bill_format">Bill #%d</string>
+    <string name="life_link_assets">Assets</string>
+    <string name="life_link_no_assets">No assets</string>
+    
+    <!-- Mood Trend Chart -->
+    <string name="life_mood_monthly_distribution">Monthly Mood Distribution</string>
+    
+    <!-- Life Focus Preview -->
+    <string name="life_focus_preview_today">Today %d min</string>
+    
+    <!-- Life Template Field Labels -->
+    <string name="life_field_target_amount">Target Amount</string>
+    <string name="life_field_saved_amount">Saved Amount</string>
+    <string name="life_field_target_date">Target Date</string>
+    <string name="life_field_budget_amount">Budget Amount</string>
+    <string name="life_field_spent">Spent</string>
+    <string name="life_field_store">Store</string>
+    <string name="life_field_shopping_item">Shopping Item</string>
+    <string name="life_field_destination">Destination</string>
+    <string name="life_field_start_date">Start Date</string>
+    <string name="life_field_return_date">Return Date</string>
+    <string name="life_field_budget">Budget</string>
+    <string name="life_field_total_pages">Total Pages</string>
+    <string name="life_field_current_pages">Current Pages</string>
+    <string name="life_field_author">Author</string>
+    <string name="life_field_course_name">Course Name</string>
+    <string name="life_field_total_lessons">Total Lessons</string>
+    <string name="life_field_completed_lessons">Completed Lessons</string>
+    <string name="life_field_reminder">Reminder</string>
+    <string name="life_field_start_date_label">Start Date</string>
+    <string name="life_field_date">Date</string>
+    <string name="life_field_notes">Notes</string>
+    <string name="life_field_target_days">Target Days</string>
+    <string name="life_field_streak_days">Streak Days</string>
+    <string name="life_field_billing_amount">Billing Amount</string>
+    <string name="life_field_billing_cycle">Billing Cycle</string>
+    <string name="life_field_billing_day">Billing Day</string>
+    <string name="life_field_next_billing">Next Billing</string>
+    
+    <!-- Life Template Field Units -->
+    <string name="life_unit_currency">¥</string>
+    <string name="life_unit_pages">pages</string>
+    <string name="life_unit_days">days</string>
+    <string name="life_unit_lessons">lessons</string>
+    <string name="life_unit_number">#</string>
+    
+    <!-- Life Template Status Labels -->
+    <string name="life_status_ongoing">Ongoing</string>
+    <string name="life_status_completed">Completed</string>
+    <string name="life_status_archived">Archived</string>
+    
+    <!-- CSV Export/Import -->
+    <string name="export_error_create_file">Unable to create file</string>
+    <string name="export_success">Export successful, %d records total</string>
+    <string name="export_success_images">Export successful, %1$d records total, including %2$d images</string>
+    <string name="export_error_io">Export failed: %s</string>
+    <string name="export_error_serialization">Export data serialization failed: %s</string>
+    <string name="export_error_unknown">Unknown export error: %s</string>
+    <string name="export_error_read_file">Unable to read file</string>
+    <string name="import_error_io">Import failed: %s</string>
+    <string name="import_error_parse">Import data parse failed: %s</string>
+    <string name="import_error_unknown">Unknown import error: %s</string>
+    
+    <!-- Shopping Plan -->
+    <string name="life_shopping_tab_wishlist">Wishlist</string>
+    <string name="life_shopping_tab_ordered">Ordered</string>
+    <string name="life_shopping_list">List</string>
+    <string name="life_shopping_kanban">Kanban</string>
+    <string name="life_shopping_budget">Budget ¥%s</string>
+    
+    <!-- Report -->
+    <string name="life_report_title">Weekly &amp; Monthly Report</string>
+    <string name="life_report_empty">No reports yet</string>
+    <string name="life_report_empty_subtitle">Reports are auto-generated after using the app for a while</string>
+    
+    <!-- Mood Record -->
+    <string name="life_mood_record">Mood Record</string>
+    <string name="life_mood_record_action">Record Mood</string>
+    <string name="life_mood_empty">No mood records yet</string>
+    <string name="life_mood_empty_subtitle">Tap + in the top right to record your first mood</string>
+    
+    <!-- Template Creation -->
+    <string name="life_template_step_type">Select Type</string>
+    <string name="life_template_step_basic">Basic Info</string>
+    <string name="life_template_step_fields">Field Config</string>
+    <string name="life_template_step_layout">Layout Selection</string>
+    <string name="life_template_step_format">Step %d / 4</string>
+    <string name="life_template_next">Next</string>
+    <string name="life_template_create">Create Template</string>
+    <string name="life_template_type_plan">Plan</string>
+    <string name="life_template_type_plan_desc">Things I plan to do</string>
+    <string name="life_template_type_time">Time</string>
+    <string name="life_template_type_time_desc">Important dates to remember</string>
+    <string name="life_template_type_record">Record</string>
+    <string name="life_template_type_record_desc">Things I have done / am doing</string>
+    <string name="life_template_name">Template Name</string>
+    <string name="life_template_desc">Description (optional)</string>
+    <string name="life_template_select_icon">Select Icon</string>
+    <string name="life_template_select_color">Select Color</string>
+    <string name="life_template_field_text">Text</string>
+    <string name="life_template_field_number">Number</string>
+    <string name="life_template_field_date">Date</string>
+    <string name="life_template_field_select">Single Select</string>
+    <string name="life_template_field_decimal">Decimal</string>
+    <string name="life_template_field_index">Field %d</string>
+    <string name="life_template_field_name">Field Name</string>
+    <string name="life_template_field_required">Required</string>
+    <string name="life_template_add_field">Add Field</string>
+    <string name="life_template_layout_list">List</string>
+    <string name="life_template_layout_timeline">Timeline</string>
+    <string name="life_template_layout_calendar">Calendar</string>
+    <string name="life_template_layout_stats">Statistics</string>
 </resources>

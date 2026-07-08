@@ -100,9 +100,12 @@ private fun NumberInput(field: FieldDef, value: String, onValueChange: (String) 
 @Composable
 private fun DateInput(value: String, onValueChange: (String) -> Unit) {
     var picker by remember { mutableStateOf(false) }
+    val displayText = value.toLongOrNull()?.let { millis ->
+        java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date(millis))
+    } ?: value
     Box(modifier = Modifier.fillMaxWidth()) {
         OutlinedTextField(
-            value = value, onValueChange = { }, readOnly = true,
+            value = displayText, onValueChange = { }, readOnly = true,
             placeholder = { Text(stringResource(R.string.field_select_date)) },
             trailingIcon = { IconButton(onClick = { picker = true }) { Icon(Icons.Default.DateRange, stringResource(R.string.field_select_date)) } },
             modifier = Modifier.fillMaxWidth(),
@@ -403,6 +406,12 @@ fun FieldDisplay(field: FieldDef, value: String) {
             }
             "SLIDER" -> {
                 Text("${value}${field.unit}", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface, lineHeight = 22.sp)
+            }
+            "DATE" -> {
+                val dateStr = value.toLongOrNull()?.let { millis ->
+                    java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date(millis))
+                } ?: value.ifEmpty { "-" }
+                Text(dateStr, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface, lineHeight = 22.sp)
             }
             else -> {
                 Text(value.ifEmpty { "-" }, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface, maxLines = 5, overflow = TextOverflow.Ellipsis, lineHeight = 22.sp)

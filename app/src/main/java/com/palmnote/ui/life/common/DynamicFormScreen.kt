@@ -47,6 +47,7 @@ fun DynamicFormScreen(
     var saveErrorMessage by remember { mutableStateOf("") }
     var showDiscardDialog by remember { mutableStateOf(false) }
     val vmState by viewModel?.uiState?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(CreateItemUiState()) }
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     LaunchedEffect(vmState.saveError) {
         if (vmState.saveError != null) {
@@ -166,7 +167,7 @@ fun DynamicFormScreen(
                             saveSuccess = true
                         } catch (e: Exception) {
                             saveError = true
-                            saveErrorMessage = e.message ?: "\u4FDD\u5B58\u5931\u8D25\uFF0C\u8BF7\u91CD\u8BD5"
+                            saveErrorMessage = e.message ?: context.getString(R.string.life_form_save_failed)
                             saving = false
                         }
                     }
@@ -178,11 +179,11 @@ fun DynamicFormScreen(
                 if (saving) {
                     CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
                 } else if (saveSuccess) {
-                    Icon(Icons.Default.Check, "\u4FDD\u5B58\u6210\u529F", tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(22.dp))
+                    Icon(Icons.Default.Check, context.getString(R.string.life_form_save_success), tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(22.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text("\u5DF2\u4FDD\u5B58", fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+                    Text(context.getString(R.string.life_form_saved), fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
                 } else {
-                    Text(if (isEdit) "\u4FDD\u5B58\u4FEE\u6539" else "\u4FDD\u5B58", fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+                    Text(if (isEdit) context.getString(R.string.life_form_save_changes) else context.getString(R.string.life_form_save), fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
                 }
             }
             if (saveError) {

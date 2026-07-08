@@ -223,7 +223,7 @@ class MainActivity : AppCompatActivity() {
                         if (showPolicy) {
                             FullDocumentOverlay(
                                 title = stringResource(R.string.about_privacy_policy),
-                                lines = com.palmnote.ui.settings.privacyPolicyLines,
+                                lines = com.palmnote.ui.settings.getPrivacyPolicyLines(),
                                 onBack = { showPolicy = false }
                             )
                         }
@@ -231,7 +231,7 @@ class MainActivity : AppCompatActivity() {
                         if (showTerms) {
                             FullDocumentOverlay(
                                 title = stringResource(R.string.about_terms_of_service),
-                                lines = com.palmnote.ui.settings.termsOfServiceLines,
+                                lines = com.palmnote.ui.settings.getTermsOfServiceLines(),
                                 onBack = { showTerms = false }
                             )
                         }
@@ -292,8 +292,12 @@ private fun FullDocumentOverlay(title: String, lines: List<String>, onBack: () -
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 lines.forEach { line ->
-                    val isHeading = listOf("一、", "二、", "三、", "四、", "五、", "六、", "七、", "八、", "九、", "十").any { line.startsWith(it) }
-                            || line.endsWith(title)
+                    val isZh = java.util.Locale.getDefault().language == "zh"
+                    val isHeading = if (isZh) {
+                        listOf("一、", "二、", "三、", "四、", "五、", "六、", "七、", "八、", "九、", "十").any { line.startsWith(it) }
+                    } else {
+                        line.matches(Regex("^\\d+\\..*"))
+                    } || line.endsWith(title)
                     Text(
                         text = line,
                         style = if (isHeading) MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold) else MaterialTheme.typography.bodyMedium,

@@ -209,6 +209,8 @@ fun AboutScreen(
 fun PrivacyPolicyScreen(
     onNavigateBack: () -> Unit = {}
 ) {
+    val lines = getPrivacyPolicyLines()
+    val isZh = java.util.Locale.getDefault().language == "zh"
     Scaffold(
         topBar = {
             CompactTopAppBar(
@@ -229,10 +231,10 @@ fun PrivacyPolicyScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(privacyPolicyLines) { line ->
+            items(lines) { line ->
                 Text(
                     text = line,
-                    style = if (line.startsWith("一、") || line.startsWith("二、") || line.startsWith("三、") || line.startsWith("四、") || line.startsWith("五、") || line.startsWith("六、") || line.startsWith("七、") || line.startsWith("八、") || line.startsWith("九、") || line.endsWith("隐私政策"))
+                    style = if (isPrivacyHeading(line, isZh))
                         MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                     else MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface
@@ -248,6 +250,8 @@ fun PrivacyPolicyScreen(
 fun TermsOfServiceScreen(
     onNavigateBack: () -> Unit = {}
 ) {
+    val lines = getTermsOfServiceLines()
+    val isZh = java.util.Locale.getDefault().language == "zh"
     Scaffold(
         topBar = {
             CompactTopAppBar(
@@ -268,10 +272,10 @@ fun TermsOfServiceScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(termsOfServiceLines) { line ->
+            items(lines) { line ->
                 Text(
                     text = line,
-                    style = if (line.startsWith("一、") || line.startsWith("二、") || line.startsWith("三、") || line.startsWith("四、") || line.startsWith("五、") || line.startsWith("六、") || line.startsWith("七、") || line.startsWith("八、") || line.startsWith("九、") || line.startsWith("十") || line.endsWith("用户服务协议"))
+                    style = if (isTermsHeading(line, isZh))
                         MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                     else MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface
@@ -282,7 +286,33 @@ fun TermsOfServiceScreen(
     }
 }
 
-internal val privacyPolicyLines = """
+private fun isPrivacyHeading(line: String, isZh: Boolean): Boolean {
+    return if (isZh) {
+        line.startsWith("一、") || line.startsWith("二、") || line.startsWith("三、") || line.startsWith("四、") || line.startsWith("五、") || line.startsWith("六、") || line.startsWith("七、") || line.startsWith("八、") || line.startsWith("九、") || line.endsWith("隐私政策")
+    } else {
+        line.matches(Regex("^\\d+\\..*")) || line == "Privacy Policy"
+    }
+}
+
+private fun isTermsHeading(line: String, isZh: Boolean): Boolean {
+    return if (isZh) {
+        line.startsWith("一、") || line.startsWith("二、") || line.startsWith("三、") || line.startsWith("四、") || line.startsWith("五、") || line.startsWith("六、") || line.startsWith("七、") || line.startsWith("八、") || line.startsWith("九、") || line.startsWith("十") || line.endsWith("用户服务协议")
+    } else {
+        line.matches(Regex("^\\d+\\..*")) || line == "Terms of Service"
+    }
+}
+
+fun getPrivacyPolicyLines(): List<String> {
+    val isZh = java.util.Locale.getDefault().language == "zh"
+    return if (isZh) privacyPolicyLinesZh else privacyPolicyLinesEn
+}
+
+fun getTermsOfServiceLines(): List<String> {
+    val isZh = java.util.Locale.getDefault().language == "zh"
+    return if (isZh) termsOfServiceLinesZh else termsOfServiceLinesEn
+}
+
+internal val privacyPolicyLinesZh = """
 隐私政策
 
 最后更新日期：2026年7月6日
@@ -380,7 +410,105 @@ PalmNote（以下简称"本应用"）非常重视用户的隐私保护。本隐�
 - 邮箱：请通过GitHub Issues获取联系方式
 """.trimIndent().split("\n").filter { it.isNotBlank() }
 
-internal val termsOfServiceLines = """
+internal val privacyPolicyLinesEn = """
+Privacy Policy
+
+Last updated: July 6, 2026
+Effective date: July 6, 2026
+App name: PalmNote
+Developer: Independent Developer
+
+PalmNote (hereinafter referred to as "the App") values user privacy protection. This Privacy Policy explains how the App collects, uses, stores, and protects your personal information. Please read this policy carefully before using the App.
+
+1. Information Collection
+
+1.1 The App Does Not Actively Collect Personal Information
+The App uses a pure local storage architecture. All data is stored only on your device and is not uploaded to any server or third-party service.
+
+1.2 Types of Data Not Collected
+- Device identifiers (IMEI, Android ID, serial numbers, etc.)
+- Location information (GPS, cell tower positioning, etc.)
+- Contacts, call logs, SMS content
+- Camera, microphone data (unless you actively use attachment features)
+- App usage behavior, browsing history
+- Network data (the App works without internet connection)
+
+1.3 Information You Provide
+The App only processes data when you actively use the following features:
+- Photo attachments: Uses the system camera; images are stored only in the app's private directory
+- App lock: Biometric data is used only for local verification and is not stored or transmitted
+- Calendar sync: Only writes to the system calendar and does not read other calendar data
+
+1.4 Third-Party SDKs
+The App does not integrate any third-party SDKs, advertising SDKs, or analytics SDKs.
+
+2. Information Storage and Security
+
+2.1 Storage Location
+All data is stored in the app's private directory (/data/data/com.palmnote/), protected by Android's sandbox system. Other apps cannot directly access it.
+
+2.2 Storage Encryption
+- Database files: Stored in the app's private directory, protected by the system
+- Backup files: Support AES-GCM encryption with user-defined keys
+- App lock: PIN/pattern passwords are stored as salted hashes
+
+2.3 Security Measures
+- App lock supports PIN, pattern, and biometric (fingerprint/face) authentication
+- Backup files support end-to-end encryption
+- No network communication means no data transmission risks
+
+3. Information Sharing
+
+The App does not share, sell, or exchange your personal information with any third party. The App does not contain any third-party SDKs, advertising SDKs, or analytics tools.
+
+4. User Rights
+
+4.1 Access Rights
+You have the right to access all personal data stored in the App. All data is stored locally on your device and can be viewed at any time.
+
+4.2 Correction Rights
+You have the right to correct or modify any personal data stored in the App. All data can be edited directly within the App.
+
+4.3 Deletion Rights
+You have the right to delete any personal data in the App. You can delete individual or batch data within the App, or delete all data by uninstalling the App.
+
+4.4 Data Portability
+You have the right to export your personal data. The App supports exporting data as backup files, which you can transfer to other devices or apps.
+
+4.5 Withdrawal of Consent
+If you no longer agree to this Privacy Policy, you may stop using the App and uninstall it. We will no longer process your personal information.
+
+5. Legal Basis
+
+The App processes information you actively provide (such as photo attachments and app lock settings) based on your explicit consent. By using these features, you consent to the App processing the corresponding data.
+
+6. Data Deletion
+
+6.1 In-App Deletion
+You can delete any individual or batch data within the App at any time.
+
+6.2 Uninstall Deletion
+Uninstalling the App will permanently delete all local data. This operation is irreversible.
+
+6.3 Data Export
+You can export data as backup files within the App. Please keep backup files secure after export.
+
+7. Minor Protection
+
+The App does not provide services to minors under 16 years of age and does not actively collect personal information from minors. If we inadvertently collect minor information, we will delete it promptly.
+
+8. Privacy Policy Updates
+
+We may update this Privacy Policy from time to time. Updated policies will be published within the App with the update date noted. We recommend checking this policy periodically for the latest information.
+
+9. Contact Us
+
+If you have any questions, suggestions, or concerns about this Privacy Policy, please contact us through:
+- GitHub: https://github.com/Bailinana/PalmNote/issues
+- Email: Please obtain contact information through GitHub Issues
+""".trimIndent().split("\n").filter { it.isNotBlank() }
+
+internal val termsOfServiceLinesZh = """
 用户服务协议
 
 最后更新日期：2026年7月6日
@@ -483,4 +611,109 @@ internal val termsOfServiceLines = """
 如对本协议有任何疑问，请通过以下方式联系我们：
 - GitHub：https://github.com/Bailinana/PalmNote/issues
 - 邮箱：请通过GitHub Issues获取联系方式
+""".trimIndent().split("\n").filter { it.isNotBlank() }
+
+internal val termsOfServiceLinesEn = """
+Terms of Service
+
+Last updated: July 6, 2026
+Effective date: July 6, 2026
+App name: PalmNote
+Developer: Independent Developer
+
+Welcome to PalmNote (hereinafter referred to as "the App"). Please read and fully understand all the contents of this agreement before using the App. Once you start using the App, it is deemed that you have read and agreed to all the terms of this agreement.
+
+1. Service Description
+
+1.1 Service Content
+The App is a local life recording tool that provides features such as bookkeeping, asset management, and life recording.
+
+1.2 Open Source License
+The App is free open source software released under the GNU General Public License v3.0 (GPL-3.0). You may freely use, modify, and distribute this software, but must comply with GPL-3.0 license terms.
+
+1.3 Usage
+The App uses a pure local storage architecture. No account registration is required, and no internet connection is needed to use it.
+
+1.4 Account Description
+The App does not provide account registration or login services. All data is stored locally on your device and is not associated with any cloud account. You are responsible for device security and data backup.
+
+1.5 Service Availability
+The App is an offline application that does not depend on network services. The developer does not guarantee continuous availability but will do their best to maintain normal operation. If service needs to be suspended due to system upgrades or other reasons, the developer will provide advance notice.
+
+2. User Rights and Obligations
+
+2.1 User Rights
+- Freely use all features of the App
+- Export or delete your data at any time
+- Modify and distribute this software based on GPL-3.0 license
+- Provide feedback and suggestions for the App
+
+2.2 User Obligations
+- Properly secure your device and app lock password to prevent unauthorized access
+- Regularly back up important data to prevent data loss
+- Do not use the App for any illegal activities
+- Do not reverse engineer, decompile, or crack the App
+- Do not use the App for commercial purposes (unless complying with GPL-3.0 license)
+
+3. Data Ownership
+
+3.1 All data you create in the App (including but not limited to bills, assets, life records, etc.) belongs entirely to you.
+
+3.2 The developer does not own, access, or control your data. All data is stored only on your device.
+
+3.3 You may export or delete your data at any time. The developer will not prevent or restrict your data operations in any way.
+
+4. Intellectual Property
+
+4.1 The App's source code, interface design, icons, etc. are protected by copyright law.
+
+4.2 Based on GPL-3.0 license, you may freely use, modify, and distribute this software, but must retain original copyright notices and licenses.
+
+4.3 Intellectual property rights of third-party libraries used in the App belong to their respective owners.
+
+5. Disclaimer
+
+5.1 The App is provided "as is," and the developer is not responsible for:
+- Data loss caused by device failure, system crashes, or insufficient storage
+- Data corruption caused by improper user operations (such as accidental deletion, lack of backup)
+- Data loss caused by force majeure (such as device loss, damage, theft)
+- Any direct or indirect damages arising from using the App
+
+5.2 The developer is not liable for any loss of profits, business interruption, data loss, or other consequences arising from using the App.
+
+5.3 You assume all risks of using the App, including but not limited to data backup, device security, etc.
+
+6. Service Changes and Termination
+
+6.1 Service Changes
+The developer reserves the right to modify, suspend, or terminate the App's services at any time without notice.
+
+6.2 User Termination
+You may stop using the App and delete it at any time. The developer will not prevent or restrict this in any way.
+
+7. Force Majeure
+
+The developer shall not be liable for any failure of the App to operate normally or data loss caused by force majeure (including but not limited to natural disasters, government actions, war, strikes, network failures, power outages, etc.).
+
+8. Agreement Modifications
+
+8.1 Modification Rights
+The developer reserves the right to modify this agreement at any time. Modified agreements will be published within the App with the update date noted.
+
+8.2 Acceptance of Modifications
+Continued use of the App constitutes acceptance of the modified agreement. If you do not agree to the modifications, please stop using the App.
+
+9. Dispute Resolution
+
+Any disputes arising from or related to this agreement shall first be resolved through friendly negotiation. If negotiation fails, either party has the right to file a lawsuit with the people's court at the developer's location.
+
+10. Governing Law
+
+The formation, validity, interpretation, performance, modification, and termination of this agreement shall be governed by the laws of the People's Republic of China.
+
+11. Contact Information
+
+If you have any questions about this agreement, please contact us through:
+- GitHub: https://github.com/Bailinana/PalmNote/issues
+- Email: Please obtain contact information through GitHub Issues
 """.trimIndent().split("\n").filter { it.isNotBlank() }
