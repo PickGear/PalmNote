@@ -2,6 +2,7 @@ package com.palmnote.ui.bills
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.palmnote.R
 import com.palmnote.data.db.dao.CategoryTotal
 import com.palmnote.data.db.dao.MonthTotal
 import com.palmnote.data.db.entity.AccountBook
@@ -20,6 +21,8 @@ import com.palmnote.ui.components.toComposeColor
 import androidx.compose.runtime.Stable
 import com.palmnote.ui.theme.AppIcon
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import android.content.Context
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -78,6 +81,7 @@ data class AddBillFormState(
 
 @HiltViewModel
 class BillViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val billRepository: BillRepository,
     private val budgetRepository: BudgetRepository,
     private val walletRepository: WalletRepository,
@@ -230,7 +234,7 @@ class BillViewModel @Inject constructor(
             walletRepository.initDefaultWallets()
             walletRepository.getEnabledWallets().collect { wallets ->
                 _wallets.value = wallets
-                val walletMap = wallets.associate { it.id to it.name }
+                val walletMap = wallets.associate { it.id to com.palmnote.ui.components.getLocalizedWalletDisplayName(it, context) }
                 _state.value = _state.value.copy(wallets = walletMap)
             }
         }
@@ -341,11 +345,11 @@ class BillViewModel @Inject constructor(
         val form = _formState.value
         // Bug fix: handle locale-formatted numbers (e.g., "1,000.50")
         if (form.amount.isBlank() || form.amount.replace(",", "").toDoubleOrNull() == null) {
-            _formState.value = form.copy(amountError = "请输入有效金额")
+            _formState.value = form.copy(amountError = context.getString(R.string.bill_error_amount_required))
             return
         }
         if (form.category.isBlank()) {
-            _formState.value = form.copy(categoryError = "请选择分类")
+            _formState.value = form.copy(categoryError = context.getString(R.string.bill_error_category_required))
             return
         }
 
@@ -354,7 +358,7 @@ class BillViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val amount = form.amount.replace(",", "").toDoubleOrNull() ?: run {
-                    _formState.value = form.copy(isSaving = false, amountError = "请输入有效金额")
+                    _formState.value = form.copy(isSaving = false, amountError = context.getString(R.string.bill_error_amount_required))
                     return@launch
                 }
                 val now = System.currentTimeMillis()

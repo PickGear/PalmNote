@@ -378,7 +378,7 @@ private fun DonutChartSection(state: ReportState, onNavigateToAddBill: () -> Uni
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        text = cat.category,
+                        text = stringResource(getLocalizedCategoryName(cat.category)),
                         style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier.weight(1f)
                     )
@@ -494,7 +494,7 @@ private fun CategoryRankingItem(cat: CategoryTotal, total: Double, isExpense: Bo
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = cat.category,
+                    text = stringResource(getLocalizedCategoryName(cat.category)),
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Text(

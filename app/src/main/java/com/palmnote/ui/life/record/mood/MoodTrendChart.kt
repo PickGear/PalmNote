@@ -10,9 +10,11 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.palmnote.R
 import com.palmnote.data.db.entity.MoodDiary
 import com.palmnote.ui.theme.*
 import java.time.Instant
@@ -29,13 +31,14 @@ fun MoodTrendChart(diaries: List<MoodDiary>) {
     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
         Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text("\u6708\u5EA6\u5FC3\u60C5\u5206\u5E03", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
+                Text(stringResource(R.string.life_mood_monthly_distribution), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
                 Spacer(modifier = Modifier.height(8.dp))
                 val counts = months.map { ym ->
                     val entries = diaries.filter { YearMonth.from(Instant.ofEpochMilli(it.date).atZone(ZoneId.systemDefault()).toLocalDate()) == ym }
                     ym to entries.groupBy { it.mood }.mapValues { it.value.size }
                 }
                 val maxCount = counts.flatMap { it.second.values }.maxOrNull()?.toFloat()?.coerceAtLeast(1f) ?: 1f
+                val textPaint = android.graphics.Paint().apply { textAlign = android.graphics.Paint.Align.CENTER; textSize = 24f }
 
                 Canvas(modifier = Modifier.fillMaxWidth().height(100.dp)) {
                     val barW = size.width / months.size * 0.6f
@@ -46,7 +49,7 @@ fun MoodTrendChart(diaries: List<MoodDiary>) {
                         val pct = (moodCounts.values.sum().toFloat() / maxCount).coerceIn(0.05f, 1f)
                         val color = moodColors[mostCommon] ?: LifeMoodNormal
                         drawRoundRect(color = color, topLeft = Offset(x, size.height - pct * 80f - 20f), size = Size(barW, pct * 80f), cornerRadius = androidx.compose.ui.geometry.CornerRadius(4f, 4f))
-                        drawContext.canvas.nativeCanvas.drawText(moodEmojis[mostCommon] ?: "\uD83D\uDE04", x + barW / 2, size.height - 4f, android.graphics.Paint().apply { textAlign = android.graphics.Paint.Align.CENTER; textSize = 24f })
+                        drawContext.canvas.nativeCanvas.drawText(moodEmojis[mostCommon] ?: "\uD83D\uDE04", x + barW / 2, size.height - 4f, textPaint)
                     }
                 }
             }

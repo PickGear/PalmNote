@@ -330,7 +330,7 @@ private fun OcrItem(result: OcrBillResult, selected: Boolean, onClick: () -> Uni
             if (result.merchant.isNotBlank()) Text(result.merchant, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
             Row {
                 if (result.date != null) { Text(DateUtils.formatDate(result.date), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant); Spacer(modifier = Modifier.width(8.dp)) }
-                if (result.category != "其他") Text(result.category, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                if (result.category != "其他") Text(stringResource(getLocalizedCategoryName(result.category)), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
             }
         }
         if (result.amount != null) Text("-${CurrencyUtils.formatCurrency(result.amount)}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = ExpenseRed)

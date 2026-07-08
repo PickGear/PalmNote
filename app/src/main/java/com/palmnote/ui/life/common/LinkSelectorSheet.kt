@@ -9,6 +9,7 @@ import androidx.compose.runtime.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -16,6 +17,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.palmnote.data.db.entity.CrossLink
+import com.palmnote.R
 import com.palmnote.domain.model.EntityType
 import com.palmnote.domain.model.LinkType
 import com.palmnote.domain.repository.AssetRepository
@@ -89,14 +91,14 @@ fun LinkSelectorSheet(
         shape = MaterialTheme.shapes.extraLarge
     ) {
         Column(modifier = Modifier.padding(horizontal = 24.dp).padding(bottom = 32.dp)) {
-            Text("\u5173\u8054\u6570\u636E", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            Text(stringResource(R.string.life_link_title), fontWeight = FontWeight.Bold, fontSize = 16.sp)
             Spacer(modifier = Modifier.height(12.dp))
 
-            Text("\u8D26\u5355", fontWeight = FontWeight.Medium, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.life_link_bills), fontWeight = FontWeight.Medium, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(modifier = Modifier.height(4.dp))
 
             if (state.bills.isEmpty()) {
-                Text("\u6682\u65E0\u8D26\u5355", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
+                Text(stringResource(R.string.life_link_no_bills), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
             } else {
                 state.bills.take(5).forEach { bill ->
                     Row(
@@ -109,7 +111,7 @@ fun LinkSelectorSheet(
                         Icon(Icons.Default.AccountBalanceWallet, null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(24.dp))
                         Spacer(modifier = Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(bill.note.ifEmpty { "\u8D26\u5355 #${bill.id}" }, fontSize = 13.sp)
+                            Text(bill.note.ifEmpty { stringResource(R.string.life_link_bill_format, bill.id.toInt()) }, fontSize = 13.sp)
                             Text(bill.amount, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
@@ -117,11 +119,11 @@ fun LinkSelectorSheet(
             }
 
             Spacer(modifier = Modifier.height(12.dp))
-            Text("\u7269\u54C1", fontWeight = FontWeight.Medium, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.life_link_assets), fontWeight = FontWeight.Medium, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(modifier = Modifier.height(4.dp))
 
             if (state.assets.isEmpty()) {
-                Text("\u6682\u65E0\u7269\u54C1", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
+                Text(stringResource(R.string.life_link_no_assets), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
             } else {
                 state.assets.take(5).forEach { asset ->
                     Row(

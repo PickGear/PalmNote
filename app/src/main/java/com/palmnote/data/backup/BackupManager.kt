@@ -2,6 +2,7 @@ package com.palmnote.data.backup
 
 import android.content.Context
 import android.os.Environment
+import com.palmnote.R
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -67,7 +68,7 @@ class BackupManager {
     fun restoreBackup(context: Context, backupFile: File) {
         // 简单校验：文件大小大于 0
         if (backupFile.length() == 0L) {
-            throw IllegalArgumentException("备份文件损坏或为空")
+            throw IllegalArgumentException(context.getString(R.string.backup_error_corrupted))
         }
 
         ZipInputStream(FileInputStream(backupFile)).use { zipIn ->

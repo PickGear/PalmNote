@@ -11,7 +11,7 @@
         android:id="@+id/widget_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="掌记"
+        android:text="@string/widget_app_name"
         android:textSize="16sp"
         android:textColor="@color/widget_title_color"
         android:textStyle="bold" />
@@ -31,7 +31,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="本月支出"
+                android:text="@string/widget_monthly_expense"
                 android:textSize="11sp"
                 android:textColor="@color/widget_label_color" />
 
@@ -54,7 +54,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="本月收入"
+                android:text="@string/widget_monthly_income"
                 android:textSize="11sp"
                 android:textColor="@color/widget_label_color" />
 

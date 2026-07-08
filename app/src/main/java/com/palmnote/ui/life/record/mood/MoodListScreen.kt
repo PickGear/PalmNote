@@ -40,6 +40,7 @@ fun MoodListScreen(onBack: () -> Unit, viewModel: MoodViewModel = hiltViewModel(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) { viewModel.load() }
     var deleteTarget by remember { mutableStateOf<MoodDiary?>(null) }
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     if (deleteTarget != null) {
         AppDialog(
@@ -99,7 +100,7 @@ fun MoodListScreen(onBack: () -> Unit, viewModel: MoodViewModel = hiltViewModel(
                                 Spacer(modifier = Modifier.width(10.dp))
                                 Column(modifier = Modifier.weight(1f)) {
                                     if (diary.content.isNotEmpty()) Text(diary.content, maxLines = 3, overflow = TextOverflow.Ellipsis, fontSize = 13.sp)
-                                    Text(formatRelativeTime(diary.date), fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text(formatRelativeTime(context, diary.date), fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                             }
                         }

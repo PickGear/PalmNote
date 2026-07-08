@@ -172,7 +172,8 @@ fun AddBillScreen(
                         onManageCategories = {
                             val categoryType = if (formState.type == "EXPENSE") "BILL_EXPENSE" else "BILL_INCOME"
                             onNavigateToCategory(categoryType)
-                        }
+                        },
+                        getDisplayName = { context.getString(getLocalizedCategoryName(it)) }
                     )
                 }
             }
@@ -216,7 +217,7 @@ fun AddBillScreen(
                                     )
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
-                                        wallet.name,
+                                        getLocalizedWalletDisplayName(wallet, context),
                                         style = MaterialTheme.typography.labelSmall,
                                         color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface,
                                         maxLines = 1

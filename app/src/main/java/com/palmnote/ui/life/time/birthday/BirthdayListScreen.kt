@@ -43,6 +43,7 @@ fun BirthdayListScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Long)
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(templateId) { viewModel.load(templateId) }
     var deleteTarget by remember { mutableStateOf<Long?>(null) }
+    val context = androidx.compose.ui.platform.LocalContext.current
     if (deleteTarget != null) {
         AppDialog(
             onDismissRequest = { deleteTarget = null },
@@ -97,7 +98,7 @@ fun BirthdayListScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Long)
 
                 val dateText = if (birthDate != null) {
                     val bd = LocalDate.ofEpochDay(birthDate / 86400000L)
-                    "${fields.second}\u00B7${bd.format(DateTimeFormatter.ofPattern("M\u6708d\u65E5"))}"
+                    "${fields.second}\u00B7${bd.format(DateTimeFormatter.ofPattern(context.getString(R.string.date_format_display)))}"
                 } else fields.second
 
                 SwipeableItem(onDelete = { deleteTarget = item.id }) {

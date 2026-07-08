@@ -40,6 +40,7 @@ fun JournalListScreen(onBack: () -> Unit, onItemClick: (Long) -> Unit, viewModel
     LaunchedEffect(Unit) { viewModel.load() }
     var showSheet by remember { mutableStateOf(false) }
     var deleteTarget by remember { mutableStateOf<LifeMoment?>(null) }
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     if (deleteTarget != null) {
         AppDialog(
@@ -70,7 +71,7 @@ fun JournalListScreen(onBack: () -> Unit, onItemClick: (Long) -> Unit, viewModel
         val grouped = state.moments.groupBy { Instant.ofEpochMilli(it.date).atZone(ZoneId.systemDefault()).toLocalDate() }.toSortedMap(compareByDescending { it })
         LazyColumn(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
             grouped.forEach { (date, moments) ->
-                item { Text(date.format(DateTimeFormatter.ofPattern("yyyy\u5E74MM\u6708dd\u65E5")), fontSize = 12.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) }
+                item { Text(date.format(DateTimeFormatter.ofPattern(context.getString(R.string.date_format_display_year))), fontSize = 12.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) }
                 items(moments, key = { it.id }) { moment ->
                     SwipeActionBox(onSwipeLeft = { deleteTarget = moment }) {
                     Card(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 3.dp), shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
@@ -83,7 +84,7 @@ fun JournalListScreen(onBack: () -> Unit, onItemClick: (Long) -> Unit, viewModel
                                 val moodE = when (moment.mood) { "HAPPY" -> "\uD83D\uDE04"; "GOOD" -> "\uD83D\uDE42"; "NORMAL" -> "\uD83D\uDE14"; "SAD" -> "\uD83D\uDE22"; "ANGRY" -> "\uD83D\uDE21"; else -> null }
                                 if (moodE != null) Text(moodE, fontSize = 16.sp)
                                 Spacer(modifier = Modifier.weight(1f))
-                                Text(formatRelativeTime(moment.date), fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(formatRelativeTime(context, moment.date), fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
                         }
