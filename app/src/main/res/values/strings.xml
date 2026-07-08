@@ -1,0 +1,1526 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_version">v1.0.0</string>\n    <string name="app_name">掌记</string>
+    
+    <!-- Bottom Navigation -->
+    <string name="nav_dashboard">首页</string>
+    <string name="nav_asset">物品</string>
+    <string name="nav_bill">账本</string>
+    <string name="nav_life">生活</string>
+    <string name="nav_settings">我的</string>
+    
+    <!-- Asset -->
+    <string name="asset_title">资产</string>
+    <string name="asset_add">添加资产</string>
+    <string name="asset_edit">编辑资产</string>
+    <string name="asset_detail">资产详情</string>
+    <string name="asset_name">物品名称</string>
+    <string name="asset_category">分类</string>
+    <string name="asset_price">购买价格</string>
+    <string name="asset_date">购买日期</string>
+    <string name="asset_channel">购买渠道</string>
+    <string name="asset_location">存放位置</string>
+    <string name="asset_warranty">保修日期</string>
+    <string name="asset_status">状态</string>
+    <string name="asset_description">备注</string>
+    <string name="asset_cost_mode">成本计算方式</string>
+    <string name="asset_cost_daily">按天计算</string>
+    <string name="asset_cost_per_use">按次计算</string>
+    
+    <!-- Asset Status -->
+    <string name="status_active">使用中</string>
+    <string name="status_retired">已退役</string>
+    <string name="status_lost">已丢失</string>
+    <string name="status_sold">已售出</string>
+    <string name="asset_held">持有中</string>
+    <string name="asset_away">暂离中</string>
+    <string name="asset_removed">已清出</string>
+    <string name="asset_per_use">单次 ¥%s</string>
+    <string name="asset_per_use_none">单次 -</string>
+    <string name="asset_daily_cost">日均 ¥%s</string>
+    <string name="asset_search_hint">搜索物品名称、分类、描述…</string>
+    <string name="asset_clear">清除</string>
+    <string name="asset_count">%d 件</string>
+    <string name="asset_status_filter">状态</string>
+    <string name="asset_all_categories">全部分类</string>
+    <string name="asset_sort_recent">最近</string>
+    <string name="asset_sort_name">名称</string>
+    <string name="asset_sort_price">价格</string>
+    <string name="asset_sort_daily_cost">日均</string>
+    <string name="asset_sort_date">日期</string>
+    <string name="asset_sort">排序</string>
+    <string name="asset_list_view">列表视图</string>
+    <string name="asset_grid_view">网格视图</string>
+    <string name="asset_not_found">未找到匹配的物品</string>
+    <string name="asset_no_items">暂无物品</string>
+    <string name="asset_try_other_keywords">试试其他关键词</string>
+    <string name="asset_add_first_item">点击右下角按钮添加你的第一个物品</string>
+    <string name="asset_back_to_top">返回顶部</string>
+    <string name="asset_days_used">已使用 %d天</string>
+    <string name="asset_warranty_valid">质保</string>
+    <string name="asset_warranty_expired">过保</string>
+    <string name="asset_used_days">已用%d天</string>
+    <string name="asset_cost_per_use_price">单次 ¥%s</string>
+    <string name="asset_cost_per_use_none">单次 -</string>
+    <string name="asset_cost_daily_price">日均 ¥%s</string>
+    
+    <!-- Acquisition Types -->
+    <string name="acquisition_purchase">购买</string>
+    <string name="acquisition_gift">赠送</string>
+    <string name="acquisition_lottery">抽奖</string>
+    <string name="acquisition_prize">奖品</string>
+    <string name="acquisition_inheritance">继承</string>
+    <string name="acquisition_other">其他</string>
+    
+    <!-- Bill -->
+    <string name="bill_title">账本</string>
+    <string name="bill_add">记一笔</string>
+    <string name="bill_expense">支出</string>
+    <string name="bill_income">收入</string>
+    <string name="bill_amount">金额</string>
+    <string name="bill_category">分类</string>
+    <string name="bill_date">日期</string>
+    <string name="bill_note">备注</string>
+    <string name="bill_trend">收支趋势</string>
+    <string name="bill_budget">预算管理</string>
+    <string name="bill_switch_book">切换账本</string>
+    <string name="bill_book_list">账本列表</string>
+    <string name="bill_default">默认</string>
+    <string name="bill_import">导入</string>
+    <string name="bill_all_books">全账本</string>
+    <string name="bill_report">报告</string>
+    <string name="bill_budget_tab">预算</string>
+    <string name="bill_monthly_expense">本月支出</string>
+    <string name="bill_monthly_income">本月收入</string>
+    <string name="bill_balance">结余</string>
+    <string name="bill_balance_amount">结余 %s</string>
+    <string name="bill_budget_usage">预算使用</string>
+    <string name="bill_remaining">剩余</string>
+    <string name="bill_over_budget">超支</string>
+    <string name="bill_remaining_amount">剩余 %s</string>
+    <string name="bill_over_budget_amount">超支 %s</string>
+    <string name="bill_calendar">日历</string>
+    <string name="bill_collapse">收起</string>
+    <string name="bill_expand">展开</string>
+    <string name="bill_all">全部</string>
+    <string name="bill_expense_category">支出分类</string>
+    <string name="bill_detail">明细</string>
+    <string name="bill_count">%d 条</string>
+    <string name="bill_no_records">暂无记录</string>
+    <string name="bill_start_recording">点击右下角按钮开始记账</string>
+    <string name="bill_reimbursable">可报销</string>
+    <string name="bill_edit_bill">编辑账单</string>
+    <string name="bill_wallet">账户</string>
+    
+    <!-- Settings -->
+    <string name="settings_title">我的</string>
+    <string name="settings_appearance">外观与个性化</string>
+    <string name="settings_theme_system">跟随系统</string>
+    <string name="settings_theme_light">浅色模式</string>
+    <string name="settings_theme_dark">深色模式</string>
+    <string name="settings_general">偏好设置</string>
+    <string name="settings_data">数据管理</string>
+    <string name="settings_about">关于掌记</string>
+    <string name="settings_backup">备份数据</string>
+    <string name="settings_export">导出数据</string>
+    <string name="settings_recycle">回收站</string>
+    <string name="settings_category">分类管理</string>
+    <string name="settings_data_overview">数据概览</string>
+    <string name="settings_items">物品</string>
+    <string name="settings_goals">目标</string>
+    <string name="settings_anniversaries">纪念日</string>
+    <string name="settings_moments">瞬间</string>
+    <string name="settings_profile_edit">编辑个人资料</string>
+    <string name="settings_profile_nickname">昵称</string>
+    <string name="settings_profile_signature">个性签名</string>
+    <string name="settings_profile_avatar">头像</string>
+    <string name="settings_profile_change_avatar">更换头像</string>
+    <string name="settings_profile_reset_avatar">重置</string>
+    <string name="settings_dark_mode">深色模式</string>
+    <string name="settings_dark_mode_subtitle">选择深色模式显示方式</string>
+    <string name="settings_language">语言设置</string>
+    <string name="settings_language_subtitle">切换应用显示语言</string>
+    <string name="settings_switch_color">开关按钮颜色</string>
+    <string name="settings_switch_color_subtitle">自定义全局开关按钮的颜色</string>
+    <string name="settings_follow_system">跟随系统</string>
+    <string name="settings_default_start_page">默认启动页</string>
+    <string name="settings_default_start_page_subtitle">打开App时默认显示的页面</string>
+    <string name="settings_default_bill_type">默认记账类型</string>
+    <string name="settings_default_bill_type_subtitle">打开记账页面时的默认类型</string>
+    <string name="settings_budget_reminder">预算提醒</string>
+    <string name="settings_budget_reminder_subtitle">预算使用80%时提醒</string>
+    <string name="settings_calendar_sync">同步纪念日到系统日历</string>
+    <string name="settings_calendar_sync_subtitle">将纪念日同步到系统日历应用</string>
+    <string name="settings_app_lock">应用锁</string>
+    <string name="settings_app_lock_subtitle">保护隐私，启动时需要验证</string>
+    <string name="settings_reminder">提醒设置</string>
+    <string name="settings_reminder_daily_section">日常提醒</string>
+    <string name="settings_reminder_advance_section">提前通知</string>
+    <string name="settings_daily_reminder">每日提醒</string>
+    <string name="settings_daily_reminder_subtitle">每天定时提醒查看生活记录</string>
+    <string name="settings_bill_reminder">记账提醒</string>
+    <string name="settings_bill_reminder_subtitle">每天提醒记录今日收支</string>
+    <string name="settings_birthday_advance">生日提前提醒天数</string>
+    <string name="settings_birthday_advance_subtitle">生日前提前几天发送提醒</string>
+    <string name="settings_anniversary_advance">纪念日提前提醒天数</string>
+    <string name="settings_anniversary_advance_subtitle">纪念日前提前几天发送提醒</string>
+    <string name="settings_account_category">账户与分类</string>
+    <string name="settings_wallet_manage">账户管理</string>
+    <string name="settings_wallet_manage_subtitle">管理钱包和银行账户</string>
+    <string name="settings_bill_manage">账本管理</string>
+    <string name="settings_bill_manage_subtitle">管理记账账本分类</string>
+    <string name="settings_category_manage">分类管理</string>
+    <string name="settings_category_manage_subtitle">管理物品和账单分类</string>
+
+    <string name="settings_recycle_bin">回收站</string>
+    <string name="settings_recycle_bin_subtitle">查看已删除的记录</string>
+    <string name="settings_export_data">导出数据</string>
+    <string name="settings_export_data_subtitle">导出全部数据为CSV-ZIP</string>
+    <string name="settings_export_file_suffix">_数据.zip</string>
+    <string name="settings_import_data">导入数据</string>
+    <string name="settings_import_data_subtitle">从CSV文件恢复数据</string>
+    <string name="settings_data_backup">数据备份</string>
+    <string name="settings_data_backup_subtitle">备份和恢复完整数据</string>
+    <string name="settings_storage_cleanup">存储清理</string>
+    <string name="settings_clear_data">清除数据</string>
+    <string name="settings_clear_data_subtitle">删除个人数据，不可恢复</string>
+    <string name="settings_clear_cache">清除缓存</string>
+    <string name="settings_clear_cache_subtitle">清理临时缓存文件，安全操作</string>
+    <string name="settings_about_app">关于掌记</string>
+    <string name="settings_about_version">版本 1.0.0</string>
+    <string name="settings_days">%d 天</string>
+    <string name="settings_color_pick_title">选择开关颜色</string>
+    <string name="settings_preset_color">预设颜色</string>
+    <string name="settings_custom_color">自定义颜色</string>
+    <string name="settings_hex_color">HEX色值</string>
+    <string name="settings_hex_color_error">请输入有效的6位色值</string>
+    <string name="settings_color_done">完成</string>
+    <string name="settings_select_start_page">默认启动页</string>
+    <string name="settings_select_bill_type">默认记账类型</string>
+    <string name="settings_select_dark_mode">深色模式</string>
+    <string name="settings_select_language">语言设置</string>
+    <string name="settings_language_chinese">中文</string>
+    <string name="settings_cancel">取消</string>
+    <string name="settings_clear_cache_title">清除缓存</string>
+    <string name="settings_clear_cache_confirm">确定要清除图片缓存和临时文件吗？不会影响你的个人数据。</string>
+    <string name="settings_clear_cache_action">清除</string>
+    <string name="settings_calendar_permission_title">需要日历权限</string>
+    <string name="settings_calendar_permission_text">同步纪念日到系统日历需要访问你的日历。掌记不会读取或修改你的其他日历事件。</string>
+    <string name="settings_calendar_permission_action">前往授权</string>
+    <string name="settings_calendar_permission_denied">日历权限已被永久拒绝，请前往系统设置手动开启</string>
+    <string name="settings_app_lock_pin_title">设置PIN码</string>
+    <string name="settings_app_lock_pin_text">请输入6位PIN码</string>
+    <string name="settings_app_lock_pin_label">PIN码</string>
+    <string name="settings_app_lock_pin_confirm">请输入完整的6位PIN码</string>
+    <string name="settings_app_lock_pin_ok">确定</string>
+    <string name="settings_birthday_advance_title">生日提前提醒天数</string>
+    <string name="settings_anniversary_advance_title">纪念日提前提醒天数</string>
+    <string name="settings_navigate_back">返回</string>
+    <string name="settings_home">首页</string>
+    <string name="settings_bill_expense">支出</string>
+    <string name="settings_bill_income">收入</string>
+    
+    <!-- Common -->
+    <string name="save">保存</string>
+    <string name="save_changes">保存修改</string>
+    <string name="cancel">取消</string>
+    <string name="delete">删除</string>
+    <string name="edit">编辑</string>
+    <string name="confirm">确定</string>
+    <string name="search">搜索</string>
+    <string name="empty_title">暂无数据</string>
+    <string name="empty_subtitle">点击按钮添加</string>
+    <string name="done">完成</string>
+    <string name="back">返回</string>
+    <string name="more">更多</string>
+    <string name="balance">余额</string>
+    <string name="merchant">商家</string>
+    <string name="merchant_hint">商家名称（可选）</string>
+    <string name="note_hint">添加备注（可选）</string>
+    
+    <!-- Dashboard Module -->
+    <string name="dashboard_card_manage">卡片管理</string>
+    <string name="dashboard_net_worth">净资产</string>
+    <string name="dashboard_monthly_expense">本月支出</string>
+    <string name="dashboard_monthly_income">本月收入</string>
+    <string name="dashboard_monthly_balance">本月结余 %s</string>
+    <string name="dashboard_monthly_over_budget">本月超支 %s</string>
+    <string name="dashboard_quick_bill">记账</string>
+    <string name="dashboard_quick_asset">物品</string>
+    <string name="dashboard_quick_goal">目标</string>
+    <string name="dashboard_quick_anniversary">纪念日</string>
+    <string name="dashboard_budget_alert">预算预警</string>
+    <string name="dashboard_budget_alert_message">本月支出 ¥%.2f 已超过预算的80%%</string>
+    <string name="dashboard_goal_progress">目标进度</string>
+    <string name="dashboard_goals_completed">%1$d/%2$d 已完成</string>
+    <string name="dashboard_no_goals">暂无目标，点击添加</string>
+    <string name="dashboard_anniversaries_count">%d 个纪念日</string>
+    <string name="dashboard_today">今天</string>
+    <string name="dashboard_days_until">还有%d天</string>
+    <string name="dashboard_days_passed">已过%d天</string>
+    <string name="dashboard_no_anniversaries">暂无纪念日，点击添加</string>
+    <string name="dashboard_asset_distribution">物品分布</string>
+    <plurals name="dashboard_items_count">
+        <item quantity="other">%d 件</item>
+    </plurals>
+    <string name="dashboard_recorded">已记录</string>
+    <string name="dashboard_items_recorded">%d 项</string>
+    <string name="dashboard_card_net_worth">净资产</string>
+    <string name="dashboard_card_quick_actions">快捷操作</string>
+    <string name="dashboard_card_budget_alert">预算预警</string>
+    <string name="dashboard_card_goals">目标进度</string>
+    <string name="dashboard_card_anniversaries">纪念日</string>
+    <string name="dashboard_card_asset_distribution">物品分布</string>
+    <string name="dashboard_card_today">今日概览</string>
+    <string name="greeting_night">夜深了</string>
+    <string name="greeting_morning">早上好</string>
+    <string name="greeting_forenoon">上午好</string>
+    <string name="greeting_noon">中午好</string>
+    <string name="greeting_afternoon">下午好</string>
+    <string name="greeting_evening">晚上好</string>
+    <string name="weekday_sunday">星期日</string>
+    <string name="weekday_monday">星期一</string>
+    <string name="weekday_tuesday">星期二</string>
+    <string name="weekday_wednesday">星期三</string>
+    <string name="weekday_thursday">星期四</string>
+    <string name="weekday_friday">星期五</string>
+    <string name="weekday_saturday">星期六</string>
+    
+    <!-- Life Module -->
+    <string name="life_title">生活</string>
+    <string name="life_search">搜索生活条目</string>
+    <string name="life_plan">计划</string>
+    <string name="life_time">时间</string>
+    <string name="life_record">记录</string>
+    <string name="life_saving">存钱计划</string>
+    <string name="life_shopping">购物计划</string>
+    <string name="life_todo">待办任务</string>
+    <string name="life_reading">阅读</string>
+    <string name="life_habit">打卡记录</string>
+    <string name="life_mood">心情记录</string>
+    <string name="life_journal">日记</string>
+    <string name="life_focus">专注</string>
+    <string name="life_countdown">倒计时</string>
+    <string name="life_birthday">生日</string>
+    <string name="life_empty_title">暂无条目</string>
+    <string name="life_empty_subtitle">点击右上角 + 开始创建第一条记录</string>
+    <string name="life_empty_action">创建</string>
+    <string name="life_ongoing">进行中</string>
+    <string name="life_completed">已完成</string>
+    <string name="life_archived">已归档</string>
+    <string name="life_delete_confirm">确定删除？</string>
+    <string name="life_delete_hint">删除后可在回收站找回</string>
+    <string name="life_archive_success">已归档</string>
+    <string name="life_giveup_confirm">确定放弃？</string>
+    <string name="life_giveup_hint">当前的专注进度将丢失</string>
+    <string name="life_giveup">放弃</string>
+    <string name="life_continue">继续专注</string>
+    <string name="life_deposit">存入一笔</string>
+    <string name="life_amount_hint">输入金额</string>
+    <string name="life_unit_times">次</string>
+    
+    <!-- Life Module - Additional -->
+    <string name="life_error_load_failed">加载失败</string>
+    <string name="life_error_save_failed">保存失败</string>
+    <string name="life_error_delete_failed">删除失败</string>
+    <string name="life_error_create_failed">创建失败</string>
+    <string name="life_error_checkin_failed">签到失败</string>
+    <string name="life_error_operation_failed">操作失败</string>
+    <string name="life_data_init_error">数据初始化异常，已跳过示例数据</string>
+    <string name="life_data_load_error">数据加载异常，请稍后重试</string>
+    <string name="life_data_temp_unavailable">专注数据暂时无法加载，可下拉刷新重试</string>
+    
+    <!-- Life Screen -->
+    <string name="life_screen_welcome">欢迎使用 PalmNote 生活</string>
+    <string name="life_screen_start_hint">选择一个开始你的生活记录</string>
+    <string name="life_screen_write_journal">写日记</string>
+    <string name="life_screen_start_checkin">开始打卡</string>
+    <string name="life_screen_deposit">存一笔</string>
+    <string name="life_screen_retry">重试</string>
+    <string name="life_screen_search_hint">搜索生活条目…</string>
+    <string name="life_empty_here">这里还没有内容</string>
+    <string name="life_empty_hint">点击右下角 + 开始记录你的生活</string>
+    <string name="life_screen_search_template_not_found">未找到匹配"%s"的模板</string>
+    <string name="life_screen_overview_today_todos">今日待办</string>
+    <string name="life_screen_overview_habit_rate">习惯完成率</string>
+    <string name="life_screen_overview_today_focus">今日专注</string>
+    <string name="life_section_title_plan">计划</string>
+    <string name="life_section_title_time">时间</string>
+    <string name="life_section_title_record">记录</string>
+    <string name="life_section_count">%d 个</string>
+    <string name="life_section_count_time">%d 个时间事件</string>
+    <string name="life_section_count_record">%d 个记录</string>
+    
+    <!-- Life Screen - Create Type Selector -->
+    <string name="life_select_type_to_create">选择要创建的类型</string>
+    <string name="life_type_saving">存钱计划</string>
+    <string name="life_type_shopping">购物计划</string>
+    <string name="life_type_todo">待办</string>
+    <string name="life_type_travel">旅行计划</string>
+    <string name="life_type_reading">阅读</string>
+    <string name="life_type_study">学习计划</string>
+    <string name="life_type_countdown">倒计时</string>
+    <string name="life_type_countup">正数日</string>
+    <string name="life_type_birthday">生日</string>
+    <string name="life_type_anniversary">纪念日</string>
+    <string name="life_type_habit">打卡</string>
+    <string name="life_type_mood">心情</string>
+    <string name="life_type_journal">日记</string>
+    <string name="life_type_focus">专注</string>
+    <string name="life_type_subscription">订阅记录</string>
+    <string name="life_type_report">周报月报</string>
+    <string name="life_template_manage">模板管理</string>
+    
+    <!-- Life - Common Actions -->
+    <string name="life_confirm">确认</string>
+    <string name="life_cancel">取消</string>
+    <string name="life_back">返回</string>
+    <string name="life_new_create">新建</string>
+    <string name="life_search_placeholder">搜索生活条目…</string>
+    <string name="life_discard">放弃</string>
+    
+    <!-- Life - Detail Screens -->
+    <string name="life_confirm_delete_record">确认删除这条记录？</string>
+    <string name="life_confirm_delete_this">确认删除该条记录？</string>
+    <string name="life_confirm_delete_this_item">确认删除该记录？</string>
+    <string name="life_confirm_discard">确定放弃修改？</string>
+    <string name="life_confirm_discard_hint">您有未保存的修改，放弃后将丢失。</string>
+    <string name="life_continue_editing">继续编辑</string>
+    <string name="life_edit_title">编辑 %s</string>
+    <string name="life_create_title">新建 %s</string>
+    <string name="life_input_title">输入标题</string>
+    <string name="life_save_failed">保存失败</string>
+    
+    <string name="life_item_detail_delete_confirm">确定删除？</string>
+    <string name="life_item_detail_delete_hint">删除后可在回收站找回</string>
+    <string name="life_item_detail_title">详情</string>
+    <string name="life_confirm_delete_countup">确认删除该正数日吗？</string>
+    <string name="life_confirm_delete_habit">确认删除该习惯吗？</string>
+    <string name="life_countdown_title">倒计时</string>
+    <string name="life_confirm_delete_countdown">确定删除该倒计时吗？</string>
+    <string name="life_empty_countdown">还没有倒计时</string>
+    <string name="life_empty_countdown_subtitle">点击右上角+创建你的第一个倒计时</string>
+    <string name="life_empty_countdown_action">新建倒计时</string>
+    <string name="life_countdown_expired">已过</string>
+    <string name="life_countdown_day">天</string>
+    <string name="life_countdown_expired_text">已到期 · %s</string>
+    <string name="life_countdown_active_text">%s · 点击查看</string>
+    
+    <string name="life_anniversary_title">纪念日</string>
+    <string name="life_confirm_delete_anniversary">确定删除该纪念日吗？</string>
+    <string name="life_empty_anniversary">还没有纪念日</string>
+    <string name="life_empty_anniversary_subtitle">点击右上角+记录你的重要纪念日</string>
+    <string name="life_empty_anniversary_action">新建纪念日</string>
+    <string name="life_anniversary_days_ago">已 %d 天</string>
+    
+    <string name="life_birthday_title">生日</string>
+    <string name="life_confirm_delete_birthday">确定删除该生日记录吗？</string>
+    <string name="life_empty_birthday">还没有生日记录</string>
+    <string name="life_empty_birthday_subtitle">点击右上角+添加你重要人的生日</string>
+    <string name="life_empty_birthday_action">添加生日</string>
+    <string name="life_birthday_days_after">天后</string>
+    <string name="life_birthday_last_gift">去年送了：%s</string>
+    
+    <string name="life_confirm_delete_todo">确定删除该待办吗？</string>
+    <string name="life_empty_todo">还没有待办</string>
+    <string name="life_empty_todo_subtitle">点击右上角+添加待办事项</string>
+    <string name="life_empty_todo_action">新建待办</string>
+    
+    <string name="life_confirm_delete_subscription">确定删除该订阅记录吗？</string>
+    <string name="life_empty_subscription">还没有订阅记录</string>
+    <string name="life_empty_subscription_subtitle">点击右上角+添加订阅</string>
+    <string name="life_empty_subscription_action">新建订阅</string>
+    
+    <string name="life_confirm_delete_travel">确定删除该旅行计划吗？</string>
+    <string name="life_empty_travel">还没有旅行计划</string>
+    <string name="life_empty_travel_subtitle">点击右上角+开始规划你的旅行</string>
+    <string name="life_empty_travel_action">新建旅行计划</string>
+    
+    <string name="life_confirm_delete_shopping">确定删除该购物计划吗？</string>
+    <string name="life_empty_shopping">还没有购物计划</string>
+    <string name="life_empty_shopping_subtitle">点击右上角+添加购物计划</string>
+    <string name="life_empty_shopping_action">新建购物计划</string>
+    
+    <string name="life_confirm_delete_reading">确定删除该阅读计划吗？</string>
+    <string name="life_empty_reading">还没有阅读计划</string>
+    <string name="life_empty_reading_subtitle">点击右上角+开始你的阅读之旅</string>
+    <string name="life_empty_reading_action">新建阅读计划</string>
+    
+    <string name="life_reading_title">阅读</string>
+    <string name="life_reading_done">已读</string>
+    <string name="life_reading_reading">在读</string>
+    <string name="life_reading_page_format">%1$s / %2$s 页</string>
+    
+    <string name="life_subscription_title">订阅记录</string>
+    <string name="life_subscription_active">订阅中</string>
+    <string name="life_subscription_cancelled">已取消</string>
+    <string name="life_subscription_archived">已归档</string>
+
+    
+    <string name="life_study_title">学习计划</string>
+    <string name="life_confirm_delete_study">确定删除该学习计划吗？</string>
+    <string name="life_empty_study">还没有学习计划</string>
+    <string name="life_empty_study_subtitle">点击右上角+创建你的第一个学习计划</string>
+    <string name="life_empty_study_action">新建学习计划</string>
+    <string name="life_study_done">已完成</string>
+    <string name="life_study_learning">学习中</string>
+    
+    <string name="life_travel_title">旅行计划</string>
+    
+    <string name="life_shopping_title">购物计划</string>
+    <string name="life_shopping_tab_wishlist">心愿</string>
+    <string name="life_shopping_tab_ordered">已购</string>
+    
+    <string name="life_todo_title">待办任务</string>
+    <string name="life_todo_filter_list">列表</string>
+    <string name="life_todo_filter_quad">四象限</string>
+    <string name="life_todo_filter_calendar">日历</string>
+    <string name="life_todo_quad_important_urgent">重要且紧急</string>
+    <string name="life_todo_quad_important">重要不紧急</string>
+    <string name="life_todo_quad_urgent">紧急不重要</string>
+    <string name="life_todo_quad_normal">不紧急不重要</string>
+    <string name="life_todo_calendar_dev">日历视图开发中</string>
+    <string name="life_todo_empty">暂无</string>
+    
+    <string name="life_journal_title">日记</string>
+    <string name="life_journal_write">写日记</string>
+    <string name="life_journal_empty_first">记录你的第一篇日记</string>
+    <string name="life_journal_empty_hint">日常的点滴值得被记录</string>
+    <string name="life_journal_write_one">写一篇</string>
+    
+    <string name="life_achievement_title">成就徽章</string>
+    <string name="life_achievement_unlocked">已解锁</string>
+    <string name="life_achievement_locked">未解锁</string>
+    <string name="life_achievement_close">关闭</string>
+    <string name="life_achievement_unlocked_on">解锁于 %s</string>
+    
+    <string name="life_factor_analysis">触发因素</string>
+    <string name="life_factor_analysis_count">%d次</string>
+    
+    <string name="life_saving_filter_all">全部 %d</string>
+    <string name="life_saving_filter_active">进行中</string>
+    <string name="life_saving_filter_done">已达成</string>
+    <string name="life_saving_no_match">暂无符合条件的记录</string>
+    <string name="life_saving_deleted">已删除</string>
+    <string name="life_saving_undo">撤销</string>
+    
+    <string name="life_saving_search_hint">搜索存钱计划…</string>
+    
+    <!-- Life - Habit -->
+    <string name="life_habit_checkin">打卡</string>
+    <string name="life_habit_checked">已打卡</string>
+    <string name="life_habit_month_rate">本月完成率</string>
+    <string name="life_habit_streak">%d天</string>
+    <string name="life_habit_streak_label">连续天数</string>
+    <string name="life_habit_total_checkins">%d次</string>
+    <string name="life_habit_total_label">累计打卡</string>
+    <string name="life_habit_heatmap">打卡热力图</string>
+    <string name="life_habit_create">新建习惯</string>
+    <string name="life_habit_name">习惯名称</string>
+    <string name="life_habit_category">分类</string>
+    <string name="life_habit_category_daily">日常习惯</string>
+    <string name="life_habit_category_fitness">运动健身</string>
+    <string name="life_habit_category_reading">阅读学习</string>
+    <string name="life_habit_frequency">频率</string>
+    <string name="life_habit_frequency_daily">每天</string>
+    <string name="life_habit_frequency_weekly">每周</string>
+    <string name="life_habit_frequency_monthly">每月</string>
+    <string name="life_habit_weekly_target">每周目标次数</string>
+    <string name="life_habit_less">少</string>
+    <string name="life_habit_more">多</string>
+    <string name="life_habit_filter_stats">统计</string>
+    <string name="life_habit_filter_timeline">时间线</string>
+    <string name="life_habit_achievement">成就</string>
+    <string name="life_habit_new">新建习惯</string>
+    <string name="life_habit_create_btn">创建</string>
+    
+    <!-- Life - CountUp -->
+    <string name="life_countup_title">正数日</string>
+    <string name="life_countup_days">%d 天</string>
+    <string name="life_countup_milestone">距离 %d 天达成</string>
+
+    
+    <!-- Life - Shopping Kanban -->
+    <string name="life_shopping_list">列表</string>
+    <string name="life_shopping_kanban">看板</string>
+    <string name="life_shopping_budget">预算 ¥%s</string>
+    
+    <!-- Life - Subscription -->
+    <string name="life_subscription_tab_active">订阅中</string>
+    <string name="life_subscription_tab_expired">已过期</string>
+    
+    <!-- Life - Travel -->
+    <string name="life_travel_tab_planning">计划中</string>
+    <string name="life_travel_tab_completed">已完成</string>
+    
+    <!-- Life - Todo -->
+    <string name="life_todo_tab_active">进行中</string>
+    <string name="life_todo_tab_completed">已完成</string>
+    
+    <!-- Life - Report -->
+    <string name="life_report_tab_weekly">周报</string>
+    <string name="life_report_tab_monthly">月报</string>
+    <string name="life_report_title">周报月报</string>
+    <string name="life_report_empty">还没有报告</string>
+    <string name="life_report_empty_subtitle">用了一段时间后将自动生成周报和月报</string>
+    
+    <!-- Life - Focus -->
+    <string name="life_focus_giveup">放弃</string>
+    <string name="life_focus_giveup_confirm">确定放弃？</string>
+    <string name="life_focus_giveup_hint">当前的专注进度将丢失</string>
+    <string name="life_focus_continue">继续专注</string>
+    <string name="life_focus_title">专注</string>
+    <string name="life_focus_stats">统计</string>
+    <string name="life_focus_today">今日专注</string>
+    <string name="life_focus_today_minutes">累计 %d 分钟</string>
+    <string name="life_focus_today_summary">今日专注 %1$d 分钟，总计 %1$d 分钟</string>
+    <string name="life_focus_pause">暂停</string>
+    <string name="life_focus_start">开始</string>
+    <string name="life_focus_complete">完成</string>
+    
+    <!-- Life - Mood -->
+    <string name="life_mood_save">保存</string>
+    <string name="life_mood_quick_save">保存</string>
+    <string name="life_mood_quick_discard">放弃</string>
+    <string name="life_mood_delete_confirm">确认删除这条心情记录？</string>
+    <string name="life_mood_happy">开心</string>
+    <string name="life_mood_normal">平静</string>
+    <string name="life_mood_upset">低落</string>
+    <string name="life_mood_sad">难过</string>
+    <string name="life_mood_angry">愤怒</string>
+    <string name="life_mood_question">今天心情怎样？</string>
+    <string name="life_mood_factors">触发因素</string>
+    <string name="life_mood_factor_work">工作</string>
+    <string name="life_mood_factor_health">健康</string>
+    <string name="life_mood_factor_family">家庭</string>
+    <string name="life_mood_factor_finance">财务</string>
+    <string name="life_mood_factor_weather">天气</string>
+    <string name="life_mood_factor_social">社交</string>
+    <string name="life_mood_content_hint">写点什么…（可选）</string>
+    <string name="life_mood_record">心情记录</string>
+    <string name="life_mood_record_action">记心情</string>
+    <string name="life_mood_empty">还没有心情记录</string>
+    <string name="life_mood_empty_subtitle">点击右上角+记录你的第一个心情</string>
+    
+    <!-- Life - Journal -->
+    <string name="life_journal_delete_confirm">确认删除这条日记？</string>
+    
+    <!-- Life - Deposit Sheet -->
+    <string name="life_deposit_title">存入一笔</string>
+    <string name="life_deposit_save">保存</string>
+    
+    <!-- Life - Delete Confirm -->
+    <string name="life_delete_confirm_default">确定删除这条记录？</string>
+    
+    <!-- Life - Dynamic Form -->
+    <string name="life_dynamic_discard">放弃</string>
+    
+    <!-- Life - Item Detail -->
+    <string name="life_item_delete_confirm">确认删除该记录？</string>
+    
+    <!-- Life - Template Create -->
+    <string name="life_template_save_error">保存失败，内容已暂存到草稿</string>
+    <string name="life_template_step_type">选择类型</string>
+    <string name="life_template_step_basic">基本信息</string>
+    <string name="life_template_step_fields">字段配置</string>
+    <string name="life_template_step_layout">布局选择</string>
+    <string name="life_template_step_format">第 %d 步 / 4步</string>
+    <string name="life_template_next">下一步</string>
+    <string name="life_template_create">创建模板</string>
+    <string name="life_template_type_plan">计划</string>
+    <string name="life_template_type_plan_desc">我打算做的事</string>
+    <string name="life_template_type_time">时间</string>
+    <string name="life_template_type_time_desc">需要记住的日子</string>
+    <string name="life_template_type_record">记录</string>
+    <string name="life_template_type_record_desc">我做过/正在做的事</string>
+    <string name="life_template_name">模板名称</string>
+    <string name="life_template_desc">描述（可选）</string>
+    <string name="life_template_select_icon">选择图标</string>
+    <string name="life_template_select_color">选择颜色</string>
+    <string name="life_template_field_text">文本</string>
+    <string name="life_template_field_number">数字</string>
+    <string name="life_template_field_date">日期</string>
+    <string name="life_template_field_select">单选</string>
+    <string name="life_template_field_decimal">小数</string>
+    <string name="life_template_field_index">字段 %d</string>
+    <string name="life_template_field_name">字段名称</string>
+    <string name="life_template_field_required">必填</string>
+    <string name="life_template_add_field">添加字段</string>
+    <string name="life_template_layout_list">列表</string>
+    <string name="life_template_layout_timeline">时间线</string>
+    <string name="life_template_layout_calendar">日历</string>
+    <string name="life_template_layout_stats">统计</string>
+    
+    <!-- Life - Create Item Warning -->
+    <string name="life_item_limit_reached">已达上限（10,000 条），请归档或删除旧条目</string>
+    <string name="life_item_limit_warning">即将达到上限（%d/10,000），建议归档</string>
+    <string name="life_item_limit_info">该模板已有 %d 条数据，建议归档旧条目</string>
+    
+    <!-- Life - Accu Days related -->
+    <string name="life_accu_days_unit">天</string>
+    
+    <!-- Bill Import Errors -->
+    <string name="bill_import_error_read_file">无法读取文件</string>
+    <string name="bill_import_error_parse_invalid">未能解析到有效的账单记录</string>
+    <string name="bill_import_error_format_unknown">无法识别文件格式，请确认是微信或支付宝账单</string>
+    <string name="bill_import_error_parse_failed">解析失败: %s</string>
+    <string name="bill_import_error_read_image">无法读取图片</string>
+    <string name="bill_import_error_ocr_invalid">未能识别到有效的交易记录</string>
+    <string name="bill_import_error_ocr_failed">识别失败: %s</string>
+    <string name="bill_import_error_invalid_amount">请输入有效金额</string>
+    
+    <!-- Bill Import Diagnostics -->
+    <string name="bill_import_diag_file_size">文件大小: %d字节</string>
+    <string name="bill_import_diag_format">格式: %s</string>
+    <string name="bill_import_diag_records">解析记录: %d条</string>
+    <string name="bill_import_diag_lines">文本行数: %d</string>
+    <string name="bill_import_diag_first_line">首行: %s</string>
+    <string name="bill_import_diag_detected_format">识别格式: %s</string>
+    <string name="bill_import_diag_encoding">编码: %s</string>
+    
+    <!-- Asset Detail Screen -->
+    <string name="asset_detail_page_title">物品详情</string>
+    <string name="asset_sold_price_label">售出价格</string>
+    <string name="asset_valuation_price">估值价格</string>
+    <string name="asset_days_owned">拥有天数</string>
+    <string name="asset_cost_single">单次成本</string>
+    <string name="asset_cost_daily_avg">日均成本</string>
+    <string name="asset_images_count">图片（%d张）</string>
+    <string name="asset_basic_info">基本信息</string>
+    <string name="asset_subcategory">子分类</string>
+    <string name="asset_brand">品牌</string>
+    <string name="asset_model_name">型号</string>
+    <string name="asset_serial_number">序列号</string>
+    <string name="asset_condition">成色</string>
+    <string name="asset_condition_new">全新</string>
+    <string name="asset_condition_good">良好</string>
+    <string name="asset_condition_fair">一般</string>
+    <string name="asset_condition_poor">较差</string>
+    <string name="asset_quantity_label">数量</string>
+    <string name="asset_tags_label">标签</string>
+    <string name="asset_favorite">收藏</string>
+    <string name="asset_yes">是</string>
+    <string name="asset_acquisition_type">获取方式</string>
+    <string name="asset_purchase_date">购买日期</string>
+    <string name="asset_acquisition_date">获取日期</string>
+    <string name="asset_purchase_channel">购买渠道</string>
+    <string name="asset_room">房间</string>
+    <string name="asset_value_info">价值信息</string>
+    <string name="asset_current_value">当前估值</string>
+    <string name="asset_depreciation_rate">年折旧率</string>
+    <string name="asset_cost_calculation">成本计算</string>
+    <string name="asset_depreciation">折旧</string>
+    <string name="asset_warranty_info">保修信息</string>
+    <string name="asset_warranty_expiry_format">到期: %s</string>
+    <string name="asset_warranty_remaining_days">剩余%d天</string>
+    <string name="asset_warranty_expired_days">已过期%d天</string>
+    <string name="asset_maintenance_info">维护信息</string>
+    <string name="asset_last_maintenance_format">上次维护: %s</string>
+    <string name="asset_maintenance_cycle_format">维护周期: %d天</string>
+    <string name="asset_maintenance_needed">需要维护</string>
+    <string name="asset_days_later_format">%d天后</string>
+    <string name="asset_maintenance_expired">已过期</string>
+    <string name="asset_complete_maintenance">完成维护</string>
+    <string name="asset_insurance_info">保险信息</string>
+    <string name="asset_insurance_company">保险公司</string>
+    <string name="asset_insurance_policy">保单号</string>
+    <string name="asset_insurance_expiry">到期日期</string>
+    <string name="asset_away_info">暂离信息</string>
+    <string name="asset_removed_info">已清出信息</string>
+    <string name="asset_status_info_label">状态信息</string>
+    <string name="asset_away_reason">暂离原因</string>
+    <string name="asset_away_date">暂离日期</string>
+    <string name="asset_clear_reason">清出原因</string>
+    <string name="asset_retire_date">退役日期</string>
+    <string name="asset_retire_reason">退役原因</string>
+    <string name="asset_lost_date">遗失日期</string>
+    <string name="asset_lost_reason">遗失原因</string>
+    <string name="asset_sold_date">售出日期</string>
+    <string name="asset_sold_channel">售出渠道</string>
+    <string name="asset_sold_to">售出对象</string>
+    <string name="asset_profit_loss">盈亏</string>
+    <string name="asset_reactivate">恢复持有</string>
+    <string name="asset_other_info">其他信息</string>
+    <string name="asset_created_at">创建时间</string>
+    <string name="asset_updated_at">更新时间</string>
+    <string name="asset_linked_bill">关联账单</string>
+    <string name="asset_linked_moment">关联瞬间</string>
+    <string name="asset_usage_records">使用记录</string>
+    <string name="asset_usage_count_format">共 %d 次</string>
+    <string name="asset_record_usage">记录使用</string>
+    <string name="asset_no_usage_records">暂无使用记录</string>
+    <string name="asset_click_to_record_usage">点击上方按钮记录使用</string>
+    <string name="asset_collapse">收起</string>
+    <string name="asset_expand_all_format">展开全部 %d 条</string>
+    <string name="asset_status_change">状态变更</string>
+    <string name="asset_status_held">持有</string>
+    <string name="asset_status_away">暂离</string>
+    <string name="asset_status_removed_label">清出</string>
+    <string name="asset_dialog_away_title">暂离物品</string>
+    <string name="asset_dialog_away_confirm">确定要将「%s」标记为暂离吗？</string>
+    <string name="asset_dialog_away_reason_hint">暂离原因（可选）</string>
+    <string name="asset_dialog_away_action">确认暂离</string>
+    <string name="asset_preset_scrapped">报废</string>
+    <string name="asset_preset_expired">过期</string>
+    <string name="asset_preset_damaged">损坏</string>
+    <string name="asset_preset_upgrade">升级换代</string>
+    <string name="asset_preset_no_use">不再使用</string>
+    <string name="asset_preset_lost">遗失</string>
+    <string name="asset_preset_stolen">失窃</string>
+    <string name="asset_preset_forgotten">遗忘</string>
+    <string name="asset_preset_missing">丢失</string>
+    <string name="asset_preset_xianyu">闲鱼转让</string>
+    <string name="asset_preset_secondhand">二手回收</string>
+    <string name="asset_preset_gift_others">赠送他人</string>
+    <string name="asset_dialog_clear_title">清出物品</string>
+    <string name="asset_clear_type_retire">退役</string>
+    <string name="asset_clear_type_lost">丢失</string>
+    <string name="asset_clear_type_sell">出售</string>
+    <string name="asset_quick_select">快捷选择</string>
+    <string name="asset_retire_reason_hint">退役原因（可选）</string>
+    <string name="asset_lost_reason_hint">丢失原因（可选）</string>
+    <string name="asset_remark_hint">备注（可选）</string>
+    <string name="asset_sell_price">出售价格</string>
+    <string name="asset_sell_channel_hint">出售渠道（可选）</string>
+    <string name="asset_dialog_delete_title">删除物品</string>
+    <string name="asset_dialog_delete_confirm">确定要删除「%s」吗？删除后可在回收站中恢复。</string>
+    <string name="asset_edit_usage_record">编辑使用记录</string>
+    <string name="asset_saved_to_album">已保存到相册</string>
+    <string name="asset_save_to_phone">保存到手机</string>
+    <string name="asset_close">关闭</string>
+
+    <!-- Asset Categories -->
+    <string name="asset_category_digital">数码</string>
+    <string name="asset_category_appliance">家电</string>
+    <string name="asset_category_furniture">家具</string>
+    <string name="asset_category_clothing">服饰</string>
+    <string name="asset_category_sports">运动</string>
+    <string name="asset_category_books">图书</string>
+    <string name="asset_category_cosmetics">美妆</string>
+    <string name="asset_category_food">食品</string>
+    <string name="asset_category_tools">工具</string>
+    <string name="asset_category_baby">母婴</string>
+    <string name="asset_category_pet">宠物</string>
+    <string name="asset_category_transport">交通</string>
+    <string name="asset_category_medical">医疗</string>
+    <string name="asset_category_stationery">文具</string>
+    <string name="asset_category_musical">乐器</string>
+    <string name="asset_category_photography">摄影</string>
+    <string name="asset_category_collection">收藏</string>
+    <string name="asset_category_jewelry">饰品</string>
+    <string name="asset_category_plants">植物</string>
+    <string name="asset_category_other">其他</string>
+
+    <!-- Add Asset Screen -->
+    <string name="asset_add_title">添加物品</string>
+    <string name="asset_edit_title">编辑物品</string>
+    <string name="asset_image_section">物品图片</string>
+    <string name="asset_remove_image">移除</string>
+    <string name="asset_drag_to_reorder">长按拖动排序</string>
+    <string name="asset_upload">上传</string>
+    <string name="asset_image_hint">首图默认为物品封面，最多上传4张</string>
+    <string name="asset_input_name_hint">输入物品名称</string>
+    <string name="asset_total_count_format">共 %d 件</string>
+    <string name="asset_custom_acquisition">自定义获取方式</string>
+    <string name="asset_valuation_optional">估值（可选）</string>
+    <string name="asset_custom_location_hint">输入自定义位置</string>
+    <string name="asset_warranty_date">保修日期</string>
+    <string name="asset_select_warranty_date">选择保修到期日期（可选）</string>
+    <string name="asset_add_remark_hint">添加备注信息...</string>
+    <string name="asset_add_button">添加物品</string>
+    <string name="asset_purchase_channel_hint">如：京东、淘宝、线下门店</string>
+    <string name="location_bedroom">卧室</string>
+    <string name="location_living_room">客厅</string>
+    <string name="location_study">书房</string>
+    <string name="location_kitchen">厨房</string>
+    <string name="location_desk">办公桌</string>
+    <string name="location_in_car">车上</string>
+    <string name="acquisition_custom">自定义</string>
+
+    <!-- Report -->
+    <string name="report_year_format">%d年</string>
+    <string name="report_total_expense_label">总支出</string>
+    <string name="report_total_income_label">总收入</string>
+
+    <!-- Asset Form Errors -->
+    <string name="asset_error_name_required">请输入物品名称</string>
+    <string name="asset_error_category_required">请选择分类</string>
+    <string name="asset_error_date_required">请选择购买日期</string>
+    <string name="asset_gallery_folder">掌记</string>
+    
+    <!-- Bill Form Errors -->
+    <string name="bill_error_amount_required">请输入有效金额</string>
+    <string name="bill_error_category_required">请选择分类</string>
+    
+    <!-- Field Validation -->
+    <string name="field_error_required">%s不能为空</string>
+    <string name="field_error_invalid_number">请输入有效数字</string>
+    <string name="field_error_min_value">最小值: %d</string>
+    <string name="field_error_max_value">最大值: %d</string>
+    <string name="field_error_invalid_percent">请输入有效百分比</string>
+    <string name="field_error_percent_range">百分比范围 0-100</string>
+    <string name="field_error_invalid_rating">无效评分</string>
+    <string name="field_error_rating_range">评分范围 0-10</string>
+    
+    <!-- Date Format -->
+    <string name="date_format_display">MM月dd日</string>
+    <string name="date_format_display_year">yyyy年MM月dd日</string>
+    <string name="date_format_display_month">yyyy年MM月</string>
+    <string name="date_weekday_sunday">星期日</string>
+    <string name="date_weekday_monday">星期一</string>
+    <string name="date_weekday_tuesday">星期二</string>
+    <string name="date_weekday_wednesday">星期三</string>
+    <string name="date_weekday_thursday">星期四</string>
+    <string name="date_weekday_friday">星期五</string>
+    <string name="date_weekday_saturday">星期六</string>
+    <string name="date_format_weekday_full">%1$d月%2$d日 %3$s</string>
+    <string name="date_format_week_range_same">%1$d月%2$d日-%3$d日</string>
+    <string name="date_format_week_range_diff">%1$d月%2$d日-%3$d月%4$d日</string>
+    <string name="date_weekday_short_mon">周一</string>
+    <string name="date_weekday_short_tue">周二</string>
+    <string name="date_weekday_short_wed">周三</string>
+    <string name="date_weekday_short_thu">周四</string>
+    <string name="date_weekday_short_fri">周五</string>
+    <string name="date_weekday_short_sat">周六</string>
+    <string name="date_weekday_short_sun">周日</string>
+    
+    <!-- Currency Format -->
+    <string name="currency_format">¥%s</string>
+    <string name="currency_compact_yi">¥%s亿</string>
+    <string name="currency_compact_wan">¥%s万</string>
+    
+    <!-- App Lock -->
+    <string name="app_lock_setup_pin">设置PIN码</string>
+    <string name="app_lock_confirm_pin">确认PIN码</string>
+    <string name="app_lock_enter_pin">输入PIN码解锁</string>
+    <string name="app_lock_pin_success">PIN码设置成功</string>
+    <string name="app_lock_pin_mismatch">两次输入不一致</string>
+    <string name="app_lock_pin_wrong">PIN码错误</string>
+    <string name="app_lock_delete">删除</string>
+    <string name="app_lock_biometric">生物识别</string>
+    <string name="app_lock_biometric_title">生物识别验证</string>
+    <string name="app_lock_biometric_subtitle">使用指纹或面部识别解锁</string>
+    <string name="app_lock_biometric_cancel">取消</string>
+    <string name="app_lock_change_pin">修改PIN码</string>
+    <string name="app_lock_forgot_pin">忘记PIN码？</string>
+    <string name="app_lock_forgot_pin_confirm">确定要清除PIN码吗？这将移除应用锁保护。</string>
+    <string name="app_lock_forgot_pin_action">清除</string>
+    <string name="app_lock_old_pin">请输入旧PIN码</string>
+    <string name="app_lock_new_pin">请输入新PIN码</string>
+    <string name="app_lock_enter_old_pin">输入当前PIN码以验证身份</string>
+    <string name="app_lock_enter_new_pin">输入新的6位PIN码</string>
+    <string name="app_lock_confirm_new_pin">再次输入新PIN码以确认</string>
+    <string name="app_lock_old_pin_wrong">旧PIN码错误</string>
+    <string name="app_lock_pin_changed">PIN码修改成功</string>
+    
+    <!-- Notifications -->
+    <string name="notification_daily_title">每日提醒</string>
+    <string name="notification_daily_message">今天还没有记录生活哦，快来记录吧！</string>
+    <string name="notification_bill_title">记账提醒</string>
+    <string name="notification_bill_message">今天还没有记账哦，快来记录收支吧！</string>
+    <string name="notification_birthday_title">生日提醒</string>
+    <string name="notification_birthday_message">「%s」的生日就要到了！</string>
+    <string name="notification_anniversary_title">纪念日提醒</string>
+    <string name="notification_anniversary_message">"%1$s" %2$d 周年纪念日即将到来</string>
+    <string name="notification_countdown_today_title">倒计时到期</string>
+    <string name="notification_countdown_today_message">「%s」就是今天！</string>
+    <string name="notification_countdown_soon_title">倒计时即将到期</string>
+    <string name="notification_countdown_soon_message">「%1$s」还剩 %2$d 天</string>
+    <string name="notification_milestone_title">正数日里程碑</string>
+    <string name="notification_milestone_message">你的「%1$s」已经坚持了 %2$d 天！</string>
+    <string name="notification_subscription_title">订阅扣费提醒</string>
+    <string name="notification_subscription_message">「%1$s」今日扣费 %1$s</string>
+    
+    <!-- Notification Channels -->
+    <string name="notification_channel_life">生活动态</string>
+    <string name="notification_channel_life_desc">正数日里程碑、打卡成就等</string>
+    <string name="notification_channel_checkin">打卡提醒</string>
+    <string name="notification_channel_checkin_desc">习惯打卡和待办提醒</string>
+    <string name="notification_channel_reminder">事件提醒</string>
+    <string name="notification_channel_reminder_desc">生日、纪念日、订阅扣费提醒</string>
+    
+    <!-- About Screen -->
+    <string name="about_title">关于</string>
+    <string name="about_subtitle">Palm Note</string>
+    <string name="about_description">个人生活管理工具</string>
+    <string name="about_description_detail">掌记是一款简洁优雅的个人生活管理应用，帮助您记录资产、管理账单、追踪目标、记录纪念日和生活瞬间。</string>
+    <string name="about_features">功能特色</string>
+    <string name="about_feature_asset">资产管理 - 记录物品，追踪成本</string>
+    <string name="about_feature_bill">智能账本 - 记账分析，预算管理</string>
+    <string name="about_feature_goal">目标追踪 - 设定目标，记录进度</string>
+    <string name="about_feature_anniversary">纪念日 - 重要日子，不再遗忘</string>
+    <string name="about_feature_moment">生活瞬间 - 记录美好，珍藏回忆</string>
+    <string name="about_tech_stack">技术栈</string>
+    <string name="about_legal">法律信息</string>
+    <string name="about_privacy_policy">隐私政策</string>
+    <string name="about_terms_of_service">用户协议</string>
+
+    <string name="about_made_with">Made with Love</string>
+    <string name="about_privacy_title">隐私政策</string>
+    <string name="about_terms_title">用户协议</string>
+    
+    <!-- App Lock Settings -->
+    <string name="app_lock_settings_title">应用锁设置</string>
+    <string name="app_lock_change_pin_title">修改PIN码</string>
+    <string name="app_lock_change_pin_subtitle">更改应用锁密码</string>
+    <string name="app_lock_forgot_pin_title_settings">忘记密码</string>
+    <string name="app_lock_forgot_pin_subtitle">清除应用数据以重置密码</string>
+    <string name="app_lock_forgot_pin_confirm_settings">确定要清除应用数据吗？这将删除所有本地数据，此操作不可逆。</string>
+    <string name="app_lock_forgot_pin_action_settings">清除应用数据</string>
+    <string name="app_lock_biometric_enable">启用生物识别</string>
+    <string name="app_lock_biometric_enable_subtitle">使用指纹或面部识别快速解锁</string>
+    <string name="app_lock_biometric_enabled">已启用</string>
+    <string name="app_lock_biometric_disabled">未启用</string>
+    
+    <!-- Reminder Time -->
+    <string name="settings_reminder_time">提醒时间</string>
+    <string name="settings_reminder_time_subtitle">设置每日提醒的具体时间</string>
+    <string name="settings_reminder_time_bill_subtitle">设置记账提醒的具体时间</string>
+    <string name="settings_reminder_time_format" formatted="false">%02d:%02d</string>
+    <string name="settings_select_reminder_time">选择提醒时间</string>
+    
+    <!-- Default Book -->
+    <string name="report_all_books">全部账本</string>
+    
+    <!-- Bill Detail -->
+    <string name="bill_detail_title">账单详情</string>
+    <string name="bill_type">类型</string>
+    <string name="bill_merchant">商家</string>
+    <string name="bill_payment_method">支付方式</string>
+    <string name="bill_sub_category">子分类</string>
+    <string name="bill_location">地点</string>
+    <string name="bill_tags">标签</string>
+    <string name="bill_attachments">附件</string>
+    <string name="bill_reimbursement_status">报销状态</string>
+    <string name="bill_reimbursed">已报销</string>
+    <string name="bill_pending_reimbursement">待报销</string>
+    <string name="bill_record_id">记录ID</string>
+    <string name="bill_created_at">创建时间</string>
+    <string name="bill_updated_at">更新时间</string>
+    
+    <!-- Bill Import -->
+    <string name="bill_import_title">导入账单</string>
+    <string name="bill_import_file">文件导入</string>
+    <string name="bill_import_image">图片识别</string>
+    <string name="bill_import_parsing">正在解析…</string>
+    <string name="bill_import_importing">正在导入…</string>
+    <string name="bill_import_failed">导入失败</string>
+    <string name="bill_import_select_method">选择导入方式</string>
+    <string name="bill_import_file_desc">导入微信/支付宝账单文件 (CSV/XLSX)</string>
+    <string name="bill_import_image_desc">拍摄或选择交易记录截图，自动识别</string>
+    <string name="bill_import_complete">导入完成</string>
+    <string name="bill_import_success_count">成功导入 %d 条账单</string>
+    <string name="bill_import_continue">继续导入</string>
+    <string name="bill_import_reselect">重新选择</string>
+    <string name="bill_import_select_all">全选</string>
+    <string name="bill_import_select_none">全不选</string>
+    <string name="bill_import_wechat_bill">微信账单</string>
+    <string name="bill_import_alipay_bill">支付宝账单</string>
+    <string name="bill_import_selected_count">导入 %d 条账单</string>
+    <string name="bill_import_ocr_recognized">识别到 %1$d 笔交易，已选 %1$d 笔</string>
+    <string name="bill_import_ocr_result">识别结果</string>
+    <string name="bill_import_amount">金额</string>
+    <string name="bill_import_merchant">商户</string>
+    <string name="bill_import_date">日期</string>
+    <string name="bill_import_category">分类</string>
+    <string name="bill_import_note">备注</string>
+    <string name="bill_import_hide_raw">隐藏原始文字</string>
+    <string name="bill_import_show_raw">查看原始识别文字</string>
+    <string name="bill_import_save">保存账单</string>
+    <string name="bill_import_batch_save">批量保存 (%d)</string>
+    <string name="bill_import_unknown_file">未知文件</string>
+    <string name="bill_import_screenshot">截图</string>
+    <string name="bill_import_total_records">共 %d 条记录</string>
+    <string name="bill_import_selected_records">已选 %d 条</string>
+    
+    <!-- Budget -->
+    <string name="budget_title">预算管理</string>
+    <string name="budget_month_format">%s 预算</string>
+    <string name="budget_total">预算总额</string>
+    <string name="budget_used">已使用</string>
+    <string name="budget_remaining">剩余</string>
+    <string name="budget_over">超支</string>
+    <string name="budget_not_set">尚未设置本月预算</string>
+    <string name="budget_modify">修改预算</string>
+    <string name="budget_set">设置预算</string>
+    <string name="budget_tips">预算小贴士</string>
+    <string name="budget_tips_content">① 建议将收入的50%%作为生活支出预算\n② 预留10%%作为应急资金\n③ 80%%使用时会收到提醒</string>
+    
+    <!-- Report -->
+    <string name="report_title">统计</string>
+    <string name="report_previous">上一期</string>
+    <string name="report_next">下一期</string>
+    <string name="report_week">周</string>
+    <string name="report_month">月</string>
+    <string name="report_year">年</string>
+    <string name="report_total_expense">总支出</string>
+    <string name="report_total_income">总收入</string>
+    <string name="report_daily_avg">日均 %s</string>
+    <string name="report_count_format">%d笔</string>
+    <string name="report_other">其他</string>
+    <string name="report_no_records">本月暂无记录</string>
+    <string name="report_category_ranking">分类排行</string>
+    <string name="report_collapse">收起</string>
+    <string name="report_expand_all">展开全部</string>
+    <string name="report_weekly_trend">本周趋势</string>
+    <string name="report_monthly_trend">月度趋势</string>
+    <string name="report_yearly_trend">年度趋势</string>
+    
+    <!-- Account Book Manage -->
+    <string name="account_book_manage_title">账本管理</string>
+    <string name="account_book_add">添加账本</string>
+    <string name="account_book_my_books">我的账本</string>
+    <string name="account_book_count_format">%d 个账本</string>
+    <string name="account_book_empty">暂无账本</string>
+    <string name="account_book_empty_hint">点击右下角按钮添加账本</string>
+    <string name="account_book_delete_title">删除账本</string>
+    <string name="account_book_delete_confirm">确定要删除「%s」吗？账本下的记录不会被删除。</string>
+    <string name="account_book_set_default">设为默认</string>
+    <string name="account_book_edit">编辑账本</string>
+    <string name="account_book_new">新建账本</string>
+    <string name="account_book_select_type">选择账本类型</string>
+    <string name="account_book_custom">自定义账本</string>
+    <string name="account_book_name">名称</string>
+    <string name="account_book_desc">描述</string>
+    <string name="account_book_icon">图标</string>
+    <string name="account_book_color">颜色</string>
+    <string name="account_book_back_to_template">← 返回模板选择</string>
+    <string name="account_book_name_required">请输入账本名称</string>
+    
+    <!-- Default Book Names -->
+    <string name="account_book_all_name">全账本</string>
+    <string name="account_book_all_desc">汇总所有账本数据</string>
+    <string name="account_book_daily_name">日常</string>
+    <string name="account_book_daily_desc">记录日常生活开支</string>
+    <string name="account_book_travel_name">旅行</string>
+    <string name="account_book_travel_desc">旅行途中的所有消费</string>
+    <string name="account_book_work_name">工作</string>
+    <string name="account_book_work_desc">工作相关收支</string>
+    <string name="account_book_family_name">家庭</string>
+    <string name="account_book_family_desc">家庭共同开支管理</string>
+    <string name="account_book_study_name">学习</string>
+    <string name="account_book_study_desc">学习培训相关费用</string>
+    <string name="account_book_investment_name">投资</string>
+    <string name="account_book_investment_desc">投资理财记录</string>
+    
+    <!-- Asset Status -->
+    <string name="asset_warranty_days">质保%d天</string>
+    <string name="asset_warranty_active">质保中</string>
+    <string name="asset_insurance_active">保险有效</string>
+    <string name="asset_insurance_expired">保险过期</string>
+    
+    <!-- Life Templates -->
+    <string name="template_savings_name">存钱计划</string>
+    <string name="template_savings_desc">设定存款目标，记录储蓄进度</string>
+    <string name="template_shopping_name">购物计划</string>
+    <string name="template_shopping_desc">管理购物清单和预算</string>
+    <string name="template_todo_name">待办</string>
+    <string name="template_todo_desc">管理日常待办事项</string>
+    <string name="template_travel_name">旅行计划</string>
+    <string name="template_travel_desc">规划旅行，记录美好回忆</string>
+    <string name="template_reading_name">阅读</string>
+    <string name="template_reading_desc">记录阅读进度</string>
+    <string name="template_study_name">学习计划</string>
+    <string name="template_study_desc">添加课程，追踪学习进度</string>
+    <string name="template_countdown_name">倒计时</string>
+    <string name="template_countdown_desc">记录重要事件倒计时</string>
+    <string name="template_countup_name">正数日</string>
+    <string name="template_countup_desc">记录一个值得纪念的起点</string>
+    <string name="template_birthday_name">生日</string>
+    <string name="template_birthday_desc">记录重要日期</string>
+    <string name="template_anniversary_name">纪念日</string>
+    <string name="template_anniversary_desc">记录那些值得铭记的日子</string>
+    <string name="template_checkin_name">打卡</string>
+    <string name="template_checkin_desc">记录每日打卡习惯</string>
+    <string name="template_mood_name">心情</string>
+    <string name="template_mood_desc">记录每日心情</string>
+    <string name="template_diary_name">日记</string>
+    <string name="template_diary_desc">记录每日心情和想法</string>
+    <string name="template_subscription_name">订阅记录</string>
+    <string name="template_subscription_desc">管理你的订阅服务</string>
+    <string name="template_report_name">周报月报</string>
+    <string name="template_report_desc">自动聚合生活数据生成报告</string>
+    
+    <!-- Wallet Type Names -->
+    <string name="wallet_type_cash">现金</string>
+    <string name="wallet_type_wechat">微信</string>
+    <string name="wallet_type_alipay">支付宝</string>
+    <string name="wallet_type_debit_card">储蓄卡</string>
+    <string name="wallet_type_credit_card">信用卡</string>
+    <string name="wallet_type_investment">投资账户</string>
+    <string name="wallet_type_top_up">充值账户</string>
+    <string name="wallet_type_other">其他</string>
+    <string name="wallet_type_e_wallet">电子钱包</string>
+    <string name="wallet_type_bank_card">银行卡</string>
+    
+    <!-- Bill Categories - Expense -->
+    <string name="category_food">餐饮</string>
+    <string name="category_snacks">零食</string>
+    <string name="category_drinks">饮品</string>
+    <string name="category_transport">交通</string>
+    <string name="category_shopping">购物</string>
+    <string name="category_clothing">服饰</string>
+    <string name="category_digital">数码</string>
+    <string name="category_used">二手</string>
+    <string name="category_housing">居住</string>
+    <string name="category_furniture">家居</string>
+    <string name="category_rent">租金</string>
+    <string name="category_entertainment">娱乐</string>
+    <string name="category_travel">旅游</string>
+    <string name="category_sports">运动</string>
+    <string name="category_medical">医疗</string>
+    <string name="category_fitness">健身</string>
+    <string name="category_beauty">美容</string>
+    <string name="category_education">教育</string>
+    <string name="category_stationery">文具</string>
+    <string name="category_social">社交</string>
+    <string name="category_favors">人情</string>
+    <string name="category_red_packet">红包</string>
+    <string name="category_gift">赠与</string>
+    <string name="category_communication">通讯</string>
+    <string name="category_housekeeping">家政</string>
+    <string name="category_delivery">快递</string>
+    <string name="category_repair">维修</string>
+    <string name="category_investment">投资</string>
+    <string name="category_stocks">股票</string>
+    <string name="category_finance">理财</string>
+    <string name="category_insurance">保险</string>
+    <string name="category_pet">宠物</string>
+    <string name="category_baby">母婴</string>
+    <string name="category_tobacco_alcohol">烟酒</string>
+    <string name="category_donation">捐赠</string>
+    <string name="category_fine">罚款</string>
+    <string name="category_fee">手续费</string>
+    <string name="category_other">其他</string>
+    
+    <!-- Bill Categories - Income -->
+    <string name="category_salary">工资</string>
+    <string name="category_bonus">奖金</string>
+    <string name="category_part_time">兼职</string>
+    <string name="category_side_job">副业</string>
+    <string name="category_reimbursement">报销</string>
+    <string name="category_dividend">分红</string>
+    <string name="category_interest">利息</string>
+    <string name="category_refund">退款</string>
+    <string name="category_lottery">中奖</string>
+    <string name="category_claim">保险理赔</string>
+    <string name="category_inheritance">继承</string>
+    
+    <!-- Payment Methods -->
+    <string name="payment_cash">现金</string>
+    <string name="payment_wechat">微信</string>
+    <string name="payment_alipay">支付宝</string>
+    <string name="payment_card">银行卡</string>
+    <string name="payment_bank_transfer">银行转账</string>
+    <string name="payment_other">其他</string>
+    
+    <!-- Wallet Screen -->
+    <string name="wallet_title">账户管理</string>
+    <string name="wallet_add">添加账户</string>
+    <string name="wallet_total_assets">总资产</string>
+    <string name="wallet_count_format">%d 个账户</string>
+    <string name="wallet_empty">暂无账户</string>
+    <string name="wallet_empty_hint">点击右下角按钮添加账户</string>
+    <string name="wallet_delete_title">删除账户</string>
+    <string name="wallet_delete_confirm">确定要删除「%s」吗？该账户下的账单记录不会被删除。</string>
+    <string name="wallet_edit">编辑账户</string>
+    <string name="wallet_name">账户名称</string>
+    <string name="wallet_type">账户类型</string>
+    <string name="wallet_bank">银行</string>
+    <string name="wallet_card_last_four">卡号后四位</string>
+    <string name="wallet_balance">余额</string>
+    <string name="wallet_icon">图标</string>
+    <string name="wallet_color">颜色</string>
+    <string name="wallet_name_required">请输入账户名称</string>
+    <string name="wallet_initial_balance">初始余额</string>
+    <string name="wallet_card_number">卡号</string>
+    <string name="wallet_balance_invalid">请输入有效数字</string>
+    <string name="wallet_balance_negative">金额不能为负数</string>
+    
+    <!-- Category Screen -->
+    <string name="category_manage_title">分类管理</string>
+    <string name="category_manage_add">添加分类</string>
+    <string name="category_manage_count_format">%d 个分类</string>
+    <string name="category_manage_system_default">系统默认</string>
+    <string name="category_manage_delete_title">删除分类</string>
+    <string name="category_manage_delete_confirm">确定要删除「%s」吗？该分类下的记录不会被删除。</string>
+    <string name="category_manage_enabled">已启用</string>
+    <string name="category_manage_disabled">已禁用</string>
+    <string name="category_manage_default">默认</string>
+    <string name="category_manage_system_category">系统分类</string>
+    <string name="category_manage_enable">启用</string>
+    <string name="category_manage_disable">禁用</string>
+    <string name="category_manage_edit">编辑分类</string>
+    <string name="category_manage_name">分类名称</string>
+    <string name="category_manage_icon">图标</string>
+    <string name="category_manage_color">颜色</string>
+    <string name="category_manage_name_required">请输入分类名称</string>
+    <string name="category_manage_empty_title">暂无分类</string>
+    <string name="category_manage_empty_hint">点击 + 添加第一个分类</string>
+    
+    <!-- Data Clear -->
+    <string name="data_clear_title">数据清除</string>
+    <string name="data_clear_select">选择要清除的数据</string>
+    <string name="data_clear_warning">清除后不可恢复，请谨慎操作。如只需清理缓存，请使用设置中的「清除缓存」功能。</string>
+    <string name="data_clear_asset">清除物品数据</string>
+    <string name="data_clear_asset_desc">删除所有物品记录</string>
+    <string name="data_clear_bill">清除账本数据</string>
+    <string name="data_clear_bill_desc">删除所有账单、预算、账户</string>
+    <string name="data_clear_life">清除生活数据</string>
+    <string name="data_clear_life_desc">删除所有目标、纪念日、瞬间</string>
+    <string name="data_clear_all">清除全部数据</string>
+    <string name="data_clear_all_desc">删除所有数据，恢复初始状态</string>
+    <string name="data_clear_confirm_title">确认清除</string>
+    <string name="data_clear_confirm_message">确定要清除%s吗？此操作不可恢复！</string>
+    <string name="data_clear_action">清除</string>
+    
+    <!-- Recycle Bin -->
+    <string name="recycle_bin_title">回收站</string>
+    <string name="recycle_bin_clear_title">清空回收站</string>
+    <string name="recycle_bin_clear_confirm">确定要永久删除所有已删除的记录吗？此操作不可恢复。</string>
+    <string name="recycle_bin_clear">清空</string>
+    <string name="recycle_bin_empty">回收站为空</string>
+    <string name="recycle_bin_empty_hint">删除的记录将在这里显示，30天后自动清除</string>
+    <string name="recycle_bin_restore">恢复</string>
+    <string name="recycle_bin_delete">删除</string>
+    <string name="recycle_tab_assets">物品</string>
+    <string name="recycle_tab_bills">账单</string>
+    <string name="recycle_tab_goals">目标</string>
+    <string name="recycle_tab_anniversaries">纪念日</string>
+    <string name="recycle_tab_moments">瞬间</string>
+    
+    <!-- Search -->
+    <string name="search_placeholder">搜索物品、账单、目标、纪念日、时刻…</string>
+    <string name="search_clear">清除</string>
+    <string name="search_hint">输入关键词搜索全部内容</string>
+    <string name="search_no_results">未找到相关内容</string>
+    <string name="search_section_assets">物品</string>
+    <string name="search_section_bills">账单</string>
+    <string name="search_section_goals">目标</string>
+    <string name="search_section_anniversaries">纪念日</string>
+    <string name="search_section_moments">时刻</string>
+    
+    <!-- Backup -->
+    <string name="backup_title">数据备份</string>
+    <string name="backup_operation_success">操作成功</string>
+    <string name="backup_create">创建备份</string>
+    <string name="backup_create_desc">将所有数据打包为 .palmnote 文件，存储到 Downloads/PalmNote/ 目录</string>
+    <string name="backup_backing_up">正在备份…</string>
+    <string name="backup_now">立即备份</string>
+    <string name="backup_existing">已有备份</string>
+    <string name="backup_empty">暂无备份</string>
+    <string name="backup_empty_hint">点击上方按钮创建第一个备份</string>
+    <string name="backup_restore_title">恢复备份</string>
+    <string name="backup_restore_confirm">恢复将覆盖当前所有数据，此操作不可撤销。确定要恢复吗？</string>
+    <string name="backup_restore">恢复</string>
+    <string name="backup_delete">删除</string>
+    
+    <!-- Common Components -->
+    <string name="common_more">更多</string>
+    <string name="common_select_category">选择分类</string>
+    <string name="common_manage_categories">管理分类</string>
+    <string name="common_custom_tag">自定义标签</string>
+    <string name="common_select_tag">选择标签</string>
+    <string name="common_previous_month">上月</string>
+    <string name="common_next_month">下月</string>
+    <string name="common_save">保存</string>
+    
+    <!-- Icon Picker Categories -->
+    <string name="icon_category_all">全部</string>
+    <string name="icon_category_study">学习</string>
+    <string name="icon_category_sports">运动</string>
+    <string name="icon_category_life">生活</string>
+    <string name="icon_category_work">工作</string>
+    <string name="icon_category_health">健康</string>
+    <string name="icon_category_travel">旅行</string>
+    <string name="icon_category_creative">创意</string>
+    <string name="icon_category_finance">财务</string>
+    <string name="icon_category_goals">目标</string>
+    <string name="icon_category_mood">心情</string>
+    <string name="icon_category_other">其他</string>
+    
+    <!-- Field Components -->
+    <string name="field_input_hint">输入后按回车添加</string>
+    <string name="field_select_date">选择日期</string>
+    <string name="field_start">开始</string>
+    <string name="field_end">结束</string>
+    <string name="field_decrease">减少</string>
+    <string name="field_increase">增加</string>
+    <string name="field_add_image">添加图片</string>
+    
+    <!-- Asset Tags -->
+    <string name="tag_own">自有</string>
+    <string name="tag_gifted">赠予</string>
+    <string name="tag_borrowed">借入</string>
+    <string name="tag_rented">租用</string>
+    <string name="tag_homemade">自制</string>
+    <string name="tag_found">拣拾</string>
+    <string name="tag_temporary">暂存</string>
+    <string name="tag_lent">借出</string>
+    <string name="tag_rented_out">租出</string>
+    <string name="tag_under_repair">维修</string>
+    <string name="tag_inspection">送检</string>
+    <string name="tag_modified">改装</string>
+    <string name="tag_maintenance">保养</string>
+    <string name="tag_returned">退换</string>
+    <string name="tag_shipping">运输</string>
+    <string name="tag_exhibited">展出</string>
+    <string name="tag_sold">出售</string>
+    <string name="tag_transferred">转让</string>
+    <string name="tag_given">赠送</string>
+    <string name="tag_donated">捐赠</string>
+    <string name="tag_refunded">退还</string>
+    <string name="tag_discarded">丢弃</string>
+    <string name="tag_scrapped">报废</string>
+    <string name="tag_lost">遗失</string>
+    <string name="tag_stolen">失窃</string>
+    <string name="tag_expired">过期</string>
+    <string name="tag_other">其他</string>
+    
+    <!-- Settings Messages -->
+    <string name="settings_sync_success">已同步 %d 个纪念日到系统日历</string>
+    <string name="settings_sync_failed">同步失败: %s</string>
+    <string name="settings_sync_cleared">已清除同步日历</string>
+    <string name="settings_export_failed">导出失败: %s</string>
+    <string name="settings_import_success">导入成功，共 %d 条记录</string>
+    <string name="settings_import_no_data">未找到可导入的数据</string>
+    <string name="settings_import_failed">导入失败: %s</string>
+    <string name="settings_cache_cleared">缓存已清除</string>
+    <string name="settings_cache_clear_failed">清除失败: %s</string>
+    <string name="close">关闭</string>
+    <string name="settings_appearance_subtitle">主题、语言、主题色</string>
+    <string name="settings_general_subtitle">启动页、账单类型、预算提醒</string>
+    <string name="settings_reminder_subtitle">日常提醒、账单提醒、生日提醒</string>
+    <string name="settings_data_subtitle">导出、导入、回收站</string>
+    <string name="life_saving_title">储蓄计划</string>
+    <string name="life_empty_habit_start">开始打卡</string>
+    <string name="life_empty_habit_hint">养成良好的习惯</string>
+    <string name="life_empty_countup">暂无正数日</string>
+    <string name="life_empty_countup_subtitle">记录值得纪念的日子</string>
+    <string name="life_empty_countup_action">创建正数日</string>
+    
+    <!-- Life - Template Empty States -->
+    <string name="life_empty_saving_title">暂无存钱计划</string>
+    <string name="life_empty_saving_subtitle">设定一个目标，开始攒钱吧</string>
+    <string name="life_empty_shopping_title">心愿单是空的</string>
+
+    <string name="life_empty_travel_title">暂无旅行计划</string>
+
+    <string name="life_empty_reading_title">书架是空的</string>
+
+    <string name="life_empty_study_title">暂无学习计划</string>
+
+    <string name="life_empty_todo_title">没有待办事项</string>
+
+    <string name="life_empty_countup_title">暂无正数日</string>
+
+    <string name="life_empty_countdown_title">没有倒计时</string>
+
+    <string name="life_empty_birthday_title">暂无生日记录</string>
+
+    <string name="life_empty_anniversary_title">暂无纪念日</string>
+
+    <string name="life_empty_subscription_title">暂无订阅记录</string>
+
+    <string name="life_empty_habit_title">开始你的第一个习惯</string>
+    <string name="life_empty_habit_subtitle">选择一个习惯，每天打卡</string>
+    <string name="life_empty_mood_title">今天还没记录心情</string>
+    <string name="life_empty_mood_subtitle">记录此刻的感受</string>
+    <string name="life_empty_journal_title">还没有日记</string>
+    <string name="life_empty_journal_subtitle">写下今天发生的事</string>
+    <string name="life_empty_focus_title">暂无专注记录</string>
+    <string name="life_empty_focus_subtitle">开始一段专注时光</string>
+    <string name="life_empty_report_title">暂无报告数据</string>
+    <string name="life_empty_report_subtitle">积累数据后自动生成报告</string>
+    <string name="life_empty_default_title">暂无数据</string>
+    <string name="life_empty_default_subtitle">点击 + 开始添加</string>
+    <string name="life_habit_times">次</string>
+    <string name="settings_notification_permission_title">开启通知权限</string>
+    <string name="settings_notification_permission_text">需要通知权限才能按时提醒您。我们不会发送垃圾通知。</string>
+    <string name="settings_notification_permission_allow">允许</string>
+    <string name="settings_notification_denied_title">权限已拒绝</string>
+    <string name="settings_notification_denied_text">通知权限已被永久拒绝，需要前往系统设置手动开启。</string>
+    <string name="settings_notification_denied_go_settings">去设置</string>
+    <string name="privacy_dialog_title">用户协议与隐私政策</string>
+    <string name="privacy_dialog_text">感谢您使用 PalmNote。在开始之前，请仔细阅读并同意我们的用户协议和隐私政策。我们将收集必要的数据以提供应用功能，不会未经授权共享您的个人信息。</string>
+    <string name="privacy_dialog_agree">同意</string>
+    <string name="privacy_dialog_disagree">不同意</string>
+    <string name="privacy_dialog_view_policy">查看隐私政策</string>
+    <string name="privacy_dialog_view_terms">查看用户协议</string>
+    <string name="privacy_dialog_view_links">点击"关于"页面可查看完整的《用户协议》和《隐私政策》</string>
+    <string name="privacy_policy_content">PalmNote（以下简称"本应用"）尊重并保护用户隐私。本应用不会收集任何个人身份信息，所有数据仅存储在用户设备本地。我们不会向任何第三方共享您的数据。本应用可能使用第三方SDK（如Coil图片加载库）以提供正常功能，这些SDK不会收集您的个人信息。如您有任何疑问，可通过应用内的联系方式与我们取得联系。</string>
+    <string name="terms_content">欢迎使用PalmNote。本应用是一款本地记录工具，所有数据存储在用户设备本地。用户应合理使用本应用，不得利用本应用从事违法违规活动。本应用按"现状"提供，不提供任何明示或暗示的保证。在适用法律允许的最大范围内，开发者不承担因使用本应用而产生的任何直接或间接损失。我们保留随时修改本协议的权利，修改后的协议一经发布即生效。</string>
+
+    <string name="field_select_time">选择时间</string>
+    <string name="field_enabled">已开启</string>
+    <string name="field_disabled">未开启</string>
+    <string name="field_option">选项%s</string>
+    <string name="field_url_placeholder">https://</string>
+    <string name="field_email_placeholder">example@email.com</string>
+    <string name="field_phone_placeholder">手机号码</string>
+    <string name="field_color_placeholder">#HEX</string>
+    <string name="field_image_placeholder">输入图片URL或路径</string>
+    <string name="field_image_helper">支持本地路径和网络URL</string>
+    <string name="field_location_placeholder">输入地点名称或地址</string>
+    <string name="field_duration_format">HH:mm</string>
+
+    <string name="life_preset_templates">预设模板</string>
+    <string name="life_custom_templates">自定义模板</string>
+    <string name="life_no_custom_templates">暂无自定义模板</string>
+    <string name="life_preset">预设</string>
+
+    <string name="life_create_template">创建模板</string>
+
+    <!-- Trigger Engine Notifications -->
+    <string name="trigger_saving_goal_title">存钱目标达成</string>
+    <string name="trigger_saving_goal_message">恭喜达成心愿「%s」！</string>
+    <string name="trigger_status_updated_title">状态已更新</string>
+    <string name="trigger_status_updated_message">「%s」已完成</string>
+    
+    <!-- Default Goal Categories -->
+    <string name="goal_category_fitness">运动健身</string>
+    <string name="goal_category_reading">阅读学习</string>
+    <string name="goal_category_skill">技能提升</string>
+    <string name="goal_category_habit">日常习惯</string>
+    <string name="goal_category_project">项目计划</string>
+    <string name="goal_category_savings">储蓄理财</string>
+    <string name="goal_category_custom">自定义</string>
+    
+    <!-- Default Anniversary Types -->
+    <string name="anniversary_type_birthday">生日</string>
+    <string name="anniversary_type_wedding">结婚纪念</string>
+    <string name="anniversary_type_meeting">相识纪念</string>
+    <string name="anniversary_type_graduation">毕业纪念</string>
+    <string name="anniversary_type_work">工作纪念</string>
+    <string name="anniversary_type_travel">旅行纪念</string>
+    <string name="anniversary_type_baby">宝宝纪念</string>
+    <string name="anniversary_type_pet">宠物纪念</string>
+    <string name="anniversary_type_custom">自定义</string>
+    
+    <!-- Default Moment Categories -->
+    <string name="moment_category_travel">旅行</string>
+    <string name="moment_category_food">美食</string>
+    <string name="moment_category_family">家庭</string>
+    <string name="moment_category_work">工作</string>
+    <string name="moment_category_friends">朋友</string>
+    <string name="moment_category_hobby">爱好</string>
+    <string name="moment_category_nature">自然</string>
+    <string name="moment_category_pet">宠物</string>
+    <string name="moment_category_custom">自定义</string>
+    
+    <!-- Default Tags -->
+    <string name="tag_default_important">重要</string>
+    <string name="tag_default_daily">日常</string>
+    <string name="tag_default_work">工作</string>
+    <string name="tag_default_life">生活</string>
+    <string name="tag_default_study">学习</string>
+    <string name="tag_default_entertainment">娱乐</string>
+    <string name="tag_default_travel">旅行</string>
+    <string name="tag_default_food">美食</string>
+    <string name="tag_default_family">家庭</string>
+    <string name="tag_default_friends">朋友</string>
+    <string name="tag_default_health">健康</string>
+    <string name="tag_default_finance">财务</string>
+    <string name="tag_default_shopping">购物</string>
+    <string name="tag_default_gift">礼物</string>
+</resources>

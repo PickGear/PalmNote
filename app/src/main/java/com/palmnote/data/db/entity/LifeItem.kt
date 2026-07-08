@@ -1,0 +1,30 @@
+package com.palmnote.data.db.entity
+
+import androidx.room.Entity
+import androidx.room.Index
+import androidx.room.PrimaryKey
+
+@Entity(
+    tableName = "life_items",
+    indices = [
+        Index(value = ["templateId", "status"], name = "idx_items_template_status"),
+        Index(value = ["templateId"], name = "idx_items_template"),
+        Index(value = ["createdAt"], name = "idx_items_created"),
+        Index(value = ["status"], name = "idx_items_status")
+    ]
+)
+data class LifeItem(
+    @PrimaryKey(autoGenerate = true)
+    val id: Long = 0,
+    val templateId: Long,
+    val title: String,
+    val fieldsData: String = "{}",
+    val status: String = "ACTIVE",
+    val note: String = "",
+    val sortOrder: Int = 0,
+    val isFavorite: Boolean = false,
+    val isDeleted: Boolean = false,
+    val deletedAt: Long? = null,
+    val createdAt: Long = System.currentTimeMillis(),
+    val updatedAt: Long = System.currentTimeMillis()
+)
