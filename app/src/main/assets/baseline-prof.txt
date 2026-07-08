@@ -1,0 +1,6 @@
+HSPLcom/palmnote/MainActivity;->onCreate(Landroid/os/Bundle;)V
+HSPLcom/palmnote/ui/navigation/AppNavigationKt;->PalmNoteNavHost(Landroidx/compose/runtime/Composer;I)V
+HSPLcom/palmnote/ui/dashboard/DashboardScreen;->DashboardScreen(Landroidx/compose/runtime/Composer;I)V
+HSPLcom/palmnote/ui/bills/BillScreen;->BillScreen(Landroidx/compose/runtime/Composer;I)V
+HSPLcom/palmnote/ui/asset/AssetScreen;->AssetScreen(Landroidx/compose/runtime/Composer;I)V
+HSPLcom/palmnote/ui/life/LifeScreen;->LifeScreen(Landroidx/compose/runtime/Composer;I)V

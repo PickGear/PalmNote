@@ -1,0 +1,35 @@
+complexity:
+  LongMethod:
+    threshold: 60
+  LongParameterList:
+    functionThreshold: 10
+    constructorThreshold: 10
+  ComplexMethod:
+    threshold: 15
+  TooManyFunctions:
+    threshold: 30
+
+style:
+  MaxLineLength:
+    maxLineLength: 140
+  MagicNumber:
+    active: false
+  ReturnCount:
+    max: 4
+  ForbiddenComment:
+    active: false
+
+naming:
+  FunctionNaming:
+    # Allow composable functions (PascalCase)
+    functionPattern: '[a-zA-Z][a-zA-Z0-9]*'
+  TopLevelPropertyNaming:
+    constantPattern: '[A-Za-z][_A-Za-z0-9]*'
+
+empty-blocks:
+  EmptyFunctionBlock:
+    ignoreOverridden: true
+
+exceptions:
+  TooGenericExceptionCaught:
+    active: false
