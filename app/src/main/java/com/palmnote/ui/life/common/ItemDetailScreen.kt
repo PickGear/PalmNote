@@ -71,6 +71,7 @@ fun ItemDetailScreen(
     val state by viewModel?.uiState?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(ItemDetailUiState()) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     if (showDeleteDialog) {
         AppDialog(
@@ -99,9 +100,9 @@ fun ItemDetailScreen(
                 actions = {
                     IconButton(onClick = onEdit) { Icon(Icons.Default.Edit, stringResource(R.string.edit)) }
                     Box {
-                        IconButton(onClick = { showMoreMenu = true }) { Icon(Icons.Default.MoreVert, "\u66F4\u591A") }
+                        IconButton(onClick = { showMoreMenu = true }) { Icon(Icons.Default.MoreVert, stringResource(R.string.life_item_more)) }
                         DropdownMenu(expanded = showMoreMenu, onDismissRequest = { showMoreMenu = false }) {
-                            DropdownMenuItem(text = { Text("\u5220\u9664") }, onClick = { showMoreMenu = false; showDeleteDialog = true })
+                            DropdownMenuItem(text = { Text(stringResource(R.string.life_item_delete)) }, onClick = { showMoreMenu = false; showDeleteDialog = true })
                         }
                     }
                 },
@@ -111,7 +112,7 @@ fun ItemDetailScreen(
         containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
         if (item == null || template == null) {
-            Box(modifier = Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) { Text("\u6570\u636E\u4E0D\u5B58\u5728", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            Box(modifier = Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) { Text(stringResource(R.string.life_item_data_not_found), color = MaterialTheme.colorScheme.onSurfaceVariant) }
             return@Scaffold
         }
 
@@ -133,7 +134,7 @@ fun ItemDetailScreen(
                         .clickable {
                             if (!isActive) {
                                 viewModel?.updateStatus(key ?: "ACTIVE")
-                                scope.launch { snackbarHostState.showSnackbar("\u5DF2\u66F4\u65B0\u4E3A\u300C${label ?: key}\u300D") }
+                                scope.launch { snackbarHostState.showSnackbar(context.getString(R.string.life_item_updated_to, label ?: key ?: "")) }
                             }
                         }
                         .padding(horizontal = 12.dp, vertical = 4.dp)
@@ -177,7 +178,7 @@ fun ItemDetailScreen(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text("${(progress * 100).toInt()}%", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = detailColor)
                         if (tot > 0) Text("$cur / $tot", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        else Text("\u8FDB\u5EA6", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        else Text(stringResource(R.string.life_item_progress), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
@@ -202,9 +203,12 @@ fun ItemDetailScreen(
                 if (detailFields.isEmpty() && data != null) {
                     data.entries.forEach { (key, value) ->
                         if (value is JsonPrimitive && value.content.isNotEmpty()) {
+                            val displayValue = value.content.toLongOrNull()?.let { millis ->
+                                try { java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date(millis)) } catch (_: Exception) { value.content }
+                            } ?: value.content
                             Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
                                 Text(key, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(0.35f))
-                                Text(value.content, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(0.65f))
+                                Text(displayValue, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(0.65f))
                             }
                             HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
                         }
@@ -224,7 +228,7 @@ fun ItemDetailScreen(
 
             if (item.note.isNotBlank()) {
                 Column(modifier = Modifier.padding(horizontal = 20.dp)) {
-                    Text("\u5907\u6CE8", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.life_item_notes), fontSize = 11.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(item.note, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
                 }
@@ -235,28 +239,28 @@ fun ItemDetailScreen(
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp).clickable { linksExpanded = !linksExpanded }) {
                     Icon(Icons.Default.Link, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("\u5173\u8054\u6570\u636E", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
+                    Text(stringResource(R.string.life_item_linked_data), fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
                     Spacer(modifier = Modifier.weight(1f))
                     val linkCount = state.links.size
-                    Text(if (linkCount > 99) "99+" else "${linkCount} \u9879", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(if (linkCount > 99) "99+" else stringResource(R.string.life_item_link_count, linkCount), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(modifier = Modifier.width(4.dp))
                     Icon(if (linksExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
                 }
                 AnimatedVisibility(visible = linksExpanded, enter = expandVertically(animationSpec = tween(200)) + fadeIn(tween(200)), exit = shrinkVertically(animationSpec = tween(200)) + fadeOut(tween(200))) {
                     Column(modifier = Modifier.animateContentSize(tween(200))) {
                         if (state.links.isEmpty()) {
-                            Text("\u6682\u65E0\u5173\u8054", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
+                            Text(stringResource(R.string.life_item_no_links), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
                         } else {
                             state.links.forEach { link ->
                                 Row(modifier = Modifier.padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                                     Icon(Icons.Default.Link, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
                                     Spacer(modifier = Modifier.width(6.dp))
-                                    Text("\u5173\u8054 ${link.targetType.name}", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
+                                    Text(link.targetType.name, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
                                 }
                             }
                         }
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text("\u70B9\u51FB\u6DFB\u52A0\u5173\u8054\u8D26\u5355\u6216\u7269\u54C1", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary, modifier = Modifier.clickable { showLinkSelector = true })
+                        Text(stringResource(R.string.life_item_add_link_hint), fontSize = 12.sp, color = MaterialTheme.colorScheme.primary, modifier = Modifier.clickable { showLinkSelector = true })
                     }
                 }
             }
@@ -264,11 +268,11 @@ fun ItemDetailScreen(
             Spacer(modifier = Modifier.height(8.dp))
 
             Column(modifier = Modifier.padding(horizontal = 20.dp)) {
-                Text("\u65F6\u95F4", fontSize = 12.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.life_item_time), fontSize = 12.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(modifier = Modifier.height(4.dp))
-                Text("\u521B\u5EFA\u4E8E ${formatTimeAgo(item.createdAt)}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.life_item_created_at, formatTimeAgo(context, item.createdAt)), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 if (item.updatedAt > 0 && item.updatedAt != item.createdAt) {
-                    Text("\u66F4\u65B0\u4E8E ${formatTimeAgo(item.updatedAt)}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.life_item_updated_at, formatTimeAgo(context, item.updatedAt)), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
 
@@ -287,15 +291,15 @@ fun ItemDetailScreen(
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = detailColor)
                     ) {
-                        Text("\u5B58\u5165\u4E00\u7B14", fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                        Text(stringResource(R.string.life_item_deposit), fontSize = 13.sp, fontWeight = FontWeight.Medium)
                     }
                 }
                 OutlinedButton(
-                    onClick = { viewModel?.archive(); scope.launch { snackbarHostState.showSnackbar("\u6761\u76EE\u5DF2\u5F52\u6863\uFF0C\u53EF\u5728\u56DE\u6536\u7AD9\u627E\u56DE") } },
+                    onClick = { viewModel?.archive(); scope.launch { snackbarHostState.showSnackbar(context.getString(R.string.life_item_archived_hint)) } },
                     modifier = Modifier.then(if (isSavingPlan) Modifier.weight(1f) else Modifier.fillMaxWidth()).height(40.dp),
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text("\u5F52\u6863", fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                    Text(stringResource(R.string.life_item_archive), fontSize = 13.sp, fontWeight = FontWeight.Medium)
                 }
             }
         }

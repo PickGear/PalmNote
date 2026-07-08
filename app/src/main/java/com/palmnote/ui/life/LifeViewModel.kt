@@ -118,7 +118,7 @@ class LifeViewModel @Inject constructor(
                         "calendar_month" -> goalRepo.getHabitGoals().map { goals -> tpl.id to if (goals.isEmpty()) emptyList() else listOf(LifeItem(templateId = tpl.id, title = goals.first().title)) }
                         "book" -> momentRepo.getAllMoments().map { moments -> tpl.id to if (moments.isEmpty()) emptyList() else listOf(LifeItem(templateId = tpl.id, title = moments.first().title.take(30))) }
                         "mood" -> moodRepo.getAllMoodDiaries().map { diaries -> tpl.id to if (diaries.isEmpty()) emptyList() else listOf(LifeItem(templateId = tpl.id, title = diaries.first().content.take(20))) }
-                        "timer" -> flow { emit(focusRepo.getTodayTotalMinutes(0L, System.currentTimeMillis())) }.map { mins -> tpl.id to if (mins > 0) listOf(LifeItem(templateId = tpl.id, title = "\u4ECA\u65E5\u4E13\u6CE8 ${mins}\u5206\u949F")) else emptyList() }
+                        "timer" -> flow { emit(focusRepo.getTodayTotalMinutes(0L, System.currentTimeMillis())) }.map { mins -> tpl.id to if (mins > 0) listOf(LifeItem(templateId = tpl.id, title = application.applicationContext.getString(R.string.life_focus_preview_today, mins.toInt()))) else emptyList() }
                         "BarChart", "assessment" -> itemRepo.getActiveItemsByTemplate(tpl.id, 3).map { items -> tpl.id to items }
                         else -> itemRepo.getActiveItemsByTemplate(tpl.id, 3).map { items -> tpl.id to items }
                     }

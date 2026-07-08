@@ -1,6 +1,7 @@
 package com.palmnote.data.backup
 
 import android.content.Context
+import com.palmnote.R
 import com.palmnote.data.db.AppDatabase
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -26,7 +27,7 @@ class BackupRepository @Inject constructor(
             emit(BackupState.Progress(100))
             emit(BackupState.Success(file.absolutePath))
         } catch (e: Exception) {
-            emit(BackupState.Error(e.message ?: "备份失败"))
+            emit(BackupState.Error(e.message ?: context.getString(R.string.backup_error_create_failed)))
         }
     }.flowOn(Dispatchers.IO)
 
@@ -40,7 +41,7 @@ class BackupRepository @Inject constructor(
             emit(BackupState.Progress(100))
             emit(BackupState.Success(file.absolutePath))
         } catch (e: Exception) {
-            emit(BackupState.Error(e.message ?: "恢复失败"))
+            emit(BackupState.Error(e.message ?: context.getString(R.string.backup_error_restore_failed)))
         }
     }.flowOn(Dispatchers.IO)
 

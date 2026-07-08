@@ -3,6 +3,7 @@ package com.palmnote.data.export
 import android.content.Context
 import android.net.Uri
 import android.util.Log
+import com.palmnote.R
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -244,7 +245,7 @@ class CsvDataExporter(
                     })
                 )
                 val outputStream = context.contentResolver.openOutputStream(uri)
-                    ?: return@withContext Result.failure(Exception("无法创建文件"))
+                    ?: return@withContext Result.failure(Exception(context.getString(R.string.export_error_create_file)))
                 outputStream.use { os ->
                     ZipOutputStream(BufferedOutputStream(os)).use { zos ->
                         for ((csvName, classes) in CSV_GROUPS) {
@@ -280,16 +281,16 @@ class CsvDataExporter(
                         zos.flush()
                     }
                 }
-                val imgSuffix = if (imageFileMap.isNotEmpty()) "，含 ${imageFileMap.size} 张图片" else ""
-                Result.success("导出成功，共 $totalCount 条记录$imgSuffix")
+                val imgSuffix = if (imageFileMap.isNotEmpty()) context.getString(R.string.export_success_images, totalCount, imageFileMap.size) else context.getString(R.string.export_success, totalCount)
+                Result.success(imgSuffix)
             } catch (e: AppException) {
                 Result.failure(e)
             } catch (e: java.io.IOException) {
-                Result.failure(AppException.Io("导出失败: ${e.message}", e))
+                Result.failure(AppException.Io(context.getString(R.string.export_error_io, e.message), e))
             } catch (e: kotlinx.serialization.SerializationException) {
-                Result.failure(AppException.Serialization("导出数据序列化失败: ${e.message}", e))
+                Result.failure(AppException.Serialization(context.getString(R.string.export_error_serialization, e.message), e))
             } catch (e: Exception) {
-                Result.failure(AppException.Unknown("导出发生未知错误: ${e.message}", e))
+                Result.failure(AppException.Unknown(context.getString(R.string.export_error_unknown, e.message), e))
             }
         }
     }
@@ -300,7 +301,7 @@ class CsvDataExporter(
             try {
                 context.contentResolver.openInputStream(uri)?.use { input ->
                     tempFile.outputStream().use { output -> input.copyTo(output) }
-                } ?: return@withContext Result.failure(Exception("无法读取文件"))
+                } ?: return@withContext Result.failure(Exception(context.getString(R.string.export_error_read_file)))
 
                 val zipEntries = mutableMapOf<String, ByteArray>()
                 FileInputStream(tempFile).use { fis ->
@@ -375,11 +376,11 @@ class CsvDataExporter(
             } catch (e: AppException) {
                 Result.failure(e)
             } catch (e: java.io.IOException) {
-                Result.failure(AppException.Io("导入失败: ${e.message}", e))
+                Result.failure(AppException.Io(context.getString(R.string.import_error_io, e.message), e))
             } catch (e: kotlinx.serialization.SerializationException) {
-                Result.failure(AppException.Serialization("导入数据解析失败: ${e.message}", e))
+                Result.failure(AppException.Serialization(context.getString(R.string.import_error_parse, e.message), e))
             } catch (e: Exception) {
-                Result.failure(AppException.Unknown("导入发生未知错误: ${e.message}", e))
+                Result.failure(AppException.Unknown(context.getString(R.string.import_error_unknown, e.message), e))
             } finally {
                 tempFile.delete()
             }

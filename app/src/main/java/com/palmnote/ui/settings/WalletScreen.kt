@@ -180,6 +180,7 @@ private fun WalletItem(
     onClick: () -> Unit,
     onToggleEnabled: () -> Unit
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     val walletColor = try {
         wallet.color.toComposeColor()
     } catch (_: Exception) { AccentOrange }
@@ -218,7 +219,7 @@ private fun WalletItem(
             Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        wallet.displayName,
+                        com.palmnote.ui.components.getLocalizedWalletDisplayName(wallet, context),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Medium,
                         maxLines = 1,
@@ -266,13 +267,14 @@ private fun WalletDetailDialog(
     onSetDefault: () -> Unit,
     onDismiss: () -> Unit
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     val walletColor = try {
         wallet.color.toComposeColor()
     } catch (_: Exception) { AccentOrange }
 
     AppDialog(
         onDismissRequest = onDismiss,
-        title = { Text(wallet.name, fontWeight = FontWeight.Bold) },
+        title = { Text(com.palmnote.ui.components.getLocalizedWalletDisplayName(wallet, context), fontWeight = FontWeight.Bold) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -283,7 +285,7 @@ private fun WalletDetailDialog(
                         Icon(wallet.icon.imageVector, null, modifier = Modifier.size(28.dp), tint = walletColor)
                     }
                     Column {
-                        Text(wallet.displayName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text(com.palmnote.ui.components.getLocalizedWalletDisplayName(wallet, context), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         Text(stringResource(walletTypeResIds[wallet.type] ?: R.string.wallet_type_other), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }

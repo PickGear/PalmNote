@@ -4,6 +4,7 @@ import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.Context
 import android.provider.CalendarContract
+import com.palmnote.R
 import com.palmnote.data.db.entity.Anniversary
 import com.palmnote.data.repository.AnniversaryRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -21,9 +22,11 @@ class CalendarSyncManager @Inject constructor(
     private val anniversaryRepository: AnniversaryRepository
 ) {
     companion object {
-        const val CALENDAR_NAME = "掌记"
         const val CALENDAR_ACCOUNT = "com.palmnote.sync"
     }
+
+    private fun getCalendarName(): String = context.getString(R.string.calendar_sync_name)
+    private fun getCalendarDisplayName(): String = context.getString(R.string.calendar_sync_display_name)
 
     private fun getOrCreateCalendarId(): Long? {
         val resolver = context.contentResolver
@@ -34,7 +37,7 @@ class CalendarSyncManager @Inject constructor(
         val selection = "${CalendarContract.Calendars.NAME} = ?"
         val cursor = resolver.query(
             CalendarContract.Calendars.CONTENT_URI,
-            projection, selection, arrayOf(CALENDAR_NAME), null
+            projection, selection, arrayOf(getCalendarName()), null
         )
         cursor?.use {
             if (it.moveToFirst()) {
@@ -43,10 +46,10 @@ class CalendarSyncManager @Inject constructor(
         }
 
         val values = ContentValues().apply {
-            put(CalendarContract.Calendars.NAME, CALENDAR_NAME)
+            put(CalendarContract.Calendars.NAME, getCalendarName())
             put(CalendarContract.Calendars.ACCOUNT_NAME, CALENDAR_ACCOUNT)
             put(CalendarContract.Calendars.ACCOUNT_TYPE, CalendarContract.ACCOUNT_TYPE_LOCAL)
-            put(CalendarContract.Calendars.CALENDAR_DISPLAY_NAME, "掌记同步")
+            put(CalendarContract.Calendars.CALENDAR_DISPLAY_NAME, getCalendarDisplayName())
             put(CalendarContract.Calendars.CALENDAR_COLOR, 0xFF4A7A5E.toInt())
             put(CalendarContract.Calendars.CALENDAR_ACCESS_LEVEL, CalendarContract.Calendars.CAL_ACCESS_OWNER)
             put(CalendarContract.Calendars.OWNER_ACCOUNT, CALENDAR_ACCOUNT)
@@ -66,7 +69,7 @@ class CalendarSyncManager @Inject constructor(
 
     suspend fun syncAnniversaries(): Result<Int> = withContext(Dispatchers.IO) {
         try {
-            val calendarId = getOrCreateCalendarId() ?: return@withContext Result.failure(Exception("无法创建日历"))
+            val calendarId = getOrCreateCalendarId() ?: return@withContext Result.failure(Exception(context.getString(R.string.calendar_sync_error_create_failed)))
             val resolver = context.contentResolver
             val anniversaries = anniversaryRepository.getAllAnniversaries().first().filter { !it.isDeleted && it.isYearly }
 
@@ -78,7 +81,7 @@ class CalendarSyncManager @Inject constructor(
             }
             Result.success(count)
         } catch (e: SecurityException) {
-            Result.failure(Exception("缺少日历权限"))
+            Result.failure(Exception(context.getString(R.string.calendar_sync_error_permission_missing)))
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -119,10 +122,10 @@ class CalendarSyncManager @Inject constructor(
 
         val values = ContentValues().apply {
             put(CalendarContract.Events.CALENDAR_ID, calendarId)
-            put(CalendarContract.Events.TITLE, anniv.title.ifEmpty { "纪念日" })
+            put(CalendarContract.Events.TITLE, anniv.title.ifEmpty { context.getString(R.string.calendar_event_anniversary) })
             put(CalendarContract.Events.DESCRIPTION, buildString {
                 if (anniv.description.isNotEmpty()) append(anniv.description).append("\n")
-                if (anniv.personName.isNotEmpty()) append("人物: ${anniv.personName}")
+                if (anniv.personName.isNotEmpty()) append(context.getString(R.string.calendar_event_person_format, anniv.personName))
             })
             put(CalendarContract.Events.DTSTART, cal.timeInMillis)
             put(CalendarContract.Events.DTEND, endCal.timeInMillis)

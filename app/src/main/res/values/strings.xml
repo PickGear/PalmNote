@@ -573,7 +573,7 @@
     <string name="life_focus_stats">统计</string>
     <string name="life_focus_today">今日专注</string>
     <string name="life_focus_today_minutes">累计 %d 分钟</string>
-    <string name="life_focus_today_summary">今日专注 %1$d 分钟，总计 %1$d 分钟</string>
+    <string name="life_focus_today_summary">今日专注 %1$d 分钟，总计 %2$d 分钟</string>
     <string name="life_focus_pause">暂停</string>
     <string name="life_focus_start">开始</string>
     <string name="life_focus_complete">完成</string>
@@ -668,6 +668,11 @@
     <string name="bill_import_error_ocr_invalid">未能识别到有效的交易记录</string>
     <string name="bill_import_error_ocr_failed">识别失败: %s</string>
     <string name="bill_import_error_invalid_amount">请输入有效金额</string>
+    
+    <!-- Widget -->
+    <string name="widget_app_name">掌记</string>
+    <string name="widget_monthly_expense">本月支出</string>
+    <string name="widget_monthly_income">本月收入</string>
     
     <!-- Bill Import Diagnostics -->
     <string name="bill_import_diag_file_size">文件大小: %d字节</string>
@@ -852,6 +857,19 @@
     <string name="bill_error_amount_required">请输入有效金额</string>
     <string name="bill_error_category_required">请选择分类</string>
     
+    <!-- Backup Error Messages -->
+    <string name="backup_error_corrupted">备份文件损坏或为空</string>
+    <string name="backup_error_create_failed">备份失败</string>
+    <string name="backup_error_restore_failed">恢复失败</string>
+    
+    <!-- Calendar Sync -->
+    <string name="calendar_sync_name">掌记</string>
+    <string name="calendar_sync_display_name">掌记同步</string>
+    <string name="calendar_sync_error_create_failed">无法创建日历</string>
+    <string name="calendar_sync_error_permission_missing">缺少日历权限</string>
+    <string name="calendar_event_anniversary">纪念日</string>
+    <string name="calendar_event_person_format">人物: %s</string>
+    
     <!-- Field Validation -->
     <string name="field_error_required">%s不能为空</string>
     <string name="field_error_invalid_number">请输入有效数字</string>
@@ -929,7 +947,7 @@
     <string name="notification_milestone_title">正数日里程碑</string>
     <string name="notification_milestone_message">你的「%1$s」已经坚持了 %2$d 天！</string>
     <string name="notification_subscription_title">订阅扣费提醒</string>
-    <string name="notification_subscription_message">「%1$s」今日扣费 %1$s</string>
+    <string name="notification_subscription_message">「%1$s」今日扣费 %2$s</string>
     
     <!-- Notification Channels -->
     <string name="notification_channel_life">生活动态</string>
@@ -1523,4 +1541,125 @@
     <string name="tag_default_finance">财务</string>
     <string name="tag_default_shopping">购物</string>
     <string name="tag_default_gift">礼物</string>
+    
+    <!-- TimeAgo & Relative Time -->
+    <string name="time_just_now">刚刚</string>
+    <string name="time_minutes_ago">%d分钟前</string>
+    <string name="time_hours_ago">%d小时前</string>
+    <string name="time_days_ago">%d天前</string>
+    <string name="time_weeks_ago">%d周前</string>
+    <string name="time_months_ago">%d个月前</string>
+    <string name="time_years_ago">%d年前</string>
+    <string name="time_today">今天 %s</string>
+    <string name="time_yesterday">昨天 %s</string>
+    
+    <!-- Life Cards -->
+    <string name="life_card_status_completed">已完成</string>
+    <string name="life_card_status_archived">已归档</string>
+    <string name="life_card_status_ongoing">进行中</string>
+    <string name="life_card_today">今天</string>
+    <string name="life_card_expired_prefix">已过</string>
+    <string name="life_card_expired_overflow">999+</string>
+    <string name="life_card_tap_to_view">点击查看</string>
+    <string name="life_card_more_events">（还有%d个事件）</string>
+    <string name="life_card_days_unit">天</string>
+    <string name="life_card_goal">目标</string>
+    <string name="life_card_pages">页</string>
+    <string name="life_card_budget">预算</string>
+    <string name="life_card_streak_days">连续%d天</string>
+    <string name="life_card_target_days">目标%d天</string>
+    <string name="life_card_completed_lessons">已完成%d节</string>
+    <string name="life_card_total_lessons">共%d节</string>
+    
+    <!-- Life Item Detail -->
+    <string name="life_item_more">更多</string>
+    <string name="life_item_delete">删除</string>
+    <string name="life_item_data_not_found">数据不存在</string>
+    <string name="life_item_updated_to">已更新为「%s」</string>
+    <string name="life_item_progress">进度</string>
+    <string name="life_item_notes">备注</string>
+    <string name="life_item_linked_data">关联数据</string>
+    <string name="life_item_link_count">%d 项</string>
+    <string name="life_item_no_links">暂无关联</string>
+    <string name="life_item_add_link_hint">点击添加关联账单或物品</string>
+    <string name="life_item_time">时间</string>
+    <string name="life_item_created_at">创建于 %s</string>
+    <string name="life_item_updated_at">更新于 %s</string>
+    <string name="life_item_deposit">存入一笔</string>
+    <string name="life_item_archived_hint">条目已归档，可在回收站找回</string>
+    <string name="life_item_archive">归档</string>
+    
+    <!-- Life Dynamic Form -->
+    <string name="life_form_save_failed">保存失败，请重试</string>
+    <string name="life_form_save_success">保存成功</string>
+    <string name="life_form_saved">已保存</string>
+    <string name="life_form_save_changes">保存修改</string>
+    <string name="life_form_save">保存</string>
+    
+    <!-- Life Link Selector -->
+    <string name="life_link_title">关联数据</string>
+    <string name="life_link_bills">账单</string>
+    <string name="life_link_no_bills">暂无账单</string>
+    <string name="life_link_bill_format">账单 #%d</string>
+    <string name="life_link_assets">物品</string>
+    <string name="life_link_no_assets">暂无物品</string>
+    
+    <!-- Mood Trend Chart -->
+    <string name="life_mood_monthly_distribution">月度心情分布</string>
+    
+    <!-- Life Focus Preview -->
+    <string name="life_focus_preview_today">今日专注 %d分钟</string>
+    
+    <!-- Life Template Field Labels -->
+    <string name="life_field_target_amount">目标金额</string>
+    <string name="life_field_saved_amount">已存金额</string>
+    <string name="life_field_target_date">目标日期</string>
+    <string name="life_field_budget_amount">预算金额</string>
+    <string name="life_field_spent">已花费</string>
+    <string name="life_field_store">店铺</string>
+    <string name="life_field_shopping_item">购物项目</string>
+    <string name="life_field_destination">目的地</string>
+    <string name="life_field_start_date">出发日期</string>
+    <string name="life_field_return_date">返程日期</string>
+    <string name="life_field_budget">预算</string>
+    <string name="life_field_total_pages">总页数</string>
+    <string name="life_field_current_pages">当前页数</string>
+    <string name="life_field_author">作者</string>
+    <string name="life_field_course_name">课程名称</string>
+    <string name="life_field_total_lessons">总节数</string>
+    <string name="life_field_completed_lessons">完成节数</string>
+    <string name="life_field_reminder">提醒</string>
+    <string name="life_field_start_date_label">起始日期</string>
+    <string name="life_field_date">日期</string>
+    <string name="life_field_notes">备注</string>
+    <string name="life_field_target_days">目标天数</string>
+    <string name="life_field_streak_days">连续天数</string>
+    <string name="life_field_billing_amount">扣费金额</string>
+    <string name="life_field_billing_cycle">扣费周期</string>
+    <string name="life_field_billing_day">扣费日</string>
+    <string name="life_field_next_billing">下次扣费</string>
+    
+    <!-- Life Template Field Units -->
+    <string name="life_unit_currency">¥</string>
+    <string name="life_unit_pages">页</string>
+    <string name="life_unit_days">天</string>
+    <string name="life_unit_lessons">节</string>
+    <string name="life_unit_number">号</string>
+    
+    <!-- Life Template Status Labels -->
+    <string name="life_status_ongoing">进行中</string>
+    <string name="life_status_completed">已完成</string>
+    <string name="life_status_archived">已归档</string>
+    
+    <!-- CSV Export/Import -->
+    <string name="export_error_create_file">无法创建文件</string>
+    <string name="export_success">导出成功，共 %d 条记录</string>
+    <string name="export_success_images">导出成功，共 %1$d 条记录，含 %2$d 张图片</string>
+    <string name="export_error_io">导出失败: %s</string>
+    <string name="export_error_serialization">导出数据序列化失败: %s</string>
+    <string name="export_error_unknown">导出发生未知错误: %s</string>
+    <string name="export_error_read_file">无法读取文件</string>
+    <string name="import_error_io">导入失败: %s</string>
+    <string name="import_error_parse">导入数据解析失败: %s</string>
+    <string name="import_error_unknown">导入发生未知错误: %s</string>
 </resources>

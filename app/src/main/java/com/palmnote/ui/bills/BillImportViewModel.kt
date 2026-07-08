@@ -87,14 +87,14 @@ class BillImportViewModel @Inject constructor(
                     _state.value = _state.value.copy(stage = ImportStage.ERROR, error = context.getString(R.string.bill_import_error_read_file))
                     return@launch
                 }
-                diag.append("文件大小: ${rawBytes.size}字节\n")
+                diag.append(context.getString(R.string.bill_import_diag_file_size, rawBytes.size) + "\n")
 
                 val isZip = rawBytes.size >= 4 && rawBytes[0] == 0x50.toByte() && rawBytes[1] == 0x4B.toByte() && rawBytes[2] == 0x03.toByte() && rawBytes[3] == 0x04.toByte()
-                diag.append("格式: ${if (isZip) "XLSX(ZIP)" else "CSV/文本"}\n")
+                diag.append(context.getString(R.string.bill_import_diag_format, if (isZip) "XLSX(ZIP)" else "CSV/Text") + "\n")
 
                 if (isZip) {
                     val parsed = withContext(Dispatchers.IO) { BillXlsxImporter().parseBytes(rawBytes, diag) }
-                    diag.append("解析记录: ${parsed.size}条\n")
+                    diag.append(context.getString(R.string.bill_import_diag_records, parsed.size) + "\n")
                     if (parsed.isEmpty()) {
                         _state.value = _state.value.copy(stage = ImportStage.ERROR, error = context.getString(R.string.bill_import_error_parse_invalid), diagnostic = diag.toString())
                         return@launch
@@ -102,17 +102,17 @@ class BillImportViewModel @Inject constructor(
                     _state.value = _state.value.copy(stage = ImportStage.PREVIEW, parsed = parsed, selectedIndices = parsed.indices.toSet(), format = BillCsvImporter.CsvFormat.WECHAT, diagnostic = diag.toString())
                 } else {
                     val lines = withContext(Dispatchers.IO) { decodeText(rawBytes, diag) }
-                    diag.append("文本行数: ${lines.size}\n")
-                    if (lines.isNotEmpty()) diag.append("首行: ${lines.first().take(80)}\n")
+                    diag.append(context.getString(R.string.bill_import_diag_lines, lines.size) + "\n")
+                    if (lines.isNotEmpty()) diag.append(context.getString(R.string.bill_import_diag_first_line, lines.first().take(80)) + "\n")
                     val importer = BillCsvImporter()
                     val format = importer.detectFormat(lines)
-                    diag.append("识别格式: $format\n")
+                    diag.append(context.getString(R.string.bill_import_diag_detected_format, format) + "\n")
                     if (format == BillCsvImporter.CsvFormat.UNKNOWN) {
                         _state.value = _state.value.copy(stage = ImportStage.ERROR, error = context.getString(R.string.bill_import_error_format_unknown), diagnostic = diag.toString())
                         return@launch
                     }
                     val parsed = importer.parseFromLines(lines, format, diag)
-                    diag.append("解析记录: ${parsed.size}条\n")
+                    diag.append(context.getString(R.string.bill_import_diag_records, parsed.size) + "\n")
                     if (parsed.isEmpty()) {
                         _state.value = _state.value.copy(stage = ImportStage.ERROR, error = context.getString(R.string.bill_import_error_parse_invalid), diagnostic = diag.toString())
                         return@launch
@@ -127,7 +127,7 @@ class BillImportViewModel @Inject constructor(
 
     private fun decodeText(rawBytes: ByteArray, diag: StringBuilder): List<String> {
         val encoding = detectEncoding(rawBytes)
-        diag.append("编码: $encoding\n")
+        diag.append(context.getString(R.string.bill_import_diag_encoding, encoding) + "\n")
         val content = try { String(rawBytes, Charset.forName(encoding)) } catch (_: Exception) { String(rawBytes, Charset.forName("UTF-8")) }
         return content.replace("\u0000", "").lines().map { it.trimStart('\uFEFF').trim() }.filter { it.isNotBlank() }
     }
