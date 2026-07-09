@@ -30,9 +30,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.palmnote.R
 import com.palmnote.data.db.entity.FocusRecord
 import com.palmnote.ui.components.AppDialog
+import com.palmnote.ui.components.SecondaryTopAppBar
 import com.palmnote.ui.theme.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -43,7 +45,7 @@ import java.time.format.DateTimeFormatter
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FocusTimerScreen(onBack: () -> Unit, viewModel: FocusViewModel = hiltViewModel()) {
-    val state by viewModel.uiState.collectAsState()
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) { viewModel.load() }
     val focusColor = LifeFocus
 
@@ -85,7 +87,7 @@ fun FocusTimerScreen(onBack: () -> Unit, viewModel: FocusViewModel = hiltViewMod
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            TopAppBar(
+            SecondaryTopAppBar(
                 title = { Text(stringResource(R.string.life_focus_title), fontWeight = FontWeight.Bold, color = focusColor) },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.life_back)) } },
                 actions = { IconButton(onClick = { scope.launch { snackbarHostState.showSnackbar(todaySummary) } }) { Icon(Icons.Default.BarChart, stringResource(R.string.life_focus_stats)) } },
@@ -163,7 +165,7 @@ fun FocusTimerScreen(onBack: () -> Unit, viewModel: FocusViewModel = hiltViewMod
                         onClick = {
                             if (isRunning) {
                                 isRunning = false
-                                val elapsed = selectedMinutes - remainingSeconds / 60
+                                val elapsed = (selectedMinutes * 60 - remainingSeconds + 59) / 60
                                 if (elapsed > 0) viewModel.saveRecord(elapsed, true, startTimeMillis)
                             }
                             remainingSeconds = selectedMinutes * 60
@@ -190,16 +192,17 @@ fun FocusTimerScreen(onBack: () -> Unit, viewModel: FocusViewModel = hiltViewMod
                 val today = java.time.LocalDate.now()
                 val date = Instant.ofEpochMilli(it.startTime).atZone(ZoneId.systemDefault()).toLocalDate()
                 date == today
-            }, key = { it.id }) { record ->
+            }, key = { it.id }) { record: FocusRecord ->
                 val start = Instant.ofEpochMilli(record.startTime).atZone(ZoneId.systemDefault())
-                val end = record.endTime?.let { Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()) }
+                val end: java.time.ZonedDateTime? = record.endTime?.let { Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()) }
                 Card(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 3.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                 ) {
                     Row(modifier = Modifier.padding(12.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("${start.format(DateTimeFormatter.ofPattern("HH:mm"))}${end?.let { " - " + it.format(DateTimeFormatter.ofPattern("HH:mm")) } ?: ""}", fontSize = 13.sp)
+                        val endStr = if (end != null) " - ${end.format(DateTimeFormatter.ofPattern("HH:mm"))}" else ""
+                        Text("${start.format(DateTimeFormatter.ofPattern("HH:mm"))}$endStr", fontSize = 13.sp)
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Default.Check, null, tint = LifeRecord, modifier = Modifier.size(14.dp))
                             Text("${record.durationMinutes}m", color = LifeRecord, fontSize = 13.sp)

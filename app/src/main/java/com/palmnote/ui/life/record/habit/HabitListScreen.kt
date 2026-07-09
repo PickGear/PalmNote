@@ -25,6 +25,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.palmnote.R
 import com.palmnote.data.db.entity.Goal
 import com.palmnote.ui.components.AppDialog
+import com.palmnote.ui.components.SecondaryTopAppBar
+import com.palmnote.ui.components.AppBottomSheet
 import com.palmnote.ui.life.common.FilterChipItem
 import com.palmnote.ui.life.common.SwipeableItem
 import com.palmnote.ui.theme.*
@@ -59,7 +61,7 @@ fun HabitListScreen(onBack: () -> Unit, onItemClick: (Long) -> Unit, onAchieveme
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            TopAppBar(
+            SecondaryTopAppBar(
                 title = { Text(stringResource(R.string.life_habit_checkin) + stringResource(R.string.life_section_title_record), fontWeight = FontWeight.Bold, color = LifeHabit) },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.life_back)) } },
                 actions = {
@@ -151,9 +153,8 @@ fun HabitListScreen(onBack: () -> Unit, onItemClick: (Long) -> Unit, onAchieveme
     }
 
     if (state.showCreateSheet) {
-        ModalBottomSheet(
-            onDismissRequest = { viewModel.dismissCreateSheet() },
-            containerColor = MaterialTheme.colorScheme.surface
+        AppBottomSheet(
+            onDismissRequest = { viewModel.dismissCreateSheet() }
         ) {
             Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).padding(bottom = 32.dp)) {
                 Text(stringResource(R.string.life_habit_new), fontWeight = FontWeight.SemiBold, fontSize = 16.sp)

@@ -45,7 +45,7 @@ class TriggerEngine @Inject constructor(
 ) {
     private val json = Json { ignoreUnknownKeys = true }
     private val scope = CoroutineScope(Dispatchers.IO)
-    private val itemRepo: LifeItemRepository get() = itemRepoProvider.get()
+    private val itemRepo: LifeItemRepository by lazy { itemRepoProvider.get() }
 
     private val rules: List<TriggerRule> = listOf(
         TriggerRule(
@@ -105,11 +105,13 @@ class TriggerEngine @Inject constructor(
                 NotificationHelper.show(context, "trigger_${item.id}", action.title, action.body)
             }
             is TriggerAction.CreateAutoLink -> {
-                crossLinkRepo.createLink(CrossLink(
-                    sourceType = EntityType.ITEM, sourceId = item.id,
-                    targetType = action.targetType, targetId = action.targetId,
-                    linkType = action.linkType, metadata = action.metadata, isAutoLinked = true
-                ))
+                if (action.targetId != item.id) {
+                    crossLinkRepo.createLink(CrossLink(
+                        sourceType = EntityType.ITEM, sourceId = item.id,
+                        targetType = action.targetType, targetId = action.targetId,
+                        linkType = action.linkType, metadata = action.metadata, isAutoLinked = true
+                    ))
+                }
             }
             is TriggerAction.SetFieldValue -> {
                 val newData = data + (action.key to JsonPrimitive(action.valueExpression))

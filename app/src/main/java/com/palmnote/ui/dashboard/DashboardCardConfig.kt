@@ -1,5 +1,6 @@
 package com.palmnote.ui.dashboard
 
+import androidx.compose.runtime.Stable
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -14,6 +15,7 @@ enum class CardType {
     TODAY
 }
 
+@Stable
 @Serializable
 data class DashboardCardConfig(
     val type: CardType,

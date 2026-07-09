@@ -24,6 +24,8 @@ import com.palmnote.domain.util.DateUtils
 import com.palmnote.ui.components.toComposeColor
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -87,7 +89,8 @@ data class AssetDetailState(
     val linkedBill: Bill? = null,
     val costPerDay: Double = 0.0,
     val costPerUse: Double = 0.0,
-    val daysOwned: Int = 0
+    val daysOwned: Int = 0,
+    val isLoading: Boolean = true
 )
 
 @Stable
@@ -274,11 +277,17 @@ class AssetViewModel @Inject constructor(
         return if (ascending) sorted else sorted.reversed()
     }
 
+    private var searchJob: Job? = null
+    
     fun setSearchQuery(query: String) {
-        _state.value = _state.value.copy(
-            searchQuery = query,
-            filteredAssets = filterAssets(_state.value.assets, _state.value.selectedCategory, _state.value.selectedStatus, _state.value.selectedSort, _state.value.sortAscending, query)
-        )
+        _state.value = _state.value.copy(searchQuery = query)
+        searchJob?.cancel()
+        searchJob = viewModelScope.launch {
+            delay(300)
+            _state.value = _state.value.copy(
+                filteredAssets = filterAssets(_state.value.assets, _state.value.selectedCategory, _state.value.selectedStatus, _state.value.selectedSort, _state.value.sortAscending, query)
+            )
+        }
     }
 
     fun toggleViewMode() {
@@ -312,8 +321,12 @@ class AssetViewModel @Inject constructor(
     }
 
     // Asset Detail
+    private var detailJob: Job? = null
+
     fun loadAssetDetail(assetId: Long) {
-        viewModelScope.launch {
+        detailJob?.cancel()
+        _detailState.update { it.copy(isLoading = true) }
+        detailJob = viewModelScope.launch {
             combine(
                 assetRepository.getAssetByIdFlow(assetId),
                 usageRecordRepository.getUsageRecordsByAsset(assetId)
@@ -328,14 +341,17 @@ class AssetViewModel @Inject constructor(
 
                 val linkedBill = asset?.linkedBillId?.let { billRepository.getBillById(it) }
 
-                _detailState.value = AssetDetailState(
-                    asset = asset,
-                    usageRecords = records,
-                    linkedBill = linkedBill,
-                    costPerDay = costPerDay,
-                    costPerUse = costPerUse,
-                    daysOwned = daysOwned
-                )
+                _detailState.update {
+                    AssetDetailState(
+                        asset = asset,
+                        usageRecords = records,
+                        linkedBill = linkedBill,
+                        costPerDay = costPerDay,
+                        costPerUse = costPerUse,
+                        daysOwned = daysOwned,
+                        isLoading = false
+                    )
+                }
             }
         }
     }
@@ -556,7 +572,7 @@ class AssetViewModel @Inject constructor(
         }
     }
 
-    fun saveImageToInternalStorage(uri: Uri): String {
+    private suspend fun saveImageToInternalStorage(uri: Uri): String = withContext(Dispatchers.IO) {
         try {
             val dir = File(application.filesDir, "images")
             if (!dir.exists()) dir.mkdirs()
@@ -566,9 +582,9 @@ class AssetViewModel @Inject constructor(
                     input.copyTo(output)
                 }
             }
-            return file.absolutePath
+            file.absolutePath
         } catch (e: Exception) {
-            return uri.toString()
+            uri.toString()
         }
     }
 
@@ -612,8 +628,10 @@ class AssetViewModel @Inject constructor(
     }
 
     fun addImage(uri: Uri) {
-        val path = saveImageToInternalStorage(uri)
-        updateImages { addAll(listOf(path).take(4 - size)) }
+        viewModelScope.launch {
+            val path = saveImageToInternalStorage(uri)
+            updateImages { addAll(listOf(path).take(4 - size)) }
+        }
     }
 
     fun removeImage(index: Int) {

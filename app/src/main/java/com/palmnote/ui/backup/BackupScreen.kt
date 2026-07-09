@@ -5,8 +5,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -15,6 +18,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -34,8 +40,13 @@ fun BackupScreen(
 ) {
     val backupState by viewModel.backupState.collectAsStateWithLifecycle()
     val backups by viewModel.backups.collectAsStateWithLifecycle()
+    val password by viewModel.password.collectAsStateWithLifecycle()
+    val restorePassword by viewModel.restorePassword.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     var showRestoreDialog by remember { mutableStateOf<BackupInfo?>(null) }
+    var deleteTarget by remember { mutableStateOf<BackupInfo?>(null) }
+    var showPasswordDialog by remember { mutableStateOf(false) }
+    var isBackupMode by remember { mutableStateOf(true) }
     val context = LocalContext.current
 
     // 处理操作结果
@@ -82,6 +93,27 @@ fun BackupScreen(
                     Text(stringResource(R.string.backup_create_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(modifier = Modifier.height(12.dp))
 
+                    // 密码输入框
+                    var passwordVisible by remember { mutableStateOf(false) }
+                    OutlinedTextField(
+                        value = password ?: "",
+                        onValueChange = { viewModel.setPassword(it.ifBlank { null }) },
+                        label = { Text(stringResource(R.string.backup_password_optional)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        trailingIcon = {
+                            IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                Icon(
+                                    if (passwordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                                    contentDescription = null
+                                )
+                            }
+                        },
+                        singleLine = true
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+
                     if (backupState is BackupState.Progress) {
                         LinearProgressIndicator(
                             progress = { (backupState as BackupState.Progress).percent / 100f },
@@ -121,11 +153,22 @@ fun BackupScreen(
                     BackupItem(
                         backup = backup,
                         onRestore = { showRestoreDialog = backup },
-                        onDelete = { viewModel.deleteBackup(File(backup.filePath)) }
+                        onDelete = { deleteTarget = backup }
                     )
                 }
             }
         }
+    }
+
+    // 删除确认对话框
+    deleteTarget?.let { backup ->
+        AppDialog(
+            onDismissRequest = { deleteTarget = null },
+            title = { Text(stringResource(R.string.backup_delete), fontWeight = FontWeight.Bold) },
+            text = { Text(stringResource(R.string.delete_confirm)) },
+            confirmButton = { TextButton(onClick = { viewModel.deleteBackup(File(backup.filePath)); deleteTarget = null }) { Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error) } },
+            dismissButton = { TextButton(onClick = { deleteTarget = null }) { Text(stringResource(R.string.cancel)) } }
+        )
     }
 
     // 恢复确认对话框
@@ -133,7 +176,32 @@ fun BackupScreen(
         AppDialog(
             onDismissRequest = { showRestoreDialog = null },
             title = { Text(stringResource(R.string.backup_restore_title), fontWeight = FontWeight.Bold) },
-            text = { Text(stringResource(R.string.backup_restore_confirm)) },
+            text = {
+                Column {
+                    Text(stringResource(R.string.backup_restore_confirm))
+                    Spacer(modifier = Modifier.height(12.dp))
+                    
+                    // 恢复密码输入框
+                    var restorePasswordVisible by remember { mutableStateOf(false) }
+                    OutlinedTextField(
+                        value = restorePassword ?: "",
+                        onValueChange = { viewModel.setRestorePassword(it.ifBlank { null }) },
+                        label = { Text(stringResource(R.string.backup_password)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        visualTransformation = if (restorePasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        trailingIcon = {
+                            IconButton(onClick = { restorePasswordVisible = !restorePasswordVisible }) {
+                                Icon(
+                                    if (restorePasswordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                                    contentDescription = null
+                                )
+                            }
+                        },
+                        singleLine = true
+                    )
+                }
+            },
             confirmButton = {
                 TextButton(onClick = {
                     viewModel.restoreBackup(File(backup.filePath))

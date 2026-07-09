@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
@@ -27,6 +28,8 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.palmnote.R
 import com.palmnote.data.db.entity.LifeItem
+import com.palmnote.ui.components.SecondaryTopAppBar
+import com.palmnote.ui.components.ModuleSearchBar
 import com.palmnote.ui.life.common.DeleteConfirmSheet
 import com.palmnote.ui.life.common.FilterChipItem
 import com.palmnote.ui.life.common.SwipeableItem
@@ -59,12 +62,25 @@ fun SavingListScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Long) -
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            TopAppBar(
+            SecondaryTopAppBar(
                 title = { Text(stringResource(R.string.life_saving_title), fontWeight = FontWeight.Bold, color = LifeSaving) },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.life_back)) } },
                 actions = {
-                    IconButton(onClick = { showSearch = !showSearch; if (!showSearch) searchQuery = "" }) { Icon(Icons.Default.Search, stringResource(R.string.search)) }
-                    IconButton(onClick = onCreateClick) { Icon(Icons.Default.Add, stringResource(R.string.life_new_create)) }
+                    if (showSearch) {
+                        ModuleSearchBar(
+                            query = searchQuery,
+                            onQueryChange = { searchQuery = it },
+                            onClear = { searchQuery = "" },
+                            placeholder = stringResource(R.string.search),
+                            modifier = Modifier.weight(1f)
+                        )
+                        IconButton(onClick = { showSearch = false; searchQuery = "" }) {
+                            Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.close))
+                        }
+                    } else {
+                        IconButton(onClick = { showSearch = true }) { Icon(Icons.Default.Search, stringResource(R.string.search)) }
+                        IconButton(onClick = onCreateClick) { Icon(Icons.Default.Add, stringResource(R.string.life_new_create)) }
+                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
@@ -77,17 +93,6 @@ fun SavingListScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Long) -
         }
 
         Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
-            if (showSearch) {
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    placeholder = { Text(stringResource(R.string.life_saving_search_hint)) },
-                    leadingIcon = { Icon(Icons.Default.Search, null) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                    shape = RoundedCornerShape(12.dp)
-                )
-            }
             Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 FilterChipItem(stringResource(R.string.life_saving_filter_all, state.items.size), filter == 0, LifeSaving) { filter = 0 }
                 FilterChipItem(stringResource(R.string.life_saving_filter_active), filter == 1, LifeSaving) { filter = 1 }

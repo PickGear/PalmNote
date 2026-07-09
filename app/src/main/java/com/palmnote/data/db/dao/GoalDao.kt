@@ -39,6 +39,9 @@ interface GoalDao {
     @Query("SELECT COUNT(*) FROM goals WHERE isDeleted = 0")
     fun getGoalCount(): Flow<Int>
 
+    @Query("SELECT * FROM goals WHERE isDeleted = 0 ORDER BY priority DESC, createdAt DESC LIMIT 3")
+    fun getRecentGoals(): Flow<List<Goal>>
+
     @Query("SELECT COUNT(*) FROM goals WHERE currentCount >= totalCount AND isDeleted = 0")
     fun getCompletedGoalCount(): Flow<Int>
 

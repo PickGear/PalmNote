@@ -54,6 +54,12 @@ interface WalletDao {
     @Query("UPDATE wallets SET isDefault = 0, updatedAt = :now WHERE isDefault = 1")
     suspend fun clearAllDefaults(now: Long = System.currentTimeMillis())
 
+    @Transaction
+    suspend fun setAsDefault(id: Long, now: Long = System.currentTimeMillis()) {
+        clearAllDefaults(now)
+        setDefault(id, now)
+    }
+
     @Query("UPDATE wallets SET isEnabled = :enabled, updatedAt = :now WHERE id = :id")
     suspend fun setEnabled(id: Long, enabled: Boolean, now: Long = System.currentTimeMillis())
 

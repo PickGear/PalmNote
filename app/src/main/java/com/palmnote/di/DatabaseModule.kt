@@ -5,6 +5,7 @@ import androidx.room.Room
 import com.palmnote.data.db.AppDatabase
 import com.palmnote.data.db.dao.*
 import com.palmnote.data.db.migration.MIGRATION_1_2
+import com.palmnote.data.db.migration.MIGRATION_2_3
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -25,88 +26,88 @@ object DatabaseModule {
             context,
             AppDatabase::class.java,
             AppDatabase.DATABASE_NAME
-        ).addMigrations(MIGRATION_1_2)
+        ).addMigrations(MIGRATION_1_2, MIGRATION_2_3)
             .build()
     }
 
-    @Provides
+    @Provides @Singleton
     fun provideAssetDao(database: AppDatabase): AssetDao = database.assetDao()
 
-    @Provides
+    @Provides @Singleton
     fun provideBillDao(database: AppDatabase): BillDao = database.billDao()
 
-    @Provides
+    @Provides @Singleton
     fun provideGoalDao(database: AppDatabase): GoalDao = database.goalDao()
 
-    @Provides
+    @Provides @Singleton
     fun provideGoalCheckInDao(database: AppDatabase): GoalCheckInDao = database.goalCheckInDao()
 
-    @Provides
+    @Provides @Singleton
     fun provideAnniversaryDao(database: AppDatabase): AnniversaryDao = database.anniversaryDao()
 
-    @Provides
+    @Provides @Singleton
     fun provideMomentDao(database: AppDatabase): MomentDao = database.momentDao()
 
-    @Provides
+    @Provides @Singleton
     fun provideCategoryMappingDao(database: AppDatabase): CategoryMappingDao = database.categoryMappingDao()
 
-    @Provides
+    @Provides @Singleton
     fun provideUsageRecordDao(database: AppDatabase): UsageRecordDao = database.usageRecordDao()
 
-    @Provides
+    @Provides @Singleton
     fun provideBudgetDao(database: AppDatabase): BudgetDao = database.budgetDao()
 
-    @Provides
+    @Provides @Singleton
     fun provideRecurringTemplateDao(database: AppDatabase): RecurringTemplateDao = database.recurringTemplateDao()
 
-    @Provides
+    @Provides @Singleton
     fun provideCategoryConfigDao(database: AppDatabase): CategoryConfigDao = database.categoryConfigDao()
 
-    @Provides
+    @Provides @Singleton
     fun provideCustomTagDao(database: AppDatabase): CustomTagDao = database.customTagDao()
 
-    @Provides
+    @Provides @Singleton
     fun provideWalletDao(database: AppDatabase): WalletDao = database.walletDao()
 
-    @Provides
+    @Provides @Singleton
     fun provideAccountBookDao(database: AppDatabase): AccountBookDao = database.accountBookDao()
 
-    @Provides
+    @Provides @Singleton
     fun providePlanListDao(database: AppDatabase): PlanListDao = database.planListDao()
 
-    @Provides
+    @Provides @Singleton
     fun providePlanListItemDao(database: AppDatabase): PlanListItemDao = database.planListItemDao()
 
-    @Provides
+    @Provides @Singleton
     fun providePlanDao(database: AppDatabase): PlanDao = database.planDao()
 
-    @Provides
+    @Provides @Singleton
     fun provideLifeTemplateDao(database: AppDatabase): LifeTemplateDao = database.lifeTemplateDao()
 
-    @Provides
+    @Provides @Singleton
     fun provideLifeItemDao(database: AppDatabase): LifeItemDao = database.lifeItemDao()
 
-    @Provides
+    @Provides @Singleton
     fun provideCrossLinkDao(database: AppDatabase): CrossLinkDao = database.crossLinkDao()
 
-    @Provides
+    @Provides @Singleton
     fun provideAchievementDao(database: AppDatabase): AchievementDao = database.achievementDao()
 
-    @Provides
+    @Provides @Singleton
     fun provideLifeReportDao(database: AppDatabase): LifeReportDao = database.lifeReportDao()
 
-    @Provides
+    @Provides @Singleton
     fun provideLegacyDao(database: AppDatabase): LegacyDao = database.legacyDao()
 
-    @Provides
+    @Provides @Singleton
     fun provideFocusRecordDao(database: AppDatabase): FocusRecordDao = database.focusRecordDao()
 
-    @Provides
+    @Provides @Singleton
     fun provideTodoItemDao(database: AppDatabase): TodoItemDao = database.todoItemDao()
 
-    @Provides
+    @Provides @Singleton
     fun provideMoodDiaryDao(database: AppDatabase): MoodDiaryDao = database.moodDiaryDao()
 
-    @Provides
+    @Provides @Singleton
     fun provideLifeMomentDao(database: AppDatabase): LifeMomentDao = database.lifeMomentDao()
 }

@@ -25,9 +25,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.palmnote.R
-import com.palmnote.ui.life.common.EmptyState
+import com.palmnote.ui.components.EmptyState
 import com.palmnote.ui.life.common.SwipeableItem
 import com.palmnote.ui.components.AppDialog
+import com.palmnote.ui.components.SecondaryTopAppBar
 import com.palmnote.ui.theme.*
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -52,7 +53,7 @@ fun CountUpListScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Long) 
     }
     Scaffold(
         topBar = {
-            TopAppBar(
+            SecondaryTopAppBar(
                 title = { Text(stringResource(R.string.life_countup_title), fontWeight = FontWeight.Bold, color = LifeCountUp) },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.life_back)) } },
                 actions = { IconButton(onClick = onCreateClick) { Icon(Icons.Default.Add, stringResource(R.string.life_new_create)) } },
@@ -70,8 +71,8 @@ fun CountUpListScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Long) 
                 icon = Icons.AutoMirrored.Filled.TrendingUp,
                 title = stringResource(R.string.life_empty_countup),
                 subtitle = stringResource(R.string.life_empty_countup_subtitle),
-                actionLabel = stringResource(R.string.life_empty_countup_action),
-                onAction = onCreateClick
+                actionText = stringResource(R.string.life_empty_countup_action),
+                onActionClick = onCreateClick
             )
         } else {
         LifeLazyList(modifier = Modifier.fillMaxSize().padding(innerPadding).padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -112,7 +113,7 @@ fun CountUpListScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Long) 
                                         ),
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        Text("$target", fontSize = 9.sp, color = if (reached) Color.Black else MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Text("$target", fontSize = 9.sp, color = if (reached) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
                                 }
                             }

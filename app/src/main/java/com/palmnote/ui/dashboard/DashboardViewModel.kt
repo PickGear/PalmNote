@@ -72,47 +72,48 @@ class DashboardViewModel @Inject constructor(
     private fun saveConfigs() {
         saveConfigsJob?.cancel()
         saveConfigsJob = viewModelScope.launch {
-            delay(300) // debounce: 拖拽排序时避免高频写入
-            preferencesManager.saveDashboardCardConfigs(_cardConfigs.value)
+            delay(300)
+            _cardConfigs.value.let { preferencesManager.saveDashboardCardConfigs(it) }
         }
     }
 
     fun moveCardDown(type: CardType) {
-        val list = _cardConfigs.value.toMutableList()
-        val idx = list.indexOfFirst { it.type == type }
-        if (idx < list.size - 1) {
-            val item = list.removeAt(idx)
-            list.add(idx + 1, item)
-            _cardConfigs.value = list
-            saveConfigs()
+        _cardConfigs.update { configs ->
+            val list = configs.toMutableList()
+            val idx = list.indexOfFirst { it.type == type }
+            if (idx < list.size - 1) {
+                val item = list.removeAt(idx)
+                list.add(idx + 1, item)
+                list
+            } else configs
         }
+        saveConfigs()
     }
 
     fun moveCardUp(type: CardType) {
-        val list = _cardConfigs.value.toMutableList()
-        val idx = list.indexOfFirst { it.type == type }
-        if (idx > 0) {
-            val item = list.removeAt(idx)
-            list.add(idx - 1, item)
-            _cardConfigs.value = list
-            saveConfigs()
+        _cardConfigs.update { configs ->
+            val list = configs.toMutableList()
+            val idx = list.indexOfFirst { it.type == type }
+            if (idx > 0) {
+                val item = list.removeAt(idx)
+                list.add(idx - 1, item)
+                list
+            } else configs
         }
+        saveConfigs()
     }
 
     fun toggleCard(type: CardType) {
-        val list = _cardConfigs.value.toMutableList()
-        val idx = list.indexOfFirst { it.type == type }
-        if (idx >= 0) {
-            list[idx] = list[idx].copy(visible = !list[idx].visible)
-            _cardConfigs.value = list
-            saveConfigs()
+        _cardConfigs.update { configs ->
+            configs.map { if (it.type == type) it.copy(visible = !it.visible) else it }
         }
+        saveConfigs()
     }
 
     private fun loadBudgetReminder() {
         viewModelScope.launch {
             preferencesManager.budgetReminderEnabled.collect { enabled ->
-                _state.value = _state.value.copy(budgetReminderEnabled = enabled)
+                _state.update { it.copy(budgetReminderEnabled = enabled) }
             }
         }
     }
@@ -138,7 +139,7 @@ class DashboardViewModel @Inject constructor(
                 goalRepository.getCompletedGoalCount(),
                 anniversaryRepository.getAnniversaryCount(),
                 anniversaryRepository.getAllAnniversaries(),
-                goalRepository.getAllGoals()
+                goalRepository.getRecentGoals()
             ) { goalCount, completedCount, annivCount, anniversaries, goals ->
                 GoalAnnivData(goalCount, completedCount, annivCount, anniversaries, goals)
             }

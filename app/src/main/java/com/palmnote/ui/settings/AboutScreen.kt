@@ -209,8 +209,9 @@ fun AboutScreen(
 fun PrivacyPolicyScreen(
     onNavigateBack: () -> Unit = {}
 ) {
-    val lines = getPrivacyPolicyLines()
-    val isZh = java.util.Locale.getDefault().language == "zh"
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val isZh = context.resources.configuration.locales[0].language == "zh"
+    val lines = getPrivacyPolicyLines(isZh)
     Scaffold(
         topBar = {
             CompactTopAppBar(
@@ -250,8 +251,9 @@ fun PrivacyPolicyScreen(
 fun TermsOfServiceScreen(
     onNavigateBack: () -> Unit = {}
 ) {
-    val lines = getTermsOfServiceLines()
-    val isZh = java.util.Locale.getDefault().language == "zh"
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val isZh = context.resources.configuration.locales[0].language == "zh"
+    val lines = getTermsOfServiceLines(isZh)
     Scaffold(
         topBar = {
             CompactTopAppBar(
@@ -302,13 +304,11 @@ private fun isTermsHeading(line: String, isZh: Boolean): Boolean {
     }
 }
 
-fun getPrivacyPolicyLines(): List<String> {
-    val isZh = java.util.Locale.getDefault().language == "zh"
+fun getPrivacyPolicyLines(isZh: Boolean = true): List<String> {
     return if (isZh) privacyPolicyLinesZh else privacyPolicyLinesEn
 }
 
-fun getTermsOfServiceLines(): List<String> {
-    val isZh = java.util.Locale.getDefault().language == "zh"
+fun getTermsOfServiceLines(isZh: Boolean = true): List<String> {
     return if (isZh) termsOfServiceLinesZh else termsOfServiceLinesEn
 }
 

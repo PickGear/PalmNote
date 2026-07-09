@@ -453,16 +453,19 @@ fun PalmNoteNavHost() {
                     onNavigateToAsset = { assetId ->
                         navController.navigate("asset_detail/$assetId")
                     },
-                    onNavigateToBill = {
-                        navController.navigate(Route.Bill)
+                    onNavigateToBill = { billId ->
+                        navController.navigate("bill_detail/$billId")
                     },
-                    onNavigateToGoal = {
+                    onNavigateToGoal = { goalId ->
+                        // 目前跳转到Life页面，后续可以添加Goal详情路由
                         navController.navigate(Route.Life)
                     },
-                    onNavigateToAnniversary = {
+                    onNavigateToAnniversary = { anniversaryId ->
+                        // 目前跳转到Life页面，后续可以添加Anniversary详情路由
                         navController.navigate(Route.Life)
                     },
-                    onNavigateToMoment = {
+                    onNavigateToMoment = { momentId ->
+                        // 目前跳转到Life页面，后续可以添加Moment详情路由
                         navController.navigate(Route.Life)
                     },
                     onBack = { navController.popBackStack() }

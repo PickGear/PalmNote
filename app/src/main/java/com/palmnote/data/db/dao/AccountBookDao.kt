@@ -33,6 +33,12 @@ interface AccountBookDao {
     @Query("UPDATE account_books SET isDefault = 0, updatedAt = :now WHERE isDefault = 1")
     suspend fun clearAllDefaults(now: Long = System.currentTimeMillis())
 
+    @Transaction
+    suspend fun setAsDefault(id: Long, now: Long = System.currentTimeMillis()) {
+        clearAllDefaults(now)
+        setDefault(id, now)
+    }
+
     @Query("UPDATE account_books SET isHidden = :hidden, updatedAt = :now WHERE id = :id")
     suspend fun setHidden(id: Long, hidden: Boolean, now: Long = System.currentTimeMillis())
 

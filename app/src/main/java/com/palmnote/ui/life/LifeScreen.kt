@@ -33,6 +33,9 @@ import com.palmnote.data.db.entity.getDisplayDescription
 import com.palmnote.ui.components.CompactTopAppBar
 import com.palmnote.ui.components.PressableFab
 import com.palmnote.ui.components.LifeScreenSkeleton
+import com.palmnote.ui.components.AppBottomSheet
+import com.palmnote.ui.components.ModuleSearchBar
+import com.palmnote.ui.components.toComposeColor
 import com.palmnote.ui.life.common.PlanCard
 import com.palmnote.ui.life.common.TimeCard
 import com.palmnote.ui.life.common.displayName
@@ -89,8 +92,21 @@ fun LifeScreen(
                 CompactTopAppBar(
                     title = { Text(stringResource(com.palmnote.R.string.life_title), style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold, color = ModuleLife) },
                     actions = {
-                        IconButton(onClick = { showSearch = !showSearch; if (!showSearch) searchQuery = "" }) { Icon(Icons.Default.Search, stringResource(R.string.search)) }
-                        IconButton(onClick = onNavigateToManage) { Icon(Icons.Default.Tune, stringResource(R.string.life_template_manage)) }
+                        if (showSearch) {
+                            ModuleSearchBar(
+                                query = searchQuery,
+                                onQueryChange = { searchQuery = it },
+                                onClear = { searchQuery = "" },
+                                placeholder = stringResource(R.string.search),
+                                modifier = Modifier.weight(1f)
+                            )
+                            IconButton(onClick = { showSearch = false; searchQuery = "" }) {
+                                Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.close))
+                            }
+                        } else {
+                            IconButton(onClick = { showSearch = true }) { Icon(Icons.Default.Search, stringResource(R.string.search)) }
+                            IconButton(onClick = onNavigateToManage) { Icon(Icons.Default.Tune, stringResource(R.string.life_template_manage)) }
+                        }
                     }
                 )
             },
@@ -163,18 +179,13 @@ private fun FunctionSheet(
     onNavigateToJournal: () -> Unit = {},
     onNavigateToReport: () -> Unit = {}
 ) {
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.surface,
-        tonalElevation = 0.dp,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    AppBottomSheet(
+        onDismissRequest = onDismiss
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(max = 600.dp)
-                .padding(horizontal = 24.dp)
-                .padding(bottom = 32.dp)
         ) {
             Text(stringResource(R.string.life_select_type_to_create), fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
             Spacer(modifier = Modifier.height(16.dp))
@@ -230,7 +241,7 @@ private fun SectionHeader(title: String, color: Color) {
 
 @Composable
 private fun TemplateCard(tpl: LifeTemplate, onTemplateClick: (Long) -> Unit) {
-    val tplColor = try { Color(android.graphics.Color.parseColor(tpl.color)) } catch (_: Exception) { ModuleLife }
+    val tplColor = tpl.color.toComposeColor(ModuleLife)
     Card(
         modifier = Modifier.fillMaxWidth().clickable { onTemplateClick(tpl.id) },
         shape = MaterialTheme.shapes.large,
@@ -309,10 +320,6 @@ private fun LifeContent(
             Spacer(modifier = Modifier.height(8.dp))
         }
         Spacer(modifier = Modifier.height(4.dp))
-        if (showSearch) {
-            OutlinedTextField(value = searchQuery, onValueChange = onSearchChange, placeholder = { Text(stringResource(R.string.life_screen_search_hint)) }, leadingIcon = { Icon(Icons.Default.Search, null) }, singleLine = true, modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp), shape = MaterialTheme.shapes.medium)
-            Spacer(modifier = Modifier.height(8.dp))
-        }
         StatsRow(state = state, scope = scope, snackbarHostState = snackbarHostState, onHabitClick = onHabitClick, onFocusClick = onFocusClick)
         Spacer(modifier = Modifier.height(16.dp))
         var hasVisible = false
@@ -429,7 +436,7 @@ private fun LifeSection(
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     templates.forEach { tpl ->
-                        val tplColor = try { Color(android.graphics.Color.parseColor(tpl.color)) } catch (_: Exception) { iconColor }
+                        val tplColor = tpl.color.toComposeColor(iconColor)
                         Box(
                             modifier = Modifier.size(32.dp).background(tplColor.copy(alpha = 0.12f), RoundedCornerShape(8.dp)),
                             contentAlignment = Alignment.Center

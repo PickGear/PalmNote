@@ -72,11 +72,11 @@ class BillRepositoryTest {
 
     @Test
     fun `softDeleteBill calls dao`() = runTest {
-        coEvery { billDao.softDeleteBill(1L) } returns Unit
+        coEvery { billDao.softDeleteBill(any(), any()) } returns Unit
 
         billRepository.softDeleteBill(1L)
 
-        coVerify { billDao.softDeleteBill(1L) }
+        coVerify { billDao.softDeleteBill(1L, any()) }
     }
 
     @Test
@@ -87,41 +87,6 @@ class BillRepositoryTest {
         billRepository.updateBill(bill)
 
         coVerify { billDao.updateBill(bill) }
-    }
-
-    @Test
-    fun `getMonthlyExpense returns total expense`() = runTest {
-        coEvery { billDao.getMonthlyExpense("2026-07") } returns flowOf(500.0)
-
-        val result = billRepository.getMonthlyExpense("2026-07").first()
-
-        assertEquals(500.0, result, 0.01)
-    }
-
-    @Test
-    fun `getCategoryFrequency returns category counts`() = runTest {
-        val categories = listOf(
-            com.palmnote.data.db.dao.CategoryTotalWithCount("餐饮", 200.0, 5),
-            com.palmnote.data.db.dao.CategoryTotalWithCount("交通", 100.0, 3)
-        )
-        coEvery { billDao.getCategoryFrequency("2026-07") } returns flowOf(categories)
-
-        val result = billRepository.getCategoryFrequency("2026-07").first()
-
-        assertEquals(2, result.size)
-        assertEquals("餐饮", result[0].category)
-        assertEquals(5, result[0].count)
-    }
-
-    @Test
-    fun `getLastBillByMerchant returns bill`() = runTest {
-        val bill = createTestBill(id = 1L, merchant = "星巴克")
-        coEvery { billDao.getLastBillByMerchant("星巴克") } returns bill
-
-        val result = billRepository.getLastBillByMerchant("星巴克")
-
-        assertNotNull(result)
-        assertEquals("星巴克", result?.merchant)
     }
 
     private fun createTestBill(

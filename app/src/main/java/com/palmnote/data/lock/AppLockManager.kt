@@ -7,6 +7,7 @@ import com.palmnote.ui.lock.AppLockState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import java.security.MessageDigest
 import java.security.SecureRandom
@@ -20,17 +21,21 @@ class AppLockManager @Inject constructor(
     private val _lockState = MutableStateFlow<AppLockState>(AppLockState.Unlocked)
     val lockState: StateFlow<AppLockState> = _lockState.asStateFlow()
 
+    private var cachedIsLockEnabled: Boolean = false
+    private var cachedHasPin: Boolean = false
+
+    init {
+        cachedIsLockEnabled = try { runBlocking { preferencesManager.appLockEnabled.first() } } catch (_: Exception) { preferencesManager.isAppLockEnabled() }
+        cachedHasPin = try { runBlocking { preferencesManager.encryptedPin.first().isNotEmpty() } } catch (_: Exception) { preferencesManager.getEncryptedPin().isNotEmpty() }
+    }
+
     private val prefs: SharedPreferences by lazy {
         context.getSharedPreferences("app_lock_prefs", Context.MODE_PRIVATE)
     }
 
-    fun isLockEnabled(): Boolean {
-        return preferencesManager.isAppLockEnabled()
-    }
+    fun isLockEnabled(): Boolean = cachedIsLockEnabled
 
-    fun hasPin(): Boolean {
-        return preferencesManager.getEncryptedPin().isNotEmpty()
-    }
+    fun hasPin(): Boolean = cachedHasPin
 
     fun verifyPin(pin: String): Boolean {
         val storedPin = preferencesManager.getEncryptedPin()
@@ -40,14 +45,16 @@ class AppLockManager @Inject constructor(
 
     fun setPin(pin: String) {
         runBlocking { preferencesManager.setEncryptedPin(hashPin(pin)) }
+        cachedHasPin = true
     }
 
     fun clearPin() {
         runBlocking { preferencesManager.setEncryptedPin("") }
+        cachedHasPin = false
     }
 
     fun lock() {
-        if (isLockEnabled() && hasPin()) {
+        if (cachedIsLockEnabled && cachedHasPin) {
             _lockState.value = AppLockState.Locked
         }
     }
@@ -58,7 +65,8 @@ class AppLockManager @Inject constructor(
 
     fun setEnabled(enabled: Boolean) {
         preferencesManager.setAppLockEnabledSync(enabled)
-        if (enabled && !hasPin()) {
+        cachedIsLockEnabled = enabled
+        if (enabled && !cachedHasPin) {
             _lockState.value = AppLockState.NeedSetup
         } else {
             _lockState.value = AppLockState.Unlocked
@@ -66,7 +74,7 @@ class AppLockManager @Inject constructor(
     }
 
     fun shouldShowLockScreen(): Boolean {
-        return isLockEnabled() && hasPin() && _lockState.value is AppLockState.Locked
+        return cachedIsLockEnabled && cachedHasPin && _lockState.value is AppLockState.Locked
     }
 
     private fun hashPin(pin: String): String {

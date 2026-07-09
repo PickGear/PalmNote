@@ -51,17 +51,16 @@ class CategoryViewModel @Inject constructor(
     private fun loadCategories() {
         viewModelScope.launch {
             repository.getAllCategories().collect { allCategories ->
-                val currentType = _state.value.currentType
-                val filtered = allCategories.filter { it.type == currentType }
-                _state.value = _state.value.copy(
-                    categories = filtered
-                )
+                _state.update { state ->
+                    val filtered = allCategories.filter { it.type == state.currentType }
+                    state.copy(categories = filtered)
+                }
             }
         }
     }
 
     fun selectType(index: Int) {
-        _state.value = _state.value.copy(selectedTypeIndex = index)
+        _state.update { it.copy(selectedTypeIndex = index) }
         loadCategories()
     }
 

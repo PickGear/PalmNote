@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -39,6 +40,7 @@ import com.palmnote.ui.lock.AppLockScreen
 import com.palmnote.ui.lock.AppLockState
 import com.palmnote.ui.navigation.PalmNoteNavHost
 import com.palmnote.ui.theme.LocalSwitchColor
+import com.palmnote.ui.components.toComposeColor
 import com.palmnote.ui.theme.PalmNoteTheme
 import com.palmnote.ui.theme.PrimaryGreenLight
 import androidx.compose.ui.res.stringResource
@@ -82,17 +84,17 @@ class MainActivity : AppCompatActivity() {
                 "LIGHT" -> false
                 else -> isSystemInDarkTheme()
             }
-            val switchColor = try { Color(android.graphics.Color.parseColor(switchColorHex)) } catch (_: Exception) { Color(0xFF2D4A3E) }
+            val switchColor = switchColorHex.toComposeColor(Color(0xFF2D4A3E))
             val lockState by appLockManager.lockState.collectAsState()
-            val privacyAgreed by preferencesManager.privacyAgreed.collectAsState(initial = false)
-            val showPrivacyDialog = !privacyAgreed
+            val privacyAgreed by preferencesManager.privacyAgreed.collectAsState(initial = null)
+            val showPrivacyDialog = privacyAgreed == false
             val scope = rememberCoroutineScope()
 
             PalmNoteTheme(darkTheme = isDarkTheme) {
                 CompositionLocalProvider(LocalSwitchColor provides switchColor) {
                     if (showPrivacyDialog) {
-                        var showPolicy by remember { mutableStateOf(false) }
-                        var showTerms by remember { mutableStateOf(false) }
+                        var showPolicy by rememberSaveable { mutableStateOf(false) }
+                        var showTerms by rememberSaveable { mutableStateOf(false) }
 
                         Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                             Column(
