@@ -13,3 +13,4 @@ release.jks
 app/build/
 C*UsersBion.sshknown_hosts
 .github/
+*.log

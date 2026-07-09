@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.palmnote.data.db.entity.LifeItem
 import com.palmnote.domain.repository.LifeItemRepository
 import com.palmnote.domain.repository.LifeTemplateRepository
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -20,8 +21,11 @@ abstract class BaseLifeViewModel<T : Any>(
     val uiState: StateFlow<T> = _uiState.asStateFlow()
     abstract fun initialState(): T
 
+    private var itemsJob: Job? = null
+
     protected fun loadItems(templateId: Long, update: (List<LifeItem>) -> Unit) {
-        itemRepo.getItemsByTemplate(templateId).onEach { items ->
+        itemsJob?.let(Job::cancel)
+        itemsJob = itemRepo.getItemsByTemplate(templateId).onEach { items ->
             update(items)
         }.launchIn(viewModelScope)
     }

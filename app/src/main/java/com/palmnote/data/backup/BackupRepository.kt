@@ -19,11 +19,11 @@ class BackupRepository @Inject constructor(
 ) {
     private val backupManager = BackupManager()
 
-    // 创建备份
-    fun createBackup(): Flow<BackupState> = flow {
+    // 创建备份（支持可选密码）
+    fun createBackup(password: String? = null): Flow<BackupState> = flow {
         emit(BackupState.Progress(0))
         try {
-            val file = backupManager.createBackup(context)
+            val file = backupManager.createBackup(context, password)
             emit(BackupState.Progress(100))
             emit(BackupState.Success(file.absolutePath))
         } catch (e: Exception) {
@@ -31,17 +31,22 @@ class BackupRepository @Inject constructor(
         }
     }.flowOn(Dispatchers.IO)
 
-    // 恢复备份
-    fun restoreBackup(file: File): Flow<BackupState> = flow {
+    // 恢复备份（支持可选密码）
+    fun restoreBackup(file: File, password: String? = null): Flow<BackupState> = flow {
         emit(BackupState.Progress(0))
         try {
+            // 恢复前自动备份
+            backupManager.createPreRestoreBackup(context)
+            
             db.close()
-            backupManager.restoreBackup(context, file)
-            db.openHelper.writableDatabase
+            backupManager.restoreBackup(context, file, password)
             emit(BackupState.Progress(100))
             emit(BackupState.Success(file.absolutePath))
         } catch (e: Exception) {
             emit(BackupState.Error(e.message ?: context.getString(R.string.backup_error_restore_failed)))
+        } finally {
+            // 无论恢复成功还是失败，确保数据库可重新打开，避免后续操作崩溃
+            try { db.openHelper.writableDatabase } catch (_: Exception) {}
         }
     }.flowOn(Dispatchers.IO)
 

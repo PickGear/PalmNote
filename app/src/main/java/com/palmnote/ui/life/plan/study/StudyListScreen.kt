@@ -23,7 +23,8 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.palmnote.R
 import com.palmnote.ui.components.AppDialog
-import com.palmnote.ui.life.common.EmptyState
+import com.palmnote.ui.components.EmptyState
+import com.palmnote.ui.components.SecondaryTopAppBar
 import com.palmnote.ui.life.common.SwipeableItem
 import com.palmnote.ui.theme.*
 
@@ -44,7 +45,7 @@ fun StudyListScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Long) ->
     }
     Scaffold(
         topBar = {
-            TopAppBar(
+            SecondaryTopAppBar(
                 title = { Text(stringResource(R.string.life_study_title), fontWeight = FontWeight.Bold, color = LifeStudy) },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.life_back)) } },
                 actions = { IconButton(onClick = onCreateClick) { Icon(Icons.Default.Add, stringResource(R.string.life_new_create)) } },
@@ -62,8 +63,8 @@ fun StudyListScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Long) ->
                 icon = iconFromName("school"),
                 title = stringResource(R.string.life_empty_study),
                 subtitle = stringResource(R.string.life_empty_study_subtitle),
-                actionLabel = stringResource(R.string.life_empty_study_action),
-                onAction = onCreateClick
+                actionText = stringResource(R.string.life_empty_study_action),
+                onActionClick = onCreateClick
             )
         } else {
         LifeLazyList(modifier = Modifier.fillMaxSize().padding(innerPadding).padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {

@@ -60,7 +60,7 @@ fun CategoryScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { editingCategory = null; showAddSheet = true },
-                containerColor = AccentOrange,
+                containerColor = MaterialTheme.colorScheme.secondary,
                 contentColor = Color.White,
                 shape = MaterialTheme.shapes.large
             ) {

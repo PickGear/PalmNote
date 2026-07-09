@@ -26,9 +26,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.palmnote.R
-import com.palmnote.ui.life.common.EmptyState
+import com.palmnote.ui.components.EmptyState
 import com.palmnote.ui.life.common.SwipeableItem
 import com.palmnote.ui.components.AppDialog
+import com.palmnote.ui.components.SecondaryTopAppBar
 import com.palmnote.ui.theme.*
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -55,7 +56,7 @@ fun BirthdayListScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Long)
     }
     Scaffold(
         topBar = {
-            TopAppBar(
+            SecondaryTopAppBar(
                 title = { Text(stringResource(R.string.life_birthday_title), fontWeight = FontWeight.Bold, color = LifeBirthday) },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.life_back)) } },
                 actions = { IconButton(onClick = onCreateClick) { Icon(Icons.Default.Add, stringResource(R.string.life_new_create)) } },
@@ -73,8 +74,8 @@ fun BirthdayListScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Long)
                 icon = Icons.Default.CardGiftcard,
                 title = stringResource(R.string.life_empty_birthday),
                 subtitle = stringResource(R.string.life_empty_birthday_subtitle),
-                actionLabel = stringResource(R.string.life_empty_birthday_action),
-                onAction = onCreateClick
+                actionText = stringResource(R.string.life_empty_birthday_action),
+                onActionClick = onCreateClick
             )
         } else {
         LifeLazyList(modifier = Modifier.fillMaxSize().padding(innerPadding).padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -91,8 +92,14 @@ fun BirthdayListScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Long)
                 val birthDate = fields.first
                 val days = if (birthDate != null) {
                     val bd = LocalDate.ofEpochDay(birthDate / 86400000L)
-                    val nextBd = bd.withYear(LocalDate.now().year)
-                    val target = if (nextBd.isBefore(LocalDate.now())) nextBd.plusYears(1) else nextBd
+                    val target = try {
+                        val nextBd = bd.withYear(LocalDate.now().year)
+                        if (nextBd.isBefore(LocalDate.now())) nextBd.plusYears(1) else nextBd
+                    } catch (_: Exception) {
+                        val md = java.time.MonthDay.of(bd.month, bd.dayOfMonth)
+                        val nextBd = md.atYear(LocalDate.now().year)
+                        if (nextBd.isBefore(LocalDate.now())) md.atYear(LocalDate.now().year + 1) else nextBd
+                    }
                     ChronoUnit.DAYS.between(LocalDate.now(), target)
                 } else null
 

@@ -148,7 +148,7 @@ class ReportViewModel @Inject constructor(
             val days = daily.filter { if (isExpense) it.expense > 0 else it.income > 0 }
             val avg = if (days.isNotEmpty()) (if (isExpense) expense ?: 0.0 else income ?: 0.0) / days.size else 0.0
             ReportData(expense ?: 0.0, income ?: 0.0, billCount, avg, categories, daily)
-        }.collect { _state.value = _state.value.copy(data = it) }
+        }.collect { reportData -> _state.update { it.copy(data = reportData) } }
     }
 
     private suspend fun loadMonthlyData(isExpense: Boolean) {
@@ -169,7 +169,7 @@ class ReportViewModel @Inject constructor(
             val days = daily.filter { if (isExpense) it.expense > 0 else it.income > 0 }
             val avg = if (days.isNotEmpty()) (if (isExpense) expense ?: 0.0 else income ?: 0.0) / days.size else 0.0
             ReportData(expense ?: 0.0, income ?: 0.0, billCount, avg, categories, daily)
-        }.collect { _state.value = _state.value.copy(data = it) }
+        }.collect { reportData -> _state.update { it.copy(data = reportData) } }
     }
 
     private suspend fun loadYearlyData(isExpense: Boolean) {
@@ -193,6 +193,6 @@ class ReportViewModel @Inject constructor(
                 emptyList(),
                 if (isExpense) expTrend else incTrend
             )
-        }.collect { _state.value = _state.value.copy(data = it) }
-    }
+        }.collect { reportData -> _state.update { it.copy(data = reportData) } }
+}
 }

@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.palmnote.R
 import com.palmnote.ui.components.AppDialog
+import com.palmnote.ui.components.toComposeColor
 
 // ============================================================
 // 17 Field Types
@@ -297,14 +298,14 @@ private fun ColorInput(value: String, onValueChange: (String) -> Unit) {
     Column {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             palette.take(9).forEach { hex ->
-                val c = try { Color(android.graphics.Color.parseColor(hex)) } catch (_: Exception) { Color.Gray }
+                val c = hex.toComposeColor(Color.Gray)
                 Box(modifier = Modifier.size(32.dp).clip(CircleShape).background(c).border(if (value == hex) 2.dp else 0.dp, if (value == hex) MaterialTheme.colorScheme.primary else Color.Transparent, CircleShape).clickable { onValueChange(hex) })
             }
         }
         Spacer(modifier = Modifier.height(4.dp))
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             palette.drop(9).forEach { hex ->
-                val c = try { Color(android.graphics.Color.parseColor(hex)) } catch (_: Exception) { Color.Gray }
+                val c = hex.toComposeColor(Color.Gray)
                 Box(modifier = Modifier.size(32.dp).clip(CircleShape).background(c).border(if (value == hex) 2.dp else 0.dp, if (value == hex) MaterialTheme.colorScheme.primary else Color.Transparent, CircleShape).clickable { onValueChange(hex) })
             }
         }
@@ -388,7 +389,7 @@ fun FieldDisplay(field: FieldDef, value: String) {
                 }
             }
             "COLOR" -> {
-                val c = try { Color(android.graphics.Color.parseColor(value)) } catch (_: Exception) { Color.Gray }
+                val c = value.toComposeColor(Color.Gray)
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(modifier = Modifier.size(20.dp).clip(CircleShape).background(c))
                     Spacer(modifier = Modifier.width(8.dp))

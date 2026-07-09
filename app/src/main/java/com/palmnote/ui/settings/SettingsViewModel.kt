@@ -18,6 +18,7 @@ import androidx.work.WorkManager
 import com.palmnote.data.worker.LifeDailyCheckWorker
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import android.util.Log
 import java.util.Calendar
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.flow.*
@@ -75,6 +76,7 @@ class SettingsViewModel @Inject constructor(
     }
 
     private fun loadSettings() {
+        // Merge all three combines into one to prevent concurrent overwrites
         viewModelScope.launch {
             combine(
                 preferencesManager.themeMode,
@@ -92,52 +94,46 @@ class SettingsViewModel @Inject constructor(
                 preferencesManager.dailyReminderMinute,
                 preferencesManager.billReminderHour,
                 preferencesManager.billReminderMinute,
-                preferencesManager.biometricEnabled
-            ) { values ->
-                _state.value.copy(
-                    themeMode = (values.getOrNull(0) as? String) ?: "SYSTEM",
-                    defaultBillType = (values.getOrNull(1) as? String) ?: "EXPENSE",
-                    budgetReminderEnabled = (values.getOrNull(2) as? Boolean) ?: true,
-                    calendarSyncEnabled = (values.getOrNull(3) as? Boolean) ?: false,
-                    switchColor = (values.getOrNull(4) as? String) ?: "#2D4A3E",
-                    defaultStartPage = (values.getOrNull(5) as? String) ?: "dashboard",
-                    language = (values.getOrNull(6) as? String) ?: "SYSTEM",
-                    birthdayReminderAdvanceDays = (values.getOrNull(7) as? Int) ?: 3,
-                    anniversaryReminderAdvanceDays = (values.getOrNull(8) as? Int) ?: 3,
-                    dailyReminderEnabled = (values.getOrNull(9) as? Boolean) ?: true,
-                    billReminderEnabled = (values.getOrNull(10) as? Boolean) ?: true,
-                    dailyReminderHour = (values.getOrNull(11) as? Int) ?: 9,
-                    dailyReminderMinute = (values.getOrNull(12) as? Int) ?: 0,
-                    billReminderHour = (values.getOrNull(13) as? Int) ?: 21,
-                    billReminderMinute = (values.getOrNull(14) as? Int) ?: 0,
-                    biometricEnabled = (values.getOrNull(15) as? Boolean) ?: false
-                )
-            }.collect { _state.value = it }
-        }
-
-        viewModelScope.launch {
-            combine(
+                preferencesManager.biometricEnabled,
+                preferencesManager.profileNickname,
+                preferencesManager.profileSignature,
+                preferencesManager.profileAvatar,
+                preferencesManager.profileAvatarPath,
                 assetRepository.getTotalAssetCount(),
                 goalRepository.getGoalCount(),
                 momentRepository.getMomentCount(),
                 anniversaryRepository.getAnniversaryCount()
-            ) { assets, goals, moments, anniversaries ->
-                _state.value.copy(
-                    assetCount = assets, goalCount = goals,
-                    momentCount = moments, anniversaryCount = anniversaries
-                )
-            }.collect { _state.value = it }
-        }
-
-        viewModelScope.launch {
-            combine(
-                preferencesManager.profileNickname,
-                preferencesManager.profileSignature,
-                preferencesManager.profileAvatar,
-                preferencesManager.profileAvatarPath
-            ) { nick, sig, ava, path ->
-                _state.value.copy(profileNickname = nick, profileSignature = sig, profileAvatar = ava, profileAvatarPath = path)
-            }.collect { _state.value = it }
+            ) { args ->
+                val i = { idx: Int -> args.getOrNull(idx) }
+                _state.update { current ->
+                    current.copy(
+                        themeMode = (i(0) as? String) ?: "SYSTEM",
+                        defaultBillType = (i(1) as? String) ?: "EXPENSE",
+                        budgetReminderEnabled = (i(2) as? Boolean) ?: true,
+                        calendarSyncEnabled = (i(3) as? Boolean) ?: false,
+                        switchColor = (i(4) as? String) ?: "#2D4A3E",
+                        defaultStartPage = (i(5) as? String) ?: "dashboard",
+                        language = (i(6) as? String) ?: "SYSTEM",
+                        birthdayReminderAdvanceDays = (i(7) as? Int) ?: 3,
+                        anniversaryReminderAdvanceDays = (i(8) as? Int) ?: 3,
+                        dailyReminderEnabled = (i(9) as? Boolean) ?: true,
+                        billReminderEnabled = (i(10) as? Boolean) ?: true,
+                        dailyReminderHour = (i(11) as? Int) ?: 9,
+                        dailyReminderMinute = (i(12) as? Int) ?: 0,
+                        billReminderHour = (i(13) as? Int) ?: 21,
+                        billReminderMinute = (i(14) as? Int) ?: 0,
+                        biometricEnabled = (i(15) as? Boolean) ?: false,
+                        profileNickname = (i(16) as? String) ?: "",
+                        profileSignature = (i(17) as? String) ?: "",
+                        profileAvatar = (i(18) as? String) ?: "Spa",
+                        profileAvatarPath = (i(19) as? String) ?: "",
+                        assetCount = (i(20) as? Int) ?: 0,
+                        goalCount = (i(21) as? Int) ?: 0,
+                        momentCount = (i(22) as? Int) ?: 0,
+                        anniversaryCount = (i(23) as? Int) ?: 0
+                    )
+                }
+            }.catch { Log.w("SettingsVM", "Settings flow failed", it) }.collect()
         }
     }
 

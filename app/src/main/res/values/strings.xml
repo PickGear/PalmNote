@@ -225,6 +225,7 @@
     <string name="save_changes">保存修改</string>
     <string name="cancel">取消</string>
     <string name="delete">删除</string>
+    <string name="delete_confirm">确认删除？此操作不可撤销。</string>
     <string name="edit">编辑</string>
     <string name="confirm">确定</string>
     <string name="search">搜索</string>
@@ -237,6 +238,22 @@
     <string name="merchant">商家</string>
     <string name="merchant_hint">商家名称（可选）</string>
     <string name="note_hint">添加备注（可选）</string>
+    
+    <!-- Bill Filter -->
+    <string name="bill_filter">筛选</string>
+    <string name="bill_filter_title">高级筛选</string>
+    <string name="bill_filter_type">类型</string>
+    <string name="bill_filter_type_all">全部</string>
+    <string name="bill_filter_type_expense">支出</string>
+    <string name="bill_filter_type_income">收入</string>
+    <string name="bill_filter_amount">金额范围</string>
+    <string name="bill_filter_amount_min">最低金额</string>
+    <string name="bill_filter_amount_max">最高金额</string>
+    <string name="bill_filter_category">分类</string>
+    <string name="bill_filter_category_all">全部分类</string>
+    <string name="bill_filter_payment_method">支付方式</string>
+    <string name="bill_filter_payment_method_all">全部方式</string>
+    <string name="bill_filter_apply">应用筛选</string>
     
     <!-- Dashboard Module -->
     <string name="dashboard_card_manage">卡片管理</string>
@@ -589,6 +606,7 @@
     <string name="life_mood_sad">难过</string>
     <string name="life_mood_angry">愤怒</string>
     <string name="life_mood_question">今天心情怎样？</string>
+    <string name="life_mood_edit">编辑心情记录</string>
     <string name="life_mood_factors">触发因素</string>
     <string name="life_mood_factor_work">工作</string>
     <string name="life_mood_factor_health">健康</string>
@@ -694,8 +712,11 @@
     <string name="asset_basic_info">基本信息</string>
     <string name="asset_subcategory">子分类</string>
     <string name="asset_brand">品牌</string>
+    <string name="asset_brand_hint">输入品牌名称</string>
     <string name="asset_model_name">型号</string>
+    <string name="asset_model_hint">输入型号</string>
     <string name="asset_serial_number">序列号</string>
+    <string name="asset_serial_number_hint">输入序列号</string>
     <string name="asset_condition">成色</string>
     <string name="asset_condition_new">全新</string>
     <string name="asset_condition_good">良好</string>
@@ -710,9 +731,14 @@
     <string name="asset_acquisition_date">获取日期</string>
     <string name="asset_purchase_channel">购买渠道</string>
     <string name="asset_room">房间</string>
+    <string name="asset_room_hint">输入房间位置</string>
+    <string name="asset_show_advanced_options">展开高级选项</string>
+    <string name="asset_hide_advanced_options">收起高级选项</string>
     <string name="asset_value_info">价值信息</string>
     <string name="asset_current_value">当前估值</string>
+    <string name="asset_current_value_hint">输入当前估值</string>
     <string name="asset_depreciation_rate">年折旧率</string>
+    <string name="asset_depreciation_rate_hint">输入年折旧率(%)</string>
     <string name="asset_cost_calculation">成本计算</string>
     <string name="asset_depreciation">折旧</string>
     <string name="asset_warranty_info">保修信息</string>
@@ -720,6 +746,8 @@
     <string name="asset_warranty_remaining_days">剩余%d天</string>
     <string name="asset_warranty_expired_days">已过期%d天</string>
     <string name="asset_maintenance_info">维护信息</string>
+    <string name="asset_maintenance_interval">维护间隔</string>
+    <string name="asset_maintenance_interval_hint">输入维护间隔天数</string>
     <string name="asset_last_maintenance_format">上次维护: %s</string>
     <string name="asset_maintenance_cycle_format">维护周期: %d天</string>
     <string name="asset_maintenance_needed">需要维护</string>
@@ -728,8 +756,12 @@
     <string name="asset_complete_maintenance">完成维护</string>
     <string name="asset_insurance_info">保险信息</string>
     <string name="asset_insurance_company">保险公司</string>
+    <string name="asset_insurance_company_hint">输入保险公司名称</string>
     <string name="asset_insurance_policy">保单号</string>
+    <string name="asset_insurance_policy_no_hint">输入保单号</string>
     <string name="asset_insurance_expiry">到期日期</string>
+    <string name="asset_insurance_expire_date">保险到期日</string>
+    <string name="asset_select_insurance_date">选择保险到期日</string>
     <string name="asset_away_info">暂离信息</string>
     <string name="asset_removed_info">已清出信息</string>
     <string name="asset_status_info_label">状态信息</string>
@@ -1323,6 +1355,8 @@
     <string name="backup_operation_success">操作成功</string>
     <string name="backup_create">创建备份</string>
     <string name="backup_create_desc">将所有数据打包为 .palmnote 文件，存储到 Downloads/PalmNote/ 目录</string>
+    <string name="backup_password_optional">设置密码（可选）</string>
+    <string name="backup_password">输入密码</string>
     <string name="backup_backing_up">正在备份…</string>
     <string name="backup_now">立即备份</string>
     <string name="backup_existing">已有备份</string>

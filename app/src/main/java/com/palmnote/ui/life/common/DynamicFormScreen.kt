@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.palmnote.R
 import com.palmnote.ui.components.AppDialog
+import com.palmnote.ui.components.SecondaryTopAppBar
 import com.palmnote.data.db.entity.LifeItem
 import com.palmnote.data.db.entity.LifeTemplate
 import com.palmnote.ui.theme.Spacing
@@ -130,7 +131,7 @@ fun DynamicFormScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
+            SecondaryTopAppBar(
                 title = { Text(if (isEdit) stringResource(R.string.life_edit_title, template.displayName()) else stringResource(R.string.life_create_title, template.displayName()), fontWeight = FontWeight.SemiBold) },
                 navigationIcon = { IconButton(onClick = handleBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.life_back)) } },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)

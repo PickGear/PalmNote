@@ -62,7 +62,7 @@ fun AccountBookManageScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { editingBook = null; showAddDialog = true },
-                containerColor = AccentOrange,
+                containerColor = MaterialTheme.colorScheme.secondary,
                 contentColor = Color.White,
                 shape = MaterialTheme.shapes.large
             ) {
@@ -343,7 +343,7 @@ private fun AccountBookEditBottomSheet(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Surface(shape = CircleShape, color = try { Color(android.graphics.Color.parseColor(template.color)) } catch (_: Exception) { Color.Gray }, modifier = Modifier.size(40.dp)) {
+                        Surface(shape = CircleShape, color = template.color.toComposeColor(Color.Gray), modifier = Modifier.size(40.dp)) {
                             val templateIcon = template.icon.imageVector
                         Box(contentAlignment = Alignment.Center) { Icon(templateIcon, contentDescription = null, modifier = Modifier.size(24.dp), tint = Color.White) }
                         }
@@ -377,7 +377,7 @@ private fun AccountBookEditBottomSheet(
             FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 themeColors.forEach { c ->
                     Surface(onClick = { color = c }, shape = CircleShape,
-                        color = try { Color(android.graphics.Color.parseColor(c)) } catch (_: Exception) { Color.Gray },
+                        color = c.toComposeColor(Color.Gray),
                         modifier = Modifier.size(28.dp)) {
                         if (color == c) {
                             Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {

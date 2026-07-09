@@ -39,20 +39,44 @@ private fun moodList(): List<MoodOption> = listOf(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun QuickMoodSheet(onDismiss: () -> Unit, onSave: (mood: String, content: String, factors: String) -> Unit) {
+fun QuickMoodSheet(
+    onDismiss: () -> Unit,
+    onSave: (mood: String, content: String, factors: String) -> Unit,
+    editMood: String? = null,
+    editContent: String? = null,
+    editFactors: String? = null
+) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    var selectedIndex by remember { mutableIntStateOf(2) }
-    var content by remember { mutableStateOf("") }
-    var selectedFactors by remember { mutableStateOf(setOf<String>()) }
+    val moods = moodList()
+    
+    // 根据编辑数据初始化状态
+    val initialIndex = remember(editMood) {
+        moods.indexOfFirst { it.key == editMood }.takeIf { it >= 0 } ?: 2
+    }
+    var selectedIndex by remember { mutableIntStateOf(initialIndex) }
+    var content by remember { mutableStateOf(editContent ?: "") }
+    
+    val initialFactors = remember(editFactors) {
+        if (editFactors.isNullOrBlank()) emptySet()
+        else try {
+            val arr = kotlinx.serialization.json.Json.parseToJsonElement(editFactors) as? JsonArray
+            arr?.mapNotNull { (it as? JsonPrimitive)?.content }?.toSet() ?: emptySet()
+        } catch (_: Exception) { emptySet() }
+    }
+    var selectedFactors by remember { mutableStateOf(initialFactors) }
+    
     var dragAccum by remember { mutableFloatStateOf(0f) }
     val factors = listOf(stringResource(R.string.life_mood_factor_work) to "work", stringResource(R.string.life_mood_factor_health) to "favorite", stringResource(R.string.life_mood_factor_family) to "family_restroom", stringResource(R.string.life_mood_factor_finance) to "account_balance", stringResource(R.string.life_mood_factor_weather) to "cloud", stringResource(R.string.life_mood_factor_social) to "groups")
-    val moods = moodList()
     val selectedMood = moods[selectedIndex].key
-
+    
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)) {
         Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
             Box(modifier = Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 8.dp), contentAlignment = Alignment.Center) { Box(modifier = Modifier.width(36.dp).height(4.dp).background(MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(2.dp))) }
-            Text(stringResource(R.string.life_mood_question), fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.padding(horizontal = 24.dp))
+            Text(
+                if (editMood != null) stringResource(R.string.life_mood_edit) 
+                else stringResource(R.string.life_mood_question), 
+                fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.padding(horizontal = 24.dp)
+            )
             Spacer(modifier = Modifier.height(24.dp))
 
             Row(

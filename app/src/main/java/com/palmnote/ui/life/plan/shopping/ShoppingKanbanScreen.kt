@@ -32,7 +32,8 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.palmnote.R
 import com.palmnote.ui.components.AppDialog
-import com.palmnote.ui.life.common.EmptyState
+import com.palmnote.ui.components.EmptyState
+import com.palmnote.ui.components.SecondaryTopAppBar
 import com.palmnote.ui.life.common.FilterChipItem
 import com.palmnote.ui.life.common.SwipeableItem
 import com.palmnote.ui.theme.*
@@ -46,9 +47,9 @@ fun ShoppingKanbanScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Lon
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(templateId) { viewModel.load(templateId) }
 
-    val active = state.items.filter { it.status == "ACTIVE" || it.status == "\u5F85\u8D2D\u4E70" }
-    val progress = state.items.filter { it.status == "ONGOING" || it.status == "\u8FDB\u884C\u4E2D" }
-    val done = state.items.filter { it.status == "COMPLETED" || it.status == "\u5DF2\u8D2D\u4E70" }
+    val active = state.items.filter { it.status == "ACTIVE" || it.status == "WISHLIST" }
+    val progress = state.items.filter { it.status == "ONGOING" || it.status == "IN_PROGRESS" }
+    val done = state.items.filter { it.status == "COMPLETED" || it.status == "PURCHASED" }
 
     var deleteTarget by remember { mutableStateOf<Long?>(null) }
     if (deleteTarget != null) {
@@ -63,7 +64,7 @@ fun ShoppingKanbanScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Lon
 
     Scaffold(
         topBar = {
-            TopAppBar(
+            SecondaryTopAppBar(
                 title = { Text(stringResource(R.string.life_shopping_title), fontWeight = FontWeight.Bold, color = LifeShopping) },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.life_back)) } },
                 actions = { IconButton(onClick = onCreateClick) { Icon(Icons.Default.Add, stringResource(R.string.life_new_create)) } },
@@ -90,8 +91,8 @@ fun ShoppingKanbanScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Lon
                     icon = Icons.Default.ShoppingCart,
                     title = stringResource(R.string.life_empty_shopping),
                     subtitle = stringResource(R.string.life_empty_shopping_subtitle),
-                    actionLabel = stringResource(R.string.life_empty_shopping_action),
-                    onAction = onCreateClick
+                    actionText = stringResource(R.string.life_empty_shopping_action),
+                    onActionClick = onCreateClick
                 )
             } else if (showKanban) {
                 Row(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp).horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {

@@ -9,6 +9,7 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.palmnote.data.datastore.PreferencesManager
 import com.palmnote.data.worker.LifeDailyCheckWorker
+import com.palmnote.data.worker.AutoBackupWorker
 import com.palmnote.ui.notification.NotificationHelper
 import dagger.hilt.android.HiltAndroidApp
 import java.util.Calendar
@@ -16,6 +17,7 @@ import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -31,12 +33,15 @@ class PalmNoteApp : Application(), Configuration.Provider {
     @Inject lateinit var workerFactory: HiltWorkerFactory
     @Inject lateinit var preferencesManager: PreferencesManager
 
+    private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
     override fun onCreate() {
         super.onCreate()
         instance = this
         applySavedLanguage()
         NotificationHelper.createChannels(this)
         scheduleDailyCheck()
+        scheduleAutoBackup()
         runStartupCheck()
     }
 
@@ -44,7 +49,7 @@ class PalmNoteApp : Application(), Configuration.Provider {
         get() = Configuration.Builder().setWorkerFactory(workerFactory).build()
 
     private fun scheduleDailyCheck() {
-        CoroutineScope(Dispatchers.IO).launch {
+        applicationScope.launch {
             val hour = preferencesManager.dailyReminderHour.first()
             val minute = preferencesManager.dailyReminderMinute.first()
             val now = Calendar.getInstance()
@@ -63,6 +68,14 @@ class PalmNoteApp : Application(), Configuration.Provider {
                 "life_daily_check", ExistingPeriodicWorkPolicy.REPLACE, request
             )
         }
+    }
+    
+    private fun scheduleAutoBackup() {
+        val request = PeriodicWorkRequestBuilder<AutoBackupWorker>(24, TimeUnit.HOURS)
+            .build()
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+            "auto_backup", ExistingPeriodicWorkPolicy.KEEP, request
+        )
     }
 
     private fun runStartupCheck() {

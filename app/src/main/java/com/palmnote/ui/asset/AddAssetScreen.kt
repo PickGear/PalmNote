@@ -467,7 +467,7 @@ fun AddAssetScreen(
                         Spacer(modifier = Modifier.height(8.dp))
                         OutlinedTextField(
                             value = formState.purchasePrice,
-                            onValueChange = { viewModel.updateFormField { copy(purchasePrice = it) } },
+                            onValueChange = { if (it.isEmpty() || it.matches(Regex("^\\d{0,10}(\\.\\d{0,2})?$"))) viewModel.updateFormField { copy(purchasePrice = it) } },
                             modifier = Modifier.fillMaxWidth(),
                             placeholder = { Text("0.00") },
                             prefix = { Text("¥") },
@@ -539,7 +539,7 @@ fun AddAssetScreen(
                         Spacer(modifier = Modifier.height(8.dp))
                         OutlinedTextField(
                             value = formState.purchasePrice,
-                            onValueChange = { viewModel.updateFormField { copy(purchasePrice = it) } },
+                            onValueChange = { if (it.isEmpty() || it.matches(Regex("^\\d{0,10}(\\.\\d{0,2})?$"))) viewModel.updateFormField { copy(purchasePrice = it) } },
                             modifier = Modifier.fillMaxWidth(),
                             placeholder = { Text("0.00") },
                             prefix = { Text("¥") },
@@ -646,6 +646,172 @@ fun AddAssetScreen(
                         shape = MaterialTheme.shapes.medium,
                         maxLines = 5
                     )
+                }
+            }
+            
+            // 高级选项折叠区域
+            item {
+                var showAdvancedOptions by remember { mutableStateOf(false) }
+                
+                ModuleCard(tint = MaterialTheme.colorScheme.surface) {
+                    TextButton(
+                        onClick = { showAdvancedOptions = !showAdvancedOptions },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            if (showAdvancedOptions) stringResource(R.string.asset_hide_advanced_options) 
+                            else stringResource(R.string.asset_show_advanced_options),
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Icon(
+                            if (showAdvancedOptions) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
+                            contentDescription = null
+                        )
+                    }
+                    
+                    if (showAdvancedOptions) {
+                        // 品牌
+                        FormSection(stringResource(R.string.asset_brand)) {
+                            OutlinedTextField(
+                                value = formState.brand,
+                                onValueChange = { viewModel.updateFormField { copy(brand = it) } },
+                                modifier = Modifier.fillMaxWidth(),
+                                placeholder = { Text(stringResource(R.string.asset_brand_hint)) },
+                                shape = MaterialTheme.shapes.medium,
+                                singleLine = true
+                            )
+                        }
+                        
+                        // 型号
+                        FormSection(stringResource(R.string.asset_model_name)) {
+                            OutlinedTextField(
+                                value = formState.model,
+                                onValueChange = { viewModel.updateFormField { copy(model = it) } },
+                                modifier = Modifier.fillMaxWidth(),
+                                placeholder = { Text(stringResource(R.string.asset_model_hint)) },
+                                shape = MaterialTheme.shapes.medium,
+                                singleLine = true
+                            )
+                        }
+                        
+                        // 序列号
+                        FormSection(stringResource(R.string.asset_serial_number)) {
+                            OutlinedTextField(
+                                value = formState.serialNumber,
+                                onValueChange = { viewModel.updateFormField { copy(serialNumber = it) } },
+                                modifier = Modifier.fillMaxWidth(),
+                                placeholder = { Text(stringResource(R.string.asset_serial_number_hint)) },
+                                shape = MaterialTheme.shapes.medium,
+                                singleLine = true
+                            )
+                        }
+                        
+                        // 状况
+                        FormSection(stringResource(R.string.asset_condition)) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                listOf(
+                                    "NEW" to stringResource(R.string.asset_condition_new),
+                                    "GOOD" to stringResource(R.string.asset_condition_good),
+                                    "FAIR" to stringResource(R.string.asset_condition_fair),
+                                    "POOR" to stringResource(R.string.asset_condition_poor)
+                                ).forEach { (condition, label) ->
+                                    FilterChip(
+                                        selected = formState.condition == condition,
+                                        onClick = { viewModel.updateFormField { copy(condition = condition) } },
+                                        label = { Text(label) }
+                                    )
+                                }
+                            }
+                        }
+                        
+                        // 保险公司
+                        FormSection(stringResource(R.string.asset_insurance_company)) {
+                            OutlinedTextField(
+                                value = formState.insuranceCompany,
+                                onValueChange = { viewModel.updateFormField { copy(insuranceCompany = it) } },
+                                modifier = Modifier.fillMaxWidth(),
+                                placeholder = { Text(stringResource(R.string.asset_insurance_company_hint)) },
+                                shape = MaterialTheme.shapes.medium,
+                                singleLine = true
+                            )
+                        }
+                        
+                        // 保单号
+                        FormSection(stringResource(R.string.asset_insurance_policy)) {
+                            OutlinedTextField(
+                                value = formState.insurancePolicyNo,
+                                onValueChange = { viewModel.updateFormField { copy(insurancePolicyNo = it) } },
+                                modifier = Modifier.fillMaxWidth(),
+                                placeholder = { Text(stringResource(R.string.asset_insurance_policy_no_hint)) },
+                                shape = MaterialTheme.shapes.medium,
+                                singleLine = true
+                            )
+                        }
+                        
+                        // 保险到期日
+                        FormSection(stringResource(R.string.asset_insurance_expire_date)) {
+                            DatePickerField(
+                                selectedDate = formState.insuranceExpireDate,
+                                onDateSelected = { viewModel.updateFormField { copy(insuranceExpireDate = it) } },
+                                placeholder = stringResource(R.string.asset_select_insurance_date)
+                            )
+                        }
+                        
+                        // 维护间隔天数
+                        FormSection(stringResource(R.string.asset_maintenance_interval)) {
+                            OutlinedTextField(
+                                value = formState.maintenanceIntervalDays,
+                                onValueChange = { if (it.isEmpty() || it.all { c -> c.isDigit() }) viewModel.updateFormField { copy(maintenanceIntervalDays = it) } },
+                                modifier = Modifier.fillMaxWidth(),
+                                placeholder = { Text(stringResource(R.string.asset_maintenance_interval_hint)) },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                shape = MaterialTheme.shapes.medium,
+                                singleLine = true
+                            )
+                        }
+                        
+                        // 年折旧率
+                        FormSection(stringResource(R.string.asset_depreciation_rate)) {
+                            OutlinedTextField(
+                                value = formState.depreciationRate,
+                                onValueChange = { if (it.isEmpty() || it.matches(Regex("^\\d{0,3}(\\.\\d{0,2})?$"))) viewModel.updateFormField { copy(depreciationRate = it) } },
+                                modifier = Modifier.fillMaxWidth(),
+                                placeholder = { Text(stringResource(R.string.asset_depreciation_rate_hint)) },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                shape = MaterialTheme.shapes.medium,
+                                singleLine = true,
+                                suffix = { Text("%") }
+                            )
+                        }
+                        
+                        // 当前估值
+                        FormSection(stringResource(R.string.asset_current_value)) {
+                            OutlinedTextField(
+                                value = formState.currentValue,
+                                onValueChange = { if (it.isEmpty() || it.matches(Regex("^\\d{0,10}(\\.\\d{0,2})?$"))) viewModel.updateFormField { copy(currentValue = it) } },
+                                modifier = Modifier.fillMaxWidth(),
+                                placeholder = { Text(stringResource(R.string.asset_current_value_hint)) },
+                                prefix = { Text("¥") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                shape = MaterialTheme.shapes.medium,
+                                singleLine = true
+                            )
+                        }
+                        
+                        // 房间
+                        FormSection(stringResource(R.string.asset_room)) {
+                            OutlinedTextField(
+                                value = formState.room,
+                                onValueChange = { viewModel.updateFormField { copy(room = it) } },
+                                modifier = Modifier.fillMaxWidth(),
+                                placeholder = { Text(stringResource(R.string.asset_room_hint)) },
+                                shape = MaterialTheme.shapes.medium,
+                                singleLine = true
+                            )
+                        }
+                    }
                 }
             }
 

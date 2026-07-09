@@ -84,25 +84,23 @@ class PreferencesManager @Inject constructor(
         context.dataStore.edit { it[DASHBOARD_CARD_CONFIGS] = DashboardCardConfig.toJson(configs) }
     }
 
-    fun isAppLockEnabled(): Boolean {
-        return runBlocking { context.dataStore.data.first()[APP_LOCK_ENABLED] ?: false }
-    }
+    val appLockEnabled: Flow<Boolean> by lazy { context.dataStore.data.map { it[APP_LOCK_ENABLED] ?: false } }
 
     suspend fun setAppLockEnabled(enabled: Boolean) {
         context.dataStore.edit { it[APP_LOCK_ENABLED] = enabled }
     }
 
-    fun setAppLockEnabledSync(enabled: Boolean) {
-        runBlocking { setAppLockEnabled(enabled) }
-    }
-
-    fun getEncryptedPin(): String {
-        return runBlocking { context.dataStore.data.first()[ENCRYPTED_PIN] ?: "" }
-    }
+    val encryptedPin: Flow<String> by lazy { context.dataStore.data.map { it[ENCRYPTED_PIN] ?: "" } }
 
     suspend fun setEncryptedPin(pin: String) {
         context.dataStore.edit { it[ENCRYPTED_PIN] = pin }
     }
+
+    fun isAppLockEnabled(): Boolean = runBlocking { appLockEnabled.first() }
+
+    fun setAppLockEnabledSync(enabled: Boolean) = runBlocking { setAppLockEnabled(enabled) }
+
+    fun getEncryptedPin(): String = runBlocking { encryptedPin.first() }
 
     val birthdayReminderAdvanceDays: Flow<Int> = context.dataStore.data.map { it[BIRTHDAY_REMINDER_ADVANCE_DAYS] ?: 3 }
 

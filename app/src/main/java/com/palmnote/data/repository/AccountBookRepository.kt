@@ -30,10 +30,7 @@ class AccountBookRepository @Inject constructor(
 
     override suspend fun updateBook(book: AccountBook) = accountBookDao.updateBook(book)
 
-    override suspend fun setDefault(id: Long) {
-        accountBookDao.clearAllDefaults()
-        accountBookDao.setDefault(id)
-    }
+    override suspend fun setDefault(id: Long) = accountBookDao.setAsDefault(id)
 
     override suspend fun setHidden(id: Long, hidden: Boolean) = accountBookDao.setHidden(id, hidden)
 

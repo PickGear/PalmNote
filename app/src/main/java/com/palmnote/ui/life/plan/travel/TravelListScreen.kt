@@ -24,7 +24,8 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.palmnote.R
 import com.palmnote.ui.components.AppDialog
-import com.palmnote.ui.life.common.EmptyState
+import com.palmnote.ui.components.EmptyState
+import com.palmnote.ui.components.SecondaryTopAppBar
 import com.palmnote.ui.life.common.SwipeableItem
 import com.palmnote.ui.theme.*
 import kotlinx.serialization.json.Json
@@ -48,7 +49,7 @@ fun TravelListScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Long) -
     }
     Scaffold(
         topBar = {
-            TopAppBar(
+            SecondaryTopAppBar(
                 title = { Text(stringResource(R.string.life_travel_title), fontWeight = FontWeight.Bold, color = LifeTravel) },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.life_back)) } },
                 actions = { IconButton(onClick = onCreateClick) { Icon(Icons.Default.Add, stringResource(R.string.life_new_create)) } },
@@ -66,8 +67,8 @@ fun TravelListScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Long) -
                 icon = iconFromName("flight"),
                 title = stringResource(R.string.life_empty_travel),
                 subtitle = stringResource(R.string.life_empty_travel_subtitle),
-                actionLabel = stringResource(R.string.life_empty_travel_action),
-                onAction = onCreateClick
+                actionText = stringResource(R.string.life_empty_travel_action),
+                onActionClick = onCreateClick
             )
         } else {
         LifeLazyList(modifier = Modifier.fillMaxSize().padding(innerPadding).padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {

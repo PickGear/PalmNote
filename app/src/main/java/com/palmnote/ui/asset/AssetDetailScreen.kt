@@ -5,6 +5,8 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -51,6 +53,7 @@ import com.palmnote.R
 import com.palmnote.ui.components.*
 import com.palmnote.ui.theme.*
 import kotlin.math.roundToInt
+import kotlinx.coroutines.launch
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -78,7 +81,19 @@ fun AssetDetailScreen(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
-            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+            if (detailState.isLoading) {
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+            } else {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(Icons.Outlined.ErrorOutline, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(48.dp))
+                    Spacer(Modifier.height(8.dp))
+                    Text(stringResource(R.string.asset_not_found), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Spacer(Modifier.height(16.dp))
+                    OutlinedButton(onClick = { viewModel.loadAssetDetail(assetId) }) {
+                        Text(stringResource(R.string.life_screen_retry))
+                    }
+                }
+            }
         }
         return
     }
@@ -134,7 +149,12 @@ fun AssetDetailScreen(
                         ) {
                             val firstImage = imageList.firstOrNull()
                             if (firstImage != null) {
-                                AsyncImage(model = File(firstImage), contentDescription = null, modifier = Modifier.fillMaxSize().clip(MaterialTheme.shapes.large), contentScale = ContentScale.Crop)
+                                AsyncImage(
+                                    model = File(firstImage),
+                                    contentDescription = asset.name,
+                                    modifier = Modifier.fillMaxSize().clip(MaterialTheme.shapes.large),
+                                    contentScale = ContentScale.Crop
+                                )
                             } else {
                                 Icon(imageVector = catInfo.icon, contentDescription = null, tint = catInfo.color, modifier = Modifier.size(36.dp))
                             }
@@ -267,10 +287,20 @@ fun AssetDetailScreen(
                         }
                         if (isDue) {
                             Spacer(Modifier.height(8.dp))
-                            Button(onClick = { viewModel.completeMaintenance(assetId) }, modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium, colors = ButtonDefaults.buttonColors(containerColor = AccentOrange)) {
+                            var showMaintConfirm by remember { mutableStateOf(false) }
+                            Button(onClick = { showMaintConfirm = true }, modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium, colors = ButtonDefaults.buttonColors(containerColor = AccentOrange)) {
                                 Icon(Icons.Filled.Check, null, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(8.dp))
                                 Text(stringResource(R.string.asset_complete_maintenance), fontWeight = FontWeight.Bold)
+                            }
+                            if (showMaintConfirm) {
+                                AppDialog(
+                                    onDismissRequest = { showMaintConfirm = false },
+                                    title = { Text(stringResource(R.string.asset_maintenance_info), fontWeight = FontWeight.Bold) },
+                                    text = { Text("确认完成本次维护？") },
+                                    confirmButton = { TextButton(onClick = { viewModel.completeMaintenance(assetId); showMaintConfirm = false }) { Text(stringResource(R.string.confirm)) } },
+                                    dismissButton = { TextButton(onClick = { showMaintConfirm = false }) { Text(stringResource(R.string.cancel)) } }
+                                )
                             }
                         }
                     }
@@ -324,10 +354,20 @@ fun AssetDetailScreen(
                             }
                         }
                         Spacer(modifier = Modifier.height(8.dp))
-                        OutlinedButton(onClick = { viewModel.reactivateAsset(assetId) }, modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium) {
+                        var showReactConfirm by remember { mutableStateOf(false) }
+                        OutlinedButton(onClick = { showReactConfirm = true }, modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium) {
                             Icon(Icons.Filled.Restore, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(8.dp))
                             Text(stringResource(R.string.asset_reactivate))
+                        }
+                        if (showReactConfirm) {
+                            AppDialog(
+                                onDismissRequest = { showReactConfirm = false },
+                                title = { Text(stringResource(R.string.asset_status_held), fontWeight = FontWeight.Bold) },
+                                text = { Text("确认恢复为持有状态？") },
+                                confirmButton = { TextButton(onClick = { viewModel.reactivateAsset(assetId); showReactConfirm = false }) { Text(stringResource(R.string.confirm), color = MaterialTheme.colorScheme.primary) } },
+                                dismissButton = { TextButton(onClick = { showReactConfirm = false }) { Text(stringResource(R.string.cancel)) } }
+                            )
                         }
                     }
                 }
@@ -498,7 +538,13 @@ fun AssetDetailScreen(
             onDismissRequest = { viewModel.hideDeleteDialog() },
             title = { Text(stringResource(R.string.asset_dialog_delete_title)) },
             text = { Text(stringResource(R.string.asset_dialog_delete_confirm, asset.name)) },
-            confirmButton = { TextButton(onClick = { viewModel.softDeleteAsset(assetId); onNavigateBack() }) { Text(stringResource(R.string.delete), color = ErrorLight) } }
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.softDeleteAsset(assetId)
+                    viewModel.hideDeleteDialog()
+                    onNavigateBack()
+                }) { Text(stringResource(R.string.delete), color = ErrorLight) }
+            }
         )
     }
     } // closes Box wrapper
@@ -603,10 +649,13 @@ private fun ImagePreview(showPreview: Boolean, imageList: List<String>, previewI
     BackHandler { onClose() }
     val pagerState = rememberPagerState(pageCount = { imageList.size }, initialPage = previewIndex)
     val context = LocalContext.current
+    val snackbarPreviewHost = remember { SnackbarHostState() }
+    val previewScope = rememberCoroutineScope()
     Box(
         modifier = Modifier.fillMaxSize().background(Color.Black)
             .pointerInput(Unit) { awaitPointerEventScope { while (true) { awaitPointerEvent().changes.forEach { it.consume() } } } }
     ) {
+        SnackbarHost(snackbarPreviewHost, modifier = Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 48.dp))
         Column(Modifier.fillMaxSize()) {
             Row(
                 modifier = Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 4.dp, vertical = 4.dp),
@@ -623,7 +672,12 @@ private fun ImagePreview(showPreview: Boolean, imageList: List<String>, previewI
                 Spacer(Modifier.width(48.dp))
             }
             HorizontalPager(state = pagerState, modifier = Modifier.weight(1f).fillMaxWidth()) { page ->
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                var zoomScale by remember { mutableFloatStateOf(1f) }
+                Box(modifier = Modifier.fillMaxSize().pointerInput(Unit) {
+                    detectTransformGestures { _, _, zoom, _ ->
+                        zoomScale = (zoomScale * zoom).coerceIn(1f, 5f)
+                    }
+                }.graphicsLayer { scaleX = zoomScale; scaleY = zoomScale }, contentAlignment = Alignment.Center) {
                     AsyncImage(model = File(imageList[page]), contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Fit)
                 }
             }
@@ -631,7 +685,7 @@ private fun ImagePreview(showPreview: Boolean, imageList: List<String>, previewI
                 Button(
                     onClick = {
                         viewModel.downloadImageToGallery(imageList[pagerState.currentPage])
-                        android.widget.Toast.makeText(context, context.getString(R.string.asset_saved_to_album), android.widget.Toast.LENGTH_SHORT).show()
+                        previewScope.launch { snackbarPreviewHost.showSnackbar(context.getString(R.string.asset_saved_to_album)) }
                     },
                     modifier = Modifier.height(44.dp).wrapContentWidth(),
                     shape = MaterialTheme.shapes.medium,

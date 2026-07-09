@@ -17,6 +17,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -26,6 +27,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.palmnote.R
+import com.palmnote.ui.components.SecondaryTopAppBar
+import com.palmnote.ui.components.toComposeColor
 import com.palmnote.data.db.entity.LifeTemplate
 import com.palmnote.ui.theme.*
 import kotlinx.serialization.json.*
@@ -58,9 +61,14 @@ fun TemplateCreateScreen(
     val icons = listOf("EditNote", "CheckCircle", "Savings", "ShoppingCart", "Flight", "MenuBook", "School", "Timer", "CalendarMonth", "Favorite", "Cake", "Notifications", "AutoStories", "Mood", "BarChart", "Settings")
     val colors = listOf("#EC407A", "#F07070", "#FF7043", "#FFCA28", "#66BB6A", "#50C890", "#26A69A", "#00ACC1", "#42A5F5", "#5C6BC0", "#AB47BC", "#7C8CF0", "#78909C", "#8D6E63", "#E53935", "#1E88E5")
 
+    val createdId: Long? by viewModel.createdTemplateId.collectAsStateWithLifecycle()
+    LaunchedEffect(createdId) {
+        createdId?.let { onCreated(it) }
+    }
+
     Scaffold(
         topBar = {
-            TopAppBar(
+            SecondaryTopAppBar(
                 title = { Text(if (step == 0) stringResource(R.string.life_template_step_type) else if (step == 1) stringResource(R.string.life_template_step_basic) else if (step == 2) stringResource(R.string.life_template_step_fields) else stringResource(R.string.life_template_step_layout), fontWeight = FontWeight.Bold) },
                 navigationIcon = { IconButton(onClick = { if (step > 0) step-- else onBack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.life_back)) } },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
@@ -99,7 +107,6 @@ fun TemplateCreateScreen(
                             fields = fields,
                             layout = selectedLayout
                         )
-                        onCreated(0)
                     }
                 },
                 modifier = Modifier.fillMaxWidth().height(48.dp).padding(bottom = 16.dp),
@@ -151,7 +158,7 @@ private fun BasicInfoStep(name: String, onNameChange: (String) -> Unit, descript
         item { Text(stringResource(R.string.life_template_select_icon), fontWeight = FontWeight.Medium, fontSize = 14.sp) }
         item { LazyVerticalGrid(columns = GridCells.Fixed(8), modifier = Modifier.height(120.dp)) { items(icons) { icon -> Box(modifier = Modifier.size(40.dp).clip(RoundedCornerShape(8.dp)).background(if (selectedIcon == icon) ModuleLife.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant).clickable { onIconSelect(icon) }, contentAlignment = Alignment.Center) { Icon(iconFromName(icon), null, tint = if (selectedIcon == icon) ModuleLife else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp)) } } } }
         item { Text(stringResource(R.string.life_template_select_color), fontWeight = FontWeight.Medium, fontSize = 14.sp) }
-        item { LazyVerticalGrid(columns = GridCells.Fixed(6), modifier = Modifier.height(80.dp)) { items(colors) { color -> Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(try { Color(android.graphics.Color.parseColor(color)) } catch (_: Exception) { ModuleLife }).clickable { onColorSelect(color) }.then(if (selectedColor == color) Modifier.border(2.dp, MaterialTheme.colorScheme.onSurface, CircleShape) else Modifier), contentAlignment = Alignment.Center) { if (selectedColor == color) Icon(Icons.Default.Check, null, tint = Color.White, modifier = Modifier.size(16.dp)) } } } }
+        item { LazyVerticalGrid(columns = GridCells.Fixed(6), modifier = Modifier.height(80.dp)) { items(colors) { color -> Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(color.toComposeColor(ModuleLife)).clickable { onColorSelect(color) }.then(if (selectedColor == color) Modifier.border(2.dp, MaterialTheme.colorScheme.onSurface, CircleShape) else Modifier), contentAlignment = Alignment.Center) { if (selectedColor == color) Icon(Icons.Default.Check, null, tint = Color.White, modifier = Modifier.size(16.dp)) } } } }
     }
 }
 

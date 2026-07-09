@@ -22,7 +22,5 @@ class TodoRepositoryImpl @Inject constructor(
 
     override suspend fun softDeleteTodo(id: Long) = dao.softDeleteTodo(id)
 
-    override fun getSubtodos(parentId: Long): Flow<List<TodoItem>> {
-        return dao.getAllTodos().map { list -> list.filter { it.parentId == parentId } }
-    }
+    override fun getSubtodos(parentId: Long): Flow<List<TodoItem>> = dao.getTodosByParentId(parentId)
 }

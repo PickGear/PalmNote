@@ -43,10 +43,7 @@ class WalletRepository @Inject constructor(
 
     override suspend fun adjustBalance(id: Long, amount: Double) = walletDao.adjustBalance(id, amount)
 
-    override suspend fun setDefault(id: Long) {
-        walletDao.clearAllDefaults()
-        walletDao.setDefault(id)
-    }
+    override suspend fun setDefault(id: Long) = walletDao.setAsDefault(id)
 
     override suspend fun setEnabled(id: Long, enabled: Boolean) = walletDao.setEnabled(id, enabled)
 

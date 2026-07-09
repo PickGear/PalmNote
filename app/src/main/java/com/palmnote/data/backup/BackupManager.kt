@@ -11,12 +11,14 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
 import com.palmnote.data.db.AppDatabase
+import javax.crypto.SecretKey
 
 class BackupManager {
 
     companion object {
         private const val BACKUP_DIR = "PalmNote"
         private const val BACKUP_EXTENSION = ".palmnote"
+        private const val MAGIC = "PNBK"
     }
 
     // 获取备份存储目录（使用应用专属外部存储，无需权限，兼容所有 API 级别）
@@ -26,13 +28,41 @@ class BackupManager {
         return dir
     }
 
-    // 创建备份：打包 DB + 图片 + DataStore 为 ZIP
-    fun createBackup(context: Context): File {
+    // 创建备份：打包 DB + 图片 + DataStore 为 ZIP，支持可选加密
+    fun createBackup(context: Context, password: String? = null): File {
         val timestamp = System.currentTimeMillis()
         val fileName = "palmnote_backup_${timestamp}$BACKUP_EXTENSION"
         val backupFile = File(getBackupDir(context), fileName)
 
-        ZipOutputStream(FileOutputStream(backupFile)).use { zipOut ->
+        // 创建临时ZIP文件
+        val tempZip = File(context.cacheDir, "temp_backup.zip")
+        createZipFile(context, tempZip)
+
+        // 如果有密码，加密ZIP文件
+        if (!password.isNullOrBlank()) {
+            val salt = CryptoUtils.generateSalt()
+            val key = CryptoUtils.deriveKey(password, salt)
+            val zipBytes = tempZip.readBytes()
+            val encryptedBytes = CryptoUtils.encrypt(zipBytes, key)
+
+            // 写入：magic + salt + encryptedData
+            FileOutputStream(backupFile).use { fos ->
+                fos.write(MAGIC.toByteArray())
+                fos.write(salt)
+                fos.write(encryptedBytes)
+            }
+        } else {
+            // 无密码，直接复制
+            tempZip.copyTo(backupFile, overwrite = true)
+        }
+
+        tempZip.delete()
+        return backupFile
+    }
+
+    // 创建ZIP文件
+    private fun createZipFile(context: Context, zipFile: File) {
+        ZipOutputStream(FileOutputStream(zipFile)).use { zipOut ->
             // 1. 备份数据库文件
             val dbFile = context.getDatabasePath(AppDatabase.DATABASE_NAME)
             if (dbFile.exists()) {
@@ -60,41 +90,140 @@ class BackupManager {
                 }
             }
         }
-
-        return backupFile
     }
 
-    // 恢复备份：解压 ZIP 覆盖对应数据
-    fun restoreBackup(context: Context, backupFile: File) {
+    // 恢复备份：解压 ZIP 覆盖对应数据，支持可选解密
+    fun restoreBackup(context: Context, backupFile: File, password: String? = null) {
         // 简单校验：文件大小大于 0
         if (backupFile.length() == 0L) {
             throw IllegalArgumentException(context.getString(R.string.backup_error_corrupted))
         }
 
-        ZipInputStream(FileInputStream(backupFile)).use { zipIn ->
-            var entry = zipIn.nextEntry
-            while (entry != null) {
-                val entryName = entry.name
-                when {
-                    entryName.startsWith("db/") -> {
-                        val targetFile = File(context.getDatabasePath(AppDatabase.DATABASE_NAME).parent, entryName.removePrefix("db/"))
-                        extractFile(zipIn, targetFile)
-                    }
-                    entryName.startsWith("prefs/") -> {
-                        val targetFile = File(File(context.filesDir, "datastore"), entryName.removePrefix("prefs/"))
-                        targetFile.parentFile?.mkdirs()
-                        extractFile(zipIn, targetFile)
-                    }
-                    entryName.startsWith("images/") -> {
-                        val targetFile = File(context.filesDir, entryName)
-                        targetFile.parentFile?.mkdirs()
-                        extractFile(zipIn, targetFile)
+        // 检测是否为加密备份
+        val isEncrypted = CryptoUtils.isEncryptedBackup(backupFile)
+
+        if (isEncrypted) {
+            if (password.isNullOrBlank()) {
+                throw IllegalArgumentException("需要密码才能恢复此备份")
+            }
+
+            // 读取salt和加密数据
+            val (salt, encryptedData) = readEncryptedBackup(backupFile)
+            val key = CryptoUtils.deriveKey(password, salt)
+            val zipBytes = CryptoUtils.decrypt(encryptedData, key)
+
+            // 解压到临时文件再恢复
+            val tempZip = File(context.cacheDir, "temp_restore.zip")
+            tempZip.writeBytes(zipBytes)
+            restoreFromZip(context, tempZip)
+            tempZip.delete()
+        } else {
+            // 未加密，直接恢复
+            restoreFromZip(context, backupFile)
+        }
+    }
+
+    // 读取加密备份文件
+    private fun readEncryptedBackup(file: File): Pair<ByteArray, ByteArray> {
+        FileInputStream(file).use { fis ->
+            val magic = ByteArray(4)
+            fis.read(magic)
+            
+            val salt = ByteArray(16)
+            fis.read(salt)
+            
+            val encryptedData = fis.readBytes()
+            
+            return Pair(salt, encryptedData)
+        }
+    }
+
+    // 从ZIP文件恢复（带回滚保护）
+    private fun restoreFromZip(context: Context, zipFile: File) {
+        val dbDir = context.getDatabasePath(AppDatabase.DATABASE_NAME).parentFile!!.canonicalFile
+        val prefsDir = File(context.filesDir, "datastore").canonicalFile
+        val imagesDir = File(context.filesDir, "images").canonicalFile
+        val rollbackDir = File(context.cacheDir, "restore_rollback_${System.currentTimeMillis()}")
+
+        // Phase 1: Backup existing files to rollback directory
+        val backedUpFiles = mutableListOf<File>()
+        try {
+            for (dir in listOf(dbDir, prefsDir, imagesDir)) {
+                if (dir.exists()) {
+                    dir.listFiles()?.forEach { file ->
+                        val backup = File(rollbackDir, file.name)
+                        file.copyTo(backup, overwrite = true)
+                        backedUpFiles.add(file)
                     }
                 }
-                zipIn.closeEntry()
-                entry = zipIn.nextEntry
             }
+        } catch (e: Exception) {
+            // If backup fails, clean up and abort restore
+            rollbackDir.deleteRecursively()
+            throw java.io.IOException("Failed to backup current data before restore", e)
         }
+
+        // Phase 2: Perform restore
+        var restoreFailed = false
+        try {
+            ZipInputStream(FileInputStream(zipFile)).use { zipIn ->
+                var entry = zipIn.nextEntry
+                while (entry != null) {
+                    val entryName = entry.name
+                    when {
+                        entryName.startsWith("db/") -> {
+                            val cleanName = entryName.removePrefix("db/")
+                            if (!cleanName.contains("..") && !cleanName.startsWith("/")) {
+                                val targetFile = File(dbDir, cleanName).canonicalFile
+                                if (targetFile.canonicalPath.startsWith(dbDir.canonicalPath)) {
+                                    targetFile.parentFile?.mkdirs()
+                                    extractFile(zipIn, targetFile)
+                                }
+                            }
+                        }
+                        entryName.startsWith("prefs/") -> {
+                            val cleanName = entryName.removePrefix("prefs/")
+                            if (!cleanName.contains("..") && !cleanName.startsWith("/")) {
+                                val targetFile = File(prefsDir, cleanName).canonicalFile
+                                if (targetFile.canonicalPath.startsWith(prefsDir.canonicalPath)) {
+                                    targetFile.parentFile?.mkdirs()
+                                    extractFile(zipIn, targetFile)
+                                }
+                            }
+                        }
+                        entryName.startsWith("images/") -> {
+                            val cleanName = entryName.removePrefix("images/")
+                            if (!cleanName.contains("..") && !cleanName.startsWith("/")) {
+                                val targetFile = File(imagesDir, cleanName).canonicalFile
+                                if (targetFile.canonicalPath.startsWith(imagesDir.canonicalPath)) {
+                                    targetFile.parentFile?.mkdirs()
+                                    extractFile(zipIn, targetFile)
+                                }
+                            }
+                        }
+                    }
+                    zipIn.closeEntry()
+                    entry = zipIn.nextEntry
+                }
+            }
+        } catch (e: Exception) {
+            restoreFailed = true
+            // Rollback: restore backed up files
+            for (file in backedUpFiles) {
+                val backupFile = File(rollbackDir, file.name)
+                if (backupFile.exists()) {
+                    try { backupFile.copyTo(file, overwrite = true) } catch (_: Exception) {}
+                }
+            }
+            throw e
+        } finally {
+            rollbackDir.deleteRecursively()
+        }
+    }
+
+    // 恢复前自动备份
+    fun createPreRestoreBackup(context: Context): File {
+        return createBackup(context, null)
     }
 
     // 列出所有备份文件

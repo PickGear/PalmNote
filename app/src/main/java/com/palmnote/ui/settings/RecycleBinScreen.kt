@@ -104,7 +104,17 @@ fun RecycleBinScreen(
                     contentPadding = PaddingValues(16.dp, 16.dp, 16.dp, 32.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    items(items.size, key = { index -> "recycle_$index" }) { index ->
+                    items(items.size, key = { index ->
+                        val id = when (selectedTab) {
+                            0 -> state.deletedAssets.getOrNull(index)?.id ?: index.toLong()
+                            1 -> state.deletedBills.getOrNull(index)?.id ?: index.toLong()
+                            2 -> state.deletedGoals.getOrNull(index)?.id ?: index.toLong()
+                            3 -> state.deletedAnniversaries.getOrNull(index)?.id ?: index.toLong()
+                            4 -> state.deletedMoments.getOrNull(index)?.id ?: index.toLong()
+                            else -> index.toLong()
+                        }
+                        "recycle_$id"
+                    }) { index ->
                         val item = items[index]
                         ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
                             Row(

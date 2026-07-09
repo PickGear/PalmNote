@@ -12,6 +12,7 @@ import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import com.palmnote.R
+import com.palmnote.ui.components.SecondaryTopAppBar
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -87,11 +88,11 @@ fun GenericTemplateListScreen(
 ) {
     val pagingItems = viewModel.loadPaged(templateId).collectAsLazyPagingItems()
     val emptyConfig = remember(template.icon) { emptyStateConfigs[template.icon] ?: Triple(Icons.Default.Inbox, R.string.life_empty_default_title, R.string.life_empty_default_subtitle) }
-    val tplColor = try { Color(android.graphics.Color.parseColor(template.color)) } catch (_: Exception) { MaterialTheme.colorScheme.primary }
+    val tplColor = MaterialTheme.colorScheme.secondary
 
     Scaffold(
         topBar = {
-            TopAppBar(
+            SecondaryTopAppBar(
                 title = { Text(template.displayName(), fontWeight = FontWeight.SemiBold) },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "\u8FD4\u56DE") } },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)

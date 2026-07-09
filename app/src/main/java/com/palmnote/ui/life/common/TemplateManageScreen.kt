@@ -23,6 +23,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.palmnote.data.db.entity.LifeTemplate
 import com.palmnote.data.db.entity.getDisplayDescription
 import com.palmnote.ui.components.CompactTopAppBar
+import com.palmnote.ui.components.toComposeColor
 import com.palmnote.ui.life.LifeViewModel
 import com.palmnote.ui.theme.*
 
@@ -107,7 +108,7 @@ fun TemplateManageScreen(
 
 @Composable
 private fun TemplateItem(tpl: LifeTemplate) {
-    val tplColor = try { Color(android.graphics.Color.parseColor(tpl.color)) } catch (_: Exception) { ModuleLife }
+    val tplColor = tpl.color.toComposeColor(ModuleLife)
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,

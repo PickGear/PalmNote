@@ -141,7 +141,7 @@ class BillOcrParser {
                         .replace("年", "-").replace("月", "-").replace("日", "")
                         .replace("/", "-").replace(".", "-")
                     try {
-                        return SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(dateStr)?.time
+                        return java.time.LocalDate.parse(dateStr, java.time.format.DateTimeFormatter.ofPattern("yyyy-M-d")).atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
                     } catch (_: Exception) { }
                 }
             }
@@ -152,7 +152,7 @@ class BillOcrParser {
                 if (m.find()) {
                     val dateStr = m.group(1)!!.replace("/", "-").replace(".", "-")
                     try {
-                        return SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(dateStr)?.time
+                        return java.time.LocalDate.parse(dateStr, java.time.format.DateTimeFormatter.ofPattern("yyyy-M-d")).atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
                     } catch (_: Exception) { }
                 }
             }

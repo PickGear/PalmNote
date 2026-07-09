@@ -4,6 +4,7 @@ import com.palmnote.data.db.dao.WalletDao
 import com.palmnote.data.db.entity.Wallet
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
@@ -18,11 +19,18 @@ class WalletRepositoryTest {
 
     private lateinit var walletDao: WalletDao
     private lateinit var walletRepository: WalletRepository
+    private lateinit var context: android.content.Context
 
     @Before
     fun setUp() {
         walletDao = mockk(relaxUnitFun = true)
-        walletRepository = WalletRepository(walletDao)
+        context = mockk(relaxUnitFun = true)
+        
+        // 模拟Context.getString()
+        every { context.getString(any()) } returns ""
+        every { context.getString(any(), any()) } returns ""
+        
+        walletRepository = WalletRepository(walletDao, context)
     }
 
     @Test
@@ -102,11 +110,10 @@ class WalletRepositoryTest {
     }
 
     @Test
-    fun `setDefault clears all defaults then sets one`() = runTest {
+    fun `setDefault calls transactional setAsDefault`() = runTest {
         walletRepository.setDefault(1)
 
-        coVerify { walletDao.clearAllDefaults(any()) }
-        coVerify { walletDao.setDefault(1, any()) }
+        coVerify { walletDao.setAsDefault(1, any()) }
     }
 
     @Test
@@ -155,13 +162,13 @@ class WalletRepositoryTest {
     }
 
     @Test
-    fun `initDefaultWallets inserts 5 defaults when none exists`() = runTest {
+    fun `initDefaultWallets inserts 8 defaults when none exists`() = runTest {
         coEvery { walletDao.getDefaultWallet() } returns null
-        coEvery { walletDao.insert(any()) } returnsMany listOf(1L, 2L, 3L, 4L, 5L)
+        coEvery { walletDao.insert(any()) } returnsMany listOf(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L)
 
         walletRepository.initDefaultWallets()
 
-        coVerify(exactly = 5) { walletDao.insert(any()) }
+        coVerify(exactly = 8) { walletDao.insert(any()) }
     }
 
     @Test

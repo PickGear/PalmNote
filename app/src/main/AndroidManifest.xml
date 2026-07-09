@@ -22,6 +22,11 @@
         android:theme="@style/Theme.PalmNote"
         tools:targetApi="34">
         <provider
+            android:name="androidx.work.impl.WorkManagerInitializer"
+            android:authorities="${applicationId}.androidx.work.impl.WorkManagerInitializer"
+            android:exported="false"
+            tools:node="remove" />
+        <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
             android:exported="false"

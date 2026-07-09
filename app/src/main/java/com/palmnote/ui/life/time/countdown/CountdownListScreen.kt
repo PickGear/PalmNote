@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.HourglassBottom
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -26,14 +27,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.palmnote.R
-import com.palmnote.ui.life.common.EmptyState
+import com.palmnote.ui.components.EmptyState
 import com.palmnote.ui.life.common.SwipeableItem
 import com.palmnote.ui.components.AppDialog
+import com.palmnote.ui.components.SecondaryTopAppBar
 import com.palmnote.ui.theme.*
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -53,10 +56,37 @@ fun CountdownListScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Long
     }
     Scaffold(
         topBar = {
-            TopAppBar(
+            SecondaryTopAppBar(
                 title = { Text(stringResource(R.string.life_countdown_title), fontWeight = FontWeight.Bold, color = LifeCountdown) },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.life_back)) } },
-                actions = { IconButton(onClick = onCreateClick) { Icon(Icons.Default.Add, stringResource(R.string.life_new_create)) } },
+                actions = {
+                    IconButton(onClick = onCreateClick) { Icon(Icons.Default.Add, stringResource(R.string.life_new_create)) }
+                    var showClearExpired by remember { mutableStateOf(false) }
+                    if (state.items.isNotEmpty()) {
+                        IconButton(onClick = { showClearExpired = true }) { Icon(Icons.Filled.Delete, "清除过期") }
+                    }
+                    if (showClearExpired) {
+                        AppDialog(
+                            onDismissRequest = { showClearExpired = false },
+                            title = { Text("清除过期倒计时", fontWeight = FontWeight.Bold) },
+                            text = { Text("确定删除所有已过期的倒计时？") },
+                            confirmButton = { TextButton(onClick = {
+                                state.items.forEach { item ->
+                                    val dateMillis = try {
+                                        val obj = Json.decodeFromString<JsonObject>(item.fieldsData)
+                                        (obj["target_date"] as? JsonPrimitive)?.content?.toLongOrNull()
+                                            ?: (obj["targetDate"] as? JsonPrimitive)?.content?.toLongOrNull()
+                                    } catch (_: Exception) { null }
+                                    if (dateMillis != null && ChronoUnit.DAYS.between(LocalDate.now(), LocalDate.ofEpochDay(dateMillis / 86400000L)) < 0) {
+                                        viewModel.deleteItem(item.id)
+                                    }
+                                }
+                                showClearExpired = false
+                            }) { Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error) } },
+                            dismissButton = { TextButton(onClick = { showClearExpired = false }) { Text(stringResource(R.string.cancel)) } }
+                        )
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         },
@@ -71,8 +101,8 @@ fun CountdownListScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Long
                 icon = Icons.Default.HourglassBottom,
                 title = stringResource(R.string.life_empty_countdown),
                 subtitle = stringResource(R.string.life_empty_countdown_subtitle),
-                actionLabel = stringResource(R.string.life_empty_countdown_action),
-                onAction = onCreateClick
+                actionText = stringResource(R.string.life_empty_countdown_action),
+                onActionClick = onCreateClick
             )
         } else {
         LifeLazyList(modifier = Modifier.fillMaxSize().padding(innerPadding).padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -106,7 +136,8 @@ fun CountdownListScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Long
                                 Text(item.title, fontWeight = FontWeight.Medium, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                 if (dateMillis != null) {
                                     val date = LocalDate.ofEpochDay(dateMillis / 86400000L)
-                                    Text(if (isExpired) stringResource(R.string.life_countdown_expired_text, date.toString()) else stringResource(R.string.life_countdown_active_text, date.toString()), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    val dateStr = date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                                    Text(if (isExpired) stringResource(R.string.life_countdown_expired_text, dateStr) else stringResource(R.string.life_countdown_active_text, dateStr), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                             }
                         }

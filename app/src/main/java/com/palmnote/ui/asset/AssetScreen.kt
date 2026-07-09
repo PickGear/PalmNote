@@ -135,89 +135,22 @@ fun AssetScreen(
                     }
                 },
                 actions = {
-                    var isSearchFocused by remember { mutableStateOf(false) }
-                    val focusRequester = remember { FocusRequester() }
-                    val expanded = isSearchFocused || state.searchQuery.isNotEmpty()
-                    val searchWidth by animateDpAsState(
-                        targetValue = if (expanded) 200.dp else 70.dp,
-                        animationSpec = tween(durationMillis = 200)
-                    )
-                    Surface(
-                        modifier = Modifier
-                            .padding(end = 8.dp)
-                            .width(searchWidth)
-                            .clip(MaterialTheme.shapes.extraLarge)
-                            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, MaterialTheme.shapes.extraLarge),
-                        shape = MaterialTheme.shapes.extraLarge,
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                    ) {
-                        Row(
-                            modifier = Modifier.height(32.dp).padding(horizontal = 10.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                Icons.Outlined.Search,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp),
-                                tint = InfoBlue
-                            )
-                            if (expanded) {
-                                Spacer(modifier = Modifier.width(4.dp))
-                                BasicTextField(
-                                    value = state.searchQuery,
-                                    onValueChange = { viewModel.setSearchQuery(it) },
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .focusRequester(focusRequester)
-                                        .onFocusChanged { isSearchFocused = it.isFocused },
-                                    singleLine = true,
-                                    textStyle = MaterialTheme.typography.bodySmall.copy(
-                                        color = MaterialTheme.colorScheme.onSurface,
-                                        fontSize = 13.sp
-                                    ),
-                                    decorationBox = { innerTextField ->
-                                        Box {
-                                            if (state.searchQuery.isEmpty()) {
-                                                Text(
-                                                    text = stringResource(R.string.asset_search_hint),
-                                                    style = MaterialTheme.typography.bodySmall,
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                    maxLines = 1,
-                                                    overflow = TextOverflow.Ellipsis
-                                                )
-                                            }
-                                            innerTextField()
-                                        }
-                                    }
-                                )
-                                if (state.searchQuery.isNotEmpty()) {
-                                    IconButton(
-                                        onClick = { viewModel.setSearchQuery("") },
-                                        modifier = Modifier.size(16.dp)
-                                    ) {
-                                        Icon(
-                                            Icons.Filled.Clear,
-                                            contentDescription = stringResource(R.string.asset_clear),
-                                            modifier = Modifier.size(14.dp),
-                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                }
-                            } else {
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(
-                                    text = stringResource(R.string.search),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 1,
-                                    modifier = Modifier.clickable { isSearchFocused = true }
-                                )
-                            }
+                    var showSearch by remember { mutableStateOf(false) }
+                    
+                    if (showSearch) {
+                        ModuleSearchBar(
+                            query = state.searchQuery,
+                            onQueryChange = { viewModel.setSearchQuery(it) },
+                            onClear = { viewModel.setSearchQuery("") },
+                            placeholder = stringResource(R.string.search),
+                            modifier = Modifier.weight(1f)
+                        )
+                        IconButton(onClick = { showSearch = false; viewModel.setSearchQuery("") }) {
+                            Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.close))
                         }
-                    }
-                    LaunchedEffect(expanded) {
-                        if (expanded) {
-                            focusRequester.requestFocus()
+                    } else {
+                        IconButton(onClick = { showSearch = true }) {
+                            Icon(Icons.Outlined.Search, contentDescription = stringResource(R.string.search), tint = MaterialTheme.colorScheme.primary)
                         }
                     }
                 }
@@ -226,7 +159,7 @@ fun AssetScreen(
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = onNavigateToAdd,
-                containerColor = AccentOrange,
+                containerColor = MaterialTheme.colorScheme.secondary,
                 contentColor = Color.White,
                 shape = MaterialTheme.shapes.large,
                 icon = { Icon(Icons.Filled.Add, contentDescription = null) },
@@ -256,6 +189,9 @@ fun AssetScreen(
                 .background(MaterialTheme.colorScheme.background)
                 .padding(padding)
         ) {
+            val assetIndexMap = remember(state.filteredAssets) {
+                state.filteredAssets.withIndex().associate { (i, a) -> a.id to i }
+            }
             LazyColumn(
                 state = listState,
                 modifier = Modifier
@@ -341,7 +277,7 @@ fun AssetScreen(
                         var statusExpanded by remember { mutableStateOf(false) }
                         var statusBoxHeight by remember { mutableStateOf(0) }
                         val statusFilters = listOf(
-                            AssetFilter.ALL to stringResource(R.string.bill_all),
+                            AssetFilter.ALL to "全部",
                             AssetFilter.HELD to stringResource(R.string.asset_held),
                             AssetFilter.AWAY to stringResource(R.string.asset_away),
                             AssetFilter.REMOVED to stringResource(R.string.asset_removed)
@@ -426,7 +362,7 @@ fun AssetScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = state.selectedCategory ?: stringResource(R.string.bill_category),
+                                    text = state.selectedCategory?.let { com.palmnote.ui.components.getCategoryName(it, androidx.compose.ui.platform.LocalContext.current) } ?: stringResource(R.string.bill_category),
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = if (state.selectedCategory != null) FontWeight.Medium else FontWeight.Normal,
                                     color = MaterialTheme.colorScheme.onSurface
@@ -466,7 +402,7 @@ fun AssetScreen(
                                         )
                                         state.categoryDistribution.forEach { cat ->
                                             Text(
-                                                text = "${cat.category} (${cat.count})",
+                                                text = "${com.palmnote.ui.components.getCategoryName(cat.category, androidx.compose.ui.platform.LocalContext.current)} (${cat.count})",
                                                 modifier = Modifier
                                                     .clickable { viewModel.setCategoryFilter(cat.category); catExpanded = false }
                                                     .padding(horizontal = 16.dp, vertical = 8.dp),
@@ -611,7 +547,7 @@ fun AssetScreen(
                 }
             } else {
                 items(state.filteredAssets, key = { it.id }) { asset ->
-                    AnimatedCard(index = state.filteredAssets.indexOf(asset).coerceAtMost(10)) {
+                    AnimatedCard(index = (assetIndexMap[asset.id] ?: 0).coerceAtMost(10)) {
                         EnhancedAssetCard(
                             asset = asset,
                             onClick = { onNavigateToDetail(asset.id) }

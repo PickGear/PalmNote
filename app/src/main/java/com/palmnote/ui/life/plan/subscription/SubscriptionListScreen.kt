@@ -24,7 +24,8 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.palmnote.R
 import com.palmnote.ui.components.AppDialog
-import com.palmnote.ui.life.common.EmptyState
+import com.palmnote.ui.components.EmptyState
+import com.palmnote.ui.components.SecondaryTopAppBar
 import com.palmnote.ui.life.common.SwipeableItem
 import com.palmnote.ui.theme.*
 import kotlinx.serialization.json.*
@@ -45,15 +46,22 @@ fun SubscriptionListScreen(templateId: Long, onBack: () -> Unit, onItemClick: (L
             dismissButton = { TextButton(onClick = { deleteTarget = null }) { Text(stringResource(R.string.cancel)) } }
         )
     }
-    Scaffold(topBar = { TopAppBar(title = { Text(stringResource(R.string.life_subscription_title), fontWeight = FontWeight.Bold, color = subColor) }, navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.life_back)) } }, actions = { IconButton(onClick = onCreateClick) { Icon(Icons.Default.Add, stringResource(R.string.life_new_create)) } }, colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)) }, containerColor = MaterialTheme.colorScheme.background) { innerPadding ->
+    Scaffold(topBar = { 
+        SecondaryTopAppBar(
+            title = stringResource(R.string.life_subscription_title),
+            navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.life_back)) } },
+            actions = { IconButton(onClick = onCreateClick) { Icon(Icons.Default.Add, stringResource(R.string.life_new_create)) } },
+            backgroundColor = MaterialTheme.colorScheme.background
+        )
+    }, containerColor = MaterialTheme.colorScheme.background) { innerPadding ->
         if (state.isLoading) { Box(modifier = Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = subColor) }; return@Scaffold }
         if (state.items.isEmpty()) {
             EmptyState(
                 icon = Icons.Default.DateRange,
                 title = stringResource(R.string.life_empty_subscription),
                 subtitle = stringResource(R.string.life_empty_subscription_subtitle),
-                actionLabel = stringResource(R.string.life_empty_subscription_action),
-                onAction = onCreateClick
+                actionText = stringResource(R.string.life_empty_subscription_action),
+                onActionClick = onCreateClick
             )
         } else {
         LifeLazyList(modifier = Modifier.fillMaxSize().padding(innerPadding).padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {

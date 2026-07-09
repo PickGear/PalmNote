@@ -34,7 +34,9 @@ data class LinkableAsset(val id: Long, val name: String, val category: String)
 data class LinkSelectorState(
     val bills: List<LinkableBill> = emptyList(),
     val assets: List<LinkableAsset> = emptyList(),
-    val isLoading: Boolean = true
+    val isLoading: Boolean = true,
+    val billSearchQuery: String = "",
+    val assetSearchQuery: String = ""
 )
 
 @HiltViewModel
@@ -73,6 +75,14 @@ class LinkSelectorViewModel @Inject constructor(
             } catch (_: Exception) { }
         }
     }
+
+    fun updateBillSearch(query: String) {
+        _state.update { it.copy(billSearchQuery = query) }
+    }
+
+    fun updateAssetSearch(query: String) {
+        _state.update { it.copy(assetSearchQuery = query) }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -97,10 +107,25 @@ fun LinkSelectorSheet(
             Text(stringResource(R.string.life_link_bills), fontWeight = FontWeight.Medium, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(modifier = Modifier.height(4.dp))
 
-            if (state.bills.isEmpty()) {
+            if (state.billSearchQuery.isEmpty() && state.bills.size > 5) {
+                OutlinedTextField(
+                    value = state.billSearchQuery,
+                    onValueChange = { viewModel.updateBillSearch(it) },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text(stringResource(R.string.search)) },
+                    singleLine = true,
+                    shape = MaterialTheme.shapes.medium
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+            }
+
+            val filteredBills = state.bills.filter {
+                state.billSearchQuery.isBlank() || it.note.contains(state.billSearchQuery, ignoreCase = true)
+            }
+            if (filteredBills.isEmpty()) {
                 Text(stringResource(R.string.life_link_no_bills), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
             } else {
-                state.bills.take(5).forEach { bill ->
+                filteredBills.take(20).forEach { bill ->
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.fillMaxWidth().clickable {
@@ -122,10 +147,25 @@ fun LinkSelectorSheet(
             Text(stringResource(R.string.life_link_assets), fontWeight = FontWeight.Medium, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(modifier = Modifier.height(4.dp))
 
-            if (state.assets.isEmpty()) {
+            if (state.assetSearchQuery.isEmpty() && state.assets.size > 5) {
+                OutlinedTextField(
+                    value = state.assetSearchQuery,
+                    onValueChange = { viewModel.updateAssetSearch(it) },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text(stringResource(R.string.search)) },
+                    singleLine = true,
+                    shape = MaterialTheme.shapes.medium
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+            }
+
+            val filteredAssets = state.assets.filter {
+                state.assetSearchQuery.isBlank() || it.name.contains(state.assetSearchQuery, ignoreCase = true)
+            }
+            if (filteredAssets.isEmpty()) {
                 Text(stringResource(R.string.life_link_no_assets), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
             } else {
-                state.assets.take(5).forEach { asset ->
+                filteredAssets.take(20).forEach { asset ->
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.fillMaxWidth().clickable {

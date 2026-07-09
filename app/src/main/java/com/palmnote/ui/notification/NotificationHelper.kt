@@ -7,6 +7,7 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.palmnote.R
+import java.util.concurrent.atomic.AtomicInteger
 
 object NotificationHelper {
     const val CHANNEL_LIFE = "life_general"
@@ -21,10 +22,10 @@ object NotificationHelper {
         mgr.createNotificationChannel(NotificationChannel(CHANNEL_REMINDER, context.getString(R.string.notification_channel_reminder), NotificationManager.IMPORTANCE_HIGH).apply { description = context.getString(R.string.notification_channel_reminder_desc) })
     }
 
-    private var notificationId = 1000
+    private val notificationId = AtomicInteger(1000)
 
     fun show(context: Context, channelId: String, title: String, message: String) {
-        val id = notificationId++
+        val id = notificationId.incrementAndGet()
         val notification = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentTitle(title).setContentText(message)

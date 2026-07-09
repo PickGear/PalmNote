@@ -28,6 +28,27 @@ enum class AppIcon(val imageVector: ImageVector, val tint: Color) {
     Bookmark(Icons.Outlined.Bookmark, Color(0xFF5C6BC0)),
     Link(Icons.Outlined.Link, Color(0xFF78909C)),
     ContentCopy(Icons.Outlined.ContentCopy, Color(0xFF78909C)),
+    
+    // 通用操作图标
+    Add(Icons.Outlined.Add, Color(0xFF34A853)),
+    Delete(Icons.Outlined.Delete, Color(0xFFEF5350)),
+    Search(Icons.Outlined.Search, Color(0xFF5C6BC0)),
+    Check(Icons.Outlined.Check, Color(0xFF34A853)),
+    Close(Icons.Outlined.Close, Color(0xFF78909C)),
+    FilterList(Icons.Outlined.FilterList, Color(0xFF78909C)),
+    Sort(Icons.AutoMirrored.Outlined.Sort, Color(0xFF78909C)),
+    Share(Icons.Outlined.Share, Color(0xFF42A5F5)),
+    MoreVert(Icons.Outlined.MoreVert, Color(0xFF78909C)),
+    ArrowBack(Icons.AutoMirrored.Outlined.ArrowBack, Color(0xFF78909C)),
+    ExpandMore(Icons.Outlined.ExpandMore, Color(0xFF78909C)),
+    ExpandLess(Icons.Outlined.ExpandLess, Color(0xFF78909C)),
+    Image(Icons.Outlined.Image, Color(0xFF42A5F5)),
+    CalendarToday(Icons.Outlined.CalendarToday, Color(0xFF42A5F5)),
+    Tune(Icons.Outlined.Tune, Color(0xFF78909C)),
+    SearchOff(Icons.Outlined.SearchOff, Color(0xFF9E9E9E)),
+    Person(Icons.Outlined.Person, Color(0xFF5C6BC0)),
+    Warning(Icons.Outlined.Warning, Color(0xFFFFB300)),
+    Archive(Icons.Outlined.Archive, Color(0xFF78909C)),
 
     // 学习
     MenuBook(Icons.AutoMirrored.Outlined.MenuBook, Color(0xFF1E88E5)),

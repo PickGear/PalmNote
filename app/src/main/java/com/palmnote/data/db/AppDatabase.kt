@@ -16,7 +16,7 @@ import com.palmnote.data.db.entity.*
         LifeTemplate::class, LifeItem::class, CrossLink::class, Achievement::class,
         LifeReport::class, TodoItem::class, LifeMoment::class, MoodDiary::class, FocusRecord::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = true
 )
 @TypeConverters(Converters::class)

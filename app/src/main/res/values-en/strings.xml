@@ -225,6 +225,7 @@
     <string name="save_changes">Save Changes</string>
     <string name="cancel">Cancel</string>
     <string name="delete">Delete</string>
+    <string name="delete_confirm">Confirm deletion? This action cannot be undone.</string>
     <string name="edit">Edit</string>
     <string name="confirm">Confirm</string>
     <string name="search">Search</string>
@@ -237,6 +238,22 @@
     <string name="merchant">Merchant</string>
     <string name="merchant_hint">Merchant name (optional)</string>
     <string name="note_hint">Add note (optional)</string>
+    
+    <!-- Bill Filter -->
+    <string name="bill_filter">Filter</string>
+    <string name="bill_filter_title">Advanced Filter</string>
+    <string name="bill_filter_type">Type</string>
+    <string name="bill_filter_type_all">All</string>
+    <string name="bill_filter_type_expense">Expense</string>
+    <string name="bill_filter_type_income">Income</string>
+    <string name="bill_filter_amount">Amount Range</string>
+    <string name="bill_filter_amount_min">Min Amount</string>
+    <string name="bill_filter_amount_max">Max Amount</string>
+    <string name="bill_filter_category">Category</string>
+    <string name="bill_filter_category_all">All Categories</string>
+    <string name="bill_filter_payment_method">Payment Method</string>
+    <string name="bill_filter_payment_method_all">All Methods</string>
+    <string name="bill_filter_apply">Apply Filter</string>
     
     <!-- Dashboard Module -->
     <string name="dashboard_card_manage">Card Management</string>
@@ -583,6 +600,7 @@
     <string name="life_mood_sad">Sad</string>
     <string name="life_mood_angry">Angry</string>
     <string name="life_mood_question">How are you feeling?</string>
+    <string name="life_mood_edit">Edit Mood Record</string>
     <string name="life_mood_factors">Triggers</string>
     <string name="life_mood_factor_work">Work</string>
     <string name="life_mood_factor_health">Health</string>
@@ -654,8 +672,11 @@
     <string name="asset_basic_info">Basic Info</string>
     <string name="asset_subcategory">Subcategory</string>
     <string name="asset_brand">Brand</string>
+    <string name="asset_brand_hint">Enter brand name</string>
     <string name="asset_model_name">Model</string>
+    <string name="asset_model_hint">Enter model</string>
     <string name="asset_serial_number">Serial Number</string>
+    <string name="asset_serial_number_hint">Enter serial number</string>
     <string name="asset_condition">Condition</string>
     <string name="asset_condition_new">New</string>
     <string name="asset_condition_good">Good</string>
@@ -670,9 +691,14 @@
     <string name="asset_acquisition_date">Acquisition Date</string>
     <string name="asset_purchase_channel">Purchase Channel</string>
     <string name="asset_room">Room</string>
+    <string name="asset_room_hint">Enter room location</string>
+    <string name="asset_show_advanced_options">Show Advanced Options</string>
+    <string name="asset_hide_advanced_options">Hide Advanced Options</string>
     <string name="asset_value_info">Value Info</string>
     <string name="asset_current_value">Current Value</string>
+    <string name="asset_current_value_hint">Enter current value</string>
     <string name="asset_depreciation_rate">Annual Depreciation</string>
+    <string name="asset_depreciation_rate_hint">Enter annual depreciation (%)</string>
     <string name="asset_cost_calculation">Cost Calculation</string>
     <string name="asset_depreciation">Depreciation</string>
     <string name="asset_warranty_info">Warranty Info</string>
@@ -680,6 +706,8 @@
     <string name="asset_warranty_remaining_days">%d days left</string>
     <string name="asset_warranty_expired_days">Expired %d days ago</string>
     <string name="asset_maintenance_info">Maintenance Info</string>
+    <string name="asset_maintenance_interval">Maintenance Interval</string>
+    <string name="asset_maintenance_interval_hint">Enter maintenance interval (days)</string>
     <string name="asset_last_maintenance_format">Last maintenance: %s</string>
     <string name="asset_maintenance_cycle_format">Maintenance cycle: %d days</string>
     <string name="asset_maintenance_needed">Maintenance Due</string>
@@ -688,8 +716,12 @@
     <string name="asset_complete_maintenance">Complete Maintenance</string>
     <string name="asset_insurance_info">Insurance Info</string>
     <string name="asset_insurance_company">Insurance Company</string>
+    <string name="asset_insurance_company_hint">Enter insurance company</string>
     <string name="asset_insurance_policy">Policy Number</string>
+    <string name="asset_insurance_policy_no_hint">Enter policy number</string>
     <string name="asset_insurance_expiry">Expiry Date</string>
+    <string name="asset_insurance_expire_date">Insurance Expiry</string>
+    <string name="asset_select_insurance_date">Select Insurance Expiry Date</string>
     <string name="asset_away_info">Away Info</string>
     <string name="asset_removed_info">Removed Info</string>
     <string name="asset_status_info_label">Status Info</string>
@@ -1283,6 +1315,8 @@
     <string name="backup_operation_success">Operation successful</string>
     <string name="backup_create">Create Backup</string>
     <string name="backup_create_desc">Package all data as .palmnote file, saved to Downloads/PalmNote/</string>
+    <string name="backup_password_optional">Set password (optional)</string>
+    <string name="backup_password">Enter password</string>
     <string name="backup_backing_up">Backing up…</string>
     <string name="backup_now">Backup Now</string>
     <string name="backup_existing">Existing Backups</string>

@@ -19,7 +19,10 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import java.io.*
 import java.lang.reflect.Modifier
-import java.text.SimpleDateFormat
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.*
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
@@ -188,7 +191,8 @@ class CsvDataExporter(
         )
     }
 
-    private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
+    private val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+    private val yearMonthFormatter = DateTimeFormatter.ofPattern("yyyy-MM")
     private val imageFileMap = mutableMapOf<String, File>()
 
     suspend fun exportToUri(uri: Uri): Result<String> {
@@ -332,25 +336,31 @@ class CsvDataExporter(
 
                 val idMaps = mutableMapOf<Class<*>, MutableMap<Long, Long>>()
                 var count = 0
-                for ((filename, bytes) in zipEntries) {
-                    if (filename.startsWith("images/") || !filename.endsWith(".csv")) continue
-                    val rows = csvToRows(String(bytes, Charsets.UTF_8))
-                    if (rows.isEmpty()) continue
-                    for (row in rows) {
-                        val clazz = CLASS_BY_TYPE_NAME[row["实体类型"]] ?: continue
-                        val result = insertRow(row, clazz, pathMapping)
-                        if (result != null) {
-                            val (oldId, newId) = result
-                            if (oldId != newId) {
-                                idMaps.getOrPut(clazz) { mutableMapOf() }[oldId] = newId
+
+                // Wrap all DB writes in a single transaction for atomicity
+                db.runInTransaction {
+                    kotlinx.coroutines.runBlocking {
+                        for ((filename, bytes) in zipEntries) {
+                            if (filename.startsWith("images/") || !filename.endsWith(".csv")) continue
+                            val rows = csvToRows(String(bytes, Charsets.UTF_8))
+                            if (rows.isEmpty()) continue
+                            for (row in rows) {
+                                val clazz = CLASS_BY_TYPE_NAME[row["实体类型"]] ?: continue
+                                val result = insertRow(row, clazz, pathMapping)
+                                if (result != null) {
+                                    val (oldId, newId) = result
+                                    if (oldId != newId) {
+                                        idMaps.getOrPut(clazz) { mutableMapOf() }[oldId] = newId
+                                    }
+                                    count++
+                                }
                             }
-                            count++
+                        }
+
+                        if (idMaps.isNotEmpty()) {
+                            updateCrossReferences(idMaps)
                         }
                     }
-                }
-
-                if (idMaps.isNotEmpty()) {
-                    updateCrossReferences(idMaps)
                 }
 
                 if (count > 0) zipEntries[PREFERENCES_ENTRY]?.let { bytes ->
@@ -504,7 +514,7 @@ class CsvDataExporter(
         return when {
             value == null -> ""
             value is Boolean -> if (value) "是" else "否"
-            value is Long && fieldName in DATE_FIELDS -> dateFormat.format(Date(value))
+            value is Long && fieldName in DATE_FIELDS -> dateFormatter.format(Instant.ofEpochMilli(value).atZone(ZoneId.systemDefault()))
             value is Number -> value.toString()
             value is String && fieldName == "images" -> processImagesForExport(value)
             value is String && fieldName in LIST_FIELDS -> parseAndJoin(value)
@@ -790,7 +800,7 @@ class CsvDataExporter(
                 subCategory = row["subCategory"] ?: "",
                 note = row["note"] ?: "",
                 date = billDate,
-                yearMonth = row["yearMonth"] ?: SimpleDateFormat("yyyy-MM", Locale.US).format(Date(billDate)),
+                yearMonth = row["yearMonth"] ?: yearMonthFormatter.format(java.time.Instant.ofEpochMilli(billDate).atZone(java.time.ZoneId.systemDefault())),
                 timeOfDay = row["timeOfDay"] ?: "",
                 walletId = row["walletId"]?.toLongOrNull(),
                 toWalletId = row["toWalletId"]?.toLongOrNull(),
@@ -1066,7 +1076,7 @@ class CsvDataExporter(
             value.toLong()
         } catch (_: NumberFormatException) {
             try {
-                dateFormat.parse(value)?.time
+                LocalDateTime.parse(value, dateFormatter).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
             } catch (_: Exception) {
                 null
             }

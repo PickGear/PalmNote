@@ -1,5 +1,6 @@
 package com.palmnote.data.export
 
+import android.util.Log
 import com.palmnote.domain.util.CategoryClassifier
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -155,7 +156,7 @@ class BillCsvImporter {
             try {
                 val parsed = SimpleDateFormat(pat, Locale.getDefault()).parse(clean)
                 if (parsed != null) return parsed.time
-            } catch (_: Exception) { }
+            } catch (e: Exception) { Log.w("CsvImport", "parseDate failed", e) }
         }
         return null
     }

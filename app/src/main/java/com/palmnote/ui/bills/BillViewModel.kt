@@ -24,6 +24,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import android.content.Context
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -31,6 +32,7 @@ import javax.inject.Inject
 @Stable
 data class BillState(
     val bills: List<Bill> = emptyList(),
+    val filteredBills: List<Bill> = emptyList(),
     val currentYearMonth: String = DateUtils.getCurrentYearMonth(),
     val monthlyExpense: Double = 0.0,
     val monthlyIncome: Double = 0.0,
@@ -41,7 +43,11 @@ data class BillState(
     val selectedBookId: Long = AccountBook.ALL_BOOKS_ID,
     val accountBooks: List<AccountBook> = emptyList(),
     val allAccountBooks: List<AccountBook> = emptyList(),
-    val wallets: Map<Long, String> = emptyMap() // walletId -> walletName
+    val wallets: Map<Long, String> = emptyMap(),
+    val searchQuery: String = "",
+    val isSearching: Boolean = false,
+    val currentFilter: BillFilter = BillFilter(),
+    val showFilterSheet: Boolean = false
 )
 
 private data class BillDataGroup(
@@ -135,23 +141,25 @@ class BillViewModel @Inject constructor(
     private fun loadAccountBooks() {
         viewModelScope.launch {
             accountBookRepository.getAllBooks().collect { books ->
-                // Bug fix: snapshot state once to avoid race condition
-                val current = _state.value
-                _state.value = current.copy(accountBooks = books)
-                val selectedId = current.selectedBookId
-                if (books.isNotEmpty()) {
-                    if (selectedId == AccountBook.ALL_BOOKS_ID) {
-                        val defaultBook = books.find { it.isDefault }
-                        if (defaultBook != null) {
-                            _state.value = _state.value.copy(selectedBookId = defaultBook.id)
-                            loadBillData()
-                        }
-                    } else if (books.none { it.id == selectedId }) {
-                        val defaultBook = books.find { it.isDefault }
-                        _state.value = _state.value.copy(selectedBookId = defaultBook?.id ?: books.first().id)
-                        loadBillData()
-                    }
+                var needsReload = false
+                _state.update { current ->
+                    val updated = current.copy(accountBooks = books)
+                    if (books.isNotEmpty()) {
+                        val selectedId = current.selectedBookId
+                        if (selectedId == AccountBook.ALL_BOOKS_ID) {
+                            val defaultBook = books.find { it.isDefault }
+                            if (defaultBook != null) {
+                                needsReload = true
+                                updated.copy(selectedBookId = defaultBook.id)
+                            } else updated
+                        } else if (books.none { it.id == selectedId }) {
+                            val defaultBook = books.find { it.isDefault }
+                            needsReload = true
+                            updated.copy(selectedBookId = defaultBook?.id ?: books.first().id)
+                        } else updated
+                    } else updated
                 }
+                if (needsReload) loadBillData()
             }
         }
     }
@@ -159,7 +167,7 @@ class BillViewModel @Inject constructor(
     private fun loadAllAccountBooks() {
         viewModelScope.launch {
             accountBookRepository.getAllBooksIncludingHidden().collect { books ->
-                _state.value = _state.value.copy(allAccountBooks = books)
+                _state.update { it.copy(allAccountBooks = books) }
             }
         }
     }
@@ -235,7 +243,7 @@ class BillViewModel @Inject constructor(
             walletRepository.getEnabledWallets().collect { wallets ->
                 _wallets.value = wallets
                 val walletMap = wallets.associate { it.id to com.palmnote.ui.components.getLocalizedWalletDisplayName(it, context) }
-                _state.value = _state.value.copy(wallets = walletMap)
+                _state.update { it.copy(wallets = walletMap) }
             }
         }
     }
@@ -293,6 +301,63 @@ class BillViewModel @Inject constructor(
     fun setMonth(yearMonth: String) {
         _state.value = _state.value.copy(currentYearMonth = yearMonth)
         loadBillData()
+    }
+    
+    private var searchJob: Job? = null
+    
+    fun onSearchQueryChanged(query: String) {
+        _state.value = _state.value.copy(searchQuery = query, isSearching = query.isNotBlank())
+        searchJob?.cancel()
+        searchJob = viewModelScope.launch {
+            if (query.isBlank()) {
+                _state.value = _state.value.copy(filteredBills = emptyList(), isSearching = false)
+                return@launch
+            }
+            delay(300)
+            val results = billRepository.search(query)
+            _state.value = _state.value.copy(filteredBills = results, isSearching = false)
+        }
+    }
+    
+    fun clearSearch() {
+        _state.value = _state.value.copy(searchQuery = "", filteredBills = emptyList(), isSearching = false)
+        searchJob?.cancel()
+    }
+    
+    fun toggleFilterSheet() {
+        _state.value = _state.value.copy(showFilterSheet = !_state.value.showFilterSheet)
+    }
+    
+    fun applyFilter(filter: BillFilter) {
+        _state.value = _state.value.copy(currentFilter = filter, showFilterSheet = false)
+        filterBills()
+    }
+    
+    fun clearFilter() {
+        _state.value = _state.value.copy(currentFilter = BillFilter(), showFilterSheet = false)
+        filterBills()
+    }
+    
+    private fun filterBills() {
+        val state = _state.value
+        val filter = state.currentFilter
+        val query = state.searchQuery
+        
+        val filtered = state.bills.filter { bill ->
+            val matchesType = filter.type == null || bill.type == filter.type
+            val matchesCategory = filter.category == null || bill.category == filter.category
+            val matchesPaymentMethod = filter.paymentMethod == null || bill.paymentMethod == filter.paymentMethod
+            val matchesAmountMin = filter.amountMin == null || bill.amount >= filter.amountMin
+            val matchesAmountMax = filter.amountMax == null || bill.amount <= filter.amountMax
+            val matchesSearch = query.isBlank() || 
+                bill.note.contains(query, ignoreCase = true) ||
+                bill.merchant.contains(query, ignoreCase = true) ||
+                bill.category.contains(query, ignoreCase = true)
+            
+            matchesType && matchesCategory && matchesPaymentMethod && matchesAmountMin && matchesAmountMax && matchesSearch
+        }
+        
+        _state.value = _state.value.copy(filteredBills = filtered)
     }
 
     fun deleteBill(billId: Long) {

@@ -20,5 +20,5 @@ class FocusRecordRepositoryImpl @Inject constructor(
     override fun getCompletedCount(): Flow<Int> = dao.getCompletedCount()
     override suspend fun insertRecord(record: FocusRecord): Long = dao.insertRecord(record)
     override suspend fun updateRecord(record: FocusRecord) = dao.updateRecord(record)
-    override suspend fun deleteRecord(id: Long) = dao.deleteRecord(FocusRecord(id = id, durationMinutes = 0, completed = false, startTime = 0))
+    override suspend fun deleteRecord(id: Long) = dao.deleteRecordById(id)
 }

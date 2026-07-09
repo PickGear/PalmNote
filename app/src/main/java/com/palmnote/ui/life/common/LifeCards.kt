@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.sp
 import com.palmnote.R
 import com.palmnote.data.db.entity.LifeItem
 import com.palmnote.data.db.entity.LifeTemplate
+import com.palmnote.ui.components.toComposeColor
 import com.palmnote.ui.theme.*
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
@@ -28,7 +29,7 @@ import kotlinx.serialization.json.*
 @Composable
 fun PlanCard(tpl: LifeTemplate, previews: List<LifeItem>, iconColor: Color, onClick: () -> Unit) {
     val context = LocalContext.current
-    val tplColor = try { Color(android.graphics.Color.parseColor(tpl.color)) } catch (_: Exception) { iconColor }
+    val tplColor = tpl.color.toComposeColor(iconColor)
     val previewItem = previews.firstOrNull()
     val itemStatus = previewItem?.status ?: "ACTIVE"
     val isDone = itemStatus == "COMPLETED" || itemStatus == "ARCHIVED"
@@ -69,7 +70,7 @@ fun PlanCard(tpl: LifeTemplate, previews: List<LifeItem>, iconColor: Color, onCl
 @Composable
 fun TimeCard(tpl: LifeTemplate, previews: List<LifeItem>, iconColor: Color, onClick: () -> Unit) {
     val context = LocalContext.current
-    val tplColor = try { Color(android.graphics.Color.parseColor(tpl.color)) } catch (_: Exception) { iconColor }
+    val tplColor = tpl.color.toComposeColor(iconColor)
     val nearestDay = previews.firstOrNull()?.let { calcDays(it) }
     val dayText = when {
         nearestDay == null -> "--"

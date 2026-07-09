@@ -8,9 +8,11 @@ import com.palmnote.data.repository.AccountBookRepository
 import com.palmnote.data.repository.CategoryConfigRepository
 import com.palmnote.data.datastore.PreferencesManager
 import io.mockk.coEvery
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -33,6 +35,7 @@ class BillViewModelTest {
     private lateinit var accountBookRepository: AccountBookRepository
     private lateinit var categoryConfigRepository: CategoryConfigRepository
     private lateinit var preferencesManager: PreferencesManager
+    private lateinit var context: android.content.Context
     private lateinit var viewModel: BillViewModel
 
     @Before
@@ -44,11 +47,18 @@ class BillViewModelTest {
         accountBookRepository = mockk(relaxUnitFun = true)
         categoryConfigRepository = mockk(relaxUnitFun = true)
         preferencesManager = mockk(relaxUnitFun = true)
+        context = mockk(relaxUnitFun = true)
 
-        coEvery { preferencesManager.defaultBillType } returns kotlinx.coroutines.flow.flowOf("EXPENSE")
+        // 模拟所有Repository方法
+        every { accountBookRepository.getAllBooks() } returns flowOf(emptyList())
+        every { accountBookRepository.getAllBooksIncludingHidden() } returns flowOf(emptyList())
+        every { walletRepository.getEnabledWallets() } returns flowOf(emptyList())
+        every { categoryConfigRepository.getAllCategories() } returns flowOf(emptyList())
+        coEvery { walletRepository.getDefaultWallet() } returns null
+        coEvery { preferencesManager.defaultBillType } returns flowOf("EXPENSE")
 
         viewModel = BillViewModel(
-            billRepository, budgetRepository, walletRepository,
+            context, billRepository, budgetRepository, walletRepository,
             accountBookRepository, categoryConfigRepository, preferencesManager
         )
     }
@@ -79,13 +89,14 @@ class BillViewModelTest {
     }
 
     @Test
-    fun `clearAfterSave resets amount note and merchant`() = runTest {
+    fun `resetForm resets amount note and merchant`() = runTest {
         advanceUntilIdle()
 
         viewModel.updateForm {
             copy(amount = "100.0", note = "测试备注", merchant = "星巴克")
         }
-        viewModel.clearAfterSave()
+        viewModel.resetForm()
+        advanceUntilIdle()
 
         val state = viewModel.formState.value
         assertEquals("", state.amount)
@@ -94,33 +105,33 @@ class BillViewModelTest {
     }
 
     @Test
-    fun `formState preserves type after clearAfterSave`() = runTest {
+    fun `formState preserves type after resetForm`() = runTest {
         advanceUntilIdle()
 
         viewModel.updateForm { copy(type = "INCOME", category = "工资") }
-        viewModel.clearAfterSave()
+        viewModel.resetForm()
 
         assertEquals("INCOME", viewModel.formState.value.type)
         assertEquals("工资", viewModel.formState.value.category)
     }
 
     @Test
-    fun `formState preserves walletId after clearAfterSave`() = runTest {
+    fun `formState preserves walletId after resetForm`() = runTest {
         advanceUntilIdle()
 
         viewModel.updateForm { copy(walletId = 42L) }
-        viewModel.clearAfterSave()
+        viewModel.resetForm()
 
         assertEquals(42L, viewModel.formState.value.walletId)
     }
 
     @Test
-    fun `formState preserves date after clearAfterSave`() = runTest {
+    fun `formState preserves date after resetForm`() = runTest {
         advanceUntilIdle()
 
         val testDate = 1700000000000L
         viewModel.updateForm { copy(date = testDate) }
-        viewModel.clearAfterSave()
+        viewModel.resetForm()
 
         assertEquals(testDate, viewModel.formState.value.date)
     }

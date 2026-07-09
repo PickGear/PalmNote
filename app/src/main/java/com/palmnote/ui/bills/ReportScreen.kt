@@ -94,23 +94,19 @@ fun ReportScreen(
                 .padding(padding),
             contentPadding = PaddingValues(bottom = 24.dp)
         ) {
-            item {
-                Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-                    PeriodSelector(state, viewModel)
-                    Spacer(Modifier.height(12.dp))
-                    IncomeExpenseToggle(state, viewModel)
-                    Spacer(Modifier.height(12.dp))
-                    PeriodTabRow(state, viewModel)
-                    Spacer(Modifier.height(16.dp))
-                    SummarySection(state)
-                    Spacer(Modifier.height(20.dp))
-                    DonutChartSection(state, onNavigateToAddBill)
-                    Spacer(Modifier.height(20.dp))
-                    CategoryRankingSection(state)
-                    Spacer(Modifier.height(20.dp))
-                    TrendChartSection(state)
-                }
-            }
+            item { PeriodSelector(state, viewModel) }
+            item { Spacer(modifier = Modifier.height(12.dp)) }
+            item { IncomeExpenseToggle(state, viewModel) }
+            item { Spacer(modifier = Modifier.height(12.dp)) }
+            item { PeriodTabRow(state, viewModel) }
+            item { Spacer(modifier = Modifier.height(16.dp)) }
+            item { SummarySection(state) }
+            item { Spacer(modifier = Modifier.height(20.dp)) }
+            item { DonutChartSection(state, onNavigateToAddBill) }
+            item { Spacer(modifier = Modifier.height(20.dp)) }
+            item { CategoryRankingSection(state) }
+            item { Spacer(modifier = Modifier.height(20.dp)) }
+            item { TrendChartSection(state) }
         }
     }
 }
