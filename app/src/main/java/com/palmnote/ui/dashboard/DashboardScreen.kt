@@ -66,6 +66,9 @@ fun DashboardScreen(
     val hapticFeedback = LocalHapticFeedback.current
     val spacingPx = with(LocalDensity.current) { 16.dp.toPx() }
     val itemHeights = remember { mutableStateMapOf<CardType, Int>() }
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val greeting = remember { getGreeting(context) }
+    val weekDay = remember { getWeekDay(context) }
 
     var draggedType by remember { mutableStateOf<CardType?>(null) }
     var overlayTopPx by remember { mutableFloatStateOf(0f) }
@@ -102,7 +105,7 @@ fun DashboardScreen(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = getGreeting(),
+                            text = greeting,
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -297,7 +300,7 @@ private fun NetWorthCard(state: DashboardState) {
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.extraLarge,
         colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-        border = BorderStroke(0.5.dp, PrimaryGreenLight.copy(alpha = 0.3f))
+        border = BorderStroke(1.dp, PrimaryGreenLight.copy(alpha = 0.3f))
     ) {
         Box(
             modifier = Modifier
@@ -392,7 +395,7 @@ private fun QuickActionsCard(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.extraLarge,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Row(
             modifier = Modifier
@@ -449,7 +452,7 @@ private fun GoalsCard(state: DashboardState, onNavigateToLife: () -> Unit) {
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.extraLarge,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -509,7 +512,7 @@ private fun AnniversariesCard(state: DashboardState, onNavigateToLife: () -> Uni
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.extraLarge,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -593,7 +596,7 @@ private fun AssetDistributionCard(state: DashboardState, onNavigateToAsset: () -
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.extraLarge,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(stringResource(R.string.dashboard_asset_distribution), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold,
@@ -664,11 +667,12 @@ private fun LegendItem(item: CategoryCount, colorIndex: Int, modifier: Modifier 
 @Composable
 private fun TodayCard(state: DashboardState) {
     val context = androidx.compose.ui.platform.LocalContext.current
+    val weekDay = remember { getWeekDay(context) }
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.extraLarge,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -677,7 +681,7 @@ private fun TodayCard(state: DashboardState) {
         ) {
             Column {
                 Text(DateUtils.formatDisplayYearDate(context, System.currentTimeMillis()), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(getWeekDay(), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text(weekDay, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             }
             Column(horizontalAlignment = Alignment.End) {
                 Text(stringResource(R.string.dashboard_recorded), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -783,33 +787,31 @@ private fun CardManagementDialog(
     )
 }
 
-@Composable
-private fun getGreeting(): String {
+private fun getGreeting(context: android.content.Context): String {
     val cal = java.util.Calendar.getInstance()
     val hour = cal.get(java.util.Calendar.HOUR_OF_DAY)
     return when {
-        hour < 6 -> stringResource(R.string.greeting_night)
-        hour < 9 -> stringResource(R.string.greeting_morning)
-        hour < 12 -> stringResource(R.string.greeting_forenoon)
-        hour < 14 -> stringResource(R.string.greeting_noon)
-        hour < 18 -> stringResource(R.string.greeting_afternoon)
-        hour < 21 -> stringResource(R.string.greeting_evening)
-        else -> stringResource(R.string.greeting_night)
+        hour < 6 -> context.getString(R.string.greeting_night)
+        hour < 9 -> context.getString(R.string.greeting_morning)
+        hour < 12 -> context.getString(R.string.greeting_forenoon)
+        hour < 14 -> context.getString(R.string.greeting_noon)
+        hour < 18 -> context.getString(R.string.greeting_afternoon)
+        hour < 21 -> context.getString(R.string.greeting_evening)
+        else -> context.getString(R.string.greeting_night)
     }
 }
 
-@Composable
-private fun getWeekDay(): String {
+private fun getWeekDay(context: android.content.Context): String {
     val cal = java.util.Calendar.getInstance()
     val dayOfWeek = cal.get(java.util.Calendar.DAY_OF_WEEK)
     return when (dayOfWeek) {
-        java.util.Calendar.SUNDAY -> stringResource(R.string.weekday_sunday)
-        java.util.Calendar.MONDAY -> stringResource(R.string.weekday_monday)
-        java.util.Calendar.TUESDAY -> stringResource(R.string.weekday_tuesday)
-        java.util.Calendar.WEDNESDAY -> stringResource(R.string.weekday_wednesday)
-        java.util.Calendar.THURSDAY -> stringResource(R.string.weekday_thursday)
-        java.util.Calendar.FRIDAY -> stringResource(R.string.weekday_friday)
-        java.util.Calendar.SATURDAY -> stringResource(R.string.weekday_saturday)
-        else -> stringResource(R.string.weekday_sunday)
+        java.util.Calendar.SUNDAY -> context.getString(R.string.weekday_sunday)
+        java.util.Calendar.MONDAY -> context.getString(R.string.weekday_monday)
+        java.util.Calendar.TUESDAY -> context.getString(R.string.weekday_tuesday)
+        java.util.Calendar.WEDNESDAY -> context.getString(R.string.weekday_wednesday)
+        java.util.Calendar.THURSDAY -> context.getString(R.string.weekday_thursday)
+        java.util.Calendar.FRIDAY -> context.getString(R.string.weekday_friday)
+        java.util.Calendar.SATURDAY -> context.getString(R.string.weekday_saturday)
+        else -> context.getString(R.string.weekday_sunday)
     }
 }

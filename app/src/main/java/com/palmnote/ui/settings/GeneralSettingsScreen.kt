@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import com.palmnote.ui.components.ModuleCard
 import com.palmnote.ui.components.XiaomiSwitch
 import com.palmnote.ui.components.AppDialog
+import com.palmnote.ui.components.toComposeColor
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
@@ -38,6 +39,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.palmnote.ui.components.CompactTopAppBar
 import com.palmnote.R
 import com.palmnote.ui.theme.*
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -62,6 +64,7 @@ fun GeneralSettingsScreen(
     LaunchedEffect(state.resultMessage) {
         state.resultMessage?.let {
             snackbarHostState.showSnackbar(it)
+            kotlinx.coroutines.delay(100)
             viewModel.clearResult()
         }
     }
@@ -113,7 +116,7 @@ fun GeneralSettingsScreen(
                         SettingRowContent(title = stringResource(R.string.settings_language), subtitle = stringResource(R.string.settings_language_subtitle), value = languageLabels[state.language], showChevron = true)
                     }
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-                    val switchColor = try { Color(android.graphics.Color.parseColor(state.switchColor)) } catch (_: Exception) { PrimaryGreen }
+                    val switchColor = state.switchColor.toComposeColor(PrimaryGreen)
                     SettingRow(clickable = { showColorPicker = true }) {
                         SettingRowContent(title = stringResource(R.string.settings_switch_color), subtitle = stringResource(R.string.settings_switch_color_subtitle))
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -199,7 +202,7 @@ fun GeneralSettingsScreen(
                     Text(stringResource(R.string.settings_preset_color), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         presetColors.forEach { color ->
-                            val c = try { Color(android.graphics.Color.parseColor(color)) } catch (_: Exception) { Color.Gray }
+                            val c = color.toComposeColor(Color.Gray)
                             val isSelected = state.switchColor == color
                             Box(modifier = Modifier.size(44.dp).clip(CircleShape).background(c).clickable { viewModel.setSwitchColor(color) }.then(if (isSelected) Modifier.border(3.dp, Color.White, CircleShape) else Modifier), contentAlignment = Alignment.Center) {
                                 if (isSelected) Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(20.dp))
@@ -210,7 +213,7 @@ fun GeneralSettingsScreen(
                     Text(stringResource(R.string.settings_custom_color), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         OutlinedTextField(value = customColor, onValueChange = { v -> customColor = v.filter { it.isLetterOrDigit() }.take(6); customColorError = false }, label = { Text(stringResource(R.string.settings_hex_color), fontWeight = FontWeight.Bold) }, prefix = { Text("#") }, isError = customColorError, singleLine = true, modifier = Modifier.weight(1f), shape = MaterialTheme.shapes.small)
-                        val previewColor = try { Color(android.graphics.Color.parseColor("#$customColor")) } catch (_: Exception) { Color.Gray }
+                        val previewColor = "#$customColor".toComposeColor(Color.Gray)
                         val isCustomSelected = state.switchColor == "#$customColor" && customColor.length == 6
                         Box(modifier = Modifier.size(44.dp).clip(CircleShape).background(previewColor).then(if (isCustomSelected) Modifier.border(3.dp, Color.White, CircleShape) else Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape)).clickable { if (customColor.length == 6) viewModel.setSwitchColor("#$customColor"); else customColorError = true }, contentAlignment = Alignment.Center) {
                             if (isCustomSelected) Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(20.dp))

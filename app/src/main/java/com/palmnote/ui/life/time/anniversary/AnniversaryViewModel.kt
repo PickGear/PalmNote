@@ -10,6 +10,7 @@ import com.palmnote.domain.repository.LifeItemRepository
 import com.palmnote.domain.repository.LifeTemplateRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -22,13 +23,17 @@ class AnniversaryViewModel @Inject constructor(
     private val itemRepo: LifeItemRepository,
     private val templateRepo: LifeTemplateRepository
 ) : ViewModel() {
+    private var templateJob: Job? = null
+    private var itemsJob: Job? = null
     private val _uiState = MutableStateFlow(AnniversaryUiState())
     val uiState: StateFlow<AnniversaryUiState> = _uiState.asStateFlow()
     fun load(templateId: Long) {
         viewModelScope.launch {
             try {
-                templateRepo.getTemplateByIdFlow(templateId).onEach { tpl -> _uiState.update { state -> state.copy(template = tpl) } }.launchIn(viewModelScope)
-                itemRepo.getItemsByTemplate(templateId).onEach { items -> _uiState.update { state -> state.copy(items = items, isLoading = false) } }.launchIn(viewModelScope)
+                templateJob?.let(Job::cancel)
+                itemsJob?.let(Job::cancel)
+                templateJob = templateRepo.getTemplateByIdFlow(templateId).onEach { tpl -> _uiState.update { state -> state.copy(template = tpl) } }.launchIn(viewModelScope)
+                itemsJob = itemRepo.getItemsByTemplate(templateId).onEach { items -> _uiState.update { state -> state.copy(items = items, isLoading = false) } }.launchIn(viewModelScope)
             } catch (e: Exception) {
                 _uiState.update { it.copy(error = e.message ?: context.getString(R.string.life_error_load_failed), isLoading = false) }
             }

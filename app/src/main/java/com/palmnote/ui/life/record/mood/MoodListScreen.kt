@@ -23,8 +23,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.palmnote.R
 import com.palmnote.data.db.entity.MoodDiary
 import com.palmnote.ui.components.AppDialog
+import com.palmnote.ui.components.SecondaryTopAppBar
 import com.palmnote.ui.components.SwipeActionBox
-import com.palmnote.ui.life.common.EmptyState
+import com.palmnote.ui.components.EmptyState
 import com.palmnote.ui.life.common.formatRelativeTime
 import com.palmnote.ui.theme.*
 import kotlinx.serialization.json.Json
@@ -54,7 +55,7 @@ fun MoodListScreen(onBack: () -> Unit, viewModel: MoodViewModel = hiltViewModel(
 
     Scaffold(
         topBar = {
-            TopAppBar(
+            SecondaryTopAppBar(
                 title = { Text(stringResource(R.string.life_mood_record), fontWeight = FontWeight.Bold, color = LifeMoodColor) },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.life_back)) } },
                 actions = { IconButton(onClick = { viewModel.showSheet() }) { Icon(Icons.Default.Add, stringResource(R.string.life_mood_record_action)) } },
@@ -75,8 +76,8 @@ fun MoodListScreen(onBack: () -> Unit, viewModel: MoodViewModel = hiltViewModel(
                         icon = Icons.Default.Mood,
                         title = stringResource(R.string.life_mood_empty),
                         subtitle = stringResource(R.string.life_mood_empty_subtitle),
-                        actionLabel = stringResource(R.string.life_mood_record_action),
-                        onAction = { viewModel.showSheet() }
+                        actionText = stringResource(R.string.life_mood_record_action),
+                        onActionClick = { viewModel.showSheet() }
                     )
                 }
             } else {
@@ -92,7 +93,11 @@ fun MoodListScreen(onBack: () -> Unit, viewModel: MoodViewModel = hiltViewModel(
                     val moodEmoji = when (diary.mood) { "HAPPY" -> "\uD83D\uDE04"; "GOOD" -> "\uD83D\uDE42"; "NORMAL" -> "\uD83D\uDE14"; "SAD" -> "\uD83D\uDE22"; "ANGRY" -> "\uD83D\uDE21"; else -> "\uD83D\uDE04" }
                     val moodColor = when (diary.mood) { "HAPPY" -> LifeMoodHappy; "GOOD" -> LifeMoodNormal; "NORMAL" -> LifeMoodUpset; "SAD" -> LifeMoodSad; "ANGRY" -> LifeMoodAngry; else -> LifeMoodHappy }
                     SwipeActionBox(onSwipeLeft = { deleteTarget = diary }) {
-                    Card(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp), shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                    ) {
                         Box(modifier = Modifier.fillMaxWidth()) {
                             Box(modifier = Modifier.width(3.dp).height(56.dp).align(Alignment.CenterStart).background(moodColor, RoundedCornerShape(topEnd = 2.dp, bottomEnd = 2.dp)))
                             Row(modifier = Modifier.padding(start = 15.dp, end = 12.dp, top = 12.dp, bottom = 12.dp), verticalAlignment = Alignment.Top) {

@@ -20,6 +20,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -49,7 +50,7 @@ class SearchViewModel @Inject constructor(
     private var searchJob: Job? = null
 
     fun onQueryChanged(query: String) {
-        _state.value = _state.value.copy(query = query)
+        _state.update { it.copy(query = query) }
         searchJob?.cancel()
         if (query.isBlank()) {
             _state.value = SearchState(query = query)
@@ -57,25 +58,27 @@ class SearchViewModel @Inject constructor(
         }
         searchJob = viewModelScope.launch {
             delay(300)
-            _state.value = _state.value.copy(isSearching = true)
-            val assetsDeferred = async { assetRepository.search(query) }
-            val billsDeferred = async { billRepository.search(query) }
-            val goalsDeferred = async { goalRepository.search(query) }
-            val anniversariesDeferred = async { anniversaryRepository.search(query) }
-            val momentsDeferred = async { momentRepository.search(query) }
-            val assets = assetsDeferred.await()
-            val bills = billsDeferred.await()
-            val goals = goalsDeferred.await()
-            val anniversaries = anniversariesDeferred.await()
-            val moments = momentsDeferred.await()
-            _state.value = _state.value.copy(
-                assets = assets,
-                bills = bills,
-                goals = goals,
-                anniversaries = anniversaries,
-                moments = moments,
-                isSearching = false
-            )
+            _state.update { it.copy(isSearching = true) }
+            try {
+                val assetsDeferred = async { assetRepository.search(query) }
+                val billsDeferred = async { billRepository.search(query) }
+                val goalsDeferred = async { goalRepository.search(query) }
+                val anniversariesDeferred = async { anniversaryRepository.search(query) }
+                val momentsDeferred = async { momentRepository.search(query) }
+                val assets = assetsDeferred.await()
+                val bills = billsDeferred.await()
+                val goals = goalsDeferred.await()
+                val anniversaries = anniversariesDeferred.await()
+                val moments = momentsDeferred.await()
+                _state.update {
+                    it.copy(
+                        assets = assets, bills = bills, goals = goals,
+                        anniversaries = anniversaries, moments = moments, isSearching = false
+                    )
+                }
+            } catch (e: Exception) {
+                _state.update { it.copy(isSearching = false) }
+            }
         }
     }
 }

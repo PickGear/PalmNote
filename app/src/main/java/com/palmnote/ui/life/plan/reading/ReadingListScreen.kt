@@ -24,7 +24,8 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.palmnote.R
 import com.palmnote.ui.components.AppDialog
-import com.palmnote.ui.life.common.EmptyState
+import com.palmnote.ui.components.EmptyState
+import com.palmnote.ui.components.SecondaryTopAppBar
 import com.palmnote.ui.life.common.SwipeableItem
 import com.palmnote.ui.theme.*
 import kotlinx.serialization.json.Json
@@ -48,7 +49,7 @@ fun ReadingListScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Long) 
     }
     Scaffold(
         topBar = {
-            TopAppBar(
+            SecondaryTopAppBar(
                 title = { Text(stringResource(R.string.life_reading_title), fontWeight = FontWeight.Bold, color = LifeReading) },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.life_back)) } },
                 actions = { IconButton(onClick = onCreateClick) { Icon(Icons.Default.Add, stringResource(R.string.life_new_create)) } },
@@ -66,8 +67,8 @@ fun ReadingListScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Long) 
                 icon = Icons.AutoMirrored.Filled.MenuBook,
                 title = stringResource(R.string.life_empty_reading),
                 subtitle = stringResource(R.string.life_empty_reading_subtitle),
-                actionLabel = stringResource(R.string.life_empty_reading_action),
-                onAction = onCreateClick
+                actionText = stringResource(R.string.life_empty_reading_action),
+                onActionClick = onCreateClick
             )
         } else {
         LifeLazyList(modifier = Modifier.fillMaxSize().padding(innerPadding).padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {

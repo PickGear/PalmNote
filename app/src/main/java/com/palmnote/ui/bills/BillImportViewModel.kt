@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
@@ -54,7 +55,10 @@ data class BillImportState(
     val ocrMerchant: String = "",
     val ocrDate: String = "",
     val ocrCategory: String = "其他",
-    val ocrNote: String = ""
+    val ocrNote: String = "",
+    val ocrType: String = "EXPENSE",
+    val ocrWalletId: Long? = null,
+    val wallets: List<com.palmnote.data.db.entity.Wallet> = emptyList()
 )
 
 @HiltViewModel
@@ -68,6 +72,14 @@ class BillImportViewModel @Inject constructor(
     val state: StateFlow<BillImportState> = _state.asStateFlow()
     private val ocrParser = BillOcrParser()
     private val recognizer = TextRecognition.getClient(ChineseTextRecognizerOptions.Builder().build())
+
+    init {
+        viewModelScope.launch {
+            walletRepository.getEnabledWallets().first().let { wallets ->
+                _state.update { it.copy(wallets = wallets, ocrWalletId = wallets.firstOrNull()?.id) }
+            }
+        }
+    }
 
     override fun onCleared() { recognizer.close(); super.onCleared() }
 
@@ -189,6 +201,8 @@ class BillImportViewModel @Inject constructor(
     fun updateOcrDate(v: String) { _state.value = _state.value.copy(ocrDate = v) }
     fun updateOcrCategory(v: String) { _state.value = _state.value.copy(ocrCategory = v) }
     fun updateOcrNote(v: String) { _state.value = _state.value.copy(ocrNote = v) }
+    fun updateOcrType(t: String) { _state.value = _state.value.copy(ocrType = t) }
+    fun updateOcrWallet(id: Long?) { _state.value = _state.value.copy(ocrWalletId = id) }
 
     fun importSelected() {
         val s = _state.value
@@ -206,13 +220,13 @@ class BillImportViewModel @Inject constructor(
         viewModelScope.launch {
             _state.value = s.copy(stage = ImportStage.IMPORTING)
             val existing = billRepository.getAllBills().first()
-            val walletId = getWalletId()
+            val walletId = s.ocrWalletId ?: getWalletId()
 
             val toSave = if (s.ocrResults.isNotEmpty() && s.ocrSelectedIndices.isNotEmpty()) {
                 s.ocrResults.filterIndexed { i, _ -> i in s.ocrSelectedIndices }.mapNotNull { r ->
                     val amount = r.amount ?: return@mapNotNull null
                     val date = r.date ?: System.currentTimeMillis()
-                    Bill(amount = amount, type = "EXPENSE", category = r.category, note = r.note,
+                    Bill(amount = amount, type = s.ocrType, category = r.category, note = r.note,
                         date = date, yearMonth = DateUtils.formatYearMonth(date), walletId = walletId,
                         merchant = r.merchant, createdAt = System.currentTimeMillis(), updatedAt = System.currentTimeMillis())
                 }
@@ -221,7 +235,7 @@ class BillImportViewModel @Inject constructor(
                 if (amount == null) { _state.value = _state.value.copy(stage = ImportStage.PREVIEW, error = context.getString(R.string.bill_import_error_invalid_amount)); return@launch }
                 val billDate = try { java.time.LocalDate.parse(s.ocrDate, java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd")).atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli() }
                 catch (_: Exception) { System.currentTimeMillis() }
-                listOf(Bill(amount = amount, type = "EXPENSE", category = s.ocrCategory, note = s.ocrNote,
+                listOf(Bill(amount = amount, type = s.ocrType, category = s.ocrCategory, note = s.ocrNote,
                     date = billDate, yearMonth = DateUtils.formatYearMonth(billDate), walletId = walletId,
                     merchant = s.ocrMerchant, createdAt = System.currentTimeMillis(), updatedAt = System.currentTimeMillis()))
             }

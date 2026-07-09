@@ -59,43 +59,44 @@ class LifeViewModel @Inject constructor(
         _uiState.update { it.copy(greeting = greet) }
 
         observeTemplates()
-
-        viewModelScope.launch {
-            try {
-                val todayMillis = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-                val todayEndMillis = todayMillis + 86400000L
-                var todayCount = 0
-                _uiState.value.templatePreviewItems.forEach { (_, items) ->
-                    items.forEach { item ->
-                        try {
-                            val obj = kotlinx.serialization.json.Json.decodeFromString<kotlinx.serialization.json.JsonObject>(item.fieldsData)
-                            val dateStr = (obj["target_date"]?.jsonPrimitive?.content?.toLongOrNull()
-                                ?: obj["targetDate"]?.jsonPrimitive?.content?.toLongOrNull()
-                                ?: obj["date"]?.jsonPrimitive?.content?.toLongOrNull())
-                            if (dateStr != null && dateStr in todayMillis until todayEndMillis) todayCount++
-                        } catch (_: Exception) {}
-                    }
-                }
-                _uiState.update { it.copy(todayTodos = todayCount) }
-            } catch (_: Exception) {}
-        }
-
-        viewModelScope.launch {
-            try {
-                val todayStart = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-                val todayEnd = todayStart + 86400000L
-                val minutes = focusRepo.getTodayTotalMinutes(todayStart, todayEnd)
-                _uiState.update { it.copy(todayFocusMinutes = minutes) }
-            } catch (e: Exception) {
-                _uiState.update { it.copy(error = application.getString(R.string.life_data_temp_unavailable)) }
-            }
-        }
+        loadTodayData()
 
         goalRepo.getHabitGoals().onEach { habits ->
             if (habits.isEmpty()) { _uiState.update { it.copy(habitCompletionRate = 0) }; return@onEach }
             val completed = habits.count { it.isCompleted }
             _uiState.update { it.copy(habitCompletionRate = (completed * 100 / habits.size)) }
         }.launchIn(viewModelScope)
+    }
+
+    private fun loadTodayData() {
+        viewModelScope.launch {
+            try {
+                val todayStart = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                val todayEnd = LocalDate.now().plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                val minutes = focusRepo.getTodayTotalMinutes(todayStart, todayEnd)
+                _uiState.update { it.copy(todayFocusMinutes = minutes) }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(error = application.getString(R.string.life_data_temp_unavailable)) }
+            }
+        }
+    }
+
+    private fun countTodayTodos(items: Map<Long, List<LifeItem>>): Int {
+        val todayMillis = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        val todayEndMillis = LocalDate.now().plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        var count = 0
+        items.forEach { (_, itemList) ->
+            itemList.forEach { item ->
+                try {
+                    val obj = Json.decodeFromString<JsonObject>(item.fieldsData)
+                    val dateStr = (obj["target_date"]?.jsonPrimitive?.content?.toLongOrNull()
+                        ?: obj["targetDate"]?.jsonPrimitive?.content?.toLongOrNull()
+                        ?: obj["date"]?.jsonPrimitive?.content?.toLongOrNull())
+                    if (dateStr != null && dateStr in todayMillis until todayEndMillis) count++
+                } catch (_: Exception) {}
+            }
+        }
+        return count
     }
 
     fun retry() {
@@ -118,7 +119,11 @@ class LifeViewModel @Inject constructor(
                         "calendar_month" -> goalRepo.getHabitGoals().map { goals -> tpl.id to if (goals.isEmpty()) emptyList() else listOf(LifeItem(templateId = tpl.id, title = goals.first().title)) }
                         "book" -> momentRepo.getAllMoments().map { moments -> tpl.id to if (moments.isEmpty()) emptyList() else listOf(LifeItem(templateId = tpl.id, title = moments.first().title.take(30))) }
                         "mood" -> moodRepo.getAllMoodDiaries().map { diaries -> tpl.id to if (diaries.isEmpty()) emptyList() else listOf(LifeItem(templateId = tpl.id, title = diaries.first().content.take(20))) }
-                        "timer" -> flow { emit(focusRepo.getTodayTotalMinutes(0L, System.currentTimeMillis())) }.map { mins -> tpl.id to if (mins > 0) listOf(LifeItem(templateId = tpl.id, title = application.applicationContext.getString(R.string.life_focus_preview_today, mins.toInt()))) else emptyList() }
+                        "timer" -> flow {
+                            val todayStart = java.time.LocalDate.now().atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
+                            val todayEnd = todayStart + 86400000L
+                            emit(focusRepo.getTodayTotalMinutes(todayStart, todayEnd))
+                        }.map { mins -> tpl.id to if (mins > 0) listOf(LifeItem(templateId = tpl.id, title = application.applicationContext.getString(R.string.life_focus_preview_today, mins.toInt()))) else emptyList() }
                         "BarChart", "assessment" -> itemRepo.getActiveItemsByTemplate(tpl.id, 3).map { items -> tpl.id to items }
                         else -> itemRepo.getActiveItemsByTemplate(tpl.id, 3).map { items -> tpl.id to items }
                     }
@@ -131,7 +136,8 @@ class LifeViewModel @Inject constructor(
                     combine(flows) { arrays ->
                         val merged = mutableMapOf<Long, List<LifeItem>>()
                         arrays.forEach { (id, items) -> merged[id] = items }
-                        _uiState.update { it.copy(templates = templates, planTemplates = plans, timeTemplates = times, recordTemplates = records, templatePreviewItems = merged, isLoading = false) }
+                        val todayCount = countTodayTodos(merged)
+                        _uiState.update { it.copy(templates = templates, planTemplates = plans, timeTemplates = times, recordTemplates = records, templatePreviewItems = merged, todayTodos = todayCount, isLoading = false) }
                         merged
                     }
                 }

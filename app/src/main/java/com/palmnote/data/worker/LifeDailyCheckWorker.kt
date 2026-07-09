@@ -33,17 +33,27 @@ class LifeDailyCheckWorker @AssistedInject constructor(
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
+        val startTime = System.currentTimeMillis()
+        val timeBudgetMs = 240_000L
+        fun overBudget() = System.currentTimeMillis() - startTime > timeBudgetMs
         return try {
             val dailyEnabled = preferencesManager.dailyReminderEnabled.first()
             if (dailyEnabled) {
                 checkDailyReminder()
             }
+            if (overBudget()) return Result.success()
             checkBillReminder()
+            if (overBudget()) return Result.success()
             checkCountUpMilestones()
+            if (overBudget()) return Result.success()
             checkCountdownExpiry()
+            if (overBudget()) return Result.success()
             checkBirthdayReminders()
+            if (overBudget()) return Result.success()
             checkAnniversaryReminders()
+            if (overBudget()) return Result.success()
             checkSubscriptionBilling()
+            if (overBudget()) return Result.success()
             tryGenerateWeeklyReport()
             Result.success()
         } catch (e: Exception) {
@@ -81,7 +91,7 @@ class LifeDailyCheckWorker @AssistedInject constructor(
         val tpls = templateRepo.getAllTemplates().first().filter { it.name == "\u6B63\u6570\u65E5" }
         val milestoneDays = listOf(100L, 200L, 365L, 500L, 750L, 1000L)
         tpls.forEach { tpl ->
-            itemRepo.getActiveItemsByTemplate(tpl.id, Int.MAX_VALUE).first().forEach { item ->
+            itemRepo.getActiveItemsByTemplate(tpl.id, 200).first().forEach { item ->
                 try {
                     val obj = Json.decodeFromString<JsonObject>(item.fieldsData)
                     val startDateStr = (obj["start_date"] as? JsonPrimitive)?.content?.toLongOrNull()
@@ -108,7 +118,7 @@ class LifeDailyCheckWorker @AssistedInject constructor(
         val advanceDays = preferencesManager.birthdayReminderAdvanceDays.first()
         val tpls = templateRepo.getAllTemplates().first().filter { it.name.contains("\u5012\u8BA1\u65F6") }
         tpls.forEach { tpl ->
-            itemRepo.getActiveItemsByTemplate(tpl.id, Int.MAX_VALUE).first().forEach { item ->
+            itemRepo.getActiveItemsByTemplate(tpl.id, 200).first().forEach { item ->
                 try {
                     val obj = Json.decodeFromString<JsonObject>(item.fieldsData)
                     val dateStr = (obj["targetDate"] as? JsonPrimitive)?.content?.toLongOrNull()
@@ -141,14 +151,14 @@ class LifeDailyCheckWorker @AssistedInject constructor(
         val advanceDays = preferencesManager.birthdayReminderAdvanceDays.first()
         val tpls = templateRepo.getAllTemplates().first().filter { it.name.contains("\u751F\u65E5") }
         tpls.forEach { tpl ->
-            itemRepo.getActiveItemsByTemplate(tpl.id, Int.MAX_VALUE).first().forEach { item ->
+            itemRepo.getActiveItemsByTemplate(tpl.id, 200).first().forEach { item ->
                 try {
                     val obj = Json.decodeFromString<JsonObject>(item.fieldsData)
                     val dateStr = (obj["date"] as? JsonPrimitive)?.content?.toLongOrNull()
                         ?: (obj["birthday_date"] as? JsonPrimitive)?.content?.toLongOrNull()
                     if (dateStr != null) {
                         val birthDate = LocalDate.ofEpochDay(dateStr / 86400000L)
-                        val nextBirthday = birthDate.withYear(today.year)
+                        val nextBirthday = try { birthDate.withYear(today.year) } catch (_: java.time.DateTimeException) { birthDate.withYear(today.year).withDayOfMonth(28) }
                         val diff = ChronoUnit.DAYS.between(today, if (nextBirthday.isAfter(today) || nextBirthday == today) nextBirthday else nextBirthday.plusYears(1))
                         if (diff in 0..advanceDays.toLong()) {
                             com.palmnote.ui.notification.NotificationHelper.show(
@@ -169,13 +179,13 @@ class LifeDailyCheckWorker @AssistedInject constructor(
         val advanceDays = preferencesManager.anniversaryReminderAdvanceDays.first()
         val tpls = templateRepo.getAllTemplates().first().filter { it.name.contains("\u7EAA\u5FF5\u65E5") }
         tpls.forEach { tpl ->
-            itemRepo.getActiveItemsByTemplate(tpl.id, Int.MAX_VALUE).first().forEach { item ->
+            itemRepo.getActiveItemsByTemplate(tpl.id, 200).first().forEach { item ->
                 try {
                     val obj = Json.decodeFromString<JsonObject>(item.fieldsData)
                     val dateStr = (obj["date"] as? JsonPrimitive)?.content?.toLongOrNull()
                     if (dateStr != null) {
                         val anniDate = LocalDate.ofEpochDay(dateStr / 86400000L)
-                        val nextAnni = anniDate.withYear(today.year)
+                        val nextAnni = try { anniDate.withYear(today.year) } catch (_: java.time.DateTimeException) { anniDate.withYear(today.year).withDayOfMonth(28) }
                         val diff = ChronoUnit.DAYS.between(today, if (nextAnni.isAfter(today) || nextAnni == today) nextAnni else nextAnni.plusYears(1))
                         if (diff in 0..advanceDays.toLong()) {
                             val years = ChronoUnit.YEARS.between(anniDate, today)
@@ -196,7 +206,7 @@ class LifeDailyCheckWorker @AssistedInject constructor(
         val today = LocalDate.now()
         val tpls = templateRepo.getAllTemplates().first().filter { it.name.contains("\u8BA2\u9605") }
         tpls.forEach { tpl ->
-            itemRepo.getActiveItemsByTemplate(tpl.id, Int.MAX_VALUE).first().forEach { item ->
+            itemRepo.getActiveItemsByTemplate(tpl.id, 200).first().forEach { item ->
                 try {
                     val obj = Json.decodeFromString<JsonObject>(item.fieldsData)
                     val billingDay = (obj["billingDay"] as? JsonPrimitive)?.content?.toIntOrNull()
@@ -204,14 +214,16 @@ class LifeDailyCheckWorker @AssistedInject constructor(
                     val lastBilled = (obj["lastBilledDate"] as? JsonPrimitive)?.content?.toLongOrNull()
                     val cycle = (obj["billingCycle"] as? JsonPrimitive)?.content ?: "monthly"
                         if (billingDay != null && today.dayOfMonth == billingDay) {
-                        if (lastBilled != null) {
-                            val lastBilledDate = LocalDate.ofEpochDay(lastBilled / 86400000L)
-                            val monthsBetween = ChronoUnit.MONTHS.between(lastBilledDate, today)
-                            when (cycle) {
-                                "monthly" -> if (monthsBetween < 1) return@forEach
-                                "yearly" -> if (monthsBetween < 12) return@forEach
-                                "quarterly" -> if (monthsBetween < 3) return@forEach
-                            }
+                        if (lastBilled == null) {
+                            // No billing history yet, skip notification until first bill recorded
+                            return@forEach
+                        }
+                        val lastBilledDate = LocalDate.ofEpochDay(lastBilled / 86400000L)
+                        val monthsBetween = ChronoUnit.MONTHS.between(lastBilledDate, today)
+                        when (cycle) {
+                            "monthly" -> if (monthsBetween < 1) return@forEach
+                            "yearly" -> if (monthsBetween < 12) return@forEach
+                            "quarterly" -> if (monthsBetween < 3) return@forEach
                         }
                         val price = (obj["price"] as? JsonPrimitive)?.content ?: ""
                         com.palmnote.ui.notification.NotificationHelper.show(

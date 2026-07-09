@@ -7,6 +7,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -25,6 +27,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
@@ -34,6 +37,7 @@ import com.palmnote.data.export.ParsedBill
 import com.palmnote.data.ocr.OcrBillResult
 import com.palmnote.domain.util.CurrencyUtils
 import com.palmnote.domain.util.DateUtils
+import com.palmnote.data.db.entity.Wallet
 import com.palmnote.ui.components.*
 import com.palmnote.ui.theme.*
 
@@ -117,7 +121,7 @@ fun BillImportScreen(
                             if (state.mode == ImportMode.FILE) {
                                 FilePreviewContent(state, viewModel, onPickAgain = { filePickerLauncher.launch(arrayOf("text/*", "*/*")) })
                             } else {
-                                OcrPreviewContent(state, viewModel, onPickAnother = { imagePickerLauncher.launch("image/*") })
+                                OcrPreviewContent(state, viewModel, context, onPickAnother = { imagePickerLauncher.launch("image/*") })
                             }
                         }
                     }
@@ -277,7 +281,7 @@ private fun FileBillRow(bill: ParsedBill, selected: Boolean, onToggle: () -> Uni
 }
 
 @Composable
-private fun OcrPreviewContent(state: BillImportState, viewModel: BillImportViewModel, onPickAnother: () -> Unit) {
+private fun OcrPreviewContent(state: BillImportState, viewModel: BillImportViewModel, context: android.content.Context, onPickAnother: () -> Unit) {
     val isMulti = state.ocrResults.size > 1
     Column(modifier = Modifier.fillMaxSize()) {
         if (state.ocrImageUri != null) {
@@ -296,6 +300,33 @@ private fun OcrPreviewContent(state: BillImportState, viewModel: BillImportViewM
         } else {
             Text(stringResource(R.string.bill_import_ocr_result), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 16.dp))
             Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf("EXPENSE" to R.string.bill_expense, "INCOME" to R.string.bill_income).forEach { (t, labelRes) ->
+                        FilterChip(
+                            selected = state.ocrType == t,
+                            onClick = { viewModel.updateOcrType(t) },
+                            label = { Text(stringResource(labelRes)) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = (if (t == "EXPENSE") ExpenseRed else StatusActive).copy(alpha = 0.15f),
+                                selectedLabelColor = if (t == "EXPENSE") ExpenseRed else StatusActive
+                            )
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(stringResource(R.string.bill_wallet), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (state.wallets.isNotEmpty()) {
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        items(state.wallets, key = { it.id }) { wallet ->
+                            FilterChip(
+                                selected = state.ocrWalletId == wallet.id,
+                                onClick = { viewModel.updateOcrWallet(wallet.id) },
+                                label = { Text(com.palmnote.ui.components.getLocalizedWalletDisplayName(wallet, context), fontSize = 11.sp) }
+                            )
+                        }
+                    }
+                }
                 Spacer(modifier = Modifier.height(12.dp))
                 EditField(stringResource(R.string.bill_import_amount), state.ocrAmount, viewModel::updateOcrAmount, prefix = "¥ ")
                 EditField(stringResource(R.string.bill_import_merchant), state.ocrMerchant, viewModel::updateOcrMerchant)

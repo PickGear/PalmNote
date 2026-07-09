@@ -13,6 +13,8 @@ class GoalRepository @Inject constructor(
 ) : GoalRepository {
     override fun getAllGoals(): Flow<List<Goal>> = goalDao.getAllGoals()
 
+    override fun getRecentGoals(): Flow<List<Goal>> = goalDao.getRecentGoals()
+
     override suspend fun getGoalById(id: Long): Goal? = goalDao.getGoalById(id)
 
     override fun getGoalsByCategory(category: String): Flow<List<Goal>> = goalDao.getGoalsByCategory(category)

@@ -1,9 +1,21 @@
 ﻿package com.palmnote.data.db.entity
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "bills")
+@Entity(
+    tableName = "bills",
+    indices = [
+        Index(value = ["yearMonth", "type", "isDeleted"]),
+        Index(value = ["accountBookId", "yearMonth", "isDeleted"]),
+        Index(value = ["type", "isDeleted"]),
+        Index(value = ["date", "isDeleted"]),
+        Index(value = ["isReimbursable", "isReimbursed", "isDeleted"]),
+        Index(value = ["recurringId", "isDeleted"]),
+        Index(value = ["category", "isDeleted"])
+    ]
+)
 data class Bill(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,

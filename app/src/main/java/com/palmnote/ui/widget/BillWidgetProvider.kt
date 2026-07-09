@@ -12,26 +12,26 @@ import com.palmnote.MainActivity
 import com.palmnote.R
 import com.palmnote.data.db.AppDatabase
 import com.palmnote.data.db.migration.MIGRATION_1_2
-import kotlinx.coroutines.CoroutineScope
+import com.palmnote.data.db.migration.MIGRATION_2_3
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
-import java.text.NumberFormat
-import java.text.SimpleDateFormat
-import java.util.Date
+import kotlinx.coroutines.runBlocking
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.util.Currency
 import java.util.Locale
 
 class BillWidgetProvider : AppWidgetProvider() {
 
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
         val pendingResult = goAsync()
-        CoroutineScope(Dispatchers.IO).launch {
+        runBlocking(Dispatchers.IO) {
             try {
-                val yearMonth = SimpleDateFormat("yyyy-MM", Locale.getDefault()).format(Date())
+                val yearMonth = DateTimeFormatter.ofPattern("yyyy-MM").format(LocalDate.now())
                 val db = getDatabase(context)
                 val expense = db.billDao().getMonthlyExpense(yearMonth).first()
                 val income = db.billDao().getMonthlyIncome(yearMonth).first()
-                val fmt = NumberFormat.getCurrencyInstance(Locale.CHINA)
+                val fmt = java.text.NumberFormat.getCurrencyInstance(Locale.CHINA)
 
                 for (appWidgetId in appWidgetIds) {
                     val views = RemoteViews(context.packageName, R.layout.widget_layout)
@@ -65,7 +65,7 @@ class BillWidgetProvider : AppWidgetProvider() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     AppDatabase.DATABASE_NAME
-                ).addMigrations(MIGRATION_1_2).fallbackToDestructiveMigration().build().also { INSTANCE = it }
+                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3).build().also { INSTANCE = it }
             }
         }
     }

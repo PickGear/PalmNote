@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.Flow
 
 interface GoalRepository {
     fun getAllGoals(): Flow<List<Goal>>
+    fun getRecentGoals(): Flow<List<Goal>>
     suspend fun getGoalById(id: Long): Goal?
     fun getGoalsByCategory(category: String): Flow<List<Goal>>
     fun getGoalCount(): Flow<Int>

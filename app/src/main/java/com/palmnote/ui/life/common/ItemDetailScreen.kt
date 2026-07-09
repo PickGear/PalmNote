@@ -36,6 +36,8 @@ import androidx.compose.ui.unit.sp
 import com.palmnote.R
 import com.palmnote.data.db.entity.LifeItem
 import com.palmnote.ui.components.AppDialog
+import com.palmnote.ui.components.SecondaryTopAppBar
+import com.palmnote.ui.components.toComposeColor
 import com.palmnote.data.db.entity.LifeTemplate
 import com.palmnote.ui.theme.*
 import com.palmnote.ui.utils.formatTimeAgo
@@ -59,7 +61,7 @@ fun ItemDetailScreen(
     onDelete: () -> Unit = {},
     viewModel: ItemDetailViewModel? = null
 ) {
-    val detailColor = try { Color(android.graphics.Color.parseColor(template?.color ?: "#7BC4A0")) } catch (_: Exception) { ModuleLife }
+    val detailColor = (template?.color ?: "#7BC4A0").toComposeColor(ModuleLife)
     val json = remember { Json { ignoreUnknownKeys = true } }
 
     var showDepositDialog by remember { mutableStateOf(false) }
@@ -94,7 +96,7 @@ fun ItemDetailScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            TopAppBar(
+            SecondaryTopAppBar(
                 title = { Text(item?.title ?: stringResource(R.string.life_item_detail_title), fontWeight = FontWeight.SemiBold) },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.life_back)) } },
                 actions = {
@@ -278,7 +280,7 @@ fun ItemDetailScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            val isSavingPlan = template?.icon == "Savings"
+            val isSavingPlan = template?.icon?.lowercase() == "savings"
 
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp),

@@ -15,6 +15,9 @@ class TemplateCreateViewModel @Inject constructor(
     private val templateRepo: LifeTemplateRepository
 ) : ViewModel() {
 
+    private val _createdTemplateId = MutableStateFlow<Long?>(null)
+    val createdTemplateId: StateFlow<Long?> = _createdTemplateId.asStateFlow()
+
     fun createTemplate(
         name: String,
         category: String,
@@ -77,7 +80,7 @@ class TemplateCreateViewModel @Inject constructor(
                     put("allowItemLink", true)
                 }
 
-                templateRepo.insertTemplate(LifeTemplate(
+                val id = templateRepo.insertTemplate(LifeTemplate(
                     name = name,
                     category = category,
                     icon = icon,
@@ -90,6 +93,7 @@ class TemplateCreateViewModel @Inject constructor(
                     linkConfig = linkConfig.toString(),
                     isBuiltin = false
                 ))
+                _createdTemplateId.value = id
             } catch (e: Exception) {
                 e.printStackTrace()
             }

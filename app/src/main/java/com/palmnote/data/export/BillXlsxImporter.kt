@@ -2,6 +2,7 @@
 
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import com.palmnote.domain.util.DateUtils
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserFactory
@@ -137,7 +138,7 @@ class BillXlsxImporter {
                 }
                 parser.next()
             }
-        } catch (_: Exception) { }
+        } catch (e: Exception) { Log.w("XlsxImport", "parseSharedStrings failed", e) }
         return result
     }
 
@@ -185,7 +186,7 @@ class BillXlsxImporter {
                 }
                 parser.next()
             }
-        } catch (_: Exception) { }
+        } catch (e: Exception) { Log.w("XlsxImport", "parseSheet failed", e) }
         if (rawRows.isEmpty()) return emptyList()
         val globalMax = rawRows.maxOf { it.keys.max() }
         return rawRows.map { row -> (0..globalMax).map { row[it] ?: "" } }
@@ -208,7 +209,7 @@ class BillXlsxImporter {
     private fun parseXlsxDate(timeStr: String): Long? {
         val clean = timeStr.trim()
         for (pat in listOf("yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd HH:mm", "yyyy-MM-dd")) {
-            try { return SimpleDateFormat(pat, Locale.getDefault()).parse(clean)?.time } catch (_: Exception) { }
+            try { return SimpleDateFormat(pat, Locale.getDefault()).parse(clean)?.time } catch (e: Exception) { Log.w("XlsxImport", "parseXlsxDate failed for pattern: $pat", e) }
         }
         val num = clean.toDoubleOrNull()
         if (num != null && num > 40000 && num < 60000) {

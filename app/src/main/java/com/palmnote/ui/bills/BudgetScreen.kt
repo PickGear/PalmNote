@@ -181,6 +181,7 @@ fun BudgetScreen(
     // Edit Budget Dialog
     if (showEditDialog) {
         var amount by remember { mutableStateOf(state.budget?.totalBudget?.toString() ?: "") }
+        var amountError by remember { mutableStateOf(false) }
 
         AppDialog(
             onDismissRequest = { showEditDialog = false },
@@ -195,10 +196,12 @@ fun BudgetScreen(
                     Spacer(modifier = Modifier.height(12.dp))
                     OutlinedTextField(
                         value = amount,
-                        onValueChange = { amount = it },
+                        onValueChange = { amount = it; amountError = false },
                         modifier = Modifier.fillMaxWidth(),
                         placeholder = { Text("0.00") },
                         prefix = { Text("¥") },
+                        isError = amountError,
+                        supportingText = if (amountError) {{ Text("请输入有效金额") }} else null,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         shape = MaterialTheme.shapes.medium,
                         singleLine = true
@@ -208,8 +211,8 @@ fun BudgetScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        val budgetValue = amount.toDoubleOrNull() ?: 0.0
-                        if (budgetValue > 0) {
+                        val budgetValue = amount.toDoubleOrNull()
+                        if (budgetValue != null && budgetValue > 0) {
                             val existing = state.budget
                             viewModel.saveBudget(
                                 if (existing != null) {
@@ -221,8 +224,10 @@ fun BudgetScreen(
                                     )
                                 }
                             )
+                            showEditDialog = false
+                        } else {
+                            amountError = true
                         }
-                        showEditDialog = false
                     }
                 ) {
                     Text(stringResource(R.string.confirm), color = AccentOrange)

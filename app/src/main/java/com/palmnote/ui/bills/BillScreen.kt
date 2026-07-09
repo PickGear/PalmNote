@@ -69,21 +69,26 @@ fun BillScreen(
         mutableStateOf(if (isCurrentMonth) todayDay else null)
     }
     var calendarExpanded by remember { mutableStateOf(false) }
-    val filteredBills by remember(state.bills, selectedFilter, selectedDay) {
+    val filteredBills by remember(state.bills, state.filteredBills, state.currentFilter, selectedFilter, selectedDay) {
         derivedStateOf {
+            val base = if (state.currentFilter.isActive) state.filteredBills else state.bills
             val byType = when (selectedFilter) {
-                "EXPENSE" -> state.bills.filter { it.type == "EXPENSE" }
-                "INCOME" -> state.bills.filter { it.type == "INCOME" }
-                else -> state.bills
+                "EXPENSE" -> base.filter { it.type == "EXPENSE" }
+                "INCOME" -> base.filter { it.type == "INCOME" }
+                else -> base
             }
             if (selectedDay != null) byType.filter { DateUtils.getDayOfMonth(it.date) == selectedDay }
             else byType
         }
     }
 
+    val groupedBills = remember(filteredBills) { filteredBills.groupBy { DateUtils.formatDate(it.date) } }
+
     var showBookMenu by remember { mutableStateOf(false) }
     val currentBook = state.accountBooks.find { it.id == state.selectedBookId }
         ?: state.allAccountBooks.find { it.id == state.selectedBookId }
+    
+    var billToDelete by remember { mutableStateOf<Bill?>(null) }
 
     Scaffold(
         topBar = {
@@ -134,7 +139,7 @@ fun BillScreen(
                                                     }
                                                     .padding(horizontal = 12.dp, vertical = 10.dp)
                                             ) {
-                                                Surface(shape = CircleShape, color = try { Color(android.graphics.Color.parseColor(book.color)) } catch (_: Exception) { Color.Gray }, modifier = Modifier.size(32.dp)) {
+                                                Surface(shape = CircleShape, color = book.color.toComposeColor(Color.Gray), modifier = Modifier.size(32.dp)) {
                                                     Box(contentAlignment = Alignment.Center) { Icon(book.icon.imageVector, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color.White) }
                                                 }
                                                 Spacer(Modifier.width(10.dp))
@@ -182,15 +187,33 @@ fun BillScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = onNavigateToImportCsv) {
-                        Icon(Icons.Outlined.FileUpload, contentDescription = stringResource(R.string.bill_import), tint = AccentOrange)
-                    }
-                    val allBooksLabel = stringResource(R.string.bill_all_books)
-                    IconButton(onClick = { onNavigateToReport(state.selectedBookId, currentBook?.getDisplayName(context) ?: allBooksLabel) }) {
-                        Icon(Icons.Outlined.Assessment, contentDescription = stringResource(R.string.bill_report), tint = AccentOrange)
-                    }
-                    IconButton(onClick = onNavigateToBudget) {
-                        Icon(Icons.Outlined.AccountBalance, contentDescription = stringResource(R.string.bill_budget_tab), tint = AccentOrange)
+                    var showSearch by remember { mutableStateOf(false) }
+                    
+                    if (showSearch) {
+                        ModuleSearchBar(
+                            query = state.searchQuery,
+                            onQueryChange = { viewModel.onSearchQueryChanged(it) },
+                            onClear = { viewModel.clearSearch() },
+                            placeholder = stringResource(R.string.search),
+                            modifier = Modifier.weight(1f)
+                        )
+                        IconButton(onClick = { showSearch = false; viewModel.clearSearch() }) {
+                            Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.close))
+                        }
+                    } else {
+                        IconButton(onClick = { showSearch = true }) {
+                            Icon(Icons.Outlined.Search, contentDescription = stringResource(R.string.search), tint = MaterialTheme.colorScheme.primary)
+                        }
+                        IconButton(onClick = onNavigateToImportCsv) {
+                            Icon(Icons.Outlined.FileUpload, contentDescription = stringResource(R.string.bill_import), tint = MaterialTheme.colorScheme.primary)
+                        }
+                        val allBooksLabel = stringResource(R.string.bill_all_books)
+                        IconButton(onClick = { onNavigateToReport(state.selectedBookId, currentBook?.getDisplayName(context) ?: allBooksLabel) }) {
+                            Icon(Icons.Outlined.Assessment, contentDescription = stringResource(R.string.bill_report), tint = MaterialTheme.colorScheme.primary)
+                        }
+                        IconButton(onClick = onNavigateToBudget) {
+                            Icon(Icons.Outlined.AccountBalance, contentDescription = stringResource(R.string.bill_budget_tab), tint = MaterialTheme.colorScheme.primary)
+                        }
                     }
                 }
             )
@@ -198,7 +221,7 @@ fun BillScreen(
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = onNavigateToAdd,
-                containerColor = AccentOrange,
+                containerColor = MaterialTheme.colorScheme.secondary,
                 contentColor = Color.White,
                 shape = MaterialTheme.shapes.large,
                 icon = { Icon(Icons.Filled.Add, contentDescription = null) },
@@ -355,51 +378,61 @@ fun BillScreen(
 
             // Filter chips (no ripple)
             item {
-                Row(modifier = Modifier.padding(bottom = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    val interactionSource = remember { MutableInteractionSource() }
-                    Surface(
-                        shape = MaterialTheme.shapes.extraLarge,
-                        color = if (selectedFilter == "ALL") MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else Color.Transparent,
-                        modifier = Modifier.clickable(interactionSource = interactionSource, indication = null) { selectedFilter = "ALL" }
-                    ) {
-                        Text(
-                            text = stringResource(R.string.bill_all),
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                            color = if (selectedFilter == "ALL") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                            style = MaterialTheme.typography.labelLarge
+                Row(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        val interactionSource = remember { MutableInteractionSource() }
+                        Surface(
+                            shape = MaterialTheme.shapes.extraLarge,
+                            color = if (selectedFilter == "ALL") MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else Color.Transparent,
+                            modifier = Modifier.clickable(interactionSource = interactionSource, indication = null) { selectedFilter = "ALL" }
+                        ) {
+                            Text(
+                                text = stringResource(R.string.bill_all),
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                                color = if (selectedFilter == "ALL") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                                style = MaterialTheme.typography.labelLarge
+                            )
+                        }
+                        val interactionSource2 = remember { MutableInteractionSource() }
+                        Surface(
+                            shape = MaterialTheme.shapes.extraLarge,
+                            color = if (selectedFilter == "EXPENSE") ExpenseRed.copy(alpha = 0.15f) else Color.Transparent,
+                            modifier = Modifier.clickable(interactionSource = interactionSource2, indication = null) { selectedFilter = "EXPENSE" }
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                                Icon(Icons.AutoMirrored.Outlined.TrendingDown, null, Modifier.size(16.dp), tint = if (selectedFilter == "EXPENSE") ExpenseRed else MaterialTheme.colorScheme.onSurface)
+                                Spacer(Modifier.width(4.dp))
+                                Text(
+                                    text = stringResource(R.string.bill_expense),
+                                    color = if (selectedFilter == "EXPENSE") ExpenseRed else MaterialTheme.colorScheme.onSurface,
+                                    style = MaterialTheme.typography.labelLarge
+                                )
+                            }
+                        }
+                        val interactionSource3 = remember { MutableInteractionSource() }
+                        Surface(
+                            shape = MaterialTheme.shapes.extraLarge,
+                            color = if (selectedFilter == "INCOME") StatusActive.copy(alpha = 0.15f) else Color.Transparent,
+                            modifier = Modifier.clickable(interactionSource = interactionSource3, indication = null) { selectedFilter = "INCOME" }
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                                Icon(Icons.AutoMirrored.Outlined.TrendingUp, null, Modifier.size(16.dp), tint = if (selectedFilter == "INCOME") StatusActive else MaterialTheme.colorScheme.onSurface)
+                                Spacer(Modifier.width(4.dp))
+                                Text(
+                                    text = stringResource(R.string.bill_income),
+                                    color = if (selectedFilter == "INCOME") StatusActive else MaterialTheme.colorScheme.onSurface,
+                                    style = MaterialTheme.typography.labelLarge
+                                )
+                            }
+                        }
+                    }
+                    // 高级筛选图标
+                    IconButton(onClick = { viewModel.toggleFilterSheet() }) {
+                        Icon(
+                            Icons.Outlined.FilterList,
+                            contentDescription = stringResource(R.string.bill_filter),
+                            tint = if (state.currentFilter.isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                    }
-                    val interactionSource2 = remember { MutableInteractionSource() }
-                    Surface(
-                        shape = MaterialTheme.shapes.extraLarge,
-                        color = if (selectedFilter == "EXPENSE") ExpenseRed.copy(alpha = 0.15f) else Color.Transparent,
-                        modifier = Modifier.clickable(interactionSource = interactionSource2, indication = null) { selectedFilter = "EXPENSE" }
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-                            Icon(Icons.AutoMirrored.Outlined.TrendingDown, null, Modifier.size(16.dp), tint = if (selectedFilter == "EXPENSE") ExpenseRed else MaterialTheme.colorScheme.onSurface)
-                            Spacer(Modifier.width(4.dp))
-                            Text(
-                                text = stringResource(R.string.bill_expense),
-                                color = if (selectedFilter == "EXPENSE") ExpenseRed else MaterialTheme.colorScheme.onSurface,
-                                style = MaterialTheme.typography.labelLarge
-                            )
-                        }
-                    }
-                    val interactionSource3 = remember { MutableInteractionSource() }
-                    Surface(
-                        shape = MaterialTheme.shapes.extraLarge,
-                        color = if (selectedFilter == "INCOME") StatusActive.copy(alpha = 0.15f) else Color.Transparent,
-                        modifier = Modifier.clickable(interactionSource = interactionSource3, indication = null) { selectedFilter = "INCOME" }
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-                            Icon(Icons.AutoMirrored.Outlined.TrendingUp, null, Modifier.size(16.dp), tint = if (selectedFilter == "INCOME") StatusActive else MaterialTheme.colorScheme.onSurface)
-                            Spacer(Modifier.width(4.dp))
-                            Text(
-                                text = stringResource(R.string.bill_income),
-                                color = if (selectedFilter == "INCOME") StatusActive else MaterialTheme.colorScheme.onSurface,
-                                style = MaterialTheme.typography.labelLarge
-                            )
-                        }
                     }
                 }
             }
@@ -448,7 +481,8 @@ fun BillScreen(
                                 modifier = Modifier.weight(1f),
                                 verticalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
-                                state.expenseByCategory.take(5).forEachIndexed { index, item ->
+                                val maxLegendItems = 5
+                                state.expenseByCategory.take(maxLegendItems).forEachIndexed { index, item ->
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -477,6 +511,13 @@ fun BillScreen(
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
+                                }
+                                if (state.expenseByCategory.size > maxLegendItems) {
+                                    Text(
+                                        text = "+${state.expenseByCategory.size - maxLegendItems} 更多",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                    )
                                 }
                             }
                         }
@@ -513,9 +554,7 @@ fun BillScreen(
                     )
                 }
             } else {
-                // Group by date
-                val grouped = filteredBills.groupBy { DateUtils.formatDate(it.date) }
-                grouped.forEach { (_, bills) ->
+                groupedBills.forEach { (_, bills) ->
                     item {
                         Text(
                             text = DateUtils.formatDisplayDateWithWeekday(context, bills.first().date),
@@ -529,7 +568,7 @@ fun BillScreen(
                             bill = bill,
                             wallets = state.wallets,
                             onDetail = { onNavigateToDetail(bill.id) },
-                            onDelete = { viewModel.deleteBill(bill.id) }
+                            onDelete = { billToDelete = bill }
                         )
                     }
                 }
@@ -537,6 +576,40 @@ fun BillScreen(
 
             item { Spacer(modifier = Modifier.height(80.dp)) }
         }
+    }
+    
+    // 删除确认弹窗
+    billToDelete?.let { bill ->
+        AppDialog(
+            onDismissRequest = { billToDelete = null },
+            title = { Text(stringResource(R.string.delete), fontWeight = FontWeight.Bold) },
+            text = { Text(stringResource(R.string.delete_confirm)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.deleteBill(bill.id)
+                    billToDelete = null
+                }) {
+                    Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { billToDelete = null }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            }
+        )
+    }
+    
+    // 高级筛选Sheet
+    if (state.showFilterSheet) {
+        BillFilterSheet(
+            onDismiss = { viewModel.toggleFilterSheet() },
+            onApply = { filter -> viewModel.applyFilter(filter) },
+            currentFilter = state.currentFilter,
+            expenseCategories = expenseCategoryItems,
+            incomeCategories = incomeCategoryItems,
+            paymentMethods = listOf(stringResource(R.string.payment_cash), stringResource(R.string.payment_wechat), stringResource(R.string.payment_alipay), stringResource(R.string.payment_bank_transfer))
+        )
     }
 }
 

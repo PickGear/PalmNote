@@ -50,6 +50,8 @@ fun BillDetailScreen(
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
+    
+    var showDeleteDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -61,7 +63,7 @@ fun BillDetailScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { viewModel.deleteBill(billId); onNavigateBack() }) {
+                    IconButton(onClick = { showDeleteDialog = true }) {
                         Icon(Icons.Outlined.Delete, contentDescription = stringResource(R.string.delete), tint = ExpenseRed)
                     }
                 }
@@ -144,5 +146,27 @@ fun BillDetailScreen(
                 }
             }
         }
+    }
+    
+    // 删除确认弹窗
+    if (showDeleteDialog) {
+        AppDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text(stringResource(R.string.delete), fontWeight = FontWeight.Bold) },
+            text = { Text(stringResource(R.string.delete_confirm)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.deleteBill(billId)
+                    onNavigateBack()
+                }) {
+                    Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            }
+        )
     }
 }

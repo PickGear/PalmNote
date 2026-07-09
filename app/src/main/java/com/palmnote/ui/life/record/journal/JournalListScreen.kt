@@ -23,9 +23,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.palmnote.R
 import com.palmnote.data.db.entity.LifeMoment
 import com.palmnote.ui.components.AppDialog
+import com.palmnote.ui.components.SecondaryTopAppBar
 import com.palmnote.ui.components.SwipeActionBox
-import com.palmnote.ui.life.record.mood.QuickMoodSheet
-import com.palmnote.ui.life.common.EmptyState
+import com.palmnote.ui.components.EmptyState
 import com.palmnote.ui.life.common.formatRelativeTime
 import com.palmnote.ui.theme.*
 import kotlinx.coroutines.launch
@@ -54,7 +54,7 @@ fun JournalListScreen(onBack: () -> Unit, onItemClick: (Long) -> Unit, viewModel
 
     Scaffold(
         topBar = {
-            TopAppBar(
+            SecondaryTopAppBar(
                 title = { Text(stringResource(R.string.life_journal_title), fontWeight = FontWeight.Bold, color = LifeJournal) },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.life_back)) } },
                 actions = { IconButton(onClick = { showSheet = true }) { Icon(Icons.Default.Add, stringResource(R.string.life_journal_write)) } },
@@ -65,10 +65,10 @@ fun JournalListScreen(onBack: () -> Unit, onItemClick: (Long) -> Unit, viewModel
     ) { innerPadding ->
         if (state.isLoading) { Box(modifier = Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = LifeJournal) }; return@Scaffold }
         if (state.moments.isEmpty()) {
-            EmptyState(icon = Icons.Default.AutoStories, title = stringResource(R.string.life_journal_empty_first), subtitle = stringResource(R.string.life_journal_empty_hint), actionLabel = stringResource(R.string.life_journal_write_one), onAction = { showSheet = true })
+            EmptyState(icon = Icons.Default.AutoStories, title = stringResource(R.string.life_journal_empty_first), subtitle = stringResource(R.string.life_journal_empty_hint), actionText = stringResource(R.string.life_journal_write_one), onActionClick = { showSheet = true })
             return@Scaffold
         }
-        val grouped = state.moments.groupBy { Instant.ofEpochMilli(it.date).atZone(ZoneId.systemDefault()).toLocalDate() }.toSortedMap(compareByDescending { it })
+        val grouped = remember(state.moments) { state.moments.groupBy { Instant.ofEpochMilli(it.date).atZone(ZoneId.systemDefault()).toLocalDate() }.toSortedMap(compareByDescending { it }) }
         LazyColumn(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
             grouped.forEach { (date, moments) ->
                 item { Text(date.format(DateTimeFormatter.ofPattern(context.getString(R.string.date_format_display_year))), fontSize = 12.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) }
@@ -85,23 +85,76 @@ fun JournalListScreen(onBack: () -> Unit, onItemClick: (Long) -> Unit, viewModel
                                 if (moodE != null) Text(moodE, fontSize = 16.sp)
                                 Spacer(modifier = Modifier.weight(1f))
                                 Text(formatRelativeTime(context, moment.date), fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
-                        }
-                        }
-                    }
-                    }
-                }
         }
     }
+}
+}
+}
+}
+    }
+}
     }
 
     if (showSheet) {
-        QuickMoodSheet(
+        JournalEntrySheet(
             onDismiss = { showSheet = false },
-            onSave = { mood, content, factors ->
-                viewModel.saveMoment(mood, content, factors)
+            onSave = { mood, content ->
+                viewModel.saveMoment(mood, content)
                 showSheet = false
             }
         )
     }
 }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun JournalEntrySheet(
+    onDismiss: () -> Unit,
+    onSave: (String, String) -> Unit
+) {
+    var mood by remember { mutableStateOf("NORMAL") }
+    var content by remember { mutableStateOf("") }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        shape = MaterialTheme.shapes.extraLarge
+    ) {
+        Column(modifier = Modifier.padding(horizontal = 24.dp).padding(bottom = 32.dp)) {
+            Text(stringResource(R.string.life_journal_write), fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.life_mood), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                listOf("HAPPY" to "\uD83D\uDE04", "GOOD" to "\uD83D\uDE42", "NORMAL" to "\uD83D\uDE14", "SAD" to "\uD83D\uDE22", "ANGRY" to "\uD83D\uDE21").forEach { (key, emoji) ->
+                    Surface(
+                        modifier = Modifier.size(36.dp).clickable { mood = key },
+                        shape = RoundedCornerShape(18.dp),
+                        color = if (mood == key) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.background,
+                        border = if (mood == key) androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary) else null
+                    ) { Box(contentAlignment = Alignment.Center) { Text(emoji, fontSize = 18.sp) } }
+    }
+}
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+
+            OutlinedTextField(
+                value = content,
+                onValueChange = { content = it },
+                modifier = Modifier.fillMaxWidth().heightIn(min = 150.dp),
+                placeholder = { Text(stringResource(R.string.life_journal_write)) },
+                shape = MaterialTheme.shapes.medium,
+                maxLines = 10
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(
+                onClick = { if (content.isNotBlank()) onSave(mood, content) },
+                modifier = Modifier.fillMaxWidth().height(48.dp),
+                shape = MaterialTheme.shapes.medium,
+                colors = ButtonDefaults.buttonColors(containerColor = LifeJournal),
+                enabled = content.isNotBlank()
+            ) { Text(stringResource(R.string.save), fontWeight = FontWeight.Medium) }
+        }
+    }

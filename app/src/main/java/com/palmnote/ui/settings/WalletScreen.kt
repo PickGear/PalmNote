@@ -60,7 +60,7 @@ fun WalletScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { editingWallet = null; showAddDialog = true },
-                containerColor = AccentOrange,
+                containerColor = MaterialTheme.colorScheme.secondary,
                 contentColor = Color.White,
                 shape = MaterialTheme.shapes.large
             ) {
@@ -424,7 +424,7 @@ private fun WalletEditBottomSheet(
                 onSave(Wallet(
                     id = wallet?.id ?: 0L, name = name.trim(), type = type, icon = icon, color = color,
                     bankName = bankName.trim(), cardNumber = cardNumber.trim(),
-                    initialBalance = balance, currentBalance = balance,
+                    initialBalance = balance, currentBalance = wallet?.currentBalance ?: balance,
                     isDefault = wallet?.isDefault ?: false, isEnabled = wallet?.isEnabled ?: true,
                     sortOrder = wallet?.sortOrder ?: 0
                 ))

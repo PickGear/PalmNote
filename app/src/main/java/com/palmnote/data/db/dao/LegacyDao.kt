@@ -15,6 +15,9 @@ interface LegacyDao {
     @Query("SELECT * FROM todo_items WHERE id = :id")
     suspend fun getTodoById(id: Long): TodoItem?
 
+    @Query("SELECT * FROM todo_items WHERE parentId = :parentId AND isDeleted = 0 ORDER BY createdAt DESC")
+    fun getTodosByParentId(parentId: Long): Flow<List<TodoItem>>
+
     @Query("SELECT * FROM todo_items WHERE lifeItemId = :lifeItemId AND isDeleted = 0 ORDER BY createdAt DESC")
     fun getTodosByLifeItem(lifeItemId: Long): Flow<List<TodoItem>>
 

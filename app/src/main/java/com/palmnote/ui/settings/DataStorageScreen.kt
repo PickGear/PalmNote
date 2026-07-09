@@ -21,6 +21,7 @@ import com.palmnote.ui.components.CompactTopAppBar
 import com.palmnote.R
 import com.palmnote.ui.components.*
 import com.palmnote.ui.theme.*
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -48,6 +49,7 @@ fun DataStorageScreen(
     LaunchedEffect(state.resultMessage) {
         state.resultMessage?.let {
             snackbarHostState.showSnackbar(it)
+            delay(100)
             viewModel.clearResult()
         }
     }
@@ -80,7 +82,7 @@ fun DataStorageScreen(
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 12.dp))
                     SettingsMenuItem(icon = Icons.Outlined.FileDownload, title = stringResource(R.string.settings_export_data), subtitle = stringResource(R.string.settings_export_data_subtitle), tint = InfoBlue, onClick = { exportLauncher.launch(appName + exportSuffix) })
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 12.dp))
-                    SettingsMenuItem(icon = Icons.Outlined.FileUpload, title = stringResource(R.string.settings_import_data), subtitle = stringResource(R.string.settings_import_data_subtitle), tint = AccentOrange, onClick = { importLauncher.launch(arrayOf("application/zip", "*/*")) })
+                    SettingsMenuItem(icon = Icons.Outlined.FileUpload, title = stringResource(R.string.settings_import_data), subtitle = stringResource(R.string.settings_import_data_subtitle), tint = AccentOrange, onClick = { importLauncher.launch(arrayOf("application/zip")) })
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 12.dp))
                     SettingsMenuItem(icon = Icons.Outlined.Backup, title = stringResource(R.string.settings_data_backup), subtitle = stringResource(R.string.settings_data_backup_subtitle), tint = ModuleLife, onClick = onNavigateToBackup)
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 12.dp))

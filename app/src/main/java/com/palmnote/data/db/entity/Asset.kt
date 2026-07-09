@@ -2,11 +2,22 @@
 
 import android.content.Context
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.palmnote.R
 import com.palmnote.domain.util.DateUtils
 
-@Entity(tableName = "assets")
+@Entity(
+    tableName = "assets",
+    indices = [
+        Index(value = ["status", "isDeleted"]),
+        Index(value = ["category", "isDeleted"]),
+        Index(value = ["warrantyExpireDate", "isDeleted"]),
+        Index(value = ["nextMaintenanceDate", "isDeleted"]),
+        Index(value = ["insuranceExpireDate", "isDeleted"]),
+        Index(value = ["isFavorite", "isDeleted"])
+    ]
+)
 data class Asset(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
