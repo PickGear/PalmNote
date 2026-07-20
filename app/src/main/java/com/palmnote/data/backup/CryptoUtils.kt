@@ -53,6 +53,30 @@ object CryptoUtils {
         return cipher.doFinal(data)
     }
     
+    fun encryptStream(input: java.io.InputStream, output: java.io.OutputStream, key: SecretKey) {
+        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+        val iv = ByteArray(IV_SIZE)
+        SecureRandom().nextBytes(iv)
+        val parameterSpec = GCMParameterSpec(GCM_TAG_LENGTH, iv)
+        cipher.init(Cipher.ENCRYPT_MODE, key, parameterSpec)
+        output.write(iv)
+        val cos = javax.crypto.CipherOutputStream(output, cipher)
+        input.copyTo(cos)
+        cos.flush()
+        cos.close()
+    }
+
+    fun decryptStream(input: java.io.InputStream, output: java.io.OutputStream, key: SecretKey) {
+        val iv = ByteArray(IV_SIZE)
+        if (input.read(iv) != IV_SIZE) throw java.io.IOException("Failed to read IV")
+        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+        val parameterSpec = GCMParameterSpec(GCM_TAG_LENGTH, iv)
+        cipher.init(Cipher.DECRYPT_MODE, key, parameterSpec)
+        val cis = javax.crypto.CipherInputStream(input, cipher)
+        cis.copyTo(output)
+        cis.close()
+    }
+
     fun isEncryptedBackup(file: java.io.File): Boolean {
         return try {
             java.io.FileInputStream(file).use { fis ->

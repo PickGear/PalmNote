@@ -38,18 +38,14 @@ class BackupManager {
         val tempZip = File(context.cacheDir, "temp_backup.zip")
         createZipFile(context, tempZip)
 
-        // 如果有密码，加密ZIP文件
+        // 如果有密码，加密ZIP文件（流式处理避免OOM）
         if (!password.isNullOrBlank()) {
             val salt = CryptoUtils.generateSalt()
             val key = CryptoUtils.deriveKey(password, salt)
-            val zipBytes = tempZip.readBytes()
-            val encryptedBytes = CryptoUtils.encrypt(zipBytes, key)
-
-            // 写入：magic + salt + encryptedData
             FileOutputStream(backupFile).use { fos ->
                 fos.write(MAGIC.toByteArray())
                 fos.write(salt)
-                fos.write(encryptedBytes)
+                FileInputStream(tempZip).use { fis -> CryptoUtils.encryptStream(fis, fos, key) }
             }
         } else {
             // 无密码，直接复制
@@ -107,34 +103,19 @@ class BackupManager {
                 throw IllegalArgumentException("需要密码才能恢复此备份")
             }
 
-            // 读取salt和加密数据
-            val (salt, encryptedData) = readEncryptedBackup(backupFile)
-            val key = CryptoUtils.deriveKey(password, salt)
-            val zipBytes = CryptoUtils.decrypt(encryptedData, key)
-
-            // 解压到临时文件再恢复
+            // 流式解密避免OOM
             val tempZip = File(context.cacheDir, "temp_restore.zip")
-            tempZip.writeBytes(zipBytes)
+            FileInputStream(backupFile).use { fis ->
+                val magic = ByteArray(4); fis.read(magic)
+                val salt = ByteArray(16); fis.read(salt)
+                val key = CryptoUtils.deriveKey(password, salt)
+                FileOutputStream(tempZip).use { fos -> CryptoUtils.decryptStream(fis, fos, key) }
+            }
             restoreFromZip(context, tempZip)
             tempZip.delete()
         } else {
             // 未加密，直接恢复
             restoreFromZip(context, backupFile)
-        }
-    }
-
-    // 读取加密备份文件
-    private fun readEncryptedBackup(file: File): Pair<ByteArray, ByteArray> {
-        FileInputStream(file).use { fis ->
-            val magic = ByteArray(4)
-            fis.read(magic)
-            
-            val salt = ByteArray(16)
-            fis.read(salt)
-            
-            val encryptedData = fis.readBytes()
-            
-            return Pair(salt, encryptedData)
         }
     }
 

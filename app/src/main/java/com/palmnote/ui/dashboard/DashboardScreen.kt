@@ -427,7 +427,7 @@ private fun QuickActionButton(icon: ImageVector, label: String, color: Color, on
             Icon(icon, contentDescription = label, tint = color, modifier = Modifier.size(26.dp))
         }
         Spacer(modifier = Modifier.height(6.dp))
-        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 

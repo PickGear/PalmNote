@@ -1,5 +1,7 @@
 package com.palmnote.ui.bills
 
+import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -85,6 +87,7 @@ fun BillScreen(
     val groupedBills = remember(filteredBills) { filteredBills.groupBy { DateUtils.formatDate(it.date) } }
 
     var showBookMenu by remember { mutableStateOf(false) }
+    var showSearch by remember { mutableStateOf(false) }
     val currentBook = state.accountBooks.find { it.id == state.selectedBookId }
         ?: state.allAccountBooks.find { it.id == state.selectedBookId }
     
@@ -94,91 +97,101 @@ fun BillScreen(
         topBar = {
             CompactTopAppBar(
                 title = {
-                    Box {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .clickable { showBookMenu = true }
-                                .padding(end = 4.dp)
-                        ) {
-                            Text(
-                                text = currentBook?.getDisplayName(context) ?: stringResource(R.string.bill_title),
-                                style = MaterialTheme.typography.displaySmall,
-                                fontWeight = FontWeight.Bold,
-                                    color = ModuleBill
-                            )
-                            Spacer(Modifier.width(4.dp))
-                            Icon(
-                                if (showBookMenu) Icons.Filled.ArrowDropUp else Icons.Filled.ArrowDropDown,
-                                contentDescription = stringResource(R.string.bill_switch_book),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                        if (showBookMenu) {
-                            Popup(
-                                alignment = Alignment.TopStart,
-                                offset = with(LocalDensity.current) { IntOffset(0, 56.dp.roundToPx()) },
-                                onDismissRequest = { showBookMenu = false },
-                                properties = PopupProperties(focusable = true)
+                    if (showSearch) {
+                        ModuleSearchBar(
+                            query = state.searchQuery,
+                            onQueryChange = { viewModel.onSearchQueryChanged(it) },
+                            onClear = { viewModel.clearSearch() },
+                            placeholder = stringResource(R.string.search),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    } else {
+                        Box {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .clickable { showBookMenu = true }
+                                    .padding(end = 4.dp)
                             ) {
-                                Surface(
-                                    shape = MaterialTheme.shapes.medium,
-                                    color = MaterialTheme.colorScheme.background,
-                                    shadowElevation = 3.dp
+                                Text(
+                                    text = currentBook?.getDisplayName(context) ?: stringResource(R.string.bill_title),
+                                    style = MaterialTheme.typography.displaySmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = ModuleBill
+                                )
+                                Spacer(Modifier.width(4.dp))
+                                Icon(
+                                    if (showBookMenu) Icons.Filled.ArrowDropUp else Icons.Filled.ArrowDropDown,
+                                    contentDescription = stringResource(R.string.bill_switch_book),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                            if (showBookMenu) {
+                                Popup(
+                                    alignment = Alignment.TopStart,
+                                    offset = with(LocalDensity.current) { IntOffset(0, 56.dp.roundToPx()) },
+                                    onDismissRequest = { showBookMenu = false },
+                                    properties = PopupProperties(focusable = true)
                                 ) {
-                                    Column(modifier = Modifier.width(260.dp).padding(vertical = 4.dp)) {
-                                        Text(stringResource(R.string.bill_book_list), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 8.dp, top = 4.dp, bottom = 4.dp))
-                                        state.accountBooks.forEach { book ->
+                                    Surface(
+                                        shape = MaterialTheme.shapes.medium,
+                                        color = MaterialTheme.colorScheme.background,
+                                        shadowElevation = 3.dp
+                                    ) {
+                                        Column(modifier = Modifier.width(260.dp).padding(vertical = 4.dp)) {
+                                            Text(stringResource(R.string.bill_book_list), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 8.dp, top = 4.dp, bottom = 4.dp))
+                                            state.accountBooks.forEach { book ->
+                                                Row(
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .clickable {
+                                                            viewModel.selectAccountBook(book.id)
+                                                            showBookMenu = false
+                                                        }
+                                                        .padding(horizontal = 12.dp, vertical = 10.dp)
+                                                ) {
+                                                    Surface(shape = CircleShape, color = book.color.toComposeColor(Color.Gray), modifier = Modifier.size(32.dp)) {
+                                                        Box(contentAlignment = Alignment.Center) { Icon(book.icon.imageVector, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color.White) }
+                                                    }
+                                                    Spacer(Modifier.width(10.dp))
+                                                    Column(modifier = Modifier.weight(1f)) {
+                                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                                            Text(book.getDisplayName(context), style = MaterialTheme.typography.bodyMedium)
+                                                            if (book.isDefault) {
+                                                                Spacer(Modifier.width(6.dp))
+                                                                Surface(
+                                                                    shape = MaterialTheme.shapes.extraSmall,
+                                                                    color = AccentOrange.copy(alpha = 0.1f)
+                                                                ) {
+                                                                    Text(stringResource(R.string.bill_default), modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
+                                                                        style = MaterialTheme.typography.labelSmall, color = AccentOrange)
+                                                                }
+                                                            }
+                                                        }
+                                                        if (book.getDisplayDescription(context).isNotEmpty()) {
+                                                            Text(book.getDisplayDescription(context), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+                                                        }
+                                                    }
+                                                    if (book.id == state.selectedBookId) {
+                                                        Icon(Icons.Filled.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                                                    }
+                                                }
+                                            }
+                                            HorizontalDivider(modifier = Modifier.padding(horizontal = 8.dp))
                                             Row(
                                                 verticalAlignment = Alignment.CenterVertically,
                                                 modifier = Modifier
                                                     .fillMaxWidth()
                                                     .clickable {
-                                                        viewModel.selectAccountBook(book.id)
                                                         showBookMenu = false
+                                                        onNavigateToAccountBook()
                                                     }
                                                     .padding(horizontal = 12.dp, vertical = 10.dp)
                                             ) {
-                                                Surface(shape = CircleShape, color = book.color.toComposeColor(Color.Gray), modifier = Modifier.size(32.dp)) {
-                                                    Box(contentAlignment = Alignment.Center) { Icon(book.icon.imageVector, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color.White) }
-                                                }
-                                                Spacer(Modifier.width(10.dp))
-                                                Column(modifier = Modifier.weight(1f)) {
-                                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                                        Text(book.getDisplayName(context), style = MaterialTheme.typography.bodyMedium)
-                                                        if (book.isDefault) {
-                                                            Spacer(Modifier.width(6.dp))
-                                                            Surface(
-                                                                shape = MaterialTheme.shapes.extraSmall,
-                                                                color = AccentOrange.copy(alpha = 0.1f)
-                                                            ) {
-                                                                Text(stringResource(R.string.bill_default), modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
-                                                                    style = MaterialTheme.typography.labelSmall, color = AccentOrange)
-                                                            }
-                                                        }
-                                                    }
-                                                    if (book.getDisplayDescription(context).isNotEmpty()) {
-                                                        Text(book.getDisplayDescription(context), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
-                                                    }
-                                                }
-                                                if (book.id == state.selectedBookId) {
-                                                    Icon(Icons.Filled.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
-                                                }
+                                                Icon(Icons.Filled.Add, null, modifier = Modifier.padding(end = 8.dp))
+                                                Text(stringResource(R.string.settings_bill_manage))
                                             }
-                                        }
-                                        HorizontalDivider(modifier = Modifier.padding(horizontal = 8.dp))
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .clickable {
-                                                    showBookMenu = false
-                                                    onNavigateToAccountBook()
-                                                }
-                                                .padding(horizontal = 12.dp, vertical = 10.dp)
-                                        ) {
-                                            Icon(Icons.Filled.Add, null, modifier = Modifier.padding(end = 8.dp))
-                                            Text(stringResource(R.string.settings_bill_manage))
                                         }
                                     }
                                 }
@@ -187,18 +200,9 @@ fun BillScreen(
                     }
                 },
                 actions = {
-                    var showSearch by remember { mutableStateOf(false) }
-                    
                     if (showSearch) {
-                        ModuleSearchBar(
-                            query = state.searchQuery,
-                            onQueryChange = { viewModel.onSearchQueryChanged(it) },
-                            onClear = { viewModel.clearSearch() },
-                            placeholder = stringResource(R.string.search),
-                            modifier = Modifier.weight(1f)
-                        )
                         IconButton(onClick = { showSearch = false; viewModel.clearSearch() }) {
-                            Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.close))
+                            Text(stringResource(R.string.cancel), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
                         }
                     } else {
                         IconButton(onClick = { showSearch = true }) {
@@ -229,16 +233,21 @@ fun BillScreen(
             )
         }
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-                .padding(padding),
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+        Box(
+            modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(padding)
         ) {
-            // Summary Card
-            item {
-                ModuleCard(tint = billTint(), modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                // Animated sections (outside LazyColumn for smooth transition)
+                AnimatedVisibility(
+                    visible = !showSearch,
+                    enter = fadeIn(tween(300)) + expandVertically(tween(300)),
+                    exit = fadeOut(tween(300)) + shrinkVertically(tween(300))
+                ) {
+                    Column(
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                ModuleCard(tint = billTint(), modifier = Modifier.fillMaxWidth()) {
                     // Main numbers
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -248,7 +257,8 @@ fun BillScreen(
                             Text(
                                 text = stringResource(R.string.bill_monthly_expense),
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1, overflow = TextOverflow.Ellipsis
                             )
                             Text(
                                 text = CurrencyUtils.formatCurrency(state.monthlyExpense),
@@ -261,7 +271,8 @@ fun BillScreen(
                             Text(
                                 text = stringResource(R.string.bill_monthly_income),
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1, overflow = TextOverflow.Ellipsis
                             )
                             Text(
                                 text = CurrencyUtils.formatCurrency(state.monthlyIncome),
@@ -351,18 +362,14 @@ fun BillScreen(
                         }
                     }
                 }
-            }
 
-            // Calendar View
-            item {
-                ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
+                ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                         Text(stringResource(R.string.bill_calendar), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         TextButton(onClick = { calendarExpanded = !calendarExpanded }) {
                             Text(if (calendarExpanded) stringResource(R.string.bill_collapse) else stringResource(R.string.bill_expand), style = MaterialTheme.typography.labelMedium, color = AccentOrange)
                         }
                     }
-
                     CalendarView(
                         yearMonth = state.currentYearMonth,
                         dailyData = state.dailySummary,
@@ -374,9 +381,64 @@ fun BillScreen(
                         onMonthChanged = { newMonth -> viewModel.setMonth(newMonth) }
                     )
                 }
-            }
 
-            // Filter chips (no ripple)
+                if (state.expenseByCategory.isNotEmpty()) {
+                ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = stringResource(R.string.bill_expense_category),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        val total = state.expenseByCategory.sumOf { it.total }.takeIf { it > 0 } ?: 1.0
+                        Canvas(modifier = Modifier.size(80.dp)) {
+                            val strokeWidth = 10.dp.toPx()
+                            val radius = (size.minDimension - strokeWidth) / 2
+                            val center = Offset(size.width / 2, size.height / 2)
+                            var startAngle = -90f
+                            state.expenseByCategory.forEachIndexed { index, item ->
+                                val sweep = (item.total / total * 360f).toFloat()
+                                drawArc(
+                                    color = ChartColors[index % ChartColors.size],
+                                    startAngle = startAngle, sweepAngle = sweep,
+                                    useCenter = false,
+                                    topLeft = Offset(center.x - radius, center.y - radius),
+                                    size = Size(radius * 2, radius * 2),
+                                    style = Stroke(strokeWidth, cap = StrokeCap.Round)
+                                )
+                                startAngle += sweep
+                            }
+                        }
+                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            val maxLegendItems = 5
+                            state.expenseByCategory.take(maxLegendItems).forEachIndexed { index, item ->
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Box(Modifier.size(10.dp).clip(CircleShape).background(ChartColors[index % ChartColors.size]))
+                                    Text(stringResource(getLocalizedCategoryName(item.category)), style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                                    Text(CurrencyUtils.formatCurrency(item.total), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium)
+                                    Text("${(item.total / total * 100).toInt()}%", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            }
+                            if (state.expenseByCategory.size > maxLegendItems) {
+                                Text(stringResource(R.string.bill_category_more_count, state.expenseByCategory.size - maxLegendItems), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
+                            }
+                        }
+                    }
+                }
+                }
+                    }
+                }
+
+                LazyColumn(
+                    modifier = Modifier.weight(1f),
+                    contentPadding = PaddingValues(horizontal = 16.dp)
+                ) {
+            // Filter chips
             item {
                 Row(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -426,101 +488,12 @@ fun BillScreen(
                             }
                         }
                     }
-                    // 高级筛选图标
                     IconButton(onClick = { viewModel.toggleFilterSheet() }) {
                         Icon(
                             Icons.Outlined.FilterList,
                             contentDescription = stringResource(R.string.bill_filter),
                             tint = if (state.currentFilter.isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                    }
-                }
-            }
-
-            // Expense by Category (pie chart)
-            if (state.expenseByCategory.isNotEmpty()) {
-                item {
-                    ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
-                        Text(
-                            text = stringResource(R.string.bill_expense_category),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            // Mini pie chart
-                            val total = state.expenseByCategory.sumOf { it.total }.takeIf { it > 0 } ?: 1.0
-                            Canvas(modifier = Modifier.size(80.dp)) {
-                                val strokeWidth = 10.dp.toPx()
-                                val radius = (size.minDimension - strokeWidth) / 2
-                                val center = Offset(size.width / 2, size.height / 2)
-                                var startAngle = -90f
-
-                                state.expenseByCategory.forEachIndexed { index, item ->
-                                    val sweep = (item.total / total * 360f).toFloat()
-                                    drawArc(
-                                        color = ChartColors[index % ChartColors.size],
-                                        startAngle = startAngle,
-                                        sweepAngle = sweep,
-                                        useCenter = false,
-                                        topLeft = Offset(center.x - radius, center.y - radius),
-                                        size = Size(radius * 2, radius * 2),
-                                        style = Stroke(strokeWidth, cap = StrokeCap.Round)
-                                    )
-                                    startAngle += sweep
-                                }
-                            }
-
-                            // Legend
-                            Column(
-                                modifier = Modifier.weight(1f),
-                                verticalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                val maxLegendItems = 5
-                                state.expenseByCategory.take(maxLegendItems).forEachIndexed { index, item ->
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                    ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(10.dp)
-                                                .clip(CircleShape)
-                                                .background(ChartColors[index % ChartColors.size])
-                                        )
-                                        Text(
-                                            text = stringResource(getLocalizedCategoryName(item.category)),
-                                            style = MaterialTheme.typography.bodySmall,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis,
-                                            modifier = Modifier.weight(1f)
-                                        )
-                                        Text(
-                                            text = CurrencyUtils.formatCurrency(item.total),
-                                            style = MaterialTheme.typography.bodySmall,
-                                            fontWeight = FontWeight.Medium
-                                        )
-                                        Text(
-                                            text = "${(item.total / total * 100).toInt()}%",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                }
-                                if (state.expenseByCategory.size > maxLegendItems) {
-                                    Text(
-                                        text = "+${state.expenseByCategory.size - maxLegendItems} 更多",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                                    )
-                                }
-                            }
-                        }
                     }
                 }
             }
@@ -575,6 +548,8 @@ fun BillScreen(
             }
 
             item { Spacer(modifier = Modifier.height(80.dp)) }
+            }
+        }
         }
     }
     

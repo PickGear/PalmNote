@@ -614,7 +614,7 @@ fun AddAssetScreen(
             // Cost Mode
             item {
                 FormSection(stringResource(R.string.asset_cost_mode)) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         listOf(
                             Triple("DAILY", stringResource(R.string.asset_cost_daily), Icons.Outlined.CalendarToday),
                             Triple("PER_USE", stringResource(R.string.asset_cost_per_use), Icons.Outlined.Repeat)
