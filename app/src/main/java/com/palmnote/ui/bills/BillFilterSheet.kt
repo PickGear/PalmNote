@@ -1,8 +1,6 @@
 package com.palmnote.ui.bills
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -22,14 +20,14 @@ fun BillFilterSheet(
     currentFilter: BillFilter = BillFilter(),
     expenseCategories: List<CategoryItem> = emptyList(),
     incomeCategories: List<CategoryItem> = emptyList(),
-    paymentMethods: List<String> = emptyList()
+    @Suppress("UNUSED_PARAMETER") paymentMethods: List<String> = emptyList()
 ) {
     var selectedCategory by remember { mutableStateOf(currentFilter.category) }
-    var selectedPaymentMethod by remember { mutableStateOf(currentFilter.paymentMethod) }
     var amountMin by remember { mutableStateOf(currentFilter.amountMin?.toString() ?: "") }
     var amountMax by remember { mutableStateOf(currentFilter.amountMax?.toString() ?: "") }
     var selectedType by remember { mutableStateOf(currentFilter.type) }
-    
+    var showAllCategories by remember { mutableStateOf(false) }
+
     AppBottomSheet(onDismissRequest = onDismiss) {
         Text(
             stringResource(R.string.bill_filter_title),
@@ -37,7 +35,7 @@ fun BillFilterSheet(
             fontWeight = FontWeight.Bold
         )
         Spacer(modifier = Modifier.height(16.dp))
-        
+
         // 类型筛选
         Text(stringResource(R.string.bill_filter_type), style = MaterialTheme.typography.titleSmall)
         Spacer(modifier = Modifier.height(8.dp))
@@ -59,7 +57,7 @@ fun BillFilterSheet(
             )
         }
         Spacer(modifier = Modifier.height(16.dp))
-        
+
         // 金额范围
         Text(stringResource(R.string.bill_filter_amount), style = MaterialTheme.typography.titleSmall)
         Spacer(modifier = Modifier.height(8.dp))
@@ -80,54 +78,38 @@ fun BillFilterSheet(
             )
         }
         Spacer(modifier = Modifier.height(16.dp))
-        
-        // 分类筛选
+
+        // 分类筛选（限制显示 + 展开收起）
         Text(stringResource(R.string.bill_filter_category), style = MaterialTheme.typography.titleSmall)
         Spacer(modifier = Modifier.height(8.dp))
         val categories = if (selectedType == "INCOME") incomeCategories else expenseCategories
+        val maxVisible = 8
+        val allItems = listOf(null) + categories.map { it.name }
+        val visibleItems = if (showAllCategories || allItems.size <= maxVisible) allItems else allItems.take(maxVisible)
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            FilterChip(
-                selected = selectedCategory == null,
-                onClick = { selectedCategory = null },
-                label = { Text(stringResource(R.string.bill_filter_category_all)) }
-            )
-            categories.forEach { category ->
+            visibleItems.forEach { name ->
                 FilterChip(
-                    selected = selectedCategory == category.name,
-                    onClick = { selectedCategory = category.name },
-                    label = { Text(category.name) }
+                    selected = selectedCategory == name,
+                    onClick = { selectedCategory = name },
+                    label = { Text(name ?: stringResource(R.string.bill_filter_category_all)) }
                 )
             }
         }
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        // 支付方式筛选
-        if (paymentMethods.isNotEmpty()) {
-            Text(stringResource(R.string.bill_filter_payment_method), style = MaterialTheme.typography.titleSmall)
-            Spacer(modifier = Modifier.height(8.dp))
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                FilterChip(
-                    selected = selectedPaymentMethod == null,
-                    onClick = { selectedPaymentMethod = null },
-                    label = { Text(stringResource(R.string.bill_filter_payment_method_all)) }
+        if (allItems.size > maxVisible) {
+            Spacer(modifier = Modifier.height(4.dp))
+            TextButton(onClick = { showAllCategories = !showAllCategories }) {
+                Text(
+                    if (showAllCategories) stringResource(R.string.bill_filter_show_less)
+                    else stringResource(R.string.bill_filter_show_all),
+                    style = MaterialTheme.typography.bodySmall
                 )
-                paymentMethods.forEach { method ->
-                    FilterChip(
-                        selected = selectedPaymentMethod == method,
-                        onClick = { selectedPaymentMethod = method },
-                        label = { Text(method) }
-                    )
-                }
             }
         }
         Spacer(modifier = Modifier.height(24.dp))
-        
+
         // 应用按钮
         Button(
             onClick = {
@@ -135,7 +117,6 @@ fun BillFilterSheet(
                     BillFilter(
                         type = selectedType,
                         category = selectedCategory,
-                        paymentMethod = selectedPaymentMethod,
                         amountMin = amountMin.toDoubleOrNull(),
                         amountMax = amountMax.toDoubleOrNull()
                     )

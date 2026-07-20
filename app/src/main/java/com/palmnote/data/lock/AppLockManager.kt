@@ -7,7 +7,6 @@ import com.palmnote.ui.lock.AppLockState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import java.security.MessageDigest
 import java.security.SecureRandom
@@ -25,8 +24,8 @@ class AppLockManager @Inject constructor(
     private var cachedHasPin: Boolean = false
 
     init {
-        cachedIsLockEnabled = try { runBlocking { preferencesManager.appLockEnabled.first() } } catch (_: Exception) { preferencesManager.isAppLockEnabled() }
-        cachedHasPin = try { runBlocking { preferencesManager.encryptedPin.first().isNotEmpty() } } catch (_: Exception) { preferencesManager.getEncryptedPin().isNotEmpty() }
+        cachedIsLockEnabled = preferencesManager.isAppLockEnabled()
+        cachedHasPin = preferencesManager.getEncryptedPin().isNotEmpty()
     }
 
     private val prefs: SharedPreferences by lazy {

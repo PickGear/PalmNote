@@ -42,6 +42,10 @@
     <string name="asset_clear">Clear</string>
     <string name="asset_count">%d items</string>
     <string name="asset_status_filter">Status</string>
+    <string name="asset_all">All</string>
+    <string name="bill_filter_show_all">Show all</string>
+    <string name="bill_category_more_count">+%d</string>
+    <string name="bill_filter_show_less">Show less</string>
     <string name="asset_all_categories">All Categories</string>
     <string name="asset_sort_recent">Recent</string>
     <string name="asset_sort_name">Name</string>
