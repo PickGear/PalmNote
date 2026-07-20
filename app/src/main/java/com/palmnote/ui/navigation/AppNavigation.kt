@@ -128,7 +128,11 @@ fun PalmNoteNavHost() {
         Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
-            if (showBottomBar) {
+            AnimatedVisibility(
+                visible = showBottomBar,
+                enter = fadeIn(tween(250)),
+                exit = fadeOut(tween(250))
+            ) {
                 Surface(
                     color = MaterialTheme.colorScheme.background,
                     shadowElevation = 0.dp
@@ -199,16 +203,16 @@ fun PalmNoteNavHost() {
             startDestination = startDest!!,
             modifier = Modifier.padding(innerPadding),
             enterTransition = {
-                fadeIn(animationSpec = spring(dampingRatio = 0.9f, stiffness = 250f))
+                fadeIn(animationSpec = tween(250))
             },
             exitTransition = {
-                fadeOut(animationSpec = spring(dampingRatio = 0.9f, stiffness = 250f))
+                fadeOut(animationSpec = tween(250))
             },
             popEnterTransition = {
-                fadeIn(animationSpec = spring(dampingRatio = 0.9f, stiffness = 250f))
+                fadeIn(animationSpec = tween(250))
             },
             popExitTransition = {
-                fadeOut(animationSpec = spring(dampingRatio = 0.9f, stiffness = 250f))
+                fadeOut(animationSpec = tween(250))
             }
         ) {
             composable(Route.Dashboard) {
