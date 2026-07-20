@@ -9,6 +9,7 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -38,6 +39,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -685,7 +687,10 @@ fun CategoryGridItem(
             text = name,
             style = MaterialTheme.typography.labelSmall,
             color = if (isSelected) color else MaterialTheme.colorScheme.onSurfaceVariant,
-            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+            maxLines = 1,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth().basicMarquee()
         )
     }
 }
@@ -1136,7 +1141,7 @@ fun ModuleSearchBar(
     onQueryChange: (String) -> Unit,
     onSearch: () -> Unit = {},
     onClear: () -> Unit,
-    placeholder: String = "搜索...",
+    placeholder: String,
     modifier: Modifier = Modifier
 ) {
     OutlinedTextField(
@@ -1147,7 +1152,7 @@ fun ModuleSearchBar(
         trailingIcon = {
             if (query.isNotEmpty()) {
                 IconButton(onClick = onClear) {
-                    Icon(Icons.Filled.Close, contentDescription = "清除")
+                    Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.close))
                 }
             }
         },

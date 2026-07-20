@@ -160,7 +160,19 @@ class DashboardViewModel @Inject constructor(
                     recentGoals = gaData.goals.take(3),
                     assetDistribution = assetData.third
                 )
-            }.collect { s -> _state.value = s }
+            }.collect { s -> _state.update { it.copy(
+                totalAssetValue = s.totalAssetValue,
+                activeAssetCount = s.activeAssetCount,
+                monthlyExpense = s.monthlyExpense,
+                monthlyIncome = s.monthlyIncome,
+                budget = s.budget,
+                goalCount = s.goalCount,
+                completedGoalCount = s.completedGoalCount,
+                anniversaryCount = s.anniversaryCount,
+                upcomingAnniversaries = s.upcomingAnniversaries,
+                recentGoals = s.recentGoals,
+                assetDistribution = s.assetDistribution
+            ) } }
         }
     }
 }

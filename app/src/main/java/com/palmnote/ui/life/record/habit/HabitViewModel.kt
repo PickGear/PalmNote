@@ -11,6 +11,7 @@ import com.palmnote.domain.repository.GoalRepository
 import com.palmnote.ui.theme.AppIcon
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.time.Instant
@@ -34,32 +35,40 @@ class HabitViewModel @Inject constructor(
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(HabitUiState())
     val uiState: StateFlow<HabitUiState> = _uiState.asStateFlow()
+    private var loadJob: Job? = null
+    private var habitsFlowJob: Job? = null
+    private val habitJobs = mutableMapOf<Long, Job>()
 
     fun load() {
-        viewModelScope.launch {
+        habitsFlowJob?.let(Job::cancel)
+        loadJob?.let(Job::cancel)
+        habitJobs.values.forEach { it.cancel() }
+        habitJobs.clear()
+        loadJob = viewModelScope.launch {
             try {
-                goalRepo.getHabitGoals().onEach { habits ->
+                habitsFlowJob = goalRepo.getHabitGoals().onEach { habits ->
                     _uiState.update { state -> state.copy(habits = habits, isLoading = false) }
-                    habits.forEach { habit ->
-                        viewModelScope.launch {
-                            checkInDao.getCheckInsByGoal(habit.id).collect { checkIns ->
-                                val dates = checkIns.mapNotNull { c ->
-                                    try {
-                                        val millis = c.date
-                                        if (millis > 1_000_000_000_000L) {
-                                            Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate()
-                                        } else if (millis > 0) {
-                                            LocalDate.ofEpochDay(millis)
-                                        } else null
-                                    } catch (_: Exception) { null }
-                                }.toSet()
-                                _uiState.update { state ->
-                                    state.copy(checkInDates = state.checkInDates + (habit.id to dates))
-                                }
+                }.launchIn(viewModelScope)
+                goalRepo.getHabitGoals().first().forEach { habit ->
+                    habitJobs[habit.id]?.cancel()
+                    habitJobs[habit.id] = launch {
+                        checkInDao.getCheckInsByGoal(habit.id).collect { checkIns ->
+                            val dates = checkIns.mapNotNull { c ->
+                                try {
+                                    val millis = c.date
+                                    if (millis > 1_000_000_000_000L) {
+                                        Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate()
+                                    } else if (millis > 0) {
+                                        LocalDate.ofEpochDay(millis)
+                                    } else null
+                                } catch (_: Exception) { null }
+                            }.toSet()
+                            _uiState.update { state ->
+                                state.copy(checkInDates = state.checkInDates + (habit.id to dates))
                             }
                         }
                     }
-                }.launchIn(viewModelScope)
+                }
             } catch (e: Exception) {
                 _uiState.update { it.copy(error = e.message ?: context.getString(R.string.life_error_load_failed), isLoading = false) }
             }

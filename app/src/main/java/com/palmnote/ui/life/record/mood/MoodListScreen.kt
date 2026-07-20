@@ -72,13 +72,15 @@ fun MoodListScreen(onBack: () -> Unit, viewModel: MoodViewModel = hiltViewModel(
         LazyColumn(modifier = Modifier.fillMaxSize().padding(innerPadding), verticalArrangement = Arrangement.spacedBy(0.dp)) {
             if (state.diaries.isEmpty()) {
                 item {
-                    EmptyState(
-                        icon = Icons.Default.Mood,
-                        title = stringResource(R.string.life_mood_empty),
-                        subtitle = stringResource(R.string.life_mood_empty_subtitle),
-                        actionText = stringResource(R.string.life_mood_record_action),
-                        onActionClick = { viewModel.showSheet() }
-                    )
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        EmptyState(
+                            icon = Icons.Default.Mood,
+                            title = stringResource(R.string.life_mood_empty),
+                            subtitle = stringResource(R.string.life_mood_empty_subtitle),
+                            actionText = stringResource(R.string.life_mood_record_action),
+                            onActionClick = { viewModel.showSheet() }
+                        )
+                    }
                 }
             } else {
                 item {

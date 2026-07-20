@@ -189,7 +189,7 @@ class AssetViewModel @Inject constructor(
     private fun loadViewMode() {
         viewModelScope.launch {
             preferencesManager.assetViewMode.collect { isGrid ->
-                _state.value = _state.value.copy(isGridView = isGrid)
+                _state.update { it.copy(isGridView = isGrid) }
             }
         }
     }

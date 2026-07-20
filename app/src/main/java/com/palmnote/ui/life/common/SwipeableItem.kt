@@ -11,7 +11,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.palmnote.R
 
 data class SwipeAction(
     val icon: androidx.compose.ui.graphics.vector.ImageVector,
@@ -29,7 +31,7 @@ fun SwipeableItem(
     content: @Composable () -> Unit
 ) {
     val effectiveActions = if (actions.isNotEmpty()) actions else {
-        onDelete?.let { listOf(SwipeAction(Icons.Default.Delete, "删除", MaterialTheme.colorScheme.error, it)) } ?: emptyList()
+        onDelete?.let { listOf(SwipeAction(Icons.Default.Delete, stringResource(com.palmnote.R.string.delete), MaterialTheme.colorScheme.error, it)) } ?: emptyList()
     }
     
     val dismissState = rememberSwipeToDismissBoxState(
@@ -53,7 +55,7 @@ fun SwipeableItem(
             )
             Box(modifier = Modifier.fillMaxSize().background(color).padding(end = 20.dp), contentAlignment = Alignment.CenterEnd) {
                 if (dismissState.targetValue == SwipeToDismissBoxValue.EndToStart) {
-                    Icon(Icons.Default.Delete, "删除", tint = Color.White)
+                    Icon(Icons.Default.Delete, stringResource(R.string.delete), tint = Color.White)
                 }
             }
         },

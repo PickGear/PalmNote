@@ -100,7 +100,7 @@ class BackupManager {
 
         if (isEncrypted) {
             if (password.isNullOrBlank()) {
-                throw IllegalArgumentException("需要密码才能恢复此备份")
+                throw IllegalArgumentException(context.getString(com.palmnote.R.string.backup_password_required))
             }
 
             // 流式解密避免OOM
