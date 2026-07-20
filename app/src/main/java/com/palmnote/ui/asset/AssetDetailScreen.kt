@@ -297,7 +297,7 @@ fun AssetDetailScreen(
                                 AppDialog(
                                     onDismissRequest = { showMaintConfirm = false },
                                     title = { Text(stringResource(R.string.asset_maintenance_info), fontWeight = FontWeight.Bold) },
-                                    text = { Text("确认完成本次维护？") },
+                                    text = { Text(stringResource(R.string.asset_maintenance_complete_confirm)) },
                                     confirmButton = { TextButton(onClick = { viewModel.completeMaintenance(assetId); showMaintConfirm = false }) { Text(stringResource(R.string.confirm)) } },
                                     dismissButton = { TextButton(onClick = { showMaintConfirm = false }) { Text(stringResource(R.string.cancel)) } }
                                 )
@@ -364,7 +364,7 @@ fun AssetDetailScreen(
                             AppDialog(
                                 onDismissRequest = { showReactConfirm = false },
                                 title = { Text(stringResource(R.string.asset_status_held), fontWeight = FontWeight.Bold) },
-                                text = { Text("确认恢复为持有状态？") },
+                                text = { Text(stringResource(R.string.asset_restore_confirm)) },
                                 confirmButton = { TextButton(onClick = { viewModel.reactivateAsset(assetId); showReactConfirm = false }) { Text(stringResource(R.string.confirm), color = MaterialTheme.colorScheme.primary) } },
                                 dismissButton = { TextButton(onClick = { showReactConfirm = false }) { Text(stringResource(R.string.cancel)) } }
                             )

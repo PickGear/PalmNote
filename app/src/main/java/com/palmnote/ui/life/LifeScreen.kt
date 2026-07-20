@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -105,12 +106,12 @@ fun LifeScreen(
                     },
                     actions = {
                         if (showSearch) {
-                            IconButton(onClick = { showSearch = false; searchQuery = "" }) {
-                                Text(stringResource(R.string.cancel), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+                            TextButton(onClick = { showSearch = false; searchQuery = "" }, modifier = Modifier.padding(end = 4.dp)) {
+                                Text(stringResource(R.string.cancel), style = MaterialTheme.typography.bodyMedium)
                             }
                         } else {
-                            IconButton(onClick = { showSearch = true }) { Icon(Icons.Default.Search, stringResource(R.string.search)) }
-                            IconButton(onClick = onNavigateToManage) { Icon(Icons.Default.Tune, stringResource(R.string.life_template_manage)) }
+                            IconButton(onClick = { showSearch = true }) { Icon(Icons.Outlined.Search, stringResource(R.string.search), tint = MaterialTheme.colorScheme.primary) }
+                            IconButton(onClick = onNavigateToManage) { Icon(Icons.Outlined.Dashboard, stringResource(R.string.life_template_manage), tint = MaterialTheme.colorScheme.primary) }
                         }
                     }
                 )

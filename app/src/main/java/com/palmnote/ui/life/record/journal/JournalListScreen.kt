@@ -65,7 +65,9 @@ fun JournalListScreen(onBack: () -> Unit, onItemClick: (Long) -> Unit, viewModel
     ) { innerPadding ->
         if (state.isLoading) { Box(modifier = Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = LifeJournal) }; return@Scaffold }
         if (state.moments.isEmpty()) {
-            EmptyState(icon = Icons.Default.AutoStories, title = stringResource(R.string.life_journal_empty_first), subtitle = stringResource(R.string.life_journal_empty_hint), actionText = stringResource(R.string.life_journal_write_one), onActionClick = { showSheet = true })
+            Box(modifier = Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) {
+                EmptyState(icon = Icons.Default.AutoStories, title = stringResource(R.string.life_journal_empty_first), subtitle = stringResource(R.string.life_journal_empty_hint), actionText = stringResource(R.string.life_journal_write_one), onActionClick = { showSheet = true })
+            }
             return@Scaffold
         }
         val grouped = remember(state.moments) { state.moments.groupBy { Instant.ofEpochMilli(it.date).atZone(ZoneId.systemDefault()).toLocalDate() }.toSortedMap(compareByDescending { it }) }

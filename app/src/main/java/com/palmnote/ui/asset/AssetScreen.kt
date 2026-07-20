@@ -145,8 +145,8 @@ fun AssetScreen(
                 },
                 actions = {
                     if (showSearch) {
-                        IconButton(onClick = { showSearch = false; viewModel.setSearchQuery("") }) {
-                            Text(stringResource(R.string.cancel), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+                        TextButton(onClick = { showSearch = false; viewModel.setSearchQuery("") }, modifier = Modifier.padding(end = 4.dp)) {
+                            Text(stringResource(R.string.cancel), style = MaterialTheme.typography.bodyMedium)
                         }
                     } else {
                         IconButton(onClick = { showSearch = true }) {

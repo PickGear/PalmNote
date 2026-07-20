@@ -32,11 +32,13 @@ fun ReportListScreen(onBack: () -> Unit, onItemClick: (Long) -> Unit, viewModel:
     Scaffold(topBar = { SecondaryTopAppBar(title = { Text(stringResource(R.string.life_report_title), fontWeight = FontWeight.Bold, color = rColor) }, navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.life_back)) } }, colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)) }, containerColor = MaterialTheme.colorScheme.background) { innerPadding ->
         if (state.isLoading) { Box(modifier = Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = rColor) }; return@Scaffold }
         if (state.reports.isEmpty()) {
-            EmptyState(
-                icon = Icons.Default.DateRange,
-                title = stringResource(R.string.life_report_empty),
-                subtitle = stringResource(R.string.life_report_empty_subtitle)
-            )
+            Box(modifier = Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) {
+                EmptyState(
+                    icon = Icons.Default.DateRange,
+                    title = stringResource(R.string.life_report_empty),
+                    subtitle = stringResource(R.string.life_report_empty_subtitle)
+                )
+            }
         } else {
         LazyColumn(modifier = Modifier.fillMaxSize().padding(innerPadding).padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             items(state.reports.sortedByDescending { it.periodStart }, key = { it.id }) { report ->

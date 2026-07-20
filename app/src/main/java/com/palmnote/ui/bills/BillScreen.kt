@@ -201,8 +201,8 @@ fun BillScreen(
                 },
                 actions = {
                     if (showSearch) {
-                        IconButton(onClick = { showSearch = false; viewModel.clearSearch() }) {
-                            Text(stringResource(R.string.cancel), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+                        TextButton(onClick = { showSearch = false; viewModel.clearSearch() }, modifier = Modifier.padding(end = 4.dp)) {
+                            Text(stringResource(R.string.cancel), style = MaterialTheme.typography.bodyMedium)
                         }
                     } else {
                         IconButton(onClick = { showSearch = true }) {
@@ -436,7 +436,8 @@ fun BillScreen(
 
                 LazyColumn(
                     modifier = Modifier.weight(1f),
-                    contentPadding = PaddingValues(horizontal = 16.dp)
+                    contentPadding = PaddingValues(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
             // Filter chips
             item {

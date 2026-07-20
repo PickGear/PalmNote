@@ -12,10 +12,10 @@ interface BillDao {
     @Query("SELECT * FROM bills WHERE id = :id AND isDeleted = 0")
     suspend fun getBillById(id: Long): Bill?
 
-    @Query("SELECT * FROM bills WHERE yearMonth = :yearMonth AND isDeleted = 0 ORDER BY date DESC")
+    @Query("SELECT * FROM bills WHERE yearMonth = :yearMonth AND isDeleted = 0 ORDER BY date DESC LIMIT 500")
     fun getBillsByMonth(yearMonth: String): Flow<List<Bill>>
 
-    @Query("SELECT * FROM bills WHERE accountBookId = :bookId AND yearMonth = :yearMonth AND isDeleted = 0 ORDER BY date DESC")
+    @Query("SELECT * FROM bills WHERE accountBookId = :bookId AND yearMonth = :yearMonth AND isDeleted = 0 ORDER BY date DESC LIMIT 500")
     fun getBillsByBookAndMonth(bookId: Long, yearMonth: String): Flow<List<Bill>>
 
     @Query("SELECT * FROM bills WHERE yearMonth = :yearMonth AND type = :type AND isDeleted = 0 ORDER BY date DESC")

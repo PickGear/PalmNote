@@ -46,6 +46,7 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun FocusTimerScreen(onBack: () -> Unit, viewModel: FocusViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val todayRecords by viewModel.todayRecords.collectAsStateWithLifecycle(initialValue = emptyList())
     LaunchedEffect(Unit) { viewModel.load() }
     val focusColor = LifeFocus
 
@@ -188,11 +189,7 @@ fun FocusTimerScreen(onBack: () -> Unit, viewModel: FocusViewModel = hiltViewMod
                 }
             }
 
-            items(state.records.filter {
-                val today = java.time.LocalDate.now()
-                val date = Instant.ofEpochMilli(it.startTime).atZone(ZoneId.systemDefault()).toLocalDate()
-                date == today
-            }, key = { it.id }) { record: FocusRecord ->
+            items(todayRecords, key = { it.id }) { record: FocusRecord ->
                 val start = Instant.ofEpochMilli(record.startTime).atZone(ZoneId.systemDefault())
                 val end: java.time.ZonedDateTime? = record.endTime?.let { Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()) }
                 Card(

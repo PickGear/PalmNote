@@ -67,13 +67,15 @@ fun CountUpListScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Long) 
             return@Scaffold
         }
         if (state.items.isEmpty()) {
-            EmptyState(
-                icon = Icons.AutoMirrored.Filled.TrendingUp,
-                title = stringResource(R.string.life_empty_countup),
-                subtitle = stringResource(R.string.life_empty_countup_subtitle),
-                actionText = stringResource(R.string.life_empty_countup_action),
-                onActionClick = onCreateClick
-            )
+            Box(modifier = Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) {
+                EmptyState(
+                    icon = Icons.AutoMirrored.Filled.TrendingUp,
+                    title = stringResource(R.string.life_empty_countup),
+                    subtitle = stringResource(R.string.life_empty_countup_subtitle),
+                    actionText = stringResource(R.string.life_empty_countup_action),
+                    onActionClick = onCreateClick
+                )
+            }
         } else {
         LifeLazyList(modifier = Modifier.fillMaxSize().padding(innerPadding).padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             items(state.items, key = { it.id }) { item ->

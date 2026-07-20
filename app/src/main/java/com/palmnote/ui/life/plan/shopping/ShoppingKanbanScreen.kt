@@ -87,13 +87,15 @@ fun ShoppingKanbanScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Lon
             }
 
             if (state.items.isEmpty()) {
-                EmptyState(
-                    icon = Icons.Default.ShoppingCart,
-                    title = stringResource(R.string.life_empty_shopping),
-                    subtitle = stringResource(R.string.life_empty_shopping_subtitle),
-                    actionText = stringResource(R.string.life_empty_shopping_action),
-                    onActionClick = onCreateClick
-                )
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    EmptyState(
+                        icon = Icons.Default.ShoppingCart,
+                        title = stringResource(R.string.life_empty_shopping),
+                        subtitle = stringResource(R.string.life_empty_shopping_subtitle),
+                        actionText = stringResource(R.string.life_empty_shopping_action),
+                        onActionClick = onCreateClick
+                    )
+                }
             } else if (showKanban) {
                 Row(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp).horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     KanbanColumn(title = stringResource(R.string.life_shopping_tab_wishlist), count = active.size, color = LifeShopping, icon = Icons.Default.RadioButtonUnchecked, items = active, onItemClick = onItemClick, onDelete = { deleteTarget = it }, modifier = Modifier.width(180.dp))
