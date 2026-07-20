@@ -42,6 +42,10 @@
     <string name="asset_clear">清除</string>
     <string name="asset_count">%d 件</string>
     <string name="asset_status_filter">状态</string>
+    <string name="asset_all">全部</string>
+    <string name="bill_filter_show_all">展开全部</string>
+    <string name="bill_category_more_count">+%d 更多</string>
+    <string name="bill_filter_show_less">收起</string>
     <string name="asset_all_categories">全部分类</string>
     <string name="asset_sort_recent">最近</string>
     <string name="asset_sort_name">名称</string>

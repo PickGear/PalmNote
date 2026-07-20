@@ -257,7 +257,7 @@ fun AddBillScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = "${selectedWallet.name} ${stringResource(R.string.balance)}",
+                                    text = "${getLocalizedWalletDisplayName(selectedWallet, context)} ${stringResource(R.string.balance)}",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -268,35 +268,6 @@ fun AddBillScreen(
                                     color = if (selectedWallet.currentBalance >= 0) StatusActive else ErrorLight
                                 )
                             }
-                        }
-                    }
-                }
-            }
-
-            // Payment Method
-            item {
-                ModuleCard(tint = MaterialTheme.colorScheme.surface) {
-                    Text(
-                        text = stringResource(R.string.bill_payment_method),
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    val paymentMethods = listOf("cash" to R.string.payment_cash, "wechat" to R.string.payment_wechat, "alipay" to R.string.payment_alipay, "bank" to R.string.payment_bank_transfer)
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(paymentMethods, key = { it.first }) { (key, labelRes) ->
-                            val isSelected = formState.paymentMethod == key
-                            FilterChip(
-                                selected = isSelected,
-                                onClick = {
-                                    viewModel.updateForm { copy(paymentMethod = if (isSelected) "" else key) }
-                                },
-                                label = { Text(stringResource(labelRes)) },
-                                colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                                    selectedLabelColor = MaterialTheme.colorScheme.primary
-                                )
-                            )
                         }
                     }
                 }

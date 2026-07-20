@@ -90,18 +90,23 @@ fun LifeScreen(
             snackbarHost = { SnackbarHost(snackbarHostState, modifier = Modifier.navigationBarsPadding().padding(bottom = 60.dp)) },
             topBar = {
                 CompactTopAppBar(
-                    title = { Text(stringResource(com.palmnote.R.string.life_title), style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold, color = ModuleLife) },
-                    actions = {
+                    title = {
                         if (showSearch) {
                             ModuleSearchBar(
                                 query = searchQuery,
                                 onQueryChange = { searchQuery = it },
                                 onClear = { searchQuery = "" },
                                 placeholder = stringResource(R.string.search),
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.fillMaxWidth()
                             )
+                        } else {
+                            Text(stringResource(com.palmnote.R.string.life_title), style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold, color = ModuleLife)
+                        }
+                    },
+                    actions = {
+                        if (showSearch) {
                             IconButton(onClick = { showSearch = false; searchQuery = "" }) {
-                                Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.close))
+                                Text(stringResource(R.string.cancel), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
                             }
                         } else {
                             IconButton(onClick = { showSearch = true }) { Icon(Icons.Default.Search, stringResource(R.string.search)) }
@@ -110,7 +115,19 @@ fun LifeScreen(
                     }
                 )
             },
-            containerColor = MaterialTheme.colorScheme.background
+            containerColor = MaterialTheme.colorScheme.background,
+            floatingActionButton = {
+                if (!state.isLoading) {
+                    ExtendedFloatingActionButton(
+                        onClick = { showFuncPage = true },
+                        containerColor = MaterialTheme.colorScheme.secondary,
+                        contentColor = Color.White,
+                        shape = MaterialTheme.shapes.large,
+                        icon = { Icon(Icons.Filled.Add, contentDescription = null) },
+                        text = { Text(stringResource(R.string.life_new_create), fontWeight = FontWeight.Medium) }
+                    )
+                }
+            }
         ) { innerPadding ->
             if (state.isLoading) { LoadingView(innerPadding); return@Scaffold }
             if (state.templates.isEmpty()) { EmptyLifeView(innerPadding, fabExpanded = false, isLoading = false, onGo = onNavigateToJournal); return@Scaffold }
@@ -122,14 +139,6 @@ fun LifeScreen(
                 onTemplateClick = onNavigateToTemplate, onHabitClick = onNavigateToHabit, onFocusClick = onNavigateToFocus, onRetry = { viewModel.retry() },
                 snackbarHostState = snackbarHostState, scope = scope
             )
-        }
-
-        if (!state.isLoading) {
-            Box(modifier = Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 16.dp)) {
-                PressableFab(onClick = { showFuncPage = true }, containerColor = MaterialTheme.colorScheme.secondary) {
-                    Icon(Icons.Default.Add, stringResource(R.string.life_empty_action), tint = Color.White, modifier = Modifier.size(24.dp))
-                }
-            }
         }
 
         if (showFuncPage) {
@@ -320,8 +329,14 @@ private fun LifeContent(
             Spacer(modifier = Modifier.height(8.dp))
         }
         Spacer(modifier = Modifier.height(4.dp))
-        StatsRow(state = state, scope = scope, snackbarHostState = snackbarHostState, onHabitClick = onHabitClick, onFocusClick = onFocusClick)
-        Spacer(modifier = Modifier.height(16.dp))
+        AnimatedVisibility(
+            visible = !showSearch,
+            enter = fadeIn(tween(300)) + expandVertically(tween(300)),
+            exit = fadeOut(tween(300)) + shrinkVertically(tween(300))
+        ) {
+            StatsRow(state = state, scope = scope, snackbarHostState = snackbarHostState, onHabitClick = onHabitClick, onFocusClick = onFocusClick)
+        }
+        if (!showSearch) Spacer(modifier = Modifier.height(16.dp))
         var hasVisible = false
         if (filteredPlans.isNotEmpty()) { hasVisible = true
             LifeSection(title = stringResource(R.string.life_section_title_plan), iconColor = LifePlan, count = stringResource(R.string.life_section_count, filteredPlans.size), templates = filteredPlans, isTimeSection = false, previewItems = state.templatePreviewItems, onTemplateClick = onTemplateClick, expanded = planExpanded, onToggle = onPlanToggle)
@@ -374,7 +389,7 @@ private fun StatsRow(state: LifeUiState, scope: kotlinx.coroutines.CoroutineScop
                     Column(modifier = Modifier.padding(14.dp)) {
                         Text(card.value, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = card.color)
                         Spacer(modifier = Modifier.height(2.dp))
-                        Text(card.label, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(card.label, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                 }
             }

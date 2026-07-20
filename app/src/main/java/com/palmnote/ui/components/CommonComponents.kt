@@ -691,9 +691,9 @@ fun CategoryGridItem(
 }
 
 // Tag presets per status
-val heldTags = listOf("自有", "赠予", "借入", "租用", "自制", "拣拾", "暂存")
-val awayTags = listOf("借出", "租出", "维修", "送检", "改装", "保养", "退换", "运输", "展出")
-val removedTags = listOf("出售", "转让", "赠送", "捐赠", "退还", "丢弃", "报废", "遗失", "失窃", "过期")
+val heldTags = listOf("own", "gifted", "borrowed", "rented", "homemade", "found", "temporary")
+val awayTags = listOf("lent", "rented_out", "under_repair", "inspection", "modified", "maintenance", "returned", "shipping", "exhibited")
+val removedTags = listOf("sold", "transferred", "given", "donated", "refunded", "discarded", "scrapped", "lost", "stolen", "expired")
 
 fun getTagsForStatus(status: String): List<String> = when (status) {
     "HELD" -> heldTags
@@ -704,32 +704,32 @@ fun getTagsForStatus(status: String): List<String> = when (status) {
 
 @StringRes
 fun getLocalizedTagName(tag: String): Int = when (tag) {
-    "自有" -> R.string.tag_own
-    "赠予" -> R.string.tag_gifted
-    "借入" -> R.string.tag_borrowed
-    "租用" -> R.string.tag_rented
-    "自制" -> R.string.tag_homemade
-    "拣拾" -> R.string.tag_found
-    "暂存" -> R.string.tag_temporary
-    "借出" -> R.string.tag_lent
-    "租出" -> R.string.tag_rented_out
-    "维修" -> R.string.tag_under_repair
-    "送检" -> R.string.tag_inspection
-    "改装" -> R.string.tag_modified
-    "保养" -> R.string.tag_maintenance
-    "退换" -> R.string.tag_returned
-    "运输" -> R.string.tag_shipping
-    "展出" -> R.string.tag_exhibited
-    "出售" -> R.string.tag_sold
-    "转让" -> R.string.tag_transferred
-    "赠送" -> R.string.tag_given
-    "捐赠" -> R.string.tag_donated
-    "退还" -> R.string.tag_refunded
-    "丢弃" -> R.string.tag_discarded
-    "报废" -> R.string.tag_scrapped
-    "遗失" -> R.string.tag_lost
-    "失窃" -> R.string.tag_stolen
-    "过期" -> R.string.tag_expired
+    "自有", "own" -> R.string.tag_own
+    "赠予", "gifted" -> R.string.tag_gifted
+    "借入", "borrowed" -> R.string.tag_borrowed
+    "租用", "rented" -> R.string.tag_rented
+    "自制", "homemade" -> R.string.tag_homemade
+    "拣拾", "found" -> R.string.tag_found
+    "暂存", "temporary" -> R.string.tag_temporary
+    "借出", "lent" -> R.string.tag_lent
+    "租出", "rented_out" -> R.string.tag_rented_out
+    "维修", "under_repair" -> R.string.tag_under_repair
+    "送检", "inspection" -> R.string.tag_inspection
+    "改装", "modified" -> R.string.tag_modified
+    "保养", "maintenance" -> R.string.tag_maintenance
+    "退换", "returned" -> R.string.tag_returned
+    "运输", "shipping" -> R.string.tag_shipping
+    "展出", "exhibited" -> R.string.tag_exhibited
+    "出售", "sold" -> R.string.tag_sold
+    "转让", "transferred" -> R.string.tag_transferred
+    "赠送", "given" -> R.string.tag_given
+    "捐赠", "donated" -> R.string.tag_donated
+    "退还", "refunded" -> R.string.tag_refunded
+    "丢弃", "discarded" -> R.string.tag_discarded
+    "报废", "scrapped" -> R.string.tag_scrapped
+    "遗失", "lost" -> R.string.tag_lost
+    "失窃", "stolen" -> R.string.tag_stolen
+    "过期", "expired" -> R.string.tag_expired
     else -> R.string.tag_other
 }
 

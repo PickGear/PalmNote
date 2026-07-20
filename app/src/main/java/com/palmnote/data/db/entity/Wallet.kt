@@ -31,17 +31,6 @@ data class Wallet(
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()
 ) {
-    val typeText: String
-        get() = when (type) {
-            "CASH" -> "现金"
-            "E_WALLET" -> "电子钱包"
-            "BANK_CARD" -> "银行卡"
-            "CREDIT_CARD" -> "信用卡"
-            "INVESTMENT" -> "投资账户"
-            "OTHER" -> "其他"
-            else -> "其他"
-        }
-
     val displayCardNumber: String
         get() = if (cardNumber.isNotEmpty()) "****$cardNumber" else ""
 

@@ -11,9 +11,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
+import androidx.compose.animation.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ViewList
 import androidx.compose.material.icons.filled.*
@@ -113,40 +111,42 @@ fun AssetScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val focusManager = LocalFocusManager.current
+    var showSearch by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
             CompactTopAppBar(
                 title = {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {
-                                focusManager.clearFocus()
-                            },
-                        contentAlignment = Alignment.CenterStart
-                    ) {
-                        Text(
-                            text = stringResource(R.string.settings_items),
-                            style = MaterialTheme.typography.displaySmall,
-                            fontWeight = FontWeight.Bold,
-                            color = ModuleItem
-                        )
-                    }
-                },
-                actions = {
-                    var showSearch by remember { mutableStateOf(false) }
-                    
                     if (showSearch) {
                         ModuleSearchBar(
                             query = state.searchQuery,
                             onQueryChange = { viewModel.setSearchQuery(it) },
                             onClear = { viewModel.setSearchQuery("") },
                             placeholder = stringResource(R.string.search),
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.fillMaxWidth()
                         )
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {
+                                    focusManager.clearFocus()
+                                },
+                            contentAlignment = Alignment.CenterStart
+                        ) {
+                            Text(
+                                text = stringResource(R.string.settings_items),
+                                style = MaterialTheme.typography.displaySmall,
+                                fontWeight = FontWeight.Bold,
+                                color = ModuleItem
+                            )
+                        }
+                    }
+                },
+                actions = {
+                    if (showSearch) {
                         IconButton(onClick = { showSearch = false; viewModel.setSearchQuery("") }) {
-                            Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.close))
+                            Text(stringResource(R.string.cancel), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
                         }
                     } else {
                         IconButton(onClick = { showSearch = true }) {
@@ -189,13 +189,74 @@ fun AssetScreen(
                 .background(MaterialTheme.colorScheme.background)
                 .padding(padding)
         ) {
+            Column(modifier = Modifier.fillMaxSize()) {
+            // Summary Cards (animated hide during search, outside LazyColumn for smooth animation)
+            AnimatedVisibility(
+                visible = !showSearch,
+                enter = fadeIn(tween(300)) + expandVertically(tween(300)),
+                exit = fadeOut(tween(300)) + shrinkVertically(tween(300))
+            ) {
+                Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        ModuleCard(
+                            tint = assetTint(),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(
+                                text = stringResource(R.string.asset_held),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = CurrencyUtils.formatCompact(state.heldValue),
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                text = stringResource(R.string.asset_count, state.heldCount),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        ModuleCard(
+                            tint = billTint(),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(
+                                text = stringResource(R.string.asset_away),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = stringResource(R.string.asset_count, state.awayCount),
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = AccentOrange
+                            )
+                            Text(
+                                text = "${stringResource(R.string.asset_removed)} ${stringResource(R.string.asset_count, state.removedCount)}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+
             val assetIndexMap = remember(state.filteredAssets) {
                 state.filteredAssets.withIndex().associate { (i, a) -> a.id to i }
             }
             LazyColumn(
                 state = listState,
                 modifier = Modifier
-                    .fillMaxSize()
+                    .weight(1f)
                     .nestedScroll(object : NestedScrollConnection {
                         override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
                             focusManager.clearFocus()
@@ -208,63 +269,9 @@ fun AssetScreen(
                             focusManager.clearFocus()
                         }
                     },
-                contentPadding = PaddingValues(16.dp),
+                contentPadding = PaddingValues(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-            // Summary Cards
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    ModuleCard(
-                        tint = assetTint(),
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text(
-                            text = stringResource(R.string.asset_held),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = CurrencyUtils.formatCompact(state.heldValue),
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        Text(
-                            text = stringResource(R.string.asset_count, state.heldCount),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-
-                    ModuleCard(
-                        tint = billTint(),
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text(
-                            text = stringResource(R.string.asset_away),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = stringResource(R.string.asset_count, state.awayCount),
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = AccentOrange
-                        )
-                        Text(
-                            text = "${stringResource(R.string.asset_removed)} ${stringResource(R.string.asset_count, state.removedCount)}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-
             // Status + Category Filter Dropdowns + View Toggle
             item {
                 Row(
@@ -277,7 +284,7 @@ fun AssetScreen(
                         var statusExpanded by remember { mutableStateOf(false) }
                         var statusBoxHeight by remember { mutableStateOf(0) }
                         val statusFilters = listOf(
-                            AssetFilter.ALL to "全部",
+                            AssetFilter.ALL to stringResource(R.string.asset_all),
                             AssetFilter.HELD to stringResource(R.string.asset_held),
                             AssetFilter.AWAY to stringResource(R.string.asset_away),
                             AssetFilter.REMOVED to stringResource(R.string.asset_removed)
@@ -558,6 +565,7 @@ fun AssetScreen(
 
             item { Spacer(modifier = Modifier.height(80.dp)) }
             }
+            }
             val scope = rememberCoroutineScope()
             AnimatedVisibility(
                 visible = showScrollToTop,
@@ -712,7 +720,8 @@ fun EnhancedAssetCard(
                     Text(
                         text = com.palmnote.ui.components.getCategoryName(asset.category, LocalContext.current),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1, overflow = TextOverflow.Ellipsis
                     )
                     Spacer(modifier = Modifier.weight(1f))
                     Text(
