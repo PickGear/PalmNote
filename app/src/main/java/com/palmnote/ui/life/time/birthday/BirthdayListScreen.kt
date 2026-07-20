@@ -70,13 +70,15 @@ fun BirthdayListScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Long)
             return@Scaffold
         }
         if (state.items.isEmpty()) {
-            EmptyState(
-                icon = Icons.Default.CardGiftcard,
-                title = stringResource(R.string.life_empty_birthday),
-                subtitle = stringResource(R.string.life_empty_birthday_subtitle),
-                actionText = stringResource(R.string.life_empty_birthday_action),
-                onActionClick = onCreateClick
-            )
+            Box(modifier = Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) {
+                EmptyState(
+                    icon = Icons.Default.CardGiftcard,
+                    title = stringResource(R.string.life_empty_birthday),
+                    subtitle = stringResource(R.string.life_empty_birthday_subtitle),
+                    actionText = stringResource(R.string.life_empty_birthday_action),
+                    onActionClick = onCreateClick
+                )
+            }
         } else {
         LifeLazyList(modifier = Modifier.fillMaxSize().padding(innerPadding).padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             items(state.items, key = { it.id }) { item ->

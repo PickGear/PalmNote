@@ -56,13 +56,15 @@ fun SubscriptionListScreen(templateId: Long, onBack: () -> Unit, onItemClick: (L
     }, containerColor = MaterialTheme.colorScheme.background) { innerPadding ->
         if (state.isLoading) { Box(modifier = Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = subColor) }; return@Scaffold }
         if (state.items.isEmpty()) {
-            EmptyState(
-                icon = Icons.Default.DateRange,
-                title = stringResource(R.string.life_empty_subscription),
-                subtitle = stringResource(R.string.life_empty_subscription_subtitle),
-                actionText = stringResource(R.string.life_empty_subscription_action),
-                onActionClick = onCreateClick
-            )
+            Box(modifier = Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) {
+                EmptyState(
+                    icon = Icons.Default.DateRange,
+                    title = stringResource(R.string.life_empty_subscription),
+                    subtitle = stringResource(R.string.life_empty_subscription_subtitle),
+                    actionText = stringResource(R.string.life_empty_subscription_action),
+                    onActionClick = onCreateClick
+                )
+            }
         } else {
         LifeLazyList(modifier = Modifier.fillMaxSize().padding(innerPadding).padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             items(state.items, key = { it.id }) { item ->

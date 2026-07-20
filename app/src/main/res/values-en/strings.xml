@@ -42,6 +42,8 @@
     <string name="asset_clear">Clear</string>
     <string name="asset_count">%d items</string>
     <string name="asset_status_filter">Status</string>
+    <string name="asset_maintenance_complete_confirm">Complete this maintenance?</string>
+    <string name="asset_restore_confirm">Restore to held status?</string>
     <string name="asset_all">All</string>
     <string name="bill_filter_show_all">Show all</string>
     <string name="bill_category_more_count">+%d</string>
@@ -1319,6 +1321,7 @@
     <string name="backup_operation_success">Operation successful</string>
     <string name="backup_create">Create Backup</string>
     <string name="backup_create_desc">Package all data as .palmnote file, saved to Downloads/PalmNote/</string>
+    <string name="backup_password_required">Password is required to restore this backup</string>
     <string name="backup_password_optional">Set password (optional)</string>
     <string name="backup_password">Enter password</string>
     <string name="backup_backing_up">Backing up…</string>

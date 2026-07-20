@@ -59,13 +59,15 @@ fun StudyListScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Long) ->
             return@Scaffold
         }
         if (state.items.isEmpty()) {
-            EmptyState(
-                icon = iconFromName("school"),
-                title = stringResource(R.string.life_empty_study),
-                subtitle = stringResource(R.string.life_empty_study_subtitle),
-                actionText = stringResource(R.string.life_empty_study_action),
-                onActionClick = onCreateClick
-            )
+            Box(modifier = Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) {
+                EmptyState(
+                    icon = iconFromName("school"),
+                    title = stringResource(R.string.life_empty_study),
+                    subtitle = stringResource(R.string.life_empty_study_subtitle),
+                    actionText = stringResource(R.string.life_empty_study_action),
+                    onActionClick = onCreateClick
+                )
+            }
         } else {
         LifeLazyList(modifier = Modifier.fillMaxSize().padding(innerPadding).padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             items(state.items, key = { it.id }) { item ->

@@ -158,7 +158,7 @@ fun DashboardScreen(
                 configs.forEach { config ->
                     key(config.type) {
                         val isDragged = draggedType == config.type
-                        val cardShape = MaterialTheme.shapes.extraLarge
+                        val cardShape = MaterialTheme.shapes.large
 
                         Box(
                             modifier = Modifier
@@ -240,7 +240,7 @@ fun DashboardScreen(
 
             // 浮层
             draggedType?.let { type ->
-                val cardShape = MaterialTheme.shapes.extraLarge
+                val cardShape = MaterialTheme.shapes.large
                 Box(
                     modifier = Modifier
                         .zIndex(200f)
@@ -298,7 +298,7 @@ private fun DashboardCardContent(
 private fun NetWorthCard(state: DashboardState) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.extraLarge,
+        shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(containerColor = Color.Transparent),
         border = BorderStroke(1.dp, PrimaryGreenLight.copy(alpha = 0.3f))
     ) {
@@ -393,7 +393,7 @@ private fun QuickActionsCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.extraLarge,
+        shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
@@ -450,7 +450,7 @@ private fun BudgetAlertCard(state: DashboardState) {
 private fun GoalsCard(state: DashboardState, onNavigateToLife: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.extraLarge,
+        shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
@@ -510,7 +510,7 @@ private fun AnniversariesCard(state: DashboardState, onNavigateToLife: () -> Uni
     val context = androidx.compose.ui.platform.LocalContext.current
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.extraLarge,
+        shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
@@ -594,7 +594,7 @@ private fun AssetDistributionCard(state: DashboardState, onNavigateToAsset: () -
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.extraLarge,
+        shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
@@ -670,7 +670,7 @@ private fun TodayCard(state: DashboardState) {
     val weekDay = remember { getWeekDay(context) }
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.extraLarge,
+        shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {

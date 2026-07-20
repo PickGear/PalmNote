@@ -42,6 +42,8 @@
     <string name="asset_clear">清除</string>
     <string name="asset_count">%d 件</string>
     <string name="asset_status_filter">状态</string>
+    <string name="asset_maintenance_complete_confirm">确认完成本次维护？</string>
+    <string name="asset_restore_confirm">确认恢复为持有状态？</string>
     <string name="asset_all">全部</string>
     <string name="bill_filter_show_all">展开全部</string>
     <string name="bill_category_more_count">+%d 更多</string>
@@ -1359,6 +1361,7 @@
     <string name="backup_operation_success">操作成功</string>
     <string name="backup_create">创建备份</string>
     <string name="backup_create_desc">将所有数据打包为 .palmnote 文件，存储到 Downloads/PalmNote/ 目录</string>
+    <string name="backup_password_required">需要密码才能恢复此备份</string>
     <string name="backup_password_optional">设置密码（可选）</string>
     <string name="backup_password">输入密码</string>
     <string name="backup_backing_up">正在备份…</string>

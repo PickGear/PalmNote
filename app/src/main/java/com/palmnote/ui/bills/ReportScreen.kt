@@ -92,7 +92,7 @@ fun ReportScreen(
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
                 .padding(padding),
-            contentPadding = PaddingValues(bottom = 24.dp)
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp)
         ) {
             item { PeriodSelector(state, viewModel) }
             item { Spacer(modifier = Modifier.height(12.dp)) }
@@ -132,7 +132,7 @@ private fun PeriodSelector(state: ReportState, viewModel: ReportViewModel) {
             text = when (state.periodTab) {
                 0 -> DateUtils.formatWeekRange(context, state.weekStart, state.weekEnd)
                 1 -> DateUtils.formatDisplayMonth(context, state.currentYearMonth)
-                2 -> stringResource(R.string.report_year_format, state.currentYear)
+                2 -> stringResource(R.string.report_year_format, state.currentYear.toIntOrNull() ?: 0)
                 else -> ""
             },
             style = MaterialTheme.typography.titleLarge,
@@ -156,7 +156,7 @@ private fun IncomeExpenseToggle(state: ReportState, viewModel: ReportViewModel) 
         modifier = Modifier
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.small)
-            .background(Gray100)
+            .background(MaterialTheme.colorScheme.surfaceVariant)
             .padding(4.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
@@ -180,7 +180,7 @@ private fun IncomeExpenseToggle(state: ReportState, viewModel: ReportViewModel) 
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                     color = if (isSelected) {
                         if (index == 0) ExpenseRed else IncomeGreen
-                    } else Gray400
+                    } else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
@@ -193,7 +193,7 @@ private fun PeriodTabRow(state: ReportState, viewModel: ReportViewModel) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.small)
-            .background(Gray100)
+            .background(MaterialTheme.colorScheme.surfaceVariant)
             .padding(4.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
@@ -215,7 +215,7 @@ private fun PeriodTabRow(state: ReportState, viewModel: ReportViewModel) {
                     text = label,
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                    color = if (isSelected) MaterialTheme.colorScheme.onSurface else Gray400
+                    color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
@@ -238,7 +238,7 @@ private fun SummarySection(state: ReportState) {
             Text(
                 text = totalLabel,
                 style = MaterialTheme.typography.bodyMedium,
-                color = Gray400
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
                 text = "${CurrencyUtils.formatCompact(total)}",
@@ -257,13 +257,13 @@ private fun SummarySection(state: ReportState) {
             Text(
                 text = stringResource(R.string.report_daily_avg, CurrencyUtils.formatCompact(state.data.avgDaily)),
                 style = MaterialTheme.typography.bodySmall,
-                color = Gray400
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             if (state.data.billCount > 0) {
                 Text(
                     text = stringResource(R.string.report_count_format, state.data.billCount),
                     style = MaterialTheme.typography.bodySmall,
-                    color = Gray400
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
@@ -343,7 +343,7 @@ private fun DonutChartSection(state: ReportState, onNavigateToAddBill: () -> Uni
                 Text(
                     text = if (isExpense) stringResource(R.string.report_total_expense_label) else stringResource(R.string.report_total_income_label),
                     style = MaterialTheme.typography.bodySmall,
-                    color = Gray400
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
@@ -381,7 +381,7 @@ private fun DonutChartSection(state: ReportState, onNavigateToAddBill: () -> Uni
                     Text(
                         text = "$fraction%",
                         style = MaterialTheme.typography.bodySmall,
-                        color = Gray400
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -402,10 +402,10 @@ private fun EmptyChartState(onNavigateToAddBill: () -> Unit) {
             Icons.Outlined.PieChart,
             contentDescription = null,
             modifier = Modifier.size(48.dp),
-            tint = Gray400
+            tint = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Spacer(Modifier.height(8.dp))
-        Text(stringResource(R.string.report_no_records), style = MaterialTheme.typography.bodyMedium, color = Gray400)
+        Text(stringResource(R.string.report_no_records), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(12.dp))
         TextButton(onClick = onNavigateToAddBill) {
             Text(stringResource(R.string.bill_add))
@@ -496,7 +496,7 @@ private fun CategoryRankingItem(cat: CategoryTotal, total: Double, isExpense: Bo
                 Text(
                     text = "${(fraction * 100).toInt()}%",
                     style = MaterialTheme.typography.bodySmall,
-                    color = Gray400
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             Spacer(Modifier.height(6.dp))
@@ -509,7 +509,7 @@ private fun CategoryRankingItem(cat: CategoryTotal, total: Double, isExpense: Bo
                         .weight(1f)
                         .height(8.dp)
                         .clip(MaterialTheme.shapes.extraSmall)
-                        .background(Gray100)
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
                 ) {
                     Box(
                         modifier = Modifier
@@ -559,6 +559,7 @@ private fun TrendChartSection(state: ReportState) {
 @Composable
 private fun WeeklyBarChart(dailySummary: List<DailySummary>, isExpense: Boolean) {
     val context = androidx.compose.ui.platform.LocalContext.current
+    val gridColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
     if (dailySummary.isEmpty()) {
         GrayChartPlaceholder()
         return
@@ -582,7 +583,7 @@ private fun WeeklyBarChart(dailySummary: List<DailySummary>, isExpense: Boolean)
         for (i in 0..4) {
             val y = size.height - bottomPad - chartH * i / 4
             drawLine(
-                color = Gray400.copy(alpha = 0.3f),
+                color = gridColor,
                 start = Offset(leftPad, y),
                 end = Offset(size.width, y),
                 strokeWidth = 0.5f
@@ -636,6 +637,7 @@ private fun WeeklyBarChart(dailySummary: List<DailySummary>, isExpense: Boolean)
 
 @Composable
 private fun MonthlyLineChart(dailySummary: List<DailySummary>, isExpense: Boolean) {
+    val gridColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
     if (dailySummary.isEmpty()) {
         GrayChartPlaceholder()
         return
@@ -656,7 +658,7 @@ private fun MonthlyLineChart(dailySummary: List<DailySummary>, isExpense: Boolea
         for (i in 0..4) {
             val y = size.height - bottomPad - chartH * i / 4
             drawLine(
-                color = Gray400.copy(alpha = 0.3f),
+                color = gridColor,
                 start = Offset(leftPad, y),
                 end = Offset(size.width, y),
                 strokeWidth = 0.5f
@@ -697,6 +699,7 @@ private fun MonthlyLineChart(dailySummary: List<DailySummary>, isExpense: Boolea
 
 @Composable
 private fun YearlyBarChart(monthlyTrend: List<MonthTotal>, isExpense: Boolean) {
+    val gridColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
     if (monthlyTrend.isEmpty()) {
         GrayChartPlaceholder()
         return
@@ -719,7 +722,7 @@ private fun YearlyBarChart(monthlyTrend: List<MonthTotal>, isExpense: Boolean) {
         for (i in 0..4) {
             val y = size.height - bottomPad - chartH * i / 4
             drawLine(
-                color = Gray400.copy(alpha = 0.3f),
+                color = gridColor,
                 start = Offset(leftPad, y),
                 end = Offset(size.width, y),
                 strokeWidth = 0.5f
@@ -762,10 +765,10 @@ private fun GrayChartPlaceholder() {
             .fillMaxWidth()
             .height(160.dp)
             .clip(MaterialTheme.shapes.small)
-            .background(Gray100),
+            .background(MaterialTheme.colorScheme.surfaceVariant),
         contentAlignment = Alignment.Center
     ) {
-        Text(stringResource(R.string.empty_title), style = MaterialTheme.typography.bodyMedium, color = Gray400)
+        Text(stringResource(R.string.empty_title), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 

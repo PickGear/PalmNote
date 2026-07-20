@@ -95,13 +95,15 @@ fun TodoScreen(
                 FilterChipItem(stringResource(R.string.life_todo_filter_calendar), viewMode == "calendar", LifeTodo) { viewMode = "calendar" }
             }
             if (state.items.isEmpty()) {
-                EmptyState(
-                    icon = Icons.Default.CheckBox,
-                    title = stringResource(R.string.life_empty_todo),
-                    subtitle = stringResource(R.string.life_empty_todo_subtitle),
-                    actionText = stringResource(R.string.life_empty_todo_action),
-                    onActionClick = onCreateClick
-                )
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    EmptyState(
+                        icon = Icons.Default.CheckBox,
+                        title = stringResource(R.string.life_empty_todo),
+                        subtitle = stringResource(R.string.life_empty_todo_subtitle),
+                        actionText = stringResource(R.string.life_empty_todo_action),
+                        onActionClick = onCreateClick
+                    )
+                }
             } else {
             Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
                 when (viewMode) {
@@ -146,9 +148,9 @@ fun TodoScreen(
                         }
                         Column(Modifier.padding(horizontal = 8.dp)) {
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                IconButton(onClick = { calendarMonth = calendarMonth.minusMonths(1) }) { Icon(Icons.Default.ChevronLeft, "上月") }
+                                IconButton(onClick = { calendarMonth = calendarMonth.minusMonths(1) }) { Icon(Icons.Default.ChevronLeft, stringResource(R.string.report_previous)) }
                                 Text(calendarMonth.toString(), fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                                IconButton(onClick = { calendarMonth = calendarMonth.plusMonths(1) }) { Icon(Icons.Default.ChevronRight, "下月") }
+                                IconButton(onClick = { calendarMonth = calendarMonth.plusMonths(1) }) { Icon(Icons.Default.ChevronRight, stringResource(R.string.report_next)) }
                             }
                             Row(Modifier.fillMaxWidth()) { listOf("一","二","三","四","五","六","日").forEach { Text(it, fontSize = 11.sp, modifier = Modifier.weight(1f), textAlign = androidx.compose.ui.text.style.TextAlign.Center) } }
                             cells.chunked(7).forEach { week ->
