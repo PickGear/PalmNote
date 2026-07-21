@@ -224,9 +224,10 @@ fun CalendarView(
             }
         }
 
-        // 选中日期汇总
-        if (selectedDay != null && selectedDay in 1..daysInMonth) {
-            val dayData = dailyData[selectedDay]
+        // 汇总（选日期显示当天，否则显示当月）
+        val showDay = selectedDay != null && selectedDay in 1..daysInMonth
+        val dayData = if (showDay) dailyData[selectedDay] else Pair(dailyData.values.sumOf { it.first }, dailyData.values.sumOf { it.second })
+        if (true) {
             Spacer(modifier = Modifier.height(12.dp))
 
             Card(

@@ -114,6 +114,8 @@ fun AssetScreen(
     var showSearch by remember { mutableStateOf(false) }
 
     Scaffold(
+        contentWindowInsets = ScaffoldDefaults.contentWindowInsets
+            .exclude(WindowInsets.navigationBars),
         topBar = {
             CompactTopAppBar(
                 title = {
@@ -196,7 +198,7 @@ fun AssetScreen(
                 enter = fadeIn(tween(300)) + expandVertically(tween(300)),
                 exit = fadeOut(tween(300)) + shrinkVertically(tween(300))
             ) {
-                Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp)) {
+                Column(modifier = Modifier.padding(horizontal = 16.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -253,27 +255,9 @@ fun AssetScreen(
             val assetIndexMap = remember(state.filteredAssets) {
                 state.filteredAssets.withIndex().associate { (i, a) -> a.id to i }
             }
-            LazyColumn(
-                state = listState,
-                modifier = Modifier
-                    .weight(1f)
-                    .nestedScroll(object : NestedScrollConnection {
-                        override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                            focusManager.clearFocus()
-                            return Offset.Zero
-                        }
-                    })
-                    .pointerInput(Unit) {
-                        awaitEachGesture {
-                            awaitFirstDown(requireUnconsumed = false)
-                            focusManager.clearFocus()
-                        }
-                    },
-                contentPadding = PaddingValues(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
+            // Filter Bar (fixed outside LazyColumn)
+            Box(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background).padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp)) {
             // Status + Category Filter Dropdowns + View Toggle
-            item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -521,13 +505,34 @@ fun AssetScreen(
                 }
             }
 
+            LazyColumn(
+                state = listState,
+                modifier = Modifier
+                    .weight(1f)
+                    .nestedScroll(object : NestedScrollConnection {
+                        override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                            focusManager.clearFocus()
+                            return Offset.Zero
+                        }
+                    })
+                    .pointerInput(Unit) {
+                        awaitEachGesture {
+                            awaitFirstDown(requireUnconsumed = false)
+                            focusManager.clearFocus()
+                        }
+                    },
+                contentPadding = PaddingValues(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+
             // Asset List
             if (state.filteredAssets.isEmpty()) {
                 item {
                     EmptyState(
                         icon = Icons.Outlined.Inventory2,
                         title = if (state.searchQuery.isNotEmpty()) stringResource(R.string.asset_not_found) else stringResource(R.string.asset_no_items),
-                        subtitle = if (state.searchQuery.isNotEmpty()) stringResource(R.string.asset_try_other_keywords) else stringResource(R.string.asset_add_first_item)
+                        subtitle = if (state.searchQuery.isNotEmpty()) stringResource(R.string.asset_try_other_keywords) else stringResource(R.string.asset_add_first_item),
+                        tint = InfoBlue
                     )
                 }
             } else if (isGridView) {

@@ -10,6 +10,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.palmnote.data.datastore.dataStore
 import kotlinx.coroutines.flow.map
@@ -118,6 +119,9 @@ fun PalmNoteNavHost() {
 
     var lifeChildAtHome by remember { mutableStateOf(true) }
     val showBottomBar = bottomNavItems.any { item -> currentDestination?.route == item.route } && lifeChildAtHome
+    val navBarBottomDp = with(LocalDensity.current) {
+        WindowInsets.navigationBars.getBottom(this).toDp()
+    }
 
     val context = LocalContext.current
     val startDest by context.dataStore.data.map { prefs ->
@@ -127,6 +131,8 @@ fun PalmNoteNavHost() {
     if (startDest != null) {
         Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
+        contentWindowInsets = ScaffoldDefaults.contentWindowInsets
+            .exclude(WindowInsets.navigationBars),
         bottomBar = {
             AnimatedVisibility(
                 visible = showBottomBar,
@@ -137,23 +143,21 @@ fun PalmNoteNavHost() {
                     color = MaterialTheme.colorScheme.background,
                     shadowElevation = 0.dp
                 ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .windowInsetsPadding(
-                                        WindowInsets.navigationBars.only(WindowInsetsSides.Bottom)
-                                    )
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(50.dp)
-                                        .padding(horizontal = 8.dp),
-                                    horizontalArrangement = Arrangement.SpaceEvenly,
-                                    verticalAlignment = Alignment.Top
-                                ) {
-                                    bottomNavItems.forEach { item ->
-                                        val selected = currentDestination?.hierarchy?.any { it.route == item.route } == true
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = navBarBottomDp)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(60.dp)
+                                .padding(horizontal = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceEvenly,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            bottomNavItems.forEach { item ->
+                                val selected = currentDestination?.hierarchy?.any { it.route == item.route } == true
                                 Column(
                                     modifier = Modifier
                                         .weight(1f)
@@ -169,7 +173,8 @@ fun PalmNoteNavHost() {
                                                 restoreState = true
                                             }
                                         }
-                                        .padding(top = 6.dp),
+                                        .align(Alignment.CenterVertically)
+                                        .padding(top = 5.dp),
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
                                     Box(

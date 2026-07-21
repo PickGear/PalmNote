@@ -146,7 +146,7 @@ fun AddAssetScreen(
                 .background(MaterialTheme.colorScheme.background)
                 .padding(padding),
             contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             // Image Upload - 最多4张，首图为封面
             item {

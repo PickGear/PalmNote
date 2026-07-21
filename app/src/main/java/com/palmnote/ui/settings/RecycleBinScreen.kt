@@ -102,7 +102,7 @@ fun RecycleBinScreen(
             } else {
                 LazyColumn(
                     contentPadding = PaddingValues(16.dp, 16.dp, 16.dp, 32.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(items.size, key = { index ->
                         val id = when (selectedTab) {

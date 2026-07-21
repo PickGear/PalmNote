@@ -9,6 +9,9 @@ interface GoalCheckInDao {
     @Query("SELECT * FROM goal_check_ins WHERE goalId = :goalId ORDER BY date DESC")
     fun getCheckInsByGoal(goalId: Long): Flow<List<GoalCheckIn>>
 
+    @Query("SELECT * FROM goal_check_ins WHERE goalId IN (:goalIds) ORDER BY goalId, date DESC")
+    fun getCheckInsByGoalIds(goalIds: List<Long>): Flow<List<GoalCheckIn>>
+
     @Query("SELECT * FROM goal_check_ins WHERE goalId = :goalId ORDER BY date DESC LIMIT :limit")
     fun getRecentCheckIns(goalId: Long, limit: Int = 30): Flow<List<GoalCheckIn>>
 

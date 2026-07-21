@@ -32,8 +32,8 @@ import com.palmnote.data.db.entity.LifeItem
 import com.palmnote.data.db.entity.LifeTemplate
 import com.palmnote.data.db.entity.getDisplayDescription
 import com.palmnote.ui.components.CompactTopAppBar
-import com.palmnote.ui.components.PressableFab
 import com.palmnote.ui.components.LifeScreenSkeleton
+import com.palmnote.ui.components.PressableFab
 import com.palmnote.ui.components.AppBottomSheet
 import com.palmnote.ui.components.ModuleSearchBar
 import com.palmnote.ui.components.toComposeColor
@@ -88,6 +88,8 @@ fun LifeScreen(
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
+            contentWindowInsets = ScaffoldDefaults.contentWindowInsets
+                .exclude(WindowInsets.navigationBars),
             snackbarHost = { SnackbarHost(snackbarHostState, modifier = Modifier.navigationBarsPadding().padding(bottom = 60.dp)) },
             topBar = {
                 CompactTopAppBar(
@@ -130,8 +132,7 @@ fun LifeScreen(
                 }
             }
         ) { innerPadding ->
-            if (state.isLoading) { LoadingView(innerPadding); return@Scaffold }
-            if (state.templates.isEmpty()) { EmptyLifeView(innerPadding, fabExpanded = false, isLoading = false, onGo = onNavigateToJournal); return@Scaffold }
+            if (state.isLoading) { Box(Modifier.fillMaxSize().padding(innerPadding)) { LifeScreenSkeleton() }; return@Scaffold }
             LifeContent(
                 innerPadding = innerPadding, state = state, showSearch = showSearch, searchQuery = searchQuery, onSearchChange = { searchQuery = it },
                 filteredPlans = filteredPlans, filteredTimes = filteredTimes, filteredRecords = filteredRecords,
@@ -284,30 +285,6 @@ private fun TemplateCard(tpl: LifeTemplate, onTemplateClick: (Long) -> Unit) {
 
 
 @Composable
-private fun LoadingView(innerPadding: PaddingValues) {
-    Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) { LifeScreenSkeleton() }
-}
-
-@Composable
-private fun EmptyLifeView(innerPadding: PaddingValues, fabExpanded: Boolean, isLoading: Boolean, onGo: () -> Unit) {
-    Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
-        Column(modifier = Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(Icons.Default.AutoStories, null, tint = ModuleLife.copy(alpha = 0.3f), modifier = Modifier.size(72.dp))
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(stringResource(R.string.life_screen_welcome), style = MaterialTheme.typography.titleLarge)
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(stringResource(R.string.life_screen_start_hint), color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Spacer(modifier = Modifier.height(24.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Button(onClick = onGo, shape = RoundedCornerShape(12.dp), colors = ButtonDefaults.buttonColors(containerColor = ModuleLife)) { Text(stringResource(R.string.life_screen_write_journal)) }
-                OutlinedButton(onClick = onGo, shape = RoundedCornerShape(12.dp)) { Text(stringResource(R.string.life_screen_start_checkin)) }
-                OutlinedButton(onClick = onGo, shape = RoundedCornerShape(12.dp)) { Text(stringResource(R.string.life_screen_deposit)) }
-            }
-        }
-    }
-}
-
-@Composable
 private fun LifeContent(
     innerPadding: PaddingValues, state: LifeUiState, showSearch: Boolean, searchQuery: String, onSearchChange: (String) -> Unit,
     filteredPlans: List<LifeTemplate>, filteredTimes: List<LifeTemplate>, filteredRecords: List<LifeTemplate>,
@@ -359,7 +336,7 @@ private fun LifeContent(
                         Spacer(modifier = Modifier.height(12.dp))
                         Text(stringResource(R.string.life_screen_search_template_not_found, searchQuery), fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     } else {
-                        Icon(Icons.Default.Spa, null, tint = PrimaryGreenLight.copy(alpha = 0.3f), modifier = Modifier.size(56.dp))
+                            Icon(Icons.Default.AutoStories, null, tint = ModuleLife.copy(alpha = 0.3f), modifier = Modifier.size(56.dp))
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(stringResource(R.string.life_empty_here), fontSize = 16.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(modifier = Modifier.height(8.dp))

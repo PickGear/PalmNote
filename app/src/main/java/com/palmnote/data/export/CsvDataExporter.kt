@@ -206,7 +206,11 @@ class CsvDataExporter(
                 val assets = db.assetDao().getAllAssets().first()
                 val usageRecords = db.usageRecordDao().getAllUsageRecords().first()
                 val goals = db.goalDao().getAllGoals().first()
-                val goalCheckIns = goals.flatMap { db.goalCheckInDao().getCheckInsByGoal(it.id).first() }
+                val goalCheckIns = if (goals.isNotEmpty()) {
+                    db.goalCheckInDao().getCheckInsByGoalIds(goals.map { it.id }).first()
+                } else {
+                    emptyList()
+                }
                 val anniversaries = db.anniversaryDao().getAllAnniversaries().first()
                 val moments = db.momentDao().getAllMoments().first()
                 val categoryConfigs = db.categoryConfigDao().getAllCategories().first()

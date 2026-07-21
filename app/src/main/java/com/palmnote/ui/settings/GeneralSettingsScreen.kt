@@ -9,6 +9,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -204,7 +205,7 @@ fun GeneralSettingsScreen(
                         presetColors.forEach { color ->
                             val c = color.toComposeColor(Color.Gray)
                             val isSelected = state.switchColor == color
-                            Box(modifier = Modifier.size(44.dp).clip(CircleShape).background(c).clickable { viewModel.setSwitchColor(color) }.then(if (isSelected) Modifier.border(3.dp, Color.White, CircleShape) else Modifier), contentAlignment = Alignment.Center) {
+                            Box(modifier = Modifier.size(44.dp).clip(CircleShape).background(c).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { viewModel.setSwitchColor(color) }.then(if (isSelected) Modifier.border(3.dp, Color.White, CircleShape) else Modifier), contentAlignment = Alignment.Center) {
                                 if (isSelected) Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(20.dp))
                             }
                         }
@@ -215,7 +216,7 @@ fun GeneralSettingsScreen(
                         OutlinedTextField(value = customColor, onValueChange = { v -> customColor = v.filter { it.isLetterOrDigit() }.take(6); customColorError = false }, label = { Text(stringResource(R.string.settings_hex_color), fontWeight = FontWeight.Bold) }, prefix = { Text("#") }, isError = customColorError, singleLine = true, modifier = Modifier.weight(1f), shape = MaterialTheme.shapes.small)
                         val previewColor = "#$customColor".toComposeColor(Color.Gray)
                         val isCustomSelected = state.switchColor == "#$customColor" && customColor.length == 6
-                        Box(modifier = Modifier.size(44.dp).clip(CircleShape).background(previewColor).then(if (isCustomSelected) Modifier.border(3.dp, Color.White, CircleShape) else Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape)).clickable { if (customColor.length == 6) viewModel.setSwitchColor("#$customColor"); else customColorError = true }, contentAlignment = Alignment.Center) {
+                        Box(modifier = Modifier.size(44.dp).clip(CircleShape).background(previewColor).then(if (isCustomSelected) Modifier.border(3.dp, Color.White, CircleShape) else Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape)).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { if (customColor.length == 6) viewModel.setSwitchColor("#$customColor"); else customColorError = true }, contentAlignment = Alignment.Center) {
                             if (isCustomSelected) Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(20.dp))
                         }
                     }

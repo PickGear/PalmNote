@@ -4,6 +4,7 @@ import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -152,13 +153,13 @@ private fun TypeStep(selectedType: String, onSelect: (String) -> Unit) {
 
 @Composable
 private fun BasicInfoStep(name: String, onNameChange: (String) -> Unit, description: String, onDescChange: (String) -> Unit, selectedIcon: String, onIconSelect: (String) -> Unit, selectedColor: String, onColorSelect: (String) -> Unit, icons: List<String>, colors: List<String>) {
-    LazyColumn(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         item { OutlinedTextField(value = name, onValueChange = onNameChange, label = { Text(stringResource(R.string.life_template_name)) }, singleLine = true, modifier = Modifier.fillMaxWidth()) }
         item { OutlinedTextField(value = description, onValueChange = onDescChange, label = { Text(stringResource(R.string.life_template_desc)) }, modifier = Modifier.fillMaxWidth()) }
         item { Text(stringResource(R.string.life_template_select_icon), fontWeight = FontWeight.Medium, fontSize = 14.sp) }
-        item { LazyVerticalGrid(columns = GridCells.Fixed(8), modifier = Modifier.height(120.dp)) { items(icons) { icon -> Box(modifier = Modifier.size(40.dp).clip(RoundedCornerShape(8.dp)).background(if (selectedIcon == icon) ModuleLife.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant).clickable { onIconSelect(icon) }, contentAlignment = Alignment.Center) { Icon(iconFromName(icon), null, tint = if (selectedIcon == icon) ModuleLife else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp)) } } } }
+        item { LazyVerticalGrid(columns = GridCells.Fixed(8), modifier = Modifier.height(120.dp)) { items(icons) { icon -> Box(modifier = Modifier.size(40.dp).clip(RoundedCornerShape(8.dp)).background(if (selectedIcon == icon) ModuleLife.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onIconSelect(icon) }, contentAlignment = Alignment.Center) { Icon(iconFromName(icon), null, tint = if (selectedIcon == icon) ModuleLife else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp)) } } } }
         item { Text(stringResource(R.string.life_template_select_color), fontWeight = FontWeight.Medium, fontSize = 14.sp) }
-        item { LazyVerticalGrid(columns = GridCells.Fixed(6), modifier = Modifier.height(80.dp)) { items(colors) { color -> Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(color.toComposeColor(ModuleLife)).clickable { onColorSelect(color) }.then(if (selectedColor == color) Modifier.border(2.dp, MaterialTheme.colorScheme.onSurface, CircleShape) else Modifier), contentAlignment = Alignment.Center) { if (selectedColor == color) Icon(Icons.Default.Check, null, tint = Color.White, modifier = Modifier.size(16.dp)) } } } }
+        item { LazyVerticalGrid(columns = GridCells.Fixed(6), modifier = Modifier.height(80.dp)) { items(colors) { color -> Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(color.toComposeColor(ModuleLife)).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onColorSelect(color) }.then(if (selectedColor == color) Modifier.border(2.dp, MaterialTheme.colorScheme.onSurface, CircleShape) else Modifier), contentAlignment = Alignment.Center) { if (selectedColor == color) Icon(Icons.Default.Check, null, tint = Color.White, modifier = Modifier.size(16.dp)) } } } }
     }
 }
 

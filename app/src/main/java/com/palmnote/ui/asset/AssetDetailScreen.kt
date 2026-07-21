@@ -138,11 +138,11 @@ fun AssetDetailScreen(
                 .background(MaterialTheme.colorScheme.background)
                 .padding(padding),
             contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             item {
                 ModuleCard(tint = assetTint(), modifier = Modifier.fillMaxWidth()) {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                         Box(
                             Modifier.size(72.dp).background(if (asset.images.isEmpty()) catInfo.color.copy(alpha = 0.12f) else Color.Transparent, MaterialTheme.shapes.large),
                             contentAlignment = Alignment.Center

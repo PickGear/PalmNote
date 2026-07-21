@@ -1,4 +1,4 @@
-package com.palmnote.ui.bills
+﻿package com.palmnote.ui.bills
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
@@ -94,6 +94,8 @@ fun BillScreen(
     var billToDelete by remember { mutableStateOf<Bill?>(null) }
 
     Scaffold(
+        contentWindowInsets = ScaffoldDefaults.contentWindowInsets
+            .exclude(WindowInsets.navigationBars),
         topBar = {
             CompactTopAppBar(
                 title = {
@@ -247,121 +249,6 @@ fun BillScreen(
                         modifier = Modifier.padding(horizontal = 16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                ModuleCard(tint = billTint(), modifier = Modifier.fillMaxWidth()) {
-                    // Main numbers
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column {
-                            Text(
-                                text = stringResource(R.string.bill_monthly_expense),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1, overflow = TextOverflow.Ellipsis
-                            )
-                            Text(
-                                text = CurrencyUtils.formatCurrency(state.monthlyExpense),
-                                style = MaterialTheme.typography.headlineMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = ExpenseRed
-                            )
-                        }
-                        Column(horizontalAlignment = Alignment.End) {
-                            Text(
-                                text = stringResource(R.string.bill_monthly_income),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1, overflow = TextOverflow.Ellipsis
-                            )
-                            Text(
-                                text = CurrencyUtils.formatCurrency(state.monthlyIncome),
-                                style = MaterialTheme.typography.headlineMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = StatusActive
-                            )
-                        }
-                    }
-
-                    // Net
-                    val net = state.monthlyIncome - state.monthlyExpense
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            if (net >= 0) Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown,
-                            null,
-                            modifier = Modifier.size(16.dp),
-                            tint = if (net >= 0) StatusActive else ErrorLight
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = stringResource(R.string.bill_balance_amount, "${if (net >= 0) "+" else ""}${CurrencyUtils.formatCurrency(net)}"),
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Medium,
-                            color = if (net >= 0) StatusActive else ErrorLight
-                        )
-                    }
-
-                    // Budget progress
-                    if (state.budget != null) {
-                        Spacer(modifier = Modifier.height(12.dp))
-                        HorizontalDivider()
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        val budget = state.budget
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                text = stringResource(R.string.bill_budget_usage),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                text = "${CurrencyUtils.formatCurrency(state.monthlyExpense)} / ${CurrencyUtils.formatCurrency(budget?.totalBudget ?: 0.0)}",
-                                style = MaterialTheme.typography.bodySmall,
-                                fontWeight = FontWeight.Medium,
-                                color = if (state.budgetUsagePercent > 1f) ErrorLight
-                                        else if (state.budgetUsagePercent > 0.8f) AccentOrange
-                                        else StatusActive
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(6.dp))
-                        ProgressBar(
-                            progress = state.budgetUsagePercent,
-                            color = when {
-                                state.budgetUsagePercent > 1f -> ErrorLight
-                                state.budgetUsagePercent > 0.8f -> AccentOrange
-                                else -> StatusActive
-                            },
-                            height = 8.dp
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                "${(state.budgetUsagePercent * 100).toInt()}%",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            val remaining = (budget?.totalBudget ?: 0.0) - state.monthlyExpense
-                            Text(
-                                if (remaining >= 0) stringResource(R.string.bill_remaining_amount, CurrencyUtils.formatCurrency(remaining))
-                                else stringResource(R.string.bill_over_budget_amount, CurrencyUtils.formatCurrency(-remaining)),
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Medium,
-                                color = if (remaining >= 0) StatusActive else ErrorLight
-                            )
-                        }
-                    }
-                }
 
                 ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -382,55 +269,6 @@ fun BillScreen(
                     )
                 }
 
-                if (state.expenseByCategory.isNotEmpty()) {
-                ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
-                    Text(
-                        text = stringResource(R.string.bill_expense_category),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        val total = state.expenseByCategory.sumOf { it.total }.takeIf { it > 0 } ?: 1.0
-                        Canvas(modifier = Modifier.size(80.dp)) {
-                            val strokeWidth = 10.dp.toPx()
-                            val radius = (size.minDimension - strokeWidth) / 2
-                            val center = Offset(size.width / 2, size.height / 2)
-                            var startAngle = -90f
-                            state.expenseByCategory.forEachIndexed { index, item ->
-                                val sweep = (item.total / total * 360f).toFloat()
-                                drawArc(
-                                    color = ChartColors[index % ChartColors.size],
-                                    startAngle = startAngle, sweepAngle = sweep,
-                                    useCenter = false,
-                                    topLeft = Offset(center.x - radius, center.y - radius),
-                                    size = Size(radius * 2, radius * 2),
-                                    style = Stroke(strokeWidth, cap = StrokeCap.Round)
-                                )
-                                startAngle += sweep
-                            }
-                        }
-                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            val maxLegendItems = 5
-                            state.expenseByCategory.take(maxLegendItems).forEachIndexed { index, item ->
-                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    Box(Modifier.size(10.dp).clip(CircleShape).background(ChartColors[index % ChartColors.size]))
-                                    Text(stringResource(getLocalizedCategoryName(item.category)), style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-                                    Text(CurrencyUtils.formatCurrency(item.total), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium)
-                                    Text("${(item.total / total * 100).toInt()}%", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                }
-                            }
-                            if (state.expenseByCategory.size > maxLegendItems) {
-                                Text(stringResource(R.string.bill_category_more_count, state.expenseByCategory.size - maxLegendItems), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
-                            }
-                        }
-                    }
-                }
-                }
                     }
                 }
 
@@ -439,8 +277,8 @@ fun BillScreen(
                     contentPadding = PaddingValues(horizontal = 16.dp)
                 ) {
             // Filter chips
-            item {
-                Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            stickyHeader {
+                Row(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background).padding(vertical = 8.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         val interactionSource = remember { MutableInteractionSource() }
                         Surface(
@@ -523,7 +361,8 @@ fun BillScreen(
                     EmptyState(
                         icon = Icons.Outlined.Receipt,
                         title = stringResource(R.string.bill_no_records),
-                        subtitle = stringResource(R.string.bill_start_recording)
+                        subtitle = stringResource(R.string.bill_start_recording),
+                        tint = AccentOrange
                     )
                 }
             } else {

@@ -291,7 +291,10 @@ private fun CategoryEditBottomSheet(
         FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             categoryColorOptions.forEach { c ->
                 Box(modifier = Modifier.size(28.dp).clip(MaterialTheme.shapes.small).background(c.toComposeColor())
-                    .clickable { color = c }, contentAlignment = Alignment.Center) {
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) { color = c }, contentAlignment = Alignment.Center) {
                     if (color == c) { Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(14.dp)) }
                 }
             }
