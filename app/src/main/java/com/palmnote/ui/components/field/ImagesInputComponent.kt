@@ -3,6 +3,7 @@ package com.palmnote.ui.components.field
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.CircleShape
@@ -49,7 +50,10 @@ fun ImagesInputComponent(
                             .size(20.dp)
                             .clip(CircleShape)
                             .background(MaterialTheme.colorScheme.error)
-                            .clickable { onRemoveImage(i) },
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null
+                            ) { onRemoveImage(i) },
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(Icons.Default.Close, null, tint = MaterialTheme.colorScheme.onError, modifier = Modifier.size(14.dp))

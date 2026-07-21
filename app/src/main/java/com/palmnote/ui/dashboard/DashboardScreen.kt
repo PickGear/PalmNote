@@ -4,6 +4,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -92,8 +93,16 @@ fun DashboardScreen(
         rawConfigs.filter(filterVisible)
     }
 
-    Scaffold(
-        topBar = {
+    val scrollState = rememberScrollState()
+    val boxGlobalY = remember { mutableFloatStateOf(0f) }
+    val cardGlobalYs = remember { mutableStateMapOf<CardType, Float>() }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+    ) {
+        Column(modifier = Modifier.fillMaxSize()) {
             CompactTopAppBar(
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -135,132 +144,126 @@ fun DashboardScreen(
                     }
                 }
             )
-        }
-    ) { innerPadding ->
-        val scrollState = rememberScrollState()
-        val boxGlobalY = remember { mutableFloatStateOf(0f) }
-        val cardGlobalYs = remember { mutableStateMapOf<CardType, Float>() }
 
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-                .padding(innerPadding)
-                .onGloballyPositioned { boxGlobalY.floatValue = it.positionInWindow().y }
-        ) {
-            Column(
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .verticalScroll(scrollState)
-                    .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                    .onGloballyPositioned { boxGlobalY.floatValue = it.positionInWindow().y }
             ) {
-                configs.forEach { config ->
-                    key(config.type) {
-                        val isDragged = draggedType == config.type
-                        val cardShape = MaterialTheme.shapes.large
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(scrollState)
+                        .padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    configs.forEach { config ->
+                        key(config.type) {
+                            val isDragged = draggedType == config.type
+                            val cardShape = MaterialTheme.shapes.large
 
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .zIndex(if (isDragged) 100f else 0f)
-                                .graphicsLayer {
-                                    alpha = if (isDragged) 0f else 1f
-                                }
-                                .onGloballyPositioned {
-                                    cardGlobalYs[config.type] = it.positionInWindow().y
-                                    itemHeights[config.type] = it.size.height
-                                }
-                                .pointerInput(config.type) {
-                                    detectDragGesturesAfterLongPress(
-                                        onDragStart = { offset ->
-                                            hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                                            draggedType = config.type
-                                            initialTouchOffset = offset.y
-                                            val cardY = cardGlobalYs[config.type] ?: 0f
-                                            overlayTopPx = cardY - boxGlobalY.floatValue
-                                            lastSwapTime = System.currentTimeMillis()
-                                        },
-                                        onDrag = { change, _ ->
-                                            change.consume()
-                                            val cardY = cardGlobalYs[config.type] ?: return@detectDragGesturesAfterLongPress
-                                            overlayTopPx = cardY + change.position.y - boxGlobalY.floatValue - initialTouchOffset
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .zIndex(if (isDragged) 100f else 0f)
+                                    .graphicsLayer {
+                                        alpha = if (isDragged) 0f else 1f
+                                    }
+                                    .onGloballyPositioned {
+                                        cardGlobalYs[config.type] = it.positionInWindow().y
+                                        itemHeights[config.type] = it.size.height
+                                    }
+                                    .pointerInput(config.type) {
+                                        detectDragGesturesAfterLongPress(
+                                            onDragStart = { offset ->
+                                                hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                draggedType = config.type
+                                                initialTouchOffset = offset.y
+                                                val cardY = cardGlobalYs[config.type] ?: 0f
+                                                overlayTopPx = cardY - boxGlobalY.floatValue
+                                                lastSwapTime = System.currentTimeMillis()
+                                            },
+                                            onDrag = { change, _ ->
+                                                change.consume()
+                                                val cardY = cardGlobalYs[config.type] ?: return@detectDragGesturesAfterLongPress
+                                                overlayTopPx = cardY + change.position.y - boxGlobalY.floatValue - initialTouchOffset
 
-                                            val freshConfigs = viewModel.visibleConfigs.value.filter(filterVisible)
-                                            val idx = freshConfigs.indexOfFirst { it.type == config.type }
-                                            val now = System.currentTimeMillis()
+                                                val freshConfigs = viewModel.visibleConfigs.value.filter(filterVisible)
+                                                val idx = freshConfigs.indexOfFirst { it.type == config.type }
+                                                val now = System.currentTimeMillis()
 
-                                            if (idx >= 0 && now - lastSwapTime > 50) {
-                                                val belowType = freshConfigs.getOrNull(idx + 1)?.type
-                                                val aboveType = freshConfigs.getOrNull(idx - 1)?.type
-                                                val selfH = itemHeights[config.type] ?: 0
-                                                val overlayCenter = overlayTopPx + selfH * 0.5f
+                                                if (idx >= 0 && now - lastSwapTime > 50) {
+                                                    val belowType = freshConfigs.getOrNull(idx + 1)?.type
+                                                    val aboveType = freshConfigs.getOrNull(idx - 1)?.type
+                                                    val selfH = itemHeights[config.type] ?: 0
+                                                    val overlayCenter = overlayTopPx + selfH * 0.5f
 
-                                                val belowCenterY = belowType?.let { t ->
-                                                    cardGlobalYs[t]?.let { it - boxGlobalY.floatValue + (itemHeights[t]?.toFloat() ?: 0f) * 0.5f }
+                                                    val belowCenterY = belowType?.let { t ->
+                                                        cardGlobalYs[t]?.let { it - boxGlobalY.floatValue + (itemHeights[t]?.toFloat() ?: 0f) * 0.5f }
+                                                    }
+                                                    val aboveCenterY = aboveType?.let { t ->
+                                                        cardGlobalYs[t]?.let { it - boxGlobalY.floatValue + (itemHeights[t]?.toFloat() ?: 0f) * 0.5f }
+                                                    }
+
+                                                    if (belowCenterY != null && overlayCenter > belowCenterY) {
+                                                        viewModel.moveCardDown(config.type)
+                                                        hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                                        lastSwapTime = now
+                                                    } else if (aboveCenterY != null && overlayCenter < aboveCenterY) {
+                                                        viewModel.moveCardUp(config.type)
+                                                        hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                                        lastSwapTime = now
+                                                    }
                                                 }
-                                                val aboveCenterY = aboveType?.let { t ->
-                                                    cardGlobalYs[t]?.let { it - boxGlobalY.floatValue + (itemHeights[t]?.toFloat() ?: 0f) * 0.5f }
-                                                }
-
-                                                if (belowCenterY != null && overlayCenter > belowCenterY) {
-                                                    viewModel.moveCardDown(config.type)
-                                                    hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                                    lastSwapTime = now
-                                                } else if (aboveCenterY != null && overlayCenter < aboveCenterY) {
-                                                    viewModel.moveCardUp(config.type)
-                                                    hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                                    lastSwapTime = now
-                                                }
+                                            },
+                                            onDragEnd = {
+                                                draggedType = null
+                                                lastSwapTime = 0L
+                                            },
+                                            onDragCancel = {
+                                                draggedType = null
+                                                lastSwapTime = 0L
                                             }
-                                        },
-                                        onDragEnd = {
-                                            draggedType = null
-                                            lastSwapTime = 0L
-                                        },
-                                        onDragCancel = {
-                                            draggedType = null
-                                            lastSwapTime = 0L
-                                        }
-                                    )
-                                }
-                        ) {
-                            DashboardCardContent(
-                                type = config.type,
-                                state = state,
-                                onNavigateToAsset = onNavigateToAsset,
-                                onNavigateToBill = onNavigateToBill,
-                                onNavigateToLife = onNavigateToLife
-                            )
+                                        )
+                                    }
+                            ) {
+                                DashboardCardContent(
+                                    type = config.type,
+                                    state = state,
+                                    onNavigateToAsset = onNavigateToAsset,
+                                    onNavigateToBill = onNavigateToBill,
+                                    onNavigateToLife = onNavigateToLife
+                                )
+                            }
                         }
                     }
+                    Spacer(modifier = Modifier.height(80.dp))
                 }
-                Spacer(modifier = Modifier.height(80.dp))
-            }
 
-            // 浮层
-            draggedType?.let { type ->
-                val cardShape = MaterialTheme.shapes.large
-                Box(
-                    modifier = Modifier
-                        .zIndex(200f)
-                        .offset { IntOffset(0, overlayTopPx.roundToInt()) }
-                        .padding(horizontal = 16.dp)
-                        .graphicsLayer {
-                            scaleX = 1.04f
-                            scaleY = 1.04f
-                            shadowElevation = 40f
-                            shape = cardShape
-                            clip = true
-                        }
-                ) {
-                    DashboardCardContent(
-                        type = type,
-                        state = state,
-                        onNavigateToAsset = onNavigateToAsset,
-                        onNavigateToBill = onNavigateToBill,
-                        onNavigateToLife = onNavigateToLife
-                    )
+                // 浮层
+                draggedType?.let { type ->
+                    val cardShape = MaterialTheme.shapes.large
+                    Box(
+                        modifier = Modifier
+                            .zIndex(200f)
+                            .offset { IntOffset(0, overlayTopPx.roundToInt()) }
+                            .padding(horizontal = 16.dp)
+                            .graphicsLayer {
+                                scaleX = 1.04f
+                                scaleY = 1.04f
+                                shadowElevation = 40f
+                                shape = cardShape
+                                clip = true
+                            }
+                    ) {
+                        DashboardCardContent(
+                            type = type,
+                            state = state,
+                            onNavigateToAsset = onNavigateToAsset,
+                            onNavigateToBill = onNavigateToBill,
+                            onNavigateToLife = onNavigateToLife
+                        )
+                    }
                 }
             }
         }
@@ -480,8 +483,9 @@ private fun GoalsCard(state: DashboardState, onNavigateToLife: () -> Unit) {
                         )
                     }
                 }
-                Icon(Icons.Filled.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.clickable(onClick = onNavigateToLife))
+                Box(modifier = Modifier.size(48.dp).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onNavigateToLife() }, contentAlignment = Alignment.Center) {
+                    Icon(Icons.Filled.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
             if (state.recentGoals.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(12.dp))
@@ -532,11 +536,12 @@ private fun AnniversariesCard(state: DashboardState, onNavigateToLife: () -> Uni
                     Spacer(modifier = Modifier.width(10.dp))
                     Column {
                         Text(stringResource(R.string.dashboard_card_anniversaries), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        Text(stringResource(R.string.dashboard_anniversaries_count, state.anniversaryCount), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(                            stringResource(R.string.dashboard_anniversaries_count, state.anniversaryCount), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
-                Icon(Icons.Filled.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.clickable(onClick = onNavigateToLife))
+                Box(modifier = Modifier.size(48.dp).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onNavigateToLife() }, contentAlignment = Alignment.Center) {
+                    Icon(Icons.Filled.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
             if (state.upcomingAnniversaries.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(12.dp))
