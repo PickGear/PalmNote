@@ -11,6 +11,8 @@ import kotlinx.coroutines.runBlocking
 import java.security.MessageDigest
 import java.security.SecureRandom
 import java.util.Base64
+import javax.crypto.SecretKeyFactory
+import javax.crypto.spec.PBEKeySpec
 import javax.inject.Inject
 
 class AppLockManager @Inject constructor(
@@ -39,7 +41,19 @@ class AppLockManager @Inject constructor(
     fun verifyPin(pin: String): Boolean {
         val storedPin = preferencesManager.getEncryptedPin()
         if (storedPin.isEmpty()) return false
-        return hashPin(pin) == storedPin
+        
+        // PBKDF2 (new format)
+        if (storedPin.startsWith(PBKDF2_PREFIX)) {
+            return verifyPbkdf2Pin(pin, storedPin)
+        }
+        
+        // Legacy SHA-256 verification
+        val isValid = hashPinLegacy(pin) == storedPin
+        if (isValid) {
+            val newHash = hashPin(pin)
+            runBlocking { preferencesManager.setEncryptedPin(newHash) }
+        }
+        return isValid
     }
 
     fun setPin(pin: String) {
@@ -76,12 +90,36 @@ class AppLockManager @Inject constructor(
         return cachedIsLockEnabled && cachedHasPin && _lockState.value is AppLockState.Locked
     }
 
+    /** PBKDF2 hash: pbkdf2:<iterations>:<base64(salt)>:<base64(hash)> */
     private fun hashPin(pin: String): String {
+        val salt = ByteArray(SALT_SIZE)
+        SecureRandom().nextBytes(salt)
+        val spec = PBEKeySpec(pin.toCharArray(), salt, PBKDF2_ITERATIONS, KEY_LENGTH)
+        val factory = SecretKeyFactory.getInstance(PBKDF2_ALGORITHM)
+        val hash = factory.generateSecret(spec).encoded
+        return "${PBKDF2_PREFIX}${PBKDF2_ITERATIONS}:${Base64.getEncoder().encodeToString(salt)}:${Base64.getEncoder().encodeToString(hash)}"
+    }
+
+    private fun verifyPbkdf2Pin(pin: String, stored: String): Boolean {
+        return try {
+            val parts = stored.removePrefix(PBKDF2_PREFIX).split(":")
+            if (parts.size != 3) false
+            else {
+                val iterations = parts[0].toInt()
+                val salt = Base64.getDecoder().decode(parts[1])
+                val expected = Base64.getDecoder().decode(parts[2])
+                val spec = PBEKeySpec(pin.toCharArray(), salt, iterations, expected.size * 8)
+                val actual = SecretKeyFactory.getInstance(PBKDF2_ALGORITHM).generateSecret(spec).encoded
+                MessageDigest.isEqual(actual, expected)
+            }
+        } catch (_: Exception) { false }
+    }
+
+    /** Legacy SHA-256 (for migration only) */
+    private fun hashPinLegacy(pin: String): String {
         val salt = getOrCreateSalt()
         val digest = MessageDigest.getInstance("SHA-256")
-        val saltedPin = salt + pin
-        val hash = digest.digest(saltedPin.toByteArray())
-        return Base64.getEncoder().encodeToString(hash)
+        return Base64.getEncoder().encodeToString(digest.digest((salt + pin).toByteArray()))
     }
 
     private fun getOrCreateSalt(): String {
@@ -93,5 +131,13 @@ class AppLockManager @Inject constructor(
             prefs.edit().putString("pin_salt", salt).apply()
         }
         return salt
+    }
+
+    companion object {
+        private const val PBKDF2_ALGORITHM = "PBKDF2WithHmacSHA256"
+        private const val PBKDF2_ITERATIONS = 100000
+        private const val SALT_SIZE = 16
+        private const val KEY_LENGTH = 256
+        private const val PBKDF2_PREFIX = "pbkdf2:"
     }
 }

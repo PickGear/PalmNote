@@ -45,15 +45,11 @@ class LifeViewModel @Inject constructor(
     private val focusRepo: FocusRecordRepository,
     private val momentRepo: LifeMomentRepository,
     private val moodRepo: MoodDiaryRepository,
-    private val dataSeeder: com.palmnote.data.LifeDataSeeder
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(LifeUiState())
     val uiState: StateFlow<LifeUiState> = _uiState.asStateFlow()
 
     init {
-        viewModelScope.launch {
-            try { dataSeeder.seedIfEmpty() } catch (e: Exception) { _uiState.update { it.copy(error = application.getString(R.string.life_data_init_error)) } }
-        }
         val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
         val greet = when (hour) { in 0..4 -> application.getString(R.string.greeting_night); in 5..8 -> application.getString(R.string.greeting_morning); in 9..11 -> application.getString(R.string.greeting_forenoon); in 12..13 -> application.getString(R.string.greeting_noon); in 14..17 -> application.getString(R.string.greeting_afternoon); else -> application.getString(R.string.greeting_evening) }
         _uiState.update { it.copy(greeting = greet) }
@@ -100,7 +96,7 @@ class LifeViewModel @Inject constructor(
     }
 
     fun retry() {
-        _uiState.update { it.copy(error = null, isLoading = true) }
+        _uiState.update { it.copy(error = null) }
         observeTemplates()
     }
 
