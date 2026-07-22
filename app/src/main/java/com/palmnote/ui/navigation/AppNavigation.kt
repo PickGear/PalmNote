@@ -60,7 +60,8 @@ import com.palmnote.ui.settings.ReminderSettingsScreen
 import com.palmnote.ui.settings.ManageCategoryScreen
 import com.palmnote.ui.settings.DataStorageScreen
 
-import androidx.hilt.navigation.compose.hiltViewModel
+import com.palmnote.PalmNoteApp
+import com.palmnote.ui.components.simpleViewModel
 import com.palmnote.ui.life.common.LifeNavHost
 import com.palmnote.ui.backup.BackupScreen
 import com.palmnote.ui.theme.*
@@ -126,19 +127,14 @@ fun PalmNoteNavHost() {
     val context = LocalContext.current
     val startDest by context.dataStore.data.map { prefs ->
         prefs[stringPreferencesKey("default_start_page")] ?: "dashboard"
-    }.collectAsState(initial = null)
+    }.collectAsState(initial = "dashboard")
 
-    if (startDest != null) {
         Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = ScaffoldDefaults.contentWindowInsets
             .exclude(WindowInsets.navigationBars),
         bottomBar = {
-            AnimatedVisibility(
-                visible = showBottomBar,
-                enter = fadeIn(tween(250)),
-                exit = fadeOut(tween(250))
-            ) {
+            if (showBottomBar) {
                 Surface(
                     color = MaterialTheme.colorScheme.background,
                     shadowElevation = 0.dp
@@ -205,7 +201,7 @@ fun PalmNoteNavHost() {
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = startDest!!,
+            startDestination = startDest,
             modifier = Modifier.padding(innerPadding),
             enterTransition = {
                 fadeIn(animationSpec = tween(250))
@@ -366,14 +362,14 @@ fun PalmNoteNavHost() {
             composable(Route.GeneralSettings) {
                 GeneralSettingsScreen(
                     onNavigateBack = { navController.popBackStack() },
-                    viewModel = hiltViewModel()
+                    viewModel = simpleViewModel { PalmNoteApp.container.settingsViewModel() }
                 )
             }
 
             composable(Route.ReminderSettings) {
                 ReminderSettingsScreen(
                     onNavigateBack = { navController.popBackStack() },
-                    viewModel = hiltViewModel()
+                    viewModel = simpleViewModel { PalmNoteApp.container.settingsViewModel() }
                 )
             }
 
@@ -392,7 +388,7 @@ fun PalmNoteNavHost() {
                     onNavigateToRecycleBin = { navController.navigate(Route.RecycleBin) },
                     onNavigateToDataClear = { navController.navigate(Route.DataClear) },
                     onNavigateToBackup = { navController.navigate(Route.Backup) },
-                    viewModel = hiltViewModel()
+                    viewModel = simpleViewModel { PalmNoteApp.container.settingsViewModel() }
                 )
             }
 
@@ -483,9 +479,5 @@ fun PalmNoteNavHost() {
 
 
         }
-    }
-    }
-    else {
-        Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background))
     }
 }

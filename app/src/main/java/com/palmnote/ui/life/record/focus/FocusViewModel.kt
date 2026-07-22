@@ -6,20 +6,18 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.palmnote.data.db.entity.FocusRecord
 import com.palmnote.domain.repository.FocusRecordRepository
-import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
+
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.ZoneId
-import javax.inject.Inject
+
 
 data class FocusUiState(val todayMinutes: Int = 0, val totalMinutes: Int = 0, val isLoading: Boolean = true, val error: String? = null)
 
-@HiltViewModel
-class FocusViewModel @Inject constructor(
-    @ApplicationContext private val context: Context,
+class FocusViewModel(
+    private val context: Context,
     private val repo: FocusRecordRepository
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(FocusUiState())

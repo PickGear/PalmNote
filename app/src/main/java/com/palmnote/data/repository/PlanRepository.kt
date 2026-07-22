@@ -4,11 +4,7 @@ import com.palmnote.data.db.dao.PlanDao
 import com.palmnote.data.db.entity.Plan
 import kotlinx.coroutines.flow.Flow
 import com.palmnote.domain.repository.PlanRepository
-import javax.inject.Inject
-import javax.inject.Singleton
-
-@Singleton
-class PlanRepository @Inject constructor(
+class PlanRepository(
     private val planDao: PlanDao
 ) : PlanRepository {
     override fun getAllPlans(): Flow<List<Plan>> = planDao.getAllPlans()

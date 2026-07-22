@@ -16,14 +16,12 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.palmnote.data.worker.LifeDailyCheckWorker
-import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import android.util.Log
 import java.util.Calendar
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import javax.inject.Inject
+
 
 @Stable
 data class SettingsState(
@@ -55,9 +53,8 @@ data class SettingsState(
     val profileAvatarPath: String = ""
 )
 
-@HiltViewModel
-class SettingsViewModel @Inject constructor(
-    @ApplicationContext private val context: Context,
+class SettingsViewModel(
+    private val context: Context,
     private val preferencesManager: PreferencesManager,
     private val csvDataExporter: CsvDataExporter,
     private val calendarSyncManager: CalendarSyncManager,

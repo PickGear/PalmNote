@@ -9,13 +9,9 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.runBlocking
 import com.palmnote.ui.dashboard.DashboardCardConfig
-import javax.inject.Inject
-import javax.inject.Singleton
-
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "palmnote_preferences")
 
-@Singleton
-class PreferencesManager @Inject constructor(
+class PreferencesManager(
     private val context: Context
 ) {
     companion object {

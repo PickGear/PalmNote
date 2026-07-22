@@ -6,15 +6,13 @@ import com.palmnote.data.db.entity.LifeItem
 import com.palmnote.data.db.entity.LifeTemplate
 import com.palmnote.domain.repository.LifeItemRepository
 import com.palmnote.domain.repository.LifeTemplateRepository
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
-import javax.inject.Inject
+
 
 data class SubscriptionUiState(val template: LifeTemplate? = null, val items: List<LifeItem> = emptyList(), val isLoading: Boolean = true)
 
-@HiltViewModel
-class SubscriptionViewModel @Inject constructor(
+class SubscriptionViewModel(
     itemRepo: LifeItemRepository,
     templateRepo: LifeTemplateRepository
 ) : BaseLifeViewModel<SubscriptionUiState>(itemRepo, templateRepo) {

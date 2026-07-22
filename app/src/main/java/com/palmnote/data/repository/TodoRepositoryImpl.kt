@@ -5,11 +5,7 @@ import com.palmnote.data.db.entity.TodoItem
 import com.palmnote.domain.repository.TodoRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import javax.inject.Inject
-import javax.inject.Singleton
-
-@Singleton
-class TodoRepositoryImpl @Inject constructor(
+class TodoRepositoryImpl(
     private val dao: LegacyDao
 ) : TodoRepository {
     override fun getAllTodos(): Flow<List<TodoItem>> = dao.getAllTodos()

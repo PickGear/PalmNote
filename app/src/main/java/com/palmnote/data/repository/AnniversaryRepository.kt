@@ -4,11 +4,7 @@ import com.palmnote.data.db.dao.AnniversaryDao
 import com.palmnote.data.db.entity.Anniversary
 import kotlinx.coroutines.flow.Flow
 import com.palmnote.domain.repository.AnniversaryRepository
-import javax.inject.Inject
-import javax.inject.Singleton
-
-@Singleton
-class AnniversaryRepository @Inject constructor(
+class AnniversaryRepository(
     private val anniversaryDao: AnniversaryDao
 ) : AnniversaryRepository {
     override fun getAllAnniversaries(): Flow<List<Anniversary>> = anniversaryDao.getAllAnniversaries()

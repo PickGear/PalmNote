@@ -13,9 +13,7 @@ import java.security.SecureRandom
 import java.util.Base64
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.PBEKeySpec
-import javax.inject.Inject
-
-class AppLockManager @Inject constructor(
+class AppLockManager(
     private val context: Context,
     private val preferencesManager: PreferencesManager
 ) {

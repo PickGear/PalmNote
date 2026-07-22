@@ -46,7 +46,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.stringResource
-import androidx.hilt.navigation.compose.hiltViewModel
+import com.palmnote.PalmNoteApp
+import com.palmnote.ui.components.simpleViewModel
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.delay
@@ -107,7 +108,7 @@ fun getCostText(costMode: String, purchasePrice: Double, useCount: Int, daysOwne
 fun AssetScreen(
     onNavigateToDetail: (Long) -> Unit = {},
     onNavigateToAdd: () -> Unit = {},
-    viewModel: AssetViewModel = hiltViewModel()
+    viewModel: AssetViewModel = simpleViewModel { PalmNoteApp.container.assetViewModel() }
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val focusManager = LocalFocusManager.current

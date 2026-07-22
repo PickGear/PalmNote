@@ -34,9 +34,10 @@ import androidx.compose.ui.unit.dp
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import coil3.compose.AsyncImage
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.palmnote.PalmNoteApp
+import com.palmnote.ui.components.simpleViewModel
 import androidx.compose.ui.res.stringResource
 import com.palmnote.R
 import com.palmnote.domain.util.DateUtils
@@ -91,7 +92,7 @@ fun AddAssetScreen(
     assetId: Long? = null,
     onNavigateBack: () -> Unit = {},
     onNavigateToCategory: (String) -> Unit = {},
-    viewModel: AssetViewModel = hiltViewModel()
+    viewModel: AssetViewModel = simpleViewModel { PalmNoteApp.container.assetViewModel() }
 ) {
     val context = LocalContext.current
     val formState by viewModel.formState.collectAsStateWithLifecycle()

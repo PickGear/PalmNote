@@ -18,14 +18,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
+import com.palmnote.PalmNoteApp
 import com.palmnote.R
+import com.palmnote.ui.components.simpleViewModel
 import com.palmnote.ui.components.EmptyState
 import com.palmnote.ui.components.SecondaryTopAppBar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ReportListScreen(onBack: () -> Unit, onItemClick: (Long) -> Unit, viewModel: ReportViewModel = hiltViewModel()) {
+fun ReportListScreen(onBack: () -> Unit, onItemClick: (Long) -> Unit, viewModel: ReportViewModel = simpleViewModel { PalmNoteApp.container.lifeReportViewModel() }) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) { viewModel.load() }
     val rColor = Color(0xFF42A5F5)

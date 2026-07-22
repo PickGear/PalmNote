@@ -25,8 +25,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
+import com.palmnote.PalmNoteApp
 import com.palmnote.R
+import com.palmnote.ui.components.simpleViewModel
 import com.palmnote.data.db.entity.LifeItem
 import com.palmnote.ui.components.SecondaryTopAppBar
 import com.palmnote.ui.components.ModuleSearchBar
@@ -41,7 +42,7 @@ import kotlinx.serialization.json.JsonPrimitive
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SavingListScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Long) -> Unit, onCreateClick: () -> Unit = {}, viewModel: SavingPlanViewModel = hiltViewModel()) {
+fun SavingListScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Long) -> Unit, onCreateClick: () -> Unit = {}, viewModel: SavingPlanViewModel = simpleViewModel { PalmNoteApp.container.savingPlanViewModel() }) {
     val state by viewModel.uiState.collectAsState()
     LaunchedEffect(templateId) { viewModel.load(templateId) }
     var filter by remember { mutableStateOf(0) }

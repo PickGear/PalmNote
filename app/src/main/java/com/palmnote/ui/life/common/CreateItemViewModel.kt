@@ -9,11 +9,9 @@ import com.palmnote.data.db.entity.LifeTemplate
 import com.palmnote.domain.repository.LifeItemRepository
 import com.palmnote.domain.repository.LifeTemplateRepository
 import com.palmnote.domain.service.TriggerEventBus
-import dagger.hilt.android.lifecycle.HiltViewModel
-
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import javax.inject.Inject
+
 
 data class CreateItemUiState(
     val template: LifeTemplate? = null,
@@ -24,8 +22,7 @@ data class CreateItemUiState(
     val saveError: String? = null
 )
 
-@HiltViewModel
-class CreateItemViewModel @Inject constructor(
+class CreateItemViewModel(
     private val application: Application,
     private val itemRepo: LifeItemRepository,
     private val templateRepo: LifeTemplateRepository,

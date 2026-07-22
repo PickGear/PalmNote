@@ -16,8 +16,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import com.palmnote.PalmNoteApp
 import com.palmnote.R
+import com.palmnote.ui.components.simpleViewModel
 import com.palmnote.ui.components.*
 import com.palmnote.ui.theme.*
 
@@ -25,7 +26,7 @@ import com.palmnote.ui.theme.*
 @Composable
 fun DataClearScreen(
     onNavigateBack: () -> Unit = {},
-    viewModel: DataClearViewModel = hiltViewModel()
+    viewModel: DataClearViewModel = simpleViewModel { PalmNoteApp.container.dataClearViewModel() }
 ) {
     var showConfirmDialog by remember { mutableStateOf(false) }
     var clearTarget by remember { mutableStateOf("") }

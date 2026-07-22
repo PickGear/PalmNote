@@ -21,8 +21,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.palmnote.PalmNoteApp
+import com.palmnote.ui.components.simpleViewModel
 import com.palmnote.R
 import com.palmnote.domain.util.CurrencyUtils
 import com.palmnote.domain.util.DateUtils
@@ -36,7 +37,7 @@ fun AddBillScreen(
     onNavigateBack: () -> Unit = {},
     onNavigateToWallet: () -> Unit = {},
     onNavigateToCategory: (String) -> Unit = {},
-    viewModel: BillViewModel = hiltViewModel()
+    viewModel: BillViewModel = simpleViewModel { PalmNoteApp.container.billViewModel() }
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val formState by viewModel.formState.collectAsStateWithLifecycle()

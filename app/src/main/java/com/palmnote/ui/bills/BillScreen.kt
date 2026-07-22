@@ -38,8 +38,9 @@ import java.util.Calendar
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.res.stringResource
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.palmnote.PalmNoteApp
+import com.palmnote.ui.components.simpleViewModel
 import com.palmnote.R
 import com.palmnote.data.db.entity.Bill
 import com.palmnote.data.db.entity.getDisplayName
@@ -58,7 +59,7 @@ fun BillScreen(
     onNavigateToReport: (Long, String) -> Unit = { _, _ -> },
     onNavigateToImportCsv: () -> Unit = {},
     onNavigateToAccountBook: () -> Unit = {},
-    viewModel: BillViewModel = hiltViewModel()
+    viewModel: BillViewModel = simpleViewModel { PalmNoteApp.container.billViewModel() }
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val state by viewModel.state.collectAsStateWithLifecycle()

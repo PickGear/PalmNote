@@ -4,11 +4,7 @@ import com.palmnote.data.db.dao.AchievementDao
 import com.palmnote.data.db.entity.Achievement
 import com.palmnote.domain.repository.AchievementRepository
 import kotlinx.coroutines.flow.Flow
-import javax.inject.Inject
-import javax.inject.Singleton
-
-@Singleton
-class AchievementRepositoryImpl @Inject constructor(
+class AchievementRepositoryImpl(
     private val dao: AchievementDao
 ) : AchievementRepository {
     override fun getAllAchievements(): Flow<List<Achievement>> = dao.getAllAchievements()

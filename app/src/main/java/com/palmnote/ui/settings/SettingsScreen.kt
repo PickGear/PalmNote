@@ -24,8 +24,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.palmnote.PalmNoteApp
+import com.palmnote.ui.components.simpleViewModel
 import com.palmnote.ui.components.AppDialog
 import com.palmnote.ui.components.CompactTopAppBar
 import com.palmnote.R
@@ -87,7 +88,7 @@ fun SettingsScreen(
     onNavigateToManageCategory: () -> Unit = {},
     onNavigateToDataStorage: () -> Unit = {},
     onNavigateToAbout: () -> Unit = {},
-    viewModel: SettingsViewModel = hiltViewModel()
+    viewModel: SettingsViewModel = simpleViewModel { PalmNoteApp.container.settingsViewModel() }
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var showProfileEdit by remember { mutableStateOf(false) }

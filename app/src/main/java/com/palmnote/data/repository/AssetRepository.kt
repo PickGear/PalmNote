@@ -3,11 +3,7 @@ package com.palmnote.data.repository
 import com.palmnote.data.db.dao.AssetDao
 import com.palmnote.data.db.entity.Asset
 import com.palmnote.domain.repository.AssetRepository
-import javax.inject.Inject
-import javax.inject.Singleton
-
-@Singleton
-class AssetRepository @Inject constructor(
+class AssetRepository(
     private val assetDao: AssetDao
 ) : AssetRepository {
     override fun getAllAssets() = assetDao.getAllAssets()

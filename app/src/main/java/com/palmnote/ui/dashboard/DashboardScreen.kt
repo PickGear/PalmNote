@@ -42,8 +42,9 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import kotlin.math.roundToInt
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.palmnote.PalmNoteApp
+import com.palmnote.ui.components.simpleViewModel
 import com.palmnote.R
 import com.palmnote.data.db.dao.CategoryCount
 import com.palmnote.domain.util.CurrencyUtils
@@ -59,7 +60,7 @@ fun DashboardScreen(
     onNavigateToLife: () -> Unit = {},
     onNavigateToSettings: () -> Unit = {},
     onNavigateToSearch: () -> Unit = {},
-    viewModel: DashboardViewModel = hiltViewModel()
+    viewModel: DashboardViewModel = simpleViewModel { PalmNoteApp.container.dashboardViewModel() }
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val rawConfigs by viewModel.visibleConfigs.collectAsStateWithLifecycle()

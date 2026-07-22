@@ -29,8 +29,9 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.palmnote.PalmNoteApp
+import com.palmnote.ui.components.simpleViewModel
 import com.palmnote.R
 import com.palmnote.data.db.entity.FocusRecord
 import com.palmnote.ui.components.AppDialog
@@ -44,7 +45,7 @@ import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FocusTimerScreen(onBack: () -> Unit, viewModel: FocusViewModel = hiltViewModel()) {
+fun FocusTimerScreen(onBack: () -> Unit, viewModel: FocusViewModel = simpleViewModel { PalmNoteApp.container.focusViewModel() }) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val todayRecords by viewModel.todayRecords.collectAsStateWithLifecycle(initialValue = emptyList())
     LaunchedEffect(Unit) { viewModel.load() }

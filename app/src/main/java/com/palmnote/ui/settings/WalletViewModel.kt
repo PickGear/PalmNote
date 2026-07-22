@@ -4,13 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.palmnote.data.db.entity.Wallet
 import com.palmnote.domain.repository.WalletRepository
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
-@HiltViewModel
-class WalletViewModel @Inject constructor(
+
+class WalletViewModel(
     private val walletRepository: WalletRepository
 ) : ViewModel() {
 

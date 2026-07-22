@@ -6,18 +6,16 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.palmnote.data.db.dao.LegacyDao
 import com.palmnote.data.db.entity.MoodDiary
-import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
+
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import javax.inject.Inject
+
 
 data class MoodUiState(val diaries: List<MoodDiary> = emptyList(), val isLoading: Boolean = true, val showSheet: Boolean = false, val error: String? = null)
 
-@HiltViewModel
-class MoodViewModel @Inject constructor(
-    @ApplicationContext private val context: Context,
+class MoodViewModel(
+    private val context: Context,
     private val legacyDao: LegacyDao
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(MoodUiState())

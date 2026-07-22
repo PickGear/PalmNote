@@ -7,14 +7,9 @@ import com.palmnote.data.db.entity.AccountBook
 import com.palmnote.ui.theme.AppIcon
 import kotlinx.coroutines.flow.Flow
 import com.palmnote.domain.repository.AccountBookRepository
-import dagger.hilt.android.qualifiers.ApplicationContext
-import javax.inject.Inject
-import javax.inject.Singleton
-
-@Singleton
-class AccountBookRepository @Inject constructor(
+class AccountBookRepository(
     private val accountBookDao: AccountBookDao,
-    @ApplicationContext private val context: Context
+    private val context: Context
 ) : AccountBookRepository {
     override fun getAllBooks(): Flow<List<AccountBook>> = accountBookDao.getAllBooks()
 

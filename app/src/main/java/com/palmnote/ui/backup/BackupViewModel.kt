@@ -5,17 +5,15 @@ import androidx.lifecycle.viewModelScope
 import com.palmnote.data.backup.BackupInfo
 import com.palmnote.data.backup.BackupRepository
 import com.palmnote.data.backup.BackupState
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
-import javax.inject.Inject
 
-@HiltViewModel
-class BackupViewModel @Inject constructor(
+
+class BackupViewModel(
     private val backupRepository: BackupRepository
 ) : ViewModel() {
 

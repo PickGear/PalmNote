@@ -13,7 +13,6 @@ import com.palmnote.domain.repository.AssetRepository
 import com.palmnote.domain.repository.BillRepository
 import com.palmnote.domain.repository.GoalRepository
 import com.palmnote.domain.repository.MomentRepository
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
@@ -22,7 +21,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import javax.inject.Inject
+
 
 @Stable
 data class SearchState(
@@ -35,8 +34,7 @@ data class SearchState(
     val isSearching: Boolean = false
 )
 
-@HiltViewModel
-class SearchViewModel @Inject constructor(
+class SearchViewModel(
     private val assetRepository: AssetRepository,
     private val billRepository: BillRepository,
     private val goalRepository: GoalRepository,

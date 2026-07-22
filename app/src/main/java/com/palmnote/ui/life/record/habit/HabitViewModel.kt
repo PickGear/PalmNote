@@ -9,15 +9,14 @@ import com.palmnote.data.db.entity.Goal
 import com.palmnote.data.db.entity.GoalCheckIn
 import com.palmnote.domain.repository.GoalRepository
 import com.palmnote.ui.theme.AppIcon
-import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
+
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
-import javax.inject.Inject
+
 
 data class HabitUiState(
     val habits: List<Goal> = emptyList(),
@@ -27,9 +26,8 @@ data class HabitUiState(
     val error: String? = null
 )
 
-@HiltViewModel
-class HabitViewModel @Inject constructor(
-    @ApplicationContext private val context: Context,
+class HabitViewModel(
+    private val context: Context,
     private val goalRepo: GoalRepository,
     private val checkInDao: GoalCheckInDao
 ) : ViewModel() {

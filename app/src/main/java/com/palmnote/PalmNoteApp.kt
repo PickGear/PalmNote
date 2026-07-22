@@ -1,7 +1,6 @@
 ﻿package com.palmnote
 
 import android.app.Application
-import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
@@ -12,11 +11,10 @@ import com.palmnote.data.db.AppDatabase
 import com.palmnote.data.datastore.PreferencesManager
 import com.palmnote.data.worker.LifeDailyCheckWorker
 import com.palmnote.data.worker.AutoBackupWorker
+import com.palmnote.di.AppContainer
 import com.palmnote.ui.notification.NotificationHelper
-import dagger.hilt.android.HiltAndroidApp
 import java.util.Calendar
 import java.util.concurrent.TimeUnit
-import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -24,42 +22,36 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
-@HiltAndroidApp
-class PalmNoteApp : Application(), Configuration.Provider {
+class PalmNoteApp : Application() {
 
     companion object {
         lateinit var instance: PalmNoteApp
             private set
+        lateinit var container: AppContainer
+            private set
     }
-
-    @Inject lateinit var workerFactory: HiltWorkerFactory
-    @Inject lateinit var preferencesManager: PreferencesManager
-    @Inject lateinit var lifeDataSeeder: LifeDataSeeder
-    @Inject lateinit var database: AppDatabase
 
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     override fun onCreate() {
         super.onCreate()
         instance = this
+        container = AppContainer(this)
         applySavedLanguage()
         NotificationHelper.createChannels(this)
         applicationScope.launch {
-            database.openHelper.writableDatabase
+            container.database.openHelper.writableDatabase
             scheduleDailyCheck()
             scheduleAutoBackup()
             runStartupCheck()
-            lifeDataSeeder.seedIfEmpty()
+            container.lifeDataSeeder.seedIfEmpty()
         }
     }
 
-    override val workManagerConfiguration: Configuration
-        get() = Configuration.Builder().setWorkerFactory(workerFactory).build()
-
     private fun scheduleDailyCheck() {
         applicationScope.launch {
-            val hour = preferencesManager.dailyReminderHour.first()
-            val minute = preferencesManager.dailyReminderMinute.first()
+            val hour = container.preferencesManager.dailyReminderHour.first()
+            val minute = container.preferencesManager.dailyReminderMinute.first()
             val now = Calendar.getInstance()
             val target = Calendar.getInstance().apply {
                 set(Calendar.HOUR_OF_DAY, hour)
@@ -92,7 +84,7 @@ class PalmNoteApp : Application(), Configuration.Provider {
     }
 
     private fun applySavedLanguage() {
-        val savedLanguage = runBlocking { preferencesManager.language.first() }
+        val savedLanguage = runBlocking { container.preferencesManager.language.first() }
         com.palmnote.ui.settings.LanguageHelper.applyLanguage(savedLanguage)
     }
 }

@@ -26,8 +26,9 @@ import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.palmnote.PalmNoteApp
+import com.palmnote.ui.components.simpleViewModel
 import com.palmnote.R
 import com.palmnote.data.db.dao.CategoryTotal
 import com.palmnote.data.db.dao.DailySummary
@@ -46,7 +47,7 @@ fun ReportScreen(
     onNavigateToAddBill: () -> Unit = {},
     selectedBookId: Long = -1L,
     bookName: String? = null,
-    viewModel: ReportViewModel = hiltViewModel()
+    viewModel: ReportViewModel = simpleViewModel { PalmNoteApp.container.billReportViewModel() }
 ) {
     val resolvedBookName = bookName ?: stringResource(R.string.report_all_books)
     LaunchedEffect(selectedBookId) {

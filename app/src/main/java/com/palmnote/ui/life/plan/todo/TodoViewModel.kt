@@ -6,14 +6,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.palmnote.data.db.entity.LifeItem
 import com.palmnote.domain.repository.LifeItemRepository
-import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
+
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import javax.inject.Inject
+
 
 data class TodoUiState(
     val items: List<LifeItem> = emptyList(),
@@ -21,9 +20,8 @@ data class TodoUiState(
     val error: String? = null
 )
 
-@HiltViewModel
-class TodoViewModel @Inject constructor(
-    @ApplicationContext private val context: Context,
+class TodoViewModel(
+    private val context: Context,
     private val itemRepo: LifeItemRepository
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(TodoUiState())

@@ -6,11 +6,7 @@ import com.palmnote.data.db.entity.PlanList
 import com.palmnote.data.db.entity.PlanListItem
 import kotlinx.coroutines.flow.Flow
 import com.palmnote.domain.repository.PlanListRepository
-import javax.inject.Inject
-import javax.inject.Singleton
-
-@Singleton
-class PlanListRepository @Inject constructor(
+class PlanListRepository(
     private val planListDao: PlanListDao,
     private val planListItemDao: PlanListItemDao
 ) : PlanListRepository {

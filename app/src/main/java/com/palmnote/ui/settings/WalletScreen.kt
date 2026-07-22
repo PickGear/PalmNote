@@ -22,8 +22,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.palmnote.PalmNoteApp
+import com.palmnote.ui.components.simpleViewModel
 import com.palmnote.R
 import com.palmnote.data.db.entity.Wallet
 import com.palmnote.domain.util.CurrencyUtils
@@ -36,7 +37,7 @@ import com.palmnote.ui.theme.*
 @Composable
 fun WalletScreen(
     onNavigateBack: () -> Unit = {},
-    viewModel: WalletViewModel = hiltViewModel()
+    viewModel: WalletViewModel = simpleViewModel { PalmNoteApp.container.walletViewModel() }
 ) {
     val wallets by viewModel.wallets.collectAsStateWithLifecycle()
     val totalBalance by viewModel.totalBalance.collectAsStateWithLifecycle()

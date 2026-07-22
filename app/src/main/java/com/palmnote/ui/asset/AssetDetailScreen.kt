@@ -41,8 +41,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import androidx.activity.compose.BackHandler
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.palmnote.PalmNoteApp
+import com.palmnote.ui.components.simpleViewModel
 import com.palmnote.data.db.entity.UsageRecord
 import com.palmnote.data.db.entity.getWarrantyStatusText
 import com.palmnote.data.db.entity.getInsuranceStatusText
@@ -62,7 +63,7 @@ fun AssetDetailScreen(
     assetId: Long,
     onNavigateBack: () -> Unit = {},
     onNavigateToEdit: (Long) -> Unit = {},
-    viewModel: AssetViewModel = hiltViewModel()
+    viewModel: AssetViewModel = simpleViewModel { PalmNoteApp.container.assetViewModel() }
 ) {
     val context = LocalContext.current
     val detailState by viewModel.detailState.collectAsStateWithLifecycle()

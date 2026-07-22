@@ -8,12 +8,11 @@ import com.palmnote.data.db.dao.DailySummary
 import com.palmnote.data.db.dao.MonthTotal
 import com.palmnote.domain.repository.BillRepository
 import com.palmnote.domain.util.DateUtils
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.util.Calendar
-import javax.inject.Inject
+
 
 @Stable
 data class ReportData(
@@ -39,8 +38,7 @@ data class ReportState(
     val selectedBookId: Long = -1L
 )
 
-@HiltViewModel
-class ReportViewModel @Inject constructor(
+class ReportViewModel(
     private val billRepository: BillRepository
 ) : ViewModel() {
 

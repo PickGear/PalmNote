@@ -22,7 +22,6 @@ import com.palmnote.domain.repository.BillRepository
 import com.palmnote.domain.repository.UsageRecordRepository
 import com.palmnote.domain.util.DateUtils
 import com.palmnote.ui.components.toComposeColor
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -31,7 +30,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
-import javax.inject.Inject
+
 
 enum class AssetFilter { ALL, HELD, AWAY, REMOVED }
 enum class SortOption { NAME, PRICE, DAILY_COST, DATE, RECENT }
@@ -141,8 +140,7 @@ data class AddAssetFormState(
     val dateError: String? = null
 )
 
-@HiltViewModel
-class AssetViewModel @Inject constructor(
+class AssetViewModel(
     private val application: Application,
     private val assetRepository: AssetRepository,
     private val usageRecordRepository: UsageRecordRepository,

@@ -7,18 +7,14 @@ import android.provider.CalendarContract
 import com.palmnote.R
 import com.palmnote.data.db.entity.Anniversary
 import com.palmnote.data.repository.AnniversaryRepository
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import java.util.Calendar
 import java.util.TimeZone
-import javax.inject.Inject
-import javax.inject.Singleton
 
-@Singleton
-class CalendarSyncManager @Inject constructor(
-    @ApplicationContext private val context: Context,
+class CalendarSyncManager(
+    private val context: Context,
     private val anniversaryRepository: AnniversaryRepository
 ) {
     companion object {

@@ -22,9 +22,10 @@ import androidx.compose.ui.res.stringResource
 import com.palmnote.ui.theme.AppIcon
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.palmnote.PalmNoteApp
 import com.palmnote.R
+import com.palmnote.ui.components.simpleViewModel
 import com.palmnote.data.db.entity.AccountBook
 import com.palmnote.data.db.entity.getDisplayName
 import com.palmnote.data.db.entity.getDisplayDescription
@@ -38,7 +39,7 @@ private val themeColors = listOf("#2D4A3E", "#FF8C42", "#34A853", "#EA4335", "#F
 @Composable
 fun AccountBookManageScreen(
     onNavigateBack: () -> Unit,
-    viewModel: BillViewModel = hiltViewModel()
+    viewModel: BillViewModel = simpleViewModel { PalmNoteApp.container.billViewModel() }
 ) {
     val context = LocalContext.current
     val state by viewModel.state.collectAsStateWithLifecycle()

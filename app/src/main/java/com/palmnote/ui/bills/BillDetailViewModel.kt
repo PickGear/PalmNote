@@ -5,18 +5,16 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.palmnote.data.db.entity.Bill
 import com.palmnote.domain.repository.BillRepository
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import javax.inject.Inject
+
 
 @Stable
 data class BillDetailState(val bill: Bill? = null)
 
-@HiltViewModel
-class BillDetailViewModel @Inject constructor(
+class BillDetailViewModel(
     private val billRepository: BillRepository
 ) : ViewModel() {
     private val _state = MutableStateFlow(BillDetailState())

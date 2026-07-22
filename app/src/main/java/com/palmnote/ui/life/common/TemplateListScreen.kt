@@ -23,8 +23,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
+import com.palmnote.PalmNoteApp
+import com.palmnote.ui.components.simpleViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
@@ -35,9 +36,8 @@ import com.palmnote.domain.repository.LifeItemRepository
 import com.palmnote.ui.theme.iconFromName
 import com.palmnote.ui.life.common.displayName
 import kotlinx.coroutines.launch
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
-import javax.inject.Inject
+
 
 private val emptyStateConfigs: Map<String, Triple<ImageVector, Int, Int>> = mapOf(
     "savings" to Triple(Icons.Default.Star, R.string.life_empty_saving_title, R.string.life_empty_saving_subtitle),
@@ -57,8 +57,7 @@ private val emptyStateConfigs: Map<String, Triple<ImageVector, Int, Int>> = mapO
     "BarChart" to Triple(Icons.Default.BarChart, R.string.life_empty_report_title, R.string.life_empty_report_subtitle)
 )
 
-@HiltViewModel
-class GenericListViewModel @Inject constructor(
+class GenericListViewModel(
     private val itemRepo: LifeItemRepository
 ) : ViewModel() {
     fun loadPaged(templateId: Long): Flow<PagingData<LifeItem>> {
@@ -84,7 +83,7 @@ fun GenericTemplateListScreen(
     onBack: () -> Unit,
     onItemClick: (Long) -> Unit,
     onCreateClick: () -> Unit,
-    viewModel: GenericListViewModel = hiltViewModel()
+    viewModel: GenericListViewModel = simpleViewModel { PalmNoteApp.container.genericListViewModel() }
 ) {
     val pagingItems = viewModel.loadPaged(templateId).collectAsLazyPagingItems()
     val emptyConfig = remember(template.icon) { emptyStateConfigs[template.icon] ?: Triple(Icons.Default.Inbox, R.string.life_empty_default_title, R.string.life_empty_default_subtitle) }

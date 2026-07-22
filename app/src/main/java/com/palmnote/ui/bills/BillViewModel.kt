@@ -20,14 +20,12 @@ import com.palmnote.ui.components.CategoryItem
 import com.palmnote.ui.components.toComposeColor
 import androidx.compose.runtime.Stable
 import com.palmnote.ui.theme.AppIcon
-import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import android.content.Context
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import javax.inject.Inject
+
 
 @Stable
 data class BillState(
@@ -85,9 +83,8 @@ data class AddBillFormState(
     val categoryError: String? = null
 )
 
-@HiltViewModel
-class BillViewModel @Inject constructor(
-    @ApplicationContext private val context: Context,
+class BillViewModel(
+    private val context: Context,
     private val billRepository: BillRepository,
     private val budgetRepository: BudgetRepository,
     private val walletRepository: WalletRepository,
