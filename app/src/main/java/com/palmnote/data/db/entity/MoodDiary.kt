@@ -1,5 +1,6 @@
 package com.palmnote.data.db.entity
 
+import androidx.compose.runtime.Immutable
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
@@ -8,6 +9,7 @@ import androidx.room.PrimaryKey
     Index(value = ["date"], name = "idx_mood_date"),
     Index(value = ["lifeItemId"], name = "idx_mood_life_item")
 ])
+@Immutable
 data class MoodDiary(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,

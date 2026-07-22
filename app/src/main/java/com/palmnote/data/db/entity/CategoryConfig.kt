@@ -3,6 +3,7 @@ package com.palmnote.data.db.entity
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import androidx.compose.runtime.Immutable
 import com.palmnote.ui.theme.AppIcon
 
 /**
@@ -10,6 +11,7 @@ import com.palmnote.ui.theme.AppIcon
  * 支持资产分类、账单分类、目标分类、纪念日类型、瞬间分类
  */
 @Entity(tableName = "category_configs")
+@Immutable
 data class CategoryConfig(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
@@ -31,6 +33,7 @@ data class CategoryConfig(
  * 可自定义的标签
  */
 @Entity(tableName = "custom_tags")
+@Immutable
 data class CustomTag(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,

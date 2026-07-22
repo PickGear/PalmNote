@@ -5,6 +5,7 @@ import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.palmnote.R
+import androidx.compose.runtime.Immutable
 import com.palmnote.domain.util.DateUtils
 
 @Entity(
@@ -18,6 +19,7 @@ import com.palmnote.domain.util.DateUtils
         Index(value = ["isFavorite", "isDeleted"])
     ]
 )
+@Immutable
 data class Asset(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,

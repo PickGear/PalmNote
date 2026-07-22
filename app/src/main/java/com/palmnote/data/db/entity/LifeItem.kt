@@ -1,5 +1,6 @@
 package com.palmnote.data.db.entity
 
+import androidx.compose.runtime.Immutable
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
@@ -13,6 +14,7 @@ import androidx.room.PrimaryKey
         Index(value = ["status"], name = "idx_items_status")
     ]
 )
+@Immutable
 data class LifeItem(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
