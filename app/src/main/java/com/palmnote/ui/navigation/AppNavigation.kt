@@ -2,25 +2,18 @@ package com.palmnote.ui.navigation
 
 import android.net.Uri
 import androidx.compose.animation.*
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
-import androidx.datastore.preferences.core.stringPreferencesKey
-import com.palmnote.data.datastore.dataStore
-import kotlinx.coroutines.flow.map
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.Dp
@@ -41,6 +34,7 @@ import com.palmnote.ui.asset.AssetDetailScreen
 import com.palmnote.ui.asset.AssetScreen
 import com.palmnote.ui.bills.AddBillScreen
 import com.palmnote.ui.bills.BillScreen
+import com.palmnote.ui.bills.BillViewModel
 import com.palmnote.ui.bills.BillDetailScreen
 import com.palmnote.ui.bills.BudgetScreen
 import com.palmnote.ui.bills.BillImportScreen
@@ -75,7 +69,7 @@ object Route {
     const val Settings = "settings"
     const val AssetDetail = "asset_detail/{assetId}"
     const val AddAsset = "add_asset?assetId={assetId}"
-    const val AddBill = "add_bill?billId={billId}"
+    const val AddBill = "add_bill?billId={billId}&selectedDate={selectedDate}"
     const val BillDetail = "bill_detail/{billId}"
     const val Budget = "budget"
     const val Report = "report?selectedBookId={selectedBookId}&bookName={bookName}"
@@ -161,14 +155,15 @@ fun PalmNoteNavHost() {
                                             indication = null,
                                             interactionSource = remember { MutableInteractionSource() }
                                         ) {
-                                            navController.navigate(item.route) {
-                                                popUpTo(navController.graph.findStartDestination().id) {
-                                                    saveState = true
-                                                }
-                                                launchSingleTop = true
-                                                restoreState = true
-                                            }
-                                        }
+                                             navController.navigate(item.route) {
+                                                 popUpTo(navController.graph.findStartDestination().id) {
+                                                     saveState = true
+                                                 }
+                                                 launchSingleTop = true
+                                                 restoreState = true
+                                             }
+                                             lifeChildAtHome = true
+                                         }
                                         .align(Alignment.CenterVertically)
                                         .padding(top = 5.dp),
                                     horizontalAlignment = Alignment.CenterHorizontally
@@ -265,10 +260,21 @@ fun PalmNoteNavHost() {
                 )
             }
 
-            composable(Route.Bill) {
+            composable(Route.Bill) { backStackEntry ->
+                val billViewModel: BillViewModel = simpleViewModel { PalmNoteApp.container.billViewModel() }
+                LaunchedEffect(Unit) {
+                    backStackEntry.savedStateHandle.getStateFlow<String?>("savedBillType", null)
+                        .collect { type ->
+                            if (type != null) {
+                                billViewModel.setFilterType("ALL")
+                                backStackEntry.savedStateHandle.remove<String>("savedBillType")
+                            }
+                        }
+                }
                 BillScreen(
-                    onNavigateToAdd = {
-                        navController.navigate(Route.AddBill)
+                    viewModel = billViewModel,
+                    onNavigateToAdd = { date ->
+                        navController.navigate("add_bill?selectedDate=$date")
                     },
                     onNavigateToDetail = { billId ->
                         navController.navigate("bill_detail/$billId")
@@ -290,11 +296,19 @@ fun PalmNoteNavHost() {
 
             composable(
                 Route.AddBill,
-                arguments = listOf(navArgument("billId") { type = NavType.LongType; defaultValue = -1L })
+                arguments = listOf(
+                    navArgument("billId") { type = NavType.LongType; defaultValue = -1L },
+                    navArgument("selectedDate") { type = NavType.LongType; defaultValue = -1L }
+                )
             ) { backStackEntry ->
                 val billId = backStackEntry.arguments?.getLong("billId").takeIf { it != -1L }
+                val selectedDate = backStackEntry.arguments?.getLong("selectedDate").takeIf { it != -1L }
                 AddBillScreen(
                     billId = billId,
+                    selectedDate = selectedDate,
+                    onBillSaved = { type ->
+                        navController.previousBackStackEntry?.savedStateHandle?.set("savedBillType", type)
+                    },
                     onNavigateBack = { navController.popBackStack() },
                     onNavigateToWallet = { navController.navigate(Route.Wallet) },
                     onNavigateToCategory = { categoryType ->
@@ -332,7 +346,7 @@ fun PalmNoteNavHost() {
             val bookName = backStackEntry.arguments?.getString("bookName") ?: stringResource(R.string.report_all_books)
                 ReportScreen(
                     onNavigateBack = { navController.popBackStack() },
-                    onNavigateToAddBill = { navController.navigate(Route.AddBill) },
+                    onNavigateToAddBill = { navController.navigate("add_bill") },
                     selectedBookId = selectedBookId,
                     bookName = bookName
                 )

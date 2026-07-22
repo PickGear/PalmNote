@@ -5,7 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.palmnote.R
 import com.palmnote.data.DataCache
 import com.palmnote.data.db.dao.CategoryTotal
-import com.palmnote.data.db.dao.MonthTotal
+
 import com.palmnote.data.db.entity.AccountBook
 import com.palmnote.data.db.entity.Bill
 import com.palmnote.data.db.entity.Budget
@@ -33,6 +33,7 @@ data class BillState(
     val bills: List<Bill> = emptyList(),
     val filteredBills: List<Bill> = emptyList(),
     val currentYearMonth: String = DateUtils.getCurrentYearMonth(),
+    val selectedDay: Int? = null,
     val monthlyExpense: Double = 0.0,
     val monthlyIncome: Double = 0.0,
     val expenseByCategory: List<CategoryTotal> = emptyList(),
@@ -46,7 +47,8 @@ data class BillState(
     val searchQuery: String = "",
     val isSearching: Boolean = false,
     val currentFilter: BillFilter = BillFilter(),
-    val showFilterSheet: Boolean = false
+    val showFilterSheet: Boolean = false,
+    val filterFeedbackSignal: Int = 0
 )
 
 private data class BillDataGroup(
@@ -114,6 +116,9 @@ class BillViewModel(
 
     init {
         DataCache.get<BillState>("bill")?.let { _state.value = it }
+        if (_state.value.selectedDay == null && _state.value.currentYearMonth == DateUtils.getCurrentYearMonth()) {
+            _state.value = _state.value.copy(selectedDay = DateUtils.getDayOfMonth(System.currentTimeMillis()))
+        }
         viewModelScope.launch { accountBookRepository.initDefaultBooks() }
         loadAccountBooks()
         loadAllAccountBooks()
@@ -247,7 +252,7 @@ class BillViewModel(
         }
     }
 
-    private fun loadBillData() {
+    fun loadBillData() {
         billDataJob?.cancel()
         // Bug fix: snapshot state once to avoid race conditions
         val currentState = _state.value
@@ -299,8 +304,13 @@ class BillViewModel(
     }
 
     fun setMonth(yearMonth: String) {
-        _state.value = _state.value.copy(currentYearMonth = yearMonth)
+        val selectedDay = if (yearMonth == DateUtils.getCurrentYearMonth()) DateUtils.getDayOfMonth(System.currentTimeMillis()) else null
+        _state.value = _state.value.copy(currentYearMonth = yearMonth, selectedDay = selectedDay)
         loadBillData()
+    }
+
+    fun setSelectedDay(day: Int?) {
+        _state.value = _state.value.copy(selectedDay = day)
     }
     
     private var searchJob: Job? = null
@@ -320,21 +330,28 @@ class BillViewModel(
     }
     
     fun clearSearch() {
-        _state.value = _state.value.copy(searchQuery = "", filteredBills = emptyList(), isSearching = false)
+        _state.value = _state.value.copy(searchQuery = "", isSearching = false)
+        if (_state.value.currentFilter.isActive) filterBills()
+        else _state.value = _state.value.copy(filteredBills = emptyList())
         searchJob?.cancel()
     }
     
+    fun setFilterType(type: String) {
+        _state.value = _state.value.copy(currentFilter = _state.value.currentFilter.copy(type = if (type == "ALL") null else type))
+        filterBills()
+    }
+
     fun toggleFilterSheet() {
         _state.value = _state.value.copy(showFilterSheet = !_state.value.showFilterSheet)
     }
     
     fun applyFilter(filter: BillFilter) {
-        _state.value = _state.value.copy(currentFilter = filter, showFilterSheet = false)
+        _state.update { it.copy(currentFilter = filter, filterFeedbackSignal = it.filterFeedbackSignal + 1) }
         filterBills()
     }
     
     fun clearFilter() {
-        _state.value = _state.value.copy(currentFilter = BillFilter(), showFilterSheet = false)
+        _state.update { it.copy(currentFilter = BillFilter(), filterFeedbackSignal = it.filterFeedbackSignal + 1) }
         filterBills()
     }
     
@@ -352,7 +369,9 @@ class BillViewModel(
             val matchesSearch = query.isBlank() || 
                 bill.note.contains(query, ignoreCase = true) ||
                 bill.merchant.contains(query, ignoreCase = true) ||
-                bill.category.contains(query, ignoreCase = true)
+                bill.location.contains(query, ignoreCase = true) ||
+                bill.category.contains(query, ignoreCase = true) ||
+                bill.amount.toString().contains(query, ignoreCase = true)
             
             matchesType && matchesCategory && matchesPaymentMethod && matchesAmountMin && matchesAmountMax && matchesSearch
         }
@@ -395,10 +414,11 @@ class BillViewModel(
         }
     }
 
-    fun resetForm() {
+    fun resetForm(selectedDate: Long? = null) {
         viewModelScope.launch {
             val defaultWallet = walletRepository.getDefaultWallet()
-            _formState.value = AddBillFormState(type = defaultBillType, walletId = defaultWallet?.id)
+            val date = selectedDate ?: System.currentTimeMillis()
+            _formState.value = AddBillFormState(date = date, type = defaultBillType, walletId = defaultWallet?.id)
         }
     }
 

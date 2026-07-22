@@ -12,13 +12,13 @@ interface BillDao {
     @Query("SELECT * FROM bills WHERE id = :id AND isDeleted = 0")
     suspend fun getBillById(id: Long): Bill?
 
-    @Query("SELECT * FROM bills WHERE yearMonth = :yearMonth AND isDeleted = 0 ORDER BY date DESC LIMIT 500")
+    @Query("SELECT * FROM bills WHERE yearMonth = :yearMonth AND isDeleted = 0 ORDER BY date DESC, createdAt DESC LIMIT 500")
     fun getBillsByMonth(yearMonth: String): Flow<List<Bill>>
 
-    @Query("SELECT * FROM bills WHERE accountBookId = :bookId AND yearMonth = :yearMonth AND isDeleted = 0 ORDER BY date DESC LIMIT 500")
+    @Query("SELECT * FROM bills WHERE accountBookId = :bookId AND yearMonth = :yearMonth AND isDeleted = 0 ORDER BY date DESC, createdAt DESC LIMIT 500")
     fun getBillsByBookAndMonth(bookId: Long, yearMonth: String): Flow<List<Bill>>
 
-    @Query("SELECT * FROM bills WHERE yearMonth = :yearMonth AND type = :type AND isDeleted = 0 ORDER BY date DESC")
+    @Query("SELECT * FROM bills WHERE yearMonth = :yearMonth AND type = :type AND isDeleted = 0 ORDER BY date DESC, createdAt DESC")
     fun getBillsByMonthAndType(yearMonth: String, type: String): Flow<List<Bill>>
 
     @Query("SELECT * FROM bills WHERE category = :category AND isDeleted = 0 ORDER BY date DESC")
@@ -177,7 +177,7 @@ interface BillDao {
                SUM(CASE WHEN type = 'INCOME' THEN amount ELSE 0 END) as income
         FROM bills
         WHERE yearMonth = :yearMonth AND isDeleted = 0
-        GROUP BY date
+        GROUP BY date / 86400000
         ORDER BY date ASC
     """)
     fun getDailySummary(yearMonth: String): Flow<List<DailySummary>>
@@ -187,7 +187,7 @@ interface BillDao {
                SUM(CASE WHEN type = 'INCOME' THEN amount ELSE 0 END) as income
         FROM bills
         WHERE accountBookId = :bookId AND yearMonth = :yearMonth AND isDeleted = 0
-        GROUP BY date
+        GROUP BY date / 86400000
         ORDER BY date ASC
     """)
     fun getDailySummaryByBook(bookId: Long, yearMonth: String): Flow<List<DailySummary>>
@@ -236,7 +236,7 @@ interface BillDao {
     """)
     fun getYearlyIncomeTrend(year: String): Flow<List<MonthTotal>>
 
-    @Query("SELECT * FROM bills WHERE isDeleted = 0 AND (note LIKE '%' || :query || '%' OR merchant LIKE '%' || :query || '%' OR location LIKE '%' || :query || '%' OR category LIKE '%' || :query || '%') ORDER BY date DESC")
+    @Query("SELECT bills.* FROM bills LEFT JOIN wallets ON bills.walletId = wallets.id WHERE bills.isDeleted = 0 AND (bills.note LIKE '%' || :query || '%' OR bills.merchant LIKE '%' || :query || '%' OR bills.location LIKE '%' || :query || '%' OR bills.category LIKE '%' || :query || '%' OR CAST(bills.amount AS TEXT) LIKE '%' || :query || '%' OR wallets.name LIKE '%' || :query || '%') ORDER BY bills.date DESC, bills.createdAt DESC")
     suspend fun search(query: String): List<Bill>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
