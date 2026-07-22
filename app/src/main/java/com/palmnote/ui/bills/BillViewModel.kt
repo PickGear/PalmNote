@@ -3,6 +3,7 @@ package com.palmnote.ui.bills
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.palmnote.R
+import com.palmnote.data.DataCache
 import com.palmnote.data.db.dao.CategoryTotal
 import com.palmnote.data.db.dao.MonthTotal
 import com.palmnote.data.db.entity.AccountBook
@@ -112,6 +113,7 @@ class BillViewModel(
     private var billDataJob: Job? = null
 
     init {
+        DataCache.get<BillState>("bill")?.let { _state.value = it }
         viewModelScope.launch { accountBookRepository.initDefaultBooks() }
         loadAccountBooks()
         loadAllAccountBooks()
@@ -291,6 +293,7 @@ class BillViewModel(
                         selectedBookId = bookId
                     )
                 }
+                DataCache.set("bill", _state.value)
             }.collect { }
         }
     }

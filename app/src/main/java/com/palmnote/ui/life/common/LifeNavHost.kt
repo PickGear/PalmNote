@@ -105,10 +105,10 @@ fun LifeNavHost(modifier: Modifier = Modifier, onChildNavigated: (Boolean) -> Un
         onChildNavigated(navBackStackEntry?.destination?.route == LifeRoute.Home)
     }
     NavHost(navController = navController, startDestination = LifeRoute.Home, modifier = modifier,
-        enterTransition = { slideIn + fadeIn(tween(300)) },
-        exitTransition = { slideOut + fadeOut(tween(300)) },
-        popEnterTransition = { popIn + fadeIn(tween(300)) },
-        popExitTransition = { popOut + fadeOut(tween(300)) }
+        enterTransition = { slideIn + fadeIn(tween(150)) },
+        exitTransition = { slideOut + fadeOut(tween(150)) },
+        popEnterTransition = { popIn + fadeIn(tween(150)) },
+        popExitTransition = { popOut + fadeOut(tween(150)) }
     ) {
         composable(LifeRoute.Home) {
             LifeScreen(

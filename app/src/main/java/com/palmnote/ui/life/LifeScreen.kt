@@ -310,7 +310,7 @@ private fun LifeContent(
         Spacer(modifier = Modifier.height(4.dp))
         AnimatedVisibility(
             visible = !showSearch,
-            enter = fadeIn(tween(300)) + expandVertically(tween(300)),
+            enter = fadeIn(tween(120)) + expandVertically(tween(120)),
             exit = fadeOut(tween(300)) + shrinkVertically(tween(300))
         ) {
             StatsRow(state = state, scope = scope, snackbarHostState = snackbarHostState, onHabitClick = onHabitClick, onFocusClick = onFocusClick)

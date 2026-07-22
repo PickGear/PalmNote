@@ -20,6 +20,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.Dp
@@ -119,15 +120,15 @@ fun PalmNoteNavHost() {
     val currentDestination = navBackStackEntry?.destination
 
     var lifeChildAtHome by remember { mutableStateOf(true) }
-    val showBottomBar = bottomNavItems.any { item -> currentDestination?.route == item.route } && lifeChildAtHome
+    val showBottomBar = lifeChildAtHome && (currentDestination?.route?.let { route ->
+        bottomNavItems.any { item -> item.route == route }
+    } ?: true)
     val navBarBottomDp = with(LocalDensity.current) {
         WindowInsets.navigationBars.getBottom(this).toDp()
     }
 
     val context = LocalContext.current
-    val startDest by context.dataStore.data.map { prefs ->
-        prefs[stringPreferencesKey("default_start_page")] ?: "dashboard"
-    }.collectAsState(initial = "dashboard")
+    val startDest = PalmNoteApp.cachedStartPage
 
         Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -204,16 +205,16 @@ fun PalmNoteNavHost() {
             startDestination = startDest,
             modifier = Modifier.padding(innerPadding),
             enterTransition = {
-                fadeIn(animationSpec = tween(250))
+                fadeIn(animationSpec = tween(80))
             },
             exitTransition = {
-                fadeOut(animationSpec = tween(250))
+                fadeOut(animationSpec = tween(80))
             },
             popEnterTransition = {
-                fadeIn(animationSpec = tween(250))
+                fadeIn(animationSpec = tween(80))
             },
             popExitTransition = {
-                fadeOut(animationSpec = tween(250))
+                fadeOut(animationSpec = tween(80))
             }
         ) {
             composable(Route.Dashboard) {

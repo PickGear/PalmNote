@@ -3,6 +3,7 @@
 import androidx.compose.runtime.Stable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.palmnote.data.DataCache
 import com.palmnote.data.db.dao.CategoryCount
 import com.palmnote.data.db.entity.Anniversary
 import com.palmnote.data.db.entity.Budget
@@ -52,6 +53,7 @@ class DashboardViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DashboardCardConfig.defaults.filter { it.visible })
 
     init {
+        DataCache.get<DashboardState>("dashboard")?.let { _state.value = it }
         loadDashboardData()
         loadBudgetReminder()
         loadCardConfigs()
@@ -170,7 +172,9 @@ class DashboardViewModel(
                 upcomingAnniversaries = s.upcomingAnniversaries,
                 recentGoals = s.recentGoals,
                 assetDistribution = s.assetDistribution
-            ) } }
+            )}
+                DataCache.set("dashboard", _state.value)
+            }
         }
     }
 }

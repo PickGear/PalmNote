@@ -10,6 +10,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import android.app.Application
 import com.palmnote.R
+import com.palmnote.data.DataCache
 import com.palmnote.data.datastore.PreferencesManager
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.decodeFromString
@@ -169,6 +170,7 @@ class AssetViewModel(
     val showDeleteDialog: StateFlow<Boolean> = _dialogType.map { it == DialogType.DELETE }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     init {
+        DataCache.get<AssetState>("asset")?.let { _state.value = it }
         loadAssets()
         loadViewMode()
         loadCustomCategories()
@@ -239,6 +241,7 @@ class AssetViewModel(
                 )
             }.collect { state ->
                 _state.value = state
+                DataCache.set("asset", state)
             }
         }
     }

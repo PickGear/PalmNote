@@ -196,7 +196,7 @@ fun AssetScreen(
             // Summary Cards (animated hide during search, outside LazyColumn for smooth animation)
             AnimatedVisibility(
                 visible = !showSearch,
-                enter = fadeIn(tween(300)) + expandVertically(tween(300)),
+                enter = fadeIn(tween(120)) + expandVertically(tween(120)),
                 exit = fadeOut(tween(300)) + shrinkVertically(tween(300))
             ) {
                 Column(modifier = Modifier.padding(horizontal = 16.dp)) {
