@@ -238,24 +238,26 @@ fun EmptyState(
 fun AnimatedCard(
     modifier: Modifier = Modifier,
     index: Int = 0,
+    instant: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val visible = remember { mutableStateOf(false) }
+    val animDuration = if (instant) 0 else 300
 
     LaunchedEffect(Unit) {
-        delay(index * 50L)
+        if (!instant) delay(index * 50L)
         visible.value = true
     }
 
     val offsetY by animateDpAsState(
         targetValue = if (visible.value) 0.dp else 20.dp,
-        animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
+        animationSpec = tween(durationMillis = animDuration, easing = FastOutSlowInEasing),
         label = "card_offset"
     )
 
     val alpha by animateFloatAsState(
         targetValue = if (visible.value) 1f else 0f,
-        animationSpec = tween(durationMillis = 300),
+        animationSpec = tween(durationMillis = animDuration),
         label = "card_alpha"
     )
 
@@ -616,7 +618,7 @@ fun CategoryPicker(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.heightIn(max = 400.dp)
                 ) {
-                    items(categories.size, key = { categories[it].name }) { index ->
+                    items(categories.size, key = { "${categories[it].name}_$it" }) { index ->
                         val cat = categories[index]
                         val displayName = getDisplayName?.invoke(cat.name) ?: cat.name
                         val isSelected = selected == cat.name

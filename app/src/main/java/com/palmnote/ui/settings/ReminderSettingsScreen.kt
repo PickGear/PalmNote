@@ -2,7 +2,9 @@ package com.palmnote.ui.settings
 
 import androidx.compose.foundation.layout.*
 import android.Manifest
+import android.content.Intent
 import android.os.Build
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -290,7 +292,7 @@ fun ReminderSettingsScreen(
             confirmButton = {
                 TextButton(onClick = {
                     showNotificationDeniedDialog = false
-                    context.startActivity(android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                    context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
                         data = android.net.Uri.parse("package:${context.packageName}")
                     })
                 }) {

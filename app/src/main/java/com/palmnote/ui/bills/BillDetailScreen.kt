@@ -94,10 +94,12 @@ fun BillDetailScreen(
                                     Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(catItem.color.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) {
                                         Icon(catItem.icon, null, tint = catItem.color, modifier = Modifier.size(20.dp))
                                     }
-                                    Text(stringResource(getLocalizedCategoryName(catItem.name)), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
+                                    val catItemResId = getLocalizedCategoryName(catItem.name)
+                                    Text(if (catItemResId != null) stringResource(catItemResId) else catItem.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
                                 }
                             } else {
-                                Text(stringResource(getLocalizedCategoryName(bill.category)), modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                val catResId = getLocalizedCategoryName(bill.category)
+                                Text(if (catResId != null) stringResource(catResId) else bill.category, modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
                         HorizontalDivider()

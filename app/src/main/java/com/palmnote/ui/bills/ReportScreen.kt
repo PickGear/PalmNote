@@ -374,8 +374,9 @@ private fun DonutChartSection(state: ReportState, onNavigateToAddBill: () -> Uni
                             .background(color)
                     )
                     Spacer(Modifier.width(8.dp))
+                    val rptResId1 = getLocalizedCategoryName(cat.category)
                     Text(
-                        text = stringResource(getLocalizedCategoryName(cat.category)),
+                        text = if (rptResId1 != null) stringResource(rptResId1) else cat.category,
                         style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier.weight(1f)
                     )
@@ -490,8 +491,9 @@ private fun CategoryRankingItem(cat: CategoryTotal, total: Double, isExpense: Bo
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
+                val rptResId2 = getLocalizedCategoryName(cat.category)
                 Text(
-                    text = stringResource(getLocalizedCategoryName(cat.category)),
+                    text = if (rptResId2 != null) stringResource(rptResId2) else cat.category,
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Text(

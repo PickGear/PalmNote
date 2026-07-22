@@ -566,7 +566,7 @@ fun AssetScreen(
                 }
             } else {
                 items(state.filteredAssets, key = { it.id }) { asset ->
-                    AnimatedCard(index = (assetIndexMap[asset.id] ?: 0).coerceAtMost(10)) {
+                    AnimatedCard(index = (assetIndexMap[asset.id] ?: 0).coerceAtMost(10), instant = remember(asset.id) { listState.isScrollInProgress }) {
                         EnhancedAssetCard(
                             asset = asset,
                             onClick = { onNavigateToDetail(asset.id) }

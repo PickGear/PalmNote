@@ -25,7 +25,8 @@ import com.palmnote.R
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
-import java.util.*
+import java.util.Calendar
+import java.util.Locale
 
 @Composable
 fun CalendarView(
@@ -227,8 +228,7 @@ fun CalendarView(
         // 汇总（选日期显示当天，否则显示当月）
         val showDay = selectedDay != null && selectedDay in 1..daysInMonth
         val dayData = if (showDay) dailyData[selectedDay] else Pair(dailyData.values.sumOf { it.first }, dailyData.values.sumOf { it.second })
-        if (true) {
-            Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -253,7 +253,7 @@ fun CalendarView(
                             text = CurrencyUtils.formatCurrency(dayData?.first ?: 0.0),
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold,
-                            color = if ((dayData?.first ?: 0.0) > 0) AccentOrange
+                            color = if ((dayData?.first ?: 0.0) > 0) ExpenseRed
                                     else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -287,7 +287,6 @@ fun CalendarView(
                     }
                 }
             }
-        }
     }
 }
 
@@ -349,7 +348,7 @@ private fun RowScope.DayCell(
                                 .clip(CircleShape)
                                 .background(
                                     if (isSelected) Color.White.copy(alpha = 0.8f)
-                                    else AccentOrange
+                                    else ExpenseRed
                                 )
                         )
                     }

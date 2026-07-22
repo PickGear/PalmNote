@@ -147,6 +147,11 @@ object DateUtils {
     fun getDayOfMonth(timestamp: Long): Int =
         millisToLocalDate(timestamp).dayOfMonth
 
+    fun toMillis(yearMonth: String, dayOfMonth: Int): Long {
+        val ym = YearMonth.parse(yearMonth, YEAR_MONTH_FMT)
+        return ym.atDay(dayOfMonth).atStartOfDay(zone).toInstant().toEpochMilli()
+    }
+
     fun getWeekStart(): Long =
         LocalDate.now(zone)
             .with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
