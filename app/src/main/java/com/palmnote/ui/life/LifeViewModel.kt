@@ -12,15 +12,13 @@ import com.palmnote.domain.repository.LifeMomentRepository
 import com.palmnote.domain.repository.LifeTemplateRepository
 import com.palmnote.domain.repository.LifeItemRepository
 import com.palmnote.domain.repository.MoodDiaryRepository
-import dagger.hilt.android.lifecycle.HiltViewModel
-
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.serialization.json.*
 import java.time.LocalDate
 import java.time.ZoneId
-import javax.inject.Inject
+
 
 data class LifeUiState(
     val templates: List<LifeTemplate> = emptyList(),
@@ -36,8 +34,7 @@ data class LifeUiState(
     val error: String? = null
 )
 
-@HiltViewModel
-class LifeViewModel @Inject constructor(
+class LifeViewModel(
     private val application: Application,
     private val templateRepo: LifeTemplateRepository,
     private val itemRepo: LifeItemRepository,

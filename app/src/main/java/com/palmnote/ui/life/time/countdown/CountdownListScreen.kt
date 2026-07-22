@@ -25,8 +25,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
+import com.palmnote.PalmNoteApp
 import com.palmnote.R
+import com.palmnote.ui.components.simpleViewModel
 import com.palmnote.ui.components.EmptyState
 import com.palmnote.ui.life.common.SwipeableItem
 import com.palmnote.ui.components.AppDialog
@@ -41,7 +42,7 @@ import java.time.temporal.ChronoUnit
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CountdownListScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Long) -> Unit, onCreateClick: () -> Unit = {}, viewModel: CountdownViewModel = hiltViewModel()) {
+fun CountdownListScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Long) -> Unit, onCreateClick: () -> Unit = {}, viewModel: CountdownViewModel = simpleViewModel { PalmNoteApp.container.countdownViewModel() }) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(templateId) { viewModel.load(templateId) }
     var deleteTarget by remember { mutableStateOf<Long?>(null) }

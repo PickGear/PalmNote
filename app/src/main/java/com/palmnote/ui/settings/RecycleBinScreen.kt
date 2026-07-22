@@ -14,8 +14,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.font.FontWeight
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.palmnote.PalmNoteApp
+import com.palmnote.ui.components.simpleViewModel
 import com.palmnote.R
 import com.palmnote.ui.components.*
 import com.palmnote.ui.theme.*
@@ -24,7 +25,7 @@ import com.palmnote.ui.theme.*
 @Composable
 fun RecycleBinScreen(
     onNavigateBack: () -> Unit = {},
-    viewModel: RecycleBinViewModel = hiltViewModel()
+    viewModel: RecycleBinViewModel = simpleViewModel { PalmNoteApp.container.recycleBinViewModel() }
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var selectedTab by remember { mutableIntStateOf(0) }

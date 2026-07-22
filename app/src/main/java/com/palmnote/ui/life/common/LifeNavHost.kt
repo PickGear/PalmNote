@@ -7,7 +7,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import com.palmnote.PalmNoteApp
+import com.palmnote.ui.components.simpleViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -43,14 +44,12 @@ import com.palmnote.ui.life.time.countdown.CountdownListScreen
 import com.palmnote.ui.life.time.countup.CountUpListScreen
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
-import javax.inject.Inject
+
 
 data class TplDispState(val template: LifeTemplate? = null, val isLoading: Boolean = true)
 
-@HiltViewModel
-class TplDispViewModel @Inject constructor(
+class TplDispViewModel(
     private val templateRepo: LifeTemplateRepository
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(TplDispState())
@@ -126,7 +125,7 @@ fun LifeNavHost(modifier: Modifier = Modifier, onChildNavigated: (Boolean) -> Un
         }
         composable("life/template/{templateId}", arguments = listOf(navArgument("templateId") { type = NavType.LongType })) { entry ->
             val tid = entry.arguments?.getLong("templateId") ?: return@composable
-            val vm = hiltViewModel<TplDispViewModel>()
+            val vm = simpleViewModel { PalmNoteApp.container.tplDispViewModel() }
             val s by vm.uiState.collectAsStateWithLifecycle()
             LaunchedEffect(tid) { vm.load(tid) }
             val tpl = s.template
@@ -138,12 +137,12 @@ fun LifeNavHost(modifier: Modifier = Modifier, onChildNavigated: (Boolean) -> Un
         }
         composable("life/item/{itemId}", arguments = listOf(navArgument("itemId") { type = NavType.LongType })) { entry ->
             val iid = entry.arguments?.getLong("itemId") ?: return@composable
-            val vm = hiltViewModel<ItemDetailViewModel>(); val s by vm.uiState.collectAsStateWithLifecycle(); LaunchedEffect(iid) { vm.load(iid) }
+            val vm = simpleViewModel { PalmNoteApp.container.itemDetailViewModel() }; val s by vm.uiState.collectAsStateWithLifecycle(); LaunchedEffect(iid) { vm.load(iid) }
             ItemDetailScreen(item = s.item, template = s.template, viewModel = vm, onBack = { navController.popBackStack() }, onEdit = { s.item?.let { item -> navController.navigate("life/edit/${item.id}") } }, onDelete = { vm.deleteItem(); navController.popBackStack() })
         }
         composable("life/create/{templateId}", arguments = listOf(navArgument("templateId") { type = NavType.LongType })) { entry ->
             val tid = entry.arguments?.getLong("templateId") ?: return@composable
-            val vm = hiltViewModel<CreateItemViewModel>(); val s by vm.uiState.collectAsStateWithLifecycle(); LaunchedEffect(tid) { vm.load(tid) }
+            val vm = simpleViewModel { PalmNoteApp.container.createItemViewModel() }; val s by vm.uiState.collectAsStateWithLifecycle(); LaunchedEffect(tid) { vm.load(tid) }
             LaunchedEffect(s.savedItemId) { if (s.savedItemId != null) { val id = s.savedItemId; vm.resetSaved(); navController.navigate("life/item/$id") { popUpTo("life/create/$tid") { inclusive = true } } } }
             val createTpl = s.template
             if (createTpl != null) {
@@ -152,7 +151,7 @@ fun LifeNavHost(modifier: Modifier = Modifier, onChildNavigated: (Boolean) -> Un
         }
         composable("life/edit/{itemId}", arguments = listOf(navArgument("itemId") { type = NavType.LongType })) { entry ->
             val iid = entry.arguments?.getLong("itemId") ?: return@composable
-            val vm = hiltViewModel<CreateItemViewModel>(); val s by vm.uiState.collectAsStateWithLifecycle(); LaunchedEffect(iid) { vm.loadEdit(iid) }
+            val vm = simpleViewModel { PalmNoteApp.container.createItemViewModel() }; val s by vm.uiState.collectAsStateWithLifecycle(); LaunchedEffect(iid) { vm.loadEdit(iid) }
             LaunchedEffect(s.savedItemId) { if (s.savedItemId != null) { vm.resetSaved(); navController.popBackStack() } }
             if (s.isLoading) {
                 Box(modifier = Modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() }

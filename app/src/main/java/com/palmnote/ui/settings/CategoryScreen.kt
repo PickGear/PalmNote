@@ -18,8 +18,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.palmnote.PalmNoteApp
+import com.palmnote.ui.components.simpleViewModel
 import com.palmnote.R
 import com.palmnote.ui.components.*
 import com.palmnote.ui.theme.*
@@ -29,7 +30,7 @@ import com.palmnote.ui.theme.*
 fun CategoryScreen(
     onNavigateBack: () -> Unit = {},
     initialType: String = "ASSET",
-    viewModel: CategoryViewModel = hiltViewModel()
+    viewModel: CategoryViewModel = simpleViewModel { PalmNoteApp.container.categoryViewModel() }
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 

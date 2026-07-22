@@ -4,11 +4,7 @@ import com.palmnote.data.db.dao.MomentDao
 import com.palmnote.data.db.entity.Moment
 import kotlinx.coroutines.flow.Flow
 import com.palmnote.domain.repository.MomentRepository
-import javax.inject.Inject
-import javax.inject.Singleton
-
-@Singleton
-class MomentRepository @Inject constructor(
+class MomentRepository(
     private val momentDao: MomentDao
 ) : MomentRepository {
     override fun getAllMoments(): Flow<List<Moment>> = momentDao.getAllMoments()

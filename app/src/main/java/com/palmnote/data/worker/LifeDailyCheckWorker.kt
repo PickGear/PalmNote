@@ -1,16 +1,13 @@
 package com.palmnote.data.worker
 
 import android.content.Context
-import androidx.hilt.work.HiltWorker
-import androidx.work.CoroutineWorker
+import androidx.work.Worker
 import androidx.work.WorkerParameters
+import com.palmnote.PalmNoteApp
 import com.palmnote.data.db.entity.LifeItem
 import com.palmnote.data.db.entity.LifeReport
-import com.palmnote.domain.repository.*
-import com.palmnote.data.datastore.PreferencesManager
-import dagger.assisted.Assisted
-import dagger.assisted.AssistedInject
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -20,44 +17,42 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 
-@HiltWorker
-class LifeDailyCheckWorker @AssistedInject constructor(
-    @Assisted context: Context,
-    @Assisted params: WorkerParameters,
-    private val templateRepo: LifeTemplateRepository,
-    private val itemRepo: LifeItemRepository,
-    private val focusRepo: FocusRecordRepository,
-    private val reportRepo: LifeReportRepository,
-    private val billRepo: BillRepository,
-    private val preferencesManager: PreferencesManager
-) : CoroutineWorker(context, params) {
+class LifeDailyCheckWorker(context: Context, params: WorkerParameters) : Worker(context, params) {
 
-    override suspend fun doWork(): Result {
+    private val container = PalmNoteApp.container
+    private val templateRepo = container.lifeTemplateRepository
+    private val itemRepo = container.lifeItemRepository
+    private val focusRepo = container.focusRecordRepository
+    private val reportRepo = container.lifeReportRepository
+    private val billRepo = container.billRepository
+    private val pm = container.preferencesManager
+
+    override fun doWork(): Result {
         val startTime = System.currentTimeMillis()
         val timeBudgetMs = 240_000L
         fun overBudget() = System.currentTimeMillis() - startTime > timeBudgetMs
-        return try {
-            val dailyEnabled = preferencesManager.dailyReminderEnabled.first()
-            if (dailyEnabled) {
-                checkDailyReminder()
+        return runBlocking {
+            try {
+                val dailyEnabled = pm.dailyReminderEnabled.first()
+                if (dailyEnabled) checkDailyReminder()
+                if (overBudget()) return@runBlocking Result.success()
+                checkBillReminder()
+                if (overBudget()) return@runBlocking Result.success()
+                checkCountUpMilestones()
+                if (overBudget()) return@runBlocking Result.success()
+                checkCountdownExpiry()
+                if (overBudget()) return@runBlocking Result.success()
+                checkBirthdayReminders()
+                if (overBudget()) return@runBlocking Result.success()
+                checkAnniversaryReminders()
+                if (overBudget()) return@runBlocking Result.success()
+                checkSubscriptionBilling()
+                if (overBudget()) return@runBlocking Result.success()
+                tryGenerateWeeklyReport()
+                Result.success()
+            } catch (e: Exception) {
+                if (runAttemptCount < 3) Result.retry() else Result.failure()
             }
-            if (overBudget()) return Result.success()
-            checkBillReminder()
-            if (overBudget()) return Result.success()
-            checkCountUpMilestones()
-            if (overBudget()) return Result.success()
-            checkCountdownExpiry()
-            if (overBudget()) return Result.success()
-            checkBirthdayReminders()
-            if (overBudget()) return Result.success()
-            checkAnniversaryReminders()
-            if (overBudget()) return Result.success()
-            checkSubscriptionBilling()
-            if (overBudget()) return Result.success()
-            tryGenerateWeeklyReport()
-            Result.success()
-        } catch (e: Exception) {
-            if (runAttemptCount < 3) Result.retry() else Result.failure()
         }
     }
 
@@ -71,7 +66,7 @@ class LifeDailyCheckWorker @AssistedInject constructor(
     }
 
     private suspend fun checkBillReminder() {
-        val billReminderEnabled = preferencesManager.billReminderEnabled.first()
+        val billReminderEnabled = pm.billReminderEnabled.first()
         if (!billReminderEnabled) return
         val today = LocalDate.now()
         val todayStart = today.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
@@ -115,7 +110,7 @@ class LifeDailyCheckWorker @AssistedInject constructor(
 
     private suspend fun checkCountdownExpiry() {
         val today = LocalDate.now()
-        val advanceDays = preferencesManager.birthdayReminderAdvanceDays.first()
+        val advanceDays = pm.birthdayReminderAdvanceDays.first()
         val tpls = templateRepo.getAllTemplates().first().filter { it.name.contains("\u5012\u8BA1\u65F6") }
         tpls.forEach { tpl ->
             itemRepo.getActiveItemsByTemplate(tpl.id, 200).first().forEach { item ->
@@ -148,7 +143,7 @@ class LifeDailyCheckWorker @AssistedInject constructor(
 
     private suspend fun checkBirthdayReminders() {
         val today = LocalDate.now()
-        val advanceDays = preferencesManager.birthdayReminderAdvanceDays.first()
+        val advanceDays = pm.birthdayReminderAdvanceDays.first()
         val tpls = templateRepo.getAllTemplates().first().filter { it.name.contains("\u751F\u65E5") }
         tpls.forEach { tpl ->
             itemRepo.getActiveItemsByTemplate(tpl.id, 200).first().forEach { item ->
@@ -176,7 +171,7 @@ class LifeDailyCheckWorker @AssistedInject constructor(
 
     private suspend fun checkAnniversaryReminders() {
         val today = LocalDate.now()
-        val advanceDays = preferencesManager.anniversaryReminderAdvanceDays.first()
+        val advanceDays = pm.anniversaryReminderAdvanceDays.first()
         val tpls = templateRepo.getAllTemplates().first().filter { it.name.contains("\u7EAA\u5FF5\u65E5") }
         tpls.forEach { tpl ->
             itemRepo.getActiveItemsByTemplate(tpl.id, 200).first().forEach { item ->
@@ -205,25 +200,22 @@ class LifeDailyCheckWorker @AssistedInject constructor(
     private suspend fun checkSubscriptionBilling() {
         val today = LocalDate.now()
         val tpls = templateRepo.getAllTemplates().first().filter { it.name.contains("\u8BA2\u9605") }
-        tpls.forEach { tpl ->
-            itemRepo.getActiveItemsByTemplate(tpl.id, 200).first().forEach { item ->
+        for (tpl in tpls) {
+            for (item in itemRepo.getActiveItemsByTemplate(tpl.id, 200).first()) {
                 try {
                     val obj = Json.decodeFromString<JsonObject>(item.fieldsData)
                     val billingDay = (obj["billingDay"] as? JsonPrimitive)?.content?.toIntOrNull()
                         ?: (obj["billing_day"] as? JsonPrimitive)?.content?.toIntOrNull()
                     val lastBilled = (obj["lastBilledDate"] as? JsonPrimitive)?.content?.toLongOrNull()
                     val cycle = (obj["billingCycle"] as? JsonPrimitive)?.content ?: "monthly"
-                        if (billingDay != null && today.dayOfMonth == billingDay) {
-                        if (lastBilled == null) {
-                            // No billing history yet, skip notification until first bill recorded
-                            return@forEach
-                        }
+                    if (billingDay != null && today.dayOfMonth == billingDay) {
+                        if (lastBilled == null) continue
                         val lastBilledDate = LocalDate.ofEpochDay(lastBilled / 86400000L)
                         val monthsBetween = ChronoUnit.MONTHS.between(lastBilledDate, today)
                         when (cycle) {
-                            "monthly" -> if (monthsBetween < 1) return@forEach
-                            "yearly" -> if (monthsBetween < 12) return@forEach
-                            "quarterly" -> if (monthsBetween < 3) return@forEach
+                            "monthly" -> if (monthsBetween < 1) continue
+                            "yearly" -> if (monthsBetween < 12) continue
+                            "quarterly" -> if (monthsBetween < 3) continue
                         }
                         val price = (obj["price"] as? JsonPrimitive)?.content ?: ""
                         com.palmnote.ui.notification.NotificationHelper.show(

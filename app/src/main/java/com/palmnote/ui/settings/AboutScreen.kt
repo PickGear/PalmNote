@@ -153,7 +153,7 @@ fun AboutScreen(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Kotlin · Jetpack Compose · Room · Hilt · Navigation",
+                        text = "Kotlin · Jetpack Compose · Room · Navigation",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

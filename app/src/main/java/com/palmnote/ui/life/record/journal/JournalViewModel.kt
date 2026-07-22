@@ -6,18 +6,16 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.palmnote.data.db.dao.LegacyDao
 import com.palmnote.data.db.entity.LifeMoment
-import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
+
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import javax.inject.Inject
+
 
 data class JournalUiState(val moments: List<LifeMoment> = emptyList(), val isLoading: Boolean = true, val error: String? = null)
 
-@HiltViewModel
-class JournalViewModel @Inject constructor(
-    @ApplicationContext private val context: Context,
+class JournalViewModel(
+    private val context: Context,
     private val legacyDao: LegacyDao
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(JournalUiState())

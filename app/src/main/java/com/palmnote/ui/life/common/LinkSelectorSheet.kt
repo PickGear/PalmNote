@@ -13,8 +13,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
+import com.palmnote.PalmNoteApp
+import com.palmnote.ui.components.simpleViewModel
 import androidx.lifecycle.viewModelScope
 import com.palmnote.data.db.entity.CrossLink
 import com.palmnote.R
@@ -23,10 +24,9 @@ import com.palmnote.domain.model.LinkType
 import com.palmnote.domain.repository.AssetRepository
 import com.palmnote.domain.repository.BillRepository
 import com.palmnote.domain.repository.CrossLinkRepository
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import javax.inject.Inject
+
 
 data class LinkableBill(val id: Long, val note: String, val amount: String)
 data class LinkableAsset(val id: Long, val name: String, val category: String)
@@ -39,8 +39,7 @@ data class LinkSelectorState(
     val assetSearchQuery: String = ""
 )
 
-@HiltViewModel
-class LinkSelectorViewModel @Inject constructor(
+class LinkSelectorViewModel(
     private val billRepo: BillRepository,
     private val assetRepo: AssetRepository,
     private val crossLinkRepo: CrossLinkRepository
@@ -90,7 +89,7 @@ class LinkSelectorViewModel @Inject constructor(
 fun LinkSelectorSheet(
     sourceItemId: Long,
     onDismiss: () -> Unit,
-    viewModel: LinkSelectorViewModel = hiltViewModel()
+    viewModel: LinkSelectorViewModel = simpleViewModel { PalmNoteApp.container.linkSelectorViewModel() }
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)

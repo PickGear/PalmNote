@@ -4,11 +4,7 @@ import com.palmnote.data.db.dao.CountdownDao
 import com.palmnote.data.db.entity.Countdown
 import kotlinx.coroutines.flow.Flow
 import com.palmnote.domain.repository.CountdownRepository
-import javax.inject.Inject
-import javax.inject.Singleton
-
-@Singleton
-class CountdownRepository @Inject constructor(
+class CountdownRepository(
     private val countdownDao: CountdownDao
 ) : CountdownRepository {
     override fun getUpcomingCountdowns(): Flow<List<Countdown>> = countdownDao.getUpcomingCountdowns()

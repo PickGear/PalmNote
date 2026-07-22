@@ -7,15 +7,11 @@ import com.palmnote.data.db.dao.CustomTagDao
 import com.palmnote.data.db.entity.CategoryConfig
 import com.palmnote.data.db.entity.CustomTag
 import com.palmnote.ui.theme.AppIcon
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import com.palmnote.domain.repository.CategoryConfigRepository
-import javax.inject.Inject
-import javax.inject.Singleton
 
-@Singleton
-class CategoryConfigRepository @Inject constructor(
-    @ApplicationContext private val context: Context,
+class CategoryConfigRepository(
+    private val context: Context,
     private val categoryConfigDao: CategoryConfigDao,
     private val customTagDao: CustomTagDao
 ) : CategoryConfigRepository {

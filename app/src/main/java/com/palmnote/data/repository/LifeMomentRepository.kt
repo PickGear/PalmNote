@@ -4,11 +4,7 @@ import com.palmnote.data.db.dao.LifeMomentDao
 import com.palmnote.data.db.entity.LifeMoment
 import kotlinx.coroutines.flow.Flow
 import com.palmnote.domain.repository.LifeMomentRepository
-import javax.inject.Inject
-import javax.inject.Singleton
-
-@Singleton
-class LifeMomentRepository @Inject constructor(
+class LifeMomentRepository(
     private val lifeMomentDao: LifeMomentDao
 ) : LifeMomentRepository {
     override fun getRecentMoments(limit: Int): Flow<List<LifeMoment>> = lifeMomentDao.getRecentMoments(limit)

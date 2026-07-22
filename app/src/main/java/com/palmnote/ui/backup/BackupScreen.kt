@@ -22,9 +22,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.palmnote.PalmNoteApp
 import com.palmnote.R
+import com.palmnote.ui.components.simpleViewModel
 import com.palmnote.data.backup.BackupInfo
 import com.palmnote.data.backup.BackupState
 import com.palmnote.ui.components.*
@@ -36,7 +37,7 @@ import java.io.File
 @Composable
 fun BackupScreen(
     onNavigateBack: () -> Unit = {},
-    viewModel: BackupViewModel = hiltViewModel()
+    viewModel: BackupViewModel = simpleViewModel { PalmNoteApp.container.backupViewModel() }
 ) {
     val backupState by viewModel.backupState.collectAsStateWithLifecycle()
     val backups by viewModel.backups.collectAsStateWithLifecycle()

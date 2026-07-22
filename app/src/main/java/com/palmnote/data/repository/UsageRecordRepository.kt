@@ -4,11 +4,7 @@ import com.palmnote.data.db.dao.UsageRecordDao
 import com.palmnote.data.db.entity.UsageRecord
 import kotlinx.coroutines.flow.Flow
 import com.palmnote.domain.repository.UsageRecordRepository
-import javax.inject.Inject
-import javax.inject.Singleton
-
-@Singleton
-class UsageRecordRepository @Inject constructor(
+class UsageRecordRepository(
     private val usageRecordDao: UsageRecordDao
 ) : UsageRecordRepository {
     override fun getUsageRecordsByAsset(assetId: Long): Flow<List<UsageRecord>> =

@@ -31,6 +31,8 @@ import com.palmnote.R
 import com.palmnote.ui.components.SecondaryTopAppBar
 import com.palmnote.ui.components.toComposeColor
 import com.palmnote.data.db.entity.LifeTemplate
+import com.palmnote.PalmNoteApp
+import com.palmnote.ui.components.simpleViewModel
 import com.palmnote.ui.theme.*
 import kotlinx.serialization.json.*
 import java.util.UUID
@@ -48,7 +50,7 @@ data class TemplateField(
 fun TemplateCreateScreen(
     onBack: () -> Unit,
     onCreated: (Long) -> Unit,
-    viewModel: TemplateCreateViewModel = androidx.hilt.navigation.compose.hiltViewModel()
+    viewModel: TemplateCreateViewModel = simpleViewModel { PalmNoteApp.container.templateCreateViewModel() }
 ) {
     var step by remember { mutableIntStateOf(0) }
     var templateType by remember { mutableStateOf("PLAN") }

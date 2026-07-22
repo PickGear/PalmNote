@@ -7,10 +7,9 @@ import androidx.lifecycle.viewModelScope
 import com.palmnote.R
 import com.palmnote.data.db.entity.CategoryConfig
 import com.palmnote.domain.repository.CategoryConfigRepository
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import javax.inject.Inject
+
 
 @Stable
 data class CategoryType(
@@ -36,8 +35,7 @@ data class CategoryState(
         get() = categoryTypes.getOrNull(selectedTypeIndex)?.key ?: "ASSET"
 }
 
-@HiltViewModel
-class CategoryViewModel @Inject constructor(
+class CategoryViewModel(
     private val repository: CategoryConfigRepository
 ) : ViewModel() {
 

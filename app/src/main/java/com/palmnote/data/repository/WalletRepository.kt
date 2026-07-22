@@ -4,16 +4,12 @@ import android.content.Context
 import com.palmnote.data.db.dao.WalletDao
 import com.palmnote.data.db.entity.Wallet
 import com.palmnote.ui.bills.walletPresets
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import com.palmnote.domain.repository.WalletRepository
-import javax.inject.Inject
-import javax.inject.Singleton
 
-@Singleton
-class WalletRepository @Inject constructor(
+class WalletRepository(
     private val walletDao: WalletDao,
-    @ApplicationContext private val context: Context
+    private val context: Context
 ) : WalletRepository {
     override fun getEnabledWallets(): Flow<List<Wallet>> = walletDao.getEnabledWallets()
 

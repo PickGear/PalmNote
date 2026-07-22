@@ -4,11 +4,7 @@ import com.palmnote.data.db.dao.LifeTemplateDao
 import com.palmnote.data.db.entity.LifeTemplate
 import com.palmnote.domain.repository.LifeTemplateRepository
 import kotlinx.coroutines.flow.Flow
-import javax.inject.Inject
-import javax.inject.Singleton
-
-@Singleton
-class LifeTemplateRepositoryImpl @Inject constructor(
+class LifeTemplateRepositoryImpl(
     private val dao: LifeTemplateDao
 ) : LifeTemplateRepository {
     override fun getAllVisibleTemplates(): Flow<List<LifeTemplate>> = dao.getAllVisibleTemplates()
