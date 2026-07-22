@@ -32,6 +32,9 @@ import com.palmnote.ui.components.CompactTopAppBar
 import com.palmnote.R
 import com.palmnote.ui.theme.*
 import com.palmnote.ui.theme.AppIcon
+import java.io.File
+import coil3.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
 
 
 @Composable
@@ -128,11 +131,11 @@ fun SettingsScreen(
                                 contentAlignment = Alignment.Center
                             ) {
                                 if (state.profileAvatarPath.isNotBlank()) {
-                                    coil3.compose.AsyncImage(
-                                        model = java.io.File(state.profileAvatarPath),
+                                    AsyncImage(
+                                        model = File(state.profileAvatarPath),
                                         contentDescription = null,
                                         modifier = Modifier.size(52.dp).clip(CircleShape),
-                                        contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                                        contentScale = ContentScale.Crop
                                     )
                                 } else {
                                     Icon(avatarIcon, null, tint = PrimaryGreenLight, modifier = Modifier.size(28.dp))
@@ -164,13 +167,47 @@ fun SettingsScreen(
                 Spacer(Modifier.height(16.dp))
             }
 
-            item { SettingsCard(icon = Icons.Outlined.Palette, title = stringResource(R.string.settings_appearance), subtitle = stringResource(R.string.settings_appearance_subtitle), tint = LifePlan, onClick = onNavigateToGeneral) }
-            item { SettingsCard(icon = Icons.Outlined.Notifications, title = stringResource(R.string.settings_reminder), subtitle = stringResource(R.string.settings_reminder_subtitle), tint = AccentOrange, onClick = onNavigateToReminder) }
-            item { SettingsCard(icon = Icons.Outlined.Category, title = stringResource(R.string.settings_category_manage), subtitle = stringResource(R.string.settings_category_manage_subtitle), tint = InfoBlue, onClick = onNavigateToManageCategory) }
-            item { SettingsCard(icon = Icons.Outlined.Storage, title = stringResource(R.string.settings_data), subtitle = stringResource(R.string.settings_data_subtitle), tint = LifeRecord, onClick = onNavigateToDataStorage) }
-            item { SettingsCard(icon = Icons.Outlined.Info, title = stringResource(R.string.settings_about_app), subtitle = stringResource(R.string.settings_about_version), tint = PrimaryGreenLight, onClick = onNavigateToAbout) }
+            item {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.large,
+                    color = MaterialTheme.colorScheme.surface
+                ) {
+                    Column {
+                        SettingsRowItem(icon = Icons.Outlined.Palette, title = stringResource(R.string.settings_appearance), subtitle = stringResource(R.string.settings_appearance_subtitle), tint = LifePlan, onClick = onNavigateToGeneral)
+                        HorizontalDivider(modifier = Modifier.padding(horizontal = 56.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                        SettingsRowItem(icon = Icons.Outlined.Notifications, title = stringResource(R.string.settings_reminder), subtitle = stringResource(R.string.settings_reminder_subtitle), tint = AccentOrange, onClick = onNavigateToReminder)
+                        HorizontalDivider(modifier = Modifier.padding(horizontal = 56.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                        SettingsRowItem(icon = Icons.Outlined.Category, title = stringResource(R.string.settings_category_manage), subtitle = stringResource(R.string.settings_category_manage_subtitle), tint = InfoBlue, onClick = onNavigateToManageCategory)
+                        HorizontalDivider(modifier = Modifier.padding(horizontal = 56.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                        SettingsRowItem(icon = Icons.Outlined.Storage, title = stringResource(R.string.settings_data), subtitle = stringResource(R.string.settings_data_subtitle), tint = LifeRecord, onClick = onNavigateToDataStorage)
+                        HorizontalDivider(modifier = Modifier.padding(horizontal = 56.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                        SettingsRowItem(icon = Icons.Outlined.Info, title = stringResource(R.string.settings_about_app), subtitle = stringResource(R.string.settings_about_version), tint = PrimaryGreenLight, onClick = onNavigateToAbout)
+                    }
+                }
+            }
 
             item { Spacer(Modifier.height(24.dp)) }
+
+            item {
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = stringResource(R.string.app_name),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = "v1.1.0",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
         }
     }
 
@@ -184,9 +221,9 @@ fun SettingsScreen(
             uri?.let {
                 try {
                     val inputStream = context.contentResolver.openInputStream(it)
-                    val avatarDir = java.io.File(context.filesDir, "avatars")
+                    val avatarDir = File(context.filesDir, "avatars")
                     avatarDir.mkdirs()
-                    val destFile = java.io.File(avatarDir, "profile_avatar.jpg")
+                    val destFile = File(avatarDir, "profile_avatar.jpg")
                     inputStream?.use { input ->
                         destFile.outputStream().use { output ->
                             input.copyTo(output)
@@ -209,11 +246,11 @@ fun SettingsScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             if (editAvatarPath.isNotBlank()) {
-                                coil3.compose.AsyncImage(
-                                    model = java.io.File(editAvatarPath),
+                                AsyncImage(
+                                    model = File(editAvatarPath),
                                     contentDescription = null,
-                                    modifier = Modifier.size(64.dp).clip(CircleShape),
-                                    contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                                    modifier = Modifier.size(52.dp).clip(CircleShape),
+                                    contentScale = ContentScale.Crop
                                 )
                             } else {
                                 val icon = try { AppIcon.valueOf(editAvatar).imageVector } catch (_: Exception) { Icons.Filled.Spa }
@@ -266,14 +303,20 @@ fun SettingsScreen(
 }
 
 @Composable
-private fun SettingsCard(icon: ImageVector, title: String, subtitle: String, tint: Color, onClick: () -> Unit) {
-    Surface(
-        modifier = Modifier.fillMaxWidth().border(1.dp, MaterialTheme.colorScheme.outlineVariant, MaterialTheme.shapes.large),
-        shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 0.dp
+private fun SettingsRowItem(icon: ImageVector, title: String, subtitle: String, tint: Color, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 14.dp, horizontal = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        SettingsMenuItem(icon = icon, title = title, subtitle = subtitle, tint = tint, onClick = onClick)
+        Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(tint.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) {
+            Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(20.dp))
+        }
+        Column(modifier = Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.bodyLarge)
+            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+        Icon(Icons.Filled.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
     }
 }
 

@@ -1,7 +1,9 @@
 package com.palmnote.ui.bills
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.*
+import androidx.compose.material.icons.automirrored.outlined.ShowChart
+import androidx.compose.material.icons.automirrored.outlined.TrendingUp
+import androidx.compose.material.icons.automirrored.outlined.Undo
 import androidx.compose.material.icons.outlined.*
 import com.palmnote.R
 import com.palmnote.ui.components.CategoryItem
@@ -89,58 +91,59 @@ val incomeCategoryItems = listOf(
     CategoryItem("其他", Icons.Outlined.MoreHoriz, StatusRetired)
 )
 
-fun getLocalizedCategoryName(name: String): Int = when (name) {
-    "餐饮" -> R.string.category_food
-    "零食" -> R.string.category_snacks
-    "饮品" -> R.string.category_drinks
-    "交通" -> R.string.category_transport
-    "购物" -> R.string.category_shopping
-    "服饰" -> R.string.category_clothing
-    "数码" -> R.string.category_digital
-    "二手" -> R.string.category_used
-    "居住" -> R.string.category_housing
-    "家居" -> R.string.category_furniture
-    "租金" -> R.string.category_rent
-    "娱乐" -> R.string.category_entertainment
-    "旅游" -> R.string.category_travel
-    "运动" -> R.string.category_sports
-    "医疗" -> R.string.category_medical
-    "健身" -> R.string.category_fitness
-    "美容" -> R.string.category_beauty
-    "教育" -> R.string.category_education
-    "文具" -> R.string.category_stationery
-    "社交" -> R.string.category_social
-    "人情" -> R.string.category_favors
-    "红包" -> R.string.category_red_packet
-    "赠与" -> R.string.category_gift
-    "通讯" -> R.string.category_communication
-    "家政" -> R.string.category_housekeeping
-    "快递" -> R.string.category_delivery
-    "维修" -> R.string.category_repair
-    "投资" -> R.string.category_investment
-    "股票" -> R.string.category_stocks
-    "理财" -> R.string.category_finance
-    "保险" -> R.string.category_insurance
-    "宠物" -> R.string.category_pet
-    "母婴" -> R.string.category_baby
-    "烟酒" -> R.string.category_tobacco_alcohol
-    "捐赠" -> R.string.category_donation
-    "罚款" -> R.string.category_fine
-    "手续费" -> R.string.category_fee
-    "其他" -> R.string.category_other
-    "工资" -> R.string.category_salary
-    "奖金" -> R.string.category_bonus
-    "兼职" -> R.string.category_part_time
-    "副业" -> R.string.category_side_job
-    "报销" -> R.string.category_reimbursement
-    "分红" -> R.string.category_dividend
-    "利息" -> R.string.category_interest
-    "退款" -> R.string.category_refund
-    "中奖" -> R.string.category_lottery
-    "保险理赔" -> R.string.category_claim
-    "继承" -> R.string.category_inheritance
-    else -> R.string.category_other
-}
+private val categoryNameMap = mapOf(
+    "餐饮" to R.string.category_food,
+    "零食" to R.string.category_snacks,
+    "饮品" to R.string.category_drinks,
+    "交通" to R.string.category_transport,
+    "购物" to R.string.category_shopping,
+    "服饰" to R.string.category_clothing,
+    "数码" to R.string.category_digital,
+    "二手" to R.string.category_used,
+    "居住" to R.string.category_housing,
+    "家居" to R.string.category_furniture,
+    "租金" to R.string.category_rent,
+    "娱乐" to R.string.category_entertainment,
+    "旅游" to R.string.category_travel,
+    "运动" to R.string.category_sports,
+    "医疗" to R.string.category_medical,
+    "健身" to R.string.category_fitness,
+    "美容" to R.string.category_beauty,
+    "教育" to R.string.category_education,
+    "文具" to R.string.category_stationery,
+    "社交" to R.string.category_social,
+    "人情" to R.string.category_favors,
+    "红包" to R.string.category_red_packet,
+    "赠与" to R.string.category_gift,
+    "通讯" to R.string.category_communication,
+    "家政" to R.string.category_housekeeping,
+    "快递" to R.string.category_delivery,
+    "维修" to R.string.category_repair,
+    "投资" to R.string.category_investment,
+    "股票" to R.string.category_stocks,
+    "理财" to R.string.category_finance,
+    "保险" to R.string.category_insurance,
+    "宠物" to R.string.category_pet,
+    "母婴" to R.string.category_baby,
+    "烟酒" to R.string.category_tobacco_alcohol,
+    "捐赠" to R.string.category_donation,
+    "罚款" to R.string.category_fine,
+    "手续费" to R.string.category_fee,
+    "其他" to R.string.category_other,
+    "工资" to R.string.category_salary,
+    "奖金" to R.string.category_bonus,
+    "兼职" to R.string.category_part_time,
+    "副业" to R.string.category_side_job,
+    "报销" to R.string.category_reimbursement,
+    "分红" to R.string.category_dividend,
+    "利息" to R.string.category_interest,
+    "退款" to R.string.category_refund,
+    "中奖" to R.string.category_lottery,
+    "保险理赔" to R.string.category_claim,
+    "继承" to R.string.category_inheritance
+)
+
+fun getLocalizedCategoryName(name: String): Int? = categoryNameMap[name]
 
 fun getLocalizedPaymentMethod(method: String): Int = when (method) {
     "CASH" -> R.string.payment_cash

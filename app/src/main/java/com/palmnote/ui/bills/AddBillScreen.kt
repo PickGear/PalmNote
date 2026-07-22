@@ -23,7 +23,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.palmnote.PalmNoteApp
-import com.palmnote.ui.components.simpleViewModel
 import com.palmnote.R
 import com.palmnote.domain.util.CurrencyUtils
 import com.palmnote.domain.util.DateUtils
@@ -34,7 +33,9 @@ import com.palmnote.ui.theme.*
 @Composable
 fun AddBillScreen(
     billId: Long? = null,
+    selectedDate: Long? = null,
     onNavigateBack: () -> Unit = {},
+    onBillSaved: (String) -> Unit = {},
     onNavigateToWallet: () -> Unit = {},
     onNavigateToCategory: (String) -> Unit = {},
     viewModel: BillViewModel = simpleViewModel { PalmNoteApp.container.billViewModel() }
@@ -44,16 +45,21 @@ fun AddBillScreen(
     val isEditing = billId != null
 
     LaunchedEffect(billId) {
-        if (billId != null) viewModel.initFormForEdit(billId) else viewModel.resetForm()
+        if (billId != null) viewModel.initFormForEdit(billId) else viewModel.resetForm(selectedDate)
     }
 
     LaunchedEffect(formState.isSaved) {
-        if (formState.isSaved) onNavigateBack()
+        if (formState.isSaved) {
+            onBillSaved(formState.type)
+            onNavigateBack()
+        }
     }
 
     val customExpenseCategories by viewModel.customExpenseCategories.collectAsStateWithLifecycle()
     val customIncomeCategories by viewModel.customIncomeCategories.collectAsStateWithLifecycle()
-    val categories = if (formState.type == "EXPENSE") expenseCategoryItems + customExpenseCategories else incomeCategoryItems + customIncomeCategories
+    val categories = remember(formState.type, customExpenseCategories, customIncomeCategories) {
+        if (formState.type == "EXPENSE") expenseCategoryItems + customExpenseCategories else incomeCategoryItems + customIncomeCategories
+    }
 
     Scaffold(
         topBar = {
@@ -91,7 +97,7 @@ fun AddBillScreen(
                         modifier = Modifier
                             .weight(1f)
                             .clip(MaterialTheme.shapes.small)
-                            .background(if (expenseSelected) AccentOrange else Color.Transparent)
+                            .background(if (expenseSelected) ExpenseRed else Color.Transparent)
                             .clickable(
                                 indication = null,
                                 interactionSource = remember { MutableInteractionSource() }
@@ -174,7 +180,7 @@ fun AddBillScreen(
                             val categoryType = if (formState.type == "EXPENSE") "BILL_EXPENSE" else "BILL_INCOME"
                             onNavigateToCategory(categoryType)
                         },
-                        getDisplayName = { context.getString(getLocalizedCategoryName(it)) }
+                        getDisplayName = { getLocalizedCategoryName(it)?.let { id -> context.getString(id) } ?: it }
                     )
                 }
             }
@@ -334,6 +340,26 @@ fun AddBillScreen(
                         onValueChange = { viewModel.updateForm { copy(merchant = it) } },
                         modifier = Modifier.fillMaxWidth(),
                         placeholder = { Text(stringResource(R.string.merchant_hint)) },
+                        shape = MaterialTheme.shapes.medium,
+                        singleLine = true
+                    )
+                }
+            }
+
+            // Location
+            item {
+                ModuleCard(tint = MaterialTheme.colorScheme.surface) {
+                    Text(
+                        text = stringResource(R.string.bill_location),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = formState.location,
+                        onValueChange = { viewModel.updateForm { copy(location = it) } },
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text(stringResource(R.string.location_hint)) },
                         shape = MaterialTheme.shapes.medium,
                         singleLine = true
                     )

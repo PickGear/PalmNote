@@ -243,6 +243,7 @@
     <string name="balance">余额</string>
     <string name="merchant">商家</string>
     <string name="merchant_hint">商家名称（可选）</string>
+    <string name="location_hint">消费地点（可选）</string>
     <string name="note_hint">添加备注（可选）</string>
     
     <!-- Bill Filter -->
@@ -1045,6 +1046,8 @@
     <string name="bill_payment_method">支付方式</string>
     <string name="bill_sub_category">子分类</string>
     <string name="bill_location">地点</string>
+    <string name="bill_filter_applied">筛选已应用</string>
+    <string name="bill_filter_cleared">筛选已清除</string>
     <string name="bill_tags">标签</string>
     <string name="bill_attachments">附件</string>
     <string name="bill_reimbursement_status">报销状态</string>
@@ -1382,6 +1385,7 @@
     <string name="common_select_tag">选择标签</string>
     <string name="common_previous_month">上月</string>
     <string name="common_next_month">下月</string>
+    <string name="common_today">今天</string>
     <string name="common_save">保存</string>
     
     <!-- Icon Picker Categories -->

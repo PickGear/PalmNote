@@ -243,6 +243,7 @@
     <string name="balance">Balance</string>
     <string name="merchant">Merchant</string>
     <string name="merchant_hint">Merchant name (optional)</string>
+    <string name="location_hint">Location (optional)</string>
     <string name="note_hint">Add note (optional)</string>
     
     <!-- Bill Filter -->
@@ -1005,6 +1006,8 @@
     <string name="bill_payment_method">Payment Method</string>
     <string name="bill_sub_category">Sub Category</string>
     <string name="bill_location">Location</string>
+    <string name="bill_filter_applied">Filter applied</string>
+    <string name="bill_filter_cleared">Filter cleared</string>
     <string name="bill_tags">Tags</string>
     <string name="bill_attachments">Attachments</string>
     <string name="bill_reimbursement_status">Reimbursement Status</string>
@@ -1342,6 +1345,7 @@
     <string name="common_select_tag">Select Tag</string>
     <string name="common_previous_month">Previous Month</string>
     <string name="common_next_month">Next Month</string>
+    <string name="common_today">Today</string>
     <string name="common_save">Save</string>
     
     <!-- Icon Picker Categories -->
