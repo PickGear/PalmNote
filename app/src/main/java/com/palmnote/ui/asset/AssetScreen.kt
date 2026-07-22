@@ -19,11 +19,14 @@ import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
@@ -538,17 +541,20 @@ fun AssetScreen(
                 }
             } else if (isGridView) {
                 item {
+                    var rowIndex by remember { mutableIntStateOf(0) }
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         state.filteredAssets.chunked(2).forEach { rowAssets ->
+                            val currentRow = rowIndex++
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                rowAssets.forEach { asset ->
+                                rowAssets.forEachIndexed { _, asset ->
                                     GridAssetCard(
                                         modifier = Modifier.weight(1f),
                                         asset = asset,
-                                        onClick = { onNavigateToDetail(asset.id) }
+                                        onClick = { onNavigateToDetail(asset.id) },
+                                        animIndex = currentRow
                                     )
                                 }
                                 if (rowAssets.size < 2) {
@@ -804,7 +810,8 @@ text = DateUtils.formatDisplayYearDate(context, asset.effectiveDate),
 fun GridAssetCard(
     modifier: Modifier = Modifier,
     asset: Asset,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    animIndex: Int = 0
 ) {
     val context = LocalContext.current
     val statusColor = getStatusColor(asset.status)
@@ -814,9 +821,18 @@ fun GridAssetCard(
     val catInfo = getCategoryIcon(asset.category)
     val daysOwned = DateUtils.getDaysSince(asset.effectiveDate).coerceAtLeast(1)
     val costText = getCostText(asset.costMode, asset.purchasePrice, asset.useCount, daysOwned)
+    val animProgress = remember { Animatable(0f) }
+    LaunchedEffect(Unit) {
+        delay(animIndex * 60L)
+        animProgress.animateTo(1f, animationSpec = tween(300, easing = FastOutSlowInEasing))
+    }
 
     Surface(
         modifier = modifier
+            .graphicsLayer {
+                alpha = animProgress.value
+                translationY = (1f - animProgress.value) * 12.dp.toPx()
+            }
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.large)
             .border(1.dp, MaterialTheme.colorScheme.outlineVariant, MaterialTheme.shapes.large)
