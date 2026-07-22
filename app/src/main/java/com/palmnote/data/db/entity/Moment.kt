@@ -2,10 +2,12 @@ package com.palmnote.data.db.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import androidx.compose.runtime.Immutable
 import com.palmnote.ui.theme.AppIcon
 
 
 @Entity(tableName = "moments")
+@Immutable
 data class Moment(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,

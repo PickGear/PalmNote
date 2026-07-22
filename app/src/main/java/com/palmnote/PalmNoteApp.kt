@@ -8,6 +8,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.palmnote.data.LifeDataSeeder
+import com.palmnote.data.db.AppDatabase
 import com.palmnote.data.datastore.PreferencesManager
 import com.palmnote.data.worker.LifeDailyCheckWorker
 import com.palmnote.data.worker.AutoBackupWorker
@@ -34,6 +35,7 @@ class PalmNoteApp : Application(), Configuration.Provider {
     @Inject lateinit var workerFactory: HiltWorkerFactory
     @Inject lateinit var preferencesManager: PreferencesManager
     @Inject lateinit var lifeDataSeeder: LifeDataSeeder
+    @Inject lateinit var database: AppDatabase
 
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -42,10 +44,13 @@ class PalmNoteApp : Application(), Configuration.Provider {
         instance = this
         applySavedLanguage()
         NotificationHelper.createChannels(this)
-        scheduleDailyCheck()
-        scheduleAutoBackup()
-        runStartupCheck()
-        applicationScope.launch { lifeDataSeeder.seedIfEmpty() }
+        applicationScope.launch {
+            database.openHelper.writableDatabase
+            scheduleDailyCheck()
+            scheduleAutoBackup()
+            runStartupCheck()
+            lifeDataSeeder.seedIfEmpty()
+        }
     }
 
     override val workManagerConfiguration: Configuration

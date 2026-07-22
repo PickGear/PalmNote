@@ -5,9 +5,11 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.palmnote.R
+import androidx.compose.runtime.Immutable
 import com.palmnote.ui.theme.AppIcon
 
 @Entity(tableName = "account_books")
+@Immutable
 data class AccountBook(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,

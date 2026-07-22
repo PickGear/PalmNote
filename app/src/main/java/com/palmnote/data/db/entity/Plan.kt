@@ -3,9 +3,11 @@ package com.palmnote.data.db.entity
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import androidx.compose.runtime.Immutable
 import com.palmnote.ui.theme.AppIcon
 
 @Entity(tableName = "plans")
+@Immutable
 data class Plan(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,

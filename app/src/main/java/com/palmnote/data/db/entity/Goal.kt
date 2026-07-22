@@ -5,6 +5,7 @@ import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.palmnote.domain.util.DateUtils
+import androidx.compose.runtime.Immutable
 import com.palmnote.ui.theme.AppIcon
 
 @Entity(tableName = "goals", indices = [
@@ -13,6 +14,7 @@ import com.palmnote.ui.theme.AppIcon
     Index(value = ["isDeleted"], name = "idx_goal_deleted"),
     Index(value = ["deadline"], name = "idx_goal_deadline")
 ])
+@Immutable
 data class Goal(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
@@ -93,6 +95,7 @@ data class Goal(
     Index(value = ["goalId"], name = "idx_checkin_goal"),
     Index(value = ["goalId", "date"], name = "idx_checkin_goal_date")
 ])
+@Immutable
 data class GoalCheckIn(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,

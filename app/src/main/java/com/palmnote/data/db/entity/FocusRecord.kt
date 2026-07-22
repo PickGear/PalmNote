@@ -1,5 +1,6 @@
 package com.palmnote.data.db.entity
 
+import androidx.compose.runtime.Immutable
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
@@ -11,6 +12,7 @@ import androidx.room.PrimaryKey
         Index(value = ["startTime"], name = "idx_focus_start")
     ]
 )
+@Immutable
 data class FocusRecord(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val todoId: Long? = null,

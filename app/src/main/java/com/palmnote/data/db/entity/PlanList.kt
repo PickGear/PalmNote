@@ -3,12 +3,14 @@ package com.palmnote.data.db.entity
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import androidx.compose.runtime.Immutable
 import com.palmnote.ui.theme.AppIcon
 
 /**
  * @deprecated 已被 Plan 替代，保留避免数据库迁移
  */
 @Entity(tableName = "plan_lists")
+@Immutable
 data class PlanList(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
