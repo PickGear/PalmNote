@@ -8,11 +8,7 @@ import com.palmnote.data.db.dao.LifeItemPagingSource
 import com.palmnote.data.db.entity.LifeItem
 import com.palmnote.domain.repository.LifeItemRepository
 import kotlinx.coroutines.flow.Flow
-import javax.inject.Inject
-import javax.inject.Singleton
-
-@Singleton
-class LifeItemRepositoryImpl @Inject constructor(
+class LifeItemRepositoryImpl(
     private val dao: LifeItemDao
 ) : LifeItemRepository {
     override fun getAllItems(): Flow<List<LifeItem>> = dao.getAllItems()

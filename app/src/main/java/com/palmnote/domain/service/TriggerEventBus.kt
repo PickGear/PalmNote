@@ -1,11 +1,8 @@
 package com.palmnote.domain.service
 
 import com.palmnote.data.db.entity.LifeItem
-import javax.inject.Inject
-import javax.inject.Singleton
 
-@Singleton
-class TriggerEventBus @Inject constructor(
+class TriggerEventBus(
     private val engine: TriggerEngine
 ) {
     fun postCreated(item: LifeItem) { engine.evaluate(TriggerEvent.ITEM_CREATED, item) }

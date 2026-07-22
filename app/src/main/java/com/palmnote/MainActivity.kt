@@ -44,20 +44,14 @@ import com.palmnote.ui.components.toComposeColor
 import com.palmnote.ui.theme.PalmNoteTheme
 import com.palmnote.ui.theme.PrimaryGreenLight
 import androidx.compose.ui.res.stringResource
-import dagger.hilt.android.AndroidEntryPoint
-import javax.inject.Inject
+import com.palmnote.R
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.combine
-import com.palmnote.R
 
-@AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
 
-    @Inject
-    lateinit var preferencesManager: PreferencesManager
-
-    @Inject
-    lateinit var appLockManager: AppLockManager
+    private val appContainer get() = PalmNoteApp.container
+    private val appLockManager get() = appContainer.appLockManager
 
     private val lockObserver = LifecycleEventObserver { _, event ->
         if (event == Lifecycle.Event.ON_STOP) {
@@ -80,8 +74,8 @@ class MainActivity : AppCompatActivity() {
         setContent {
             val preferences by remember {
                 combine(
-                    preferencesManager.themeMode,
-                    preferencesManager.switchColor
+                    appContainer.preferencesManager.themeMode,
+                    appContainer.preferencesManager.switchColor
                 ) { theme, color -> Pair(theme, color) }
             }.collectAsState(initial = Pair("SYSTEM", "#2D4A3E"))
             val isDarkTheme = when (preferences.first) {
@@ -91,7 +85,7 @@ class MainActivity : AppCompatActivity() {
             }
             val switchColor = preferences.second.toComposeColor(Color(0xFF2D4A3E))
             val lockState by appLockManager.lockState.collectAsState()
-            val privacyAgreed by preferencesManager.privacyAgreed.collectAsState(initial = null)
+            val privacyAgreed by appContainer.preferencesManager.privacyAgreed.collectAsState(initial = null)
             val showPrivacyDialog = privacyAgreed == false
             val scope = rememberCoroutineScope()
 
@@ -197,7 +191,7 @@ class MainActivity : AppCompatActivity() {
 
                                 Button(
                                     onClick = {
-                                        scope.launch { preferencesManager.setPrivacyAgreed(true) }
+                                        scope.launch { appContainer.preferencesManager.setPrivacyAgreed(true) }
                                     },
                                     modifier = Modifier
                                         .fillMaxWidth()

@@ -21,8 +21,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
+import com.palmnote.PalmNoteApp
 import com.palmnote.R
+import com.palmnote.ui.components.simpleViewModel
 import com.palmnote.ui.components.AppDialog
 import com.palmnote.ui.components.SecondaryTopAppBar
 import androidx.lifecycle.ViewModel
@@ -30,19 +31,17 @@ import androidx.lifecycle.viewModelScope
 import com.palmnote.data.db.entity.Achievement
 import com.palmnote.domain.repository.AchievementRepository
 import com.palmnote.ui.theme.iconFromName
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import java.text.SimpleDateFormat
 import java.util.*
-import javax.inject.Inject
+
 
 data class AchievementUiState(
     val achievements: List<Achievement> = emptyList(),
     val isLoading: Boolean = true
 )
 
-@HiltViewModel
-class AchievementViewModel @Inject constructor(
+class AchievementViewModel(
     private val achievementRepo: AchievementRepository
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(AchievementUiState())
@@ -57,7 +56,7 @@ class AchievementViewModel @Inject constructor(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AchievementScreen(onBack: () -> Unit, viewModel: AchievementViewModel = hiltViewModel()) {
+fun AchievementScreen(onBack: () -> Unit, viewModel: AchievementViewModel = simpleViewModel { PalmNoteApp.container.achievementViewModel() }) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val dateFmt = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) }
     var selectedAchievement by remember { mutableStateOf<Achievement?>(null) }

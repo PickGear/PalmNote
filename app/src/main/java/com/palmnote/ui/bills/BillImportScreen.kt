@@ -28,8 +28,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.palmnote.PalmNoteApp
+import com.palmnote.ui.components.simpleViewModel
 import coil3.compose.AsyncImage
 import com.palmnote.R
 import com.palmnote.data.export.BillCsvImporter
@@ -45,7 +46,7 @@ import com.palmnote.ui.theme.*
 @Composable
 fun BillImportScreen(
     onNavigateBack: () -> Unit = {},
-    viewModel: BillImportViewModel = hiltViewModel()
+    viewModel: BillImportViewModel = simpleViewModel { PalmNoteApp.container.billImportViewModel() }
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current

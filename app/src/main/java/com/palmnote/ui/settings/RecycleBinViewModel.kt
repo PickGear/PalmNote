@@ -9,10 +9,9 @@ import com.palmnote.data.db.entity.Bill
 import com.palmnote.data.db.entity.Goal
 import com.palmnote.data.db.entity.Moment
 import com.palmnote.domain.repository.*
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import javax.inject.Inject
+
 
 @Stable
 data class RecycleBinState(
@@ -23,8 +22,7 @@ data class RecycleBinState(
     val deletedMoments: List<Moment> = emptyList()
 )
 
-@HiltViewModel
-class RecycleBinViewModel @Inject constructor(
+class RecycleBinViewModel(
     private val assetRepository: AssetRepository,
     private val billRepository: BillRepository,
     private val goalRepository: GoalRepository,

@@ -3,11 +3,7 @@ package com.palmnote.data
 import com.palmnote.data.db.entity.LifeTemplate
 import com.palmnote.domain.repository.LifeTemplateRepository
 import kotlinx.coroutines.flow.first
-import javax.inject.Inject
-import javax.inject.Singleton
-
-@Singleton
-class LifeDataSeeder @Inject constructor(
+class LifeDataSeeder(
     private val templateRepo: LifeTemplateRepository
 ) {
     suspend fun seedIfEmpty() {

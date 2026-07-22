@@ -20,8 +20,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.palmnote.PalmNoteApp
+import com.palmnote.ui.components.simpleViewModel
 import com.palmnote.R
 import com.palmnote.data.db.entity.Anniversary
 import com.palmnote.data.db.entity.Asset
@@ -41,7 +42,7 @@ fun SearchScreen(
     onNavigateToAnniversary: (Long) -> Unit = {},
     onNavigateToMoment: (Long) -> Unit = {},
     onBack: () -> Unit = {},
-    viewModel: SearchViewModel = hiltViewModel()
+    viewModel: SearchViewModel = simpleViewModel { PalmNoteApp.container.searchViewModel() }
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 

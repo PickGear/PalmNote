@@ -19,8 +19,7 @@ import com.palmnote.data.ocr.OcrBillResult
 import com.palmnote.domain.repository.BillRepository
 import com.palmnote.domain.repository.WalletRepository
 import com.palmnote.domain.util.DateUtils
-import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
+
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -31,7 +30,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import java.nio.charset.Charset
-import javax.inject.Inject
+
 
 enum class ImportMode { FILE, OCR }
 enum class ImportStage { IDLE, PARSING, PREVIEW, IMPORTING, DONE, ERROR }
@@ -61,9 +60,8 @@ data class BillImportState(
     val wallets: List<com.palmnote.data.db.entity.Wallet> = emptyList()
 )
 
-@HiltViewModel
-class BillImportViewModel @Inject constructor(
-    @ApplicationContext private val context: Context,
+class BillImportViewModel(
+    private val context: Context,
     private val billRepository: BillRepository,
     private val walletRepository: WalletRepository
 ) : ViewModel() {

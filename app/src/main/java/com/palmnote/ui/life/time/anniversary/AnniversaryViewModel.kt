@@ -8,18 +8,16 @@ import com.palmnote.data.db.entity.LifeItem
 import com.palmnote.data.db.entity.LifeTemplate
 import com.palmnote.domain.repository.LifeItemRepository
 import com.palmnote.domain.repository.LifeTemplateRepository
-import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
+
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import javax.inject.Inject
+
 
 data class AnniversaryUiState(val template: LifeTemplate? = null, val items: List<LifeItem> = emptyList(), val isLoading: Boolean = true, val error: String? = null)
 
-@HiltViewModel
-class AnniversaryViewModel @Inject constructor(
-    @ApplicationContext private val context: Context,
+class AnniversaryViewModel(
+    private val context: Context,
     private val itemRepo: LifeItemRepository,
     private val templateRepo: LifeTemplateRepository
 ) : ViewModel() {

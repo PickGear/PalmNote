@@ -27,8 +27,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.palmnote.PalmNoteApp
+import com.palmnote.ui.components.simpleViewModel
 import com.palmnote.R
 import com.palmnote.data.db.entity.LifeItem
 import com.palmnote.ui.components.AppDialog
@@ -46,7 +47,7 @@ fun TodoScreen(
     onBack: () -> Unit,
     onItemClick: (Long) -> Unit,
     onCreateClick: () -> Unit = {},
-    viewModel: TodoViewModel = hiltViewModel()
+    viewModel: TodoViewModel = simpleViewModel { PalmNoteApp.container.todoViewModel() }
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(templateId) { if (templateId > 0) viewModel.load(templateId) }

@@ -19,8 +19,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
+import com.palmnote.PalmNoteApp
 import com.palmnote.R
+import com.palmnote.ui.components.simpleViewModel
 import com.palmnote.data.db.entity.LifeMoment
 import com.palmnote.ui.components.AppDialog
 import com.palmnote.ui.components.SecondaryTopAppBar
@@ -35,7 +36,7 @@ import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun JournalListScreen(onBack: () -> Unit, onItemClick: (Long) -> Unit, viewModel: JournalViewModel = hiltViewModel()) {
+fun JournalListScreen(onBack: () -> Unit, onItemClick: (Long) -> Unit, viewModel: JournalViewModel = simpleViewModel { PalmNoteApp.container.journalViewModel() }) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) { viewModel.load() }
     var showSheet by remember { mutableStateOf(false) }

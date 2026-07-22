@@ -4,11 +4,7 @@ import com.palmnote.data.db.dao.CategoryMappingDao
 import com.palmnote.data.db.entity.CategoryMapping
 import kotlinx.coroutines.flow.Flow
 import com.palmnote.domain.repository.CategoryMappingRepository
-import javax.inject.Inject
-import javax.inject.Singleton
-
-@Singleton
-class CategoryMappingRepository @Inject constructor(
+class CategoryMappingRepository(
     private val categoryMappingDao: CategoryMappingDao
 ) : CategoryMappingRepository {
     override fun getAllMappings(): Flow<List<CategoryMapping>> = categoryMappingDao.getAllMappings()

@@ -26,8 +26,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.palmnote.PalmNoteApp
+import com.palmnote.ui.components.simpleViewModel
 import com.palmnote.data.db.entity.LifeItem
 import com.palmnote.data.db.entity.LifeTemplate
 import com.palmnote.data.db.entity.getDisplayDescription
@@ -64,7 +65,7 @@ fun LifeScreen(
     onNavigateToJournal: () -> Unit = {},
     onNavigateToReport: () -> Unit = {},
     onNavigateToManage: () -> Unit = {},
-    viewModel: LifeViewModel = hiltViewModel()
+    viewModel: LifeViewModel = simpleViewModel { PalmNoteApp.container.lifeViewModel() }
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var showSearch by remember { mutableStateOf(false) }

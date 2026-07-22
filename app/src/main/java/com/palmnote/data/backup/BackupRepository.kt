@@ -3,18 +3,14 @@ package com.palmnote.data.backup
 import android.content.Context
 import com.palmnote.R
 import com.palmnote.data.db.AppDatabase
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import java.io.File
-import javax.inject.Inject
-import javax.inject.Singleton
 
-@Singleton
-class BackupRepository @Inject constructor(
-    @ApplicationContext private val context: Context,
+class BackupRepository(
+    private val context: Context,
     private val db: AppDatabase
 ) {
     private val backupManager = BackupManager()

@@ -10,12 +10,11 @@ import com.palmnote.data.db.entity.Goal
 import com.palmnote.data.datastore.PreferencesManager
 import com.palmnote.domain.repository.*
 import com.palmnote.domain.util.DateUtils
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import javax.inject.Inject
+
 
 @Stable
 data class DashboardState(
@@ -33,8 +32,7 @@ data class DashboardState(
     val assetDistribution: List<CategoryCount> = emptyList()
 )
 
-@HiltViewModel
-class DashboardViewModel @Inject constructor(
+class DashboardViewModel(
     private val assetRepository: AssetRepository,
     private val billRepository: BillRepository,
     private val budgetRepository: BudgetRepository,

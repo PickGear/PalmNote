@@ -21,8 +21,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
+import com.palmnote.PalmNoteApp
 import com.palmnote.R
+import com.palmnote.ui.components.simpleViewModel
 import com.palmnote.data.db.entity.Goal
 import com.palmnote.ui.components.AppDialog
 import com.palmnote.ui.components.SecondaryTopAppBar
@@ -35,7 +36,7 @@ import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HabitListScreen(onBack: () -> Unit, onItemClick: (Long) -> Unit, onAchievementClick: () -> Unit = {}, viewModel: HabitViewModel = hiltViewModel()) {
+fun HabitListScreen(onBack: () -> Unit, onItemClick: (Long) -> Unit, onAchievementClick: () -> Unit = {}, viewModel: HabitViewModel = simpleViewModel { PalmNoteApp.container.habitViewModel() }) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) { viewModel.load() }
     var showStats by remember { mutableStateOf(true) }

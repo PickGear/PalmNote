@@ -18,8 +18,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.palmnote.R
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.palmnote.PalmNoteApp
+import com.palmnote.ui.components.simpleViewModel
 import com.palmnote.data.db.entity.LifeTemplate
 import com.palmnote.data.db.entity.getDisplayDescription
 import com.palmnote.ui.components.CompactTopAppBar
@@ -32,7 +33,7 @@ import com.palmnote.ui.theme.*
 fun TemplateManageScreen(
     onBack: () -> Unit,
     onCreateClick: () -> Unit = {},
-    viewModel: LifeViewModel = hiltViewModel()
+    viewModel: LifeViewModel = simpleViewModel { PalmNoteApp.container.lifeViewModel() }
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 

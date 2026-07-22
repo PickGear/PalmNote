@@ -4,11 +4,7 @@ import com.palmnote.data.db.dao.GoalDao
 import com.palmnote.data.db.entity.Goal
 import kotlinx.coroutines.flow.Flow
 import com.palmnote.domain.repository.GoalRepository
-import javax.inject.Inject
-import javax.inject.Singleton
-
-@Singleton
-class GoalRepository @Inject constructor(
+class GoalRepository(
     private val goalDao: GoalDao
 ) : GoalRepository {
     override fun getAllGoals(): Flow<List<Goal>> = goalDao.getAllGoals()

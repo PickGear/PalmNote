@@ -10,13 +10,12 @@ import com.palmnote.domain.repository.CrossLinkRepository
 import com.palmnote.domain.repository.LifeItemRepository
 import com.palmnote.domain.repository.LifeTemplateRepository
 import com.palmnote.domain.service.TriggerEventBus
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import javax.inject.Inject
+
 
 data class ItemDetailUiState(
     val item: LifeItem? = null,
@@ -25,8 +24,7 @@ data class ItemDetailUiState(
     val links: List<CrossLink> = emptyList()
 )
 
-@HiltViewModel
-class ItemDetailViewModel @Inject constructor(
+class ItemDetailViewModel(
     private val itemRepo: LifeItemRepository,
     private val templateRepo: LifeTemplateRepository,
     private val crossLinkRepo: CrossLinkRepository,

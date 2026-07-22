@@ -4,11 +4,7 @@ import com.palmnote.data.db.dao.MoodDiaryDao
 import com.palmnote.data.db.entity.MoodDiary
 import kotlinx.coroutines.flow.Flow
 import com.palmnote.domain.repository.MoodDiaryRepository
-import javax.inject.Inject
-import javax.inject.Singleton
-
-@Singleton
-class MoodDiaryRepository @Inject constructor(
+class MoodDiaryRepository(
     private val moodDiaryDao: MoodDiaryDao
 ) : MoodDiaryRepository {
     override fun getAllMoodDiaries(): Flow<List<MoodDiary>> = moodDiaryDao.getAllMoodDiaries()

@@ -8,11 +8,7 @@ import com.palmnote.data.db.dao.MonthTotal
 import com.palmnote.data.db.entity.Bill
 import kotlinx.coroutines.flow.Flow
 import com.palmnote.domain.repository.BillRepository
-import javax.inject.Inject
-import javax.inject.Singleton
-
-@Singleton
-class BillRepository @Inject constructor(
+class BillRepository(
     private val billDao: BillDao
 ) : BillRepository {
     override fun getAllBills(): Flow<List<Bill>> = billDao.getAllBills()

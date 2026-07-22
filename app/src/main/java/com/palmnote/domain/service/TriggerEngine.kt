@@ -9,16 +9,13 @@ import com.palmnote.domain.model.LinkType
 import com.palmnote.domain.repository.CrossLinkRepository
 import com.palmnote.domain.repository.LifeItemRepository
 import com.palmnote.ui.notification.NotificationHelper
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import javax.inject.Inject
 import javax.inject.Provider
-import javax.inject.Singleton
 
 data class TriggerRule(
     val triggerEvent: TriggerEvent,
@@ -37,9 +34,8 @@ sealed class TriggerAction {
     data class SetFieldValue(val key: String, val valueExpression: String) : TriggerAction()
 }
 
-@Singleton
-class TriggerEngine @Inject constructor(
-    @ApplicationContext private val context: Context,
+class TriggerEngine(
+    private val context: Context,
     private val itemRepoProvider: Provider<LifeItemRepository>,
     private val crossLinkRepo: CrossLinkRepository
 ) {

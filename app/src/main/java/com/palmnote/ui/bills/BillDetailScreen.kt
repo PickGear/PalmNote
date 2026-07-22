@@ -20,8 +20,9 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.palmnote.PalmNoteApp
+import com.palmnote.ui.components.simpleViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.palmnote.R
@@ -37,7 +38,7 @@ fun BillDetailScreen(
     billId: Long,
     onNavigateBack: () -> Unit = {},
     onNavigateToEdit: (Long) -> Unit = {},
-    viewModel: BillDetailViewModel = hiltViewModel()
+    viewModel: BillDetailViewModel = simpleViewModel { PalmNoteApp.container.billDetailViewModel() }
 ) {
     val context = LocalContext.current
     val state by viewModel.state.collectAsStateWithLifecycle()
