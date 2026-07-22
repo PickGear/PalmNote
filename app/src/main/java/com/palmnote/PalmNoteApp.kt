@@ -3,7 +3,6 @@
 import android.app.Application
 import androidx.work.Configuration
 import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.palmnote.data.LifeDataSeeder
@@ -44,18 +43,20 @@ class PalmNoteApp : Application() {
         }
         applySavedLanguage()
         NotificationHelper.createChannels(this)
-        applicationScope.launch {
+        kotlinx.coroutines.runBlocking {
             container.database.openHelper.writableDatabase
             preloadTabData()
+        }
+        applicationScope.launch {
             scheduleDailyCheck()
             scheduleAutoBackup()
-            runStartupCheck()
             container.lifeDataSeeder.seedIfEmpty()
         }
     }
 
     private fun preloadTabData() {
-        applicationScope.launch {
+        kotlinx.coroutines.runBlocking {
+            container.dashboardViewModel()
             // Create ViewModels to trigger data loading - states auto-cache via DataCache
             container.dashboardViewModel().apply { /* loadDashboardData called in init */ }
             container.assetViewModel().apply { /* loadAssets called in init */ }
@@ -92,11 +93,6 @@ class PalmNoteApp : Application() {
         WorkManager.getInstance(this).enqueueUniquePeriodicWork(
             "auto_backup", ExistingPeriodicWorkPolicy.KEEP, request
         )
-    }
-
-    private fun runStartupCheck() {
-        val request = OneTimeWorkRequestBuilder<LifeDailyCheckWorker>().build()
-        WorkManager.getInstance(this).enqueue(request)
     }
 
     private fun applySavedLanguage() {
