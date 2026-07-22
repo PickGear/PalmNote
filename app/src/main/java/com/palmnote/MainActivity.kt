@@ -47,6 +47,8 @@ import androidx.compose.ui.res.stringResource
 import com.palmnote.R
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 
 class MainActivity : AppCompatActivity() {
 
@@ -71,6 +73,10 @@ class MainActivity : AppCompatActivity() {
             appLockManager.lock()
         }
 
+        val initialPrivacyAgreed = kotlinx.coroutines.runBlocking {
+            appContainer.preferencesManager.privacyAgreed.first()
+        }
+
         setContent {
             val preferences by remember {
                 combine(
@@ -85,7 +91,7 @@ class MainActivity : AppCompatActivity() {
             }
             val switchColor = preferences.second.toComposeColor(Color(0xFF2D4A3E))
             val lockState by appLockManager.lockState.collectAsState()
-            val privacyAgreed by appContainer.preferencesManager.privacyAgreed.collectAsState(initial = null)
+            val privacyAgreed by appContainer.preferencesManager.privacyAgreed.collectAsState(initial = initialPrivacyAgreed)
             val showPrivacyDialog = privacyAgreed == false
             val scope = rememberCoroutineScope()
 

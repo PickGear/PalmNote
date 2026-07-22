@@ -243,7 +243,7 @@ fun BillScreen(
                 // Animated sections (outside LazyColumn for smooth transition)
                 AnimatedVisibility(
                     visible = !showSearch,
-                    enter = fadeIn(tween(300)) + expandVertically(tween(300)),
+                    enter = fadeIn(tween(120)) + expandVertically(tween(120)),
                     exit = fadeOut(tween(300)) + shrinkVertically(tween(300))
                 ) {
                     Column(

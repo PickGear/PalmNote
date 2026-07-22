@@ -1,13 +1,13 @@
-以下是调整后的完整 **PalmNote 设计规范 v4.1**：
+以下是调整后的完整 **PalmNote 设计规范 v4.2**：
 
 ---
 
 # PalmNote 设计规范
 
-> v4.1 | 2026-07-04 | Material3 + Jetpack Compose | 纯本地存储
+> v4.2 | 2026-07-22 | Material3 + Jetpack Compose | 纯本地存储 | 手动 DI
 > 本规范涵盖全局设计系统 + 生活模块专属规范。生活模块新增部分以 `[Life]` 标记。
 >
-> **v4.1 变更说明：** 基于实施规格书交叉审查，修复成就图标列表不一致、FAB 菜单图标重复、颜色选择器排序混乱等问题，补充日历视图组件规范、空状态差异化文案、心情触发因素交互规范、图片处理规范、条目上限预警等缺失内容。
+> **v4.2 变更说明：** 移除 Hilt/Dagger，更换为手动 DI（AppContainer）；更新底部导航栏规范（60dp、CenterVertically、无动画、缓存 inset）；更新卡片间距统一为 8dp；移除 Dashboard 内部 Scaffold；新增性能优化章节；更新架构栈。
 
 ---
 
@@ -213,11 +213,13 @@ val lifeColorPalette = listOf(
 | Token | 值 | 场景 |
 |-------|-----|------|
 | xxs | 4dp | 文字与图标间、键盘按键间距 |
-| xs | 8dp | 表单字段间距、标签间距、卡片间距 |
+| xs | 8dp | **卡片间距（统一）、** 表单字段间距、标签间距 |
 | sm | 12dp | 并列模块间距、表单字段间距、卡片内容区垂直间距 |
 | md | 16dp | Card padding、页面边距、SettingRow 水平内边距、BottomSheet 内容区内边距 |
 | lg | 24dp | 大区块间距、Dialog 内边距 |
 | xl | 32dp | 页面顶部间距、底部垫底 |
+
+> **v4.2 变更：** 卡片间距统一从 16dp 改为 8dp（包括 Dashboard、Asset、Bill、Life、Detail 页等所有页面的卡片列表）
 
 `[Life]` 生活模块无额外间距 Token，全部复用上述 6 级间距。
 
@@ -494,7 +496,7 @@ Card(
 
 #### Dashboard 拖拽排序
 
-- 实现：`Column` + `verticalScroll` + 浮层覆盖 + `positionInWindow()` 全局坐标追踪
+- 实现：`Column` + `verticalScroll`（无内部 Scaffold）+ 浮层覆盖 + `positionInWindow()` 全局坐标追踪
 - 长按触发：`detectDragGesturesAfterLongPress` + 触觉反馈
 - 浮层：缩放 1.04x，阴影 40dp，`zIndex: 200f`
 - 原位卡片：`alpha = 0`，`zIndex: 100f`
@@ -599,15 +601,23 @@ Card(
 
 | 属性 | 值 |
 |------|-----|
-| 内容高度 | 50dp |
-| 上边距 | 6dp |
+| 内容高度 | 60dp |
+| 内部上边距 | 5dp |
 | 图标与文字间距 | 2dp |
 | 文字样式 | `labelSmall`（10sp） |
 | 图标容器 | 26dp Box 居中 |
 | 选中态 | filled 图标 + 主题色 |
 | 未选中态 | outlined 图标 + `onSurfaceVariant` |
-| 系统导航栏 | `WindowInsets.navigationBars` 底部留白 |
-| 容器 | 透明背景，无阴影 |
+| 对齐 | `CenterVertically` |
+| 系统导航栏 | 缓存固定值 `navBarBottomDp`，通过 `Modifier.padding(bottom = ...)` 设置 |
+| 入场动画 | **无**（与页面同步出现） |
+| 容器 | `Surface` + `background` 色，无阴影 |
+
+#### 架构变更
+
+- 使用 `contentWindowInsets.exclude(WindowInsets.navigationBars)` 防止 Scaffold 双重 inset
+- 使用 `WindowInsets.navigationBars.getBottom()` 转换为 Dp 并缓存为固定值，避免双 Scaffold 嵌套时 recomposition 导致的 inset 波动
+- 移除了 Dashboard 内部 Scaffold，消除嵌套 Scaffold 的 inset 冲突
 
 #### `[Life]` 生活模块内部导航
 
@@ -825,9 +835,9 @@ Card(
 
 | 场景 | 动画 | 参数 |
 |------|------|------|
-| Tab 切换 | fade 淡入淡出 | `spring(dampingRatio=0.9f, stiffness=250f)` |
-| Push 进入子页面 | fade 淡入 | `spring(dampingRatio=0.9f, stiffness=250f)` |
-| Pop 返回 | fade 淡出 | `spring(dampingRatio=0.9f, stiffness=250f)` |
+| Tab 切换 | fade 淡入淡出 | `tween(250)` |
+| Push 进入子页面 | fade 淡入 | `tween(250)` |
+| Pop 返回 | fade 淡出 | `tween(250)` |
 
 > 所有页面切换统一使用 fade，无滑动方向。
 
@@ -1191,7 +1201,67 @@ const val LIFE_FOCUS_TIMER = "life/focus/timer"
 
 ---
 
-## 变更记录
+## 十六、架构与性能
+
+### 16.1 技术栈
+
+| 层 | 方案 |
+|-------|------|
+| UI 框架 | Jetpack Compose + Material 3 |
+| 依赖注入 | **手动 DI（AppContainer）** — 单例容器，Application.onCreate 时初始化所有依赖 |
+| 数据库 | Room（预热：onCreate 时调用 `openHelper.writableDatabase`） |
+| 偏好存储 | DataStore Preferences |
+| 图片加载 | Coil 3 |
+| 导航 | Navigation Compose（fade 动画） |
+| 图表 | Compose Canvas 自绘（无第三方库） |
+| 状态管理 | ViewModel + StateFlow |
+| 备份 | AES-GCM + WebDAV |
+| OCR | ML Kit（本地离线识别） |
+
+### 16.2 依赖注入架构变更（v4.2）
+
+| 维度 | 之前 (v4.1) | 之后 (v4.2) |
+|------|:---------:|:---------:|
+| DI 框架 | Hilt/Dagger（KSP 代码生成） | 手动 DI（AppContainer 模式） |
+| 初始化开销 | ~30ms（Hilt 组件图构建） | 0ms |
+| 依赖查找 | 运行时反射 | 编译时直接取用 |
+| 编译速度 | 慢（KSP 生成） | 快 |
+| APK 体积 | 较大（Hilt 注入代码） | 较小 |
+| DI 模块数 | 3 个文件 | 1 个 `AppContainer.kt` |
+| ViewModel 创建 | `hiltViewModel()`（反射查找） | `simpleViewModel { container.xxx() }`（直接构造） |
+
+### 16.3 性能优化
+
+| 优化项 | 说明 |
+|--------|------|
+| **Baseline Profile** | 40+ 条规则覆盖 Hoot/Startup 路径（Compose/Hilt/Room/导航），消除首帧 JIT 编译 |
+| **Room 预热** | Application.onCreate 时调用 `database.openHelper.writableDatabase` 强制初始化 |
+| **@Immutable 实体** | 22 个 Entity 数据类标注 `@Immutable`，减少 Compose 不必要的重组 |
+| **DataStore 批量读取** | 使用 `combine()` 一次性读取主题色/模式/隐私协议，减少 2 次启动时重组 |
+| **ViewModel 创建优化** | `simpleViewModel {}` 直接构造，零反射开销 |
+| **WorkManager 延迟** | 非关键 Worker 调度延迟到后台协程，不阻塞主线程 |
+
+### 16.4 启动流程优化
+
+```
+Application.onCreate()
+├── AppContainer.init()      → 所有依赖就绪
+├── applySavedLanguage()     → 语言设置
+├── NotificationChannels     → 通知渠道
+└── applicationScope.launch {
+    ├── database.openHelper  → Room 预热
+    ├── scheduleDailyCheck() → Worker 调度
+    ├── scheduleAutoBackup() → 自动备份
+    └── seedIfEmpty()        → 模板种子
+}
+
+MainActivity.onCreate()
+└── setContent {
+    ├── collectAsState(combine) → DataStore 批量读取（1 次重组）
+    ├── PalmNoteTheme()
+    └── NavHost(fade 动画)
+        └── 当前页面（导航栏同步出现，无动画延迟）
+}
 
 | 版本 | 日期 | 内容 |
 |------|------|------|
@@ -1202,4 +1272,4 @@ const val LIFE_FOCUS_TIMER = "life/focus/timer"
 | 2.2 | 2026-07-03 | Tab/页面动画 fade+spring；顶栏图标上色；胶囊 Switch；设置页规范；移除主题色 |
 | 3.0 | 2026-07-03 | 全面对齐：修正 Card 边框 1dp、分隔线双规则、AppDialog 按钮文案去统一化、新增小节（权限/备份/编码禁止 clickable 缺 clip 和 items 缺 key）、14 组件章节重组 |
 | 4.0 | 2026-07-03 | 生活模块集成：新增 1.7 生活模块色彩体系、5.3 生活模块图标规范、6.17 生活模块专属组件、7.2 生活模块动画补充、8 权限补充、10 文案补充、11 图表补充、13.3 生活模块颜色引用、15 生活模块导航结构与路由定义 |
-| **4.1** | **2026-07-04** | **基于实施规格书交叉审查优化：修复成就图标列表不一致（5.3.2 新增 13 个成就完整映射表）；修复 FAB 菜单第 7 项图标重复（EditNote→AutoStories）；颜色选择器按色相重新排列并扩充至 16 色（1.7.3）；补充日历视图完整组件规范（6.17.8）；补充心情触发因素交互规范（5.3.5）；补充空状态差异化文案表（6.10）；补充条目数量预警阈值（6.17.1）；补充关联类型用户可见 Tag 文案（6.17.2）；补充关联数量统计规则（6.17.3）；补充热力图列标签渲染策略（6.17.5）；补充底栏与生活模块内部导航关系说明（6.12）；补充 COUNTDOWN/TIMER 展示规则与日期计算方案（九）；补充图片存储压缩参数与删除策略（十四）；补充备份恢复时 CrossLink ID 重映射逻辑（十四）；补充金额输入"复用记账键盘"的明确说明（十二）；补充日历月份切换手势（7.3）；补充双轴折线图（十一）；补充多个新文案条目（十）** |
+| **4.2** | **2026-07-22** | **架构重构：移除 Hilt → 手动 DI（AppContainer）。底部导航栏：60dp、CenterVertically、无动画、缓存 inset。卡片间距统一 8dp。移除 Dashboard 内部 Scaffold。导航动画 spring → tween(250)。新增架构与性能章节。** |

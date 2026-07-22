@@ -29,6 +29,8 @@ class PalmNoteApp : Application() {
             private set
         lateinit var container: AppContainer
             private set
+        var cachedStartPage: String = "dashboard"
+            private set
     }
 
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -37,14 +39,28 @@ class PalmNoteApp : Application() {
         super.onCreate()
         instance = this
         container = AppContainer(this)
+        cachedStartPage = kotlinx.coroutines.runBlocking {
+            container.preferencesManager.defaultStartPage.first()
+        }
         applySavedLanguage()
         NotificationHelper.createChannels(this)
         applicationScope.launch {
             container.database.openHelper.writableDatabase
+            preloadTabData()
             scheduleDailyCheck()
             scheduleAutoBackup()
             runStartupCheck()
             container.lifeDataSeeder.seedIfEmpty()
+        }
+    }
+
+    private fun preloadTabData() {
+        applicationScope.launch {
+            // Create ViewModels to trigger data loading - states auto-cache via DataCache
+            container.dashboardViewModel().apply { /* loadDashboardData called in init */ }
+            container.assetViewModel().apply { /* loadAssets called in init */ }
+            container.billViewModel().apply { /* loadBillData called in init */ }
+            container.lifeViewModel().apply { /* observeTemplates called in init */ }
         }
     }
 
