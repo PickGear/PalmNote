@@ -122,10 +122,7 @@ fun PalmNoteNavHost() {
     var lifeChildAtHome by remember { mutableStateOf(true) }
     val showBottomBar = lifeChildAtHome && (currentDestination?.route?.let { route ->
         bottomNavItems.any { item -> item.route == route }
-    } ?: true)
-    val navBarBottomDp = with(LocalDensity.current) {
-        WindowInsets.navigationBars.getBottom(this).toDp()
-    }
+     } ?: true)
 
     val context = LocalContext.current
     val startDest = PalmNoteApp.cachedStartPage
@@ -143,7 +140,9 @@ fun PalmNoteNavHost() {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(bottom = navBarBottomDp)
+                            .windowInsetsPadding(
+                                WindowInsets.navigationBars.only(WindowInsetsSides.Bottom)
+                            )
                     ) {
                         Row(
                             modifier = Modifier

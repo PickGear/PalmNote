@@ -13,6 +13,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.Animatable
+import kotlinx.coroutines.delay
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
@@ -161,17 +163,23 @@ fun DashboardScreen(
                         .padding(horizontal = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    configs.forEach { config ->
+                    configs.forEachIndexed { index, config ->
                         key(config.type) {
                             val isDragged = draggedType == config.type
                             val cardShape = MaterialTheme.shapes.large
+                            val animProgress = remember { Animatable(0f) }
+                            LaunchedEffect(Unit) {
+                                delay(index * 60L)
+                                animProgress.animateTo(1f, animationSpec = tween(300))
+                            }
 
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .zIndex(if (isDragged) 100f else 0f)
                                     .graphicsLayer {
-                                        alpha = if (isDragged) 0f else 1f
+                                        alpha = if (isDragged) 0f else animProgress.value
+                                        translationY = if (isDragged) 0f else (1f - animProgress.value) * 12.dp.toPx()
                                     }
                                     .onGloballyPositioned {
                                         cardGlobalYs[config.type] = it.positionInWindow().y
