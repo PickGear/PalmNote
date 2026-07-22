@@ -5,6 +5,7 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.palmnote.domain.model.EntityType
+import androidx.compose.runtime.Immutable
 import com.palmnote.domain.model.LinkType
 
 @Entity(
@@ -25,6 +26,7 @@ import com.palmnote.domain.model.LinkType
         )
     ]
 )
+@Immutable
 data class CrossLink(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,

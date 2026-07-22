@@ -1,5 +1,6 @@
 package com.palmnote.data.db.entity
 
+import androidx.compose.runtime.Immutable
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
@@ -8,6 +9,7 @@ import androidx.room.PrimaryKey
     tableName = "achievements",
     indices = [Index(value = ["code"], unique = true)]
 )
+@Immutable
 data class Achievement(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val code: String,

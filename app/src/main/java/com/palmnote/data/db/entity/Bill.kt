@@ -1,5 +1,6 @@
 ﻿package com.palmnote.data.db.entity
 
+import androidx.compose.runtime.Immutable
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
@@ -16,6 +17,7 @@ import androidx.room.PrimaryKey
         Index(value = ["category", "isDeleted"])
     ]
 )
+@Immutable
 data class Bill(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
@@ -55,6 +57,7 @@ data class Bill(
 )
 
 @Entity(tableName = "recurring_templates")
+@Immutable
 data class RecurringTemplate(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,

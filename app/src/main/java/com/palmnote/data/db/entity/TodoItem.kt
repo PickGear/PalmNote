@@ -1,5 +1,6 @@
 package com.palmnote.data.db.entity
 
+import androidx.compose.runtime.Immutable
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
@@ -10,6 +11,7 @@ import androidx.room.PrimaryKey
     Index(value = ["planId"], name = "idx_todo_plan"),
     Index(value = ["lifeItemId"], name = "idx_todo_life_item")
 ])
+@Immutable
 data class TodoItem(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,

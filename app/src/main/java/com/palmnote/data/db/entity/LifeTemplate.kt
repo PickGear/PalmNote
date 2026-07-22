@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import androidx.compose.runtime.Immutable
 import com.palmnote.R
 
 @Entity(tableName = "life_templates", indices = [
@@ -11,6 +12,7 @@ import com.palmnote.R
     Index(value = ["isDeleted"], name = "idx_template_deleted"),
     Index(value = ["isHidden", "isDeleted"], name = "idx_template_visible")
 ])
+@Immutable
 data class LifeTemplate(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,

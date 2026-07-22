@@ -47,6 +47,7 @@ import androidx.compose.ui.res.stringResource
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.combine
 import com.palmnote.R
 
 @AndroidEntryPoint
@@ -77,14 +78,18 @@ class MainActivity : AppCompatActivity() {
         }
 
         setContent {
-            val themeMode by preferencesManager.themeMode.collectAsState(initial = "SYSTEM")
-            val switchColorHex by preferencesManager.switchColor.collectAsState(initial = "#2D4A3E")
-            val isDarkTheme = when (themeMode) {
+            val preferences by remember {
+                combine(
+                    preferencesManager.themeMode,
+                    preferencesManager.switchColor
+                ) { theme, color -> Pair(theme, color) }
+            }.collectAsState(initial = Pair("SYSTEM", "#2D4A3E"))
+            val isDarkTheme = when (preferences.first) {
                 "DARK" -> true
                 "LIGHT" -> false
                 else -> isSystemInDarkTheme()
             }
-            val switchColor = switchColorHex.toComposeColor(Color(0xFF2D4A3E))
+            val switchColor = preferences.second.toComposeColor(Color(0xFF2D4A3E))
             val lockState by appLockManager.lockState.collectAsState()
             val privacyAgreed by preferencesManager.privacyAgreed.collectAsState(initial = null)
             val showPrivacyDialog = privacyAgreed == false
