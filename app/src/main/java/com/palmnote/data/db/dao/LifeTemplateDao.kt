@@ -44,4 +44,7 @@ interface LifeTemplateDao {
 
     @Query("DELETE FROM life_templates WHERE id = :id")
     suspend fun hardDeleteTemplateById(id: Long)
+
+    @Query("DELETE FROM life_templates")
+    suspend fun deleteAll()
 }

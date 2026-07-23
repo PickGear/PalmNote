@@ -38,30 +38,16 @@ class PalmNoteApp : Application() {
         super.onCreate()
         instance = this
         container = AppContainer(this)
-        cachedStartPage = kotlinx.coroutines.runBlocking {
+        cachedStartPage = runBlocking {
             container.preferencesManager.defaultStartPage.first()
         }
         applySavedLanguage()
         NotificationHelper.createChannels(this)
-        kotlinx.coroutines.runBlocking {
-            container.database.openHelper.writableDatabase
-            preloadTabData()
-        }
         applicationScope.launch {
+            container.database.openHelper.writableDatabase
             scheduleDailyCheck()
             scheduleAutoBackup()
             container.lifeDataSeeder.seedIfEmpty()
-        }
-    }
-
-    private fun preloadTabData() {
-        kotlinx.coroutines.runBlocking {
-            container.dashboardViewModel()
-            // Create ViewModels to trigger data loading - states auto-cache via DataCache
-            container.dashboardViewModel().apply { /* loadDashboardData called in init */ }
-            container.assetViewModel().apply { /* loadAssets called in init */ }
-            container.billViewModel().apply { /* loadBillData called in init */ }
-            container.lifeViewModel().apply { /* observeTemplates called in init */ }
         }
     }
 

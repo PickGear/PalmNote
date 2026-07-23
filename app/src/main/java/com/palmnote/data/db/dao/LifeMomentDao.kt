@@ -26,4 +26,7 @@ interface LifeMomentDao {
 
     @Query("SELECT COUNT(*) FROM life_moments WHERE isDeleted = 0")
     fun getMomentCount(): Flow<Int>
+
+    @Query("DELETE FROM life_moments")
+    suspend fun deleteAll()
 }

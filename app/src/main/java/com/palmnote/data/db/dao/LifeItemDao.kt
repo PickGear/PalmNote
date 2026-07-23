@@ -75,4 +75,7 @@ interface LifeItemDao {
 
     @Query("DELETE FROM life_items WHERE id = :id")
     suspend fun hardDeleteById(id: Long)
+
+    @Query("DELETE FROM life_items")
+    suspend fun deleteAll()
 }

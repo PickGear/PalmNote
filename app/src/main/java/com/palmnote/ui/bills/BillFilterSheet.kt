@@ -48,17 +48,17 @@ fun BillFilterSheet(
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 FilterChip(
                     selected = selectedType == null,
-                    onClick = { selectedType = null; selectedCategory = null },
+                    onClick = { selectedType = null },
                     label = { Text(stringResource(R.string.bill_filter_type_all)) }
                 )
                 FilterChip(
                     selected = selectedType == "EXPENSE",
-                    onClick = { selectedType = "EXPENSE"; selectedCategory = null },
+                    onClick = { selectedType = "EXPENSE" },
                     label = { Text(stringResource(R.string.bill_filter_type_expense)) }
                 )
                 FilterChip(
                     selected = selectedType == "INCOME",
-                    onClick = { selectedType = "INCOME"; selectedCategory = null },
+                    onClick = { selectedType = "INCOME" },
                     label = { Text(stringResource(R.string.bill_filter_type_income)) }
                 )
             }
@@ -101,22 +101,58 @@ fun BillFilterSheet(
             )
             Spacer(modifier = Modifier.height(16.dp))
 
-            Button(
-                onClick = {
-                    onApply(
-                        BillFilter(
-                            type = selectedType,
-                            category = selectedCategory,
-                            amountMin = amountMin.toDoubleOrNull(),
-                            amountMax = amountMax.toDoubleOrNull()
+            val hasActiveFilter = currentFilter.isActive
+            if (hasActiveFilter) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = {
+                            onApply(BillFilter())
+                            onDismiss()
+                        },
+                        modifier = Modifier.weight(1f).height(48.dp),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(stringResource(R.string.bill_filter_clear), fontWeight = FontWeight.Medium)
+                    }
+                    Button(
+                        onClick = {
+                            onApply(
+                                BillFilter(
+                                    type = selectedType,
+                                    category = selectedCategory,
+                                    amountMin = amountMin.toDoubleOrNull(),
+                                    amountMax = amountMax.toDoubleOrNull()
+                                )
+                            )
+                            onDismiss()
+                        },
+                        modifier = Modifier.weight(1f).height(48.dp),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(stringResource(R.string.bill_filter_apply), fontWeight = FontWeight.Bold)
+                    }
+                }
+            } else {
+                Button(
+                    onClick = {
+                        onApply(
+                            BillFilter(
+                                type = selectedType,
+                                category = selectedCategory,
+                                amountMin = amountMin.toDoubleOrNull(),
+                                amountMax = amountMax.toDoubleOrNull()
+                            )
                         )
-                    )
-                    onDismiss()
-                },
-                modifier = Modifier.fillMaxWidth().height(48.dp),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text(stringResource(R.string.bill_filter_apply), fontWeight = FontWeight.Bold)
+                        onDismiss()
+                    },
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(stringResource(R.string.bill_filter_apply), fontWeight = FontWeight.Bold)
+                }
             }
             Spacer(modifier = Modifier.height(8.dp))
         }

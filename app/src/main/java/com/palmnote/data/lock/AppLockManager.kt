@@ -7,6 +7,7 @@ import com.palmnote.ui.lock.AppLockState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import java.security.MessageDigest
 import java.security.SecureRandom
@@ -39,28 +40,28 @@ class AppLockManager(
     fun verifyPin(pin: String): Boolean {
         val storedPin = preferencesManager.getEncryptedPin()
         if (storedPin.isEmpty()) return false
-        
+
         // PBKDF2 (new format)
         if (storedPin.startsWith(PBKDF2_PREFIX)) {
             return verifyPbkdf2Pin(pin, storedPin)
         }
-        
+
         // Legacy SHA-256 verification
         val isValid = hashPinLegacy(pin) == storedPin
         if (isValid) {
             val newHash = hashPin(pin)
-            runBlocking { preferencesManager.setEncryptedPin(newHash) }
+            runBlocking(Dispatchers.IO) { preferencesManager.setEncryptedPin(newHash) }
         }
         return isValid
     }
 
     fun setPin(pin: String) {
-        runBlocking { preferencesManager.setEncryptedPin(hashPin(pin)) }
+        runBlocking(Dispatchers.IO) { preferencesManager.setEncryptedPin(hashPin(pin)) }
         cachedHasPin = true
     }
 
     fun clearPin() {
-        runBlocking { preferencesManager.setEncryptedPin("") }
+        runBlocking(Dispatchers.IO) { preferencesManager.setEncryptedPin("") }
         cachedHasPin = false
     }
 

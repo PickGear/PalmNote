@@ -261,6 +261,7 @@
     <string name="bill_filter_payment_method">支付方式</string>
     <string name="bill_filter_payment_method_all">全部方式</string>
     <string name="bill_filter_apply">应用筛选</string>
+    <string name="bill_filter_clear">清除筛选</string>
     
     <!-- Dashboard Module -->
     <string name="dashboard_card_manage">卡片管理</string>

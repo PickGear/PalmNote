@@ -37,4 +37,7 @@ interface CrossLinkDao {
 
     @Query("DELETE FROM cross_links WHERE sourceType = :sourceType AND sourceId = :sourceId")
     suspend fun deleteLinksBySource(sourceType: EntityType, sourceId: Long)
+
+    @Query("DELETE FROM cross_links")
+    suspend fun deleteAll()
 }
