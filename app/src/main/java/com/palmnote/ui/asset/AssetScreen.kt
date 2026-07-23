@@ -1,6 +1,7 @@
 package com.palmnote.ui.asset
 
 import androidx.compose.foundation.background
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -116,6 +117,7 @@ fun AssetScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val focusManager = LocalFocusManager.current
     var showSearch by remember { mutableStateOf(false) }
+    BackHandler(enabled = showSearch) { showSearch = false; viewModel.setSearchQuery("") }
 
     Scaffold(
         contentWindowInsets = ScaffoldDefaults.contentWindowInsets

@@ -1,6 +1,7 @@
 ﻿package com.palmnote.ui.bills
 
 import androidx.compose.animation.*
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -91,6 +92,8 @@ fun BillScreen(
 
     var showBookMenu by remember { mutableStateOf(false) }
     var showSearch by remember { mutableStateOf(false) }
+    
+    BackHandler(enabled = showSearch) { showSearch = false; viewModel.clearSearch() }
     val currentBook = state.accountBooks.find { it.id == state.selectedBookId }
         ?: state.allAccountBooks.find { it.id == state.selectedBookId }
     

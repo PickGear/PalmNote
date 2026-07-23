@@ -4,6 +4,7 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.activity.compose.BackHandler
 
 import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -69,6 +70,7 @@ fun LifeScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var showSearch by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
+    BackHandler(enabled = showSearch) { showSearch = false; searchQuery = "" }
     val contextLife = LocalContext.current
     val planExpanded by contextLife.dataStore.data.map { it[booleanPreferencesKey("life_plan_expanded")] ?: true }.collectAsStateWithLifecycle(initialValue = true)
     val timeExpanded by contextLife.dataStore.data.map { it[booleanPreferencesKey("life_time_expanded")] ?: true }.collectAsStateWithLifecycle(initialValue = true)
