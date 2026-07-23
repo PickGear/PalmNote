@@ -261,6 +261,7 @@
     <string name="bill_filter_payment_method">Payment Method</string>
     <string name="bill_filter_payment_method_all">All Methods</string>
     <string name="bill_filter_apply">Apply Filter</string>
+    <string name="bill_filter_clear">Clear Filter</string>
     
     <!-- Dashboard Module -->
     <string name="dashboard_card_manage">Card Management</string>

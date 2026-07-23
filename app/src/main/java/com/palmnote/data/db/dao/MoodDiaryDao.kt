@@ -26,4 +26,7 @@ interface MoodDiaryDao {
 
     @Query("DELETE FROM mood_diaries WHERE id = :id")
     suspend fun deleteMoodDiary(id: Long)
+
+    @Query("DELETE FROM mood_diaries")
+    suspend fun deleteAll()
 }

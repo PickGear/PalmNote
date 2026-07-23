@@ -23,4 +23,7 @@ interface LifeReportDao {
 
     @Query("DELETE FROM life_reports WHERE type = :type AND periodStart = :periodStart")
     suspend fun deleteReport(type: String, periodStart: Long)
+
+    @Query("DELETE FROM life_reports")
+    suspend fun deleteAll()
 }

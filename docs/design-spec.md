@@ -177,13 +177,13 @@ val lifeColorPalette = listOf(
 
 | Style | 字号 | 行高 | 字重 | 场景 |
 |-------|------|------|------|------|
-| displaySmall | 24sp | 32sp | Bold | 大号计数器、App 标题 |
+| displaySmall | 24sp | 30sp | Medium | 大号计数器、App 标题 |
 | headlineLarge | 22sp | 28sp | Bold | 页面大标题 |
-| headlineMedium | 20sp | 26sp | Bold | 问候语、统计数字、记账金额 |
-| titleLarge | 18sp | 24sp | Bold | 列表标题、Dialog 标题 |
-| titleMedium | 16sp | 22sp | Bold | 卡片标题、BottomSheet 标题、Tab 选中态 |
+| headlineMedium | 20sp | 26sp | Medium | 问候语、统计数字、记账金额 |
+| titleLarge | 18sp | 24sp | Medium | 列表标题、Dialog 标题 |
+| titleMedium | 16sp | 22sp | Medium | 卡片标题、BottomSheet 标题、Tab 选中态 |
 | titleSmall | 14sp | 20sp | Medium | 设置页 SectionHeader |
-| bodyLarge | 16sp | 22sp | Normal | 列表项标题、设置项标题、内容正文 |
+| bodyLarge | 16sp | 24sp | Normal | 列表项标题、设置项标题、内容正文 |
 | bodyMedium | 14sp | 20sp | Normal | 名称、次要内容、表单占位文字 |
 | bodySmall | 12sp | 16sp | Normal | 日期、摘要、副标题、提示文字 |
 | labelLarge | 14sp | 20sp | Medium | 按钮文字、键盘保存按钮 |
@@ -463,7 +463,7 @@ Card(
 | 位置 | 右下角，距底部 16dp，距右侧 16dp | — | — |
 | 阴影 | Material3 默认（约 6dp） | — | — |
 
-> ⚠️ Asset/Bill 的 FAB 目前硬编码 `AccentOrange`（非 `secondary`），属于历史遗留，应统一为 `secondary`。
+> Asset/Bill 的 FAB 统一使用 `secondary` 色。
 
 #### `[Life]` 展开式 FAB（生活页）
 
@@ -835,9 +835,9 @@ Card(
 
 | 场景 | 动画 | 参数 |
 |------|------|------|
-| Tab 切换 | fade 淡入淡出 | `tween(250)` |
-| Push 进入子页面 | fade 淡入 | `tween(250)` |
-| Pop 返回 | fade 淡出 | `tween(250)` |
+| Tab 切换 | fade 淡入淡出 | `tween(200)` |
+| Push 进入子页面 | fade 淡入 | `tween(200)` |
+| Pop 返回 | fade 淡出 | `tween(200)` |
 
 > 所有页面切换统一使用 fade，无滑动方向。
 
@@ -1234,9 +1234,9 @@ const val LIFE_FOCUS_TIMER = "life/focus/timer"
 
 | 优化项 | 说明 |
 |--------|------|
-| **Baseline Profile** | 40+ 条规则覆盖 Hoot/Startup 路径（Compose/Hilt/Room/导航），消除首帧 JIT 编译 |
+| **Baseline Profile** | 71 条规则覆盖 Hoot/Startup 路径（Compose/Hilt/Room/导航），消除首帧 JIT 编译 |
 | **Room 预热** | Application.onCreate 时调用 `database.openHelper.writableDatabase` 强制初始化 |
-| **@Immutable 实体** | 22 个 Entity 数据类标注 `@Immutable`，减少 Compose 不必要的重组 |
+| **@Immutable 实体** | 24 个 Entity 数据类标注 `@Immutable`，减少 Compose 不必要的重组 |
 | **DataStore 批量读取** | 使用 `combine()` 一次性读取主题色/模式/隐私协议，减少 2 次启动时重组 |
 | **ViewModel 创建优化** | `simpleViewModel {}` 直接构造，零反射开销 |
 | **WorkManager 延迟** | 非关键 Worker 调度延迟到后台协程，不阻塞主线程 |
@@ -1272,4 +1272,5 @@ MainActivity.onCreate()
 | 2.2 | 2026-07-03 | Tab/页面动画 fade+spring；顶栏图标上色；胶囊 Switch；设置页规范；移除主题色 |
 | 3.0 | 2026-07-03 | 全面对齐：修正 Card 边框 1dp、分隔线双规则、AppDialog 按钮文案去统一化、新增小节（权限/备份/编码禁止 clickable 缺 clip 和 items 缺 key）、14 组件章节重组 |
 | 4.0 | 2026-07-03 | 生活模块集成：新增 1.7 生活模块色彩体系、5.3 生活模块图标规范、6.17 生活模块专属组件、7.2 生活模块动画补充、8 权限补充、10 文案补充、11 图表补充、13.3 生活模块颜色引用、15 生活模块导航结构与路由定义 |
-| **4.2** | **2026-07-22** | **架构重构：移除 Hilt → 手动 DI（AppContainer）。底部导航栏：60dp、CenterVertically、无动画、缓存 inset。卡片间距统一 8dp。移除 Dashboard 内部 Scaffold。导航动画 spring → tween(250)。新增架构与性能章节。** |
+| **4.2** | **2026-07-22** | **架构重构：移除 Hilt → 手动 DI（AppContainer）。底部导航栏：60dp、CenterVertically、无动画、缓存 inset。卡片间距统一 8dp。移除 Dashboard 内部 Scaffold。导航动画 spring → tween(200)。新增架构与性能章节。** |
+| **4.3** | **2026-07-23** | **账本筛选优化：切换账本/月份自动清除筛选并提示；筛选 Sheet 新增"清除筛选"按钮；搜索与筛选联动保活。BillScreen Snackbar 移至页面顶部悬浮。DataCache 改用线程安全 LRU 缓存。DataClearViewModel 补全生活模块表清除。DashboardViewModel 加异常处理。AssetViewModel 图片保存失败处理。AppLockManager IO 线程化。** |

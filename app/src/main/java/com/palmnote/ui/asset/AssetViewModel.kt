@@ -573,7 +573,7 @@ class AssetViewModel(
         }
     }
 
-    private suspend fun saveImageToInternalStorage(uri: Uri): String = withContext(Dispatchers.IO) {
+    private suspend fun saveImageToInternalStorage(uri: Uri): String? = withContext(Dispatchers.IO) {
         try {
             val dir = File(application.filesDir, "images")
             if (!dir.exists()) dir.mkdirs()
@@ -585,7 +585,8 @@ class AssetViewModel(
             }
             file.absolutePath
         } catch (e: Exception) {
-            uri.toString()
+            Log.e("AssetViewModel", "Failed to save image", e)
+            null
         }
     }
 
@@ -630,8 +631,8 @@ class AssetViewModel(
 
     fun addImage(uri: Uri) {
         viewModelScope.launch {
-            val path = saveImageToInternalStorage(uri)
-            updateImages { addAll(listOf(path).take(4 - size)) }
+            val path = saveImageToInternalStorage(uri) ?: return@launch
+            updateImages { add(path) }
         }
     }
 

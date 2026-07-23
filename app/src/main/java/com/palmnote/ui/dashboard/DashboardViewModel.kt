@@ -15,6 +15,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import android.util.Log
 
 
 @Stable
@@ -160,7 +161,7 @@ class DashboardViewModel(
                     recentGoals = gaData.goals.take(3),
                     assetDistribution = assetData.third
                 )
-            }.collect { s -> _state.update { it.copy(
+            }.catch { e -> Log.e("DashboardVM", "loadDashboardData failed", e) }.collect { s -> _state.update { it.copy(
                 totalAssetValue = s.totalAssetValue,
                 activeAssetCount = s.activeAssetCount,
                 monthlyExpense = s.monthlyExpense,

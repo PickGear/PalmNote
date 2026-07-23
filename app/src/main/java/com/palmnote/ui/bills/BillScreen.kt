@@ -102,7 +102,6 @@ fun BillScreen(
     }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
         contentWindowInsets = ScaffoldDefaults.contentWindowInsets
             .exclude(WindowInsets.navigationBars),
         topBar = {
@@ -401,6 +400,18 @@ fun BillScreen(
             }
         }
         }
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.TopCenter).padding(top = 4.dp),
+            snackbar = { data ->
+                Snackbar(
+                    snackbarData = data,
+                    shape = MaterialTheme.shapes.small,
+                    containerColor = MaterialTheme.colorScheme.inverseSurface,
+                    contentColor = MaterialTheme.colorScheme.inverseOnSurface
+                )
+            }
+        )
     }
     
     // 删除确认弹窗
