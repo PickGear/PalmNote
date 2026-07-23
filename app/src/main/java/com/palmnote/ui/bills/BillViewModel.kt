@@ -47,8 +47,7 @@ data class BillState(
     val searchQuery: String = "",
     val isSearching: Boolean = false,
     val currentFilter: BillFilter = BillFilter(),
-    val showFilterSheet: Boolean = false,
-    val filterFeedbackSignal: Int = 0
+    val showFilterSheet: Boolean = false
 )
 
 private data class BillDataGroup(
@@ -115,7 +114,7 @@ class BillViewModel(
     private var billDataJob: Job? = null
 
     init {
-        DataCache.get<BillState>("bill")?.let { _state.value = it }
+        DataCache.get<BillState>("bill")?.let { _state.value = it.copy(currentFilter = BillFilter()) }
         if (_state.value.selectedDay == null && _state.value.currentYearMonth == DateUtils.getCurrentYearMonth()) {
             _state.value = _state.value.copy(selectedDay = DateUtils.getDayOfMonth(System.currentTimeMillis()))
         }
@@ -177,13 +176,11 @@ class BillViewModel(
     }
 
     fun selectAccountBook(bookId: Long) {
-        val hadFilter = _state.value.currentFilter.isActive
         val hasSearch = _state.value.searchQuery.isNotBlank()
         _state.value = _state.value.copy(
             selectedBookId = bookId,
             currentFilter = BillFilter(),
-            filteredBills = if (hasSearch) _state.value.filteredBills else emptyList(),
-            filterFeedbackSignal = if (hadFilter) _state.value.filterFeedbackSignal + 1 else _state.value.filterFeedbackSignal
+            filteredBills = if (hasSearch) _state.value.filteredBills else emptyList()
         )
         loadBillData()
     }
@@ -296,6 +293,7 @@ class BillViewModel(
                     it.copy(
                         bills = billData.bills,
                         currentYearMonth = yearMonth,
+                        currentFilter = BillFilter(),
                         monthlyExpense = billData.expense,
                         monthlyIncome = billData.income,
                         expenseByCategory = billData.categories,
@@ -315,14 +313,12 @@ class BillViewModel(
 
     fun setMonth(yearMonth: String) {
         val selectedDay = if (yearMonth == DateUtils.getCurrentYearMonth()) DateUtils.getDayOfMonth(System.currentTimeMillis()) else null
-        val hadFilter = _state.value.currentFilter.isActive
         val hasSearch = _state.value.searchQuery.isNotBlank()
         _state.value = _state.value.copy(
             currentYearMonth = yearMonth,
             selectedDay = selectedDay,
             currentFilter = BillFilter(),
-            filteredBills = if (hasSearch) _state.value.filteredBills else emptyList(),
-            filterFeedbackSignal = if (hadFilter) _state.value.filterFeedbackSignal + 1 else _state.value.filterFeedbackSignal
+            filteredBills = if (hasSearch) _state.value.filteredBills else emptyList()
         )
         loadBillData()
     }
@@ -364,12 +360,12 @@ class BillViewModel(
     }
     
     fun applyFilter(filter: BillFilter) {
-        _state.update { it.copy(currentFilter = filter, filterFeedbackSignal = it.filterFeedbackSignal + 1) }
+        _state.update { it.copy(currentFilter = filter) }
         filterBills()
     }
     
     fun clearFilter() {
-        _state.update { it.copy(currentFilter = BillFilter(), filterFeedbackSignal = it.filterFeedbackSignal + 1) }
+        _state.update { it.copy(currentFilter = BillFilter()) }
         filterBills()
     }
     
