@@ -307,14 +307,18 @@ fun AddBillScreen(
                     }
 
                     if (showDatePicker) {
-                        val state = rememberDatePickerState(initialSelectedDateMillis = formState.date)
+                        val timeZoneOffset = java.util.TimeZone.getDefault().getOffset(formState.date)
+                        val state = rememberDatePickerState(initialSelectedDateMillis = formState.date + timeZoneOffset)
                         DatePickerDialog(
                             onDismissRequest = { showDatePicker = false },
                             tonalElevation = 0.dp,
                             colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.background),
                             confirmButton = {
                                 TextButton(onClick = {
-                                    state.selectedDateMillis?.let { viewModel.updateForm { copy(date = it) } }
+                                    state.selectedDateMillis?.let { utcDate ->
+                                        val localDate = utcDate - java.util.TimeZone.getDefault().getOffset(utcDate)
+                                        viewModel.updateForm { copy(date = localDate) }
+                                    }
                                     showDatePicker = false
                                 }) { Text(stringResource(R.string.confirm), color = AccentOrange, fontWeight = FontWeight.Bold) }
                             },
