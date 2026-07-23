@@ -177,7 +177,14 @@ class BillViewModel(
     }
 
     fun selectAccountBook(bookId: Long) {
-        _state.value = _state.value.copy(selectedBookId = bookId)
+        val hadFilter = _state.value.currentFilter.isActive
+        val hasSearch = _state.value.searchQuery.isNotBlank()
+        _state.value = _state.value.copy(
+            selectedBookId = bookId,
+            currentFilter = BillFilter(),
+            filteredBills = if (hasSearch) _state.value.filteredBills else emptyList(),
+            filterFeedbackSignal = if (hadFilter) _state.value.filterFeedbackSignal + 1 else _state.value.filterFeedbackSignal
+        )
         loadBillData()
     }
 
@@ -298,6 +305,9 @@ class BillViewModel(
                         selectedBookId = bookId
                     )
                 }
+                if (_state.value.searchQuery.isNotBlank() || _state.value.currentFilter.isActive) {
+                    filterBills()
+                }
                 DataCache.set("bill", _state.value)
             }.collect { }
         }
@@ -305,7 +315,15 @@ class BillViewModel(
 
     fun setMonth(yearMonth: String) {
         val selectedDay = if (yearMonth == DateUtils.getCurrentYearMonth()) DateUtils.getDayOfMonth(System.currentTimeMillis()) else null
-        _state.value = _state.value.copy(currentYearMonth = yearMonth, selectedDay = selectedDay)
+        val hadFilter = _state.value.currentFilter.isActive
+        val hasSearch = _state.value.searchQuery.isNotBlank()
+        _state.value = _state.value.copy(
+            currentYearMonth = yearMonth,
+            selectedDay = selectedDay,
+            currentFilter = BillFilter(),
+            filteredBills = if (hasSearch) _state.value.filteredBills else emptyList(),
+            filterFeedbackSignal = if (hadFilter) _state.value.filterFeedbackSignal + 1 else _state.value.filterFeedbackSignal
+        )
         loadBillData()
     }
 
@@ -359,24 +377,31 @@ class BillViewModel(
         val state = _state.value
         val filter = state.currentFilter
         val query = state.searchQuery
-        
-        val filtered = state.bills.filter { bill ->
+        val bills = state.bills
+
+        // Early return: no filter active and no search query
+        if (!filter.isActive && query.isBlank()) {
+            _state.value = state.copy(filteredBills = emptyList())
+            return
+        }
+
+        val filtered = bills.filter { bill ->
             val matchesType = filter.type == null || bill.type == filter.type
             val matchesCategory = filter.category == null || bill.category == filter.category
             val matchesPaymentMethod = filter.paymentMethod == null || bill.paymentMethod == filter.paymentMethod
             val matchesAmountMin = filter.amountMin == null || bill.amount >= filter.amountMin
             val matchesAmountMax = filter.amountMax == null || bill.amount <= filter.amountMax
-            val matchesSearch = query.isBlank() || 
+            val matchesSearch = query.isBlank() ||
                 bill.note.contains(query, ignoreCase = true) ||
                 bill.merchant.contains(query, ignoreCase = true) ||
                 bill.location.contains(query, ignoreCase = true) ||
                 bill.category.contains(query, ignoreCase = true) ||
                 bill.amount.toString().contains(query, ignoreCase = true)
-            
+
             matchesType && matchesCategory && matchesPaymentMethod && matchesAmountMin && matchesAmountMax && matchesSearch
         }
-        
-        _state.value = _state.value.copy(filteredBills = filtered)
+
+        _state.value = state.copy(filteredBills = filtered)
     }
 
     fun deleteBill(billId: Long) {

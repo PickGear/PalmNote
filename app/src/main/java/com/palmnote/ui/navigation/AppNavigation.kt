@@ -199,16 +199,16 @@ fun PalmNoteNavHost() {
             startDestination = startDest,
             modifier = Modifier.padding(innerPadding),
             enterTransition = {
-                fadeIn(animationSpec = tween(80))
+                fadeIn(animationSpec = tween(200))
             },
             exitTransition = {
-                fadeOut(animationSpec = tween(80))
+                fadeOut(animationSpec = tween(200))
             },
             popEnterTransition = {
-                fadeIn(animationSpec = tween(80))
+                fadeIn(animationSpec = tween(200))
             },
             popExitTransition = {
-                fadeOut(animationSpec = tween(80))
+                fadeOut(animationSpec = tween(200))
             }
         ) {
             composable(Route.Dashboard) {

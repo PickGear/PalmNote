@@ -72,4 +72,7 @@ interface TodoItemDao {
 
     @Query("UPDATE todo_items SET isCompleted = 0, updatedAt = :now WHERE id IN (:ids) AND isDeleted = 0")
     suspend fun batchUncomplete(ids: List<Long>, now: Long = System.currentTimeMillis())
+
+    @Query("DELETE FROM todo_items")
+    suspend fun deleteAll()
 }

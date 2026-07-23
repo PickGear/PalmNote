@@ -38,4 +38,7 @@ interface FocusRecordDao {
 
     @Query("DELETE FROM focus_records WHERE id = :id")
     suspend fun deleteRecordById(id: Long)
+
+    @Query("DELETE FROM focus_records")
+    suspend fun deleteAll()
 }

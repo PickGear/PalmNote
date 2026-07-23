@@ -26,4 +26,7 @@ interface AchievementDao {
 
     @Query("UPDATE achievements SET unlockedAt = :timestamp, goalId = :goalId WHERE code = :code")
     suspend fun unlockAchievement(code: String, timestamp: Long = System.currentTimeMillis(), goalId: Long? = null)
+
+    @Query("DELETE FROM achievements")
+    suspend fun deleteAll()
 }
