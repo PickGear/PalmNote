@@ -359,6 +359,13 @@ class BillViewModel(
         _state.value = _state.value.copy(showFilterSheet = !_state.value.showFilterSheet)
     }
     
+    fun syncDateFromSaved(date: Long) {
+        val yearMonth = DateUtils.formatYearMonth(date)
+        val day = DateUtils.getDayOfMonth(date)
+        _state.value = _state.value.copy(currentYearMonth = yearMonth, selectedDay = day)
+        loadBillData()
+    }
+    
     fun applyFilter(filter: BillFilter) {
         _state.update { it.copy(currentFilter = filter) }
         filterBills()
