@@ -263,11 +263,11 @@ fun PalmNoteNavHost() {
             composable(Route.Bill) { backStackEntry ->
                 val billViewModel: BillViewModel = simpleViewModel { PalmNoteApp.container.billViewModel() }
                 LaunchedEffect(Unit) {
-                    backStackEntry.savedStateHandle.getStateFlow<String?>("savedBillType", null)
-                        .collect { type ->
-                            if (type != null) {
-                                billViewModel.setFilterType("ALL")
-                                backStackEntry.savedStateHandle.remove<String>("savedBillType")
+                    backStackEntry.savedStateHandle.getStateFlow<Long?>("savedBillDate", null)
+                        .collect { date ->
+                            if (date != null) {
+                                billViewModel.syncDateFromSaved(date)
+                                backStackEntry.savedStateHandle.remove<Long>("savedBillDate")
                             }
                         }
                 }
@@ -306,8 +306,8 @@ fun PalmNoteNavHost() {
                 AddBillScreen(
                     billId = billId,
                     selectedDate = selectedDate,
-                    onBillSaved = { type ->
-                        navController.previousBackStackEntry?.savedStateHandle?.set("savedBillType", type)
+                    onBillDateSaved = { date ->
+                        navController.previousBackStackEntry?.savedStateHandle?.set("savedBillDate", date)
                     },
                     onNavigateBack = { navController.popBackStack() },
                     onNavigateToWallet = { navController.navigate(Route.Wallet) },

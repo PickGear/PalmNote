@@ -35,7 +35,7 @@ fun AddBillScreen(
     billId: Long? = null,
     selectedDate: Long? = null,
     onNavigateBack: () -> Unit = {},
-    onBillSaved: (String) -> Unit = {},
+    onBillDateSaved: (Long) -> Unit = {},
     onNavigateToWallet: () -> Unit = {},
     onNavigateToCategory: (String) -> Unit = {},
     viewModel: BillViewModel = simpleViewModel { PalmNoteApp.container.billViewModel() }
@@ -50,7 +50,7 @@ fun AddBillScreen(
 
     LaunchedEffect(formState.isSaved) {
         if (formState.isSaved) {
-            onBillSaved(formState.type)
+            onBillDateSaved(formState.date)
             onNavigateBack()
         }
     }
