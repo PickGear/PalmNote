@@ -61,6 +61,11 @@ fun BillScreen(
     val customExpenseCategories by viewModel.customExpenseCategories.collectAsStateWithLifecycle()
     val customIncomeCategories by viewModel.customIncomeCategories.collectAsStateWithLifecycle()
     val lifecycle = LocalLifecycleOwner.current.lifecycle
+    
+    DisposableEffect(Unit) {
+        onDispose { viewModel.clearFilter() }
+    }
+    
     LaunchedEffect(lifecycle) {
         lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
             viewModel.loadBillData()
@@ -90,16 +95,6 @@ fun BillScreen(
         ?: state.allAccountBooks.find { it.id == state.selectedBookId }
     
     var billToDelete by remember { mutableStateOf<Bill?>(null) }
-    val snackbarHostState = remember { SnackbarHostState() }
-
-    LaunchedEffect(state.filterFeedbackSignal) {
-        if (state.filterFeedbackSignal > 0) {
-            snackbarHostState.showSnackbar(
-                message = if (state.currentFilter.isActive) context.getString(R.string.bill_filter_applied) else context.getString(R.string.bill_filter_cleared),
-                duration = SnackbarDuration.Short
-            )
-        }
-    }
 
     Scaffold(
         contentWindowInsets = ScaffoldDefaults.contentWindowInsets
@@ -337,11 +332,13 @@ fun BillScreen(
                             }
                         }
                     }
+                    val hasAdvancedFilter = state.currentFilter.category != null ||
+                        state.currentFilter.amountMin != null || state.currentFilter.amountMax != null
                     IconButton(onClick = { viewModel.toggleFilterSheet() }) {
                         Icon(
-                            Icons.Outlined.FilterList,
+                            imageVector = if (hasAdvancedFilter) Icons.Filled.FilterList else Icons.Outlined.FilterList,
                             contentDescription = stringResource(R.string.bill_filter),
-                            tint = if (state.currentFilter.isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                            tint = if (hasAdvancedFilter) AccentOrange else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -400,18 +397,6 @@ fun BillScreen(
             }
         }
         }
-        SnackbarHost(
-            hostState = snackbarHostState,
-            modifier = Modifier.align(Alignment.TopCenter).padding(top = 4.dp),
-            snackbar = { data ->
-                Snackbar(
-                    snackbarData = data,
-                    shape = MaterialTheme.shapes.small,
-                    containerColor = MaterialTheme.colorScheme.inverseSurface,
-                    contentColor = MaterialTheme.colorScheme.inverseOnSurface
-                )
-            }
-        )
     }
     
     // 删除确认弹窗
