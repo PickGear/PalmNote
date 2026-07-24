@@ -11,6 +11,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.animation.*
 import androidx.compose.material.icons.Icons
@@ -18,16 +19,13 @@ import androidx.compose.material.icons.automirrored.outlined.ViewList
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.graphicsLayer
+
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
@@ -64,9 +62,28 @@ import com.palmnote.domain.util.CurrencyUtils
 import com.palmnote.domain.util.DateUtils
 import com.palmnote.ui.components.*
 import com.palmnote.ui.theme.*
+import com.palmnote.ui.theme.ColorResolver
 
-fun getCategoryIcon(category: String): CategoryItem {
-    return assetCategoryItems.find { it.name == category } ?: assetCategoryItems.last()
+fun getCategoryIcon(category: String, customItems: List<CategoryItem>? = null): CategoryItem {
+    val item = assetCategoryItems.find { it.name == category }
+        ?: customItems?.find { it.name == category }
+        ?: CategoryItem(category, Icons.Outlined.Cancel, ErrorLight)
+    val resolved = ColorResolver.resolve(category, item.color)
+    return if (resolved != item.color) item.copy(color = resolved) else item
+}
+
+fun getCategoryDisplayName(category: String, context: android.content.Context, overrides: Map<String, String>? = null): String {
+    val overrideKey = "preset_$category"
+    val json = overrides?.get(overrideKey)
+    if (json != null) {
+        try {
+            val obj = org.json.JSONObject(json)
+            if (obj.has("name")) return obj.getString("name")
+        } catch (_: Exception) {}
+    }
+    return if (assetCategoryItems.any { it.name == category })
+        com.palmnote.ui.components.getCategoryName(category, context)
+    else category
 }
 
 private val statusColorMap = mapOf("HELD" to StatusHeld, "AWAY" to StatusAway, "REMOVED" to StatusRemoved)
@@ -117,6 +134,14 @@ fun AssetScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val focusManager = LocalFocusManager.current
     var showSearch by remember { mutableStateOf(false) }
+    val assetPresetOverrides by com.palmnote.PalmNoteApp.container.preferencesManager.presetCategoryOverrides
+        .collectAsStateWithLifecycle(initialValue = emptyMap())
+    val assetCustomCfg by com.palmnote.PalmNoteApp.container.cachedCategoryConfigs
+        .collectAsStateWithLifecycle(initialValue = emptyList())
+    val assetCustomItems = remember(assetCustomCfg) {
+        assetCustomCfg.filter { it.type == "ASSET" }
+            .map { CategoryItem(it.name, it.icon.imageVector, it.color.toComposeColor()) }
+    }
     BackHandler(enabled = showSearch) { showSearch = false; viewModel.setSearchQuery("") }
 
     Scaffold(
@@ -209,9 +234,10 @@ fun AssetScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
+                        AnimatedCard(Modifier.weight(1f), index = 0, instant = showSearch) {
                         ModuleCard(
                             tint = assetTint(),
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(
                                 text = stringResource(R.string.asset_held),
@@ -231,10 +257,12 @@ fun AssetScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
+                        }
 
+                        AnimatedCard(Modifier.weight(1f), index = 1, instant = showSearch) {
                         ModuleCard(
                             tint = billTint(),
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(
                                 text = stringResource(R.string.asset_away),
@@ -254,6 +282,7 @@ fun AssetScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
+                        }
                     }
                 }
             }
@@ -262,6 +291,7 @@ fun AssetScreen(
                 state.filteredAssets.withIndex().associate { (i, a) -> a.id to i }
             }
             // Filter Bar (fixed outside LazyColumn)
+            AnimatedCard(index = 2, instant = showSearch) {
             Box(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background).padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp)) {
             // Status + Category Filter Dropdowns + View Toggle
                 Row(
@@ -359,7 +389,7 @@ fun AssetScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = state.selectedCategory?.let { com.palmnote.ui.components.getCategoryName(it, androidx.compose.ui.platform.LocalContext.current) } ?: stringResource(R.string.bill_category),
+                                    text = state.selectedCategory?.let { getCategoryDisplayName(it, LocalContext.current, assetPresetOverrides) } ?: stringResource(R.string.bill_category),
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = if (state.selectedCategory != null) FontWeight.Medium else FontWeight.Normal,
                                     color = MaterialTheme.colorScheme.onSurface
@@ -399,7 +429,7 @@ fun AssetScreen(
                                         )
                                         state.categoryDistribution.forEach { cat ->
                                             Text(
-                                                text = "${com.palmnote.ui.components.getCategoryName(cat.category, androidx.compose.ui.platform.LocalContext.current)} (${cat.count})",
+                                                text = "${getCategoryDisplayName(cat.category, LocalContext.current, assetPresetOverrides)} (${cat.count})",
                                                 modifier = Modifier
                                                     .clickable { viewModel.setCategoryFilter(cat.category); catExpanded = false }
                                                     .padding(horizontal = 16.dp, vertical = 8.dp),
@@ -510,6 +540,7 @@ fun AssetScreen(
                     }
                 }
             }
+            }
 
             LazyColumn(
                 state = listState,
@@ -542,36 +573,34 @@ fun AssetScreen(
                     )
                 }
             } else if (isGridView) {
-                item {
-                    var rowIndex by remember { mutableIntStateOf(0) }
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        state.filteredAssets.chunked(2).forEach { rowAssets ->
-                            val currentRow = rowIndex++
-                            Row(
+                val chunked = state.filteredAssets.chunked(2)
+                itemsIndexed(chunked, key = { i, _ -> chunked[i].firstOrNull()?.id ?: i }) { rowIdx, rowAssets ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        rowAssets.forEach { asset ->
+                            AnimatedCard(Modifier.weight(1f), index = rowIdx + 3, instant = listState.isScrollInProgress) {
+                            GridAssetCard(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                rowAssets.forEachIndexed { _, asset ->
-                                    GridAssetCard(
-                                        modifier = Modifier.weight(1f),
-                                        asset = asset,
-                                        onClick = { onNavigateToDetail(asset.id) },
-                                        animIndex = currentRow
-                                    )
-                                }
-                                if (rowAssets.size < 2) {
-                                    Spacer(modifier = Modifier.weight(1f))
-                                }
+                                asset = asset,
+                                onClick = { onNavigateToDetail(asset.id) },
+                                presetOverrides = assetPresetOverrides,
+                                customItems = assetCustomItems
+                            )
                             }
                         }
+                        if (rowAssets.size < 2) Spacer(Modifier.weight(1f))
                     }
                 }
             } else {
                 items(state.filteredAssets, key = { it.id }) { asset ->
-                    AnimatedCard(index = (assetIndexMap[asset.id] ?: 0).coerceAtMost(10), instant = remember(asset.id) { listState.isScrollInProgress }) {
+                    AnimatedCard(index = ((assetIndexMap[asset.id] ?: 0) + 3).coerceAtMost(10), instant = remember(asset.id) { listState.isScrollInProgress }) {
                         EnhancedAssetCard(
                             asset = asset,
-                            onClick = { onNavigateToDetail(asset.id) }
+                            onClick = { onNavigateToDetail(asset.id) },
+                            presetOverrides = assetPresetOverrides,
+                            customItems = assetCustomItems
                         )
                     }
                 }
@@ -613,7 +642,9 @@ fun AssetScreen(
 @Composable
 fun EnhancedAssetCard(
     asset: Asset,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    presetOverrides: Map<String, String>? = null,
+    customItems: List<CategoryItem>? = null
 ) {
     val context = LocalContext.current
     val statusColor = getStatusColor(asset.status)
@@ -621,15 +652,12 @@ fun EnhancedAssetCard(
     val acquisitionText = getAcquisitionText(asset.acquisitionType)
 
     val acquisitionColor = getAcquisitionColor(asset.acquisitionType)
-    val catInfo = getCategoryIcon(asset.category)
+    val catInfo = remember(asset.category, presetOverrides, customItems) { getCategoryIcon(asset.category, customItems) }
     val daysOwned = DateUtils.getDaysSince(asset.effectiveDate).coerceAtLeast(1)
 
     ModuleCard(
         tint = MaterialTheme.colorScheme.surface,
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(MaterialTheme.shapes.large)
-            .clickable(onClick = onClick)
+        modifier = Modifier.fillMaxWidth()
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -732,7 +760,7 @@ fun EnhancedAssetCard(
                         )
                     }
                     Text(
-                        text = com.palmnote.ui.components.getCategoryName(asset.category, LocalContext.current),
+                        text = getCategoryDisplayName(asset.category, context, presetOverrides),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1, overflow = TextOverflow.Ellipsis
@@ -813,28 +841,20 @@ fun GridAssetCard(
     modifier: Modifier = Modifier,
     asset: Asset,
     onClick: () -> Unit,
-    animIndex: Int = 0
+    presetOverrides: Map<String, String>? = null,
+    customItems: List<CategoryItem>? = null
 ) {
     val context = LocalContext.current
     val statusColor = getStatusColor(asset.status)
     val statusText = getStatusText(asset.status)
     val acquisitionText = getAcquisitionText(asset.acquisitionType)
     val acquisitionColor = getAcquisitionColor(asset.acquisitionType)
-    val catInfo = getCategoryIcon(asset.category)
+    val catInfo = remember(asset.category, presetOverrides, customItems) { getCategoryIcon(asset.category, customItems) }
     val daysOwned = DateUtils.getDaysSince(asset.effectiveDate).coerceAtLeast(1)
     val costText = getCostText(asset.costMode, asset.purchasePrice, asset.useCount, daysOwned)
-    val animProgress = remember { Animatable(0f) }
-    LaunchedEffect(Unit) {
-        delay(animIndex * 60L)
-        animProgress.animateTo(1f, animationSpec = tween(300, easing = FastOutSlowInEasing))
-    }
 
     Surface(
         modifier = modifier
-            .graphicsLayer {
-                alpha = animProgress.value
-                translationY = (1f - animProgress.value) * 12.dp.toPx()
-            }
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.large)
             .border(1.dp, MaterialTheme.colorScheme.outlineVariant, MaterialTheme.shapes.large)
@@ -970,7 +990,7 @@ fun GridAssetCard(
                         )
                     }
                     Text(
-                        text = com.palmnote.ui.components.getCategoryName(asset.category, LocalContext.current),
+                        text = getCategoryDisplayName(asset.category, context, presetOverrides),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,

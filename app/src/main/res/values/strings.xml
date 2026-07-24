@@ -5,15 +5,15 @@
     <!-- Bottom Navigation -->
     <string name="nav_dashboard">首页</string>
     <string name="nav_asset">物品</string>
-    <string name="nav_bill">账本</string>
+    <string name="nav_bill">账单</string>
     <string name="nav_life">生活</string>
     <string name="nav_settings">我的</string>
     
     <!-- Asset -->
-    <string name="asset_title">资产</string>
-    <string name="asset_add">添加资产</string>
-    <string name="asset_edit">编辑资产</string>
-    <string name="asset_detail">资产详情</string>
+    <string name="asset_title">物品</string>
+    <string name="asset_add">添加物品</string>
+    <string name="asset_edit">编辑物品</string>
+    <string name="asset_detail">物品详情</string>
     <string name="asset_name">物品名称</string>
     <string name="asset_category">分类</string>
     <string name="asset_price">购买价格</string>
@@ -79,10 +79,12 @@
     <string name="acquisition_other">其他</string>
     
     <!-- Bill -->
-    <string name="bill_title">账本</string>
+    <string name="bill_title">账单</string>
     <string name="bill_add">记一笔</string>
     <string name="bill_expense">支出</string>
+    <string name="bill_expense_short">支出:%s</string>
     <string name="bill_income">收入</string>
+    <string name="bill_income_short">收入:%s</string>
     <string name="bill_amount">金额</string>
     <string name="bill_category">分类</string>
     <string name="bill_date">日期</string>
@@ -250,7 +252,6 @@
     <string name="bill_filter">筛选</string>
     <string name="bill_filter_title">高级筛选</string>
     <string name="bill_filter_type">类型</string>
-    <string name="bill_filter_type_all">全部</string>
     <string name="bill_filter_type_expense">支出</string>
     <string name="bill_filter_type_income">收入</string>
     <string name="bill_filter_amount">金额范围</string>
@@ -1004,7 +1005,7 @@
     <string name="about_description_detail">掌记是一款简洁优雅的个人生活管理应用，帮助您记录资产、管理账单、追踪目标、记录纪念日和生活瞬间。</string>
     <string name="about_features">功能特色</string>
     <string name="about_feature_asset">资产管理 - 记录物品，追踪成本</string>
-    <string name="about_feature_bill">智能账本 - 记账分析，预算管理</string>
+    <string name="about_feature_bill">智能记账 - 记账分析，预算管理</string>
     <string name="about_feature_goal">目标追踪 - 设定目标，记录进度</string>
     <string name="about_feature_anniversary">纪念日 - 重要日子，不再遗忘</string>
     <string name="about_feature_moment">生活瞬间 - 记录美好，珍藏回忆</string>
@@ -1043,6 +1044,9 @@
     <!-- Bill Detail -->
     <string name="bill_detail_title">账单详情</string>
     <string name="bill_type">类型</string>
+    <string name="bill_transfer">转账</string>
+    <string name="bill_transfer_from">从哪个账户</string>
+    <string name="bill_transfer_to">到哪个账户</string>
     <string name="bill_merchant">商家</string>
     <string name="bill_payment_method">支付方式</string>
     <string name="bill_sub_category">子分类</string>
@@ -1134,7 +1138,7 @@
     <string name="account_book_empty">暂无账本</string>
     <string name="account_book_empty_hint">点击右下角按钮添加账本</string>
     <string name="account_book_delete_title">删除账本</string>
-    <string name="account_book_delete_confirm">确定要删除「%s」吗？账本下的记录不会被删除。</string>
+    <string name="account_book_delete_confirm">确定要删除「%s」吗？账本下的所有账单数据将被一并删除。</string>
     <string name="account_book_set_default">设为默认</string>
     <string name="account_book_edit">编辑账本</string>
     <string name="account_book_new">新建账本</string>
@@ -1282,7 +1286,7 @@
     <string name="wallet_empty">暂无账户</string>
     <string name="wallet_empty_hint">点击右下角按钮添加账户</string>
     <string name="wallet_delete_title">删除账户</string>
-    <string name="wallet_delete_confirm">确定要删除「%s」吗？该账户下的账单记录不会被删除。</string>
+    <string name="wallet_delete_confirm">确定要删除「%s」吗？该账户下的所有账单数据将被一并删除。</string>
     <string name="wallet_edit">编辑账户</string>
     <string name="wallet_name">账户名称</string>
     <string name="wallet_type">账户类型</string>
@@ -1708,4 +1712,29 @@
     <string name="import_error_io">导入失败: %s</string>
     <string name="import_error_parse">导入数据解析失败: %s</string>
     <string name="import_error_unknown">导入发生未知错误: %s</string>
+
+    <!-- Category Settings -->
+    <string name="cat_preset_section">预设分类</string>
+    <string name="cat_custom_section">自定义分类</string>
+    <string name="cat_collapse">收起</string>
+    <string name="cat_all_count">全部 %d 个</string>
+    <string name="cat_preset_label">预设</string>
+    <string name="cat_enabled">已启用</string>
+    <string name="cat_disabled">已隐藏</string>
+    <string name="cat_preset_detail_desc">预设分类 — 名称、颜色可编辑，图标固定，不可删除</string>
+    <string name="cat_custom_detail_desc">自定义分类 — 可编辑、可删除</string>
+    <string name="cat_edit_preset_title">编辑预设分类</string>
+    <string name="cat_edit_preset_desc">「%s」是预设分类，图标固定不可更改</string>
+    <string name="cat_field_name">分类名称</string>
+    <string name="cat_field_color">颜色</string>
+    <string name="cat_field_icon">图标</string>
+    <string name="cat_reset_default">重置默认</string>
+    <string name="cat_name_required">请输入分类名称</string>
+    <string name="cat_edit">编辑</string>
+    <string name="cat_close">关闭</string>
+    <string name="cat_edit_category">编辑分类</string>
+    <string name="cat_add_category">添加分类</string>
+    <string name="cat_save">保存</string>
+    <string name="transfer_from_required">请选择转出账户</string>
+    <string name="transfer_to_required">请选择转入账户</string>
 </resources>

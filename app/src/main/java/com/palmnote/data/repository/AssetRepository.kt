@@ -72,4 +72,13 @@ class AssetRepository(
     override suspend fun linkBill(id: Long, billId: Long) = assetDao.linkBill(id, billId)
 
     override suspend fun search(query: String): List<Asset> = assetDao.search(query)
+
+    override suspend fun updateCategoryNameInAssets(oldName: String, newName: String) =
+        assetDao.updateCategoryName(oldName, newName)
+
+    override suspend fun countByCategory(category: String): Int =
+        assetDao.countByCategory(category)
+
+    override suspend fun softDeleteByCategory(category: String) =
+        assetDao.softDeleteByCategory(category)
 }

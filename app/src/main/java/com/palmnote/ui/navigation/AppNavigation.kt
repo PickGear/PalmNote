@@ -322,8 +322,12 @@ fun PalmNoteNavHost() {
                 arguments = listOf(navArgument("billId") { type = NavType.LongType })
             ) { backStackEntry ->
                 val billId = backStackEntry.arguments?.getLong("billId") ?: 0L
+                val context = LocalContext.current
+                val allWallets by PalmNoteApp.container.walletRepository.getAllWallets().collectAsState(initial = emptyList())
+                val walletNames = allWallets.associate { it.id to it.name }
                 BillDetailScreen(
                     billId = billId,
+                    walletNames = walletNames,
                     onNavigateBack = { navController.popBackStack() },
                     onNavigateToEdit = { id -> navController.navigate("add_bill?billId=$id") }
                 )

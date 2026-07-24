@@ -150,4 +150,28 @@ class BillRepository(
 
     override fun getYearlyIncomeByCategoryByBook(bookId: Long, year: String): Flow<List<CategoryTotalWithCount>> =
         billDao.getYearlyIncomeByCategoryByBook(bookId, year)
+
+    override fun getCategoryUsageCounts(type: String): Flow<List<CategoryTotalWithCount>> =
+        billDao.getCategoryUsageCounts(type)
+
+    override suspend fun updateCategoryNameInBills(oldName: String, newName: String) =
+        billDao.updateCategoryName(oldName, newName)
+
+    override suspend fun countByCategory(category: String): Int =
+        billDao.countByCategory(category)
+
+    override suspend fun softDeleteByCategory(category: String) =
+        billDao.softDeleteByCategory(category)
+
+    override suspend fun countByWallet(walletId: Long): Int =
+        billDao.countByWallet(walletId)
+
+    override suspend fun softDeleteByWallet(walletId: Long) =
+        billDao.softDeleteByWallet(walletId)
+
+    override suspend fun countByBook(bookId: Long): Int =
+        billDao.countByBook(bookId)
+
+    override suspend fun softDeleteByBook(bookId: Long) =
+        billDao.softDeleteByBook(bookId)
 }

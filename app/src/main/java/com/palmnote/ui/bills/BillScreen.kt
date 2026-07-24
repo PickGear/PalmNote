@@ -10,6 +10,7 @@ import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.*
@@ -24,11 +25,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import kotlin.math.roundToInt
+
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.res.stringResource
@@ -61,17 +64,16 @@ fun BillScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val customExpenseCategories by viewModel.customExpenseCategories.collectAsStateWithLifecycle()
     val customIncomeCategories by viewModel.customIncomeCategories.collectAsStateWithLifecycle()
+    val allCustomExpenseCategories by viewModel.allCustomExpenseCategories.collectAsStateWithLifecycle()
+    val allCustomIncomeCategories by viewModel.allCustomIncomeCategories.collectAsStateWithLifecycle()
+    val billPresetOverrides by PalmNoteApp.container.preferencesManager.presetCategoryOverrides
+        .collectAsStateWithLifecycle(initialValue = emptyMap())
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     
     DisposableEffect(Unit) {
         onDispose { viewModel.clearFilter() }
     }
     
-    LaunchedEffect(lifecycle) {
-        lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-            viewModel.loadBillData()
-        }
-    }
     var calendarExpanded by remember { mutableStateOf(false) }
     val selectedFilter = state.currentFilter.type ?: "ALL"
     val filteredBills by remember(state.bills, state.filteredBills, state.currentFilter, selectedFilter, state.selectedDay) {
@@ -259,6 +261,7 @@ fun BillScreen(
                     enter = fadeIn(tween(120)) + expandVertically(tween(120)),
                     exit = fadeOut(tween(300)) + shrinkVertically(tween(300))
                 ) {
+                    AnimatedCard(index = 1) {
                     ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
                         Row(modifier = Modifier.fillMaxWidth().height(40.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                             Text(stringResource(R.string.bill_calendar), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
@@ -284,9 +287,11 @@ fun BillScreen(
                             onMonthChanged = { newMonth -> viewModel.setMonth(newMonth) }
                         )
                     }
+                    }
                 }
 
                 // Filter chips (fixed)
+                AnimatedCard(index = 2) {
                 Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         val interactionSource = remember { MutableInteractionSource() }
@@ -345,6 +350,7 @@ fun BillScreen(
                         )
                     }
                 }
+                }
 
                 // Bill list (scrollable)
                 LazyColumn(
@@ -352,6 +358,7 @@ fun BillScreen(
                     contentPadding = PaddingValues(horizontal = 16.dp)
                 ) {
                     item {
+                        AnimatedCard(index = 3) {
                         Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                             Text(
                                 text = stringResource(R.string.bill_detail),
@@ -362,9 +369,10 @@ fun BillScreen(
                                 text = stringResource(R.string.bill_count, filteredBills.size),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
+                        )
                     }
+                    }
+                }
 
                     if (filteredBills.isEmpty()) {
                 item {
@@ -385,13 +393,18 @@ fun BillScreen(
                             modifier = Modifier.padding(top = 12.dp, bottom = 4.dp)
                         )
                     }
-                    items(bills, key = { it.id }) { bill ->
+                    itemsIndexed(bills, key = { _, bill -> bill.id }) { index, bill ->
+                        AnimatedCard(index = (index + 4).coerceAtMost(10)) {
                         BillListItem(
                             bill = bill,
                             wallets = state.wallets,
                             onDetail = { onNavigateToDetail(bill.id) },
-                            onDelete = { billToDelete = bill }
+                            onDelete = { billToDelete = bill },
+                            customExpenseItems = allCustomExpenseCategories,
+                            customIncomeItems = allCustomIncomeCategories,
+                            presetOverrides = billPresetOverrides
                         )
+                        }
                     }
                 }
             }
@@ -426,24 +439,50 @@ fun BillScreen(
     
     // 高级筛选Sheet
     if (state.showFilterSheet) {
+        val resolvedExpense = expenseCategoryItems.map { item ->
+            val resolved = ColorResolver.resolve(item.name, item.color)
+            if (resolved != item.color) item.copy(color = resolved) else item
+        }
+        val resolvedIncome = incomeCategoryItems.map { item ->
+            val resolved = ColorResolver.resolve(item.name, item.color)
+            if (resolved != item.color) item.copy(color = resolved) else item
+        }
         BillFilterSheet(
             onDismiss = { viewModel.toggleFilterSheet() },
             onApply = { filter -> viewModel.applyFilter(filter) },
             currentFilter = state.currentFilter,
-            expenseCategories = expenseCategoryItems + customExpenseCategories,
-            incomeCategories = incomeCategoryItems + customIncomeCategories
+            expenseCategories = resolvedExpense + customExpenseCategories,
+            incomeCategories = resolvedIncome + customIncomeCategories,
+            presetOverrides = billPresetOverrides
         )
     }
 }
 
 @Composable
-fun BillListItem(bill: Bill, wallets: Map<Long, String> = emptyMap(), onDetail: () -> Unit, onDelete: () -> Unit) {
+fun BillListItem(bill: Bill, wallets: Map<Long, String> = emptyMap(), onDetail: () -> Unit, onDelete: () -> Unit,
+    customExpenseItems: List<CategoryItem>? = null, customIncomeItems: List<CategoryItem>? = null,
+    presetOverrides: Map<String, String> = emptyMap()) {
+    val context = LocalContext.current
     val isExpense = bill.type == "EXPENSE"
-    val categoryItem = remember(bill.category, bill.type) {
-        val list = if (isExpense) expenseCategoryItems else incomeCategoryItems
-        list.find { it.name == bill.category }
+    val categoryItem = remember(bill.category, bill.type, customExpenseItems, customIncomeItems, presetOverrides) {
+        val presetList = if (isExpense) expenseCategoryItems else incomeCategoryItems
+        presetList.find { it.name == bill.category }?.let {
+            it.copy(color = ColorResolver.resolve(it.name, it.color))
+        } ?: (if (isExpense) customExpenseItems else customIncomeItems)?.find { it.name == bill.category }
     }
-    val catColor = categoryItem?.color ?: StatusRetired
+    val catColor = categoryItem?.color ?: ErrorLight
+    val displayName = remember(bill.category, bill.type, presetOverrides) {
+        val prefix = if (bill.type == "EXPENSE") "EXPENSE_" else "INCOME_"
+        val overrideKey = "preset_$prefix${bill.category}"
+        val json = presetOverrides[overrideKey]
+        if (json != null) {
+            try {
+                val obj = org.json.JSONObject(json)
+                if (obj.has("name")) obj.getString("name")
+                else null
+            } catch (_: Exception) { null }
+        } else null
+    } ?: getLocalizedCategoryName(bill.category)?.let { context.getString(it) } ?: bill.category
 
     val density = LocalDensity.current
     var offsetX by remember { mutableFloatStateOf(0f) }
@@ -477,14 +516,14 @@ fun BillListItem(bill: Bill, wallets: Map<Long, String> = emptyMap(), onDetail: 
             Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp).padding(end = 12.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Top) {
                 Row(modifier = Modifier.weight(1f, false), verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(catColor.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) {
-                        if (categoryItem != null) {
-                            Icon(categoryItem.icon, null, tint = catColor, modifier = Modifier.size(20.dp))
-                        }
+                        Icon(
+                            categoryItem?.icon ?: Icons.Outlined.Cancel,
+                            null, tint = catColor, modifier = Modifier.size(20.dp)
+                        )
                     }
                     Column {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            val catResId = getLocalizedCategoryName(bill.category)
-                            Text(if (catResId != null) stringResource(catResId) else bill.category, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                            Text(displayName, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
                             if (bill.subCategory.isNotEmpty()) Text(" · ${bill.subCategory}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         val merchantText = if (bill.merchant.isNotEmpty() && bill.location.isNotEmpty()) {

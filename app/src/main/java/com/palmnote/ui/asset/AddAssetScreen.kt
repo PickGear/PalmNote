@@ -62,25 +62,25 @@ private val acquisitionTypes = listOf(
 )
 
 val assetCategoryItems = listOf(
-    CategoryItem("DIGITAL", Icons.Outlined.Devices, InfoBlue),
-    CategoryItem("APPLIANCE", Icons.Outlined.Kitchen, StatusActive),
+    CategoryItem("DIGITAL", Icons.Outlined.Devices, CatSkyBlue),
+    CategoryItem("APPLIANCE", Icons.Outlined.Kitchen, CatMint),
     CategoryItem("FURNITURE", Icons.Outlined.Chair, Amber),
-    CategoryItem("CLOTHING", Icons.Outlined.Checkroom, ErrorLight),
-    CategoryItem("SPORTS", Icons.Outlined.SportsBasketball, DeepOrange),
-    CategoryItem("BOOKS", Icons.AutoMirrored.Outlined.MenuBook, Purple),
-    CategoryItem("COSMETICS", Icons.Outlined.Face, ModuleLife),
-    CategoryItem("FOOD", Icons.Outlined.Restaurant, Brown),
-    CategoryItem("TOOLS", Icons.Outlined.Build, ModuleSettings),
-    CategoryItem("BABY", Icons.Outlined.ChildCare, ModuleLife),
-    CategoryItem("PET", Icons.Outlined.Pets, StatusActive),
-    CategoryItem("TRANSPORT", Icons.Outlined.DirectionsCar, InfoBlue),
-    CategoryItem("MEDICAL", Icons.Outlined.LocalHospital, ErrorLight),
-    CategoryItem("STATIONERY", Icons.Outlined.Edit, Brown),
-    CategoryItem("MUSICAL", Icons.Outlined.MusicNote, Purple),
-    CategoryItem("PHOTOGRAPHY", Icons.Outlined.CameraAlt, ModuleSettings),
-    CategoryItem("COLLECTION", Icons.Outlined.Star, Amber),
-    CategoryItem("JEWELRY", Icons.Outlined.Watch, ModuleLife),
-    CategoryItem("PLANTS", Icons.Outlined.Eco, StatusActive),
+    CategoryItem("CLOTHING", Icons.Outlined.Checkroom, LifeMoodHappy),
+    CategoryItem("SPORTS", Icons.Outlined.SportsBasketball, CatLime),
+    CategoryItem("BOOKS", Icons.AutoMirrored.Outlined.MenuBook, CatBrightPurple),
+    CategoryItem("COSMETICS", Icons.Outlined.Face, CatLightPurple),
+    CategoryItem("FOOD", Icons.Outlined.Restaurant, AccentOrange),
+    CategoryItem("TOOLS", Icons.Outlined.Build, CatBrightBlue),
+    CategoryItem("BABY", Icons.Outlined.ChildCare, CatPink),
+    CategoryItem("PET", Icons.Outlined.Pets, CatPeach),
+    CategoryItem("TRANSPORT", Icons.Outlined.DirectionsCar, StatusAway),
+    CategoryItem("MEDICAL", Icons.Outlined.LocalHospital, CatBrightRed),
+    CategoryItem("STATIONERY", Icons.Outlined.Edit, CatBrightTeal),
+    CategoryItem("MUSICAL", Icons.Outlined.MusicNote, CatIndigo),
+    CategoryItem("PHOTOGRAPHY", Icons.Outlined.CameraAlt, Warning),
+    CategoryItem("COLLECTION", Icons.Outlined.Star, CatGold),
+    CategoryItem("JEWELRY", Icons.Outlined.Watch, CatWarmRose),
+    CategoryItem("PLANTS", Icons.Outlined.Eco, CatFreshGreen),
     CategoryItem("OTHER", Icons.Outlined.Inventory2, StatusRetired)
 )
 
@@ -141,6 +141,7 @@ fun AddAssetScreen(
             )
         }
     ) { padding ->
+        val customAssetCategories by viewModel.customCategories.collectAsStateWithLifecycle()
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -153,7 +154,13 @@ fun AddAssetScreen(
             item {
                 val images = formState.images.toImageList()
                 val catInfo = if (formState.category.isNotEmpty()) {
-                    assetCategoryItems.find { it.name == formState.category }
+                    val fromPreset = assetCategoryItems.find { it.name == formState.category }
+                    if (fromPreset != null) {
+                        val resolved = ColorResolver.resolve(formState.category, fromPreset.color)
+                        if (resolved != fromPreset.color) fromPreset.copy(color = resolved) else fromPreset
+                    } else {
+                        customAssetCategories.find { it.name == formState.category }
+                    }
                 } else null
 
                 val imagePickerLauncher = rememberLauncherForActivityResult(
@@ -357,15 +364,45 @@ fun AddAssetScreen(
                     }
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    val customAssetCategories by viewModel.customCategories.collectAsStateWithLifecycle()
-                    val allAssetCategories = remember(customAssetCategories) { assetCategoryItems + customAssetCategories }
+                    val presetOverrides by PalmNoteApp.container.preferencesManager.presetCategoryOverrides
+                        .collectAsStateWithLifecycle(initialValue = emptyMap())
+                    val enrichedPresets = remember(presetOverrides) {
+                        assetCategoryItems.filter { item ->
+                            val key = "preset_${item.name}"
+                            val json = presetOverrides[key]
+                            if (json != null) {
+                                try {
+                                    org.json.JSONObject(json).optBoolean("enabled", true)
+                                } catch (_: Exception) { true }
+                            } else true
+                        }.map { item ->
+                            val resolvedColor = ColorResolver.resolve(item.name, item.color)
+                            if (resolvedColor != item.color) item.copy(color = resolvedColor) else item
+                        }
+                    }
+                    val allAssetCategories = remember(customAssetCategories, enrichedPresets) { enrichedPresets + customAssetCategories }
+
+                    fun presetDisplayName(key: String): String {
+                        val overrideKey = "preset_$key"
+                        val json = presetOverrides[overrideKey]
+                        if (json != null) {
+                            try {
+                                val obj = org.json.JSONObject(json)
+                                if (obj.has("name")) return obj.getString("name")
+                            } catch (_: Exception) {}
+                        }
+                        if (assetCategoryItems.any { it.name == key }) {
+                            return com.palmnote.ui.components.getCategoryName(key, context)
+                        }
+                        return key
+                    }
 
                     CategoryPicker(
                         selected = formState.category,
                         onSelected = { viewModel.updateFormField { copy(category = it, categoryError = null) } },
                         categories = allAssetCategories,
                         onManageCategories = { onNavigateToCategory("ASSET") },
-                        getDisplayName = { com.palmnote.ui.components.getCategoryName(it, context) }
+                        getDisplayName = { presetDisplayName(it) }
                     )
                 }
             }

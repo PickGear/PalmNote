@@ -43,6 +43,8 @@ class PreferencesManager(
         val PROFILE_SIGNATURE = stringPreferencesKey("profile_signature")
         val PROFILE_AVATAR = stringPreferencesKey("profile_avatar")
         val PROFILE_AVATAR_PATH = stringPreferencesKey("profile_avatar_path")
+        val CATEGORY_COLOR_OVERRIDES = stringPreferencesKey("category_color_overrides")
+        val PRESET_CATEGORY_OVERRIDES = stringPreferencesKey("preset_category_overrides")
     }
 
     val themeMode: Flow<String> = context.dataStore.data.map { it[THEME_MODE] ?: "SYSTEM" }
@@ -151,4 +153,32 @@ class PreferencesManager(
     suspend fun setProfileSignature(sig: String) { context.dataStore.edit { it[PROFILE_SIGNATURE] = sig } }
     suspend fun setProfileAvatar(avatar: String) { context.dataStore.edit { it[PROFILE_AVATAR] = avatar } }
     suspend fun setProfileAvatarPath(path: String) { context.dataStore.edit { it[PROFILE_AVATAR_PATH] = path } }
+
+    val categoryColorOverrides: Flow<Map<String, String>> = context.dataStore.data.map { prefs ->
+        val json = prefs[CATEGORY_COLOR_OVERRIDES]
+        if (json != null) {
+            try {
+                val obj = org.json.JSONObject(json)
+                obj.keys().asSequence().associateWith { obj.getString(it) }
+            } catch (_: Exception) { emptyMap() }
+        } else emptyMap()
+    }
+
+    suspend fun saveCategoryColorOverrides(overrides: Map<String, String>) {
+        context.dataStore.edit { it[CATEGORY_COLOR_OVERRIDES] = org.json.JSONObject(overrides.toMap()).toString() }
+    }
+
+    val presetCategoryOverrides: Flow<Map<String, String>> = context.dataStore.data.map { prefs ->
+        val json = prefs[PRESET_CATEGORY_OVERRIDES]
+        if (json != null) {
+            try {
+                val obj = org.json.JSONObject(json)
+                obj.keys().asSequence().associateWith { obj.getString(it) }
+            } catch (_: Exception) { emptyMap() }
+        } else emptyMap()
+    }
+
+    suspend fun savePresetCategoryOverrides(overrides: Map<String, String>) {
+        context.dataStore.edit { it[PRESET_CATEGORY_OVERRIDES] = org.json.JSONObject(overrides.toMap()).toString() }
+    }
 }

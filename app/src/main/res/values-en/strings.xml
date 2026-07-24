@@ -82,7 +82,9 @@
     <string name="bill_title">Bills</string>
     <string name="bill_add">Add Entry</string>
     <string name="bill_expense">Expense</string>
+    <string name="bill_expense_short">Expense:%s</string>
     <string name="bill_income">Income</string>
+    <string name="bill_income_short">Income:%s</string>
     <string name="bill_amount">Amount</string>
     <string name="bill_category">Category</string>
     <string name="bill_date">Date</string>
@@ -250,7 +252,6 @@
     <string name="bill_filter">Filter</string>
     <string name="bill_filter_title">Advanced Filter</string>
     <string name="bill_filter_type">Type</string>
-    <string name="bill_filter_type_all">All</string>
     <string name="bill_filter_type_expense">Expense</string>
     <string name="bill_filter_type_income">Income</string>
     <string name="bill_filter_amount">Amount Range</string>
@@ -1003,6 +1004,9 @@
     <!-- Bill Detail -->
     <string name="bill_detail_title">Bill Detail</string>
     <string name="bill_type">Type</string>
+    <string name="bill_transfer">Transfer</string>
+    <string name="bill_transfer_from">From Account</string>
+    <string name="bill_transfer_to">To Account</string>
     <string name="bill_merchant">Merchant</string>
     <string name="bill_payment_method">Payment Method</string>
     <string name="bill_sub_category">Sub Category</string>
@@ -1094,7 +1098,7 @@
     <string name="account_book_empty">No Books</string>
     <string name="account_book_empty_hint">Tap the button to add a book</string>
     <string name="account_book_delete_title">Delete Book</string>
-    <string name="account_book_delete_confirm">Delete "%s"? Records in this book will not be deleted.</string>
+    <string name="account_book_delete_confirm">Delete "%s"? All bill data in this book will also be deleted.</string>
     <string name="account_book_set_default">Set as Default</string>
     <string name="account_book_edit">Edit Book</string>
     <string name="account_book_new">New Book</string>
@@ -1242,7 +1246,7 @@
     <string name="wallet_empty">No Accounts</string>
     <string name="wallet_empty_hint">Tap the button to add an account</string>
     <string name="wallet_delete_title">Delete Account</string>
-    <string name="wallet_delete_confirm">Delete "%s"? Bill records under this account will not be deleted.</string>
+    <string name="wallet_delete_confirm">Delete "%s"? All bill records under this account will also be deleted.</string>
     <string name="wallet_edit">Edit Account</string>
     <string name="wallet_name">Account Name</string>
     <string name="wallet_type">Account Type</string>
@@ -1718,4 +1722,29 @@
     <string name="life_template_layout_timeline">Timeline</string>
     <string name="life_template_layout_calendar">Calendar</string>
     <string name="life_template_layout_stats">Statistics</string>
+
+    <!-- Category Settings -->
+    <string name="cat_preset_section">Preset Categories</string>
+    <string name="cat_custom_section">Custom Categories</string>
+    <string name="cat_collapse">Collapse</string>
+    <string name="cat_all_count">All %d</string>
+    <string name="cat_preset_label">Preset</string>
+    <string name="cat_enabled">Enabled</string>
+    <string name="cat_disabled">Hidden</string>
+    <string name="cat_preset_detail_desc">Preset — name/color editable, icon fixed, cannot delete</string>
+    <string name="cat_custom_detail_desc">Custom — editable, deletable</string>
+    <string name="cat_edit_preset_title">Edit Preset Category</string>
+    <string name="cat_edit_preset_desc">「%s」is a preset category, icon is fixed</string>
+    <string name="cat_field_name">Category Name</string>
+    <string name="cat_field_color">Color</string>
+    <string name="cat_field_icon">Icon</string>
+    <string name="cat_reset_default">Reset Default</string>
+    <string name="cat_name_required">Name is required</string>
+    <string name="cat_edit">Edit</string>
+    <string name="cat_close">Close</string>
+    <string name="cat_edit_category">Edit Category</string>
+    <string name="cat_add_category">Add Category</string>
+    <string name="cat_save">Save</string>
+    <string name="transfer_from_required">Please select the source account</string>
+    <string name="transfer_to_required">Please select the destination account</string>
 </resources>

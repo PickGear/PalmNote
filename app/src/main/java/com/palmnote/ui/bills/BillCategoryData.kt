@@ -14,81 +14,81 @@ import com.palmnote.ui.theme.*
 val expenseCategoryItems = listOf(
     // 餐饮食品
     CategoryItem("餐饮", Icons.Outlined.Restaurant, DeepOrange),
-    CategoryItem("零食", Icons.Outlined.Cookie, DeepOrange),
-    CategoryItem("饮品", Icons.Outlined.LocalCafe, Brown),
+    CategoryItem("零食", Icons.Outlined.Cookie, AccentOrange),
+    CategoryItem("饮品", Icons.Outlined.LocalCafe, CatBrightTeal),
     // 交通出行
     CategoryItem("交通", Icons.Outlined.Train, InfoBlue),
     // 购物消费
-    CategoryItem("购物", Icons.Outlined.ShoppingCart, ModuleLife),
+    CategoryItem("购物", Icons.Outlined.ShoppingCart, CatBrightBlue),
     CategoryItem("服饰", Icons.Outlined.Checkroom, Amber),
-    CategoryItem("数码", Icons.Outlined.Devices, InfoBlue),
+    CategoryItem("数码", Icons.Outlined.Devices, LifePlan),
     CategoryItem("二手", Icons.Outlined.SwapHoriz, StatusRetired),
     // 居住生活
-    CategoryItem("居住", Icons.Outlined.Home, StatusActive),
-    CategoryItem("家居", Icons.Outlined.Chair, Amber),
-    CategoryItem("租金", Icons.Outlined.HouseSiding, StatusActive),
+    CategoryItem("居住", Icons.Outlined.Home, CatLightGreen),
+    CategoryItem("家居", Icons.Outlined.Chair, DarkWarning),
+    CategoryItem("租金", Icons.Outlined.HouseSiding, PrimaryGreenLight),
     // 娱乐休闲
-    CategoryItem("娱乐", Icons.Outlined.SportsEsports, Purple),
-    CategoryItem("旅游", Icons.Outlined.Flight, StatusActive),
-    CategoryItem("运动", Icons.Outlined.SportsBasketball, StatusActive),
+    CategoryItem("娱乐", Icons.Outlined.SportsEsports, CatBrightPurple),
+    CategoryItem("旅游", Icons.Outlined.Flight, LifeTravel),
+    CategoryItem("运动", Icons.Outlined.SportsBasketball, StatusAway),
     // 医疗健康
-    CategoryItem("医疗", Icons.Outlined.LocalHospital, ErrorLight),
-    CategoryItem("健身", Icons.Outlined.FitnessCenter, StatusActive),
-    CategoryItem("美容", Icons.Outlined.Face, ModuleLife),
+    CategoryItem("医疗", Icons.Outlined.LocalHospital, CatBrightRed),
+    CategoryItem("健身", Icons.Outlined.FitnessCenter, LifeRecord),
+    CategoryItem("美容", Icons.Outlined.Face, CatBrightPink),
     // 教育学习
-    CategoryItem("教育", Icons.Outlined.School, InfoBlue),
-    CategoryItem("文具", Icons.Outlined.Edit, Brown),
+    CategoryItem("教育", Icons.Outlined.School, CatMint),
+    CategoryItem("文具", Icons.Outlined.Edit, LifeReading),
     // 社交人情
-    CategoryItem("社交", Icons.Outlined.Groups, Purple),
-    CategoryItem("人情", Icons.Outlined.Redeem, DeepOrange),
-    CategoryItem("红包", Icons.Outlined.CardGiftcard, ErrorLight),
-    CategoryItem("赠与", Icons.Outlined.VolunteerActivism, Purple),
+    CategoryItem("社交", Icons.Outlined.Groups, Warning),
+    CategoryItem("人情", Icons.Outlined.Redeem, LifeSaving),
+    CategoryItem("红包", Icons.Outlined.CardGiftcard, LifeBirthday),
+    CategoryItem("赠与", Icons.Outlined.VolunteerActivism, CatIndigo),
     // 生活服务
     CategoryItem("通讯", Icons.Outlined.PhoneAndroid, ModuleSettings),
-    CategoryItem("家政", Icons.Outlined.CleaningServices, ModuleSettings),
-    CategoryItem("快递", Icons.Outlined.LocalShipping, ModuleSettings),
-    CategoryItem("维修", Icons.Outlined.Build, Brown),
+    CategoryItem("家政", Icons.Outlined.CleaningServices, LifeSubscription),
+    CategoryItem("快递", Icons.Outlined.LocalShipping, LifeFocus),
+    CategoryItem("维修", Icons.Outlined.Build, CatLightGreen),
     // 金融保险
-    CategoryItem("投资", Icons.AutoMirrored.Outlined.TrendingUp, InfoBlue),
-    CategoryItem("股票", Icons.AutoMirrored.Outlined.ShowChart, ErrorLight),
-    CategoryItem("理财", Icons.Outlined.Savings, InfoBlue),
-    CategoryItem("保险", Icons.Outlined.HealthAndSafety, ModuleSettings),
+    CategoryItem("投资", Icons.AutoMirrored.Outlined.TrendingUp, CatSkyBlue),
+    CategoryItem("股票", Icons.AutoMirrored.Outlined.ShowChart, CatBrightRed),
+    CategoryItem("理财", Icons.Outlined.Savings, CatFreshGreen),
+    CategoryItem("保险", Icons.Outlined.HealthAndSafety, ModuleBill),
     // 其他
-    CategoryItem("宠物", Icons.Outlined.Pets, StatusActive),
-    CategoryItem("母婴", Icons.Outlined.ChildCare, ModuleLife),
-    CategoryItem("烟酒", Icons.Outlined.LocalBar, Brown),
-    CategoryItem("捐赠", Icons.Outlined.VolunteerActivism, Purple),
-    CategoryItem("罚款", Icons.Outlined.Gavel, ErrorLight),
-    CategoryItem("手续费", Icons.Outlined.Receipt, ModuleSettings),
-    CategoryItem("其他", Icons.Outlined.MoreHoriz, StatusRetired)
+    CategoryItem("宠物", Icons.Outlined.Pets, CatLightPurple),
+    CategoryItem("母婴", Icons.Outlined.ChildCare, CatPink),
+    CategoryItem("烟酒", Icons.Outlined.LocalBar, CatOrange),
+    CategoryItem("捐赠", Icons.Outlined.FavoriteBorder, CatLime),
+    CategoryItem("罚款", Icons.Outlined.Gavel, CatOrange),
+    CategoryItem("手续费", Icons.Outlined.Receipt, LifeMoodNormal),
+    CategoryItem("其他", Icons.Outlined.MoreHoriz, CatBrightTeal)
 )
 
 val incomeCategoryItems = listOf(
     // 工作收入
     CategoryItem("工资", Icons.Outlined.AccountBalance, StatusActive),
-    CategoryItem("奖金", Icons.Outlined.EmojiEvents, DeepOrange),
-    CategoryItem("兼职", Icons.Outlined.Work, ModuleSettings),
-    CategoryItem("副业", Icons.Outlined.Workspaces, ModuleSettings),
-    CategoryItem("报销", Icons.Outlined.Receipt, StatusActive),
+    CategoryItem("奖金", Icons.Outlined.EmojiEvents, ModuleBill),
+    CategoryItem("兼职", Icons.Outlined.Work, CatBrightPink),
+    CategoryItem("副业", Icons.Outlined.Workspaces, LifeReport),
+    CategoryItem("报销", Icons.Outlined.Receipt, CatBrightBlue),
     // 投资理财
-    CategoryItem("投资", Icons.AutoMirrored.Outlined.TrendingUp, InfoBlue),
-    CategoryItem("股票", Icons.AutoMirrored.Outlined.ShowChart, ErrorLight),
-    CategoryItem("理财", Icons.Outlined.Savings, InfoBlue),
-    CategoryItem("分红", Icons.Outlined.EmojiEvents, DeepOrange),
-    CategoryItem("利息", Icons.Outlined.Percent, Amber),
+    CategoryItem("投资", Icons.AutoMirrored.Outlined.TrendingUp, CatSkyBlue),
+    CategoryItem("股票", Icons.AutoMirrored.Outlined.ShowChart, CatBrightRed),
+    CategoryItem("理财", Icons.Outlined.Savings, CatFreshGreen),
+    CategoryItem("分红", Icons.Outlined.MonetizationOn, CatGold),
+    CategoryItem("利息", Icons.Outlined.Percent, CatPeach),
     // 资产收入
-    CategoryItem("租金", Icons.Outlined.HouseSiding, StatusActive),
+    CategoryItem("租金", Icons.Outlined.HouseSiding, PrimaryGreenLight),
     CategoryItem("二手", Icons.Outlined.SwapHoriz, StatusRetired),
     // 人情往来
-    CategoryItem("红包", Icons.Outlined.CardGiftcard, ErrorLight),
-    CategoryItem("赠与", Icons.Outlined.Redeem, Purple),
-    CategoryItem("人情", Icons.Outlined.Redeem, DeepOrange),
+    CategoryItem("红包", Icons.Outlined.CardGiftcard, LifeBirthday),
+    CategoryItem("赠与", Icons.Outlined.VolunteerActivism, CatIndigo),
+    CategoryItem("人情", Icons.Outlined.Redeem, LifeSaving),
     // 其他收入
-    CategoryItem("退款", Icons.AutoMirrored.Outlined.Undo, Purple),
-    CategoryItem("中奖", Icons.Outlined.EmojiEvents, Amber),
-    CategoryItem("保险理赔", Icons.Outlined.HealthAndSafety, StatusActive),
-    CategoryItem("继承", Icons.Outlined.AccountBalance, StatusActive),
-    CategoryItem("其他", Icons.Outlined.MoreHoriz, StatusRetired)
+    CategoryItem("退款", Icons.AutoMirrored.Outlined.Undo, CatMint),
+    CategoryItem("中奖", Icons.Outlined.AutoAwesome, LifeMoodNormal),
+    CategoryItem("保险理赔", Icons.Outlined.MedicalServices, CatBrightRed),
+    CategoryItem("继承", Icons.Outlined.AccountTree, LifeMoodSad),
+    CategoryItem("其他", Icons.Outlined.MoreHoriz, CatBrightTeal)
 )
 
 private val categoryNameMap = mapOf(

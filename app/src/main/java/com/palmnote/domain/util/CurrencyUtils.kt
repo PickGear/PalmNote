@@ -6,7 +6,7 @@ import com.palmnote.R
 import java.text.DecimalFormat
 
 object CurrencyUtils {
-    private val currencyFormat = DecimalFormat("#,##0.##")
+    private val currencyFormat = DecimalFormat("#,##0.00")
 
     private fun getAppContext(): Context = PalmNoteApp.instance
 

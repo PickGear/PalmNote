@@ -34,6 +34,8 @@ import com.palmnote.data.db.dao.FocusRecordDao
 import com.palmnote.data.db.dao.TodoItemDao
 import com.palmnote.data.db.dao.MoodDiaryDao
 import com.palmnote.data.db.dao.LifeMomentDao
+import com.palmnote.data.db.entity.CategoryConfig
+import com.palmnote.data.db.entity.Wallet
 import com.palmnote.data.db.migration.MIGRATION_1_2
 import com.palmnote.data.db.migration.MIGRATION_2_3
 import com.palmnote.data.export.CsvDataExporter
@@ -73,7 +75,6 @@ import com.palmnote.domain.repository.LifeReportRepository
 import com.palmnote.domain.repository.TodoRepository
 import com.palmnote.domain.service.TriggerEngine
 import com.palmnote.domain.service.TriggerEventBus
-import javax.inject.Provider
 import com.palmnote.ui.asset.AssetViewModel
 import com.palmnote.ui.backup.BackupViewModel
 import com.palmnote.ui.bills.BillViewModel
@@ -113,10 +114,18 @@ import com.palmnote.ui.settings.DataClearViewModel
 import com.palmnote.ui.settings.RecycleBinViewModel
 import androidx.work.ListenableWorker
 import androidx.work.WorkerParameters
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
+import javax.inject.Provider
 
 class AppContainer(private val application: Application) {
 
     private val context: Context = application.applicationContext
+
+    private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
     val database: AppDatabase by lazy {
         Room.databaseBuilder(context, AppDatabase::class.java, AppDatabase.DATABASE_NAME)
@@ -168,10 +177,17 @@ class AppContainer(private val application: Application) {
     val anniversaryRepository: AnniversaryRepository by lazy { AnniversaryRepository(anniversaryDao) }
     val momentRepository: MomentRepository by lazy { MomentRepository(momentDao) }
     val categoryConfigRepository: CategoryConfigRepository by lazy { CategoryConfigRepository(context, categoryConfigDao, customTagDao) }
+    val cachedCategoryConfigs = categoryConfigRepository.getAllCategories()
+        .stateIn(applicationScope, SharingStarted.Eagerly, emptyList())
     val categoryMappingRepository: CategoryMappingRepository by lazy { CategoryMappingRepository(categoryMappingDao) }
     val usageRecordRepository: UsageRecordRepository by lazy { UsageRecordRepository(usageRecordDao) }
     val walletRepository: WalletRepository by lazy { WalletRepository(walletDao, context) }
+    val cachedWallets = walletRepository.getEnabledWallets()
+        .stateIn(applicationScope, SharingStarted.Eagerly, emptyList())
+
     val accountBookRepository: AccountBookRepository by lazy { AccountBookRepository(accountBookDao, context) }
+    val cachedAccountBooks = accountBookRepository.getAllBooks()
+        .stateIn(applicationScope, SharingStarted.Eagerly, emptyList())
     val planListRepository: PlanListRepository by lazy { PlanListRepository(planListDao, planListItemDao) }
     val planRepository: PlanRepository by lazy { PlanRepository(planDao) }
     val lifeTemplateRepository: LifeTemplateRepository by lazy { LifeTemplateRepositoryImpl(lifeTemplateDao) }
@@ -186,17 +202,17 @@ class AppContainer(private val application: Application) {
     val lifeMomentRepository: LifeMomentRepository by lazy { LifeMomentRepository(lifeMomentDao) }
 
     fun dashboardViewModel() = DashboardViewModel(assetRepository, billRepository, budgetRepository, goalRepository, anniversaryRepository, preferencesManager)
-    fun assetViewModel() = AssetViewModel(application, assetRepository, usageRecordRepository, billRepository, categoryConfigRepository, preferencesManager)
-    fun billViewModel() = BillViewModel(context, billRepository, budgetRepository, walletRepository, accountBookRepository, categoryConfigRepository, preferencesManager)
+    fun assetViewModel() = AssetViewModel(application, assetRepository, usageRecordRepository, billRepository, cachedCategoryConfigs, preferencesManager)
+    fun billViewModel() = BillViewModel(context, cachedWallets, cachedCategoryConfigs, cachedAccountBooks, billRepository, budgetRepository, walletRepository, accountBookRepository, preferencesManager)
     fun lifeViewModel() = LifeViewModel(application, lifeTemplateRepository, lifeItemRepository, goalRepository, focusRecordRepository, lifeMomentRepository, moodDiaryRepository)
     fun backupViewModel() = BackupViewModel(backupRepository)
     fun billDetailViewModel() = BillDetailViewModel(billRepository)
-    fun billImportViewModel() = BillImportViewModel(context, billRepository, walletRepository)
+    fun billImportViewModel() = BillImportViewModel(context, billRepository, cachedWallets)
     fun billReportViewModel() = BillReportViewModel(billRepository)
     fun searchViewModel() = SearchViewModel(assetRepository, billRepository, goalRepository, anniversaryRepository, momentRepository)
-    fun categoryViewModel() = CategoryViewModel(categoryConfigRepository)
+    fun categoryViewModel() = CategoryViewModel(cachedCategoryConfigs, categoryConfigRepository, preferencesManager, assetRepository, billRepository)
     fun dataClearViewModel() = DataClearViewModel(database)
-    fun walletViewModel() = WalletViewModel(walletRepository)
+    fun walletViewModel() = WalletViewModel(walletRepository, billRepository)
     fun recycleBinViewModel() = RecycleBinViewModel(assetRepository, billRepository, goalRepository, anniversaryRepository, momentRepository)
     fun anniversaryViewModel() = AnniversaryViewModel(context, lifeItemRepository, lifeTemplateRepository)
     fun birthdayViewModel() = BirthdayViewModel(context, lifeItemRepository, lifeTemplateRepository)

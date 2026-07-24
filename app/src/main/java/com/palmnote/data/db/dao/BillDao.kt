@@ -377,6 +377,36 @@ interface BillDao {
         ORDER BY total DESC
     """)
     fun getYearlyIncomeByCategoryByBook(bookId: Long, year: String): Flow<List<CategoryTotalWithCount>>
+
+    @Query("""
+        SELECT category, 0.0 as total, COUNT(*) as count
+        FROM bills
+        WHERE type = :type AND isDeleted = 0
+        GROUP BY category
+        ORDER BY count DESC
+    """)
+    fun getCategoryUsageCounts(type: String): Flow<List<CategoryTotalWithCount>>
+
+    @Query("UPDATE bills SET category = :newName WHERE category = :oldName AND isDeleted = 0")
+    suspend fun updateCategoryName(oldName: String, newName: String)
+
+    @Query("SELECT COUNT(*) FROM bills WHERE category = :category AND isDeleted = 0")
+    suspend fun countByCategory(category: String): Int
+
+    @Query("UPDATE bills SET isDeleted = 1, deletedAt = :now WHERE category = :category AND isDeleted = 0")
+    suspend fun softDeleteByCategory(category: String, now: Long = System.currentTimeMillis())
+
+    @Query("SELECT COUNT(*) FROM bills WHERE (walletId = :walletId OR toWalletId = :walletId) AND isDeleted = 0")
+    suspend fun countByWallet(walletId: Long): Int
+
+    @Query("UPDATE bills SET isDeleted = 1, deletedAt = :now WHERE (walletId = :walletId OR toWalletId = :walletId) AND isDeleted = 0")
+    suspend fun softDeleteByWallet(walletId: Long, now: Long = System.currentTimeMillis())
+
+    @Query("SELECT COUNT(*) FROM bills WHERE accountBookId = :bookId AND isDeleted = 0")
+    suspend fun countByBook(bookId: Long): Int
+
+    @Query("UPDATE bills SET isDeleted = 1, deletedAt = :now WHERE accountBookId = :bookId AND isDeleted = 0")
+    suspend fun softDeleteByBook(bookId: Long, now: Long = System.currentTimeMillis())
 }
 
 data class CategoryTotal(

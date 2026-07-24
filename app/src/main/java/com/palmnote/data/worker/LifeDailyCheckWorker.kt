@@ -1,13 +1,12 @@
 package com.palmnote.data.worker
 
 import android.content.Context
-import androidx.work.Worker
+import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.palmnote.PalmNoteApp
 import com.palmnote.data.db.entity.LifeItem
 import com.palmnote.data.db.entity.LifeReport
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -17,7 +16,7 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 
-class LifeDailyCheckWorker(context: Context, params: WorkerParameters) : Worker(context, params) {
+class LifeDailyCheckWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
 
     private val container = PalmNoteApp.container
     private val templateRepo = container.lifeTemplateRepository
@@ -27,32 +26,30 @@ class LifeDailyCheckWorker(context: Context, params: WorkerParameters) : Worker(
     private val billRepo = container.billRepository
     private val pm = container.preferencesManager
 
-    override fun doWork(): Result {
+    override suspend fun doWork(): Result {
         val startTime = System.currentTimeMillis()
         val timeBudgetMs = 240_000L
         fun overBudget() = System.currentTimeMillis() - startTime > timeBudgetMs
-        return runBlocking {
-            try {
-                val dailyEnabled = pm.dailyReminderEnabled.first()
-                if (dailyEnabled) checkDailyReminder()
-                if (overBudget()) return@runBlocking Result.success()
-                checkBillReminder()
-                if (overBudget()) return@runBlocking Result.success()
-                checkCountUpMilestones()
-                if (overBudget()) return@runBlocking Result.success()
-                checkCountdownExpiry()
-                if (overBudget()) return@runBlocking Result.success()
-                checkBirthdayReminders()
-                if (overBudget()) return@runBlocking Result.success()
-                checkAnniversaryReminders()
-                if (overBudget()) return@runBlocking Result.success()
-                checkSubscriptionBilling()
-                if (overBudget()) return@runBlocking Result.success()
-                tryGenerateWeeklyReport()
-                Result.success()
-            } catch (e: Exception) {
-                if (runAttemptCount < 3) Result.retry() else Result.failure()
-            }
+        return try {
+            val dailyEnabled = pm.dailyReminderEnabled.first()
+            if (dailyEnabled) checkDailyReminder()
+            if (overBudget()) return Result.success()
+            checkBillReminder()
+            if (overBudget()) return Result.success()
+            checkCountUpMilestones()
+            if (overBudget()) return Result.success()
+            checkCountdownExpiry()
+            if (overBudget()) return Result.success()
+            checkBirthdayReminders()
+            if (overBudget()) return Result.success()
+            checkAnniversaryReminders()
+            if (overBudget()) return Result.success()
+            checkSubscriptionBilling()
+            if (overBudget()) return Result.success()
+            tryGenerateWeeklyReport()
+            Result.success()
+        } catch (e: Exception) {
+            if (runAttemptCount < 3) Result.retry() else Result.failure()
         }
     }
 

@@ -6,6 +6,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
@@ -28,7 +30,6 @@ import com.palmnote.ui.components.simpleViewModel
 import com.palmnote.R
 import com.palmnote.data.db.entity.Wallet
 import com.palmnote.domain.util.CurrencyUtils
-import com.palmnote.ui.bills.walletColorOptions
 import com.palmnote.ui.bills.walletTypeResIds
 import com.palmnote.ui.components.*
 import com.palmnote.ui.theme.*
@@ -124,7 +125,7 @@ fun WalletScreen(
                         icon = Icons.Outlined.AccountBalanceWallet,
                         title = stringResource(R.string.wallet_empty),
                         subtitle = stringResource(R.string.wallet_empty_hint)
-                    )
+                )
                 }
             }
 
@@ -138,7 +139,14 @@ fun WalletScreen(
         WalletDetailDialog(
             wallet = detailWalletSnapshot,
             onEdit = { editingWallet = detailWallet; showAddDialog = true; detailWallet = null },
-            onDelete = { walletToDelete = detailWallet; showDeleteDialog = true; detailWallet = null },
+            onDelete = {
+                val w = detailWallet
+                if (w != null) {
+                    walletToDelete = w
+                    showDeleteDialog = true
+                    detailWallet = null
+                }
+            },
             onSetDefault = { viewModel.setDefault(detailWalletSnapshot.id) },
             onDismiss = { detailWallet = null }
         )
@@ -162,9 +170,9 @@ fun WalletScreen(
         AppDialog(
             onDismissRequest = { showDeleteDialog = false },
             title = { Text(stringResource(R.string.wallet_delete_title), fontWeight = FontWeight.Bold) },
-            text = { Text(stringResource(R.string.wallet_delete_confirm, walletToDeleteSnapshot.name)) },
+            text = { Text("确定要删除「${walletToDeleteSnapshot.name}」吗？该账户下的所有账单数据将被一并删除。") },
             confirmButton = {
-                TextButton(onClick = { viewModel.deleteWallet(walletToDeleteSnapshot.id); showDeleteDialog = false }) {
+                TextButton(onClick = { viewModel.deleteWalletWithData(walletToDeleteSnapshot.id); showDeleteDialog = false }) {
                     Text(stringResource(R.string.delete), color = ErrorLight)
                 }
             },
@@ -391,23 +399,7 @@ private fun WalletEditBottomSheet(
         IconPickerGrid(selectedIcon = icon, onSelected = { icon = it })
 
         Text(stringResource(R.string.wallet_color), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Medium)
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            walletColorOptions.forEach { c ->
-                val hex = "#%02X%02X%02X".format((c.red * 255).toInt(), (c.green * 255).toInt(), (c.blue * 255).toInt())
-                Box(
-                    modifier = Modifier
-                        .size(28.dp)
-                        .clip(MaterialTheme.shapes.small)
-                        .background(c)
-                        .clickable { color = hex },
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (color == hex) {
-                        Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(14.dp))
-                    }
-                }
-            }
-        }
+        ColorPicker(selectedColor = color, onColorSelected = { color = it })
 
         val walletNameRequired = stringResource(R.string.wallet_name_required)
         AppSaveButton(
@@ -425,7 +417,7 @@ private fun WalletEditBottomSheet(
                 onSave(Wallet(
                     id = wallet?.id ?: 0L, name = name.trim(), type = type, icon = icon, color = color,
                     bankName = bankName.trim(), cardNumber = cardNumber.trim(),
-                    initialBalance = balance, currentBalance = wallet?.currentBalance ?: balance,
+                    initialBalance = balance, currentBalance = wallet?.let { it.currentBalance + (balance - it.initialBalance) } ?: balance,
                     isDefault = wallet?.isDefault ?: false, isEnabled = wallet?.isEnabled ?: true,
                     sortOrder = wallet?.sortOrder ?: 0
                 ))

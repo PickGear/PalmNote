@@ -17,6 +17,7 @@ import kotlinx.serialization.decodeFromString
 import com.palmnote.data.db.dao.CategoryCount
 import com.palmnote.data.db.entity.Asset
 import com.palmnote.data.db.entity.Bill
+import com.palmnote.data.db.entity.CategoryConfig
 import com.palmnote.data.db.entity.UsageRecord
 import com.palmnote.domain.repository.AssetRepository
 import com.palmnote.domain.repository.BillRepository
@@ -146,7 +147,7 @@ class AssetViewModel(
     private val assetRepository: AssetRepository,
     private val usageRecordRepository: UsageRecordRepository,
     private val billRepository: BillRepository,
-    private val categoryConfigRepository: com.palmnote.data.repository.CategoryConfigRepository,
+    private val cachedCategoryConfigs: StateFlow<List<CategoryConfig>>,
     private val preferencesManager: PreferencesManager
 ) : ViewModel() {
 
@@ -159,8 +160,10 @@ class AssetViewModel(
     private val _formState = MutableStateFlow(AddAssetFormState())
     val formState: StateFlow<AddAssetFormState> = _formState.asStateFlow()
 
-    private val _customCategories = MutableStateFlow<List<com.palmnote.ui.components.CategoryItem>>(emptyList())
-    val customCategories: StateFlow<List<com.palmnote.ui.components.CategoryItem>> = _customCategories.asStateFlow()
+    val customCategories: StateFlow<List<com.palmnote.ui.components.CategoryItem>> = cachedCategoryConfigs
+        .map { configs -> configs.filter { it.type == "ASSET" && it.isEnabled }
+            .map { com.palmnote.ui.components.CategoryItem(it.name, it.icon.imageVector, it.color.toComposeColor()) } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     enum class DialogType { AWAY, CLEAR, DELETE }
 
@@ -173,17 +176,6 @@ class AssetViewModel(
         DataCache.get<AssetState>("asset")?.let { _state.value = it }
         loadAssets()
         loadViewMode()
-        loadCustomCategories()
-    }
-
-    private fun loadCustomCategories() {
-        viewModelScope.launch {
-            categoryConfigRepository.getAllCategories().collect { configs ->
-                val categories = configs.filter { it.type == "ASSET" && it.isEnabled }
-                    .map { com.palmnote.ui.components.CategoryItem(it.name, it.icon.imageVector, it.color.toComposeColor()) }
-                _customCategories.value = categories
-            }
-        }
     }
 
     private fun loadViewMode() {
