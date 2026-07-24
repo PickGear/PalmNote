@@ -62,4 +62,12 @@ interface BillRepository {
     fun getYearlyIncomeTrendByBook(bookId: Long, year: String): Flow<List<MonthTotal>>
     fun getYearlyExpenseByCategoryByBook(bookId: Long, year: String): Flow<List<CategoryTotalWithCount>>
     fun getYearlyIncomeByCategoryByBook(bookId: Long, year: String): Flow<List<CategoryTotalWithCount>>
+    fun getCategoryUsageCounts(type: String): Flow<List<CategoryTotalWithCount>>
+    suspend fun updateCategoryNameInBills(oldName: String, newName: String)
+    suspend fun countByCategory(category: String): Int
+    suspend fun softDeleteByCategory(category: String)
+    suspend fun countByWallet(walletId: Long): Int
+    suspend fun softDeleteByWallet(walletId: Long)
+    suspend fun countByBook(bookId: Long): Int
+    suspend fun softDeleteByBook(bookId: Long)
 }

@@ -32,8 +32,7 @@ import com.palmnote.data.db.entity.getDisplayDescription
 import com.palmnote.ui.components.*
 import com.palmnote.ui.theme.*
 
-// Performance fix: move list literals to top-level to avoid recreation per recomposition
-private val themeColors = listOf("#2D4A3E", "#FF8C42", "#34A853", "#EA4335", "#FBBC04", "#9C27B0", "#00BCD4", "#795548", "#607D8B", "#E91E63")
+
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -71,8 +70,8 @@ fun AccountBookManageScreen(
             }
         }
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier
+            LazyColumn(
+                modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
                 .padding(padding),
@@ -143,7 +142,11 @@ fun AccountBookManageScreen(
         AccountBookDetailDialog(
             book = book,
             onEdit = { editingBook = book; showAddDialog = true; detailBook = null },
-            onDelete = { bookToDelete = book; showDeleteDialog = true; detailBook = null },
+            onDelete = {
+                bookToDelete = book
+                showDeleteDialog = true
+                detailBook = null
+            },
             onSetDefault = { viewModel.setDefaultBook(book.id); detailBook = null },
             onDismiss = { detailBook = null }
         )
@@ -163,15 +166,14 @@ fun AccountBookManageScreen(
         )
     }
 
-    // Bug fix: use ?.let to avoid !! force-unwrap
     if (showDeleteDialog) {
         bookToDelete?.let { book ->
             AppDialog(
                 onDismissRequest = { showDeleteDialog = false },
                 title = { Text(stringResource(R.string.account_book_delete_title)) },
-                text = { Text(stringResource(R.string.account_book_delete_confirm, book.getDisplayName(context))) },
+                text = { Text("确定要删除「${book.getDisplayName(context)}」吗？账本下的所有账单数据将被一并删除。") },
                 confirmButton = {
-                    TextButton(onClick = { viewModel.deleteAccountBook(book.id); showDeleteDialog = false }) {
+                    TextButton(onClick = { viewModel.deleteAccountBookWithData(book.id); showDeleteDialog = false }) {
                         Text(stringResource(R.string.delete), color = ErrorLight)
                     }
                 },
@@ -375,19 +377,7 @@ private fun AccountBookEditBottomSheet(
             IconPickerGrid(selectedIcon = icon, onSelected = { newIcon -> icon = newIcon }, modifier = Modifier.height(160.dp), columns = 5)
 
             Text(stringResource(R.string.account_book_color), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Medium)
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                themeColors.forEach { c ->
-                    Surface(onClick = { color = c }, shape = CircleShape,
-                        color = c.toComposeColor(Color.Gray),
-                        modifier = Modifier.size(28.dp)) {
-                        if (color == c) {
-                            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                                Icon(Icons.Filled.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
-                            }
-                        }
-                    }
-                }
-            }
+            ColorPicker(selectedColor = color, onColorSelected = { color = it })
 
             if (book == null) {
                 TextButton(onClick = { showTemplatePicker = true }) { Text(stringResource(R.string.account_book_back_to_template)) }

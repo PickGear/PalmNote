@@ -156,6 +156,15 @@ interface AssetDao {
 
     @Query("DELETE FROM assets")
     suspend fun deleteAll()
+
+    @Query("UPDATE assets SET category = :newName WHERE category = :oldName AND isDeleted = 0")
+    suspend fun updateCategoryName(oldName: String, newName: String)
+
+    @Query("SELECT COUNT(*) FROM assets WHERE category = :category AND isDeleted = 0")
+    suspend fun countByCategory(category: String): Int
+
+    @Query("UPDATE assets SET isDeleted = 1, deletedAt = :now WHERE category = :category AND isDeleted = 0")
+    suspend fun softDeleteByCategory(category: String, now: Long = System.currentTimeMillis())
 }
 
 data class CategoryCount(

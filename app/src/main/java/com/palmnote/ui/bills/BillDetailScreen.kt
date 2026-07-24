@@ -7,9 +7,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.outlined.Cancel
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Receipt
+import androidx.compose.material.icons.outlined.SwapVert
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -38,9 +40,22 @@ fun BillDetailScreen(
     billId: Long,
     onNavigateBack: () -> Unit = {},
     onNavigateToEdit: (Long) -> Unit = {},
+    walletNames: Map<Long, String> = emptyMap(),
     viewModel: BillDetailViewModel = simpleViewModel { PalmNoteApp.container.billDetailViewModel() }
 ) {
     val context = LocalContext.current
+    val billPresetOverrides by PalmNoteApp.container.preferencesManager.presetCategoryOverrides
+        .collectAsStateWithLifecycle(initialValue = emptyMap())
+    val billCustomCfg by PalmNoteApp.container.cachedCategoryConfigs
+        .collectAsStateWithLifecycle(initialValue = emptyList())
+    val billCustomExpense = remember(billCustomCfg) {
+        billCustomCfg.filter { it.type == "BILL_EXPENSE" }
+            .map { com.palmnote.ui.components.CategoryItem(it.name, it.icon.imageVector, it.color.toComposeColor()) }
+    }
+    val billCustomIncome = remember(billCustomCfg) {
+        billCustomCfg.filter { it.type == "BILL_INCOME" }
+            .map { com.palmnote.ui.components.CategoryItem(it.name, it.icon.imageVector, it.color.toComposeColor()) }
+    }
     val state by viewModel.state.collectAsStateWithLifecycle()
     LaunchedEffect(billId) { viewModel.loadBill(billId) }
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -81,31 +96,57 @@ fun BillDetailScreen(
                     Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                text = "${if (bill.type == "EXPENSE") "-" else "+"}${CurrencyUtils.formatCurrency(bill.amount)}",
+                                text = "${if (bill.type == "EXPENSE") "-" else if (bill.type == "TRANSFER") "" else "+"}${CurrencyUtils.formatCurrency(bill.amount)}",
                                 style = MaterialTheme.typography.displaySmall,
                                 fontWeight = FontWeight.Bold,
-                                color = if (bill.type == "EXPENSE") ExpenseRed else IncomeGreen
+                                color = if (bill.type == "EXPENSE") ExpenseRed else if (bill.type == "TRANSFER") InfoBlue else IncomeGreen
                             )
-                            val catItem = remember(bill.category, bill.type) {
-                                (if (bill.type == "EXPENSE") expenseCategoryItems else incomeCategoryItems).find { it.name == bill.category }
+                    val catItem = remember(bill.category, bill.type, billCustomExpense, billCustomIncome) {
+                        val item = (if (bill.type == "EXPENSE") expenseCategoryItems else incomeCategoryItems).find { it.name == bill.category }
+                        item?.let { it.copy(color = ColorResolver.resolve(it.name, it.color)) }
+                            ?: (if (bill.type == "EXPENSE") billCustomExpense else billCustomIncome).find { it.name == bill.category }
+                            ?: com.palmnote.ui.components.CategoryItem(bill.category, Icons.Outlined.Cancel, ErrorLight)
+                    }
+                    fun getBillDisplayName(cat: String): String {
+                        val prefix = if (bill.type == "EXPENSE") "EXPENSE_" else "INCOME_"
+                        val overrideKey = "preset_$prefix$cat"
+                        val json = billPresetOverrides[overrideKey]
+                        if (json != null) {
+                            try {
+                                val obj = org.json.JSONObject(json)
+                                if (obj.has("name")) return obj.getString("name")
+                            } catch (_: Exception) {}
+                        }
+                        val resId = getLocalizedCategoryName(cat)
+                        return if (resId != null) context.getString(resId) else cat
+                    }
+                    if (bill.type == "TRANSFER") {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(InfoBlue.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) {
+                                Icon(Icons.Outlined.SwapVert, null, tint = InfoBlue, modifier = Modifier.size(20.dp))
                             }
-                            if (catItem != null) {
+                            Text(stringResource(R.string.bill_transfer), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium, color = InfoBlue)
+                        }
+                    } else {
+                        val displayName = getBillDisplayName(catItem.name)
                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(catItem.color.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) {
                                         Icon(catItem.icon, null, tint = catItem.color, modifier = Modifier.size(20.dp))
                                     }
-                                    val catItemResId = getLocalizedCategoryName(catItem.name)
-                                    Text(if (catItemResId != null) stringResource(catItemResId) else catItem.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
+                                    Text(displayName, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
                                 }
-                            } else {
-                                val catResId = getLocalizedCategoryName(bill.category)
-                                Text(if (catResId != null) stringResource(catResId) else bill.category, modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
                         HorizontalDivider()
-                        DetailRow(stringResource(R.string.bill_type), if (bill.type == "EXPENSE") stringResource(R.string.bill_expense) else stringResource(R.string.bill_income))
+                        DetailRow(stringResource(R.string.bill_type), if (bill.type == "TRANSFER") stringResource(R.string.bill_transfer) else if (bill.type == "EXPENSE") stringResource(R.string.bill_expense) else stringResource(R.string.bill_income))
                         DetailRow(stringResource(R.string.bill_date), DateUtils.formatDisplayDate(context, bill.date))
-                        if (bill.merchant.isNotEmpty()) DetailRow(stringResource(R.string.bill_merchant), bill.merchant)
+                        if (bill.type == "TRANSFER") {
+                            DetailRow(stringResource(R.string.bill_wallet), walletNames[bill.walletId] ?: "")
+                            DetailRow(stringResource(R.string.bill_transfer_to), walletNames[bill.toWalletId] ?: "")
+                        } else {
+                            bill.walletId?.let { DetailRow(stringResource(R.string.bill_wallet), walletNames[it] ?: "") }
+                        }
+                        if (bill.type != "TRANSFER" && bill.merchant.isNotEmpty()) DetailRow(stringResource(R.string.bill_merchant), bill.merchant)
                         if (bill.paymentMethod.isNotEmpty()) DetailRow(stringResource(R.string.bill_payment_method), stringResource(getLocalizedPaymentMethod(bill.paymentMethod)))
                         if (bill.note.isNotEmpty()) DetailRow(stringResource(R.string.bill_note), bill.note)
                         if (bill.subCategory.isNotEmpty()) DetailRow(stringResource(R.string.bill_sub_category), bill.subCategory)

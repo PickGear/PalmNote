@@ -54,6 +54,16 @@ fun ReportScreen(
         viewModel.setSelectedBookId(selectedBookId)
     }
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val reportCustomCfg by PalmNoteApp.container.cachedCategoryConfigs
+        .collectAsStateWithLifecycle(initialValue = emptyList())
+    val reportCustomExpense = remember(reportCustomCfg) {
+        reportCustomCfg.filter { it.type == "BILL_EXPENSE" && it.isEnabled }
+            .map { com.palmnote.ui.components.CategoryItem(it.name, it.icon.imageVector, it.color.toComposeColor()) }
+    }
+    val reportCustomIncome = remember(reportCustomCfg) {
+        reportCustomCfg.filter { it.type == "BILL_INCOME" && it.isEnabled }
+            .map { com.palmnote.ui.components.CategoryItem(it.name, it.icon.imageVector, it.color.toComposeColor()) }
+    }
 
     Scaffold(
         topBar = {
@@ -103,9 +113,9 @@ fun ReportScreen(
             item { Spacer(modifier = Modifier.height(16.dp)) }
             item { SummarySection(state) }
             item { Spacer(modifier = Modifier.height(20.dp)) }
-            item { DonutChartSection(state, onNavigateToAddBill) }
+            item { DonutChartSection(state, onNavigateToAddBill, reportCustomExpense, reportCustomIncome) }
             item { Spacer(modifier = Modifier.height(20.dp)) }
-            item { CategoryRankingSection(state) }
+            item { CategoryRankingSection(state, reportCustomExpense, reportCustomIncome) }
             item { Spacer(modifier = Modifier.height(20.dp)) }
             item { TrendChartSection(state) }
         }
@@ -272,7 +282,8 @@ private fun SummarySection(state: ReportState) {
 }
 
 @Composable
-private fun DonutChartSection(state: ReportState, onNavigateToAddBill: () -> Unit) {
+private fun DonutChartSection(state: ReportState, onNavigateToAddBill: () -> Unit,
+    customExpense: List<CategoryItem> = emptyList(), customIncome: List<CategoryItem> = emptyList()) {
     val categories = state.data.categories
     val isExpense = state.incomeExpenseTab == 0
     val total = if (isExpense) state.data.totalExpense else state.data.totalIncome
@@ -319,7 +330,7 @@ private fun DonutChartSection(state: ReportState, onNavigateToAddBill: () -> Uni
                     val offsetY = (offset * Math.sin(midAngle)).toFloat()
 
                     drawArc(
-                        color = getCatColor(cat.category, isExpense),
+                        color = getCatColor(cat.category, isExpense, if (isExpense) customExpense else customIncome),
                         startAngle = startAngle,
                         sweepAngle = sweepAngle,
                         useCenter = false,
@@ -354,7 +365,7 @@ private fun DonutChartSection(state: ReportState, onNavigateToAddBill: () -> Uni
         Column(modifier = Modifier.weight(1f)) {
             displayCategories.forEach { cat ->
                 val fraction = (cat.total / total * 100).toInt()
-                val color = getCatColor(cat.category, isExpense)
+                val color = getCatColor(cat.category, isExpense, if (isExpense) customExpense else customIncome)
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -416,7 +427,8 @@ private fun EmptyChartState(onNavigateToAddBill: () -> Unit) {
 }
 
 @Composable
-private fun CategoryRankingSection(state: ReportState) {
+private fun CategoryRankingSection(state: ReportState,
+    customExpense: List<CategoryItem> = emptyList(), customIncome: List<CategoryItem> = emptyList()) {
     val categories = state.data.categories
     val isExpense = state.incomeExpenseTab == 0
     val total = if (isExpense) state.data.totalExpense else state.data.totalIncome
@@ -453,16 +465,17 @@ private fun CategoryRankingSection(state: ReportState) {
         Spacer(Modifier.height(12.dp))
 
         displayCategories.forEach { cat ->
-            CategoryRankingItem(cat, total, isExpense)
+            CategoryRankingItem(cat, total, isExpense, if (isExpense) customExpense else customIncome)
             Spacer(Modifier.height(8.dp))
         }
     }
 }
 
 @Composable
-private fun CategoryRankingItem(cat: CategoryTotal, total: Double, isExpense: Boolean) {
+private fun CategoryRankingItem(cat: CategoryTotal, total: Double, isExpense: Boolean,
+    customItems: List<CategoryItem> = emptyList()) {
     val fraction = if (total > 0) (cat.total / total).toFloat() else 0f
-    val color = getCatColor(cat.category, isExpense)
+    val color = getCatColor(cat.category, isExpense, customItems)
     val categoryItem = (if (isExpense) expenseCategoryItems else incomeCategoryItems).find { it.name == cat.category }
 
     Row(
@@ -489,44 +502,41 @@ private fun CategoryRankingItem(cat: CategoryTotal, total: Double, isExpense: Bo
         Column(modifier = Modifier.weight(1f)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 val rptResId2 = getLocalizedCategoryName(cat.category)
-                Text(
-                    text = if (rptResId2 != null) stringResource(rptResId2) else cat.category,
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Text(
-                    text = "${(fraction * 100).toInt()}%",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            Spacer(Modifier.height(6.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(8.dp)
-                        .clip(MaterialTheme.shapes.extraSmall)
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .fillMaxWidth(fraction)
-                            .clip(MaterialTheme.shapes.extraSmall)
-                            .background(color)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = if (rptResId2 != null) stringResource(rptResId2) else cat.category,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Text(
+                        text = " ${(fraction * 100).toInt()}%",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                Spacer(Modifier.width(8.dp))
                 Text(
                     text = "${CurrencyUtils.formatCompact(cat.total)}",
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Medium
+                )
+            }
+            Spacer(Modifier.height(6.dp))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(8.dp)
+                    .clip(MaterialTheme.shapes.extraSmall)
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .fillMaxWidth(fraction)
+                        .clip(MaterialTheme.shapes.extraSmall)
+                        .background(color)
                 )
             }
         }
@@ -775,5 +785,9 @@ private fun GrayChartPlaceholder() {
     }
 }
 
-private fun getCatColor(name: String, isExpense: Boolean): Color =
-    (if (isExpense) expenseCategoryItems else incomeCategoryItems).find { it.name == name }?.color ?: Gray400
+private fun getCatColor(name: String, isExpense: Boolean, customItems: List<CategoryItem>? = null): Color {
+    val fromPreset = (if (isExpense) expenseCategoryItems else incomeCategoryItems).find { it.name == name }
+    val fromCustom = customItems?.find { it.name == name }
+    val fallback = fromCustom?.color ?: fromPreset?.color ?: Gray400
+    return ColorResolver.resolve(name, fallback)
+}

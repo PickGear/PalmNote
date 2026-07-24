@@ -57,8 +57,27 @@ fun AddBillScreen(
 
     val customExpenseCategories by viewModel.customExpenseCategories.collectAsStateWithLifecycle()
     val customIncomeCategories by viewModel.customIncomeCategories.collectAsStateWithLifecycle()
-    val categories = remember(formState.type, customExpenseCategories, customIncomeCategories) {
-        if (formState.type == "EXPENSE") expenseCategoryItems + customExpenseCategories else incomeCategoryItems + customIncomeCategories
+    val categoryUsageCounts by viewModel.categoryUsageCounts.collectAsStateWithLifecycle()
+    val presetOverrides by com.palmnote.PalmNoteApp.container.preferencesManager.presetCategoryOverrides
+        .collectAsStateWithLifecycle(initialValue = emptyMap())
+    val categories = remember(formState.type, customExpenseCategories, customIncomeCategories, categoryUsageCounts, presetOverrides) {
+        val isExpense = formState.type == "EXPENSE"
+        val rawPresets = if (isExpense) expenseCategoryItems else incomeCategoryItems
+        val prefix = if (isExpense) "EXPENSE_" else "INCOME_"
+        val filteredPresets = rawPresets.filter { item ->
+            val key = "preset_$prefix${item.name}"
+            val json = presetOverrides[key]
+            if (json != null) {
+                try {
+                    org.json.JSONObject(json).optBoolean("enabled", true)
+                } catch (_: Exception) { true }
+            } else true
+        }.map { item ->
+            val resolved = com.palmnote.ui.theme.ColorResolver.resolve(item.name, item.color)
+            if (resolved != item.color) item.copy(color = resolved) else item
+        }
+        val base = filteredPresets + if (isExpense) customExpenseCategories else customIncomeCategories
+        base.sortedByDescending { categoryUsageCounts[it.name] ?: 0 }
     }
 
     Scaffold(
@@ -93,6 +112,7 @@ fun AddBillScreen(
                 ) {
                     val expenseSelected = formState.type == "EXPENSE"
                     val incomeSelected = formState.type == "INCOME"
+                    val transferSelected = formState.type == "TRANSFER"
                     Box(
                         modifier = Modifier
                             .weight(1f)
@@ -101,7 +121,7 @@ fun AddBillScreen(
                             .clickable(
                                 indication = null,
                                 interactionSource = remember { MutableInteractionSource() }
-                            ) { viewModel.updateForm { copy(type = "EXPENSE", category = "") } }
+                            ) { viewModel.updateForm { copy(type = "EXPENSE", category = "", toWalletId = null) } }
                             .padding(vertical = 10.dp),
                         contentAlignment = Alignment.Center
                     ) {
@@ -120,7 +140,7 @@ fun AddBillScreen(
                             .clickable(
                                 indication = null,
                                 interactionSource = remember { MutableInteractionSource() }
-                            ) { viewModel.updateForm { copy(type = "INCOME", category = "") } }
+                            ) { viewModel.updateForm { copy(type = "INCOME", category = "", toWalletId = null) } }
                             .padding(vertical = 10.dp),
                         contentAlignment = Alignment.Center
                     ) {
@@ -129,6 +149,25 @@ fun AddBillScreen(
                             style = MaterialTheme.typography.labelLarge,
                             fontWeight = if (incomeSelected) FontWeight.Bold else FontWeight.Normal,
                             color = if (incomeSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(MaterialTheme.shapes.small)
+                            .background(if (transferSelected) InfoBlue else Color.Transparent)
+                            .clickable(
+                                indication = null,
+                                interactionSource = remember { MutableInteractionSource() }
+                            ) { viewModel.updateForm { copy(type = "TRANSFER", category = "", toWalletId = null) } }
+                            .padding(vertical = 10.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            stringResource(R.string.bill_transfer),
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = if (transferSelected) FontWeight.Bold else FontWeight.Normal,
+                            color = if (transferSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -160,7 +199,7 @@ fun AddBillScreen(
             }
 
             // Category
-            item {
+            items(if (formState.type != "TRANSFER") 1 else 0) {
                 ModuleCard(tint = MaterialTheme.colorScheme.surface) {
                     Text(
                         text = stringResource(R.string.bill_category),
@@ -171,7 +210,6 @@ fun AddBillScreen(
                         Text(formState.categoryError ?: "", style = MaterialTheme.typography.bodySmall, color = ErrorLight)
                     }
                     Spacer(modifier = Modifier.height(8.dp))
-
                     CategoryPicker(
                         selected = formState.category,
                         onSelected = { viewModel.updateForm { copy(category = it, categoryError = null) } },
@@ -180,18 +218,29 @@ fun AddBillScreen(
                             val categoryType = if (formState.type == "EXPENSE") "BILL_EXPENSE" else "BILL_INCOME"
                             onNavigateToCategory(categoryType)
                         },
-                        getDisplayName = { getLocalizedCategoryName(it)?.let { id -> context.getString(id) } ?: it }
+                        getDisplayName = { key ->
+                            val prefix = if (formState.type == "EXPENSE") "EXPENSE_" else "INCOME_"
+                            val overrideKey = "preset_$prefix$key"
+                            val json = presetOverrides[overrideKey]
+                            val customName = if (json != null) {
+                                try {
+                                    val obj = org.json.JSONObject(json)
+                                    if (obj.has("name")) obj.getString("name") else null
+                                } catch (_: Exception) { null }
+                            } else null
+                            customName ?: (getLocalizedCategoryName(key)?.let { id -> context.getString(id) } ?: key)
+                        }
                     )
                 }
             }
-
+            
             // Account/Wallet Selector
             item {
                 val wallets by viewModel.wallets.collectAsStateWithLifecycle()
 
                 ModuleCard(tint = MaterialTheme.colorScheme.surface) {
                     Text(
-                        text = stringResource(R.string.bill_wallet),
+                        text = if (formState.type == "TRANSFER") stringResource(R.string.bill_transfer_from) else stringResource(R.string.bill_wallet),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold
                     )
@@ -277,6 +326,82 @@ fun AddBillScreen(
                             }
                         }
                     }
+                    if (formState.type == "TRANSFER") {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                            IconButton(onClick = {
+                                val temp = formState.walletId
+                                viewModel.updateForm { copy(walletId = formState.toWalletId, toWalletId = temp) }
+                            }, modifier = Modifier.size(32.dp)) {
+                                Icon(Icons.Outlined.SwapVert, contentDescription = stringResource(R.string.bill_transfer), tint = InfoBlue, modifier = Modifier.size(20.dp))
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = stringResource(R.string.bill_transfer_to),
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            items(wallets, key = { it.id }) { wallet ->
+                                val isSelected = formState.toWalletId == wallet.id
+                                val walletColor = try {
+                                    wallet.color.toComposeColor()
+                                } catch (_: Exception) { AccentOrange }
+                                Box(
+                                    modifier = Modifier
+                                        .size(width = 72.dp, height = 56.dp)
+                                        .clip(MaterialTheme.shapes.medium)
+                                        .background(if (isSelected) walletColor else MaterialTheme.colorScheme.surfaceVariant)
+                                        .clickable(
+                                            indication = null,
+                                            interactionSource = remember { MutableInteractionSource() }
+                                        ) { viewModel.updateForm { copy(toWalletId = wallet.id) } },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Icon(
+                                            wallet.icon.imageVector,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(20.dp),
+                                            tint = if (isSelected) Color.White else walletColor
+                                        )
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text(
+                                            getLocalizedWalletDisplayName(wallet, context),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface,
+                                            maxLines = 1
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        formState.toWalletId?.let { walletId ->
+                            val selectedWallet = wallets.find { it.id == walletId }
+                            if (selectedWallet != null) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "${getLocalizedWalletDisplayName(selectedWallet, context)} ${stringResource(R.string.balance)}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Text(
+                                        text = CurrencyUtils.formatCurrency(selectedWallet.currentBalance),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        fontWeight = FontWeight.Medium,
+                                        color = if (selectedWallet.currentBalance >= 0) StatusActive else ErrorLight
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
@@ -331,7 +456,7 @@ fun AddBillScreen(
             }
 
             // Merchant
-            item {
+            items(if (formState.type != "TRANSFER") 1 else 0) {
                 ModuleCard(tint = MaterialTheme.colorScheme.surface) {
                     Text(
                         text = stringResource(R.string.merchant),
@@ -349,9 +474,9 @@ fun AddBillScreen(
                     )
                 }
             }
-
+            
             // Location
-            item {
+            items(if (formState.type != "TRANSFER") 1 else 0) {
                 ModuleCard(tint = MaterialTheme.colorScheme.surface) {
                     Text(
                         text = stringResource(R.string.bill_location),
@@ -398,7 +523,11 @@ fun AddBillScreen(
                     enabled = !formState.isSaving,
                     shape = MaterialTheme.shapes.medium,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (formState.type == "EXPENSE") ExpenseRed else StatusActive
+                        containerColor = when (formState.type) {
+                            "EXPENSE" -> ExpenseRed
+                            "TRANSFER" -> InfoBlue
+                            else -> StatusActive
+                        }
                     )
                 ) {
                     if (formState.isSaving) {

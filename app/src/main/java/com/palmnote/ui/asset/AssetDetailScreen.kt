@@ -102,7 +102,10 @@ fun AssetDetailScreen(
     val statusColor = getStatusColor(asset.status)
     val statusText = getStatusText(asset.status)
 
-    val catInfo = getCategoryIcon(asset.category)
+    val presetVer by com.palmnote.PalmNoteApp.container.preferencesManager.presetCategoryOverrides
+        .collectAsStateWithLifecycle(initialValue = emptyMap())
+    val customItems by viewModel.customCategories.collectAsStateWithLifecycle()
+    val catInfo = remember(asset.category, presetVer, customItems) { getCategoryIcon(asset.category, customItems) }
 
     val imageList = remember(asset.images) { asset.images.toImageList() }
     val tags = remember(asset.tags) { parseTags(asset.tags) }
@@ -210,7 +213,7 @@ fun AssetDetailScreen(
                 ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
                     Text(text = stringResource(R.string.asset_basic_info), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(12.dp))
-                    DetailRow(stringResource(R.string.asset_category), com.palmnote.ui.components.getCategoryName(asset.category, context))
+                    DetailRow(stringResource(R.string.asset_category), com.palmnote.ui.asset.getCategoryDisplayName(asset.category, context, presetVer))
                     if (asset.subCategory.isNotEmpty()) DetailRow(stringResource(R.string.asset_subcategory), asset.subCategory)
                     if (asset.brand.isNotEmpty()) DetailRow(stringResource(R.string.asset_brand), asset.brand)
                     if (asset.model.isNotEmpty()) DetailRow(stringResource(R.string.asset_model_name), asset.model)

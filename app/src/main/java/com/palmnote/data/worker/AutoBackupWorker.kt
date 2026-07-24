@@ -2,21 +2,20 @@ package com.palmnote.data.worker
 
 import android.content.Context
 import android.util.Log
-import androidx.work.Worker
+import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.palmnote.PalmNoteApp
 import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.runBlocking
 
-class AutoBackupWorker(context: Context, workerParams: WorkerParameters) : Worker(context, workerParams) {
+class AutoBackupWorker(context: Context, workerParams: WorkerParameters) : CoroutineWorker(context, workerParams) {
 
     companion object {
         private const val TAG = "AutoBackupWorker"
     }
 
-    override fun doWork(): Result = runBlocking {
+    override suspend fun doWork(): Result {
         val backupRepository = PalmNoteApp.container.backupRepository
-        try {
+        return try {
             Log.d(TAG, "Starting auto backup")
             
             backupRepository.createBackup().collect { state ->

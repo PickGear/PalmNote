@@ -14,6 +14,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Arrangement
 
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -40,6 +42,8 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -1173,5 +1177,69 @@ fun ModuleSearchBar(
         ),
         modifier = modifier.fillMaxWidth()
     )
+}
+
+val presetColorHexes = listOf(
+    "#E57373", "#EF5350", "#FF7043", "#FF8C42", "#FFAB91",
+    "#FFCA28", "#FFD54F", "#FBBC04", "#C0CA33", "#66BB6A",
+    "#4DB6AC", "#4DD0E1", "#29B6F6", "#64B5F6", "#42A5F5",
+    "#7986CB", "#BA68C8", "#CE93D8", "#F06292", "#F48FB1",
+    "#FF80AB", "#34A853", "#00ACC1", "#4285F4"
+)
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun ColorPicker(
+    selectedColor: String,
+    onColorSelected: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var customHex by remember(selectedColor) {
+        val clean = selectedColor.removePrefix("#")
+        mutableStateOf(if (clean.length == 6) clean else "4285F4")
+    }
+    Column(modifier = modifier) {
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            presetColorHexes.forEach { hex ->
+                Box(
+                    modifier = Modifier
+                        .size(28.dp)
+                        .clip(MaterialTheme.shapes.small)
+                        .background(hex.toComposeColor())
+                        .clickable { onColorSelected(hex) },
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (selectedColor == hex) {
+                        Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(14.dp))
+                    }
+                }
+            }
+        }
+        Spacer(Modifier.height(8.dp))
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedTextField(
+                value = customHex,
+                onValueChange = { input ->
+                    val filtered = input.filter { it.isDigit() || it in 'A'..'F' || it in 'a'..'f' }.take(6)
+                    customHex = filtered
+                    if (filtered.length == 6) onColorSelected("#$filtered")
+                },
+                modifier = Modifier.width(140.dp),
+                label = { Text("#") },
+                singleLine = true,
+                textStyle = MaterialTheme.typography.bodyMedium,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii)
+            )
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .clip(MaterialTheme.shapes.small)
+                    .background(("#$customHex").toComposeColor())
+            )
+        }
+    }
 }
 

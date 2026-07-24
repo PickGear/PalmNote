@@ -128,6 +128,32 @@ val LifeMoodUpset = Color(0xFF5C6BC0)
 val LifeMoodSad = Color(0xFFEF5350)
 val LifeMoodAngry = Color(0xFFE53935)
 
+// ----- Category Colors -----
+val CatLightGreen = Color(0xFF7CB342)
+val CatRed = Color(0xFFD32F2F)
+val CatOrange = Color(0xFFF4511E)
+val CatLime = Color(0xFFC0CA33)
+val CatTeal = Color(0xFF00897B)
+val CatWarmGray = Color(0xFF8D6E63)
+val CatBlueGray = Color(0xFF546E7A)
+val CatLightPurple = Color(0xFFCE93D8)
+val CatPink = Color(0xFFF48FB1)
+val CatGold = Color(0xFFFFD54F)
+val CatRose = Color(0xFFE91E63)
+val CatSkyBlue = Color(0xFF29B6F6)
+val CatMint = Color(0xFF4DB6AC)
+val CatPeach = Color(0xFFFFAB91)
+
+// ----- Bright Category Colors (supplement) -----
+val CatBrightRed = Color(0xFFE57373)
+val CatBrightTeal = Color(0xFF4DD0E1)
+val CatIndigo = Color(0xFF7986CB)
+val CatWarmRose = Color(0xFFFF80AB)
+val CatFreshGreen = Color(0xFF66BB6A)
+val CatBrightBlue = Color(0xFF64B5F6)
+val CatBrightPink = Color(0xFFF06292)
+val CatBrightPurple = Color(0xFFBA68C8)
+
 // ----- Gray Scale -----
 val Gray100 = Color(0xFFF5F5F5)
 val Gray400 = Color(0xFFBDBDBD)

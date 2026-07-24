@@ -36,4 +36,7 @@ interface AssetRepository {
     suspend fun completeMaintenance(id: Long, date: Long, nextDate: Long?, notes: String)
     suspend fun linkBill(id: Long, billId: Long)
     suspend fun search(query: String): List<Asset>
+    suspend fun updateCategoryNameInAssets(oldName: String, newName: String)
+    suspend fun countByCategory(category: String): Int
+    suspend fun softDeleteByCategory(category: String)
 }

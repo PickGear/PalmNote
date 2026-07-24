@@ -26,13 +26,27 @@ fun BillFilterSheet(
     currentFilter: BillFilter = BillFilter(),
     expenseCategories: List<CategoryItem> = emptyList(),
     incomeCategories: List<CategoryItem> = emptyList(),
-    onManageCategories: ((String) -> Unit)? = null
+    onManageCategories: ((String) -> Unit)? = null,
+    presetOverrides: Map<String, String> = emptyMap()
 ) {
     var selectedCategory by remember { mutableStateOf(currentFilter.category) }
     var amountMin by remember { mutableStateOf(currentFilter.amountMin?.toString() ?: "") }
     var amountMax by remember { mutableStateOf(currentFilter.amountMax?.toString() ?: "") }
     var selectedType by remember { mutableStateOf(currentFilter.type) }
     val context = LocalContext.current
+
+    fun filterDisplayName(key: String, type: String?): String {
+        val prefix = if (type == "EXPENSE") "EXPENSE_" else if (type == "INCOME") "INCOME_" else ""
+        val overrideKey = "preset_$prefix$key"
+        val json = presetOverrides[overrideKey]
+        if (json != null) {
+            try {
+                val obj = org.json.JSONObject(json)
+                if (obj.has("name")) return obj.getString("name")
+            } catch (_: Exception) {}
+        }
+        return getLocalizedCategoryName(key)?.let { context.getString(it) } ?: key
+    }
 
     AppBottomSheet(onDismissRequest = onDismiss) {
         Column(modifier = Modifier.fillMaxWidth()) {
@@ -47,18 +61,13 @@ fun BillFilterSheet(
             Spacer(modifier = Modifier.height(8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 FilterChip(
-                    selected = selectedType == null,
-                    onClick = { selectedType = null },
-                    label = { Text(stringResource(R.string.bill_filter_type_all)) }
-                )
-                FilterChip(
                     selected = selectedType == "EXPENSE",
-                    onClick = { selectedType = "EXPENSE" },
+                    onClick = { selectedType = if (selectedType == "EXPENSE") null else "EXPENSE" },
                     label = { Text(stringResource(R.string.bill_filter_type_expense)) }
                 )
                 FilterChip(
                     selected = selectedType == "INCOME",
-                    onClick = { selectedType = "INCOME" },
+                    onClick = { selectedType = if (selectedType == "INCOME") null else "INCOME" },
                     label = { Text(stringResource(R.string.bill_filter_type_income)) }
                 )
             }
@@ -86,8 +95,8 @@ fun BillFilterSheet(
 
             Text(stringResource(R.string.bill_filter_category), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium)
             Spacer(modifier = Modifier.height(8.dp))
-            val categories = if (selectedType == "INCOME") incomeCategories else if (selectedType == "EXPENSE") expenseCategories else expenseCategories + incomeCategories
-            val categoryType = if (selectedType == "INCOME") "BILL_INCOME" else if (selectedType == "EXPENSE") "BILL_EXPENSE" else "BILL_EXPENSE"
+            val categories = if (selectedType == "INCOME") incomeCategories else expenseCategories
+            val categoryType = if (selectedType == "INCOME") "BILL_INCOME" else "BILL_EXPENSE"
             CategoryPicker(
                 selected = selectedCategory ?: "",
                 onSelected = { catName ->
@@ -97,7 +106,7 @@ fun BillFilterSheet(
                 rows = 3,
                 columns = 5,
                 onManageCategories = onManageCategories?.let { { it(categoryType) } },
-                getDisplayName = { getLocalizedCategoryName(it)?.let { id -> context.getString(id) } ?: it }
+                getDisplayName = { filterDisplayName(it, selectedType ?: "EXPENSE") }
             )
             Spacer(modifier = Modifier.height(16.dp))
 

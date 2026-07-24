@@ -1,7 +1,6 @@
 ﻿package com.palmnote
 
 import android.app.Application
-import androidx.work.Configuration
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
@@ -45,9 +44,17 @@ class PalmNoteApp : Application() {
         NotificationHelper.createChannels(this)
         applicationScope.launch {
             container.database.openHelper.writableDatabase
+            container.walletRepository.initDefaultWallets()
+            container.accountBookRepository.initDefaultBooks()
             scheduleDailyCheck()
             scheduleAutoBackup()
             container.lifeDataSeeder.seedIfEmpty()
+            container.preferencesManager.categoryColorOverrides.first().let {
+                com.palmnote.ui.theme.ColorResolver.loadOverrides(it)
+            }
+            container.preferencesManager.presetCategoryOverrides.first().let {
+                com.palmnote.ui.theme.ColorResolver.loadPresetColorOverrides(it)
+            }
         }
     }
 
