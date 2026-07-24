@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.ProcessLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
 import com.palmnote.data.datastore.PreferencesManager
 import com.palmnote.data.lock.AppLockManager
 import com.palmnote.ui.lock.AppLockScreen
@@ -47,8 +48,6 @@ import androidx.compose.ui.res.stringResource
 import com.palmnote.R
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
 
 class MainActivity : AppCompatActivity() {
 
@@ -73,10 +72,6 @@ class MainActivity : AppCompatActivity() {
             appLockManager.lock()
         }
 
-        val initialPrivacyAgreed = kotlinx.coroutines.runBlocking {
-            appContainer.preferencesManager.privacyAgreed.first()
-        }
-
         setContent {
             val preferences by remember {
                 combine(
@@ -91,13 +86,15 @@ class MainActivity : AppCompatActivity() {
             }
             val switchColor = preferences.second.toComposeColor(Color(0xFF2D4A3E))
             val lockState by appLockManager.lockState.collectAsState()
-            val privacyAgreed by appContainer.preferencesManager.privacyAgreed.collectAsState(initial = initialPrivacyAgreed)
+            val privacyAgreed by appContainer.preferencesManager.privacyAgreed.collectAsState(initial = null)
             val showPrivacyDialog = privacyAgreed == false
             val scope = rememberCoroutineScope()
 
             PalmNoteTheme(darkTheme = isDarkTheme) {
                 CompositionLocalProvider(LocalSwitchColor provides switchColor) {
-                    if (showPrivacyDialog) {
+                    if (privacyAgreed == null) {
+                        // Still loading privacy state - show nothing
+                    } else if (privacyAgreed == false) {
                         var showPolicy by rememberSaveable { mutableStateOf(false) }
                         var showTerms by rememberSaveable { mutableStateOf(false) }
 
@@ -245,7 +242,16 @@ class MainActivity : AppCompatActivity() {
                     } else {
                         if (Build.VERSION.SDK_INT >= 33) {
                             val notificationPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
-                            LaunchedEffect(Unit) { notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS) }
+                            var hasRequestedNotification by remember { mutableStateOf(false) }
+                            val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+                            LaunchedEffect(lifecycleOwner) {
+                                lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                                    if (!hasRequestedNotification) {
+                                        hasRequestedNotification = true
+                                        notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                    }
+                                }
+                            }
                         }
 
                         Surface(

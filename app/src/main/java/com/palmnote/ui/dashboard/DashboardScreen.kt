@@ -608,6 +608,8 @@ private fun AnniversariesCard(state: DashboardState, onNavigateToLife: () -> Uni
 @Composable
 private fun AssetDistributionCard(state: DashboardState, onNavigateToAsset: () -> Unit) {
     if (state.assetDistribution.isEmpty()) return
+    val distPresetOverrides by com.palmnote.PalmNoteApp.container.preferencesManager.presetCategoryOverrides
+        .collectAsStateWithLifecycle(initialValue = emptyMap())
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -630,7 +632,7 @@ private fun AssetDistributionCard(state: DashboardState, onNavigateToAsset: () -
                     val longItems = mutableListOf<Pair<CategoryCount, Int>>()
                     val shortItems = mutableListOf<Pair<CategoryCount, Int>>()
                     state.assetDistribution.forEachIndexed { index, item ->
-                        val name = com.palmnote.ui.components.getCategoryName(item.category, context)
+                        val name = com.palmnote.ui.asset.getCategoryDisplayName(item.category, context, distPresetOverrides)
                         if (name.length > 5) {
                             longItems.add(item to index)
                         } else {
@@ -649,11 +651,11 @@ private fun AssetDistributionCard(state: DashboardState, onNavigateToAsset: () -
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalAlignment = Alignment.Top
                         ) {
-                            rowItems.forEach { (item, idx) ->
+                            rowItems.forEach { (item, _) ->
                                 if (fullWidth) {
-                                    LegendItem(item, idx, Modifier.fillMaxWidth(), maxLines = 2)
+                                    LegendItem(item, Modifier.fillMaxWidth(), maxLines = 2)
                                 } else {
-                                    LegendItem(item, idx, Modifier.weight(1f), maxLines = 1)
+                                    LegendItem(item, Modifier.weight(1f), maxLines = 1)
                                 }
                             }
                             if (rowItems.size < 2) Spacer(Modifier.weight(1f))
@@ -666,17 +668,28 @@ private fun AssetDistributionCard(state: DashboardState, onNavigateToAsset: () -
 }
 
 @Composable
-private fun LegendItem(item: CategoryCount, colorIndex: Int, modifier: Modifier = Modifier, maxLines: Int = 1) {
+private fun LegendItem(item: CategoryCount, modifier: Modifier = Modifier, maxLines: Int = 1) {
     val context = androidx.compose.ui.platform.LocalContext.current
+    val dashPresetVer by com.palmnote.PalmNoteApp.container.preferencesManager.presetCategoryOverrides
+        .collectAsStateWithLifecycle(initialValue = emptyMap())
+    val dashCustomCfg by com.palmnote.PalmNoteApp.container.cachedCategoryConfigs
+        .collectAsStateWithLifecycle(initialValue = emptyList())
+    val dashCustomItems = remember(dashCustomCfg) {
+        dashCustomCfg.filter { it.type == "ASSET" && it.isEnabled }
+            .map { com.palmnote.ui.components.CategoryItem(it.name, it.icon.imageVector, it.color.toComposeColor()) }
+    }
+    val color = remember(dashPresetVer, dashCustomItems) {
+        com.palmnote.ui.asset.getCategoryIcon(item.category, dashCustomItems).color
+    }
     Row(
         modifier = modifier
-            .background(ChartColors[colorIndex % ChartColors.size].copy(alpha = 0.35f), MaterialTheme.shapes.small)
+            .background(color.copy(alpha = 0.35f), MaterialTheme.shapes.small)
             .padding(horizontal = 8.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        Box(Modifier.size(8.dp).clip(CircleShape).background(ChartColors[colorIndex % ChartColors.size]))
-        Text(com.palmnote.ui.components.getCategoryName(item.category, context), style = MaterialTheme.typography.bodySmall, maxLines = maxLines, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+        Box(Modifier.size(8.dp).clip(CircleShape).background(color))
+        Text(com.palmnote.ui.asset.getCategoryDisplayName(item.category, context, dashPresetVer), style = MaterialTheme.typography.bodySmall, maxLines = maxLines, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
         Text(pluralStringResource(R.plurals.dashboard_items_count, item.count, item.count), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Medium)
     }
 }
@@ -738,6 +751,19 @@ fun AssetDistributionChart(distribution: List<CategoryCount>, modifier: Modifier
         }
         return
     }
+    val chartPresetVer by com.palmnote.PalmNoteApp.container.preferencesManager.presetCategoryOverrides
+        .collectAsStateWithLifecycle(initialValue = emptyMap())
+    val chartCustomCfg by com.palmnote.PalmNoteApp.container.cachedCategoryConfigs
+        .collectAsStateWithLifecycle(initialValue = emptyList())
+    val chartCustomItems = remember(chartCustomCfg) {
+        chartCustomCfg.filter { it.type == "ASSET" && it.isEnabled }
+            .map { com.palmnote.ui.components.CategoryItem(it.name, it.icon.imageVector, it.color.toComposeColor()) }
+    }
+    val chartColors = remember(chartPresetVer, chartCustomItems) {
+        distribution.map { item ->
+            com.palmnote.ui.asset.getCategoryIcon(item.category, chartCustomItems).color
+        }
+    }
     Canvas(modifier = modifier) {
         val strokeWidth = 12.dp.toPx()
         val radius = (size.minDimension - strokeWidth) / 2
@@ -745,8 +771,9 @@ fun AssetDistributionChart(distribution: List<CategoryCount>, modifier: Modifier
         var startAngle = -90f
         distribution.forEachIndexed { index, item ->
             val sweepAngle = (item.count / total) * 360f
+            val catColor = chartColors.getOrElse(index) { com.palmnote.ui.theme.Gray400 }
             drawArc(
-                color = ChartColors[index % ChartColors.size],
+                color = catColor,
                 startAngle = startAngle,
                 sweepAngle = sweepAngle,
                 useCenter = false,

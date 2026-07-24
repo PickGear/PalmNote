@@ -2,7 +2,6 @@ package com.palmnote.ui.settings
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
@@ -15,15 +14,65 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.launch
 import com.palmnote.PalmNoteApp
-import com.palmnote.ui.components.simpleViewModel
 import com.palmnote.R
+import com.palmnote.data.db.entity.CategoryConfig
+import com.palmnote.ui.asset.assetCategoryItems
 import com.palmnote.ui.components.*
 import com.palmnote.ui.theme.*
+
+private fun getPresetDisplayName(name: String, context: android.content.Context): String =
+    if (com.palmnote.ui.asset.assetCategoryItems.any { it.name == name })
+        com.palmnote.ui.components.getCategoryName(name, context)
+    else name
+
+private data class PendingPresetData(
+    val key: String,
+    val name: String,
+    val colorHex: String,
+    val enabled: Boolean
+)
+
+@Composable
+private fun CustomCategoryDetailDialog(
+    entry: CategoryEntry,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AppDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(entry.name, fontWeight = FontWeight.Bold) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Box(modifier = Modifier.size(56.dp).clip(MaterialTheme.shapes.large).background(entry.color.copy(alpha = 0.15f)), contentAlignment = Alignment.Center) {
+                        Icon(entry.icon, null, modifier = Modifier.size(28.dp), tint = entry.color)
+                    }
+                    Column {
+                        Text(entry.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text(if (entry.isEnabled) stringResource(R.string.cat_enabled) else stringResource(R.string.cat_disabled), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+                HorizontalDivider()
+                Text(stringResource(R.string.cat_custom_detail_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        },
+        confirmButton = {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TextButton(onClick = onDelete) { Text(stringResource(R.string.delete), color = ErrorLight) }
+                TextButton(onClick = onEdit) { Text(stringResource(R.string.cat_edit), color = AccentOrange) }
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cat_close), fontWeight = FontWeight.Bold) } }
+    )
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,17 +84,26 @@ fun CategoryScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     LaunchedEffect(initialType) {
-        val index = viewModel.state.value.categoryTypes.indexOfFirst { it.key == initialType }
-        if (index >= 0 && index != viewModel.state.value.selectedTypeIndex) {
+        val index = CategoryState().categoryTypes.indexOfFirst { it.key == initialType }
+        if (index >= 0 && index != state.selectedTypeIndex) {
             viewModel.selectType(index)
         }
     }
 
+    var editingPreset by remember { mutableStateOf<CategoryEntry?>(null) }
+    var editingCustom by remember { mutableStateOf<CategoryConfig?>(null) }
     var showAddSheet by remember { mutableStateOf(false) }
-    var editingCategory by remember { mutableStateOf<com.palmnote.data.db.entity.CategoryConfig?>(null) }
     var showDeleteDialog by remember { mutableStateOf(false) }
-    var categoryToDelete by remember { mutableStateOf<com.palmnote.data.db.entity.CategoryConfig?>(null) }
-    var detailCategory by remember { mutableStateOf<com.palmnote.data.db.entity.CategoryConfig?>(null) }
+    var categoryToDelete by remember { mutableStateOf<CategoryConfig?>(null) }
+    var detailPreset by remember { mutableStateOf<CategoryEntry?>(null) }
+    var detailCustom by remember { mutableStateOf<CategoryEntry?>(null) }
+    var showDeleteWarning by remember { mutableStateOf(false) }
+    var deleteWarningData by remember { mutableStateOf<Triple<String, Long?, Pair<Int, Int>>?>(null) }
+    var showMatchPrompt by remember { mutableStateOf(false) }
+    var matchPromptData by remember { mutableStateOf<Pair<String, Pair<Int, Int>>?>(null) }
+    var pendingSaveCategory by remember { mutableStateOf<CategoryConfig?>(null) }
+    var pendingPresetData by remember { mutableStateOf<PendingPresetData?>(null) }
+    val scope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
@@ -60,7 +118,7 @@ fun CategoryScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { editingCategory = null; showAddSheet = true },
+                onClick = { editingCustom = null; showAddSheet = true },
                 containerColor = MaterialTheme.colorScheme.secondary,
                 contentColor = Color.White,
                 shape = MaterialTheme.shapes.large
@@ -75,7 +133,7 @@ fun CategoryScreen(
                 .background(MaterialTheme.colorScheme.background)
                 .padding(padding)
         ) {
-                    ScrollableTabRow(
+            ScrollableTabRow(
                 selectedTabIndex = state.selectedTypeIndex,
                 containerColor = MaterialTheme.colorScheme.background,
                 edgePadding = 16.dp,
@@ -95,21 +153,69 @@ fun CategoryScreen(
                 }
             }
 
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)) {
-                    Text(stringResource(R.string.category_manage_count_format, state.categories.size), modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                        style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-                }
-            }
-
             LazyColumn(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                if (state.categories.isEmpty()) {
+                if (state.presetEntries.isNotEmpty()) {
+                    item(key = "preset_header") {
+                        val presetsExpanded = remember { mutableStateOf(false) }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(stringResource(R.string.cat_preset_section),
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary)
+                            if (state.presetEntries.size > 5) {
+                                TextButton(onClick = { presetsExpanded.value = !presetsExpanded.value }) {
+                                    Icon(
+                                        if (presetsExpanded.value) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
+                                        null, modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(Modifier.width(2.dp))
+                                    Text(if (presetsExpanded.value) stringResource(R.string.cat_collapse) else stringResource(R.string.cat_all_count, state.presetEntries.size),
+                                        color = MaterialTheme.colorScheme.primary)
+                                }
+                            }
+                        }
+                        val displayPresets = if (presetsExpanded.value) state.presetEntries else state.presetEntries.take(5)
+                        Column {
+                            displayPresets.forEach { entry ->
+                                PresetCategoryItem(
+                                    entry = entry,
+                                    onClick = { detailPreset = entry },
+                                    onToggleEnabled = { viewModel.togglePresetEnabled(entry.key) }
+                                )
+                                Spacer(Modifier.height(8.dp))
+                            }
+                        }
+                    }
+                }
+
+                if (state.customEntries.isNotEmpty()) {
+                    item {
+                        Text(stringResource(R.string.cat_custom_section),
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.secondary,
+                            modifier = Modifier.padding(bottom = 4.dp))
+                    }
+                    items(state.customEntries.size, key = { state.customEntries[it].key }) { index ->
+                        val entry = state.customEntries[index]
+                        CustomCategoryItem(
+                            entry = entry,
+                            onClick = { detailCustom = entry },
+                            onToggleEnabled = {
+                                entry.configId?.let { viewModel.toggleCategoryEnabled(it) }
+                            }
+                        )
+                    }
+                }
+
+                if (state.presetEntries.isEmpty() && state.customEntries.isEmpty()) {
                     item {
                         EmptyState(
                             icon = Icons.Outlined.Category,
@@ -117,44 +223,198 @@ fun CategoryScreen(
                             subtitle = stringResource(R.string.category_manage_empty_hint)
                         )
                     }
-                } else {
-                    items(state.categories.size, key = { state.categories[it].id }) { index ->
-                        val category = state.categories[index]
-                        CategoryItem(
-                            category = category,
-                            onClick = { detailCategory = category },
-                            onToggleEnabled = { viewModel.toggleCategoryEnabled(category.id) }
-                        )
-                    }
                 }
+                item { Spacer(Modifier.height(80.dp)) }
             }
         }
     }
 
-    detailCategory?.let { category ->
-        CategoryDetailDialog(
-            category = category,
-            onEdit = { editingCategory = category; showAddSheet = true; detailCategory = null },
-            onDelete = {
-                if (!category.isDefault) {
-                    categoryToDelete = category; showDeleteDialog = true
+    detailPreset?.let { entry ->
+        PresetCategoryDetailDialog(
+            entry = entry,
+            onEdit = { editingPreset = entry; detailPreset = null },
+            onDismiss = { detailPreset = null }
+        )
+    }
+
+    detailCustom?.let { entry ->
+        CustomCategoryDetailDialog(
+            entry = entry,
+            onEdit = {
+                entry.configId?.let { id ->
+                    val config = CategoryConfig(
+                        id = id, type = state.currentType, name = entry.name,
+                        icon = entry.configIcon ?: com.palmnote.ui.theme.AppIcon.Restaurant,
+                        color = "#%02X%02X%02X".format(
+                            (entry.color.red * 255).toInt(),
+                            (entry.color.green * 255).toInt(),
+                            (entry.color.blue * 255).toInt()
+                        ),
+                        isEnabled = entry.isEnabled
+                    )
+                    editingCustom = config; showAddSheet = true; detailCustom = null
                 }
-                detailCategory = null
             },
-            onDismiss = { detailCategory = null }
+            onDelete = {
+                val catName = entry.name
+                val catId = entry.configId
+                scope.launch {
+                    val (billCount, assetCount) = viewModel.getCategoryUsageCount(catName)
+                    if (billCount > 0 || assetCount > 0) {
+                        deleteWarningData = Triple(catName, catId, billCount to assetCount)
+                        showDeleteWarning = true
+                    } else {
+                        categoryToDelete = CategoryConfig(id = catId ?: 0L, name = catName, type = state.currentType)
+                        showDeleteDialog = true
+                    }
+                    detailCustom = null
+                }
+            },
+            onDismiss = { detailCustom = null }
+        )
+    }
+
+    editingPreset?.let { entry ->
+        PresetCategoryEditSheet(
+            entry = entry,
+            onSave = { name, colorHex, enabled ->
+                if (name != entry.name) {
+                    scope.launch {
+                        val (billCount, assetCount) = viewModel.getCategoryUsageCount(name)
+                        if (billCount > 0 || assetCount > 0) {
+                            pendingPresetData = PendingPresetData(entry.key, name, colorHex, enabled)
+                            matchPromptData = name to (billCount to assetCount)
+                            showMatchPrompt = true
+                        } else {
+                            viewModel.savePresetOverride(entry.key, name, colorHex, enabled)
+                            editingPreset = null
+                        }
+                    }
+                } else {
+                    viewModel.savePresetOverride(entry.key, name, colorHex, enabled)
+                    editingPreset = null
+                }
+            },
+            onReset = {
+                viewModel.resetPresetOverride(entry.key)
+                editingPreset = null
+            },
+            onDismiss = { editingPreset = null }
         )
     }
 
     if (showAddSheet) {
         CategoryEditBottomSheet(
-            category = editingCategory,
+            category = editingCustom,
             type = state.currentType,
             onSave = { category ->
-                if (editingCategory != null) viewModel.updateCategory(category) else viewModel.addCategory(category)
-                showAddSheet = false
+                if (editingCustom != null) {
+                    val nameChanged = editingCustom?.name != category.name
+                    if (nameChanged) {
+                        scope.launch {
+                            val (billCount, assetCount) = viewModel.getCategoryUsageCount(category.name)
+                            if (billCount > 0 || assetCount > 0) {
+                                pendingSaveCategory = category
+                                matchPromptData = category.name to (billCount to assetCount)
+                                showMatchPrompt = true
+                            } else {
+                                viewModel.updateCategory(category)
+                                showAddSheet = false
+                            }
+                        }
+                    } else {
+                        viewModel.updateCategory(category)
+                        showAddSheet = false
+                    }
+                } else {
+                    scope.launch {
+                        val (billCount, assetCount) = viewModel.getCategoryUsageCount(category.name)
+                        if (billCount > 0 || assetCount > 0) {
+                            pendingSaveCategory = category
+                            matchPromptData = category.name to (billCount to assetCount)
+                            showMatchPrompt = true
+                        } else {
+                            viewModel.addCategory(category)
+                            showAddSheet = false
+                        }
+                    }
+                }
             },
             onDismiss = { showAddSheet = false }
         )
+    }
+
+    deleteWarningData?.let { (name, catId, counts) ->
+        if (showDeleteWarning) {
+            val (billCount, assetCount) = counts
+            val countText = when (state.currentType) {
+                "ASSET" -> "${assetCount} 件物品"
+                "BILL_EXPENSE", "BILL_INCOME" -> "${billCount} 条账单"
+                else -> "${billCount} 条账单、${assetCount} 件物品"
+            }
+            AppDialog(
+                onDismissRequest = { showDeleteWarning = false; deleteWarningData = null },
+                title = { Text("删除分类「$name」", fontWeight = FontWeight.Bold) },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("该分类关联了 $countText：")
+                        Text("· 全部删除 — 删除分类和所有关联记录", color = ErrorLight, style = MaterialTheme.typography.bodySmall)
+                        Text("· 保留记录 — 保留关联记录，图标变为红色×号", color = AccentOrange, style = MaterialTheme.typography.bodySmall)
+                    }
+                },
+                confirmButton = {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        TextButton(onClick = {
+                            if (catId != null) viewModel.deleteCategoryWithData(name, catId)
+                            showDeleteWarning = false; deleteWarningData = null
+                        }) { Text("全部删除", color = ErrorLight) }
+                        TextButton(onClick = {
+                            viewModel.deleteCategory(catId ?: 0L)
+                            showDeleteWarning = false; deleteWarningData = null
+                        }) { Text("保留记录", color = AccentOrange) }
+                    }
+                },
+                dismissButton = { TextButton(onClick = { showDeleteWarning = false; deleteWarningData = null }) { Text(stringResource(R.string.cancel)) } }
+            )
+        }
+    }
+
+    matchPromptData?.let { (name, counts) ->
+        if (showMatchPrompt) {
+            val (billCount, assetCount) = counts
+            val countText = when (state.currentType) {
+                "ASSET" -> "${assetCount} 件物品"
+                "BILL_EXPENSE", "BILL_INCOME" -> "${billCount} 条账单"
+                else -> "${billCount} 条账单、${assetCount} 件物品"
+            }
+            val isPreset = pendingPresetData != null
+            val isEdit = !isPreset && editingCustom != null
+            AppDialog(
+                onDismissRequest = { showMatchPrompt = false; matchPromptData = null; pendingSaveCategory = null; pendingPresetData = null },
+                title = { Text("${if (isPreset) "重命名预设" else if (isEdit) "重命名" else "创建"}分类「$name」", fontWeight = FontWeight.Bold) },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("检测到 $countText 使用了同名分类。${if (isPreset) "重命名后预设的" else if (isEdit) "修改后的" else "新"}分类的图标和颜色将自动应用到这些历史记录上。")
+                    }
+                },
+                confirmButton = {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        TextButton(onClick = {
+                            if (isPreset) {
+                                pendingPresetData?.let { viewModel.savePresetOverride(it.key, it.name, it.colorHex, it.enabled); editingPreset = null }
+                            } else if (isEdit) {
+                                pendingSaveCategory?.let { viewModel.updateCategory(it) }
+                            } else {
+                                pendingSaveCategory?.let { viewModel.addCategory(it) }
+                            }
+                            showMatchPrompt = false; matchPromptData = null; pendingSaveCategory = null; pendingPresetData = null
+                            showAddSheet = false
+                        }) { Text("确认${if (isPreset) "重命名" else if (isEdit) "修改" else "创建"}", color = AccentOrange) }
+                    }
+                },
+                dismissButton = { TextButton(onClick = { showMatchPrompt = false; matchPromptData = null; pendingSaveCategory = null; pendingPresetData = null }) { Text(stringResource(R.string.cancel)) } }
+            )
+        }
     }
 
     val categoryToDeleteSnapshot = categoryToDelete
@@ -168,48 +428,48 @@ fun CategoryScreen(
                     Text(stringResource(R.string.delete), color = ErrorLight)
                 }
             },
-            dismissButton = { TextButton(onClick = { showDeleteDialog = false }) { Text(stringResource(R.string.cancel), fontWeight = FontWeight.Bold) } }
+            dismissButton = { TextButton(onClick = { showDeleteDialog = false }) { Text(stringResource(R.string.cancel)) } }
         )
     }
 }
 
 @Composable
-private fun CategoryItem(
-    category: com.palmnote.data.db.entity.CategoryConfig,
+private fun PresetCategoryItem(
+    entry: CategoryEntry,
     onClick: () -> Unit,
     onToggleEnabled: () -> Unit
 ) {
-    val iconColor = try {
-        if (category.color.isNotEmpty()) category.color.toComposeColor() else AccentOrange
-    } catch (_: Exception) { AccentOrange }
-
-    ModuleCard(
-        tint = MaterialTheme.colorScheme.surface,
-        modifier = Modifier.fillMaxWidth()
+    val context = LocalContext.current
+    val displayName = getPresetDisplayName(entry.name, context)
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = CardDefaults.outlinedCardBorder().copy(
+            brush = androidx.compose.ui.graphics.SolidColor(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+        )
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().clickable(indication = null, interactionSource = remember { MutableInteractionSource() }) { onClick() }.padding(4.dp),
+            modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
-                modifier = Modifier.size(40.dp).clip(MaterialTheme.shapes.medium).background(iconColor.copy(alpha = 0.15f)),
+                modifier = Modifier.size(36.dp).clip(MaterialTheme.shapes.medium).background(
+                    if (entry.isEnabled) entry.color.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant
+                ),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(category.icon.imageVector, null, modifier = Modifier.size(20.dp), tint = iconColor)
+                Icon(entry.icon, null, modifier = Modifier.size(20.dp),
+                    tint = if (entry.isEnabled) entry.color else MaterialTheme.colorScheme.onSurfaceVariant)
             }
-
             Spacer(Modifier.width(12.dp))
-
             Column(modifier = Modifier.weight(1f)) {
-                Text(category.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium,
-                    color = if (category.isEnabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
-                if (category.isDefault) {
-                    Text(stringResource(R.string.category_manage_system_default), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
-                }
+                Text(displayName,
+                    style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium,
+                    color = if (entry.isEnabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
+                Text(stringResource(R.string.cat_preset_label), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
             }
-
             XiaomiSwitch(
-                checked = category.isEnabled,
+                checked = entry.isEnabled,
                 onCheckedChange = { onToggleEnabled() },
                 checkedTrackColor = LocalSwitchColor.current
             )
@@ -218,60 +478,99 @@ private fun CategoryItem(
 }
 
 @Composable
-private fun CategoryDetailDialog(
-    category: com.palmnote.data.db.entity.CategoryConfig,
+private fun CustomCategoryItem(
+    entry: CategoryEntry,
+    onClick: () -> Unit,
+    onToggleEnabled: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = CardDefaults.outlinedCardBorder().copy(
+            brush = androidx.compose.ui.graphics.SolidColor(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+        )
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier.size(36.dp).clip(MaterialTheme.shapes.medium).background(
+                    if (entry.isEnabled) entry.color.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant
+                ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(entry.icon, null, modifier = Modifier.size(20.dp),
+                    tint = if (entry.isEnabled) entry.color else MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(entry.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium,
+                    color = if (entry.isEnabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
+            }
+            XiaomiSwitch(
+                checked = entry.isEnabled,
+                onCheckedChange = { onToggleEnabled() },
+                checkedTrackColor = LocalSwitchColor.current
+            )
+        }
+    }
+}
+
+@Composable
+private fun PresetCategoryDetailDialog(
+    entry: CategoryEntry,
     onEdit: () -> Unit,
-    onDelete: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    val iconColor = try {
-        if (category.color.isNotEmpty()) category.color.toComposeColor() else AccentOrange
-    } catch (_: Exception) { AccentOrange }
-
+    val context = LocalContext.current
+    val displayName = getPresetDisplayName(entry.name, context)
     AppDialog(
         onDismissRequest = onDismiss,
-        title = { Text(category.name, fontWeight = FontWeight.Bold) },
+        title = { Text(displayName, fontWeight = FontWeight.Bold) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Box(modifier = Modifier.size(56.dp).clip(MaterialTheme.shapes.large).background(iconColor.copy(alpha = 0.15f)), contentAlignment = Alignment.Center) {
-                        Icon(category.icon.imageVector, null, modifier = Modifier.size(28.dp), tint = iconColor)
+                    Box(modifier = Modifier.size(56.dp).clip(MaterialTheme.shapes.large).background(entry.color.copy(alpha = 0.15f)), contentAlignment = Alignment.Center) {
+                        Icon(entry.icon, null, modifier = Modifier.size(28.dp), tint = entry.color)
                     }
                     Column {
-                        Text(category.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        Text(if (category.isEnabled) stringResource(R.string.category_manage_enabled) else stringResource(R.string.category_manage_disabled), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(displayName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text(if (entry.isEnabled) stringResource(R.string.cat_enabled) else stringResource(R.string.cat_disabled), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
                 HorizontalDivider()
-                DetailRow(stringResource(R.string.bill_type), category.type)
-                if (category.isDefault) DetailRow(stringResource(R.string.category_manage_default), stringResource(R.string.category_manage_system_category))
-                DetailRow(stringResource(R.string.asset_status), if (category.isEnabled) stringResource(R.string.category_manage_enable) else stringResource(R.string.category_manage_disable))
+                Text(stringResource(R.string.cat_preset_detail_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         },
         confirmButton = {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (!category.isDefault) {
-                    TextButton(onClick = onDelete) { Text(stringResource(R.string.delete), color = ErrorLight) }
-                }
-                TextButton(onClick = onEdit) { Text(stringResource(R.string.edit), color = AccentOrange) }
+                TextButton(onClick = onEdit) { Text(stringResource(R.string.cat_edit), color = AccentOrange) }
             }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.close), fontWeight = FontWeight.Bold) } }
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cat_close), fontWeight = FontWeight.Bold) } }
     )
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-private fun CategoryEditBottomSheet(
-    category: com.palmnote.data.db.entity.CategoryConfig?,
-    type: String,
-    onSave: (com.palmnote.data.db.entity.CategoryConfig) -> Unit,
+private fun PresetCategoryEditSheet(
+    entry: CategoryEntry,
+    onSave: (String, String, Boolean) -> Unit,
+    onReset: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    var name by remember { mutableStateOf(category?.name ?: "") }
-    var icon by remember { mutableStateOf(category?.icon ?: AppIcon.Restaurant) }
-    var color by remember { mutableStateOf(category?.color ?: "#4285F4") }
+    val context = LocalContext.current
+    val localizedName = getPresetDisplayName(entry.name, context)
+    val defaultHex = "#%02X%02X%02X".format(
+        (entry.color.red * 255).toInt(),
+        (entry.color.green * 255).toInt(),
+        (entry.color.blue * 255).toInt()
+    )
+    var name by remember { mutableStateOf(localizedName) }
+    var colorHex by remember { mutableStateOf(defaultHex) }
     var nameError by remember { mutableStateOf<String?>(null) }
+    val nameRequiredError = stringResource(R.string.cat_name_required)
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
@@ -279,33 +578,78 @@ private fun CategoryEditBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState
     ) {
-        Text(if (category != null) stringResource(R.string.category_manage_edit) else stringResource(R.string.category_manage_add), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+        Text(stringResource(R.string.cat_edit_preset_title), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(8.dp))
+        Text(stringResource(R.string.cat_edit_preset_desc, localizedName),
+            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
 
-        OutlinedTextField(value = name, onValueChange = { name = it; nameError = null }, label = { Text(stringResource(R.string.category_manage_name)) },
+        Spacer(Modifier.height(12.dp))
+        OutlinedTextField(value = name, onValueChange = { name = it; nameError = null },
+            label = { Text(stringResource(R.string.cat_field_name)) },
             modifier = Modifier.fillMaxWidth(), isError = nameError != null, supportingText = nameError?.let { { Text(it) } },
             shape = MaterialTheme.shapes.medium, singleLine = true)
 
-        Text(stringResource(R.string.category_manage_icon), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Medium)
-        IconPickerGrid(selectedIcon = icon, onSelected = { icon = it })
+        Spacer(Modifier.height(12.dp))
+        Text(stringResource(R.string.cat_field_color), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Medium)
+        Spacer(Modifier.height(4.dp))
+        ColorPicker(selectedColor = colorHex, onColorSelected = { colorHex = it })
 
-        Text(stringResource(R.string.category_manage_color), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Medium)
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            categoryColorOptions.forEach { c ->
-                Box(modifier = Modifier.size(28.dp).clip(MaterialTheme.shapes.small).background(c.toComposeColor())
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null
-                    ) { color = c }, contentAlignment = Alignment.Center) {
-                    if (color == c) { Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(14.dp)) }
-                }
+        Spacer(Modifier.height(16.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+            OutlinedButton(onClick = onReset, modifier = Modifier.weight(1f)) {
+                Text(stringResource(R.string.cat_reset_default))
+            }
+            Button(onClick = {
+                if (name.isBlank()) { nameError = nameRequiredError; return@Button }
+                val saveName = if (name.trim() == localizedName) entry.name else name.trim()
+                onSave(saveName, colorHex, entry.isEnabled)
+            }, modifier = Modifier.weight(1f), enabled = name.isNotBlank()) {
+                Text(stringResource(R.string.cat_save))
             }
         }
+    }
+}
 
-        val categoryNameRequired = stringResource(R.string.category_manage_name_required)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+private fun CategoryEditBottomSheet(
+    category: CategoryConfig?,
+    type: String,
+    onSave: (CategoryConfig) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var name by remember { mutableStateOf(category?.name ?: "") }
+    var icon by remember { mutableStateOf(category?.icon ?: com.palmnote.ui.theme.AppIcon.Restaurant) }
+    var color by remember { mutableStateOf(category?.color ?: "#4285F4") }
+    var nameError by remember { mutableStateOf<String?>(null) }
+    val nameRequiredError = stringResource(R.string.cat_name_required)
+
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    AppBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState
+    ) {
+        Text(if (category != null) stringResource(R.string.cat_edit_category) else stringResource(R.string.cat_add_category), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+
+        Spacer(Modifier.height(12.dp))
+        OutlinedTextField(value = name, onValueChange = { name = it; nameError = null }, label = { Text(stringResource(R.string.cat_field_name)) },
+            modifier = Modifier.fillMaxWidth(), isError = nameError != null, supportingText = nameError?.let { { Text(it) } },
+            shape = MaterialTheme.shapes.medium, singleLine = true)
+
+        Spacer(Modifier.height(12.dp))
+        Text(stringResource(R.string.cat_field_icon), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Medium)
+        IconPickerGrid(selectedIcon = icon, onSelected = { icon = it })
+
+        Spacer(Modifier.height(12.dp))
+        Text(stringResource(R.string.cat_field_color), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Medium)
+        ColorPicker(selectedColor = color, onColorSelected = { color = it })
+
+        Spacer(Modifier.height(16.dp))
         AppSaveButton(
             onClick = {
-                if (name.isBlank()) { nameError = categoryNameRequired; return@AppSaveButton }
-                onSave(com.palmnote.data.db.entity.CategoryConfig(
+                if (name.isBlank()) { nameError = nameRequiredError; return@AppSaveButton }
+                onSave(CategoryConfig(
                     id = category?.id ?: 0L, type = type, name = name.trim(), icon = icon,
                     color = color, sortOrder = category?.sortOrder ?: 0, isDefault = category?.isDefault ?: false,
                     isEnabled = category?.isEnabled ?: true

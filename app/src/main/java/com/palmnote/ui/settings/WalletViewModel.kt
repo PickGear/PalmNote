@@ -3,13 +3,15 @@
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.palmnote.data.db.entity.Wallet
+import com.palmnote.domain.repository.BillRepository
 import com.palmnote.domain.repository.WalletRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 
 class WalletViewModel(
-    private val walletRepository: WalletRepository
+    private val walletRepository: WalletRepository,
+    private val billRepository: BillRepository
 ) : ViewModel() {
 
     val wallets: StateFlow<List<Wallet>> = walletRepository.getAllWallets()
@@ -33,6 +35,13 @@ class WalletViewModel(
     fun deleteWallet(id: Long) {
         viewModelScope.launch {
             walletRepository.softDelete(id)
+        }
+    }
+
+    fun deleteWalletWithData(walletId: Long) {
+        viewModelScope.launch {
+            billRepository.softDeleteByWallet(walletId)
+            walletRepository.softDelete(walletId)
         }
     }
 

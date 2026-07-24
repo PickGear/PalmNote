@@ -32,12 +32,12 @@ data class AccountBook(
         const val ALL_BOOKS_ID = -1L
 
         val BOOK_TEMPLATES = listOf(
-            BookTemplate("DAILY", "日常", AppIcon.MenuBook, "#2D4A3E", "记录日常生活开支"),
-            BookTemplate("TRAVEL", "旅行", AppIcon.Flight, "#34A853", "旅行途中的所有消费"),
+            BookTemplate("DAILY", "日常", AppIcon.MenuBook, "#4DB6AC", "记录日常生活开支"),
+            BookTemplate("TRAVEL", "旅行", AppIcon.Flight, "#29B6F6", "旅行途中的所有消费"),
             BookTemplate("WORK", "工作", AppIcon.Work, "#FF8C42", "工作相关收支"),
-            BookTemplate("FAMILY", "家庭", AppIcon.Home, "#EA4335", "家庭共同开支管理"),
-            BookTemplate("STUDY", "学习", AppIcon.School, "#9C27B0", "学习培训相关费用"),
-            BookTemplate("INVESTMENT", "投资", AppIcon.Savings, "#FBBC04", "投资理财记录"),
+            BookTemplate("FAMILY", "家庭", AppIcon.Home, "#F48FB1", "家庭共同开支管理"),
+            BookTemplate("STUDY", "学习", AppIcon.School, "#CE93D8", "学习培训相关费用"),
+            BookTemplate("INVESTMENT", "投资", AppIcon.Savings, "#FFD54F", "投资理财记录"),
         )
     }
 }

@@ -16,8 +16,8 @@ import com.palmnote.data.export.BillXlsxImporter
 import com.palmnote.data.export.ParsedBill
 import com.palmnote.data.ocr.BillOcrParser
 import com.palmnote.data.ocr.OcrBillResult
+import com.palmnote.data.db.entity.Wallet
 import com.palmnote.domain.repository.BillRepository
-import com.palmnote.domain.repository.WalletRepository
 import com.palmnote.domain.util.DateUtils
 
 import kotlinx.coroutines.Dispatchers
@@ -63,7 +63,7 @@ data class BillImportState(
 class BillImportViewModel(
     private val context: Context,
     private val billRepository: BillRepository,
-    private val walletRepository: WalletRepository
+    private val cachedWallets: StateFlow<List<Wallet>>
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(BillImportState())
@@ -73,7 +73,7 @@ class BillImportViewModel(
 
     init {
         viewModelScope.launch {
-            walletRepository.getEnabledWallets().first().let { wallets ->
+            cachedWallets.first().let { wallets ->
                 _state.update { it.copy(wallets = wallets, ocrWalletId = wallets.firstOrNull()?.id) }
             }
         }
@@ -259,7 +259,7 @@ class BillImportViewModel(
     }
 
     private suspend fun getWalletId(): Long? = try {
-        walletRepository.getEnabledWallets().first().firstOrNull()?.id
+        cachedWallets.first().firstOrNull()?.id
     } catch (_: Exception) { null }
 
     private suspend fun insertBillsIfNew(bills: List<Bill>, existing: List<Bill>): Int {
