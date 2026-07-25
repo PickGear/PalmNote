@@ -90,6 +90,7 @@ fun SettingsScreen(
     onNavigateToReminder: () -> Unit = {},
     onNavigateToManageCategory: () -> Unit = {},
     onNavigateToDataStorage: () -> Unit = {},
+    onNavigateToAppLock: () -> Unit = {},
     onNavigateToAbout: () -> Unit = {},
     viewModel: SettingsViewModel = simpleViewModel { PalmNoteApp.container.settingsViewModel() }
 ) {
@@ -181,6 +182,8 @@ fun SettingsScreen(
                         SettingsRowItem(icon = Icons.Outlined.Category, title = stringResource(R.string.settings_category_manage), subtitle = stringResource(R.string.settings_category_manage_subtitle), tint = InfoBlue, onClick = onNavigateToManageCategory)
                         HorizontalDivider(modifier = Modifier.padding(horizontal = 56.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                         SettingsRowItem(icon = Icons.Outlined.Storage, title = stringResource(R.string.settings_data), subtitle = stringResource(R.string.settings_data_subtitle), tint = LifeRecord, onClick = onNavigateToDataStorage)
+                        HorizontalDivider(modifier = Modifier.padding(horizontal = 56.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                        SettingsRowItem(icon = Icons.Outlined.Lock, title = stringResource(R.string.settings_app_lock), subtitle = stringResource(R.string.settings_app_lock_subtitle), tint = ModuleSettings, onClick = onNavigateToAppLock)
                         HorizontalDivider(modifier = Modifier.padding(horizontal = 56.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                         SettingsRowItem(icon = Icons.Outlined.Info, title = stringResource(R.string.settings_about_app), subtitle = stringResource(R.string.settings_about_version), tint = PrimaryGreenLight, onClick = onNavigateToAbout)
                     }
