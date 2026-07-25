@@ -57,6 +57,7 @@ import com.palmnote.ui.settings.GeneralSettingsScreen
 import com.palmnote.ui.settings.ReminderSettingsScreen
 import com.palmnote.ui.settings.ManageCategoryScreen
 import com.palmnote.ui.settings.DataStorageScreen
+import com.palmnote.ui.settings.AppLockSettingsScreen
 
 import com.palmnote.PalmNoteApp
 import com.palmnote.ui.components.simpleViewModel
@@ -93,6 +94,7 @@ object Route {
     const val ReminderSettings = "reminder_settings"
     const val ManageCategory = "manage_category"
     const val DataStorage = "data_storage"
+    const val AppLockSettings = "app_lock_settings"
 }
 
 data class BottomNavItem(
@@ -278,7 +280,8 @@ fun PalmNoteNavHost() {
                 onNavigateToReminder = { navController.navigate(Route.ReminderSettings) },
                 onNavigateToManageCategory = { navController.navigate(Route.ManageCategory) },
                 onNavigateToDataStorage = { navController.navigate(Route.DataStorage) },
-                onNavigateToAbout = { navController.navigate(Route.About) }
+                onNavigateToAbout = { navController.navigate(Route.About) },
+                onNavigateToAppLock = { navController.navigate(Route.AppLockSettings) }
             )
         }
 
@@ -344,6 +347,13 @@ fun PalmNoteNavHost() {
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToPrivacy = { navController.navigate(Route.PrivacyPolicy) },
                 onNavigateToTerms = { navController.navigate(Route.TermsOfService) }
+            )
+        }
+
+        composable(Route.AppLockSettings) {
+            AppLockSettingsScreen(
+                onNavigateBack = { navController.popBackStack() },
+                viewModel = simpleViewModel { PalmNoteApp.container.settingsViewModel() }
             )
         }
 
