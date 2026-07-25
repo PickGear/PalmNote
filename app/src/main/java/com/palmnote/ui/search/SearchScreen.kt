@@ -48,7 +48,7 @@ fun SearchScreen(
 
     Scaffold(
         topBar = {
-            Surface(color = MaterialTheme.colorScheme.background) {
+            Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.statusBarsPadding()) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
