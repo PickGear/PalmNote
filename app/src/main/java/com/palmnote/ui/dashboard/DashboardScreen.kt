@@ -625,7 +625,7 @@ private fun AssetDistributionCard(state: DashboardState, onNavigateToAsset: () -
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.Top
             ) {
                 AssetDistributionChart(state.assetDistribution, Modifier.size(100.dp))
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
