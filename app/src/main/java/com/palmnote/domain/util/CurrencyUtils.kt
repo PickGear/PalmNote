@@ -21,7 +21,7 @@ object CurrencyUtils {
         val context = getAppContext()
         return when {
             amount >= 10000_0000 -> context.getString(R.string.currency_compact_yi, twoDecimals.format(amount / 10000_0000))
-            amount >= 10000 -> context.getString(R.string.currency_compact_wan, twoDecimals.format(amount / 10000))
+            amount >= 100_0000 -> context.getString(R.string.currency_compact_wan, twoDecimals.format(amount / 10000))
             else -> context.getString(R.string.currency_format, currencyFormat.format(amount))
         }
     }
@@ -30,7 +30,7 @@ object CurrencyUtils {
         val twoDecimals = DecimalFormat("#.##")
         return when {
             amount >= 10000_0000 -> context.getString(R.string.currency_compact_yi, twoDecimals.format(amount / 10000_0000))
-            amount >= 10000 -> context.getString(R.string.currency_compact_wan, twoDecimals.format(amount / 10000))
+            amount >= 100_0000 -> context.getString(R.string.currency_compact_wan, twoDecimals.format(amount / 10000))
             else -> context.getString(R.string.currency_format, currencyFormat.format(amount))
         }
     }

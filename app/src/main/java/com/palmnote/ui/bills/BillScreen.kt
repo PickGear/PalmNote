@@ -360,7 +360,7 @@ fun BillScreen(
                 ) {
                     item {
                         AnimatedCard(index = 3) {
-                        Row(modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 4.dp, end = 12.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Row(modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 4.dp, start = 12.dp, end = 12.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                             Text(
                                 text = stringResource(R.string.bill_detail),
                                 style = MaterialTheme.typography.titleMedium,
@@ -391,31 +391,33 @@ fun BillScreen(
                     item {
                         val dayIncome = bills.filter { it.type == "INCOME" }.sumOf { it.amount }
                         val dayExpense = bills.filter { it.type == "EXPENSE" }.sumOf { it.amount }
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 4.dp, end = 12.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = DateUtils.formatDisplayDateWithWeekday(context, bills.first().date),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Spacer(modifier = Modifier.weight(1f))
-                                if (dayIncome > 0) {
-                                    Text(
-                                        text = stringResource(R.string.bill_income_short, CurrencyUtils.formatCurrency(dayIncome)),
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                                if (dayExpense > 0) {
-                                    Text(
-                                        text = stringResource(R.string.bill_expense_short, CurrencyUtils.formatCurrency(dayExpense)),
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
+                        AnimatedCard {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 4.dp, start = 12.dp, end = 12.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = DateUtils.formatDisplayDateWithWeekday(context, bills.first().date),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    Spacer(modifier = Modifier.weight(1f))
+                                    if (dayIncome > 0) {
+                                        Text(
+                                            text = stringResource(R.string.bill_income_short, CurrencyUtils.formatCurrency(dayIncome)),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                    if (dayExpense > 0) {
+                                        Text(
+                                            text = stringResource(R.string.bill_expense_short, CurrencyUtils.formatCurrency(dayExpense)),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -540,17 +542,17 @@ fun BillListItem(bill: Bill, wallets: Map<Long, String> = emptyMap(), onDetail: 
                 }
                 .clickable { if (offsetX == 0f) onDetail() else offsetX = 0f }
         ) {
-            Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp).padding(end = 12.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Top) {
+            Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp).padding(start = 12.dp, end = 12.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Top) {
                 Row(modifier = Modifier.weight(1f, false), verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(catColor.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) {
+                    Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(if (bill.type == "TRANSFER") InfoBlue.copy(alpha = 0.12f) else catColor.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) {
                         Icon(
-                            categoryItem?.icon ?: Icons.Outlined.Cancel,
-                            null, tint = catColor, modifier = Modifier.size(20.dp)
+                            if (bill.type == "TRANSFER") Icons.Outlined.SwapVert else categoryItem?.icon ?: Icons.Outlined.Cancel,
+                            null, tint = if (bill.type == "TRANSFER") InfoBlue else catColor, modifier = Modifier.size(20.dp)
                         )
                     }
                     Column {
-                        Text(displayName, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
-                        val merchantText = if (bill.merchant.isNotEmpty() && bill.location.isNotEmpty()) {
+                        Text(if (bill.type == "TRANSFER") stringResource(R.string.bill_transfer) else displayName, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                        val merchantText = if (bill.type == "TRANSFER") null else if (bill.merchant.isNotEmpty() && bill.location.isNotEmpty()) {
                             "${bill.merchant} · ${bill.location}"
                         } else if (bill.merchant.isNotEmpty()) {
                             bill.merchant
@@ -560,10 +562,15 @@ fun BillListItem(bill: Bill, wallets: Map<Long, String> = emptyMap(), onDetail: 
                         if (merchantText != null) {
                             Text(merchantText, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 2.dp))
                         }
+                        if (bill.type == "TRANSFER" && bill.walletId != null && bill.toWalletId != null) {
+                            val fromName = wallets[bill.walletId] ?: ""
+                            val toName = wallets[bill.toWalletId] ?: ""
+                            Text("$fromName → $toName", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 2.dp))
+                        }
                     }
                 }
                 Column(horizontalAlignment = Alignment.End, modifier = Modifier.width(100.dp)) {
-                    Text(text = "${if (isExpense) "-" else "+"}${CurrencyUtils.formatCurrency(bill.amount)}", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = if (isExpense) ExpenseRed else StatusActive, textAlign = TextAlign.End, modifier = Modifier.fillMaxWidth())
+                    Text(text = "${if (bill.type == "EXPENSE") "-" else if (bill.type == "TRANSFER") "" else "+"}${CurrencyUtils.formatCompact(context, bill.amount)}", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = if (bill.type == "EXPENSE") ExpenseRed else if (bill.type == "TRANSFER") InfoBlue else StatusActive, textAlign = TextAlign.End, modifier = Modifier.fillMaxWidth())
                     bill.walletId?.let { walletId ->
                         wallets[walletId]?.let { walletName ->
                             Text(walletName, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 2.dp))
