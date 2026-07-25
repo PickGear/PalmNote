@@ -241,10 +241,10 @@ private fun AccountBookItem(
                 }
             }
 
-            XiaomiSwitch(
+            CapsuleSwitch(
                 checked = !book.isHidden,
                 onCheckedChange = { onToggleHidden() },
-                checkedTrackColor = LocalSwitchColor.current
+                checkedTrackColor = LocalSwitchColor.current,
             )
         }
     }

@@ -117,6 +117,7 @@
     <string name="bill_no_records">暂无记录</string>
     <string name="bill_start_recording">点击右下角按钮开始记账</string>
     <string name="bill_reimbursable">可报销</string>
+    <string name="bill_reimbursable_hint">标记后可在报销管理中统一处理</string>
     <string name="bill_edit_bill">编辑账单</string>
     <string name="bill_wallet">账户</string>
     
@@ -736,6 +737,9 @@
     <string name="asset_favorite">收藏</string>
     <string name="asset_yes">是</string>
     <string name="asset_acquisition_type">获取方式</string>
+    <string name="asset_acquisition">获取信息</string>
+    <string name="asset_location_warranty">位置与保修</string>
+    <string name="asset_advanced_options">高级选项</string>
     <string name="asset_purchase_date">购买日期</string>
     <string name="asset_acquisition_date">获取日期</string>
     <string name="asset_purchase_channel">购买渠道</string>
@@ -747,7 +751,7 @@
     <string name="asset_current_value">当前估值</string>
     <string name="asset_current_value_hint">输入当前估值</string>
     <string name="asset_depreciation_rate">年折旧率</string>
-    <string name="asset_depreciation_rate_hint">输入年折旧率(%)</string>
+    <string name="asset_depreciation_rate_hint">年折旧率</string>
     <string name="asset_cost_calculation">成本计算</string>
     <string name="asset_depreciation">折旧</string>
     <string name="asset_warranty_info">保修信息</string>
@@ -756,7 +760,7 @@
     <string name="asset_warranty_expired_days">已过期%d天</string>
     <string name="asset_maintenance_info">维护信息</string>
     <string name="asset_maintenance_interval">维护间隔</string>
-    <string name="asset_maintenance_interval_hint">输入维护间隔天数</string>
+    <string name="asset_maintenance_interval_hint">间隔天数</string>
     <string name="asset_last_maintenance_format">上次维护: %s</string>
     <string name="asset_maintenance_cycle_format">维护周期: %d天</string>
     <string name="asset_maintenance_needed">需要维护</string>
@@ -765,12 +769,12 @@
     <string name="asset_complete_maintenance">完成维护</string>
     <string name="asset_insurance_info">保险信息</string>
     <string name="asset_insurance_company">保险公司</string>
-    <string name="asset_insurance_company_hint">输入保险公司名称</string>
+    <string name="asset_insurance_company_hint">保险公司名称</string>
     <string name="asset_insurance_policy">保单号</string>
-    <string name="asset_insurance_policy_no_hint">输入保单号</string>
+    <string name="asset_insurance_policy_no_hint">保单号</string>
     <string name="asset_insurance_expiry">到期日期</string>
     <string name="asset_insurance_expire_date">保险到期日</string>
-    <string name="asset_select_insurance_date">选择保险到期日</string>
+    <string name="asset_select_insurance_date">选择日期</string>
     <string name="asset_away_info">暂离信息</string>
     <string name="asset_removed_info">已清出信息</string>
     <string name="asset_status_info_label">状态信息</string>
@@ -871,7 +875,7 @@
     <string name="asset_valuation_optional">估值（可选）</string>
     <string name="asset_custom_location_hint">输入自定义位置</string>
     <string name="asset_warranty_date">保修日期</string>
-    <string name="asset_select_warranty_date">选择保修到期日期（可选）</string>
+    <string name="asset_select_warranty_date">选择日期</string>
     <string name="asset_add_remark_hint">添加备注信息...</string>
     <string name="asset_add_button">添加物品</string>
     <string name="asset_purchase_channel_hint">如：京东、淘宝、线下门店</string>
@@ -923,7 +927,8 @@
     
     <!-- Date Format -->
     <string name="date_format_display">MM月dd日</string>
-    <string name="date_format_display_year">yyyy年MM月dd日</string>
+    <string name="date_format_display_year">yyyy/MM/dd</string>
+    <string name="date_format_display_full">yyyy年MM月dd日</string>
     <string name="date_format_display_month">yyyy年MM月</string>
     <string name="date_weekday_sunday">星期日</string>
     <string name="date_weekday_monday">星期一</string>
@@ -1296,6 +1301,9 @@
     <string name="wallet_icon">图标</string>
     <string name="wallet_color">颜色</string>
     <string name="wallet_name_required">请输入账户名称</string>
+    <string name="wallet_basic_info">基本信息</string>
+    <string name="wallet_appearance">外观</string>
+    <string name="wallet_current_balance">当前余额</string>
     <string name="wallet_initial_balance">初始余额</string>
     <string name="wallet_card_number">卡号</string>
     <string name="wallet_balance_invalid">请输入有效数字</string>
@@ -1378,8 +1386,12 @@
     <string name="backup_empty">暂无备份</string>
     <string name="backup_empty_hint">点击上方按钮创建第一个备份</string>
     <string name="backup_restore_title">恢复备份</string>
+    <string name="backup_restore_desc">选择之前备份的 .palmnote 文件恢复数据，恢复后应用将自动重启</string>
+    <string name="backup_restore_from_file">选择备份文件恢复</string>
+    <string name="backup_restoring">正在恢复数据…</string>
     <string name="backup_restore_confirm">恢复将覆盖当前所有数据，此操作不可撤销。确定要恢复吗？</string>
     <string name="backup_restore">恢复</string>
+
     <string name="backup_delete">删除</string>
     
     <!-- Common Components -->
