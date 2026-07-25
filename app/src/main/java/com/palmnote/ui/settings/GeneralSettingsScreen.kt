@@ -28,7 +28,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.palmnote.ui.components.ModuleCard
-import com.palmnote.ui.components.XiaomiSwitch
+import com.palmnote.ui.components.CapsuleSwitch
 import com.palmnote.ui.components.AppDialog
 import com.palmnote.ui.components.toComposeColor
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -141,12 +141,12 @@ fun GeneralSettingsScreen(
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                     SettingRow {
                         SettingRowContent(title = stringResource(R.string.settings_budget_reminder))
-                        XiaomiSwitch(checked = state.budgetReminderEnabled, onCheckedChange = { viewModel.setBudgetReminderEnabled(it) }, checkedTrackColor = LocalSwitchColor.current)
+                        CapsuleSwitch(checked = state.budgetReminderEnabled, onCheckedChange = { viewModel.setBudgetReminderEnabled(it) }, checkedTrackColor = LocalSwitchColor.current)
                     }
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                     SettingRow {
                         SettingRowContent(title = stringResource(R.string.settings_calendar_sync), subtitle = stringResource(R.string.settings_calendar_sync_subtitle))
-                        XiaomiSwitch(checked = state.calendarSyncEnabled, onCheckedChange = { enabled ->
+                        CapsuleSwitch(checked = state.calendarSyncEnabled, onCheckedChange = { enabled ->
                             if (enabled && ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_CALENDAR) != PackageManager.PERMISSION_GRANTED) {
                                 showCalendarPermissionDialog = true
                             } else { viewModel.setCalendarSyncEnabled(enabled) }

@@ -53,6 +53,8 @@ import com.palmnote.R
 import com.palmnote.ui.theme.*
 import kotlinx.coroutines.delay
 import androidx.annotation.StringRes
+import androidx.compose.ui.platform.LocalContext
+import com.palmnote.domain.util.DateUtils
 
 val categoryColorOptions = listOf(
     "#4285F4", "#34A853", "#FBBC04", "#EA4335", "#FF6D00",
@@ -370,7 +372,8 @@ fun CompactTopAppBar(
     title: @Composable () -> Unit,
     navigationIcon: @Composable () -> Unit = {},
     actions: @Composable RowScope.() -> Unit = {},
-    backgroundColor: Color = MaterialTheme.colorScheme.background
+    backgroundColor: Color = MaterialTheme.colorScheme.background,
+    windowInsets: WindowInsets = WindowInsets.statusBars
 ) {
     TopAppBar(
         title = title,
@@ -379,7 +382,7 @@ fun CompactTopAppBar(
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = backgroundColor
         ),
-        windowInsets = WindowInsets(0.dp)
+        windowInsets = windowInsets
     )
 }
 
@@ -404,7 +407,6 @@ fun SecondaryTopAppBar(
         navigationIcon = navigationIcon,
         actions = actions,
         colors = colors,
-        windowInsets = WindowInsets(0.dp)
     )
 }
 
@@ -422,7 +424,6 @@ fun SecondaryTopAppBar(
         navigationIcon = navigationIcon,
         actions = actions,
         colors = colors,
-        windowInsets = WindowInsets(0.dp)
     )
 }
 
@@ -972,36 +973,51 @@ fun BottomFormSheet(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DatePickerField(
-    label: String,
-    dateMillis: Long,
+    selectedDate: Long?,
     onDateSelected: (Long) -> Unit,
-    modifier: Modifier = Modifier
+    placeholder: String = stringResource(R.string.field_select_date)
 ) {
-    var showPicker by remember { mutableStateOf(false) }
-    val fmt = remember { java.time.format.DateTimeFormatter.ofPattern("yyyy/MM/dd") }
-    OutlinedTextField(
-        value = java.time.Instant.ofEpochMilli(dateMillis).atZone(java.time.ZoneId.systemDefault()).toLocalDate().format(fmt),
-        onValueChange = {},
-        readOnly = true,
-        label = { Text(label) },
-        trailingIcon = { Icon(AppIcon.CalendarMonth.imageVector, contentDescription = null) },
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable { showPicker = true },
-        singleLine = true
-    )
-    if (showPicker) {
-        val datePickerState = rememberDatePickerState(initialSelectedDateMillis = dateMillis)
+    val context = LocalContext.current
+    var showDatePicker by remember { mutableStateOf(false) }
+
+    Box {
+        OutlinedTextField(
+            value = if (selectedDate != null) DateUtils.formatDisplayYearDate(context, selectedDate) else "",
+            onValueChange = {},
+            readOnly = true,
+            modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 56.dp),
+            placeholder = { Text(placeholder) },
+            trailingIcon = {
+                IconButton(onClick = { showDatePicker = true }) {
+                    Icon(Icons.Outlined.CalendarMonth, contentDescription = null)
+                }
+            },
+            shape = MaterialTheme.shapes.medium,
+            singleLine = true,
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = MaterialTheme.colorScheme.outline,
+                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                cursorColor = Color.Transparent
+            )
+        )
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null
+                ) { showDatePicker = true }
+        )
+    }
+
+    if (showDatePicker) {
+        val datePickerState = rememberDatePickerState(initialSelectedDateMillis = selectedDate ?: System.currentTimeMillis())
         DatePickerDialog(
-            onDismissRequest = { showPicker = false },
+            onDismissRequest = { showDatePicker = false },
             tonalElevation = 0.dp,
             colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.background),
-            confirmButton = {
-                TextButton(onClick = { datePickerState.selectedDateMillis?.let { onDateSelected(it) }; showPicker = false }) { Text(stringResource(R.string.confirm), fontWeight = FontWeight.Bold) }
-            },
-            dismissButton = {
-                TextButton(onClick = { showPicker = false }) { Text(stringResource(R.string.cancel), fontWeight = FontWeight.Bold) }
-            }
+            confirmButton = { TextButton(onClick = { datePickerState.selectedDateMillis?.let { onDateSelected(it) }; showDatePicker = false }) { Text(stringResource(R.string.confirm), fontWeight = FontWeight.Bold) } },
+            dismissButton = { TextButton(onClick = { showDatePicker = false }) { Text(stringResource(R.string.cancel), fontWeight = FontWeight.Bold) } }
         ) { DatePicker(state = datePickerState, colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.background)) }
     }
 }
@@ -1046,7 +1062,7 @@ fun DetailRow(label: String, value: String) {
 }
 
 @Composable
-fun XiaomiSwitch(
+fun CapsuleSwitch(
     checked: Boolean,
     onCheckedChange: ((Boolean) -> Unit)?,
     enabled: Boolean = true,
@@ -1057,6 +1073,7 @@ fun XiaomiSwitch(
         targetValue = if (checked) 1f else 0f,
         animationSpec = tween(200)
     )
+    val isDark = LocalIsDarkTheme.current
 
     Box(
         modifier = modifier
@@ -1064,7 +1081,7 @@ fun XiaomiSwitch(
             .clip(RoundedCornerShape(13.dp))
             .background(
                 if (checked) checkedTrackColor
-                else if (enabled) Color(0xFFD9D9D9)
+                else if (enabled) if (isDark) Color(0xFF3A3A3C) else Color(0xFFD9D9D9)
                 else Color(0xFFE8E8E8)
             )
             .clickable(

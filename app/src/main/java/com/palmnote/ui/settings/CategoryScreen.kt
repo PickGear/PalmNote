@@ -468,10 +468,10 @@ private fun PresetCategoryItem(
                     color = if (entry.isEnabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
                 Text(stringResource(R.string.cat_preset_label), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
             }
-            XiaomiSwitch(
+            CapsuleSwitch(
                 checked = entry.isEnabled,
                 onCheckedChange = { onToggleEnabled() },
-                checkedTrackColor = LocalSwitchColor.current
+                checkedTrackColor = LocalSwitchColor.current,
             )
         }
     }
@@ -508,10 +508,10 @@ private fun CustomCategoryItem(
                 Text(entry.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium,
                     color = if (entry.isEnabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
             }
-            XiaomiSwitch(
+            CapsuleSwitch(
                 checked = entry.isEnabled,
                 onCheckedChange = { onToggleEnabled() },
-                checkedTrackColor = LocalSwitchColor.current
+                checkedTrackColor = LocalSwitchColor.current,
             )
         }
     }

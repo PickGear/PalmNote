@@ -85,7 +85,7 @@ fun ReminderSettingsScreen(
                             title = stringResource(R.string.settings_daily_reminder),
                             subtitle = stringResource(R.string.settings_daily_reminder_subtitle)
                         )
-                        XiaomiSwitch(checked = state.dailyReminderEnabled, onCheckedChange = { enabled -> if (enabled && Build.VERSION.SDK_INT >= 33) { showNotificationPermissionDialog = true } else { viewModel.setDailyReminderEnabled(enabled) } }, checkedTrackColor = LocalSwitchColor.current)
+                        CapsuleSwitch(checked = state.dailyReminderEnabled, onCheckedChange = { enabled -> if (enabled && Build.VERSION.SDK_INT >= 33) { showNotificationPermissionDialog = true } else { viewModel.setDailyReminderEnabled(enabled) } }, checkedTrackColor = LocalSwitchColor.current)
                     }
                     if (state.dailyReminderEnabled) {
                         HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
@@ -104,7 +104,7 @@ fun ReminderSettingsScreen(
                             title = stringResource(R.string.settings_bill_reminder),
                             subtitle = stringResource(R.string.settings_bill_reminder_subtitle)
                         )
-                        XiaomiSwitch(checked = state.billReminderEnabled, onCheckedChange = { viewModel.setBillReminderEnabled(it) }, checkedTrackColor = LocalSwitchColor.current)
+                        CapsuleSwitch(checked = state.billReminderEnabled, onCheckedChange = { viewModel.setBillReminderEnabled(it) }, checkedTrackColor = LocalSwitchColor.current)
                     }
                     if (state.billReminderEnabled) {
                         HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))

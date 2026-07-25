@@ -73,6 +73,9 @@ object DateUtils {
     fun formatDisplayYearDate(context: Context, timestamp: Long): String =
         millisToLocalDate(timestamp).format(DateTimeFormatter.ofPattern(context.getString(R.string.date_format_display_year)))
 
+    fun formatDisplayFullDate(context: Context, timestamp: Long): String =
+        millisToLocalDate(timestamp).format(DateTimeFormatter.ofPattern(context.getString(R.string.date_format_display_full)))
+
     @Deprecated("Use formatDisplayMonth(context, yearMonth) for proper i18n", ReplaceWith("formatDisplayMonth(context, yearMonth)"))
     fun formatDisplayMonth(yearMonth: String): String {
         val ym = YearMonth.parse(yearMonth, YEAR_MONTH_FMT)

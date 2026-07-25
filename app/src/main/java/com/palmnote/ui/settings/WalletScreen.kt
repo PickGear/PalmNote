@@ -38,12 +38,12 @@ import com.palmnote.ui.theme.*
 @Composable
 fun WalletScreen(
     onNavigateBack: () -> Unit = {},
+    onNavigateToAddWallet: () -> Unit = {},
+    onNavigateToEditWallet: (Long) -> Unit = {},
     viewModel: WalletViewModel = simpleViewModel { PalmNoteApp.container.walletViewModel() }
 ) {
     val wallets by viewModel.wallets.collectAsStateWithLifecycle()
     val totalBalance by viewModel.totalBalance.collectAsStateWithLifecycle()
-    var showAddDialog by remember { mutableStateOf(false) }
-    var editingWallet by remember { mutableStateOf<Wallet?>(null) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var walletToDelete by remember { mutableStateOf<Wallet?>(null) }
     var detailWallet by remember { mutableStateOf<Wallet?>(null) }
@@ -61,7 +61,7 @@ fun WalletScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { editingWallet = null; showAddDialog = true },
+                onClick = onNavigateToAddWallet,
                 containerColor = MaterialTheme.colorScheme.secondary,
                 contentColor = Color.White,
                 shape = MaterialTheme.shapes.large
@@ -138,7 +138,7 @@ fun WalletScreen(
     if (detailWalletSnapshot != null) {
         WalletDetailDialog(
             wallet = detailWalletSnapshot,
-            onEdit = { editingWallet = detailWallet; showAddDialog = true; detailWallet = null },
+            onEdit = { onNavigateToEditWallet(detailWalletSnapshot.id); detailWallet = null },
             onDelete = {
                 val w = detailWallet
                 if (w != null) {
@@ -149,18 +149,6 @@ fun WalletScreen(
             },
             onSetDefault = { viewModel.setDefault(detailWalletSnapshot.id) },
             onDismiss = { detailWallet = null }
-        )
-    }
-
-    // Add/Edit BottomSheet
-    if (showAddDialog) {
-        WalletEditBottomSheet(
-            wallet = editingWallet,
-            onSave = { wallet ->
-                if (editingWallet != null) viewModel.updateWallet(wallet) else viewModel.addWallet(wallet)
-                showAddDialog = false
-            },
-            onDismiss = { showAddDialog = false }
         )
     }
 
@@ -259,10 +247,10 @@ private fun WalletItem(
 
             Spacer(Modifier.width(8.dp))
 
-            XiaomiSwitch(
+            CapsuleSwitch(
                 checked = wallet.isEnabled,
                 onCheckedChange = { onToggleEnabled() },
-                checkedTrackColor = LocalSwitchColor.current
+                checkedTrackColor = LocalSwitchColor.current,
             )
         }
     }
@@ -321,108 +309,4 @@ private fun WalletDetailDialog(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
-@Composable
-private fun WalletEditBottomSheet(
-    wallet: Wallet?,
-    onSave: (Wallet) -> Unit,
-    onDismiss: () -> Unit
-) {
-    var name by rememberSaveable { mutableStateOf(wallet?.name ?: "") }
-    var type by rememberSaveable { mutableStateOf(wallet?.type ?: "CASH") }
-    var icon by remember { mutableStateOf(wallet?.icon ?: AppIcon.Payments) }
-    var color by rememberSaveable { mutableStateOf(wallet?.color ?: "#4CAF50") }
-    var bankName by rememberSaveable { mutableStateOf(wallet?.bankName ?: "") }
-    var cardNumber by rememberSaveable { mutableStateOf(wallet?.cardNumber ?: "") }
-    var initialBalance by rememberSaveable { mutableStateOf(wallet?.initialBalance?.toString() ?: "0") }
-    var nameError by rememberSaveable { mutableStateOf<String?>(null) }
-    var balanceError by remember { mutableStateOf<String?>(null) }
 
-    val balanceInvalidMsg = stringResource(R.string.wallet_balance_invalid)
-    val balanceNegativeMsg = stringResource(R.string.wallet_balance_negative)
-    val typeOptions = listOf(
-        "CASH" to stringResource(R.string.wallet_type_cash), "E_WALLET" to stringResource(R.string.wallet_type_e_wallet), "BANK_CARD" to stringResource(R.string.wallet_type_bank_card),
-        "CREDIT_CARD" to stringResource(R.string.wallet_type_credit_card), "INVESTMENT" to stringResource(R.string.wallet_type_investment), "TOP_UP" to stringResource(R.string.wallet_type_top_up), "OTHER" to stringResource(R.string.wallet_type_other)
-    )
-
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-
-    AppBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState
-    ) {
-        Text(
-            if (wallet != null) stringResource(R.string.wallet_edit) else stringResource(R.string.wallet_add),
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold
-        )
-
-        OutlinedTextField(
-            value = name, onValueChange = { name = it; nameError = null },
-            label = { Text(stringResource(R.string.wallet_name)) }, modifier = Modifier.fillMaxWidth(),
-            isError = nameError != null, supportingText = nameError?.let { { Text(it) } },
-            shape = MaterialTheme.shapes.medium, singleLine = true
-        )
-
-        Text(stringResource(R.string.wallet_type), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Medium)
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            typeOptions.forEach { (t, label) ->
-                FilterChip(
-                    selected = type == t, onClick = { type = t },
-                    label = { Text(label, style = MaterialTheme.typography.bodySmall) },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = AccentOrange.copy(alpha = 0.15f),
-                        selectedLabelColor = AccentOrange
-                    )
-                )
-            }
-        }
-
-        if (type == "BANK_CARD" || type == "CREDIT_CARD") {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(value = bankName, onValueChange = { bankName = it }, label = { Text(stringResource(R.string.wallet_bank)) },
-                    modifier = Modifier.weight(1f), shape = MaterialTheme.shapes.medium, singleLine = true)
-                OutlinedTextField(value = cardNumber, onValueChange = { cardNumber = it }, label = { Text(stringResource(R.string.wallet_card_last_four)) },
-                    modifier = Modifier.weight(1f), shape = MaterialTheme.shapes.medium, singleLine = true)
-            }
-        }
-
-        OutlinedTextField(
-            value = initialBalance, onValueChange = { initialBalance = it; balanceError = null },
-            label = { Text(stringResource(R.string.wallet_balance)) }, modifier = Modifier.fillMaxWidth(),
-            prefix = { Text("¥") }, shape = MaterialTheme.shapes.medium, singleLine = true,
-            isError = balanceError != null,
-            supportingText = balanceError?.let { { Text(it) } },
-        )
-
-        Text(stringResource(R.string.wallet_icon), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Medium)
-        IconPickerGrid(selectedIcon = icon, onSelected = { icon = it })
-
-        Text(stringResource(R.string.wallet_color), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Medium)
-        ColorPicker(selectedColor = color, onColorSelected = { color = it })
-
-        val walletNameRequired = stringResource(R.string.wallet_name_required)
-        AppSaveButton(
-            onClick = {
-                if (name.isBlank()) { nameError = walletNameRequired; return@AppSaveButton }
-                val balance = initialBalance.toDoubleOrNull()
-                if (balance == null) {
-                    balanceError = balanceInvalidMsg
-                    return@AppSaveButton
-                }
-                if (balance < 0) {
-                    balanceError = balanceNegativeMsg
-                    return@AppSaveButton
-                }
-                onSave(Wallet(
-                    id = wallet?.id ?: 0L, name = name.trim(), type = type, icon = icon, color = color,
-                    bankName = bankName.trim(), cardNumber = cardNumber.trim(),
-                    initialBalance = balance, currentBalance = wallet?.let { it.currentBalance + (balance - it.initialBalance) } ?: balance,
-                    isDefault = wallet?.isDefault ?: false, isEnabled = wallet?.isEnabled ?: true,
-                    sortOrder = wallet?.sortOrder ?: 0
-                ))
-            },
-            enabled = name.isNotBlank()
-        )
-    }
-}

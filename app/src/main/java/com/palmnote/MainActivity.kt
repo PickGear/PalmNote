@@ -84,7 +84,9 @@ class MainActivity : AppCompatActivity() {
                 "LIGHT" -> false
                 else -> isSystemInDarkTheme()
             }
-            val switchColor = preferences.second.toComposeColor(Color(0xFF2D4A3E))
+            val switchColor = preferences.second.toComposeColor(
+                if (isDarkTheme) Color(0xFF7BC4A0) else Color(0xFF2D4A3E)
+            )
             val lockState by appLockManager.lockState.collectAsState()
             val privacyAgreed by appContainer.preferencesManager.privacyAgreed.collectAsState(initial = null)
             val showPrivacyDialog = privacyAgreed == false

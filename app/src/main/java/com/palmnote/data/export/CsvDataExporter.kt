@@ -227,13 +227,6 @@ class CsvDataExporter(
                     CustomTag::class.java to customTags
                 )
 
-                val prefsMap = buildMap<String, kotlinx.serialization.json.JsonElement> {
-                    put("themeMode", JsonPrimitive(preferencesManager.themeMode.first()))
-                    put("defaultBillType", JsonPrimitive(preferencesManager.defaultBillType.first()))
-                    put("budgetReminderEnabled", JsonPrimitive(preferencesManager.budgetReminderEnabled.first()))
-                }
-                val prefsJson = JsonObject(prefsMap).toString()
-
                 var totalCount = 0
                 val usageByAssetId = usageRecords.groupBy { it.assetId }
                 val usageJsonByAssetId = usageByAssetId.mapValues { (_, records) ->
@@ -272,25 +265,10 @@ class CsvDataExporter(
                             zos.write(data)
                             zos.closeEntry()
                         }
-                        for ((relPath, file) in imageFileMap) {
-                            val imgData = file.readBytes()
-                            val imgEntry = ZipEntry("images/$relPath")
-                            imgEntry.size = imgData.size.toLong()
-                            zos.putNextEntry(imgEntry)
-                            zos.write(imgData)
-                            zos.closeEntry()
-                        }
-                        val prefsData = prefsJson.toByteArray(Charsets.UTF_8)
-                        val prefsEntry = ZipEntry(PREFERENCES_ENTRY)
-                        prefsEntry.size = prefsData.size.toLong()
-                        zos.putNextEntry(prefsEntry)
-                        zos.write(prefsData)
-                        zos.closeEntry()
                         zos.flush()
                     }
                 }
-                val imgSuffix = if (imageFileMap.isNotEmpty()) context.getString(R.string.export_success_images, totalCount, imageFileMap.size) else context.getString(R.string.export_success, totalCount)
-                Result.success(imgSuffix)
+                Result.success(context.getString(R.string.export_success, totalCount))
             } catch (e: AppException) {
                 Result.failure(e)
             } catch (e: java.io.IOException) {
