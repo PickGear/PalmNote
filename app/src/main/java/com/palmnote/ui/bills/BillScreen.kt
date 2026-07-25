@@ -8,6 +8,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -91,7 +92,7 @@ fun BillScreen(
         }
     }
 
-    val groupedBills = remember(filteredBills) { filteredBills.groupBy { DateUtils.formatDate(it.date) } }
+    val groupedBills = remember(filteredBills) { filteredBills.groupBy { DateUtils.formatDate(it.date) }.mapValues { it.value.sortedByDescending { b -> b.createdAt } } }
 
     var showBookMenu by remember { mutableStateOf(false) }
     var showSearch by remember { mutableStateOf(false) }
@@ -354,12 +355,14 @@ fun BillScreen(
                 }
 
                 // Bill list (scrollable)
+                val billListState = rememberLazyListState()
                 LazyColumn(
                     modifier = Modifier.weight(1f),
+                    state = billListState,
                     contentPadding = PaddingValues(horizontal = 16.dp)
                 ) {
                     item {
-                        AnimatedCard(index = 3) {
+                        AnimatedCard(index = 3, instant = billListState.isScrollInProgress) {
                         Row(modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 4.dp, start = 12.dp, end = 12.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                             Text(
                                 text = stringResource(R.string.bill_detail),
@@ -391,7 +394,7 @@ fun BillScreen(
                     item {
                         val dayIncome = bills.filter { it.type == "INCOME" }.sumOf { it.amount }
                         val dayExpense = bills.filter { it.type == "EXPENSE" }.sumOf { it.amount }
-                        AnimatedCard {
+                        AnimatedCard(instant = billListState.isScrollInProgress) {
                             Row(
                                 modifier = Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 4.dp, start = 12.dp, end = 12.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -423,7 +426,7 @@ fun BillScreen(
                         }
                     }
                     itemsIndexed(bills, key = { _, bill -> bill.id }) { index, bill ->
-                        AnimatedCard(index = (index + 4).coerceAtMost(10)) {
+                        AnimatedCard(index = (index + 4).coerceAtMost(10), instant = remember(bill.id) { billListState.isScrollInProgress }) {
                         BillListItem(
                             bill = bill,
                             wallets = state.wallets,
