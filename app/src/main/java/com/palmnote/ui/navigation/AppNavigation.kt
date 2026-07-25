@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -20,6 +21,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.annotation.StringRes
 import androidx.compose.ui.res.stringResource
+import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -48,6 +50,7 @@ import com.palmnote.ui.settings.TermsOfServiceScreen
 import com.palmnote.ui.settings.CategoryScreen
 import com.palmnote.ui.settings.RecycleBinScreen
 import com.palmnote.ui.settings.SettingsScreen
+import com.palmnote.ui.settings.WalletEditScreen
 import com.palmnote.ui.settings.WalletScreen
 import com.palmnote.ui.settings.DataClearScreen
 import com.palmnote.ui.settings.GeneralSettingsScreen
@@ -62,6 +65,7 @@ import com.palmnote.ui.backup.BackupScreen
 import com.palmnote.ui.theme.*
 
 object Route {
+    const val MainTabs = "main_tabs"
     const val Dashboard = "dashboard"
     const val Asset = "asset"
     const val Bill = "bill"
@@ -80,6 +84,7 @@ object Route {
     const val TermsOfService = "terms_of_service"
     const val RecycleBin = "recycle_bin"
     const val Wallet = "wallet"
+    const val WalletEdit = "wallet_edit?walletId={walletId}"
     const val DataClear = "data_clear"
     const val Search = "search"
     const val AccountBookManage = "account_book_manage"
@@ -106,25 +111,343 @@ private val bottomNavItems = listOf(
     BottomNavItem(Route.Life, R.string.nav_life, Icons.Filled.Favorite, Icons.Filled.FavoriteBorder, ModuleLife),
 )
 
+/**
+ * Outer NavHost — manages all routes.
+ * MainTabs (tabs + bottom bar) is a single composable here,
+ * sub-pages (AddBill, Settings, etc.) live at this level.
+ * Navigating to a sub-page replaces MainTabs entirely, so the
+ * bottom bar disappears without any layout shift.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PalmNoteNavHost() {
     val navController = rememberNavController()
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentDestination = navBackStackEntry?.destination
-
-    var lifeChildAtHome by remember { mutableStateOf(true) }
-    val showBottomBar = lifeChildAtHome && (currentDestination?.route?.let { route ->
-        bottomNavItems.any { item -> item.route == route }
-     } ?: true)
-
-    val context = LocalContext.current
     val startDest = PalmNoteApp.cachedStartPage
 
-        Scaffold(
+    NavHost(
+        navController = navController,
+        startDestination = Route.MainTabs,
+        modifier = Modifier.fillMaxSize(),
+        enterTransition = { fadeIn(animationSpec = tween(200)) },
+        exitTransition = { fadeOut(animationSpec = tween(200)) },
+        popEnterTransition = { fadeIn(animationSpec = tween(200)) },
+        popExitTransition = { fadeOut(animationSpec = tween(200)) }
+    ) {
+        // ── Main tabs container ──────────────────────────────────
+        composable(Route.MainTabs) {
+            MainTabs(
+                startTab = startDest,
+                onNavigateToAddBill = { date ->
+                    navController.navigate("add_bill?selectedDate=$date")
+                },
+                onNavigateToBillDetail = { billId ->
+                    navController.navigate("bill_detail/$billId")
+                },
+                onNavigateToBudget = {
+                    navController.navigate(Route.Budget)
+                },
+                onNavigateToReport = { selectedBookId, bookName ->
+                    navController.navigate("report?selectedBookId=$selectedBookId&bookName=${Uri.encode(bookName)}")
+                },
+                onNavigateToImportCsv = {
+                    navController.navigate(Route.BillImport)
+                },
+                onNavigateToAccountBook = {
+                    navController.navigate(Route.AccountBookManage)
+                },
+                onNavigateToAssetDetail = { assetId ->
+                    navController.navigate("asset_detail/$assetId")
+                },
+                onNavigateToAddAsset = {
+                    navController.navigate(Route.AddAsset)
+                },
+                onNavigateToSettings = {
+                    navController.navigate(Route.Settings)
+                },
+                onNavigateToSearch = {
+                    navController.navigate(Route.Search)
+                },
+                appNavController = navController
+            )
+        }
+
+        // ── Sub-pages (outside MainTabs, no bottom bar) ──────────
+
+        composable(
+            Route.AssetDetail,
+            arguments = listOf(navArgument("assetId") { type = NavType.LongType })
+        ) { backStackEntry ->
+            val assetId = backStackEntry.arguments?.getLong("assetId") ?: 0L
+            AssetDetailScreen(
+                assetId = assetId,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToEdit = { id ->
+                    navController.navigate("add_asset?assetId=$id")
+                }
+            )
+        }
+
+        composable(
+            Route.AddAsset,
+            arguments = listOf(navArgument("assetId") { type = NavType.LongType; defaultValue = -1L })
+        ) { backStackEntry ->
+            val assetId = backStackEntry.arguments?.getLong("assetId").takeIf { it != -1L }
+            AddAssetScreen(
+                assetId = assetId,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToCategory = { categoryType ->
+                    navController.navigate("category?type=$categoryType")
+                }
+            )
+        }
+
+        composable(
+            Route.AddBill,
+            arguments = listOf(
+                navArgument("billId") { type = NavType.LongType; defaultValue = -1L },
+                navArgument("selectedDate") { type = NavType.LongType; defaultValue = -1L }
+            )
+        ) { backStackEntry ->
+            val billId = backStackEntry.arguments?.getLong("billId").takeIf { it != -1L }
+            val selectedDate = backStackEntry.arguments?.getLong("selectedDate").takeIf { it != -1L }
+            AddBillScreen(
+                billId = billId,
+                selectedDate = selectedDate,
+                onBillDateSaved = { date ->
+                    // previousBackStackEntry is MainTabs — write date there
+                    navController.previousBackStackEntry
+                        ?.savedStateHandle
+                        ?.set("savedBillDate", date)
+                },
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToWallet = { navController.navigate(Route.Wallet) },
+                onNavigateToCategory = { categoryType ->
+                    navController.navigate("category?type=$categoryType")
+                }
+            )
+        }
+
+        composable(
+            Route.BillDetail,
+            arguments = listOf(navArgument("billId") { type = NavType.LongType })
+        ) { backStackEntry ->
+            val billId = backStackEntry.arguments?.getLong("billId") ?: 0L
+            val allWallets by PalmNoteApp.container.walletRepository.getAllWallets().collectAsState(initial = emptyList())
+            val walletNames = allWallets.associate { it.id to it.name }
+            BillDetailScreen(
+                billId = billId,
+                walletNames = walletNames,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToEdit = { id -> navController.navigate("add_bill?billId=$id") }
+            )
+        }
+
+        composable(Route.Budget) {
+            BudgetScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            Route.Report,
+            arguments = listOf(
+                navArgument("selectedBookId") { type = NavType.LongType; defaultValue = -1L },
+                navArgument("bookName") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val selectedBookId = backStackEntry.arguments?.getLong("selectedBookId") ?: -1L
+            val bookName = backStackEntry.arguments?.getString("bookName") ?: stringResource(R.string.report_all_books)
+            ReportScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToAddBill = { navController.navigate("add_bill") },
+                selectedBookId = selectedBookId,
+                bookName = bookName
+            )
+        }
+
+        composable(Route.BillImport) {
+            BillImportScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Route.Settings) {
+            SettingsScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToGeneral = { navController.navigate(Route.GeneralSettings) },
+                onNavigateToReminder = { navController.navigate(Route.ReminderSettings) },
+                onNavigateToManageCategory = { navController.navigate(Route.ManageCategory) },
+                onNavigateToDataStorage = { navController.navigate(Route.DataStorage) },
+                onNavigateToAbout = { navController.navigate(Route.About) }
+            )
+        }
+
+        composable(Route.GeneralSettings) {
+            GeneralSettingsScreen(
+                onNavigateBack = { navController.popBackStack() },
+                viewModel = simpleViewModel { PalmNoteApp.container.settingsViewModel() }
+            )
+        }
+
+        composable(Route.ReminderSettings) {
+            ReminderSettingsScreen(
+                onNavigateBack = { navController.popBackStack() },
+                viewModel = simpleViewModel { PalmNoteApp.container.settingsViewModel() }
+            )
+        }
+
+        composable(Route.ManageCategory) {
+            ManageCategoryScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToWallet = { navController.navigate(Route.Wallet) },
+                onNavigateToAccountBook = { navController.navigate(Route.AccountBookManage) },
+                onNavigateToCategory = { navController.navigate(Route.Category) }
+            )
+        }
+
+        composable(Route.DataStorage) {
+            DataStorageScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToRecycleBin = { navController.navigate(Route.RecycleBin) },
+                onNavigateToDataClear = { navController.navigate(Route.DataClear) },
+                onNavigateToBackup = { navController.navigate(Route.Backup) },
+                onNavigateToImportBill = { navController.navigate(Route.BillImport) },
+                viewModel = simpleViewModel { PalmNoteApp.container.settingsViewModel() }
+            )
+        }
+
+        composable(Route.Backup) {
+            BackupScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            Route.Category,
+            arguments = listOf(navArgument("type") { type = NavType.StringType; defaultValue = "ASSET" })
+        ) { backStackEntry ->
+            val type = backStackEntry.arguments?.getString("type") ?: "ASSET"
+            CategoryScreen(
+                onNavigateBack = { navController.popBackStack() },
+                initialType = type
+            )
+        }
+
+        composable(Route.AccountBookManage) {
+            AccountBookManageScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Route.About) {
+            AboutScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToPrivacy = { navController.navigate(Route.PrivacyPolicy) },
+                onNavigateToTerms = { navController.navigate(Route.TermsOfService) }
+            )
+        }
+
+        composable(Route.PrivacyPolicy) {
+            PrivacyPolicyScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Route.TermsOfService) {
+            TermsOfServiceScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Route.RecycleBin) {
+            RecycleBinScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Route.Wallet) {
+            WalletScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToAddWallet = { navController.navigate("wallet_edit?walletId=0") },
+                onNavigateToEditWallet = { walletId ->
+                    navController.navigate("wallet_edit?walletId=$walletId")
+                }
+            )
+        }
+
+        composable(
+            Route.WalletEdit,
+            arguments = listOf(navArgument("walletId") { type = NavType.LongType; defaultValue = 0L })
+        ) { backStackEntry ->
+            val walletId = backStackEntry.arguments?.getLong("walletId")?.takeIf { it != 0L }
+            WalletEditScreen(
+                walletId = walletId,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Route.DataClear) {
+            DataClearScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Route.Search) {
+            SearchScreen(
+                onNavigateToAsset = { assetId ->
+                    navController.navigate("asset_detail/$assetId")
+                },
+                onNavigateToBill = { billId ->
+                    navController.navigate("bill_detail/$billId")
+                },
+                onNavigateToGoal = { goalId ->
+                    navController.navigate(Route.Life)
+                },
+                onNavigateToAnniversary = { anniversaryId ->
+                    navController.navigate(Route.Life)
+                },
+                onNavigateToMoment = { momentId ->
+                    navController.navigate(Route.Life)
+                },
+                onBack = { navController.popBackStack() }
+            )
+        }
+    }
+}
+
+/**
+ * Inner tab container — owns the bottom bar and a nested NavHost
+ * for the four main tabs.  Sub-page navigation is forwarded to the
+ * outer navController passed from [PalmNoteNavHost].
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun MainTabs(
+    startTab: String,
+    onNavigateToAddBill: (Long) -> Unit,
+    onNavigateToBillDetail: (Long) -> Unit,
+    onNavigateToBudget: () -> Unit,
+    onNavigateToReport: (Long, String) -> Unit,
+    onNavigateToImportCsv: () -> Unit,
+    onNavigateToAccountBook: () -> Unit,
+    onNavigateToAssetDetail: (Long) -> Unit,
+    onNavigateToAddAsset: () -> Unit,
+    onNavigateToSettings: () -> Unit,
+    onNavigateToSearch: () -> Unit,
+    appNavController: NavHostController,
+) {
+    val tabNavController = rememberNavController()
+    val tabBackStackEntry by tabNavController.currentBackStackEntryAsState()
+    val currentTabDestination = tabBackStackEntry?.destination
+
+    var lifeChildAtHome by remember { mutableStateOf(true) }
+    val showBottomBar = lifeChildAtHome && (currentTabDestination?.route?.let { route ->
+        bottomNavItems.any { item -> item.route == route }
+    } ?: true)
+
+    Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
-        contentWindowInsets = ScaffoldDefaults.contentWindowInsets
-            .exclude(WindowInsets.navigationBars),
+        contentWindowInsets = WindowInsets(0.dp),
         bottomBar = {
             if (showBottomBar) {
                 Surface(
@@ -147,7 +470,7 @@ fun PalmNoteNavHost() {
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             bottomNavItems.forEach { item ->
-                                val selected = currentDestination?.hierarchy?.any { it.route == item.route } == true
+                                val selected = currentTabDestination?.hierarchy?.any { it.route == item.route } == true
                                 Column(
                                     modifier = Modifier
                                         .weight(1f)
@@ -155,15 +478,15 @@ fun PalmNoteNavHost() {
                                             indication = null,
                                             interactionSource = remember { MutableInteractionSource() }
                                         ) {
-                                             navController.navigate(item.route) {
-                                                 popUpTo(navController.graph.findStartDestination().id) {
-                                                     saveState = true
-                                                 }
-                                                 launchSingleTop = true
-                                                 restoreState = true
-                                             }
-                                             lifeChildAtHome = true
-                                         }
+                                            tabNavController.navigate(item.route) {
+                                                popUpTo(tabNavController.graph.findStartDestination().id) {
+                                                    saveState = true
+                                                }
+                                                launchSingleTop = true
+                                                restoreState = true
+                                            }
+                                            lifeChildAtHome = true
+                                        }
                                         .align(Alignment.CenterVertically)
                                         .padding(top = 5.dp),
                                     horizontalAlignment = Alignment.CenterHorizontally
@@ -195,307 +518,83 @@ fun PalmNoteNavHost() {
         }
     ) { innerPadding ->
         NavHost(
-            navController = navController,
-            startDestination = startDest,
+            navController = tabNavController,
+            startDestination = startTab,
             modifier = Modifier.padding(innerPadding),
-            enterTransition = {
-                fadeIn(animationSpec = tween(200))
-            },
-            exitTransition = {
-                fadeOut(animationSpec = tween(200))
-            },
-            popEnterTransition = {
-                fadeIn(animationSpec = tween(200))
-            },
-            popExitTransition = {
-                fadeOut(animationSpec = tween(200))
-            }
+            enterTransition = { fadeIn(animationSpec = tween(200)) },
+            exitTransition = { fadeOut(animationSpec = tween(200)) },
+            popEnterTransition = { fadeIn(animationSpec = tween(200)) },
+            popExitTransition = { fadeOut(animationSpec = tween(200)) }
         ) {
             composable(Route.Dashboard) {
                 DashboardScreen(
-                    onNavigateToAsset = { navController.navigate(Route.Asset) },
-                    onNavigateToBill = { navController.navigate(Route.Bill) },
-                    onNavigateToLife = { navController.navigate(Route.Life) },
-                    onNavigateToSettings = { navController.navigate(Route.Settings) },
-                    onNavigateToSearch = { navController.navigate(Route.Search) }
+                    // Simple navigation — keeps Dashboard in back stack
+                    // (matches original behavior)
+                    onNavigateToAsset = {
+                        tabNavController.navigate(Route.Asset)
+                    },
+                    onNavigateToBill = {
+                        tabNavController.navigate(Route.Bill)
+                    },
+                    onNavigateToLife = {
+                        tabNavController.navigate(Route.Life)
+                    },
+                    onNavigateToSettings = onNavigateToSettings,
+                    onNavigateToSearch = onNavigateToSearch
                 )
             }
 
             composable(Route.Asset) {
                 AssetScreen(
                     onNavigateToDetail = { assetId ->
-                        navController.navigate("asset_detail/$assetId")
+                        onNavigateToAssetDetail(assetId)
                     },
                     onNavigateToAdd = {
-                        navController.navigate(Route.AddAsset)
+                        onNavigateToAddAsset()
                     }
                 )
             }
 
-            composable(
-                Route.AssetDetail,
-                arguments = listOf(navArgument("assetId") { type = NavType.LongType })
-            ) { backStackEntry ->
-                val assetId = backStackEntry.arguments?.getLong("assetId") ?: 0L
-                AssetDetailScreen(
-                    assetId = assetId,
-                    onNavigateBack = { navController.popBackStack() },
-                    onNavigateToEdit = { id ->
-                        navController.navigate("add_asset?assetId=$id")
-                    }
-                )
-            }
-
-            composable(
-                Route.AddAsset,
-                arguments = listOf(navArgument("assetId") { type = NavType.LongType; defaultValue = -1L })
-            ) { backStackEntry ->
-                val assetId = backStackEntry.arguments?.getLong("assetId").takeIf { it != -1L }
-                AddAssetScreen(
-                    assetId = assetId,
-                    onNavigateBack = { navController.popBackStack() },
-                    onNavigateToCategory = { categoryType ->
-                        navController.navigate("category?type=$categoryType")
-                    }
-                )
-            }
-
-            composable(Route.Bill) { backStackEntry ->
+            composable(Route.Bill) {
                 val billViewModel: BillViewModel = simpleViewModel { PalmNoteApp.container.billViewModel() }
-                LaunchedEffect(Unit) {
-                    backStackEntry.savedStateHandle.getStateFlow<Long?>("savedBillDate", null)
-                        .collect { date ->
-                            if (date != null) {
-                                billViewModel.syncDateFromSaved(date)
-                                backStackEntry.savedStateHandle.remove<Long>("savedBillDate")
-                            }
-                        }
+
+                // Observe date saved from AddBillScreen.
+                // onBillDateSaved reads from the outer navController's
+                // savedStateHandle (MainTabs entry), not the inner one.
+                val savedBillDate by appNavController.currentBackStackEntry
+                    ?.savedStateHandle
+                    ?.getStateFlow<Long?>("savedBillDate", null)
+                    ?.collectAsStateWithLifecycle()
+                    ?: mutableStateOf(null)
+                LaunchedEffect(savedBillDate) {
+                    savedBillDate?.let { date ->
+                        billViewModel.syncDateFromSaved(date)
+                        appNavController.currentBackStackEntry
+                            ?.savedStateHandle
+                            ?.remove<Long>("savedBillDate")
+                    }
                 }
+
                 BillScreen(
                     viewModel = billViewModel,
                     onNavigateToAdd = { date ->
-                        navController.navigate("add_bill?selectedDate=$date")
+                        onNavigateToAddBill(date)
                     },
                     onNavigateToDetail = { billId ->
-                        navController.navigate("bill_detail/$billId")
+                        onNavigateToBillDetail(billId)
                     },
-                    onNavigateToBudget = {
-                        navController.navigate(Route.Budget)
-                    },
+                    onNavigateToBudget = onNavigateToBudget,
                     onNavigateToReport = { selectedBookId, bookName ->
-                        navController.navigate("report?selectedBookId=$selectedBookId&bookName=${Uri.encode(bookName)}")
+                        onNavigateToReport(selectedBookId, bookName)
                     },
-                    onNavigateToImportCsv = {
-                        navController.navigate(Route.BillImport)
-                    },
-                    onNavigateToAccountBook = {
-                        navController.navigate(Route.AccountBookManage)
-                    }
-                )
-            }
-
-            composable(
-                Route.AddBill,
-                arguments = listOf(
-                    navArgument("billId") { type = NavType.LongType; defaultValue = -1L },
-                    navArgument("selectedDate") { type = NavType.LongType; defaultValue = -1L }
-                )
-            ) { backStackEntry ->
-                val billId = backStackEntry.arguments?.getLong("billId").takeIf { it != -1L }
-                val selectedDate = backStackEntry.arguments?.getLong("selectedDate").takeIf { it != -1L }
-                AddBillScreen(
-                    billId = billId,
-                    selectedDate = selectedDate,
-                    onBillDateSaved = { date ->
-                        navController.previousBackStackEntry?.savedStateHandle?.set("savedBillDate", date)
-                    },
-                    onNavigateBack = { navController.popBackStack() },
-                    onNavigateToWallet = { navController.navigate(Route.Wallet) },
-                    onNavigateToCategory = { categoryType ->
-                        navController.navigate("category?type=$categoryType")
-                    }
-                )
-            }
-
-            composable(
-                Route.BillDetail,
-                arguments = listOf(navArgument("billId") { type = NavType.LongType })
-            ) { backStackEntry ->
-                val billId = backStackEntry.arguments?.getLong("billId") ?: 0L
-                val context = LocalContext.current
-                val allWallets by PalmNoteApp.container.walletRepository.getAllWallets().collectAsState(initial = emptyList())
-                val walletNames = allWallets.associate { it.id to it.name }
-                BillDetailScreen(
-                    billId = billId,
-                    walletNames = walletNames,
-                    onNavigateBack = { navController.popBackStack() },
-                    onNavigateToEdit = { id -> navController.navigate("add_bill?billId=$id") }
-                )
-            }
-
-            composable(Route.Budget) {
-                BudgetScreen(
-                    onNavigateBack = { navController.popBackStack() }
-                )
-            }
-
-            composable(
-                Route.Report,
-            arguments = listOf(
-                navArgument("selectedBookId") { type = NavType.LongType; defaultValue = -1L },
-                navArgument("bookName") { type = NavType.StringType }
-            )
-        ) { backStackEntry ->
-            val selectedBookId = backStackEntry.arguments?.getLong("selectedBookId") ?: -1L
-            val bookName = backStackEntry.arguments?.getString("bookName") ?: stringResource(R.string.report_all_books)
-                ReportScreen(
-                    onNavigateBack = { navController.popBackStack() },
-                    onNavigateToAddBill = { navController.navigate("add_bill") },
-                    selectedBookId = selectedBookId,
-                    bookName = bookName
-                )
-            }
-
-            composable(Route.BillImport) {
-                BillImportScreen(
-                    onNavigateBack = { navController.popBackStack() }
+                    onNavigateToImportCsv = onNavigateToImportCsv,
+                    onNavigateToAccountBook = onNavigateToAccountBook
                 )
             }
 
             composable(Route.Life) {
                 LifeNavHost(onChildNavigated = { lifeChildAtHome = it })
             }
-
-            composable(Route.Settings) {
-                SettingsScreen(
-                    onNavigateBack = { navController.popBackStack() },
-                    onNavigateToGeneral = { navController.navigate(Route.GeneralSettings) },
-                    onNavigateToReminder = { navController.navigate(Route.ReminderSettings) },
-                    onNavigateToManageCategory = { navController.navigate(Route.ManageCategory) },
-                    onNavigateToDataStorage = { navController.navigate(Route.DataStorage) },
-                    onNavigateToAbout = { navController.navigate(Route.About) }
-                )
-            }
-
-            composable(Route.GeneralSettings) {
-                GeneralSettingsScreen(
-                    onNavigateBack = { navController.popBackStack() },
-                    viewModel = simpleViewModel { PalmNoteApp.container.settingsViewModel() }
-                )
-            }
-
-            composable(Route.ReminderSettings) {
-                ReminderSettingsScreen(
-                    onNavigateBack = { navController.popBackStack() },
-                    viewModel = simpleViewModel { PalmNoteApp.container.settingsViewModel() }
-                )
-            }
-
-            composable(Route.ManageCategory) {
-                ManageCategoryScreen(
-                    onNavigateBack = { navController.popBackStack() },
-                    onNavigateToWallet = { navController.navigate(Route.Wallet) },
-                    onNavigateToAccountBook = { navController.navigate(Route.AccountBookManage) },
-                    onNavigateToCategory = { navController.navigate(Route.Category) }
-                )
-            }
-
-            composable(Route.DataStorage) {
-                DataStorageScreen(
-                    onNavigateBack = { navController.popBackStack() },
-                    onNavigateToRecycleBin = { navController.navigate(Route.RecycleBin) },
-                    onNavigateToDataClear = { navController.navigate(Route.DataClear) },
-                    onNavigateToBackup = { navController.navigate(Route.Backup) },
-                    viewModel = simpleViewModel { PalmNoteApp.container.settingsViewModel() }
-                )
-            }
-
-            composable(Route.Backup) {
-                BackupScreen(
-                    onNavigateBack = { navController.popBackStack() }
-                )
-            }
-
-            composable(
-                Route.Category,
-                arguments = listOf(navArgument("type") { type = NavType.StringType; defaultValue = "ASSET" })
-            ) { backStackEntry ->
-                val type = backStackEntry.arguments?.getString("type") ?: "ASSET"
-                CategoryScreen(
-                    onNavigateBack = { navController.popBackStack() },
-                    initialType = type
-                )
-            }
-
-            composable(Route.AccountBookManage) {
-                AccountBookManageScreen(
-                    onNavigateBack = { navController.popBackStack() }
-                )
-            }
-
-            composable(Route.About) {
-                AboutScreen(
-                    onNavigateBack = { navController.popBackStack() },
-                    onNavigateToPrivacy = { navController.navigate(Route.PrivacyPolicy) },
-                    onNavigateToTerms = { navController.navigate(Route.TermsOfService) }
-                )
-            }
-
-            composable(Route.PrivacyPolicy) {
-                PrivacyPolicyScreen(
-                    onNavigateBack = { navController.popBackStack() }
-                )
-            }
-
-            composable(Route.TermsOfService) {
-                TermsOfServiceScreen(
-                    onNavigateBack = { navController.popBackStack() }
-                )
-            }
-
-            composable(Route.RecycleBin) {
-                RecycleBinScreen(
-                    onNavigateBack = { navController.popBackStack() }
-                )
-            }
-
-            composable(Route.Wallet) {
-                WalletScreen(
-                    onNavigateBack = { navController.popBackStack() }
-                )
-            }
-
-            composable(Route.DataClear) {
-                DataClearScreen(
-                    onNavigateBack = { navController.popBackStack() }
-                )
-            }
-
-            composable(Route.Search) {
-                SearchScreen(
-                    onNavigateToAsset = { assetId ->
-                        navController.navigate("asset_detail/$assetId")
-                    },
-                    onNavigateToBill = { billId ->
-                        navController.navigate("bill_detail/$billId")
-                    },
-                    onNavigateToGoal = { goalId ->
-                        // 目前跳转到Life页面，后续可以添加Goal详情路由
-                        navController.navigate(Route.Life)
-                    },
-                    onNavigateToAnniversary = { anniversaryId ->
-                        // 目前跳转到Life页面，后续可以添加Anniversary详情路由
-                        navController.navigate(Route.Life)
-                    },
-                    onNavigateToMoment = { momentId ->
-                        // 目前跳转到Life页面，后续可以添加Moment详情路由
-                        navController.navigate(Route.Life)
-                    },
-                    onBack = { navController.popBackStack() }
-                )
-            }
-
-
         }
     }
 }

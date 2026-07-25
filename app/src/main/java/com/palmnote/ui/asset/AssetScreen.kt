@@ -657,7 +657,7 @@ fun EnhancedAssetCard(
 
     ModuleCard(
         tint = MaterialTheme.colorScheme.surface,
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),

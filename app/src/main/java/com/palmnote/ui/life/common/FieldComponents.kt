@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.sp
 import com.palmnote.R
 import com.palmnote.ui.components.AppDialog
 import com.palmnote.ui.components.toComposeColor
+import com.palmnote.ui.components.CapsuleSwitch
 
 // ============================================================
 // 17 Field Types
@@ -159,7 +160,7 @@ private fun TimeInput(value: String, onValueChange: (String) -> Unit) {
 private fun BooleanInput(value: String, onValueChange: (String) -> Unit) {
     val checked = value.toBooleanStrictOrNull() ?: false
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Switch(checked = checked, onCheckedChange = { onValueChange(it.toString()) })
+        CapsuleSwitch(checked = checked, onCheckedChange = { onValueChange(it.toString()) })
         Spacer(modifier = Modifier.width(8.dp))
         Text(if (checked) stringResource(R.string.field_enabled) else stringResource(R.string.field_disabled), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }

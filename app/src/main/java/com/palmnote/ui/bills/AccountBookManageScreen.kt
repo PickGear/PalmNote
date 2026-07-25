@@ -244,7 +244,7 @@ private fun AccountBookItem(
             CapsuleSwitch(
                 checked = !book.isHidden,
                 onCheckedChange = { onToggleHidden() },
-                checkedTrackColor = LocalSwitchColor.current
+                checkedTrackColor = LocalSwitchColor.current,
             )
         }
     }

@@ -471,7 +471,7 @@ private fun PresetCategoryItem(
             CapsuleSwitch(
                 checked = entry.isEnabled,
                 onCheckedChange = { onToggleEnabled() },
-                checkedTrackColor = LocalSwitchColor.current
+                checkedTrackColor = LocalSwitchColor.current,
             )
         }
     }
@@ -511,7 +511,7 @@ private fun CustomCategoryItem(
             CapsuleSwitch(
                 checked = entry.isEnabled,
                 onCheckedChange = { onToggleEnabled() },
-                checkedTrackColor = LocalSwitchColor.current
+                checkedTrackColor = LocalSwitchColor.current,
             )
         }
     }

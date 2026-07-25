@@ -710,7 +710,7 @@ private fun TodayCard(state: DashboardState) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column {
-                Text(DateUtils.formatDisplayYearDate(context, System.currentTimeMillis()), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(DateUtils.formatDisplayFullDate(context, System.currentTimeMillis()), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(weekDay, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             }
             Column(horizontalAlignment = Alignment.End) {
@@ -821,7 +821,7 @@ private fun CardManagementDialog(
                         CapsuleSwitch(
                             checked = config.visible,
                             onCheckedChange = { onToggle(config.type) },
-                            checkedTrackColor = LocalSwitchColor.current
+                            checkedTrackColor = LocalSwitchColor.current,
                         )
                     }
                 }

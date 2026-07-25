@@ -426,7 +426,7 @@ fun AddBillScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(DateUtils.formatDisplayYearDate(context, formState.date))
+                            Text(DateUtils.formatDisplayFullDate(context, formState.date))
                             Icon(Icons.Outlined.CalendarMonth, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
@@ -512,6 +512,34 @@ fun AddBillScreen(
                         shape = MaterialTheme.shapes.medium,
                         maxLines = 3
                     )
+                }
+            }
+
+            // Reimbursable Toggle
+            item {
+                ModuleCard(tint = MaterialTheme.colorScheme.surface) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                text = stringResource(R.string.bill_reimbursable),
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = stringResource(R.string.bill_reimbursable_hint),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        CapsuleSwitch(
+                            checked = formState.isReimbursable,
+                            onCheckedChange = { viewModel.updateForm { copy(isReimbursable = it) } }
+                        )
+                    }
                 }
             }
 

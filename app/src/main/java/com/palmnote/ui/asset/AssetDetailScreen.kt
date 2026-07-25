@@ -224,7 +224,7 @@ fun AssetDetailScreen(
                     if (asset.isFavorite) DetailRow(stringResource(R.string.asset_favorite), stringResource(R.string.asset_yes))
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                     DetailRow(stringResource(R.string.asset_acquisition_type), getAcquisitionText(asset.acquisitionType))
-                    asset.acquisitionDate?.let { DetailRow(if (asset.acquisitionType == "PURCHASE") stringResource(R.string.asset_purchase_date) else stringResource(R.string.asset_acquisition_date), DateUtils.formatDisplayYearDate(context, it)) }
+                    asset.acquisitionDate?.let { DetailRow(if (asset.acquisitionType == "PURCHASE") stringResource(R.string.asset_purchase_date) else stringResource(R.string.asset_acquisition_date), DateUtils.formatDisplayFullDate(context, it)) }
                     if (asset.acquisitionType == "PURCHASE" && asset.purchaseChannel.isNotEmpty()) DetailRow(stringResource(R.string.asset_purchase_channel), asset.purchaseChannel)
                     if (asset.location.isNotEmpty()) DetailRow(stringResource(R.string.asset_location), asset.location)
                     if (asset.room.isNotEmpty()) DetailRow(stringResource(R.string.asset_room), asset.room)
@@ -339,16 +339,16 @@ fun AssetDetailScreen(
                         when (asset.status) {
                             "AWAY" -> {
                                 tags.takeIf { it.isNotEmpty() }?.let { DetailRow(stringResource(R.string.asset_away_reason), it.joinToString("、")) }
-                                asset.retireDate?.let { DetailRow(stringResource(R.string.asset_away_date), DateUtils.formatDisplayYearDate(context, it)) }
+                                asset.retireDate?.let { DetailRow(stringResource(R.string.asset_away_date), DateUtils.formatDisplayFullDate(context, it)) }
                                 if (asset.retireReason.isNotEmpty()) DetailRow(stringResource(R.string.asset_description), asset.retireReason)
                             }
                             "REMOVED" -> {
                                 tags.takeIf { it.isNotEmpty() }?.let { DetailRow(stringResource(R.string.asset_clear_reason), it.joinToString("、")) }
-                                asset.retireDate?.let { DetailRow(stringResource(R.string.asset_retire_date), DateUtils.formatDisplayYearDate(context, it)) }
+                                asset.retireDate?.let { DetailRow(stringResource(R.string.asset_retire_date), DateUtils.formatDisplayFullDate(context, it)) }
                                 if (asset.retireReason.isNotEmpty()) DetailRow(stringResource(R.string.asset_retire_reason), asset.retireReason)
-                                asset.lostDate?.let { DetailRow(stringResource(R.string.asset_lost_date), DateUtils.formatDisplayYearDate(context, it)) }
+                                asset.lostDate?.let { DetailRow(stringResource(R.string.asset_lost_date), DateUtils.formatDisplayFullDate(context, it)) }
                                 if (asset.lostReason.isNotEmpty()) DetailRow(stringResource(R.string.asset_lost_reason), asset.lostReason)
-                                asset.soldDate?.let { DetailRow(stringResource(R.string.asset_sold_date), DateUtils.formatDisplayYearDate(context, it)) }
+                                asset.soldDate?.let { DetailRow(stringResource(R.string.asset_sold_date), DateUtils.formatDisplayFullDate(context, it)) }
                                 asset.soldPrice?.let { DetailRow(stringResource(R.string.asset_sold_price_label), CurrencyUtils.formatCurrency(it)) }
                                 asset.soldChannel?.let { DetailRow(stringResource(R.string.asset_sold_channel), it) }
                                 asset.soldToWhom?.takeIf { it.isNotEmpty() }?.let { DetailRow(stringResource(R.string.asset_sold_to), it) }

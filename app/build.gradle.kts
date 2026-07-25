@@ -160,6 +160,7 @@ dependencies {
     // Core
     implementation(libs.core.ktx)
     implementation(libs.appcompat)
+    implementation("androidx.documentfile:documentfile:1.0.1")
     implementation(libs.lifecycle.runtime.ktx)
     implementation(libs.lifecycle.process)
 

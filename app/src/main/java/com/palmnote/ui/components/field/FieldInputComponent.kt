@@ -20,6 +20,7 @@ import com.palmnote.R
 import com.palmnote.domain.model.FieldConfig
 import com.palmnote.domain.model.FieldType
 import com.palmnote.ui.theme.Spacing
+import com.palmnote.ui.components.CapsuleSwitch
 
 @Composable
 fun FieldInputComponent(
@@ -110,7 +111,7 @@ private fun BooleanInputField(config: FieldConfig, value: String, onValueChange:
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(config.label)
-        Switch(
+        CapsuleSwitch(
             checked = value.toBoolean(),
             onCheckedChange = { onValueChange(it.toString()) }
         )

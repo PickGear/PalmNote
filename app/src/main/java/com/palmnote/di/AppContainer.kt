@@ -205,7 +205,7 @@ class AppContainer(private val application: Application) {
     fun assetViewModel() = AssetViewModel(application, assetRepository, usageRecordRepository, billRepository, cachedCategoryConfigs, preferencesManager)
     fun billViewModel() = BillViewModel(context, cachedWallets, cachedCategoryConfigs, cachedAccountBooks, billRepository, budgetRepository, walletRepository, accountBookRepository, preferencesManager)
     fun lifeViewModel() = LifeViewModel(application, lifeTemplateRepository, lifeItemRepository, goalRepository, focusRecordRepository, lifeMomentRepository, moodDiaryRepository)
-    fun backupViewModel() = BackupViewModel(backupRepository)
+    fun backupViewModel() = BackupViewModel(context, database)
     fun billDetailViewModel() = BillDetailViewModel(billRepository)
     fun billImportViewModel() = BillImportViewModel(context, billRepository, cachedWallets)
     fun billReportViewModel() = BillReportViewModel(billRepository)

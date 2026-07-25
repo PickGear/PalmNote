@@ -117,6 +117,7 @@
     <string name="bill_no_records">No Records</string>
     <string name="bill_start_recording">Tap the button to start recording</string>
     <string name="bill_reimbursable">Reimbursable</string>
+    <string name="bill_reimbursable_hint">Track for reimbursement management</string>
     <string name="bill_edit_bill">Edit Bill</string>
     <string name="bill_wallet">Account</string>
     
@@ -696,6 +697,9 @@
     <string name="asset_favorite">Favorite</string>
     <string name="asset_yes">Yes</string>
     <string name="asset_acquisition_type">Acquisition</string>
+    <string name="asset_acquisition">Acquisition Info</string>
+    <string name="asset_location_warranty">Location &amp; Warranty</string>
+    <string name="asset_advanced_options">Advanced Options</string>
     <string name="asset_purchase_date">Purchase Date</string>
     <string name="asset_acquisition_date">Acquisition Date</string>
     <string name="asset_purchase_channel">Purchase Channel</string>
@@ -707,7 +711,7 @@
     <string name="asset_current_value">Current Value</string>
     <string name="asset_current_value_hint">Enter current value</string>
     <string name="asset_depreciation_rate">Annual Depreciation</string>
-    <string name="asset_depreciation_rate_hint">Enter annual depreciation (%)</string>
+    <string name="asset_depreciation_rate_hint">Annual rate</string>
     <string name="asset_cost_calculation">Cost Calculation</string>
     <string name="asset_depreciation">Depreciation</string>
     <string name="asset_warranty_info">Warranty Info</string>
@@ -716,7 +720,7 @@
     <string name="asset_warranty_expired_days">Expired %d days ago</string>
     <string name="asset_maintenance_info">Maintenance Info</string>
     <string name="asset_maintenance_interval">Maintenance Interval</string>
-    <string name="asset_maintenance_interval_hint">Enter maintenance interval (days)</string>
+    <string name="asset_maintenance_interval_hint">Interval (days)</string>
     <string name="asset_last_maintenance_format">Last maintenance: %s</string>
     <string name="asset_maintenance_cycle_format">Maintenance cycle: %d days</string>
     <string name="asset_maintenance_needed">Maintenance Due</string>
@@ -725,12 +729,12 @@
     <string name="asset_complete_maintenance">Complete Maintenance</string>
     <string name="asset_insurance_info">Insurance Info</string>
     <string name="asset_insurance_company">Insurance Company</string>
-    <string name="asset_insurance_company_hint">Enter insurance company</string>
+    <string name="asset_insurance_company_hint">Company name</string>
     <string name="asset_insurance_policy">Policy Number</string>
-    <string name="asset_insurance_policy_no_hint">Enter policy number</string>
+    <string name="asset_insurance_policy_no_hint">Policy number</string>
     <string name="asset_insurance_expiry">Expiry Date</string>
     <string name="asset_insurance_expire_date">Insurance Expiry</string>
-    <string name="asset_select_insurance_date">Select Insurance Expiry Date</string>
+    <string name="asset_select_insurance_date">Select date</string>
     <string name="asset_away_info">Away Info</string>
     <string name="asset_removed_info">Removed Info</string>
     <string name="asset_status_info_label">Status Info</string>
@@ -831,7 +835,7 @@
     <string name="asset_valuation_optional">Estimated value (optional)</string>
     <string name="asset_custom_location_hint">Enter custom location</string>
     <string name="asset_warranty_date">Warranty Date</string>
-    <string name="asset_select_warranty_date">Select warranty expiry date (optional)</string>
+    <string name="asset_select_warranty_date">Select date</string>
     <string name="asset_add_remark_hint">Add notes...</string>
     <string name="asset_add_button">Add Item</string>
     <string name="asset_purchase_channel_hint">e.g. JD, Taobao, offline store</string>
@@ -883,7 +887,8 @@
     
     <!-- Date Format -->
     <string name="date_format_display">MMM dd</string>
-    <string name="date_format_display_year">MMM dd, yyyy</string>
+    <string name="date_format_display_year">yyyy/MM/dd</string>
+    <string name="date_format_display_full">MMMM dd, yyyy</string>
     <string name="date_format_display_month">MMM yyyy</string>
     <string name="date_weekday_sunday">Sunday</string>
     <string name="date_weekday_monday">Monday</string>
@@ -1256,6 +1261,9 @@
     <string name="wallet_icon">Icon</string>
     <string name="wallet_color">Color</string>
     <string name="wallet_name_required">Please enter an account name</string>
+    <string name="wallet_basic_info">Basic Info</string>
+    <string name="wallet_appearance">Appearance</string>
+    <string name="wallet_current_balance">Current Balance</string>
     <string name="wallet_initial_balance">Initial Balance</string>
     <string name="wallet_card_number">Card Number</string>
     <string name="wallet_balance_invalid">Enter a valid number</string>
@@ -1338,8 +1346,12 @@
     <string name="backup_empty">No Backups</string>
     <string name="backup_empty_hint">Tap the button above to create your first backup</string>
     <string name="backup_restore_title">Restore Backup</string>
+    <string name="backup_restore_desc">Select a .palmnote backup file to restore data. The app will restart automatically after restore.</string>
+    <string name="backup_restore_from_file">Select backup file to restore</string>
+    <string name="backup_restoring">Restoring data…</string>
     <string name="backup_restore_confirm">Restore will overwrite all current data. This action cannot be undone. Continue?</string>
     <string name="backup_restore">Restore</string>
+
     <string name="backup_delete">Delete</string>
     
     <!-- Common Components -->
