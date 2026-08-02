@@ -73,6 +73,9 @@ fun VaultDetailScreen(
             lockState = state.lockState,
             error = null,
             lockoutRemainingMs = 0L,
+            biometricEnabled = state.biometricEnabled,
+            createBioDecryptCipher = viewModel::createBioDecryptCipher,
+            onBiometricUnlock = viewModel::unlockWithBiometric,
             onSetup = viewModel::setupPin,
             onUnlock = viewModel::unlock
         )
