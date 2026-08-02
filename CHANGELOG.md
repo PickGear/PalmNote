@@ -14,7 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 - 数据库 v4 → v5：新增 `vault_entries` 表（`Migration4To5`）
 - **数据库加密 SQLCipher**：全库加密（`net.zetetic:sqlcipher-android`），Room 经 `EncryptedOpenHelperFactory` 接入，明文库自动迁移，密钥存 SharedPreferences（跨设备恢复可用）
 - **OCR 引擎替换**：ML Kit 闭源模型 → 自研 `OcrEngine` 接口 + **PaddleOCR PP-OCRv6**（`ppocr-sdk` 模块，ONNX Runtime 离线推理，模型打包 assets）；移除 ML Kit 依赖与 `coroutines-play-services`
-- APK 体积优化：release 仅 arm64-v8a + `onnxruntime-mobile`，从 ~86MB 降至 ~42.6MB
+- APK 体积优化：release 仅 arm64-v8a + `onnxruntime-mobile`，从 ~86MB 降至 ~42.6MB（后因 mobile 精简算子集不兼容 PP-OCRv6 模型导致 OCR 失败，回退为完整版 `onnxruntime-android 1.21.1`）
 - 测试：`VaultCryptoTest`（加密往返/篡改检测/密钥派生）、`VaultPasswordGeneratorTest`、`Migration4To5Test`，单测 75 → 94
 
 ### Changed

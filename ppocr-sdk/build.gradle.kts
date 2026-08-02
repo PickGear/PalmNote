@@ -29,7 +29,7 @@ android {
 }
 
 dependencies {
-    implementation(libs.onnxruntime.mobile)
+    implementation(libs.onnxruntime.android)
     implementation(libs.opencv.android)
     implementation(libs.coroutines.android)
     implementation(libs.core.ktx)

@@ -13,7 +13,7 @@ core-ktx = "1.15.0"
 activity-compose = "1.9.3"
 lifecycle = "2.8.7"
 coroutines = "1.10.2"
-onnxruntime = "1.18.0"
+onnxruntime = "1.21.1"
 opencv = "4.5.3"
 lunar = "1.7.7"
 kotlinx-serialization-json = "1.8.0"
@@ -68,8 +68,8 @@ coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" 
 # SQLCipher
 sqlcipher-android = { module = "net.zetetic:sqlcipher-android", version.ref = "sqlcipher" }
 
-# PaddleOCR (PP-OCRv6, ONNX Runtime mobile 精简版以控制 APK 体积)
-onnxruntime-mobile = { module = "com.microsoft.onnxruntime:onnxruntime-mobile", version.ref = "onnxruntime" }
+# PaddleOCR (PP-OCRv6, ONNX Runtime)
+onnxruntime-android = { module = "com.microsoft.onnxruntime:onnxruntime-android", version.ref = "onnxruntime" }
 opencv-android = { module = "com.quickbirdstudios:opencv", version.ref = "opencv" }
 
 # Serialization
