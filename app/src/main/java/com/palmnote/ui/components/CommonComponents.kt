@@ -56,7 +56,7 @@ import androidx.annotation.StringRes
 import androidx.compose.ui.platform.LocalContext
 import com.palmnote.domain.util.DateUtils
 
-val categoryColorOptions = listOf(
+val CATEGORY_COLOR_OPTIONS = listOf(
     "#4285F4", "#34A853", "#FBBC04", "#EA4335", "#FF6D00",
     "#9C27B0", "#E91E63", "#795548", "#607D8B", "#00BCD4",
     "#FF9800", "#4CAF50", "#9E9E9E"
@@ -708,14 +708,14 @@ fun CategoryGridItem(
 }
 
 // Tag presets per status
-val heldTags = listOf("own", "gifted", "borrowed", "rented", "homemade", "found", "temporary")
-val awayTags = listOf("lent", "rented_out", "under_repair", "inspection", "modified", "maintenance", "returned", "shipping", "exhibited")
-val removedTags = listOf("sold", "transferred", "given", "donated", "refunded", "discarded", "scrapped", "lost", "stolen", "expired")
+val HELD_TAGS = listOf("own", "gifted", "borrowed", "rented", "homemade", "found", "temporary")
+val AWAY_TAGS = listOf("lent", "rented_out", "under_repair", "inspection", "modified", "maintenance", "returned", "shipping", "exhibited")
+val REMOVED_TAGS = listOf("sold", "transferred", "given", "donated", "refunded", "discarded", "scrapped", "lost", "stolen", "expired")
 
 fun getTagsForStatus(status: String): List<String> = when (status) {
-    "HELD" -> heldTags
-    "AWAY" -> awayTags
-    "REMOVED" -> removedTags
+    "HELD" -> HELD_TAGS
+    "AWAY" -> AWAY_TAGS
+    "REMOVED" -> REMOVED_TAGS
     else -> emptyList()
 }
 
@@ -924,12 +924,12 @@ fun TagChip(
     modifier: Modifier = Modifier
 ) {
     val color = when {
-        tag in heldTags -> StatusHeld
-        tag in awayTags -> StatusAway
-        tag in removedTags -> StatusRemoved
+        tag in HELD_TAGS -> StatusHeld
+        tag in AWAY_TAGS -> StatusAway
+        tag in REMOVED_TAGS -> StatusRemoved
         else -> MaterialTheme.colorScheme.primary
     }
-    val tagText = if (tag in heldTags || tag in awayTags || tag in removedTags) stringResource(getLocalizedTagName(tag)) else tag
+    val tagText = if (tag in HELD_TAGS || tag in AWAY_TAGS || tag in REMOVED_TAGS) stringResource(getLocalizedTagName(tag)) else tag
     FilterChip(
         selected = isSelected,
         onClick = onClick,
@@ -1197,7 +1197,7 @@ fun ModuleSearchBar(
     )
 }
 
-val presetColorHexes = listOf(
+val PRESET_COLOR_HEXES = listOf(
     "#E57373", "#EF5350", "#FF7043", "#FF8C42", "#FFAB91",
     "#FFCA28", "#FFD54F", "#FBBC04", "#C0CA33", "#66BB6A",
     "#4DB6AC", "#4DD0E1", "#29B6F6", "#64B5F6", "#42A5F5",
@@ -1221,7 +1221,7 @@ fun ColorPicker(
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            presetColorHexes.forEach { hex ->
+            PRESET_COLOR_HEXES.forEach { hex ->
                 Box(
                     modifier = Modifier
                         .size(28.dp)

@@ -62,4 +62,4 @@ Disputes arising from this agreement shall be governed by the laws of the People
 
 If you have any questions, please contact us via:
 
-- GitHub: https://github.com/Bailinana/PalmNote/issues
+- GitHub: https://github.com/PickGear/PalmNote/issues

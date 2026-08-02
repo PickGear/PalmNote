@@ -117,5 +117,5 @@
 
 如对本协议有任何疑问，请通过以下方式联系我们：
 
-- GitHub：https://github.com/Bailinana/PalmNote/issues
+- GitHub：https://github.com/PickGear/PalmNote/issues
 - 邮箱：请通过GitHub Issues获取联系方式

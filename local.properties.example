@@ -1,0 +1,11 @@
+# 复制此文件为 local.properties 并填入你的值
+# Copy this file to local.properties and fill in your values
+
+sdk.dir=/path/to/Android/Sdk
+
+# Release signing (可选，用于构建签名 APK)
+# release.jks 文件不要提交到仓库
+RELEASE_STORE_FILE=release.jks
+RELEASE_KEY_ALIAS=your_alias
+RELEASE_STORE_PASSWORD=your_password
+RELEASE_KEY_PASSWORD=your_key_password

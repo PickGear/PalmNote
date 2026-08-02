@@ -406,7 +406,7 @@ PalmNote（以下简称"本应用"）非常重视用户的隐私保护。本隐�
 九、联系我们
 
 如对本隐私政策有任何疑问、意见或建议，请通过以下方式联系我们：
-- GitHub：https://github.com/Bailinana/PalmNote/issues
+- GitHub：https://github.com/PickGear/PalmNote/issues
 - 邮箱：请通过GitHub Issues获取联系方式
 """.trimIndent().split("\n").filter { it.isNotBlank() }
 
@@ -504,7 +504,7 @@ We may update this Privacy Policy from time to time. Updated policies will be pu
 9. Contact Us
 
 If you have any questions, suggestions, or concerns about this Privacy Policy, please contact us through:
-- GitHub: https://github.com/Bailinana/PalmNote/issues
+- GitHub: https://github.com/PickGear/PalmNote/issues
 - Email: Please obtain contact information through GitHub Issues
 """.trimIndent().split("\n").filter { it.isNotBlank() }
 
@@ -609,7 +609,7 @@ internal val termsOfServiceLinesZh = """
 十一、联系方式
 
 如对本协议有任何疑问，请通过以下方式联系我们：
-- GitHub：https://github.com/Bailinana/PalmNote/issues
+- GitHub：https://github.com/PickGear/PalmNote/issues
 - 邮箱：请通过GitHub Issues获取联系方式
 """.trimIndent().split("\n").filter { it.isNotBlank() }
 
@@ -714,6 +714,6 @@ The formation, validity, interpretation, performance, modification, and terminat
 11. Contact Information
 
 If you have any questions about this agreement, please contact us through:
-- GitHub: https://github.com/Bailinana/PalmNote/issues
+- GitHub: https://github.com/PickGear/PalmNote/issues
 - Email: Please obtain contact information through GitHub Issues
 """.trimIndent().split("\n").filter { it.isNotBlank() }

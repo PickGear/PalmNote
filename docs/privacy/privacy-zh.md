@@ -80,5 +80,5 @@ PalmNote（以下简称"本应用"）非常重视用户的隐私保护。本隐�
 
 如对本隐私政策有任何疑问、意见或建议，请通过以下方式联系我们：
 
-- GitHub：https://github.com/Bailinana/PalmNote/issues
+- GitHub：https://github.com/PickGear/PalmNote/issues
 - 邮箱：请通过GitHub Issues获取联系方式
