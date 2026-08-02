@@ -1,4 +1,5 @@
 package com.palmnote.data.repository
+import javax.inject.Inject
 
 import com.palmnote.data.db.dao.CrossLinkDao
 import com.palmnote.data.db.entity.CrossLink
@@ -6,7 +7,7 @@ import com.palmnote.domain.model.EntityType
 import com.palmnote.domain.model.LinkType
 import com.palmnote.domain.repository.CrossLinkRepository
 import kotlinx.coroutines.flow.Flow
-class CrossLinkRepositoryImpl(
+class CrossLinkRepositoryImpl @Inject constructor(
     private val dao: CrossLinkDao
 ) : CrossLinkRepository {
     override fun getLinksBySource(sourceType: EntityType, sourceId: Long): Flow<List<CrossLink>> = dao.getLinksBySource(sourceType, sourceId)

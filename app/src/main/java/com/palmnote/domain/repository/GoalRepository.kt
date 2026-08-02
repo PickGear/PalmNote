@@ -25,4 +25,8 @@ interface GoalRepository {
     suspend fun setGoalProgress(id: Long, count: Int)
     suspend fun getHabitGoalsNeedingReset(): List<Goal>
     suspend fun batchResetPeriod(ids: List<Long>, periodStart: Long, periodEnd: Long)
+
+    /** 打卡记录（GoalCheckIn 关联操作，供习惯模块使用） */
+    fun getCheckInsByGoal(goalId: Long): Flow<List<com.palmnote.data.db.entity.GoalCheckIn>>
+    suspend fun insertCheckIn(checkIn: com.palmnote.data.db.entity.GoalCheckIn): Long
 }

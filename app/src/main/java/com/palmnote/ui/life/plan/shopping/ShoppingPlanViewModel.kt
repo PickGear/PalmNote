@@ -1,4 +1,7 @@
 package com.palmnote.ui.life.plan.shopping
+import javax.inject.Inject
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import com.palmnote.R
 
 import android.content.Context
@@ -15,8 +18,9 @@ import kotlinx.coroutines.launch
 
 data class ShoppingPlanUiState(val template: LifeTemplate? = null, val items: List<LifeItem> = emptyList(), val isLoading: Boolean = true, val error: String? = null)
 
-class ShoppingPlanViewModel(
-    private val context: Context,
+@HiltViewModel
+class ShoppingPlanViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     itemRepo: LifeItemRepository,
     templateRepo: LifeTemplateRepository
 ) : BaseLifeViewModel<ShoppingPlanUiState>(itemRepo, templateRepo) {

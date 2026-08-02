@@ -1,10 +1,11 @@
 package com.palmnote.data.repository
+import javax.inject.Inject
 
 import com.palmnote.data.db.dao.FocusRecordDao
 import com.palmnote.data.db.entity.FocusRecord
 import com.palmnote.domain.repository.FocusRecordRepository
 import kotlinx.coroutines.flow.Flow
-class FocusRecordRepositoryImpl(
+class FocusRecordRepositoryImpl @Inject constructor(
     private val dao: FocusRecordDao
 ) : FocusRecordRepository {
     override fun getAllRecords(): Flow<List<FocusRecord>> = dao.getAllRecords()

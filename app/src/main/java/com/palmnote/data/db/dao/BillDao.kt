@@ -12,10 +12,19 @@ interface BillDao {
     @Query("SELECT * FROM bills WHERE id = :id AND isDeleted = 0")
     suspend fun getBillById(id: Long): Bill?
 
-    @Query("SELECT * FROM bills WHERE yearMonth = :yearMonth AND isDeleted = 0 ORDER BY date DESC, createdAt DESC LIMIT 500")
+    @Query("SELECT * FROM bills WHERE id = :id")
+    suspend fun getBillByIdIncludingDeleted(id: Long): Bill?
+
+    @Query(
+        "SELECT * FROM bills WHERE yearMonth = :yearMonth AND isDeleted = 0 " +
+            "ORDER BY date DESC, createdAt DESC LIMIT 5000"
+    )
     fun getBillsByMonth(yearMonth: String): Flow<List<Bill>>
 
-    @Query("SELECT * FROM bills WHERE accountBookId = :bookId AND yearMonth = :yearMonth AND isDeleted = 0 ORDER BY date DESC, createdAt DESC LIMIT 500")
+    @Query(
+        "SELECT * FROM bills WHERE accountBookId = :bookId AND yearMonth = :yearMonth AND isDeleted = 0 " +
+            "ORDER BY date DESC, createdAt DESC LIMIT 5000"
+    )
     fun getBillsByBookAndMonth(bookId: Long, yearMonth: String): Flow<List<Bill>>
 
     @Query("SELECT * FROM bills WHERE yearMonth = :yearMonth AND type = :type AND isDeleted = 0 ORDER BY date DESC, createdAt DESC")
@@ -43,25 +52,25 @@ interface BillDao {
     fun getMonthlyBillCountByBook(bookId: Long, yearMonth: String): Flow<Int>
 
     @Query("SELECT SUM(amount) FROM bills WHERE yearMonth = :yearMonth AND type = 'EXPENSE' AND isDeleted = 0")
-    fun getMonthlyExpense(yearMonth: String): Flow<Double?>
+    fun getMonthlyExpense(yearMonth: String): Flow<Long?>
 
     @Query("SELECT SUM(amount) FROM bills WHERE accountBookId = :bookId AND yearMonth = :yearMonth AND type = 'EXPENSE' AND isDeleted = 0")
-    fun getMonthlyExpenseByBook(bookId: Long, yearMonth: String): Flow<Double?>
+    fun getMonthlyExpenseByBook(bookId: Long, yearMonth: String): Flow<Long?>
 
     @Query("SELECT SUM(amount) FROM bills WHERE yearMonth = :yearMonth AND type = 'INCOME' AND isDeleted = 0")
-    fun getMonthlyIncome(yearMonth: String): Flow<Double?>
+    fun getMonthlyIncome(yearMonth: String): Flow<Long?>
 
     @Query("SELECT SUM(amount) FROM bills WHERE accountBookId = :bookId AND yearMonth = :yearMonth AND type = 'INCOME' AND isDeleted = 0")
-    fun getMonthlyIncomeByBook(bookId: Long, yearMonth: String): Flow<Double?>
+    fun getMonthlyIncomeByBook(bookId: Long, yearMonth: String): Flow<Long?>
 
     @Query("SELECT SUM(amount) FROM bills WHERE type = 'EXPENSE' AND isDeleted = 0")
-    fun getTotalExpense(): Flow<Double?>
+    fun getTotalExpense(): Flow<Long?>
 
     @Query("SELECT SUM(amount) FROM bills WHERE type = 'INCOME' AND isDeleted = 0")
-    fun getTotalIncome(): Flow<Double?>
+    fun getTotalIncome(): Flow<Long?>
 
     @Query("SELECT SUM(amount) FROM bills WHERE yearMonth = :yearMonth AND type = 'EXPENSE' AND paymentMethod = :method AND isDeleted = 0")
-    fun getMonthlyExpenseByPaymentMethod(yearMonth: String, method: String): Flow<Double?>
+    fun getMonthlyExpenseByPaymentMethod(yearMonth: String, method: String): Flow<Long?>
 
     @Query("""
         SELECT category, SUM(amount) as total
@@ -160,6 +169,9 @@ interface BillDao {
     @Query("SELECT * FROM bills WHERE date >= :startDate AND date <= :endDate AND isDeleted = 0 ORDER BY date DESC")
     fun getBillsByDateRange(startDate: Long, endDate: Long): Flow<List<Bill>>
 
+    @Query("SELECT * FROM bills WHERE accountBookId = :bookId AND date >= :startDate AND date <= :endDate AND isDeleted = 0 ORDER BY date DESC")
+    fun getBillsByDateRangeByBook(bookId: Long, startDate: Long, endDate: Long): Flow<List<Bill>>
+
     @Query("SELECT * FROM bills WHERE isDeleted = 1 ORDER BY deletedAt DESC")
     fun getDeletedBills(): Flow<List<Bill>>
 
@@ -171,26 +183,6 @@ interface BillDao {
 
     @Query("SELECT DISTINCT merchant FROM bills WHERE merchant != '' AND isDeleted = 0 ORDER BY merchant ASC")
     fun getAllMerchants(): Flow<List<String>>
-
-    @Query("""
-        SELECT date, SUM(CASE WHEN type = 'EXPENSE' THEN amount ELSE 0 END) as expense,
-               SUM(CASE WHEN type = 'INCOME' THEN amount ELSE 0 END) as income
-        FROM bills
-        WHERE yearMonth = :yearMonth AND isDeleted = 0
-        GROUP BY date / 86400000
-        ORDER BY date ASC
-    """)
-    fun getDailySummary(yearMonth: String): Flow<List<DailySummary>>
-
-    @Query("""
-        SELECT date, SUM(CASE WHEN type = 'EXPENSE' THEN amount ELSE 0 END) as expense,
-               SUM(CASE WHEN type = 'INCOME' THEN amount ELSE 0 END) as income
-        FROM bills
-        WHERE accountBookId = :bookId AND yearMonth = :yearMonth AND isDeleted = 0
-        GROUP BY date / 86400000
-        ORDER BY date ASC
-    """)
-    fun getDailySummaryByBook(bookId: Long, yearMonth: String): Flow<List<DailySummary>>
 
     @Query("""
         SELECT category, SUM(amount) as total, COUNT(*) as count
@@ -211,10 +203,10 @@ interface BillDao {
     fun getYearlyIncomeByCategory(year: String): Flow<List<CategoryTotalWithCount>>
 
     @Query("SELECT SUM(amount) FROM bills WHERE type = 'EXPENSE' AND substr(yearMonth,1,4) = :year AND isDeleted = 0")
-    fun getYearlyExpense(year: String): Flow<Double?>
+    fun getYearlyExpense(year: String): Flow<Long?>
 
     @Query("SELECT SUM(amount) FROM bills WHERE type = 'INCOME' AND substr(yearMonth,1,4) = :year AND isDeleted = 0")
-    fun getYearlyIncome(year: String): Flow<Double?>
+    fun getYearlyIncome(year: String): Flow<Long?>
 
     @Query("""
         SELECT yearMonth, 
@@ -236,7 +228,7 @@ interface BillDao {
     """)
     fun getYearlyIncomeTrend(year: String): Flow<List<MonthTotal>>
 
-    @Query("SELECT bills.* FROM bills LEFT JOIN wallets ON bills.walletId = wallets.id WHERE bills.isDeleted = 0 AND (bills.note LIKE '%' || :query || '%' OR bills.merchant LIKE '%' || :query || '%' OR bills.location LIKE '%' || :query || '%' OR bills.category LIKE '%' || :query || '%' OR CAST(bills.amount AS TEXT) LIKE '%' || :query || '%' OR wallets.name LIKE '%' || :query || '%') ORDER BY bills.date DESC, bills.createdAt DESC")
+    @Query("SELECT bills.* FROM bills LEFT JOIN wallets ON bills.walletId = wallets.id WHERE bills.isDeleted = 0 AND (bills.note LIKE '%' || :query || '%' OR bills.merchant LIKE '%' || :query || '%' OR bills.location LIKE '%' || :query || '%' OR bills.category LIKE '%' || :query || '%' OR printf('%.2f', bills.amount / 100.0) LIKE '%' || :query || '%' OR wallets.name LIKE '%' || :query || '%') ORDER BY bills.date DESC, bills.createdAt DESC LIMIT 50")
     suspend fun search(query: String): List<Bill>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -258,10 +250,10 @@ interface BillDao {
     suspend fun markReimbursed(id: Long, date: Long = System.currentTimeMillis(), now: Long = System.currentTimeMillis())
 
     @Query("SELECT SUM(amount) FROM bills WHERE type = 'EXPENSE' AND date >= :startDate AND date <= :endDate AND isDeleted = 0")
-    fun getWeeklyExpense(startDate: Long, endDate: Long): Flow<Double?>
+    fun getWeeklyExpense(startDate: Long, endDate: Long): Flow<Long?>
 
     @Query("SELECT SUM(amount) FROM bills WHERE type = 'INCOME' AND date >= :startDate AND date <= :endDate AND isDeleted = 0")
-    fun getWeeklyIncome(startDate: Long, endDate: Long): Flow<Double?>
+    fun getWeeklyIncome(startDate: Long, endDate: Long): Flow<Long?>
 
     @Query("SELECT COUNT(*) FROM bills WHERE date >= :startDate AND date <= :endDate AND isDeleted = 0")
     fun getWeeklyBillCount(startDate: Long, endDate: Long): Flow<Int>
@@ -284,24 +276,14 @@ interface BillDao {
     """)
     fun getWeeklyIncomeByCategory(startDate: Long, endDate: Long): Flow<List<CategoryTotal>>
 
-    @Query("""
-        SELECT date, SUM(CASE WHEN type = 'EXPENSE' THEN amount ELSE 0 END) as expense,
-               SUM(CASE WHEN type = 'INCOME' THEN amount ELSE 0 END) as income
-        FROM bills
-        WHERE date >= :startDate AND date <= :endDate AND isDeleted = 0
-        GROUP BY date
-        ORDER BY date ASC
-    """)
-    fun getWeeklyDailySummary(startDate: Long, endDate: Long): Flow<List<DailySummary>>
-
     @Query("DELETE FROM bills")
     suspend fun deleteAll()
 
     @Query("SELECT SUM(amount) FROM bills WHERE type = 'EXPENSE' AND date >= :startDate AND date <= :endDate AND accountBookId = :bookId AND isDeleted = 0")
-    fun getWeeklyExpenseByBook(bookId: Long, startDate: Long, endDate: Long): Flow<Double?>
+    fun getWeeklyExpenseByBook(bookId: Long, startDate: Long, endDate: Long): Flow<Long?>
 
     @Query("SELECT SUM(amount) FROM bills WHERE type = 'INCOME' AND date >= :startDate AND date <= :endDate AND accountBookId = :bookId AND isDeleted = 0")
-    fun getWeeklyIncomeByBook(bookId: Long, startDate: Long, endDate: Long): Flow<Double?>
+    fun getWeeklyIncomeByBook(bookId: Long, startDate: Long, endDate: Long): Flow<Long?>
 
     @Query("SELECT COUNT(*) FROM bills WHERE date >= :startDate AND date <= :endDate AND accountBookId = :bookId AND isDeleted = 0")
     fun getWeeklyBillCountByBook(bookId: Long, startDate: Long, endDate: Long): Flow<Int>
@@ -324,21 +306,11 @@ interface BillDao {
     """)
     fun getWeeklyIncomeByCategoryByBook(bookId: Long, startDate: Long, endDate: Long): Flow<List<CategoryTotal>>
 
-    @Query("""
-        SELECT date, SUM(CASE WHEN type = 'EXPENSE' THEN amount ELSE 0 END) as expense,
-               SUM(CASE WHEN type = 'INCOME' THEN amount ELSE 0 END) as income
-        FROM bills
-        WHERE date >= :startDate AND date <= :endDate AND accountBookId = :bookId AND isDeleted = 0
-        GROUP BY date
-        ORDER BY date ASC
-    """)
-    fun getWeeklyDailySummaryByBook(bookId: Long, startDate: Long, endDate: Long): Flow<List<DailySummary>>
-
     @Query("SELECT SUM(amount) FROM bills WHERE type = 'EXPENSE' AND substr(yearMonth,1,4) = :year AND accountBookId = :bookId AND isDeleted = 0")
-    fun getYearlyExpenseByBook(bookId: Long, year: String): Flow<Double?>
+    fun getYearlyExpenseByBook(bookId: Long, year: String): Flow<Long?>
 
     @Query("SELECT SUM(amount) FROM bills WHERE type = 'INCOME' AND substr(yearMonth,1,4) = :year AND accountBookId = :bookId AND isDeleted = 0")
-    fun getYearlyIncomeByBook(bookId: Long, year: String): Flow<Double?>
+    fun getYearlyIncomeByBook(bookId: Long, year: String): Flow<Long?>
 
     @Query("""
         SELECT yearMonth, 
@@ -379,7 +351,7 @@ interface BillDao {
     fun getYearlyIncomeByCategoryByBook(bookId: Long, year: String): Flow<List<CategoryTotalWithCount>>
 
     @Query("""
-        SELECT category, 0.0 as total, COUNT(*) as count
+        SELECT category, 0 as total, COUNT(*) as count
         FROM bills
         WHERE type = :type AND isDeleted = 0
         GROUP BY category
@@ -411,39 +383,39 @@ interface BillDao {
 
 data class CategoryTotal(
     val category: String,
-    val total: Double
+    val total: Long
 )
 
 data class SubCategoryTotal(
     val subCategory: String,
-    val total: Double
+    val total: Long
 )
 
 data class MonthTotal(
     val yearMonth: String,
-    val total: Double
+    val total: Long
 )
 
 data class PaymentMethodTotal(
     val paymentMethod: String,
-    val total: Double,
+    val total: Long,
     val count: Int
 )
 
 data class MerchantTotal(
     val merchant: String,
-    val total: Double,
+    val total: Long,
     val count: Int
 )
 
 data class CategoryTotalWithCount(
     val category: String,
-    val total: Double,
+    val total: Long,
     val count: Int
 )
 
 data class DailySummary(
     val date: Long,
-    val expense: Double,
-    val income: Double
+    val expense: Long,
+    val income: Long
 )

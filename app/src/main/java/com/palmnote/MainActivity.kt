@@ -16,6 +16,14 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.togetherWith
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
@@ -35,6 +43,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.palmnote.data.datastore.PreferencesManager
 import com.palmnote.data.lock.AppLockManager
 import com.palmnote.ui.lock.AppLockScreen
@@ -46,19 +55,44 @@ import com.palmnote.ui.theme.PalmNoteTheme
 import com.palmnote.ui.theme.PrimaryGreenLight
 import androidx.compose.ui.res.stringResource
 import com.palmnote.R
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.combine
 
+@AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
 
-    private val appContainer get() = PalmNoteApp.container
-    private val appLockManager get() = appContainer.appLockManager
+    /** 延迟锁阈值：离开 app < 该时长回来不锁（豁免 SAF 选择器/系统弹窗/快速切换） */
+    private companion object {
+        const val LOCK_DELAY_MS = 30_000L
+    }
 
+    @javax.inject.Inject
+    lateinit var appLockManager: com.palmnote.data.lock.AppLockManager
+
+    @javax.inject.Inject
+    lateinit var preferencesManager: com.palmnote.data.datastore.PreferencesManager
+
+    private var appBackgroundedAt = 0L
+
+    // 延迟锁：系统 UI（SAF 选择器/权限弹窗/生物识别弹窗）会让主 Activity onStop，
+    // ProcessLifecycleOwner 会误判为切后台而立即锁。改为：离开 <30 秒不锁（豁免系统 UI 与快速切换），
+    // 冷启动仍立即锁（安全兜底）。
     private val lockObserver = LifecycleEventObserver { _, event ->
-        if (event == Lifecycle.Event.ON_STOP) {
-            if (appLockManager.isLockEnabled() && appLockManager.hasPin()) {
-                appLockManager.lock()
+        when (event) {
+            Lifecycle.Event.ON_STOP -> {
+                if (appLockManager.isLockEnabled() && appLockManager.hasPin()) {
+                    appBackgroundedAt = System.currentTimeMillis()
+                }
             }
+            Lifecycle.Event.ON_START -> {
+                val backgroundedAt = appBackgroundedAt
+                appBackgroundedAt = 0L
+                if (backgroundedAt > 0 && System.currentTimeMillis() - backgroundedAt >= LOCK_DELAY_MS) {
+                    appLockManager.lock()
+                }
+            }
+            else -> {}
         }
     }
 
@@ -66,19 +100,27 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
+        // 手机（<600dp 最小宽度）锁竖屏；平板保持横屏适配（NavigationRail）
+        if (resources.configuration.smallestScreenWidthDp < 600) {
+            requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        }
+
         ProcessLifecycleOwner.get().lifecycle.addObserver(lockObserver)
 
-        if (appLockManager.isLockEnabled() && appLockManager.hasPin()) {
+        // 冷启动/进程被杀恢复（非配置变更）时锁定；旋转（配置变更）不锁。
+        // 用 isChangingConfigurations() 而非 savedInstanceState==null：进程被杀后从最近任务恢复
+        // 时 savedInstanceState 可能非 null（系统恢复了 UI 状态），但应重新上锁。
+        if (!isChangingConfigurations() && appLockManager.isLockEnabled() && appLockManager.hasPin()) {
             appLockManager.lock()
         }
 
         setContent {
             val preferences by remember {
                 combine(
-                    appContainer.preferencesManager.themeMode,
-                    appContainer.preferencesManager.switchColor
+                    preferencesManager.themeMode,
+                    preferencesManager.switchColor
                 ) { theme, color -> Pair(theme, color) }
-            }.collectAsState(initial = Pair("SYSTEM", "#2D4A3E"))
+            }.collectAsStateWithLifecycle(initialValue = Pair("SYSTEM", "#2D4A3E"))
             val isDarkTheme = when (preferences.first) {
                 "DARK" -> true
                 "LIGHT" -> false
@@ -87,10 +129,21 @@ class MainActivity : AppCompatActivity() {
             val switchColor = preferences.second.toComposeColor(
                 if (isDarkTheme) Color(0xFF7BC4A0) else Color(0xFF2D4A3E)
             )
-            val lockState by appLockManager.lockState.collectAsState()
-            val privacyAgreed by appContainer.preferencesManager.privacyAgreed.collectAsState(initial = null)
+            val lockState by appLockManager.lockState.collectAsStateWithLifecycle()
+            val privacyAgreed by preferencesManager.privacyAgreed.collectAsStateWithLifecycle(initialValue = null)
             val showPrivacyDialog = privacyAgreed == false
             val scope = rememberCoroutineScope()
+
+            // 应用锁启用时禁止截图/录屏，防止最近任务缩略图泄露财务数据；
+            // 实时跟随开关变化（运行中开启/关闭都立即生效）
+            val appLockEnabled by appLockManager.appLockEnabledFlow().collectAsStateWithLifecycle(initialValue = appLockManager.isLockEnabled())
+            LaunchedEffect(appLockEnabled) {
+                if (appLockEnabled) {
+                    window.addFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
+                } else {
+                    window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
+                }
+            }
 
             PalmNoteTheme(darkTheme = isDarkTheme) {
                 CompositionLocalProvider(LocalSwitchColor provides switchColor) {
@@ -196,7 +249,7 @@ class MainActivity : AppCompatActivity() {
 
                                 Button(
                                     onClick = {
-                                        scope.launch { appContainer.preferencesManager.setPrivacyAgreed(true) }
+                                        scope.launch { preferencesManager.setPrivacyAgreed(true) }
                                     },
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -244,7 +297,8 @@ class MainActivity : AppCompatActivity() {
                     } else {
                         if (Build.VERSION.SDK_INT >= 33) {
                             val notificationPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
-                            var hasRequestedNotification by remember { mutableStateOf(false) }
+                            // rememberSaveable：旋转/重建不重复弹权限请求
+                            var hasRequestedNotification by rememberSaveable { mutableStateOf(false) }
                             val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
                             LaunchedEffect(lifecycleOwner) {
                                 lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
@@ -260,15 +314,29 @@ class MainActivity : AppCompatActivity() {
                             modifier = Modifier.fillMaxSize(),
                             color = MaterialTheme.colorScheme.background
                         ) {
-                            when (lockState) {
-                                is AppLockState.Locked, is AppLockState.NeedSetup -> {
-                                    AppLockScreen(
-                                        appLockManager = appLockManager,
-                                        onUnlocked = { appLockManager.unlock() }
-                                    )
-                                }
-                                is AppLockState.Unlocked -> {
-                                    PalmNoteNavHost()
+                            AnimatedContent(
+                                targetState = lockState,
+                                transitionSpec = {
+                                    // 进入锁屏立即覆盖，不播放动画，避免旧内容短暂可见
+                                    if (targetState is AppLockState.Locked || targetState is AppLockState.NeedSetup) {
+                                        EnterTransition.None togetherWith ExitTransition.None
+                                    } else {
+                                        (fadeIn(tween(240)) + scaleIn(initialScale = 0.97f, animationSpec = tween(240))) togetherWith
+                                            fadeOut(tween(160))
+                                    }
+                                },
+                                label = "appLockTransition"
+                            ) { ls ->
+                                when (ls) {
+                                    is AppLockState.Locked, is AppLockState.NeedSetup -> {
+                                        AppLockScreen(
+                                            appLockManager = appLockManager,
+                                            onUnlocked = { appLockManager.unlock() }
+                                        )
+                                    }
+                                    is AppLockState.Unlocked -> {
+                                        PalmNoteNavHost()
+                                    }
                                 }
                             }
                         }

@@ -1,4 +1,4 @@
-﻿package com.palmnote.data.sync
+package com.palmnote.data.sync
 
 import android.content.ContentResolver
 import android.content.ContentValues
@@ -6,7 +6,7 @@ import android.content.Context
 import android.provider.CalendarContract
 import com.palmnote.R
 import com.palmnote.data.db.entity.Anniversary
-import com.palmnote.data.repository.AnniversaryRepository
+import com.palmnote.domain.repository.AnniversaryRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext

@@ -1,9 +1,12 @@
 package com.palmnote.ui.life
+import android.content.Context
+import javax.inject.Inject
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 
 import android.app.Application
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.palmnote.data.DataCache
 import com.palmnote.R
 import com.palmnote.data.db.entity.LifeItem
 import com.palmnote.data.db.entity.LifeTemplate
@@ -35,8 +38,9 @@ data class LifeUiState(
     val error: String? = null
 )
 
-class LifeViewModel(
-    private val application: Application,
+@HiltViewModel
+class LifeViewModel @Inject constructor(
+    @ApplicationContext private val application: Context,
     private val templateRepo: LifeTemplateRepository,
     private val itemRepo: LifeItemRepository,
     private val goalRepo: GoalRepository,
@@ -48,7 +52,6 @@ class LifeViewModel(
     val uiState: StateFlow<LifeUiState> = _uiState.asStateFlow()
 
     init {
-        DataCache.get<LifeUiState>("life")?.let { _uiState.value = it }
         val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
         val greet = when (hour) { in 0..4 -> application.getString(R.string.greeting_night); in 5..8 -> application.getString(R.string.greeting_morning); in 9..11 -> application.getString(R.string.greeting_forenoon); in 12..13 -> application.getString(R.string.greeting_noon); in 14..17 -> application.getString(R.string.greeting_afternoon); else -> application.getString(R.string.greeting_evening) }
         _uiState.update { it.copy(greeting = greet) }
@@ -70,7 +73,6 @@ class LifeViewModel(
                 val todayEnd = LocalDate.now().plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
                 val minutes = focusRepo.getTodayTotalMinutes(todayStart, todayEnd)
                 _uiState.update { it.copy(todayFocusMinutes = minutes) }
-                DataCache.set("life", _uiState.value)
             } catch (e: Exception) {
                 _uiState.update { it.copy(error = application.getString(R.string.life_data_temp_unavailable)) }
             }
@@ -127,16 +129,14 @@ class LifeViewModel(
                 }
                 if (flows.isEmpty()) {
                     _uiState.update { it.copy(templates = templates, planTemplates = plans, timeTemplates = times, recordTemplates = records, templatePreviewItems = emptyMap(), isLoading = false) }
-                    DataCache.set("life", _uiState.value)
-                    flowOf(emptyMap<Long, List<LifeItem>>())
+                        flowOf(emptyMap<Long, List<LifeItem>>())
                 } else {
                     combine(flows) { arrays ->
                         val merged = mutableMapOf<Long, List<LifeItem>>()
                         arrays.forEach { (id, items) -> merged[id] = items }
                         val todayCount = countTodayTodos(merged)
                         _uiState.update { it.copy(templates = templates, planTemplates = plans, timeTemplates = times, recordTemplates = records, templatePreviewItems = merged, todayTodos = todayCount, isLoading = false) }
-                        DataCache.set("life", _uiState.value)
-                        merged
+                                merged
                     }
                 }
             }

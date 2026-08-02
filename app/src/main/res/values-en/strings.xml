@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_version">v1.2.0</string>
+    <string name="app_version">v1.3.0</string>
     <string name="app_name">Palm Note</string>
     
     <!-- Bottom Navigation -->
@@ -8,18 +8,14 @@
     <string name="nav_asset">Assets</string>
     <string name="nav_bill">Bills</string>
     <string name="nav_life">Life</string>
-    <string name="nav_settings">Mine</string>
     
     <!-- Asset -->
-    <string name="asset_title">Assets</string>
     <string name="asset_add">Add Asset</string>
     <string name="asset_edit">Edit Asset</string>
     <string name="asset_detail">Asset Detail</string>
     <string name="asset_name">Item Name</string>
     <string name="asset_category">Category</string>
     <string name="asset_price">Purchase Price</string>
-    <string name="asset_date">Purchase Date</string>
-    <string name="asset_channel">Purchase Channel</string>
     <string name="asset_location">Storage Location</string>
     <string name="asset_warranty">Warranty Date</string>
     <string name="asset_status">Status</string>
@@ -29,26 +25,15 @@
     <string name="asset_cost_per_use">Per Use</string>
     
     <!-- Asset Status -->
-    <string name="status_active">In Use</string>
-    <string name="status_retired">Retired</string>
-    <string name="status_lost">Lost</string>
-    <string name="status_sold">Sold</string>
     <string name="asset_held">Held</string>
     <string name="asset_away">Away</string>
     <string name="asset_removed">Removed</string>
-    <string name="asset_per_use">Per Use ¥%s</string>
-    <string name="asset_per_use_none">Per Use -</string>
-    <string name="asset_daily_cost">Daily ¥%s</string>
-    <string name="asset_search_hint">Search name, category, description…</string>
     <string name="asset_clear">Clear</string>
     <string name="asset_count">%d items</string>
     <string name="asset_status_filter">Status</string>
     <string name="asset_maintenance_complete_confirm">Complete this maintenance?</string>
     <string name="asset_restore_confirm">Restore to held status?</string>
     <string name="asset_all">All</string>
-    <string name="bill_filter_show_all">Show all</string>
-    <string name="bill_category_more_count">+%d</string>
-    <string name="bill_filter_show_less">Show less</string>
     <string name="asset_all_categories">All Categories</string>
     <string name="asset_sort_recent">Recent</string>
     <string name="asset_sort_name">Name</string>
@@ -90,7 +75,6 @@
     <string name="bill_category">Category</string>
     <string name="bill_date">Date</string>
     <string name="bill_note">Notes</string>
-    <string name="bill_trend">Income &amp; Expense Trend</string>
     <string name="bill_budget">Budget Management</string>
     <string name="bill_switch_book">Switch Book</string>
     <string name="bill_book_list">Book List</string>
@@ -99,20 +83,11 @@
     <string name="bill_all_books">All Books</string>
     <string name="bill_report">Report</string>
     <string name="bill_budget_tab">Budget</string>
-    <string name="bill_monthly_expense">Monthly Expense</string>
-    <string name="bill_monthly_income">Monthly Income</string>
     <string name="bill_balance">Balance</string>
-    <string name="bill_balance_amount">Balance %s</string>
-    <string name="bill_budget_usage">Budget Usage</string>
-    <string name="bill_remaining">Remaining</string>
-    <string name="bill_over_budget">Over Budget</string>
-    <string name="bill_remaining_amount">Remaining %s</string>
-    <string name="bill_over_budget_amount">Over Budget %s</string>
     <string name="bill_calendar">Calendar</string>
     <string name="bill_collapse">Collapse</string>
     <string name="bill_expand">Expand</string>
     <string name="bill_all">All</string>
-    <string name="bill_expense_category">Expense by Category</string>
     <string name="bill_detail">Details</string>
     <string name="bill_count">%d entries</string>
     <string name="bill_no_records">No Records</string>
@@ -125,17 +100,14 @@
     <!-- Settings -->
     <string name="settings_title">Mine</string>
     <string name="settings_appearance">Appearance</string>
-    <string name="settings_theme_system">Follow System</string>
     <string name="settings_theme_light">Light Mode</string>
     <string name="settings_theme_dark">Dark Mode</string>
     <string name="settings_general">General</string>
     <string name="settings_data">Data Management</string>
     <string name="settings_about">About Palm Note</string>
-    <string name="settings_backup">Backup Data</string>
     <string name="settings_export">Export Data</string>
     <string name="settings_recycle">Recycle Bin</string>
     <string name="settings_category">Category Management</string>
-    <string name="settings_data_overview">Data Overview</string>
     <string name="settings_items">Items</string>
     <string name="settings_goals">Goals</string>
     <string name="settings_anniversaries">Anniversaries</string>
@@ -143,7 +115,6 @@
     <string name="settings_profile_edit">Edit Profile</string>
     <string name="settings_profile_nickname">Nickname</string>
     <string name="settings_profile_signature">Signature</string>
-    <string name="settings_profile_avatar">Avatar</string>
     <string name="settings_profile_change_avatar">Change</string>
     <string name="settings_profile_reset_avatar">Reset</string>
     <string name="settings_dark_mode">Dark Mode</string>
@@ -154,11 +125,8 @@
     <string name="settings_switch_color_subtitle">Customize global switch button color</string>
     <string name="settings_follow_system">Follow System</string>
     <string name="settings_default_start_page">Default Start Page</string>
-    <string name="settings_default_start_page_subtitle">Page shown when app opens</string>
     <string name="settings_default_bill_type">Default Bill Type</string>
-    <string name="settings_default_bill_type_subtitle">Default type when opening bill page</string>
     <string name="settings_budget_reminder">Budget Reminder</string>
-    <string name="settings_budget_reminder_subtitle">Remind when budget reaches 80%</string>
     <string name="settings_calendar_sync">Sync Anniversaries to Calendar</string>
     <string name="settings_calendar_sync_subtitle">Sync anniversaries to system calendar</string>
     <string name="settings_app_lock">App Lock</string>
@@ -191,7 +159,6 @@
     <string name="settings_import_data_subtitle">Restore data from backup ZIP</string>
     <string name="settings_data_backup">Data Backup</string>
     <string name="settings_data_backup_subtitle">Backup and restore complete data</string>
-    <string name="settings_storage_cleanup">Storage Cleanup</string>
     <string name="settings_clear_data">Clear Data</string>
     <string name="settings_clear_data_subtitle">Delete personal data, not recoverable</string>
     <string name="settings_clear_cache">Clear Cache</string>
@@ -203,7 +170,6 @@
     <string name="settings_preset_color">Preset Colors</string>
     <string name="settings_custom_color">Custom Color</string>
     <string name="settings_hex_color">HEX Color</string>
-    <string name="settings_hex_color_error">Please enter a valid 6-digit color code</string>
     <string name="settings_color_done">Done</string>
     <string name="settings_select_start_page">Default Start Page</string>
     <string name="settings_select_bill_type">Default Bill Type</string>
@@ -218,11 +184,6 @@
     <string name="settings_calendar_permission_text">Syncing anniversaries to the system calendar requires calendar access. Palm Note will not read or modify your other calendar events.</string>
     <string name="settings_calendar_permission_action">Grant Permission</string>
     <string name="settings_calendar_permission_denied">Calendar permission was permanently denied. Please go to system settings to grant it manually.</string>
-    <string name="settings_app_lock_pin_title">Set PIN Code</string>
-    <string name="settings_app_lock_pin_text">Please enter a 6-digit PIN code</string>
-    <string name="settings_app_lock_pin_label">PIN Code</string>
-    <string name="settings_app_lock_pin_confirm">Please enter a complete 6-digit PIN code</string>
-    <string name="settings_app_lock_pin_ok">Confirm</string>
     <string name="settings_birthday_advance_title">Birthday Advance Days</string>
     <string name="settings_anniversary_advance_title">Anniversary Advance Days</string>
     <string name="settings_navigate_back">Back</string>
@@ -240,9 +201,14 @@
     <string name="confirm">Confirm</string>
     <string name="search">Search</string>
     <string name="empty_title">No Data</string>
-    <string name="empty_subtitle">Tap button to add</string>
     <string name="done">Done</string>
     <string name="back">Back</string>
+    <string name="create_new">Create</string>
+    <string name="backup_show_password">Show password</string>
+    <string name="backup_hide_password">Hide password</string>
+    <string name="bill_import_error_too_large">File too large to import (max 30MB)</string>
+    <string name="backup_in_folder">Backups in folder:</string>
+    <string name="backup_file">Backup</string>
     <string name="more">More</string>
     <string name="balance">Balance</string>
     <string name="merchant">Merchant</string>
@@ -260,9 +226,6 @@
     <string name="bill_filter_amount_min">Min Amount</string>
     <string name="bill_filter_amount_max">Max Amount</string>
     <string name="bill_filter_category">Category</string>
-    <string name="bill_filter_category_all">All Categories</string>
-    <string name="bill_filter_payment_method">Payment Method</string>
-    <string name="bill_filter_payment_method_all">All Methods</string>
     <string name="bill_filter_apply">Apply Filter</string>
     <string name="bill_filter_clear">Clear Filter</string>
     
@@ -317,10 +280,6 @@
     
     <!-- Life Module -->
     <string name="life_title">Life</string>
-    <string name="life_search">Search life items</string>
-    <string name="life_plan">Plans</string>
-    <string name="life_time">Time</string>
-    <string name="life_record">Records</string>
     <string name="life_saving">Savings Plan</string>
     <string name="life_shopping">Shopping Plan</string>
     <string name="life_todo">To-Do</string>
@@ -331,22 +290,10 @@
     <string name="life_focus">Focus</string>
     <string name="life_countdown">Countdown</string>
     <string name="life_birthday">Birthday</string>
-    <string name="life_empty_title">No Items</string>
-    <string name="life_empty_subtitle">Tap + in the top right to create your first record</string>
-    <string name="life_empty_action">Create</string>
     <string name="life_ongoing">Ongoing</string>
-    <string name="life_completed">Completed</string>
-    <string name="life_archived">Archived</string>
     <string name="life_delete_confirm">Confirm delete?</string>
-    <string name="life_delete_hint">You can find it in the recycle bin after deletion</string>
-    <string name="life_archive_success">Archived</string>
-    <string name="life_giveup_confirm">Confirm give up?</string>
-    <string name="life_giveup_hint">Current focus progress will be lost</string>
-    <string name="life_giveup">Give Up</string>
     <string name="life_continue">Continue Focus</string>
     <string name="life_deposit">Deposit</string>
-    <string name="life_amount_hint">Enter amount</string>
-    <string name="life_unit_times">times</string>
     
     <!-- Life Module - Additional -->
     <string name="life_error_load_failed">Load failed</string>
@@ -355,18 +302,11 @@
     <string name="life_error_create_failed">Create failed</string>
     <string name="life_error_checkin_failed">Check-in failed</string>
     <string name="life_error_operation_failed">Operation failed</string>
-    <string name="life_data_init_error">Data initialization error, sample data skipped</string>
     <string name="life_data_load_error">Data loading error, please try again later</string>
     <string name="life_data_temp_unavailable">Focus data temporarily unavailable, pull to refresh</string>
     
     <!-- Life Screen -->
-    <string name="life_screen_welcome">Welcome to PalmNote Life</string>
-    <string name="life_screen_start_hint">Choose one to start your life recording</string>
-    <string name="life_screen_write_journal">Write Journal</string>
-    <string name="life_screen_start_checkin">Start Check-in</string>
-    <string name="life_screen_deposit">Deposit</string>
     <string name="life_screen_retry">Retry</string>
-    <string name="life_screen_search_hint">Search life items…</string>
     <string name="life_empty_here">Nothing here yet</string>
     <string name="life_empty_hint">Tap + to start recording your life</string>
     <string name="life_screen_search_template_not_found">No template matching "%s"</string>
@@ -405,20 +345,16 @@
     <string name="life_cancel">Cancel</string>
     <string name="life_back">Back</string>
     <string name="life_new_create">New</string>
-    <string name="life_search_placeholder">Search life items…</string>
     <string name="life_discard">Discard</string>
     
     <!-- Life - Detail Screens -->
     <string name="life_confirm_delete_record">Confirm delete this record?</string>
-    <string name="life_confirm_delete_this">Confirm delete this record?</string>
-    <string name="life_confirm_delete_this_item">Confirm delete this record?</string>
     <string name="life_confirm_discard">Discard changes?</string>
     <string name="life_confirm_discard_hint">You have unsaved changes that will be lost.</string>
     <string name="life_continue_editing">Continue Editing</string>
     <string name="life_edit_title">Edit %s</string>
     <string name="life_create_title">New %s</string>
     <string name="life_input_title">Enter title</string>
-    <string name="life_save_failed">Save failed</string>
     
     <string name="life_item_detail_delete_confirm">Delete?</string>
     <string name="life_item_detail_delete_hint">You can find it in the recycle bin after deletion</string>
@@ -507,7 +443,6 @@
     <string name="life_todo_quad_important">Important</string>
     <string name="life_todo_quad_urgent">Urgent</string>
     <string name="life_todo_quad_normal">Neither</string>
-    <string name="life_todo_calendar_dev">Calendar view in development</string>
     <string name="life_todo_empty">None</string>
     
     <string name="life_journal_title">Journal</string>
@@ -532,7 +467,6 @@
     <string name="life_saving_deleted">Deleted</string>
     <string name="life_saving_undo">Undo</string>
     
-    <string name="life_saving_search_hint">Search savings plans…</string>
     
     <!-- Life - Habit -->
     <string name="life_habit_checkin">Check in</string>
@@ -571,16 +505,10 @@
     <!-- Life - Shopping Kanban -->
     
     <!-- Life - Subscription -->
-    <string name="life_subscription_tab_active">Active</string>
-    <string name="life_subscription_tab_expired">Expired</string>
     
     <!-- Life - Travel -->
-    <string name="life_travel_tab_planning">Planning</string>
-    <string name="life_travel_tab_completed">Completed</string>
     
     <!-- Life - Todo -->
-    <string name="life_todo_tab_active">Active</string>
-    <string name="life_todo_tab_completed">Completed</string>
     
     <!-- Life - Report -->
     <string name="life_report_tab_weekly">Weekly</string>
@@ -602,9 +530,6 @@
     
     <!-- Life - Mood -->
     <string name="life_mood_save">Save</string>
-    <string name="life_mood_quick_save">Save</string>
-    <string name="life_mood_quick_discard">Discard</string>
-    <string name="life_mood_delete_confirm">Delete this mood record?</string>
     <string name="life_mood_happy">Happy</string>
     <string name="life_mood_normal">Calm</string>
     <string name="life_mood_upset">Down</string>
@@ -622,7 +547,6 @@
     <string name="life_mood_content_hint">Write something... (optional)</string>
     
     <!-- Life - Journal -->
-    <string name="life_journal_delete_confirm">Delete this journal entry?</string>
     
     <!-- Life - Deposit Sheet -->
     <string name="life_deposit_title">Deposit</string>
@@ -632,10 +556,8 @@
     <string name="life_delete_confirm_default">Confirm delete this record?</string>
     
     <!-- Life - Dynamic Form -->
-    <string name="life_dynamic_discard">Discard</string>
     
     <!-- Life - Item Detail -->
-    <string name="life_item_delete_confirm">Confirm delete this record?</string>
     
     <!-- Life - Template Create -->
     <string name="life_template_save_error">Save failed, content saved to draft</string>
@@ -646,7 +568,6 @@
     <string name="life_item_limit_info">This template has %d records, consider archiving old items</string>
     
     <!-- Life - Accu Days related -->
-    <string name="life_accu_days_unit">days</string>
     
     <!-- Bill Import Errors -->
     <string name="bill_import_error_read_file">Unable to read file</string>
@@ -705,9 +626,6 @@
     <string name="asset_acquisition_date">Acquisition Date</string>
     <string name="asset_purchase_channel">Purchase Channel</string>
     <string name="asset_room">Room</string>
-    <string name="asset_room_hint">Enter room location</string>
-    <string name="asset_show_advanced_options">Show Advanced Options</string>
-    <string name="asset_hide_advanced_options">Hide Advanced Options</string>
     <string name="asset_value_info">Value Info</string>
     <string name="asset_current_value">Current Value</string>
     <string name="asset_current_value_hint">Enter current value</string>
@@ -831,7 +749,6 @@
     <string name="asset_upload">Upload</string>
     <string name="asset_image_hint">First image is the cover, up to 4 images</string>
     <string name="asset_input_name_hint">Enter item name</string>
-    <string name="asset_total_count_format">%d items</string>
     <string name="asset_custom_acquisition">Custom acquisition</string>
     <string name="asset_valuation_optional">Estimated value (optional)</string>
     <string name="asset_custom_location_hint">Enter custom location</string>
@@ -877,14 +794,6 @@
     <string name="calendar_event_person_format">Person: %s</string>
     
     <!-- Field Validation -->
-    <string name="field_error_required">%s is required</string>
-    <string name="field_error_invalid_number">Please enter a valid number</string>
-    <string name="field_error_min_value">Minimum: %d</string>
-    <string name="field_error_max_value">Maximum: %d</string>
-    <string name="field_error_invalid_percent">Please enter a valid percentage</string>
-    <string name="field_error_percent_range">Range 0-100</string>
-    <string name="field_error_invalid_rating">Invalid rating</string>
-    <string name="field_error_rating_range">Range 0-10</string>
     
     <!-- Date Format -->
     <string name="date_format_display">MMM dd</string>
@@ -989,20 +898,13 @@
     <string name="app_lock_settings_title">App Lock Settings</string>
     <string name="app_lock_change_pin_title">Change PIN</string>
     <string name="app_lock_change_pin_subtitle">Change app lock password</string>
-    <string name="app_lock_forgot_pin_title_settings">Forgot Password</string>
-    <string name="app_lock_forgot_pin_subtitle">Clear app data to reset password</string>
-    <string name="app_lock_forgot_pin_confirm_settings">Clear all app data? This will delete all local data and cannot be undone.</string>
-    <string name="app_lock_forgot_pin_action_settings">Clear App Data</string>
     <string name="app_lock_biometric_enable">Enable Biometric</string>
     <string name="app_lock_biometric_enable_subtitle">Use fingerprint or face to unlock quickly</string>
-    <string name="app_lock_biometric_enabled">Enabled</string>
-    <string name="app_lock_biometric_disabled">Disabled</string>
     
     <!-- Reminder Time -->
     <string name="settings_reminder_time">Reminder Time</string>
     <string name="settings_reminder_time_subtitle">Set specific time for daily reminder</string>
     <string name="settings_reminder_time_bill_subtitle">Set specific time for bookkeeping reminder</string>
-    <string name="settings_reminder_time_format" formatted="false">%02d:%02d</string>
     <string name="settings_select_reminder_time">Select Reminder Time</string>
     
     <!-- Default Book -->
@@ -1018,8 +920,6 @@
     <string name="bill_payment_method">Payment Method</string>
     <string name="bill_sub_category">Sub Category</string>
     <string name="bill_location">Location</string>
-    <string name="bill_filter_applied">Filter applied</string>
-    <string name="bill_filter_cleared">Filter cleared</string>
     <string name="bill_tags">Tags</string>
     <string name="bill_attachments">Attachments</string>
     <string name="bill_reimbursement_status">Reimbursement Status</string>
@@ -1274,21 +1174,8 @@
     <!-- Category Screen -->
     <string name="category_manage_title">Category Management</string>
     <string name="category_manage_add">Add Category</string>
-    <string name="category_manage_count_format">%d categories</string>
-    <string name="category_manage_system_default">System Default</string>
     <string name="category_manage_delete_title">Delete Category</string>
     <string name="category_manage_delete_confirm">Are you sure you want to delete \"%s\"? Records under this category will not be deleted.</string>
-    <string name="category_manage_enabled">Enabled</string>
-    <string name="category_manage_disabled">Disabled</string>
-    <string name="category_manage_default">Default</string>
-    <string name="category_manage_system_category">System Category</string>
-    <string name="category_manage_enable">Enable</string>
-    <string name="category_manage_disable">Disable</string>
-    <string name="category_manage_edit">Edit Category</string>
-    <string name="category_manage_name">Category Name</string>
-    <string name="category_manage_icon">Icon</string>
-    <string name="category_manage_color">Color</string>
-    <string name="category_manage_name_required">Please enter a category name</string>
     <string name="category_manage_empty_title">No categories yet</string>
     <string name="category_manage_empty_hint">Tap + to add your first category</string>
     
@@ -1316,7 +1203,6 @@
     <string name="recycle_bin_empty">Recycle Bin Empty</string>
     <string name="recycle_bin_empty_hint">Deleted records will appear here and be auto-cleared after 30 days</string>
     <string name="recycle_bin_restore">Restore</string>
-    <string name="recycle_bin_delete">Delete</string>
     <string name="recycle_tab_assets">Assets</string>
     <string name="recycle_tab_bills">Bills</string>
     <string name="recycle_tab_goals">Goals</string>
@@ -1344,9 +1230,6 @@
     <string name="backup_password">Enter password</string>
     <string name="backup_backing_up">Backing up…</string>
     <string name="backup_now">Backup Now</string>
-    <string name="backup_existing">Existing Backups</string>
-    <string name="backup_empty">No Backups</string>
-    <string name="backup_empty_hint">Tap the button above to create your first backup</string>
     <string name="backup_restore_title">Restore Backup</string>
     <string name="backup_restore_desc">Select a .palmnote backup file to restore data. The app will restart automatically after restore.</string>
     <string name="backup_restore_from_file">Select backup file to restore</string>
@@ -1354,7 +1237,6 @@
     <string name="backup_restore_confirm">Restore will overwrite all current data. This action cannot be undone. Continue?</string>
     <string name="backup_restore">Restore</string>
 
-    <string name="backup_delete">Delete</string>
     
     <!-- Common Components -->
     <string name="common_more">More</string>
@@ -1431,7 +1313,6 @@
     <string name="settings_cache_clear_failed">Clear failed: %s</string>
     <string name="close">Close</string>
     <string name="settings_appearance_subtitle">Theme, language, accent color</string>
-    <string name="settings_general_subtitle">Start page, bill type, budget reminder</string>
     <string name="settings_reminder_subtitle">Daily, bill, birthday reminders</string>
     <string name="settings_data_subtitle">Export, import, recycle bin</string>
     <string name="life_saving_title">Saving Plans</string>
@@ -1470,8 +1351,6 @@
     <string name="life_empty_mood_subtitle">Record how you feel right now</string>
     <string name="life_empty_journal_title">No journal yet</string>
     <string name="life_empty_journal_subtitle">Write about what happened today</string>
-    <string name="life_empty_focus_title">No focus records yet</string>
-    <string name="life_empty_focus_subtitle">Start a focused session</string>
     <string name="life_empty_report_title">No report data yet</string>
     <string name="life_empty_report_subtitle">Reports are generated automatically as data accumulates</string>
     <string name="life_empty_default_title">No data</string>
@@ -1487,11 +1366,7 @@
     <string name="privacy_dialog_text">Thank you for using PalmNote. Before proceeding, please read and agree to our User Agreement and Privacy Policy. We collect necessary data to provide app functionality and will not share your personal information without authorization.</string>
     <string name="privacy_dialog_agree">Agree</string>
     <string name="privacy_dialog_disagree">Disagree</string>
-    <string name="privacy_dialog_view_policy">View Privacy Policy</string>
-    <string name="privacy_dialog_view_terms">View Terms of Service</string>
     <string name="privacy_dialog_view_links">Full User Agreement and Privacy Policy can be viewed in the About page.</string>
-    <string name="privacy_policy_content">PalmNote respects and protects user privacy. We do not collect any personal information. All data is stored locally on your device. We do not share your data with any third parties. Third-party SDKs (e.g., Coil image loader) may be used to provide core functionality and do not collect personal information. If you have any questions, please contact us through the channels provided in the app.</string>
-    <string name="terms_content">Welcome to PalmNote. This app is a local record-keeping tool. All data is stored locally on your device. Users should use this app responsibly and not engage in illegal activities. The app is provided "as is" without any warranty. To the maximum extent permitted by law, the developer shall not be liable for any direct or indirect damages arising from the use of this app. We reserve the right to modify these terms at any time.</string>
 
     <string name="field_select_time">Select Time</string>
     <string name="field_enabled">Enabled</string>
@@ -1635,45 +1510,10 @@
     <string name="life_focus_preview_today">Today %d min</string>
     
     <!-- Life Template Field Labels -->
-    <string name="life_field_target_amount">Target Amount</string>
-    <string name="life_field_saved_amount">Saved Amount</string>
-    <string name="life_field_target_date">Target Date</string>
-    <string name="life_field_budget_amount">Budget Amount</string>
-    <string name="life_field_spent">Spent</string>
-    <string name="life_field_store">Store</string>
-    <string name="life_field_shopping_item">Shopping Item</string>
-    <string name="life_field_destination">Destination</string>
-    <string name="life_field_start_date">Start Date</string>
-    <string name="life_field_return_date">Return Date</string>
-    <string name="life_field_budget">Budget</string>
-    <string name="life_field_total_pages">Total Pages</string>
-    <string name="life_field_current_pages">Current Pages</string>
-    <string name="life_field_author">Author</string>
-    <string name="life_field_course_name">Course Name</string>
-    <string name="life_field_total_lessons">Total Lessons</string>
-    <string name="life_field_completed_lessons">Completed Lessons</string>
-    <string name="life_field_reminder">Reminder</string>
-    <string name="life_field_start_date_label">Start Date</string>
-    <string name="life_field_date">Date</string>
-    <string name="life_field_notes">Notes</string>
-    <string name="life_field_target_days">Target Days</string>
-    <string name="life_field_streak_days">Streak Days</string>
-    <string name="life_field_billing_amount">Billing Amount</string>
-    <string name="life_field_billing_cycle">Billing Cycle</string>
-    <string name="life_field_billing_day">Billing Day</string>
-    <string name="life_field_next_billing">Next Billing</string>
     
     <!-- Life Template Field Units -->
-    <string name="life_unit_currency">¥</string>
-    <string name="life_unit_pages">pages</string>
-    <string name="life_unit_days">days</string>
-    <string name="life_unit_lessons">lessons</string>
-    <string name="life_unit_number">#</string>
     
     <!-- Life Template Status Labels -->
-    <string name="life_status_ongoing">Ongoing</string>
-    <string name="life_status_completed">Completed</string>
-    <string name="life_status_archived">Archived</string>
     
     <!-- CSV Export/Import -->
     <string name="export_error_create_file">Unable to create file</string>
@@ -1761,4 +1601,123 @@
     <string name="cat_save">Save</string>
     <string name="transfer_from_required">Please select the source account</string>
     <string name="transfer_to_required">Please select the destination account</string>
+    <string name="currency_symbol">¥</string>
+    <string name="budget_invalid_amount">Enter a valid amount</string>
+    <string name="back_to_top">Back to top</string>
+    <string name="countdown_clear_expired_title">Clear expired countdowns</string>
+    <string name="countdown_clear_expired_confirm">Clear expired countdowns?</string>
+    <string name="app_lock_biometric_verify_fail">Biometric verification failed</string>
+    <string name="app_lock_disabled_toast">App lock disabled</string>
+    <string name="app_lock_forgot_pin_confirm_lock">A forgotten PIN cannot be recovered. Your only option is to wipe local data to reset. This deletes all bills, life records, and settings locally, and cannot be undone. Continue?</string>
+    <string name="app_lock_forgot_pin_action_lock">Wipe and reset</string>
+    <string name="app_lock_locked_out">Too many attempts, try again later</string>
+    <string name="settings_language_english">English</string>
+    <string name="category_action_create">Create</string>
+    <string name="category_action_edit">Edit</string>
+    <string name="category_action_rename">Rename</string>
+    <string name="category_adj_edit">editing category</string>
+    <string name="category_adj_new">creating category</string>
+    <string name="category_adj_preset">preset categories</string>
+    <string name="category_confirm_action">Confirm %1$s</string>
+    <string name="category_count_bills">%1$d bills</string>
+    <string name="category_count_both">%1$d bills, %2$d items</string>
+    <string name="category_count_items">%1$d items</string>
+    <string name="category_delete_all">Delete all</string>
+    <string name="category_delete_all_desc">Delete category and all related records</string>
+    <string name="category_delete_related_hint">Deleting a category also deletes all its records. This cannot be undone.</string>
+    <string name="category_delete_title">Delete category</string>
+    <string name="category_keep_records">Keep records</string>
+    <string name="category_keep_records_desc">Delete category only, keep its records</string>
+    <string name="category_match_hint">Match %1$s to %2$s</string>
+    <string name="category_match_title_create">Create match rules for %1$s</string>
+    <string name="category_match_title_edit">Edit match rules for %1$s</string>
+    <string name="category_match_title_preset">Set preset match rules for %1$s</string>
+
+    <!-- Password Vault -->
+    <string name="settings_vault">Password Vault</string>
+    <string name="settings_vault_subtitle">Manage saved passwords</string>
+    <string name="settings_more">More</string>
+    <string name="settings_confirm">OK</string>
+    <string name="vault_title">Password Vault</string>
+    <string name="vault_unlock_title">Enter vault password</string>
+    <string name="vault_setup_title">Set vault password</string>
+    <string name="vault_unlock_hint">Enter your 6-digit PIN to unlock</string>
+    <string name="vault_setup_hint_1">Set a unique 6-digit PIN</string>
+    <string name="vault_setup_hint_2">Re-enter to confirm</string>
+    <string name="vault_locked_out_hint">Too many attempts. Please try again later.</string>
+    <string name="vault_locked_out">Locked. Retry in %1$d seconds.</string>
+    <string name="vault_locked_out_short">Too many attempts. Please try again later.</string>
+    <string name="vault_pin_wrong">Wrong password</string>
+    <string name="vault_pin_mismatch">PINs do not match</string>
+    <string name="vault_old_pin">Enter old PIN</string>
+    <string name="vault_new_pin">Enter new PIN</string>
+    <string name="vault_old_pin_hint">Enter your current PIN to verify</string>
+    <string name="vault_new_pin_hint">Enter a new 6-digit PIN</string>
+    <string name="vault_pin_changed">PIN changed successfully</string>
+    <string name="vault_old_pin_wrong">Wrong old PIN</string>
+    <string name="vault_search">Search</string>
+    <string name="vault_search_hint">Search title, username or URL</string>
+    <string name="vault_all_categories">All categories</string>
+    <string name="vault_add">Add</string>
+    <string name="vault_copy">Copy</string>
+    <string name="vault_copied">Copied</string>
+    <string name="vault_copy_password">Copy password</string>
+    <string name="vault_updated_at">Updated %1$s</string>
+    <string name="vault_empty">No entries yet</string>
+    <string name="vault_empty_hint">Tap + to add your first entry</string>
+    <string name="vault_no_result">No matching entries</string>
+    <string name="vault_edit">Edit</string>
+    <string name="vault_delete">Delete</string>
+    <string name="vault_delete_title">Delete entry</string>
+    <string name="vault_delete_confirm">Delete this entry? This cannot be undone.</string>
+    <string name="vault_deleted">Deleted</string>
+    <string name="vault_deleted_hint">This entry has been removed from the vault</string>
+    <string name="vault_field_title">Title</string>
+    <string name="vault_field_username">Username</string>
+    <string name="vault_field_password">Password</string>
+    <string name="vault_field_url">Website</string>
+    <string name="vault_field_notes">Notes</string>
+    <string name="vault_field_category">Category: %1$s</string>
+    <string name="vault_field_category_input">Category</string>
+    <string name="vault_toggle_visibility">Show/hide password</string>
+    <string name="vault_edit_title">Edit entry</string>
+    <string name="vault_add_title">Add entry</string>
+    <string name="vault_error_title_required">Title is required</string>
+    <string name="vault_error_password_required">Password is required</string>
+    <string name="vault_error_save_failed">Save failed. Please try again.</string>
+    <string name="vault_generator_title">Password generator</string>
+    <string name="vault_generator_empty">Select at least one character type</string>
+    <string name="vault_generator_strength">Strength: %1$s (~%2$d bits)</string>
+    <string name="vault_generator_length">Length</string>
+    <string name="vault_generator_uppercase">Uppercase</string>
+    <string name="vault_generator_lowercase">Lowercase</string>
+    <string name="vault_generator_digits">Digits</string>
+    <string name="vault_generator_symbols">Symbols</string>
+    <string name="vault_generator_regenerate">Regenerate</string>
+    <string name="vault_generator_use">Use</string>
+    <string name="vault_strength_weak">Weak</string>
+    <string name="vault_strength_medium">Medium</string>
+    <string name="vault_strength_strong">Strong</string>
+    <string name="vault_strength_very_strong">Very strong</string>
+    <string name="dashboard_card_vault">Password Vault</string>
+    <string name="vault_card_count">%1$d entries</string>
+    <string name="vault_card_empty">Tap to add your first entry</string>
+    <string name="vault_card_more">View all →</string>
+    <string name="vault_settings_clipboard">Clipboard auto-clear</string>
+    <string name="vault_settings_clipboard_value">Current: %1$d s</string>
+    <string name="vault_settings_clipboard_option">%1$d seconds</string>
+    <string name="vault_settings_clipboard_selected">Current</string>
+    <string name="vault_settings_require_auth">Require unlock to enter</string>
+    <string name="vault_settings_require_auth_hint">When off, background switching no longer locks</string>
+    <string name="vault_settings_count">Encrypted entries</string>
+    <string name="vault_settings_count_value">%1$d</string>
+    <string name="vault_settings_change_pin">Change master PIN</string>
+    <string name="vault_settings_change_pin_hint">Update the vault unlock PIN</string>
+    <string name="vault_settings_reset">Reset vault</string>
+    <string name="vault_settings_reset_hint">Delete all entries and reset the PIN</string>
+    <string name="vault_reset_title">Reset vault</string>
+    <string name="vault_reset_confirm">This will delete all password entries and clear the unlock PIN. This cannot be undone. Continue?</string>
+    <string name="vault_reset_action">Reset</string>
+    <string name="vault_reset_done_title">Reset complete</string>
+    <string name="vault_reset_done_hint">The vault has been reset. A new unlock PIN will be required on next entry.</string>
 </resources>

@@ -1,171 +1,185 @@
-# PalmNote
+# PalmNote 掌记
 
-> **English** | [中文](README.zh-CN.md)
+> **中文** | [English](README.en.md)
 
 [![License](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
-![Kotlin](https://img.shields.io/badge/Kotlin-2.0.21-purple.svg)
+![Kotlin](https://img.shields.io/badge/Kotlin-2.2.20-purple.svg)
 ![API](https://img.shields.io/badge/minSdk-26-brightgreen.svg)
-![API](https://img.shields.io/badge/targetSdk-35-orange.svg)
+![API](https://img.shields.io/badge/targetSdk-34-orange.svg)
 [![Release](https://img.shields.io/github/v/release/PickGear/PalmNote)](https://github.com/PickGear/PalmNote/releases)
 [![CI](https://github.com/PickGear/PalmNote/actions/workflows/ci.yml/badge.svg)](https://github.com/PickGear/PalmNote/actions/workflows/ci.yml)
 
-> **⚠️ Disclaimer:** PalmNote is under active development. You may encounter bugs or incomplete features. Feedback and contributions are welcome!
+> **⚠️ 声明：** PalmNote 正在活跃开发中，可能存在问题和未完善的功能，欢迎反馈与建议！
 
-A fully local-first life tracking tool that combines expense tracking, asset management, and life planning into one app. No registration required — your data is stored locally, all features work offline.
+一款**纯本地优先**的生活记录应用，集成记账、资产管理、生活规划与记录、密码本于一体。无需注册，数据全部存储于本地，无需联网即可使用全部功能。
 
-## Screenshots
+## 截图
 
 <table>
   <tr>
-    <td align="center"><b>Dashboard</b></td>
-    <td align="center"><b>Assets</b></td>
-    <td align="center"><b>Bills</b></td>
+    <td align="center"><b>首页</b></td>
+    <td align="center"><b>物品管理</b></td>
+    <td align="center"><b>记账</b></td>
   </tr>
   <tr>
-    <td><img src="screenshots/en/dashboard.jpg" width="240"></td>
-    <td><img src="screenshots/en/asset_list.jpg" width="240"></td>
-    <td><img src="screenshots/en/bill_calendar.jpg" width="240"></td>
+    <td><img src="screenshots/zh/dashboard.jpg" width="240"></td>
+    <td><img src="screenshots/zh/asset_list.jpg" width="240"></td>
+    <td><img src="screenshots/zh/bill_calendar.jpg" width="240"></td>
   </tr>
   <tr>
-    <td align="center"><b>Reports</b></td>
-    <td align="center"><b>Life</b></td>
-    <td align="center"><b>Settings</b></td>
+    <td align="center"><b>统计报表</b></td>
+    <td align="center"><b>生活模块</b></td>
+    <td align="center"><b>设置</b></td>
   </tr>
   <tr>
-    <td><img src="screenshots/en/bill_stats.jpg" width="240"></td>
-    <td><img src="screenshots/en/life.jpg" width="240"></td>
-    <td><img src="screenshots/en/settings.jpg" width="240"></td>
+    <td><img src="screenshots/zh/bill_stats.jpg" width="240"></td>
+    <td><img src="screenshots/zh/life.jpg" width="240"></td>
+    <td><img src="screenshots/zh/settings.jpg" width="240"></td>
   </tr>
 </table>
 
-## Download
+## 下载
 
-[![GitHub Release](https://img.shields.io/github/v/release/PickGear/PalmNote?label=Latest)](https://github.com/PickGear/PalmNote/releases/latest)
+[![GitHub Release](https://img.shields.io/github/v/release/PickGear/PalmNote?label=最新版本)](https://github.com/PickGear/PalmNote/releases/latest)
 
-Grab the latest APK from [Releases](https://github.com/PickGear/PalmNote/releases), or build it yourself.
+从 [Releases](https://github.com/PickGear/PalmNote/releases) 下载最新 APK，或自行构建。
 
-## Changelog
+## 更新日志
 
-See [CHANGELOG.md](CHANGELOG.md).
+详见 [CHANGELOG.md](CHANGELOG.md)。
 
-## Features
+## 功能特性
 
-### 🏠 Dashboard
-- Net worth, monthly income/expense overview
-- Budget reminders, goal progress, anniversary countdowns
-- Drag-and-drop card reordering, show/hide customization
+### 🏠 首页 Dashboard
+- 净资产、月度收支概览
+- 预算提醒、目标进度、纪念日倒计时
+- 卡片拖拽排序、自定义显隐
 
-### 📦 Asset Management
-- Item logging, categorization, status tracking (owned/idle/sold/lost/retired)
-- Usage records, daily average cost calculation
-- Warranty/insurance/maintenance reminders
-- Linked bills and image attachments
+### 📦 物品管理
+- 物品录入、分类、状态追踪（持有/闲置/已出/丢失/退役）
+- 使用记录、日均成本计算
+- 保修/保险/维护提醒
+- 关联账单、图片附件
 
-### 💰 Expense Tracking
-- Multi-ledger, multi-wallet management
-- Income/expense categories, budget settings, monthly/yearly reports
-- Calendar view, advanced filtering
-- CSV/XLSX import, OCR recognition
-- Home screen widget
+### 💰 记账
+- 多账本、多钱包管理
+- 收支分类、预算设置、月度/年度报表
+- 日历视图、高级筛选
+- CSV/XLSX 导入、OCR 识别
+- 桌面小组件
 
-### 🌿 Life Module
-- **Plans**: Savings goals, shopping lists, travel plans, reading lists, study plans, to-do tasks
-- **Time**: Countdowns, day counters, birthdays, anniversaries
-- **Records**: Habit tracking (heatmap), mood journal (calendar + trend chart), diary, focus timer, subscription management, weekly/monthly reports
-- **Cross-module**: Custom templates, cross-module linking, achievement badges
+### 🌿 生活模块
+- **计划类**：存钱计划、购物清单、旅行规划、阅读计划、学习计划、待办任务
+- **时间类**：倒计时、正数日、生日、纪念日
+- **记录类**：习惯打卡（热力图）、心情记录（日历+趋势图）、日记、专注计时、订阅管理、周报月报
+- **通用能力**：自定义模板、跨模块关联、成就徽章
 
-### 🔒 Security
-- App lock (PIN + biometric, PBKDF2 hashing)
-- AES-GCM encrypted backups
-- 100% local storage, all features work offline
+### 🔑 密码本
+- 纯离线密码管理：标题/用户名/密码/网址/备注/分类
+- 密码生成器（长度与字符集可配、熵强度提示）
+- 搜索、分类筛选、密码遮罩查看、一键复制（30 秒自动清除剪贴板）
+- 独立主密码，字段级 AES-256-GCM 加密，切后台立即锁定
 
-## Tech Stack
+### 🔒 安全
+- 应用锁（PIN + 生物识别，PBKDF2 加密）
+- 密码本字段级 AES-GCM 加密 + 密钥包裹
+- AES-GCM 加密备份
+- 纯本地存储，全部功能无需联网
 
-| Layer | Solution |
-|-------|----------|
-| Language | Kotlin 2.0.21 |
+## 技术栈
+
+| 层 | 方案 |
+|---|------|
+| 语言 | Kotlin 2.2.20 |
 | UI | Jetpack Compose + Material 3 |
-| Database | Room 2.6.1 |
-| Preferences | DataStore |
-| Images | Coil 3 |
-| Navigation | Navigation Compose |
-| Charts | Custom Canvas drawing |
-| DI | Manual (AppContainer) |
-| Backup Encryption | AES-GCM + PBKDF2 |
-| OCR | ML Kit (on-device) |
-| Background Tasks | WorkManager |
-| Serialization | Kotlinx Serialization |
-| Chinese Lunar Calendar | Lunar |
-| Biometric | AndroidX Biometric |
-| Build | Gradle + Kotlin DSL |
+| 数据库 | Room 2.7.2 |
+| 偏好存储 | DataStore |
+| 图片加载 | Coil 3 |
+| 导航 | Navigation Compose |
+| 图表 | Compose Canvas 自绘 |
+| 依赖注入 | Hilt |
+| 备份加密 | AES-GCM + PBKDF2 |
+| OCR | ML Kit（本地离线） |
+| 后台任务 | WorkManager |
+| 序列化 | Kotlinx Serialization |
+| 农历 | Lunar |
+| 生物识别 | AndroidX Biometric |
+| 构建 | Gradle（AGP 8.13）+ Kotlin DSL |
 
-## Architecture
+## 架构
 
 ```
 com.palmnote/
-├── data/           # Data layer
-│   ├── backup/     # Backup & restore
-│   ├── datastore/  # DataStore preferences
-│   ├── db/         # Room DAO/Entity
-│   ├── export/     # CSV/ZIP import/export
-│   ├── lock/       # App lock encryption
+├── data/           # 数据层
+│   ├── backup/     # 备份恢复
+│   ├── datastore/  # DataStore 偏好
+│   ├── db/         # Room DAO/Entity/迁移
+│   ├── export/     # CSV/ZIP 导入导出
+│   ├── lock/       # 应用锁加密
 │   ├── ocr/        # ML Kit OCR
-│   ├── repository/ # Repository implementations
-│   ├── sync/       # Data sync
-│   └── worker/     # WorkManager background tasks
-├── domain/         # Domain layer
-│   ├── model/      # Domain models
-│   ├── repository/ # Repository interfaces
-│   ├── service/    # Business services
-│   └── util/       # Utilities (DateUtils/CurrencyUtils)
-├── di/             # Dependency injection: AppContainer
-├── ui/             # UI layer (per-module packages)
-│   ├── asset/      # Asset management
-│   ├── bills/      # Expense tracking
-│   ├── dashboard/  # Home dashboard
-│   ├── life/       # Life module (plan/time/record)
-│   ├── settings/   # Settings
-│   ├── search/     # Search
-│   ├── lock/       # App lock screen
-│   ├── widget/     # Home screen widget
-│   ├── navigation/ # Navigation
-│   ├── backup/     # Backup UI
-│   ├── components/ # Shared components
-│   └── theme/      # Theme (Color/Shape/Type/Icon)
-└── PalmNoteApp.kt  # Application class
+│   ├── repository/ # Repository 实现
+│   ├── sync/       # 日历同步
+│   └── worker/     # WorkManager 后台任务
+├── domain/         # 领域层
+│   ├── model/      # 领域模型
+│   ├── repository/ # Repository 接口
+│   ├── service/    # 业务服务
+│   └── util/       # 工具类（DateUtils/CurrencyUtils）
+├── feature/        # 独立功能模块
+│   └── vault/      # 密码本（字段级加密）
+├── di/             # Hilt 依赖注入
+├── ui/             # 表现层：按模块分包
+│   ├── asset/      # 物品模块
+│   ├── bills/      # 记账模块
+│   ├── dashboard/  # 首页
+│   ├── life/       # 生活模块（plan/time/record）
+│   ├── settings/   # 设置
+│   ├── search/     # 搜索
+│   ├── lock/       # 应用锁
+│   ├── widget/     # 桌面小组件
+│   ├── navigation/ # 导航
+│   ├── backup/     # 备份页面
+│   ├── components/ # 通用组件
+│   └── theme/      # 主题（Color/Shape/Type/Icon）
+└── PalmNoteApp.kt  # Application
 ```
 
-## Build
+## 构建
 
 ```bash
-# Clone the repository
+# 克隆项目
 git clone https://github.com/PickGear/PalmNote.git
 
-# Open in Android Studio or build from command line
+# 打开 Android Studio 或命令行构建
 ./gradlew assembleDebug
 ```
 
-**Requirements:**
-- Android Studio Hedgehog or later
+**环境要求：**
+- Android Studio（支持 AGP 8.13）
 - JDK 17
-- Android SDK 35
-- Min SDK: 26 (Android 8.0)
+- compileSdk 36 / targetSdk 34（自用/侧载；上架时按需升回）
 
-## Design Spec
+## 设计规范
 
-See [docs/design-spec.md](docs/design-spec.md) for the complete design system including colors, typography, spacing, components, and animations.
+- 全局设计系统（色彩、字体、间距、组件、动画）：[docs/design-spec.md](docs/design-spec.md)
+- 密码本模块设计：[docs/feature-vault.md](docs/feature-vault.md)
 
-## Contributing
+## 隐私与条款
 
-Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md).
+- [隐私政策](docs/privacy/privacy-zh.md)
+- [用户协议](docs/terms/terms-zh.md)
 
-- Report bugs or request features → [Issues](https://github.com/PickGear/PalmNote/issues)
-- Submit code → [Pull Requests](https://github.com/PickGear/PalmNote/pulls)
+## 如何贡献
 
-## License
+欢迎提交 Bug、功能建议与代码：
 
-This project is licensed under the [GPL-3.0](LICENSE) license.
+- 提交 Bug 或功能请求 → [Issues](https://github.com/PickGear/PalmNote/issues)
+- 提交代码 → [Pull Requests](https://github.com/PickGear/PalmNote/pulls)
 
-## Contact
+## 开源协议
 
-- GitHub Issues: https://github.com/PickGear/PalmNote/issues
+本项目基于 [GPL-3.0](LICENSE) 许可证发布。
+
+## 联系方式
+
+- GitHub Issues：https://github.com/PickGear/PalmNote/issues

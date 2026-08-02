@@ -28,3 +28,10 @@
 
 # Widget
 -keep class com.palmnote.ui.widget.BillWidgetProvider
+
+# 移除调试日志（release 混淆时生效）；保留 w/e 错误级日志
+-assumenosideeffects class android.util.Log {
+    public static int v(...);
+    public static int d(...);
+    public static int i(...);
+}

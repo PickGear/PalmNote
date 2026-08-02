@@ -1,4 +1,5 @@
 package com.palmnote.ui.bills
+import androidx.hilt.navigation.compose.hiltViewModel
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -24,6 +25,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.palmnote.PalmNoteApp
 import com.palmnote.R
+import com.palmnote.domain.model.toMoney
 import com.palmnote.domain.util.CurrencyUtils
 import com.palmnote.domain.util.DateUtils
 import com.palmnote.ui.components.*
@@ -38,7 +40,7 @@ fun AddBillScreen(
     onBillDateSaved: (Long) -> Unit = {},
     onNavigateToWallet: () -> Unit = {},
     onNavigateToCategory: (String) -> Unit = {},
-    viewModel: BillViewModel = simpleViewModel { PalmNoteApp.container.billViewModel() }
+    viewModel: BillViewModel = hiltViewModel()
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val formState by viewModel.formState.collectAsStateWithLifecycle()
@@ -58,7 +60,7 @@ fun AddBillScreen(
     val customExpenseCategories by viewModel.customExpenseCategories.collectAsStateWithLifecycle()
     val customIncomeCategories by viewModel.customIncomeCategories.collectAsStateWithLifecycle()
     val categoryUsageCounts by viewModel.categoryUsageCounts.collectAsStateWithLifecycle()
-    val presetOverrides by com.palmnote.PalmNoteApp.container.preferencesManager.presetCategoryOverrides
+    val presetOverrides by com.palmnote.PalmNoteApp.instance.preferencesManager.presetCategoryOverrides
         .collectAsStateWithLifecycle(initialValue = emptyMap())
     val categories = remember(formState.type, customExpenseCategories, customIncomeCategories, categoryUsageCounts, presetOverrides) {
         val isExpense = formState.type == "EXPENSE"
@@ -318,7 +320,7 @@ fun AddBillScreen(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Text(
-                                    text = CurrencyUtils.formatCurrency(selectedWallet.currentBalance),
+                                    text = CurrencyUtils.formatCurrency(selectedWallet.currentBalance.toMoney()),
                                     style = MaterialTheme.typography.bodySmall,
                                     fontWeight = FontWeight.Medium,
                                     color = if (selectedWallet.currentBalance >= 0) StatusActive else ErrorLight
@@ -393,7 +395,7 @@ fun AddBillScreen(
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                     Text(
-                                        text = CurrencyUtils.formatCurrency(selectedWallet.currentBalance),
+                                        text = CurrencyUtils.formatCurrency(selectedWallet.currentBalance.toMoney()),
                                         style = MaterialTheme.typography.bodySmall,
                                         fontWeight = FontWeight.Medium,
                                         color = if (selectedWallet.currentBalance >= 0) StatusActive else ErrorLight

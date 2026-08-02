@@ -1,4 +1,7 @@
 package com.palmnote.ui.life.record.focus
+import javax.inject.Inject
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import com.palmnote.R
 
 import android.content.Context
@@ -16,8 +19,9 @@ import java.time.ZoneId
 
 data class FocusUiState(val todayMinutes: Int = 0, val totalMinutes: Int = 0, val isLoading: Boolean = true, val error: String? = null)
 
-class FocusViewModel(
-    private val context: Context,
+@HiltViewModel
+class FocusViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val repo: FocusRecordRepository
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(FocusUiState())

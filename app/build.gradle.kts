@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.detekt)
     alias(libs.plugins.baselineProfiles)
     alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.hilt)
 }
 
 val localProps = run {
@@ -23,16 +24,21 @@ val localProps = run {
     map
 }
 
+// 密钥文件不存在时（如 CI 检出）退化为 unsigned 冒烟构建
+val releaseStoreFile = file("../${localProps["RELEASE_STORE_FILE"] ?: "release.jks"}")
+
 android {
     namespace = "com.palmnote"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.palmnote"
         minSdk = 26
-        targetSdk = 35
-        versionCode = 3
-        versionName = "1.2.0"
+        // targetSdk 34锛氳嚜鐢?渚ц浇锛岀鐢?Android 15+ 寮哄埗 predictive back锛屾仮澶嶄紶缁熻繑鍥炲姩鐢伙紱
+        // compileSdk 淇濇寔 36 涓嶆崯澶辩紪璇戣兘鍔涖€備笂 Play 鏃堕渶鍗囧洖 35+銆?
+        targetSdk = 34
+        versionCode = 4
+        versionName = "1.3.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -46,10 +52,13 @@ android {
 
     signingConfigs {
         create("release") {
-            storeFile = file("../${localProps["RELEASE_STORE_FILE"] ?: "release.jks"}")
-            storePassword = localProps["RELEASE_STORE_PASSWORD"] ?: ""
-            keyAlias = localProps["RELEASE_KEY_ALIAS"] ?: ""
-            keyPassword = localProps["RELEASE_KEY_PASSWORD"] ?: ""
+            // 瀵嗛挜鏂囦欢涓嶅瓨鍦ㄦ椂锛堝 CI 妫€鍑猴級閫€鍖栦负 unsigned 鍐掔儫鏋勫缓
+            if (releaseStoreFile.exists()) {
+                storeFile = releaseStoreFile
+                storePassword = localProps["RELEASE_STORE_PASSWORD"] ?: ""
+                keyAlias = localProps["RELEASE_KEY_ALIAS"] ?: ""
+                keyPassword = localProps["RELEASE_KEY_PASSWORD"] ?: ""
+            }
         }
     }
 
@@ -61,12 +70,22 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("release")
+
+            // CI 无密钥时保持 unsigned 冒烟构建
+            if (releaseStoreFile.exists()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
+        }
+        debug {
+            // debug 琛ュ厖 x86_64 浠ヤ究鏈満妯℃嫙鍣ㄥ畨瑁咃紙release 淇濇寔 arm 绮剧畝浣撶Н锛?
+            ndk {
+                abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64")
+            }
         }
     }
 
     lint {
-        abortOnError = false
+        abortOnError = true
     }
 
     baselineProfile {
@@ -110,6 +129,7 @@ android {
 
 detekt {
     config.setFrom("$rootDir/config/detekt/detekt.yml")
+    baseline = file("$rootDir/config/detekt/baseline.xml")
     buildUponDefaultConfig = true
     allRules = false
 }
@@ -121,6 +141,7 @@ dependencies {
     // Compose
     implementation(libs.compose.ui)
     implementation(libs.compose.ui.graphics)
+    implementation("androidx.compose.material3:material3-window-size-class")
     implementation(libs.compose.ui.tooling.preview)
     implementation(libs.compose.material3)
     implementation(libs.compose.material.icons.extended)
@@ -171,6 +192,13 @@ dependencies {
     // Biometric
     implementation("androidx.biometric:biometric:1.1.0")
 
+    // Hilt
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
+    implementation(libs.hilt.navigation.compose)
+    implementation(libs.hilt.work)
+    ksp(libs.hilt.androidx.compiler)
+
     // Debug
     debugImplementation(libs.compose.ui.tooling)
     debugImplementation(libs.compose.ui.tooling.preview)
@@ -186,4 +214,7 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.espresso.core)
     androidTestImplementation("androidx.benchmark:benchmark-macro-junit4:1.3.1")
+    androidTestImplementation(libs.room.testing)
+    androidTestImplementation("androidx.sqlite:sqlite-framework:2.4.0")
+    androidTestImplementation("androidx.test:core:1.6.1")
 }

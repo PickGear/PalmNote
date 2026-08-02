@@ -49,9 +49,10 @@ import androidx.compose.ui.res.stringResource
 import kotlin.math.roundToInt
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.palmnote.PalmNoteApp
-import com.palmnote.ui.components.simpleViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.palmnote.R
 import com.palmnote.data.db.dao.CategoryCount
+import com.palmnote.domain.model.toMoney
 import com.palmnote.domain.util.CurrencyUtils
 import com.palmnote.domain.util.DateUtils
 import com.palmnote.ui.components.*
@@ -65,7 +66,8 @@ fun DashboardScreen(
     onNavigateToLife: () -> Unit = {},
     onNavigateToSettings: () -> Unit = {},
     onNavigateToSearch: () -> Unit = {},
-    viewModel: DashboardViewModel = simpleViewModel { PalmNoteApp.container.dashboardViewModel() }
+    onNavigateToVault: () -> Unit = {},
+    viewModel: DashboardViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val rawConfigs by viewModel.visibleConfigs.collectAsStateWithLifecycle()
@@ -244,7 +246,8 @@ fun DashboardScreen(
                                     state = state,
                                     onNavigateToAsset = onNavigateToAsset,
                                     onNavigateToBill = onNavigateToBill,
-                                    onNavigateToLife = onNavigateToLife
+                                    onNavigateToLife = onNavigateToLife,
+                                    onNavigateToVault = onNavigateToVault
                                 )
                             }
                         }
@@ -252,7 +255,7 @@ fun DashboardScreen(
                     Spacer(modifier = Modifier.height(80.dp))
                 }
 
-                // 浮层
+                // 娴眰
                 draggedType?.let { type ->
                     val cardShape = MaterialTheme.shapes.large
                     Box(
@@ -273,7 +276,8 @@ fun DashboardScreen(
                             state = state,
                             onNavigateToAsset = onNavigateToAsset,
                             onNavigateToBill = onNavigateToBill,
-                            onNavigateToLife = onNavigateToLife
+                            onNavigateToLife = onNavigateToLife,
+                            onNavigateToVault = onNavigateToVault
                         )
                     }
                 }
@@ -281,8 +285,9 @@ fun DashboardScreen(
         }
 
         if (showCardDialog) {
+            val cardConfigs by viewModel.cardConfigs.collectAsStateWithLifecycle()
             CardManagementDialog(
-                allConfigs = viewModel.cardConfigs.value,
+                allConfigs = cardConfigs,
                 onToggle = { type -> viewModel.toggleCard(type) },
                 onDismiss = { showCardDialog = false }
             )
@@ -290,548 +295,7 @@ fun DashboardScreen(
     }
 }
 
-@Composable
-private fun DashboardCardContent(
-    type: CardType,
-    state: DashboardState,
-    onNavigateToAsset: () -> Unit,
-    onNavigateToBill: () -> Unit,
-    onNavigateToLife: () -> Unit
-) {
-    when (type) {
-        CardType.NET_WORTH -> NetWorthCard(state)
-        CardType.QUICK_ACTIONS -> QuickActionsCard(onNavigateToBill, onNavigateToAsset, onNavigateToLife)
-        CardType.BUDGET_ALERT -> BudgetAlertCard(state)
-        CardType.GOALS -> GoalsCard(state, onNavigateToLife)
-        CardType.ANNIVERSARIES -> AnniversariesCard(state, onNavigateToLife)
-        CardType.ASSET_DISTRIBUTION -> AssetDistributionCard(state, onNavigateToAsset)
-        CardType.TODAY -> TodayCard(state)
-    }
-}
-
-@Composable
-private fun NetWorthCard(state: DashboardState) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-        border = BorderStroke(1.dp, PrimaryGreenLight.copy(alpha = 0.3f))
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(
-                    Brush.linearGradient(
-                        colors = listOf(PrimaryGreenLight, PrimaryGreenLight.copy(alpha = 0.85f))
-                    )
-                )
-                .padding(16.dp)
-        ) {
-            Column {
-                Text(
-                    text = stringResource(R.string.dashboard_net_worth),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = CurrencyUtils.formatCompact(state.totalAssetValue),
-                    style = MaterialTheme.typography.displaySmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimary
-                )
-                Spacer(modifier = Modifier.height(24.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Column {
-                        Text(stringResource(R.string.dashboard_monthly_expense), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f))
-                        Text(
-                            CurrencyUtils.formatCurrency(state.monthlyExpense),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
-                    }
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text(stringResource(R.string.dashboard_monthly_income), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f))
-                        Text(
-                            CurrencyUtils.formatCurrency(state.monthlyIncome),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
-                    }
-                }
-                Spacer(modifier = Modifier.height(12.dp))
-                val netIncome = state.monthlyIncome - state.monthlyExpense
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        if (netIncome >= 0) Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown,
-                        contentDescription = null,
-                        tint = if (netIncome >= 0) IncomeGreen else StatusLost,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = if (netIncome >= 0) stringResource(R.string.dashboard_monthly_balance, CurrencyUtils.formatCurrency(netIncome))
-                               else stringResource(R.string.dashboard_monthly_over_budget, CurrencyUtils.formatCurrency(-netIncome)),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f)
-                    )
-                }
-            }
-            Surface(
-                modifier = Modifier.align(Alignment.TopEnd),
-                shape = MaterialTheme.shapes.medium,
-                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f)
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(Icons.Outlined.Inventory2, null, Modifier.size(14.dp), MaterialTheme.colorScheme.onPrimary)
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(pluralStringResource(R.plurals.dashboard_items_count, state.activeAssetCount, state.activeAssetCount), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimary)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun QuickActionsCard(
-    onNavigateToBill: () -> Unit,
-    onNavigateToAsset: () -> Unit,
-    onNavigateToLife: () -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 16.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            QuickActionButton(Icons.Outlined.AddCircle, stringResource(R.string.dashboard_quick_bill), AccentOrange, onNavigateToBill)
-            QuickActionButton(Icons.Outlined.Inventory2, stringResource(R.string.dashboard_quick_asset), MaterialTheme.colorScheme.primary, onNavigateToAsset)
-            QuickActionButton(Icons.Outlined.Flag, stringResource(R.string.dashboard_quick_goal), InfoBlue, onNavigateToLife)
-            QuickActionButton(Icons.Outlined.Celebration, stringResource(R.string.dashboard_quick_anniversary), ModuleLife, onNavigateToLife)
-        }
-    }
-}
-
-@Composable
-private fun QuickActionButton(icon: ImageVector, label: String, color: Color, onClick: () -> Unit) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.clickable(onClick = onClick)
-    ) {
-        Box(
-            modifier = Modifier
-                .size(52.dp)
-                .clip(MaterialTheme.shapes.large)
-                .background(color.copy(alpha = 0.12f)),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(icon, contentDescription = label, tint = color, modifier = Modifier.size(26.dp))
-        }
-        Spacer(modifier = Modifier.height(6.dp))
-        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
-    }
-}
-
-@Composable
-private fun BudgetAlertCard(state: DashboardState) {
-    val budget = state.budget
-    if (state.budgetReminderEnabled && budget != null && budget.totalBudget > 0 &&
-        state.monthlyExpense > 0 && state.monthlyExpense > budget.totalBudget * 0.8
-    ) {
-        AlertCard(
-            icon = Icons.Outlined.Warning,
-            title = stringResource(R.string.dashboard_budget_alert),
-            message = stringResource(R.string.dashboard_budget_alert_message, state.monthlyExpense),
-            color = if (state.monthlyExpense > budget.totalBudget) ErrorLight else AccentOrange
-        )
-    }
-}
-
-@Composable
-private fun GoalsCard(state: DashboardState, onNavigateToLife: () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(Icons.Filled.Flag, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
-                    }
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Column {
-                        Text(stringResource(R.string.dashboard_goal_progress), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        Text(
-                            stringResource(R.string.dashboard_goals_completed, state.completedGoalCount, state.goalCount),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-                Box(modifier = Modifier.size(48.dp).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onNavigateToLife() }, contentAlignment = Alignment.Center) {
-                    Icon(Icons.Filled.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-            if (state.recentGoals.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(12.dp))
-                state.recentGoals.forEach { goal ->
-                    val progress = if (goal.totalCount > 0) goal.currentCount.toFloat() / goal.totalCount else 0f
-                    Column(modifier = Modifier.padding(vertical = 4.dp)) {
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text(goal.title, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-                            Text("${goal.currentCount}/${goal.totalCount}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                        Spacer(modifier = Modifier.height(4.dp))
-                        ProgressBar(progress = progress, color = MaterialTheme.colorScheme.primary, height = 6.dp)
-                    }
-                }
-            } else {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(stringResource(R.string.dashboard_no_goals), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.clickable(onClick = onNavigateToLife))
-            }
-        }
-    }
-}
-
-@Composable
-private fun AnniversariesCard(state: DashboardState, onNavigateToLife: () -> Unit) {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier.size(36.dp)
-                            .clip(CircleShape)
-                            .background(AccentOrange.copy(alpha = 0.15f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(Icons.Filled.Celebration, null, tint = AccentOrange, modifier = Modifier.size(20.dp))
-                    }
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Column {
-                        Text(stringResource(R.string.dashboard_card_anniversaries), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        Text(                            stringResource(R.string.dashboard_anniversaries_count, state.anniversaryCount), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                }
-                Box(modifier = Modifier.size(48.dp).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onNavigateToLife() }, contentAlignment = Alignment.Center) {
-                    Icon(Icons.Filled.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-            if (state.upcomingAnniversaries.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(12.dp))
-                state.upcomingAnniversaries.forEach { anniversary ->
-                    val daysUntil = anniversary.daysUntil
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Box(
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .clip(MaterialTheme.shapes.small)
-                                    .background(anniversary.typeIcon.tint.copy(alpha = 0.15f)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = anniversary.typeIcon.imageVector,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(20.dp),
-                                    tint = anniversary.typeIcon.tint
-                                )
-                            }
-                            Column {
-                                Text(anniversary.displayTitle, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                Text(DateUtils.formatDisplayDate(context, anniversary.solarDate), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
-                        }
-                        StatusChip(
-                            text = when (anniversary.displayMode) {
-                                "COUNT_DOWN" -> if (daysUntil == 0) stringResource(R.string.dashboard_today) else if (daysUntil > 0) stringResource(R.string.dashboard_days_until, daysUntil) else stringResource(R.string.dashboard_days_passed, -daysUntil)
-                                else -> if (anniversary.daysSince == 0) stringResource(R.string.dashboard_today) else stringResource(R.string.dashboard_days_passed, anniversary.daysSince)
-                            },
-                            color = when {
-                                daysUntil == 0 -> AccentOrange; daysUntil in 1..7 -> ModuleLife; daysUntil in 8..30 -> Amber
-                                else -> MaterialTheme.colorScheme.onSurfaceVariant
-                            }
-                        )
-                    }
-                }
-            } else {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(stringResource(R.string.dashboard_no_anniversaries), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.clickable(onClick = onNavigateToLife))
-            }
-        }
-    }
-}
-
-@Composable
-private fun AssetDistributionCard(state: DashboardState, onNavigateToAsset: () -> Unit) {
-    if (state.assetDistribution.isEmpty()) return
-    val distPresetOverrides by com.palmnote.PalmNoteApp.container.preferencesManager.presetCategoryOverrides
-        .collectAsStateWithLifecycle(initialValue = emptyMap())
-
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(stringResource(R.string.dashboard_asset_distribution), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold,
-                modifier = Modifier.clickable(onClick = onNavigateToAsset))
-            Spacer(modifier = Modifier.height(12.dp))
-            val context = androidx.compose.ui.platform.LocalContext.current
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.Top
-            ) {
-                AssetDistributionChart(state.assetDistribution, Modifier.size(100.dp))
-                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    val longItems = mutableListOf<Pair<CategoryCount, Int>>()
-                    val shortItems = mutableListOf<Pair<CategoryCount, Int>>()
-                    state.assetDistribution.forEachIndexed { index, item ->
-                        val name = com.palmnote.ui.asset.getCategoryDisplayName(item.category, context, distPresetOverrides)
-                        if (name.length > 5) {
-                            longItems.add(item to index)
-                        } else {
-                            shortItems.add(item to index)
-                        }
-                    }
-                    val rows = mutableListOf<Pair<List<Pair<CategoryCount, Int>>, Boolean>>()
-                    val paired = shortItems.chunked(2)
-                    val hasOdd = paired.lastOrNull()?.size == 1
-                    paired.dropLast(if (hasOdd) 1 else 0).forEach { rows.add(it to false) }
-                    longItems.forEach { rows.add(listOf(it) to true) }
-                    if (hasOdd) rows.add(paired.last() to false)
-                    rows.forEach { (rowItems, fullWidth) ->
-                        Row(
-                            Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.Top
-                        ) {
-                            rowItems.forEach { (item, _) ->
-                                if (fullWidth) {
-                                    LegendItem(item, Modifier.fillMaxWidth(), maxLines = 2)
-                                } else {
-                                    LegendItem(item, Modifier.weight(1f), maxLines = 1)
-                                }
-                            }
-                            if (rowItems.size < 2) Spacer(Modifier.weight(1f))
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun LegendItem(item: CategoryCount, modifier: Modifier = Modifier, maxLines: Int = 1) {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val dashPresetVer by com.palmnote.PalmNoteApp.container.preferencesManager.presetCategoryOverrides
-        .collectAsStateWithLifecycle(initialValue = emptyMap())
-    val dashCustomCfg by com.palmnote.PalmNoteApp.container.cachedCategoryConfigs
-        .collectAsStateWithLifecycle(initialValue = emptyList())
-    val dashCustomItems = remember(dashCustomCfg) {
-        dashCustomCfg.filter { it.type == "ASSET" && it.isEnabled }
-            .map { com.palmnote.ui.components.CategoryItem(it.name, it.icon.imageVector, it.color.toComposeColor()) }
-    }
-    val color = remember(dashPresetVer, dashCustomItems) {
-        com.palmnote.ui.asset.getCategoryIcon(item.category, dashCustomItems).color
-    }
-    Row(
-        modifier = modifier
-            .background(color.copy(alpha = 0.35f), MaterialTheme.shapes.small)
-            .padding(horizontal = 8.dp, vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp)
-    ) {
-        Box(Modifier.size(8.dp).clip(CircleShape).background(color))
-        Text(com.palmnote.ui.asset.getCategoryDisplayName(item.category, context, dashPresetVer), style = MaterialTheme.typography.bodySmall, maxLines = maxLines, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-        Text(pluralStringResource(R.plurals.dashboard_items_count, item.count, item.count), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Medium)
-    }
-}
-
-@Composable
-private fun TodayCard(state: DashboardState) {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val weekDay = remember { getWeekDay(context) }
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column {
-                Text(DateUtils.formatDisplayFullDate(context, System.currentTimeMillis()), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(weekDay, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            }
-            Column(horizontalAlignment = Alignment.End) {
-                Text(stringResource(R.string.dashboard_recorded), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(stringResource(R.string.dashboard_items_recorded, state.activeAssetCount + state.goalCount + state.anniversaryCount), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-            }
-        }
-    }
-}
-
-@Composable
-private fun AlertCard(icon: ImageVector, title: String, message: String, color: Color) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.medium,
-        colors = CardDefaults.cardColors(containerColor = color.copy(alpha = 0.1f))
-    ) {
-        Row(
-            modifier = Modifier.padding(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(icon, null, tint = color, modifier = Modifier.size(24.dp))
-            Column {
-                Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = color)
-                Text(message, style = MaterialTheme.typography.bodySmall, color = color.copy(alpha = 0.8f))
-            }
-        }
-    }
-}
-
-@Composable
-fun AssetDistributionChart(distribution: List<CategoryCount>, modifier: Modifier = Modifier) {
-    val total = distribution.sumOf { it.count }.toFloat()
-    if (total == 0f) {
-        Box(modifier.clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
-            Icon(Icons.Outlined.Inventory2, null, tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f), modifier = Modifier.size(32.dp))
-        }
-        return
-    }
-    val chartPresetVer by com.palmnote.PalmNoteApp.container.preferencesManager.presetCategoryOverrides
-        .collectAsStateWithLifecycle(initialValue = emptyMap())
-    val chartCustomCfg by com.palmnote.PalmNoteApp.container.cachedCategoryConfigs
-        .collectAsStateWithLifecycle(initialValue = emptyList())
-    val chartCustomItems = remember(chartCustomCfg) {
-        chartCustomCfg.filter { it.type == "ASSET" && it.isEnabled }
-            .map { com.palmnote.ui.components.CategoryItem(it.name, it.icon.imageVector, it.color.toComposeColor()) }
-    }
-    val chartColors = remember(chartPresetVer, chartCustomItems) {
-        distribution.map { item ->
-            com.palmnote.ui.asset.getCategoryIcon(item.category, chartCustomItems).color
-        }
-    }
-    Canvas(modifier = modifier) {
-        val strokeWidth = 12.dp.toPx()
-        val radius = (size.minDimension - strokeWidth) / 2
-        val center = Offset(size.width / 2, size.height / 2)
-        var startAngle = -90f
-        distribution.forEachIndexed { index, item ->
-            val sweepAngle = (item.count / total) * 360f
-            val catColor = chartColors.getOrElse(index) { com.palmnote.ui.theme.Gray400 }
-            drawArc(
-                color = catColor,
-                startAngle = startAngle,
-                sweepAngle = sweepAngle,
-                useCenter = false,
-                topLeft = Offset(center.x - radius, center.y - radius),
-                size = Size(radius * 2, radius * 2),
-                style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
-            )
-            startAngle += sweepAngle
-        }
-    }
-}
-
-@Composable
-private fun CardManagementDialog(
-    allConfigs: List<DashboardCardConfig>,
-    onToggle: (CardType) -> Unit,
-    onDismiss: () -> Unit
-) {
-    AppDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.dashboard_card_manage), fontWeight = FontWeight.Bold) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                allConfigs.forEach { config ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onToggle(config.type) }
-                            .padding(vertical = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = when (config.type) {
-                                CardType.NET_WORTH -> stringResource(R.string.dashboard_card_net_worth)
-                                CardType.QUICK_ACTIONS -> stringResource(R.string.dashboard_card_quick_actions)
-                                CardType.BUDGET_ALERT -> stringResource(R.string.dashboard_card_budget_alert)
-                                CardType.GOALS -> stringResource(R.string.dashboard_card_goals)
-                                CardType.ANNIVERSARIES -> stringResource(R.string.dashboard_card_anniversaries)
-                                CardType.ASSET_DISTRIBUTION -> stringResource(R.string.dashboard_card_asset_distribution)
-                                CardType.TODAY -> stringResource(R.string.dashboard_card_today)
-                            },
-                            style = MaterialTheme.typography.bodyLarge
-                        )
-                        CapsuleSwitch(
-                            checked = config.visible,
-                            onCheckedChange = { onToggle(config.type) },
-                            checkedTrackColor = LocalSwitchColor.current,
-                        )
-                    }
-                }
-            }
-        },
-        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.done)) } }
-    )
-}
-
-private fun getGreeting(context: android.content.Context): String {
+internal fun getGreeting(context: android.content.Context): String {
     val cal = java.util.Calendar.getInstance()
     val hour = cal.get(java.util.Calendar.HOUR_OF_DAY)
     return when {
@@ -845,7 +309,7 @@ private fun getGreeting(context: android.content.Context): String {
     }
 }
 
-private fun getWeekDay(context: android.content.Context): String {
+internal fun getWeekDay(context: android.content.Context): String {
     val cal = java.util.Calendar.getInstance()
     val dayOfWeek = cal.get(java.util.Calendar.DAY_OF_WEEK)
     return when (dayOfWeek) {

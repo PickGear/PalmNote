@@ -43,7 +43,7 @@ import androidx.compose.ui.platform.LocalContext
 import coil3.compose.AsyncImage
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.palmnote.PalmNoteApp
-import com.palmnote.ui.components.simpleViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.ui.res.stringResource
 import com.palmnote.R
 import com.palmnote.ui.components.*
@@ -95,7 +95,7 @@ fun AddAssetScreen(
     assetId: Long? = null,
     onNavigateBack: () -> Unit = {},
     onNavigateToCategory: (String) -> Unit = {},
-    viewModel: AssetViewModel = simpleViewModel { PalmNoteApp.container.assetViewModel() }
+    viewModel: AssetViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     val formState by viewModel.formState.collectAsStateWithLifecycle()
@@ -167,7 +167,7 @@ fun AddAssetScreen(
                         Text(formState.categoryError ?: "", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
                     }
                     Spacer(modifier = Modifier.height(8.dp))
-                    val presetOverrides by PalmNoteApp.container.preferencesManager.presetCategoryOverrides
+                    val presetOverrides by PalmNoteApp.instance.preferencesManager.presetCategoryOverrides
                         .collectAsStateWithLifecycle(initialValue = emptyMap())
                     val enrichedPresets = remember(presetOverrides) {
                         assetCategoryItems.filter { item ->
@@ -267,7 +267,7 @@ fun AddAssetScreen(
                                 onValueChange = { if (it.isEmpty() || it.matches(Regex("^\\d{0,10}(\\.\\d{0,2})?$"))) viewModel.updateFormField { copy(purchasePrice = it) } },
                                 modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 56.dp),
                                 placeholder = { Text("0.00", maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                                prefix = { Text("¥") },
+                                prefix = { Text(stringResource(R.string.currency_symbol)) },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                                 shape = MaterialTheme.shapes.medium,
                                 singleLine = true
@@ -574,7 +574,7 @@ fun AddAssetScreen(
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(stringResource(R.string.asset_current_value), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
                                     Spacer(modifier = Modifier.height(4.dp))
-                                    OutlinedTextField(value = formState.currentValue, onValueChange = { if (it.isEmpty() || it.matches(Regex("^\\d{0,10}(\\.\\d{0,2})?$"))) viewModel.updateFormField { copy(currentValue = it) } }, modifier = Modifier.fillMaxWidth(), placeholder = { Text(stringResource(R.string.asset_current_value_hint), maxLines = 1, overflow = TextOverflow.Ellipsis) }, prefix = { Text("¥") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), shape = MaterialTheme.shapes.medium, singleLine = true)
+                                    OutlinedTextField(value = formState.currentValue, onValueChange = { if (it.isEmpty() || it.matches(Regex("^\\d{0,10}(\\.\\d{0,2})?$"))) viewModel.updateFormField { copy(currentValue = it) } }, modifier = Modifier.fillMaxWidth(), placeholder = { Text(stringResource(R.string.asset_current_value_hint), maxLines = 1, overflow = TextOverflow.Ellipsis) }, prefix = { Text(stringResource(R.string.currency_symbol)) }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), shape = MaterialTheme.shapes.medium, singleLine = true)
                                 }
                             }
 

@@ -1,4 +1,9 @@
 package com.palmnote.ui.asset
+import kotlin.jvm.JvmSuppressWildcards
+import android.content.Context
+import javax.inject.Inject
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 
 import android.content.ContentValues
 import android.net.Uri
@@ -7,10 +12,10 @@ import android.os.Environment
 import android.provider.MediaStore
 import androidx.compose.runtime.Stable
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import android.app.Application
 import com.palmnote.R
-import com.palmnote.data.DataCache
 import com.palmnote.data.datastore.PreferencesManager
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.decodeFromString
@@ -19,6 +24,8 @@ import com.palmnote.data.db.entity.Asset
 import com.palmnote.data.db.entity.Bill
 import com.palmnote.data.db.entity.CategoryConfig
 import com.palmnote.data.db.entity.UsageRecord
+import com.palmnote.domain.model.Money
+import com.palmnote.domain.model.toYuanString
 import com.palmnote.domain.repository.AssetRepository
 import com.palmnote.domain.repository.BillRepository
 import com.palmnote.domain.repository.UsageRecordRepository
@@ -52,9 +59,9 @@ fun String.toImageList(): List<String> {
 
 private data class AssetValues(
     val assets: List<Asset>,
-    val totalValue: Double,
-    val heldValue: Double,
-    val removedValue: Double,
+    val totalValue: Long,
+    val heldValue: Long,
+    val removedValue: Long,
     val distribution: List<CategoryCount>
 )
 
@@ -75,9 +82,9 @@ data class AssetState(
     val searchQuery: String = "",
     val isGridView: Boolean = false,
     val categoryDistribution: List<CategoryCount> = emptyList(),
-    val totalValue: Double = 0.0,
-    val heldValue: Double = 0.0,
-    val removedValue: Double = 0.0,
+    val totalValue: Long = 0,
+    val heldValue: Long = 0,
+    val removedValue: Long = 0,
     val heldCount: Int = 0,
     val awayCount: Int = 0,
     val removedCount: Int = 0
@@ -95,6 +102,7 @@ data class AssetDetailState(
 )
 
 @Stable
+@kotlinx.serialization.Serializable
 data class AddAssetFormState(
     val id: Long? = null,
     val name: String = "",
@@ -142,12 +150,14 @@ data class AddAssetFormState(
     val dateError: String? = null
 )
 
-class AssetViewModel(
-    private val application: Application,
+@HiltViewModel
+class AssetViewModel @Inject constructor(
+    @ApplicationContext private val application: Context,
+    private val savedStateHandle: androidx.lifecycle.SavedStateHandle,
     private val assetRepository: AssetRepository,
     private val usageRecordRepository: UsageRecordRepository,
     private val billRepository: BillRepository,
-    private val cachedCategoryConfigs: StateFlow<List<CategoryConfig>>,
+    private val cachedCategoryConfigs: @JvmSuppressWildcards StateFlow<List<CategoryConfig>>,
     private val preferencesManager: PreferencesManager
 ) : ViewModel() {
 
@@ -173,7 +183,36 @@ class AssetViewModel(
     val showDeleteDialog: StateFlow<Boolean> = _dialogType.map { it == DialogType.DELETE }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     init {
-        DataCache.get<AssetState>("asset")?.let { _state.value = it }
+        savedStateHandle.get<String>("asset_selected_category")?.let { v -> _state.update { it.copy(selectedCategory = v.ifEmpty { null }) } }
+        savedStateHandle.get<String>("asset_selected_status")?.let { v -> _state.update { it.copy(selectedStatus = runCatching { AssetFilter.valueOf(v) }.getOrDefault(AssetFilter.ALL)) } }
+        savedStateHandle.get<String>("asset_selected_sort")?.let { v -> _state.update { it.copy(selectedSort = runCatching { SortOption.valueOf(v) }.getOrDefault(SortOption.RECENT)) } }
+        savedStateHandle.get<Boolean>("asset_sort_ascending")?.let { v -> _state.update { it.copy(sortAscending = v) } }
+        savedStateHandle.get<String>("asset_search_query")?.let { v -> _state.update { it.copy(searchQuery = v) } }
+        savedStateHandle.get<Boolean>("asset_is_grid_view")?.let { v -> _state.update { it.copy(isGridView = v) } }
+        // 恢复上次未提交的资产表单草稿（进程被杀重建后）
+        savedStateHandle.get<String>("asset_draft")?.let { json ->
+            try {
+                val draft = kotlinx.serialization.json.Json.decodeFromString<AddAssetFormState>(json)
+                if (draft.id == null && draft.name.isNotBlank()) {
+                    _formState.value = draft.copy(
+                        isEditing = false, isSaving = false, isSaved = false,
+                        nameError = null, categoryError = null, dateError = null
+                    )
+                }
+            } catch (_: Exception) { savedStateHandle.remove<String>("asset_draft") }
+        }
+        // 自动保存新建资产表单草稿（防抖）
+        viewModelScope.launch {
+            _formState.debounce(500).collect { form ->
+                val hasContent = form.name.isNotBlank() || form.brand.isNotBlank() ||
+                    form.model.isNotBlank() || form.purchasePrice.isNotBlank() || form.description.isNotBlank()
+                if (form.isSaved || form.isEditing || !hasContent) {
+                    savedStateHandle.remove<String>("asset_draft")
+                } else {
+                    savedStateHandle["asset_draft"] = kotlinx.serialization.json.Json.encodeToString(form)
+                }
+            }
+        }
         loadAssets()
         loadViewMode()
     }
@@ -197,9 +236,9 @@ class AssetViewModel(
             ) { assets, totalValue, heldValue, removedValue, distribution ->
                 AssetValues(
                     assets = assets,
-                    totalValue = totalValue ?: 0.0,
-                    heldValue = heldValue ?: 0.0,
-                    removedValue = removedValue ?: 0.0,
+                    totalValue = totalValue ?: 0L,
+                    heldValue = heldValue ?: 0L,
+                    removedValue = removedValue ?: 0L,
                     distribution = distribution
                 )
             }
@@ -216,7 +255,9 @@ class AssetViewModel(
                 val s = _state.value
                 AssetState(
                     assets = assetValues.assets,
-                    filteredAssets = filterAssets(assetValues.assets, s.selectedCategory, s.selectedStatus, s.selectedSort, s.sortAscending, s.searchQuery),
+                    filteredAssets = withContext(Dispatchers.Default) {
+                        filterAssets(assetValues.assets, s.selectedCategory, s.selectedStatus, s.selectedSort, s.sortAscending, s.searchQuery)
+                    },
                     selectedCategory = s.selectedCategory,
                     selectedStatus = s.selectedStatus,
                     selectedSort = s.selectedSort,
@@ -233,7 +274,12 @@ class AssetViewModel(
                 )
             }.collect { state ->
                 _state.value = state
-                DataCache.set("asset", state)
+                savedStateHandle["asset_selected_category"] = state.selectedCategory ?: ""
+                savedStateHandle["asset_selected_status"] = state.selectedStatus.name
+                savedStateHandle["asset_selected_sort"] = state.selectedSort.name
+                savedStateHandle["asset_sort_ascending"] = state.sortAscending
+                savedStateHandle["asset_search_query"] = state.searchQuery
+                savedStateHandle["asset_is_grid_view"] = state.isGridView
             }
         }
     }
@@ -327,9 +373,9 @@ class AssetViewModel(
                 Pair(asset, records)
             }.collect { (asset, records) ->
                 val daysOwned = asset?.let { DateUtils.getDaysSince(it.effectiveDate).coerceAtLeast(1) } ?: 1
-                val costPerDay = (asset?.purchasePrice ?: 0.0) / daysOwned
+                val costPerDay = if (daysOwned > 0) (asset?.purchasePrice ?: 0L) / 100.0 / daysOwned else 0.0
                 val costPerUse = if ((asset?.useCount ?: 0) > 0) {
-                    (asset?.purchasePrice ?: 0.0) / (asset?.useCount ?: 1)
+                    (asset?.purchasePrice ?: 0L) / 100.0 / (asset?.useCount ?: 1)
                 } else 0.0
 
                 val linkedBill = asset?.linkedBillId?.let { billRepository.getBillById(it) }
@@ -403,7 +449,7 @@ class AssetViewModel(
         }
     }
 
-    fun sellAsset(id: Long, price: Double, channel: String) {
+    fun sellAsset(id: Long, price: Long, channel: String) {
         viewModelScope.launch {
             assetRepository.sellAsset(id, price, channel, "")
             hideDialog()
@@ -448,7 +494,7 @@ class AssetViewModel(
                 acquisitionType = if (asset.acquisitionType !in listOf("PURCHASE", "GIFT", "LOTTERY", "PRIZE", "INHERITANCE", "OTHER")) "CUSTOM" else asset.acquisitionType,
                 customAcquisitionLabel = if (asset.acquisitionType !in listOf("PURCHASE", "GIFT", "LOTTERY", "PRIZE", "INHERITANCE", "OTHER")) asset.acquisitionType else "",
                 quantity = if (asset.quantity > 0) asset.quantity.toString() else "1",
-                purchasePrice = if (asset.purchasePrice > 0) asset.purchasePrice.toString() else "",
+                purchasePrice = if (asset.purchasePrice > 0) asset.purchasePrice.toYuanString() else "",
                 acquisitionDate = asset.acquisitionDate,
                 purchaseChannel = asset.purchaseChannel,
                 location = asset.location,
@@ -462,7 +508,7 @@ class AssetViewModel(
                 serialNumber = asset.serialNumber,
                 isFavorite = asset.isFavorite,
                 depreciationRate = if (asset.depreciationRate > 0) asset.depreciationRate.toString() else "",
-                currentValue = if (asset.currentValue > 0) asset.currentValue.toString() else "",
+                currentValue = if (asset.currentValue > 0) asset.currentValue.toYuanString() else "",
                 maintenanceIntervalDays = if (asset.maintenanceIntervalDays > 0) asset.maintenanceIntervalDays.toString() else "",
                 lastMaintenanceDate = asset.lastMaintenanceDate,
                 nextMaintenanceDate = asset.nextMaintenanceDate,
@@ -511,7 +557,7 @@ class AssetViewModel(
         _formState.value = form.copy(isSaving = true)
 
         viewModelScope.launch {
-            val price = form.purchasePrice.toDoubleOrNull() ?: 0.0
+            val price = Money.parse(form.purchasePrice)?.cents ?: 0L
             val now = System.currentTimeMillis()
 
             val asset = Asset(
@@ -530,7 +576,7 @@ class AssetViewModel(
                 serialNumber = form.serialNumber.trim(),
                 isFavorite = form.isFavorite,
                 depreciationRate = form.depreciationRate.toDoubleOrNull() ?: 0.0,
-                currentValue = form.currentValue.toDoubleOrNull() ?: 0.0,
+                currentValue = Money.parse(form.currentValue)?.cents ?: 0L,
                 maintenanceIntervalDays = form.maintenanceIntervalDays.toIntOrNull() ?: 0,
                 lastMaintenanceDate = form.lastMaintenanceDate,
                 nextMaintenanceDate = form.nextMaintenanceDate,
@@ -602,14 +648,14 @@ class AssetViewModel(
                     val uri = application.contentResolver.insert(
                         MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values
                     )
-                        uri?.let {
-                            application.contentResolver.openOutputStream(it)?.use { output ->
-                                file.inputStream().use { input -> input.copyTo(output) }
-                            }
-                            values.clear()
-                            values.put(MediaStore.Images.Media.IS_PENDING, 0)
-                            application.contentResolver.update(it, values, null, null)
+                    uri?.let {
+                        application.contentResolver.openOutputStream(it)?.use { output ->
+                            file.inputStream().use { input -> input.copyTo(output) }
                         }
+                        values.clear()
+                        values.put(MediaStore.Images.Media.IS_PENDING, 0)
+                        application.contentResolver.update(it, values, null, null)
+                    }
                 } catch (e: Exception) { Log.e("AssetViewModel", "Download image failed", e) }
             }
         }

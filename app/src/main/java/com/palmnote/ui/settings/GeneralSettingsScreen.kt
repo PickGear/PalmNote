@@ -70,8 +70,8 @@ fun GeneralSettingsScreen(
         }
     }
 
-    val calendarPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        if (granted) viewModel.setCalendarSyncEnabled(true)
+    val calendarPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { granted ->
+        if (granted.values.all { it }) viewModel.setCalendarSyncEnabled(true)
         else {
             (context as? Activity)?.let { ctx ->
                 if (!ActivityCompat.shouldShowRequestPermissionRationale(ctx, Manifest.permission.WRITE_CALENDAR)) {
@@ -84,7 +84,7 @@ fun GeneralSettingsScreen(
     }
 
     val themes = mapOf("SYSTEM" to stringResource(R.string.settings_follow_system), "LIGHT" to stringResource(R.string.settings_theme_light), "DARK" to stringResource(R.string.settings_theme_dark))
-    val languageLabels = mapOf("SYSTEM" to stringResource(R.string.settings_follow_system), "zh" to stringResource(R.string.settings_language_chinese), "en" to "English")
+    val languageLabels = mapOf("SYSTEM" to stringResource(R.string.settings_follow_system), "zh" to stringResource(R.string.settings_language_chinese), "en" to stringResource(R.string.settings_language_english))
     val startPages = mapOf("dashboard" to stringResource(R.string.settings_home), "asset" to stringResource(R.string.settings_items), "bill" to stringResource(R.string.bill_title), "life" to stringResource(R.string.life_title))
     val billTypes = mapOf("EXPENSE" to stringResource(R.string.settings_bill_expense), "INCOME" to stringResource(R.string.settings_bill_income))
 
@@ -270,7 +270,7 @@ fun GeneralSettingsScreen(
             title = { Text(stringResource(R.string.settings_calendar_permission_title), fontWeight = FontWeight.Bold) },
             text = { Text(stringResource(R.string.settings_calendar_permission_text), fontWeight = FontWeight.Bold) },
             confirmButton = {
-                TextButton(onClick = { showCalendarPermissionDialog = false; calendarPermissionLauncher.launch(Manifest.permission.WRITE_CALENDAR) }) { Text(stringResource(R.string.settings_calendar_permission_action), fontWeight = FontWeight.Bold) }
+                TextButton(onClick = { showCalendarPermissionDialog = false; calendarPermissionLauncher.launch(arrayOf(Manifest.permission.WRITE_CALENDAR, Manifest.permission.READ_CALENDAR)) }) { Text(stringResource(R.string.settings_calendar_permission_action), fontWeight = FontWeight.Bold) }
             },
             dismissButton = { TextButton(onClick = { showCalendarPermissionDialog = false }) { Text(stringResource(R.string.settings_cancel), fontWeight = FontWeight.Bold) } }
         )

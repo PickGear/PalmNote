@@ -18,9 +18,11 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.palmnote.PalmNoteApp
-import com.palmnote.ui.components.simpleViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.palmnote.R
 import com.palmnote.data.db.entity.Budget
+import com.palmnote.domain.model.toMoney
+import com.palmnote.domain.model.toYuanString
 import com.palmnote.domain.util.CurrencyUtils
 import com.palmnote.domain.util.DateUtils
 import com.palmnote.ui.components.*
@@ -30,7 +32,7 @@ import com.palmnote.ui.theme.*
 @Composable
 fun BudgetScreen(
     onNavigateBack: () -> Unit = {},
-    viewModel: BillViewModel = simpleViewModel { PalmNoteApp.container.billViewModel() }
+    viewModel: BillViewModel = hiltViewModel()
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -76,7 +78,7 @@ fun BudgetScreen(
                             Column {
                                 Text(stringResource(R.string.budget_total), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 Text(
-                                    CurrencyUtils.formatCurrency(budget.totalBudget),
+                                    CurrencyUtils.formatCurrency(budget.totalBudget.toMoney()),
                                     style = MaterialTheme.typography.headlineSmall,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -84,7 +86,7 @@ fun BudgetScreen(
                             Column(horizontalAlignment = Alignment.End) {
                                 Text(stringResource(R.string.budget_used), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 Text(
-                                    CurrencyUtils.formatCurrency(state.monthlyExpense),
+                                    CurrencyUtils.formatCurrency(state.monthlyExpense.toMoney()),
                                     style = MaterialTheme.typography.headlineSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = if (state.monthlyExpense > budget.totalBudget) ErrorLight else AccentOrange
@@ -116,8 +118,8 @@ fun BudgetScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
-                                if (remaining >= 0) "${stringResource(R.string.budget_remaining)} ${CurrencyUtils.formatCurrency(remaining)}"
-                                else "${stringResource(R.string.budget_over)} ${CurrencyUtils.formatCurrency(-remaining)}",
+                                if (remaining >= 0) "${stringResource(R.string.budget_remaining)} ${CurrencyUtils.formatCurrency(remaining.toMoney())}"
+                                else "${stringResource(R.string.budget_over)} ${CurrencyUtils.formatCurrency((-remaining).toMoney())}",
                                 style = MaterialTheme.typography.bodySmall,
                                 fontWeight = FontWeight.Medium,
                                 color = if (remaining >= 0) StatusActive else ErrorLight
@@ -181,7 +183,7 @@ fun BudgetScreen(
 
     // Edit Budget Dialog
     if (showEditDialog) {
-        var amount by remember { mutableStateOf(state.budget?.totalBudget?.toString() ?: "") }
+        var amount by remember { mutableStateOf(state.budget?.totalBudget?.toYuanString() ?: "") }
         var amountError by remember { mutableStateOf(false) }
 
         AppDialog(
@@ -200,9 +202,9 @@ fun BudgetScreen(
                         onValueChange = { amount = it; amountError = false },
                         modifier = Modifier.fillMaxWidth(),
                         placeholder = { Text("0.00") },
-                        prefix = { Text("¥") },
+                        prefix = { Text(stringResource(R.string.currency_symbol)) },
                         isError = amountError,
-                        supportingText = if (amountError) {{ Text("请输入有效金额") }} else null,
+                        supportingText = if (amountError) {{ Text(stringResource(R.string.budget_invalid_amount)) }} else null,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         shape = MaterialTheme.shapes.medium,
                         singleLine = true
@@ -212,7 +214,7 @@ fun BudgetScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        val budgetValue = amount.toDoubleOrNull()
+                        val budgetValue = com.palmnote.domain.model.Money.parse(amount)?.cents
                         if (budgetValue != null && budgetValue > 0) {
                             val existing = state.budget
                             viewModel.saveBudget(

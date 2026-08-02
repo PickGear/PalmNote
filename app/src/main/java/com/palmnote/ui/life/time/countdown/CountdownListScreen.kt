@@ -1,4 +1,4 @@
-﻿package com.palmnote.ui.life.time.countdown
+package com.palmnote.ui.life.time.countdown
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -27,7 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.palmnote.PalmNoteApp
 import com.palmnote.R
-import com.palmnote.ui.components.simpleViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.palmnote.ui.components.EmptyState
 import com.palmnote.ui.life.common.SwipeableItem
 import com.palmnote.ui.components.AppDialog
@@ -42,7 +42,7 @@ import java.time.temporal.ChronoUnit
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CountdownListScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Long) -> Unit, onCreateClick: () -> Unit = {}, viewModel: CountdownViewModel = simpleViewModel { PalmNoteApp.container.countdownViewModel() }) {
+fun CountdownListScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Long) -> Unit, onCreateClick: () -> Unit = {}, viewModel: CountdownViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(templateId) { viewModel.load(templateId) }
     var deleteTarget by remember { mutableStateOf<Long?>(null) }
@@ -51,7 +51,7 @@ fun CountdownListScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Long
             onDismissRequest = { deleteTarget = null },
             title = { Text(stringResource(R.string.confirm), fontWeight = FontWeight.Bold) },
             text = { Text(stringResource(R.string.life_confirm_delete_countdown)) },
-            confirmButton = { TextButton(onClick = { viewModel.deleteItem(deleteTarget!!); deleteTarget = null }) { Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error) } },
+            confirmButton = { TextButton(onClick = { deleteTarget?.let { viewModel.deleteItem(it) }; deleteTarget = null }) { Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error) } },
             dismissButton = { TextButton(onClick = { deleteTarget = null }) { Text(stringResource(R.string.cancel)) } }
         )
     }
@@ -64,13 +64,13 @@ fun CountdownListScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Long
                     IconButton(onClick = onCreateClick) { Icon(Icons.Default.Add, stringResource(R.string.life_new_create)) }
                     var showClearExpired by remember { mutableStateOf(false) }
                     if (state.items.isNotEmpty()) {
-                        IconButton(onClick = { showClearExpired = true }) { Icon(Icons.Filled.Delete, "清除过期") }
+                        IconButton(onClick = { showClearExpired = true }) { Icon(Icons.Filled.Delete, stringResource(R.string.countdown_clear_expired_title)) }
                     }
                     if (showClearExpired) {
                         AppDialog(
                             onDismissRequest = { showClearExpired = false },
-                            title = { Text("清除过期倒计时", fontWeight = FontWeight.Bold) },
-                            text = { Text("确定删除所有已过期的倒计时？") },
+                            title = { Text(stringResource(R.string.countdown_clear_expired_title), fontWeight = FontWeight.Bold) },
+                            text = { Text(stringResource(R.string.countdown_clear_expired_confirm)) },
                             confirmButton = { TextButton(onClick = {
                                 state.items.forEach { item ->
                                     val dateMillis = try {
@@ -78,7 +78,7 @@ fun CountdownListScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Long
                                         (obj["target_date"] as? JsonPrimitive)?.content?.toLongOrNull()
                                             ?: (obj["targetDate"] as? JsonPrimitive)?.content?.toLongOrNull()
                                     } catch (_: Exception) { null }
-                                    if (dateMillis != null && ChronoUnit.DAYS.between(LocalDate.now(), LocalDate.ofEpochDay(dateMillis / 86400000L)) < 0) {
+                                    if (dateMillis != null && ChronoUnit.DAYS.between(LocalDate.now(), java.time.Instant.ofEpochMilli(dateMillis).atZone(java.time.ZoneId.systemDefault()).toLocalDate()) < 0) {
                                         viewModel.deleteItem(item.id)
                                     }
                                 }

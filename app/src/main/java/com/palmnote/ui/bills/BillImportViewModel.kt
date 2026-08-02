@@ -1,4 +1,8 @@
-﻿package com.palmnote.ui.bills
+package com.palmnote.ui.bills
+import kotlin.jvm.JvmSuppressWildcards
+import javax.inject.Inject
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -20,6 +24,7 @@ import com.palmnote.data.export.ParsedBill
 import com.palmnote.data.ocr.BillOcrParser
 import com.palmnote.data.ocr.OcrBillResult
 import com.palmnote.data.db.entity.Wallet
+import com.palmnote.domain.model.Money
 import com.palmnote.domain.repository.BillRepository
 import com.palmnote.domain.util.DateUtils
 
@@ -63,10 +68,11 @@ data class BillImportState(
     val wallets: List<com.palmnote.data.db.entity.Wallet> = emptyList()
 )
 
-class BillImportViewModel(
-    private val context: Context,
+@HiltViewModel
+class BillImportViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val billRepository: BillRepository,
-    private val cachedWallets: StateFlow<List<Wallet>>
+    private val cachedWallets: @JvmSuppressWildcards StateFlow<List<Wallet>>
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(BillImportState())
@@ -88,11 +94,22 @@ class BillImportViewModel(
         _state.value = BillImportState(mode = mode)
     }
 
-    fun parseFile(context: Context, uri: Uri, fileName: String) {
+    fun parseFile(@ApplicationContext context: Context, uri: Uri, fileName: String) {
         viewModelScope.launch {
             _state.value = _state.value.copy(stage = ImportStage.PARSING, fileName = fileName, error = null, diagnostic = "")
             try {
                 val diag = StringBuilder()
+                // 先查文件大小，超限直接提示，避免 readBytes 整读大文件 OOM
+                val fileSize = withContext(Dispatchers.IO) {
+                    context.contentResolver.openAssetFileDescriptor(uri, "r")?.use { it.length } ?: 0L
+                }
+                if (fileSize > MAX_IMPORT_SIZE) {
+                    _state.value = _state.value.copy(
+                        stage = ImportStage.ERROR,
+                        error = context.getString(R.string.bill_import_error_too_large)
+                    )
+                    return@launch
+                }
                 val rawBytes = withContext(Dispatchers.IO) {
                     context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
                 }
@@ -145,12 +162,18 @@ class BillImportViewModel(
         return content.replace("\u0000", "").lines().map { it.trimStart('\uFEFF').trim() }.filter { it.isNotBlank() }
     }
 
-    fun processOcrImage(context: Context, uri: Uri) {
+    fun processOcrImage(@ApplicationContext context: Context, uri: Uri) {
         viewModelScope.launch {
             _state.value = _state.value.copy(stage = ImportStage.PARSING, ocrImageUri = uri, error = null)
             try {
                 val text = withContext(Dispatchers.IO) {
-                    val bitmap = context.contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it) }
+                    // 先采样解码获取尺寸，再按需降采样，避免大图 OOM
+                    val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                    context.contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) }
+                    val sample = BitmapFactory.Options().apply {
+                        inSampleSize = calculateInSampleSize(bounds.outWidth, bounds.outHeight, 2048)
+                    }
+                    val bitmap = context.contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, sample) }
                         ?: throw Exception(context.getString(R.string.bill_import_error_read_image))
                     val rotated = rotateBitmapIfNeeded(context, uri, bitmap)
                     val image = InputImage.fromBitmap(rotated, 0)
@@ -163,7 +186,7 @@ class BillImportViewModel(
                 }
                 if (results.size == 1) {
                     val r = results[0]
-                    val amountStr = r.amount?.let { if (it == it.toLong().toDouble()) it.toLong().toString() else it.toString() } ?: ""
+                    val amountStr = r.amount?.let { String.format(java.util.Locale.US, "%.2f", it / 100.0) } ?: ""
                     val dateStr = r.date?.let { DateUtils.formatDate(it) } ?: ""
                     _state.value = _state.value.copy(
                         stage = ImportStage.PREVIEW, ocrResults = results, ocrSelectedIndices = setOf(0),
@@ -233,7 +256,7 @@ class BillImportViewModel(
                         merchant = r.merchant, createdAt = System.currentTimeMillis(), updatedAt = System.currentTimeMillis())
                 }
             } else {
-                val amount = s.ocrAmount.toDoubleOrNull()
+                val amount = Money.parse(s.ocrAmount)?.cents
                 if (amount == null) { _state.value = _state.value.copy(stage = ImportStage.PREVIEW, error = context.getString(R.string.bill_import_error_invalid_amount)); return@launch }
                 val billDate = try { java.time.LocalDate.parse(s.ocrDate, java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd")).atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli() }
                 catch (_: Exception) { System.currentTimeMillis() }
@@ -268,8 +291,19 @@ class BillImportViewModel(
 
     private suspend fun insertBillsIfNew(bills: List<Bill>, existing: List<Bill>): Int {
         var count = 0
+        // transactionId 是最可靠唯一键（微信/支付宝交易单号）
+        val existingTxIds = existing.mapNotNull { it.transactionId.takeIf { t -> t.isNotBlank() } }.toSet()
+        // 批内去重，避免同一文件内重复记录被重复插入
+        val seenTxIds = mutableSetOf<String>()
+        val seenByAttrs = mutableSetOf<String>()
         for (bill in bills) {
-            if (existing.any { it.date == bill.date && it.amount == bill.amount && it.merchant == bill.merchant && it.type == bill.type }) continue
+            val txId = bill.transactionId.takeIf { it.isNotBlank() }
+            if (txId != null) {
+                if (existingTxIds.contains(txId) || !seenTxIds.add(txId)) continue
+            } else {
+                val attrKey = "${bill.date}_${bill.amount}_${bill.merchant}_${bill.type}"
+                if (existing.any { it.date == bill.date && it.amount == bill.amount && it.merchant == bill.merchant && it.type == bill.type } || !seenByAttrs.add(attrKey)) continue
+            }
             billRepository.insertBill(bill)
             count++
         }
@@ -278,7 +312,7 @@ class BillImportViewModel(
 
     fun reset() { _state.value = BillImportState(mode = _state.value.mode) }
 
-    private fun rotateBitmapIfNeeded(context: Context, uri: Uri, bitmap: Bitmap): Bitmap {
+    private fun rotateBitmapIfNeeded(@ApplicationContext context: Context, uri: Uri, bitmap: Bitmap): Bitmap {
         val degrees = try {
             context.contentResolver.openInputStream(uri)?.use { stream ->
                 val exif = ExifInterface(stream)
@@ -311,5 +345,20 @@ class BillImportViewModel(
             } catch (_: Exception) { }
         }
         return "UTF-8"
+    }
+
+    private fun calculateInSampleSize(width: Int, height: Int, maxSize: Int): Int {
+        var sample = 1
+        var w = width
+        var h = height
+        while (w / (sample * 2) >= maxSize || h / (sample * 2) >= maxSize) {
+            sample *= 2
+        }
+        return sample
+    }
+
+    private companion object {
+        /** 导入文件大小上限（30MB），避免整读大文件导致 OOM */
+        const val MAX_IMPORT_SIZE = 30L * 1024 * 1024
     }
 }

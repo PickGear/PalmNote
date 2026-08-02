@@ -55,7 +55,7 @@ fun MoodCalendarView(diaries: List<MoodDiary>, month: LocalDate = LocalDate.now(
                         val mc = when (mood?.mood) { "HAPPY" -> LifeMoodHappy; "GOOD" -> LifeMoodNormal; "NORMAL" -> LifeMoodUpset; "SAD" -> LifeMoodSad; "ANGRY" -> LifeMoodAngry; else -> null }
                         val emoji = when (mood?.mood) { "HAPPY" -> "\uD83D\uDE04"; "GOOD" -> "\uD83D\uDE42"; "NORMAL" -> "\uD83D\uDE14"; "SAD" -> "\uD83D\uDE22"; "ANGRY" -> "\uD83D\uDE21"; else -> null }
                         val isToday = d == LocalDate.now()
-                            Box(modifier = Modifier.weight(1f).aspectRatio(1f).padding(2.dp), contentAlignment = Alignment.Center) {
+                        Box(modifier = Modifier.weight(1f).aspectRatio(1f).padding(2.dp), contentAlignment = Alignment.Center) {
                             Box(modifier = Modifier.size(if (isToday) 40.dp else 36.dp).then(if (mc != null) Modifier.background(mc.copy(alpha = 0.12f), if (isToday) CircleShape else RoundedCornerShape(8.dp)) else Modifier).then(if (isToday && mc == null) Modifier.background(LifeMoodColor.copy(alpha = 0.3f), CircleShape) else Modifier), contentAlignment = Alignment.Center) {
                                 if (emoji != null) Text(emoji, fontSize = 14.sp) else Text("$day", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }

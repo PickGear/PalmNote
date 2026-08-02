@@ -9,6 +9,7 @@ import java.io.File
 import java.io.FileOutputStream
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
+import kotlinx.coroutines.runBlocking
 
 class BackupManagerTest {
 
@@ -26,14 +27,14 @@ class BackupManagerTest {
     fun calculateMd5_returnsCorrectHash() {
         val file = tempFolder.newFile("test.txt")
         file.writeText("Hello World")
-        val md5 = backupManager.calculateMd5(file)
+        val md5 = runBlocking { backupManager.calculateMd5(file) }
         assertEquals("b10a8db164e0754105b7a99be72e3fe5", md5)
     }
 
     @Test
     fun calculateMd5_emptyFile_returnsEmptyHash() {
         val file = tempFolder.newFile("empty.txt")
-        val md5 = backupManager.calculateMd5(file)
+        val md5 = runBlocking { backupManager.calculateMd5(file) }
         assertEquals("d41d8cd98f00b204e9800998ecf8427e", md5)
     }
 

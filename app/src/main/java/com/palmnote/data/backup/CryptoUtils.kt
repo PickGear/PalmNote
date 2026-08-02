@@ -13,8 +13,14 @@ object CryptoUtils {
     private const val SALT_SIZE = 16
     private const val IV_SIZE = 12
     private const val GCM_TAG_LENGTH = 128
-    private const val PBKDF2_ITERATIONS = 100000
+    private const val PBKDF2_ITERATIONS = 600000
     private const val KEY_LENGTH = 256
+
+    /** 当前版本加密备份使用的迭代数 */
+    const val CURRENT_PBKDF2_ITERATIONS = PBKDF2_ITERATIONS
+
+    /** 旧版本加密备份使用的迭代数（100k），用于解密兼容 */
+    const val LEGACY_PBKDF2_ITERATIONS = 100000
     
     fun generateSalt(): ByteArray {
         val salt = ByteArray(SALT_SIZE)
@@ -22,9 +28,12 @@ object CryptoUtils {
         return salt
     }
     
-    fun deriveKey(password: String, salt: ByteArray): SecretKey {
+    fun deriveKey(password: String, salt: ByteArray): SecretKey =
+        deriveKey(password, salt, PBKDF2_ITERATIONS)
+
+    fun deriveKey(password: String, salt: ByteArray, iterations: Int): SecretKey {
         val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
-        val spec = PBEKeySpec(password.toCharArray(), salt, PBKDF2_ITERATIONS, KEY_LENGTH)
+        val spec = PBEKeySpec(password.toCharArray(), salt, iterations, KEY_LENGTH)
         val tmp = factory.generateSecret(spec)
         return SecretKeySpec(tmp.encoded, "AES")
     }
@@ -82,7 +91,10 @@ object CryptoUtils {
             java.io.FileInputStream(file).use { fis ->
                 val magic = ByteArray(4)
                 if (fis.read(magic) != 4) false
-                else String(magic) == "PNBK"
+                else {
+                    val s = String(magic)
+                    s == "PNBK" || s == "PNB2"
+                }
             }
         } catch (e: Exception) {
             false

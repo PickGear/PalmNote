@@ -18,6 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.palmnote.domain.model.toMoney
 import com.palmnote.domain.util.CurrencyUtils
 import com.palmnote.ui.theme.*
 import java.time.DayOfWeek
@@ -31,7 +32,7 @@ import java.util.Locale
 @Composable
 fun CalendarView(
     yearMonth: String, // "2024-01"
-    dailyData: Map<Int, Pair<Double, Double>>, // day -> (expense, income)
+    dailyData: Map<Int, Pair<Long, Long>>, // day -> (expense, income)
     selectedDay: Int?,
     onDaySelected: (Int) -> Unit,
     collapsed: Boolean = false,
@@ -250,10 +251,10 @@ fun CalendarView(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            text = CurrencyUtils.formatCurrency(dayData?.first ?: 0.0),
+                            text = CurrencyUtils.formatCurrency((dayData?.first ?: 0L).toMoney()),
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold,
-                            color = if ((dayData?.first ?: 0.0) > 0) ExpenseRed
+                            color = if ((dayData?.first ?: 0L) > 0) ExpenseRed
                                     else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -264,10 +265,10 @@ fun CalendarView(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            text = CurrencyUtils.formatCurrency(dayData?.second ?: 0.0),
+                            text = CurrencyUtils.formatCurrency((dayData?.second ?: 0L).toMoney()),
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold,
-                            color = if ((dayData?.second ?: 0.0) > 0) StatusActive
+                            color = if ((dayData?.second ?: 0L) > 0) StatusActive
                                     else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -277,9 +278,9 @@ fun CalendarView(
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        val balance = (dayData?.second ?: 0.0) - (dayData?.first ?: 0.0)
+                        val balance = (dayData?.second ?: 0L) - (dayData?.first ?: 0L)
                         Text(
-                            text = CurrencyUtils.formatCurrency(balance),
+                            text = CurrencyUtils.formatCurrency(balance.toMoney()),
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold,
                             color = if (balance >= 0) StatusActive else ErrorLight

@@ -32,7 +32,7 @@ import com.palmnote.ui.components.SecondaryTopAppBar
 import com.palmnote.ui.components.toComposeColor
 import com.palmnote.data.db.entity.LifeTemplate
 import com.palmnote.PalmNoteApp
-import com.palmnote.ui.components.simpleViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.palmnote.ui.theme.*
 import kotlinx.serialization.json.*
 import java.util.UUID
@@ -50,7 +50,7 @@ data class TemplateField(
 fun TemplateCreateScreen(
     onBack: () -> Unit,
     onCreated: (Long) -> Unit,
-    viewModel: TemplateCreateViewModel = simpleViewModel { PalmNoteApp.container.templateCreateViewModel() }
+    viewModel: TemplateCreateViewModel = hiltViewModel()
 ) {
     var step by remember { mutableIntStateOf(0) }
     var templateType by remember { mutableStateOf("PLAN") }
@@ -169,7 +169,7 @@ private fun BasicInfoStep(name: String, onNameChange: (String) -> Unit, descript
 private fun FieldStep(fields: List<TemplateField>, onFieldsChange: (List<TemplateField>) -> Unit) {
     val fieldTypes = listOf("TEXT" to stringResource(R.string.life_template_field_text), "NUMBER" to stringResource(R.string.life_template_field_number), "DATE" to stringResource(R.string.life_template_field_date), "SELECT" to stringResource(R.string.life_template_field_select), "DECIMAL" to stringResource(R.string.life_template_field_decimal))
     LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        items(fields.size) { index ->
+        items(fields.size, key = { it }) { index ->
             Card(shape = MaterialTheme.shapes.large, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
                 Column(modifier = Modifier.padding(12.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {

@@ -1,4 +1,6 @@
-﻿package com.palmnote.ui.bills
+package com.palmnote.ui.bills
+import javax.inject.Inject
+import dagger.hilt.android.lifecycle.HiltViewModel
 
 import androidx.compose.runtime.Stable
 import androidx.lifecycle.ViewModel
@@ -7,6 +9,7 @@ import com.palmnote.data.db.dao.CategoryTotal
 import com.palmnote.data.db.dao.DailySummary
 import com.palmnote.data.db.dao.MonthTotal
 import com.palmnote.domain.repository.BillRepository
+import com.palmnote.domain.repository.groupToDailySummaries
 import com.palmnote.domain.util.DateUtils
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
@@ -16,8 +19,8 @@ import java.util.Calendar
 
 @Stable
 data class ReportData(
-    val totalExpense: Double = 0.0,
-    val totalIncome: Double = 0.0,
+    val totalExpense: Long = 0,
+    val totalIncome: Long = 0,
     val billCount: Int = 0,
     val avgDaily: Double = 0.0,
     val categories: List<CategoryTotal> = emptyList(),
@@ -38,7 +41,8 @@ data class ReportState(
     val selectedBookId: Long = -1L
 )
 
-class ReportViewModel(
+@HiltViewModel
+class ReportViewModel @Inject constructor(
     private val billRepository: BillRepository
 ) : ViewModel() {
 
@@ -143,11 +147,12 @@ class ReportViewModel(
                 } else {
                     if (isExpense) billRepository.getWeeklyExpenseByCategoryByBook(bookId, s, e) else billRepository.getWeeklyIncomeByCategoryByBook(bookId, s, e)
                 },
-                if (isAllBooks) billRepository.getWeeklyDailySummary(s, e) else billRepository.getWeeklyDailySummaryByBook(bookId, s, e)
-            ) { billCount, expense, income, categories, daily ->
+                if (isAllBooks) billRepository.getBillsByDateRange(s, e) else billRepository.getBillsByDateRangeByBook(bookId, s, e)
+            ) { billCount, expense, income, categories, bills ->
+                val daily = bills.groupToDailySummaries()
                 val days = daily.filter { if (isExpense) it.expense > 0 else it.income > 0 }
-                val avg = if (days.isNotEmpty()) (if (isExpense) expense ?: 0.0 else income ?: 0.0) / days.size else 0.0
-                ReportData(expense ?: 0.0, income ?: 0.0, billCount, avg, categories, daily)
+                val avg = if (days.isNotEmpty()) (if (isExpense) expense ?: 0L else income ?: 0L).toDouble() / days.size else 0.0
+                ReportData(expense ?: 0L, income ?: 0L, billCount, avg, categories, daily)
             }.collect { reportData -> _state.update { it.copy(data = reportData) } }
         } catch (e: Exception) { /* Log but don't crash */ }
     }
@@ -166,11 +171,12 @@ class ReportViewModel(
                 } else {
                     if (isExpense) billRepository.getExpenseByCategoryByBook(bookId, ym) else billRepository.getIncomeByCategoryByBook(bookId, ym)
                 },
-                if (isAllBooks) billRepository.getDailySummary(ym) else billRepository.getDailySummaryByBook(bookId, ym)
-            ) { billCount, expense, income, categories, daily ->
+                if (isAllBooks) billRepository.getBillsByMonth(ym) else billRepository.getBillsByBookAndMonth(bookId, ym)
+            ) { billCount, expense, income, categories, bills ->
+                val daily = bills.groupToDailySummaries()
                 val days = daily.filter { if (isExpense) it.expense > 0 else it.income > 0 }
-                val avg = if (days.isNotEmpty()) (if (isExpense) expense ?: 0.0 else income ?: 0.0) / days.size else 0.0
-                ReportData(expense ?: 0.0, income ?: 0.0, billCount, avg, categories, daily)
+                val avg = if (days.isNotEmpty()) (if (isExpense) expense ?: 0L else income ?: 0L).toDouble() / days.size else 0.0
+                ReportData(expense ?: 0L, income ?: 0L, billCount, avg, categories, daily)
             }.collect { reportData -> _state.update { it.copy(data = reportData) } }
         } catch (e: Exception) { /* Log but don't crash */ }
     }
@@ -192,7 +198,7 @@ class ReportViewModel(
                 }
             ) { expense, income, expTrend, incTrend, categories ->
                 ReportData(
-                    expense ?: 0.0, income ?: 0.0, 0, 0.0,
+                    expense ?: 0L, income ?: 0L, 0, 0.0,
                     categories.map { CategoryTotal(it.category, it.total) },
                     emptyList(),
                     if (isExpense) expTrend else incTrend

@@ -30,12 +30,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.palmnote.PalmNoteApp
-import com.palmnote.ui.components.simpleViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
 import com.palmnote.R
 import com.palmnote.data.export.BillCsvImporter
 import com.palmnote.data.export.ParsedBill
 import com.palmnote.data.ocr.OcrBillResult
+import com.palmnote.domain.model.toMoney
 import com.palmnote.domain.util.CurrencyUtils
 import com.palmnote.domain.util.DateUtils
 import com.palmnote.data.db.entity.Wallet
@@ -46,7 +47,7 @@ import com.palmnote.ui.theme.*
 @Composable
 fun BillImportScreen(
     onNavigateBack: () -> Unit = {},
-    viewModel: BillImportViewModel = simpleViewModel { PalmNoteApp.container.billImportViewModel() }
+    viewModel: BillImportViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -269,7 +270,7 @@ private fun FileBillRow(bill: ParsedBill, selected: Boolean, onToggle: () -> Uni
             Column(modifier = Modifier.weight(1f)) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text(bill.merchant.ifEmpty { bill.category }, fontWeight = FontWeight.Medium, style = MaterialTheme.typography.bodyMedium)
-                    Text(CurrencyUtils.formatCurrency(bill.amount), fontWeight = FontWeight.Bold, color = if (bill.type == "EXPENSE") ExpenseRed else IncomeGreen)
+                    Text(CurrencyUtils.formatCurrency(bill.amount.toMoney()), fontWeight = FontWeight.Bold, color = if (bill.type == "EXPENSE") ExpenseRed else IncomeGreen)
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(DateUtils.formatDisplayDate(context, bill.date), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -368,7 +369,7 @@ private fun OcrItem(result: OcrBillResult, selected: Boolean, onClick: () -> Uni
                 }
             }
         }
-        if (result.amount != null) Text("-${CurrencyUtils.formatCurrency(result.amount)}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = ExpenseRed)
+        if (result.amount != null) Text("-${CurrencyUtils.formatCurrency(result.amount.toMoney())}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = ExpenseRed)
     }
 }
 

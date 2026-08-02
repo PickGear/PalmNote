@@ -1,10 +1,14 @@
 package com.palmnote.ui.life.common
+import javax.inject.Inject
+import dagger.hilt.android.lifecycle.HiltViewModel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.palmnote.data.db.entity.CrossLink
 import com.palmnote.data.db.entity.LifeItem
 import com.palmnote.data.db.entity.LifeTemplate
+import com.palmnote.domain.model.Money
+import com.palmnote.domain.model.toYuanString
 import com.palmnote.domain.model.EntityType
 import com.palmnote.domain.repository.CrossLinkRepository
 import com.palmnote.domain.repository.LifeItemRepository
@@ -24,7 +28,8 @@ data class ItemDetailUiState(
     val links: List<CrossLink> = emptyList()
 )
 
-class ItemDetailViewModel(
+@HiltViewModel
+class ItemDetailViewModel @Inject constructor(
     private val itemRepo: LifeItemRepository,
     private val templateRepo: LifeTemplateRepository,
     private val crossLinkRepo: CrossLinkRepository,
@@ -54,13 +59,13 @@ class ItemDetailViewModel(
         }
     }
 
-    fun depositAmount(amount: Double) {
+    fun depositAmount(amountCents: Long) {
         val item = _uiState.value.item ?: return
         viewModelScope.launch {
             val fields = try { Json.decodeFromString<JsonObject>(item.fieldsData) } catch (_: Exception) { JsonObject(emptyMap()) }
             val savedKey = if (fields.containsKey("saved_amount")) "saved_amount" else if (fields.containsKey("currentAmount")) "currentAmount" else "saved_amount"
-            val current = (fields[savedKey] as? JsonPrimitive)?.content?.toDoubleOrNull() ?: 0.0
-            val newFields = JsonObject(fields + (savedKey to JsonPrimitive((current + amount).toString())))
+            val current = (fields[savedKey] as? JsonPrimitive)?.content?.let { Money.parse(it)?.cents } ?: 0L
+            val newFields = JsonObject(fields + (savedKey to JsonPrimitive((current + amountCents).toYuanString())))
             itemRepo.updateFieldsData(item.id, newFields.toString())
             itemRepo.getItemById(item.id)?.let { eventBus.postDepositMade(it) }
             load(item.id)

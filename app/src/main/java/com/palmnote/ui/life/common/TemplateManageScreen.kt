@@ -20,7 +20,7 @@ import androidx.compose.ui.unit.sp
 import com.palmnote.R
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.palmnote.PalmNoteApp
-import com.palmnote.ui.components.simpleViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.palmnote.data.db.entity.LifeTemplate
 import com.palmnote.data.db.entity.getDisplayDescription
 import com.palmnote.ui.components.CompactTopAppBar
@@ -33,7 +33,7 @@ import com.palmnote.ui.theme.*
 fun TemplateManageScreen(
     onBack: () -> Unit,
     onCreateClick: () -> Unit = {},
-    viewModel: LifeViewModel = simpleViewModel { PalmNoteApp.container.lifeViewModel() }
+    viewModel: LifeViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -74,7 +74,7 @@ fun TemplateManageScreen(
                 Text(stringResource(R.string.life_preset_templates), fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(modifier = Modifier.height(8.dp))
             }
-            items(state.templates.filter { it.isBuiltin }) { tpl ->
+            items(state.templates.filter { it.isBuiltin }, key = { it.id }) { tpl ->
                 TemplateItem(tpl)
             }
             item {
@@ -99,7 +99,7 @@ fun TemplateManageScreen(
                     }
                 }
             } else {
-                items(customTemplates) { tpl ->
+                items(customTemplates, key = { it.id }) { tpl ->
                     TemplateItem(tpl)
                 }
             }

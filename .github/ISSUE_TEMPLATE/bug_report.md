@@ -1,30 +1,36 @@
 ---
-name: Bug report
-about: Create a report to help us improve PalmNote
+name: Bug 反馈
+about: 提交问题以帮助我们改进 PalmNote
 title: "[Bug] "
 labels: bug
 assignees: ""
 ---
 
-## Description
-A clear and concise description of the bug.
+## 问题描述
 
-## To Reproduce
-1. Go to '...'
-2. Click on '...'
-3. Scroll down to '...'
-4. See error
+清晰简洁地描述该 Bug。
 
-## Expected behavior
-A clear and concise description of what you expected to happen.
+## 复现步骤
 
-## Screenshots
-If applicable, add screenshots to help explain your problem.
+1. 进入 '...'
+2. 点击 '...'
+3. 向下滚动到 '...'
+4. 看到错误
 
-## Environment
-- Device:
-- Android version:
-- App version:
+## 预期行为
 
-## Additional context
-Add any other context about the problem here.
+清晰描述你期望发生的结果。
+
+## 截图
+
+如有需要，请添加截图帮助说明问题。
+
+## 运行环境
+
+- 设备型号：
+- Android 版本：
+- 应用版本：
+
+## 补充说明
+
+其他有助于定位问题的上下文信息。

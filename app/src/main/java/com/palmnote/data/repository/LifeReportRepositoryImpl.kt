@@ -1,10 +1,11 @@
 package com.palmnote.data.repository
+import javax.inject.Inject
 
 import com.palmnote.data.db.dao.LifeReportDao
 import com.palmnote.data.db.entity.LifeReport
 import com.palmnote.domain.repository.LifeReportRepository
 import kotlinx.coroutines.flow.Flow
-class LifeReportRepositoryImpl(
+class LifeReportRepositoryImpl @Inject constructor(
     private val dao: LifeReportDao
 ) : LifeReportRepository {
     override fun getReportsByType(type: String): Flow<List<LifeReport>> = dao.getReportsByType(type)

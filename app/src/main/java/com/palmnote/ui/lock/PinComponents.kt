@@ -1,8 +1,11 @@
 package com.palmnote.ui.lock
 
 import android.content.Context
+import android.view.HapticFeedbackConstants
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -18,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -27,6 +31,7 @@ import androidx.fragment.app.FragmentActivity
 import com.palmnote.R
 import com.palmnote.data.lock.AppLockManager
 import com.palmnote.ui.components.AppDialog
+import kotlinx.coroutines.launch
 
 @Composable
 fun PinDotsDisplay(length: Int) {
@@ -34,18 +39,27 @@ fun PinDotsDisplay(length: Int) {
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         repeat(6) { index ->
+            val filled = index < length
+            val fillColor by animateColorAsState(
+                targetValue = if (filled) MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.surfaceVariant,
+                animationSpec = tween(140),
+                label = "pinDotFill"
+            )
+            val borderColor by animateColorAsState(
+                targetValue = if (filled) MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.outlineVariant,
+                animationSpec = tween(140),
+                label = "pinDotBorder"
+            )
             Box(
                 modifier = Modifier
                     .size(16.dp)
                     .clip(CircleShape)
-                    .background(
-                        if (index < length) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.surfaceVariant
-                    )
+                    .background(fillColor)
                     .border(
                         width = 2.dp,
-                        color = if (index < length) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.outlineVariant,
+                        color = borderColor,
                         shape = CircleShape
                     )
             )
@@ -60,6 +74,7 @@ fun PinKeyboard(
     onBiometricClick: () -> Unit,
     showBiometric: Boolean
 ) {
+    val view = LocalView.current
     val keys = listOf(
         listOf("1", "2", "3"),
         listOf("4", "5", "6"),
@@ -83,6 +98,7 @@ fun PinKeyboard(
                             .clip(RoundedCornerShape(12.dp))
                             .background(MaterialTheme.colorScheme.surfaceVariant)
                             .clickable {
+                                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                                 when (key) {
                                     "del" -> onDeleteClick()
                                     "bio" -> onBiometricClick()
@@ -129,9 +145,12 @@ fun ChangePinDialog(
     var newPin by remember { mutableStateOf("") }
     var confirmNewPin by remember { mutableStateOf("") }
     var error by remember { mutableStateOf("") }
+    var saving by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
     val oldPinWrongText = stringResource(R.string.app_lock_old_pin_wrong)
     val pinMismatchText = stringResource(R.string.app_lock_pin_mismatch)
+    val lockedOutText = stringResource(R.string.app_lock_locked_out)
 
     AppDialog(
         onDismissRequest = onDismiss,
@@ -178,7 +197,7 @@ fun ChangePinDialog(
 
                 PinKeyboard(
                     onDigitClick = { digit ->
-                        if (currentPin.length < 6) {
+                        if (!saving && currentPin.length < 6) {
                             when (step) {
                                 1 -> oldPin += digit
                                 2 -> newPin += digit
@@ -188,11 +207,13 @@ fun ChangePinDialog(
                             if (currentPin.length + 1 == 6) {
                                 when (step) {
                                     1 -> {
-                                        if (appLockManager.verifyPin(oldPin)) {
-                                            step = 2
-                                        } else {
-                                            error = oldPinWrongText
-                                            oldPin = ""
+                                        scope.launch {
+                                            if (appLockManager.verifyPin(oldPin)) {
+                                                step = 2
+                                            } else {
+                                                error = if (appLockManager.getLockoutRemainingMs() > 0) lockedOutText else oldPinWrongText
+                                                oldPin = ""
+                                            }
                                         }
                                     }
                                     2 -> {
@@ -200,8 +221,11 @@ fun ChangePinDialog(
                                     }
                                     3 -> {
                                         if (newPin == confirmNewPin) {
-                                            appLockManager.setPin(newPin)
-                                            onSuccess()
+                                            saving = true
+                                            scope.launch {
+                                                appLockManager.setPin(newPin)
+                                                onSuccess()
+                                            }
                                         } else {
                                             error = pinMismatchText
                                             confirmNewPin = ""
@@ -268,6 +292,9 @@ fun showBiometricPrompt(context: Context, onResult: (Boolean) -> Unit) {
         .setTitle(context.getString(R.string.app_lock_biometric_title))
         .setSubtitle(context.getString(R.string.app_lock_biometric_subtitle))
         .setNegativeButtonText(context.getString(R.string.app_lock_biometric_cancel))
+        .setAllowedAuthenticators(
+            BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.BIOMETRIC_WEAK
+        )
         .build()
 
     biometricPrompt.authenticate(promptInfo)

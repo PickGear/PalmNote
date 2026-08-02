@@ -19,10 +19,10 @@ interface PlanListItemDao {
     fun getCompletedItemCount(listId: Long): Flow<Int>
 
     @Query("SELECT SUM(unitPrice * quantity) FROM plan_list_items WHERE listId = :listId AND isCompleted = 1")
-    fun getCompletedTotalCost(listId: Long): Flow<Double?>
+    fun getCompletedTotalCost(listId: Long): Flow<Long?>
 
     @Query("SELECT SUM(unitPrice * quantity) FROM plan_list_items WHERE listId = :listId")
-    fun getTotalCost(listId: Long): Flow<Double?>
+    fun getTotalCost(listId: Long): Flow<Long?>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertItem(item: PlanListItem): Long

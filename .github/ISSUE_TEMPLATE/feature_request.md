@@ -1,22 +1,27 @@
 ---
-name: Feature request
-about: Suggest an idea for PalmNote
+name: 功能建议
+about: 为 PalmNote 提出新功能想法
 title: "[Feature] "
 labels: enhancement
 assignees: ""
 ---
 
-## Is your feature request related to a problem?
-A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
+## 建议与现存问题的关系
 
-## Describe the solution you'd like
-A clear and concise description of what you want to happen.
+清晰描述你遇到的问题。例如：当 [...] 时，我总是很困扰。
 
-## Describe alternatives you've considered
-A clear and concise description of any alternative solutions or features you've considered.
+## 期望的解决方案
 
-## Usage scenario
-How would this feature improve your experience?
+清晰描述你希望发生的结果。
 
-## Additional context
-Add any other context or screenshots about the feature request here.
+## 考虑过的替代方案
+
+描述你考虑过的其他解决方案或备选功能。
+
+## 使用场景
+
+该功能将如何改善你的使用体验？
+
+## 补充说明
+
+其他有助于理解该功能建议的上下文或截图。

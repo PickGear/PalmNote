@@ -1,4 +1,6 @@
-﻿package com.palmnote.ui.search
+package com.palmnote.ui.search
+import javax.inject.Inject
+import dagger.hilt.android.lifecycle.HiltViewModel
 
 import androidx.compose.runtime.Stable
 import androidx.lifecycle.ViewModel
@@ -34,7 +36,8 @@ data class SearchState(
     val isSearching: Boolean = false
 )
 
-class SearchViewModel(
+@HiltViewModel
+class SearchViewModel @Inject constructor(
     private val assetRepository: AssetRepository,
     private val billRepository: BillRepository,
     private val goalRepository: GoalRepository,

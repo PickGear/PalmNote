@@ -55,16 +55,16 @@ interface AssetDao {
     fun getAssetCountByStatus(status: String): Flow<Int>
 
     @Query("SELECT SUM(purchasePrice) FROM assets WHERE isDeleted = 0 AND status != 'REMOVED'")
-    fun getTotalAssetValue(): Flow<Double?>
+    fun getTotalAssetValue(): Flow<Long?>
 
     @Query("SELECT SUM(purchasePrice) FROM assets WHERE isDeleted = 0 AND status = 'HELD'")
-    fun getHeldAssetValue(): Flow<Double?>
+    fun getHeldAssetValue(): Flow<Long?>
 
     @Query("SELECT SUM(soldPrice) FROM assets WHERE status = 'REMOVED' AND isDeleted = 0 AND soldPrice IS NOT NULL")
-    fun getTotalSoldValue(): Flow<Double?>
+    fun getTotalSoldValue(): Flow<Long?>
 
     @Query("SELECT SUM(currentValue) FROM assets WHERE status = 'HELD' AND isDeleted = 0 AND currentValue > 0")
-    fun getTotalCurrentValue(): Flow<Double?>
+    fun getTotalCurrentValue(): Flow<Long?>
 
     @Query("SELECT category, COUNT(*) as count, SUM(purchasePrice) as totalValue FROM assets WHERE isDeleted = 0 GROUP BY category ORDER BY count DESC")
     fun getCategoryDistribution(): Flow<List<CategoryCount>>
@@ -125,7 +125,7 @@ interface AssetDao {
     suspend fun setFavorite(id: Long, isFavorite: Boolean, now: Long = System.currentTimeMillis())
 
     @Query("UPDATE assets SET currentValue = :value, updatedAt = :now WHERE id = :id")
-    suspend fun updateCurrentValue(id: Long, value: Double, now: Long = System.currentTimeMillis())
+    suspend fun updateCurrentValue(id: Long, value: Long, now: Long = System.currentTimeMillis())
 
     @Query("UPDATE assets SET condition = :condition, updatedAt = :now WHERE id = :id")
     suspend fun updateCondition(id: Long, condition: String, now: Long = System.currentTimeMillis())
@@ -146,7 +146,7 @@ interface AssetDao {
     suspend fun markAssetLost(id: Long, lostDate: Long, reason: String, now: Long = System.currentTimeMillis())
 
     @Query("UPDATE assets SET status = 'REMOVED', soldDate = :soldDate, soldPrice = :soldPrice, soldChannel = :soldChannel, soldToWhom = :soldToWhom, updatedAt = :now WHERE id = :id")
-    suspend fun sellAsset(id: Long, soldDate: Long, soldPrice: Double, soldChannel: String, soldToWhom: String, now: Long = System.currentTimeMillis())
+    suspend fun sellAsset(id: Long, soldDate: Long, soldPrice: Long, soldChannel: String, soldToWhom: String, now: Long = System.currentTimeMillis())
 
     @Query("UPDATE assets SET status = 'HELD', retireDate = null, retireReason = '', lostDate = null, lostReason = '', soldDate = null, soldPrice = null, soldChannel = null, soldToWhom = null, updatedAt = :now WHERE id = :id")
     suspend fun reactivateAsset(id: Long, now: Long = System.currentTimeMillis())
@@ -170,11 +170,11 @@ interface AssetDao {
 data class CategoryCount(
     val category: String,
     val count: Int,
-    val totalValue: Double = 0.0
+    val totalValue: Long = 0
 )
 
 data class BrandCount(
     val brand: String,
     val count: Int,
-    val totalValue: Double = 0.0
+    val totalValue: Long = 0
 )

@@ -28,7 +28,7 @@ data class Asset(
     val subCategory: String = "", // 子分类，如"手机"下的"iPhone"
     val brand: String = "", // 品牌
     val model: String = "", // 型号
-    val purchasePrice: Double = 0.0,
+    val purchasePrice: Long = 0, // 购买价（分）
     val acquisitionType: String = "PURCHASE", // PURCHASE, GIFT, LOTTERY, PRIZE, INHERITANCE, OTHER
     val acquisitionDate: Long? = null,
     val status: String = "HELD", // HELD, AWAY, REMOVED
@@ -49,7 +49,7 @@ data class Asset(
     val serialNumber: String = "", // 序列号
     val receiptPath: String = "", // 电子发票路径
     val depreciationRate: Double = 0.0, // 年折旧率(%), 0表示不折旧
-    val currentValue: Double = 0.0, // 当前估值(自动计算或手动)
+    val currentValue: Long = 0, // 当前估值（分）
     val maintenanceIntervalDays: Int = 0, // 维护提醒间隔(天), 0=不提醒
     val lastMaintenanceDate: Long? = null, // 上次维护日期
     val nextMaintenanceDate: Long? = null, // 下次维护日期
@@ -63,7 +63,7 @@ data class Asset(
     val lostDate: Long? = null,
     val lostReason: String = "",
     val soldDate: Long? = null,
-    val soldPrice: Double? = null,
+    val soldPrice: Long? = null, // 售出价（分）
     val soldChannel: String? = null,
     val soldToWhom: String? = null, // 售出给谁
     val sortOrder: Int = 0,
@@ -101,7 +101,7 @@ data class Asset(
     val daysOwned: Long
         get() = ((System.currentTimeMillis() - effectiveDate) / DateUtils.MILLIS_PER_DAY).coerceAtLeast(1)
 
-    val displayPrice: Double
+    val displayPrice: Long
         get() = when {
             status == "REMOVED" && soldPrice != null -> soldPrice
             currentValue > 0 -> currentValue
@@ -109,7 +109,7 @@ data class Asset(
         }
 
     val dailyCost: Double
-        get() = purchasePrice / daysOwned
+        get() = if (daysOwned > 0) purchasePrice.toDouble() / 100.0 / daysOwned else 0.0
 
     val isMaintenanceDue: Boolean
         get() = nextMaintenanceDate != null && nextMaintenanceDate <= System.currentTimeMillis()
