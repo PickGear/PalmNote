@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_version">v1.0.0</string>\n    <string name="app_name">掌记</string>
+    <string name="app_version">v1.2.0</string>
+    <string name="app_name">掌记</string>
     
     <!-- Bottom Navigation -->
     <string name="nav_dashboard">首页</string>
