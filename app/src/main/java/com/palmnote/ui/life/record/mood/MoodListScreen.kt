@@ -21,7 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.palmnote.PalmNoteApp
 import com.palmnote.R
-import com.palmnote.ui.components.simpleViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.palmnote.data.db.entity.MoodDiary
 import com.palmnote.ui.components.AppDialog
 import com.palmnote.ui.components.SecondaryTopAppBar
@@ -38,7 +38,7 @@ import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MoodListScreen(onBack: () -> Unit, viewModel: MoodViewModel = simpleViewModel { PalmNoteApp.container.moodViewModel() }) {
+fun MoodListScreen(onBack: () -> Unit, viewModel: MoodViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) { viewModel.load() }
     var deleteTarget by remember { mutableStateOf<MoodDiary?>(null) }
@@ -49,7 +49,7 @@ fun MoodListScreen(onBack: () -> Unit, viewModel: MoodViewModel = simpleViewMode
             onDismissRequest = { deleteTarget = null },
             title = { Text(stringResource(R.string.confirm), fontWeight = FontWeight.Bold) },
             text = { Text(stringResource(R.string.life_confirm_delete_record)) },
-            confirmButton = { TextButton(onClick = { viewModel.deleteMood(deleteTarget!!.id); deleteTarget = null }) { Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error) } },
+            confirmButton = { TextButton(onClick = { deleteTarget?.let { viewModel.deleteMood(it.id) }; deleteTarget = null }) { Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error) } },
             dismissButton = { TextButton(onClick = { deleteTarget = null }) { Text(stringResource(R.string.cancel)) } }
         )
     }

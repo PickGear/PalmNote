@@ -4,10 +4,13 @@ complexity:
   LongParameterList:
     functionThreshold: 10
     constructorThreshold: 10
-  ComplexMethod:
+  CyclomaticComplexMethod:
     threshold: 15
   TooManyFunctions:
-    threshold: 30
+    thresholdInFiles: 30
+    # Room DAO/实体/仓库等数据层样板天然多函数，类/接口级阈值放宽
+    thresholdInClasses: 80
+    thresholdInInterfaces: 80
 
 style:
   MaxLineLength:

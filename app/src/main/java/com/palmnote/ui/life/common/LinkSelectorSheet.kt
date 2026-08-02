@@ -1,4 +1,6 @@
 package com.palmnote.ui.life.common
+import javax.inject.Inject
+import dagger.hilt.android.lifecycle.HiltViewModel
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -15,12 +17,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import com.palmnote.PalmNoteApp
-import com.palmnote.ui.components.simpleViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewModelScope
 import com.palmnote.data.db.entity.CrossLink
 import com.palmnote.R
 import com.palmnote.domain.model.EntityType
 import com.palmnote.domain.model.LinkType
+import com.palmnote.domain.model.toMoney
 import com.palmnote.domain.repository.AssetRepository
 import com.palmnote.domain.repository.BillRepository
 import com.palmnote.domain.repository.CrossLinkRepository
@@ -39,7 +42,8 @@ data class LinkSelectorState(
     val assetSearchQuery: String = ""
 )
 
-class LinkSelectorViewModel(
+@HiltViewModel
+class LinkSelectorViewModel @Inject constructor(
     private val billRepo: BillRepository,
     private val assetRepo: AssetRepository,
     private val crossLinkRepo: CrossLinkRepository
@@ -51,7 +55,10 @@ class LinkSelectorViewModel(
         viewModelScope.launch {
             try {
                 val bills = billRepo.getAllBills().first().map {
-                    LinkableBill(id = it.id, note = it.note, amount = "¥${"%.2f".format(it.amount)}")
+                    LinkableBill(
+                        id = it.id, note = it.note,
+                        amount = com.palmnote.domain.util.CurrencyUtils.formatCurrency(it.amount.toMoney())
+                    )
                 }
                 val assets = assetRepo.getAllAssets().first().map {
                     LinkableAsset(id = it.id, name = it.name, category = it.category)
@@ -89,7 +96,7 @@ class LinkSelectorViewModel(
 fun LinkSelectorSheet(
     sourceItemId: Long,
     onDismiss: () -> Unit,
-    viewModel: LinkSelectorViewModel = simpleViewModel { PalmNoteApp.container.linkSelectorViewModel() }
+    viewModel: LinkSelectorViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)

@@ -1,10 +1,12 @@
 package com.palmnote.ui.backup
+import androidx.hilt.navigation.compose.hiltViewModel
 
 import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -24,8 +26,6 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.palmnote.MainActivity
-import com.palmnote.PalmNoteApp
 import com.palmnote.R
 import com.palmnote.data.backup.BackupState
 import com.palmnote.ui.components.*
@@ -35,12 +35,15 @@ import com.palmnote.ui.theme.*
 @Composable
 fun BackupScreen(
     onNavigateBack: () -> Unit = {},
-    viewModel: BackupViewModel = simpleViewModel { PalmNoteApp.container.backupViewModel() }
+    viewModel: BackupViewModel = hiltViewModel()
 ) {
     val backupState by viewModel.backupState.collectAsStateWithLifecycle()
     val password by viewModel.password.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
+
+    // 备份目录列表刷新信号（备份成功后 +1 触发重查）
+    var backupListRefreshKey by remember { mutableIntStateOf(0) }
 
     // SAF: backup to user-chosen folder
     val backupLauncher = rememberLauncherForActivityResult(
@@ -50,6 +53,7 @@ fun BackupScreen(
             context.contentResolver.takePersistableUriPermission(
                 uri, Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
             )
+            viewModel.saveBackupDir(uri)
             viewModel.createBackupToFolder(uri)
         }
     }
@@ -71,13 +75,12 @@ fun BackupScreen(
             is BackupState.Success -> {
                 if (isRestoring) {
                     isRestoring = false
-                    val intent = Intent(context, MainActivity::class.java)
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-                    context.startActivity(intent)
-                    Runtime.getRuntime().exit(0)
+                    // 用 AlarmManager 可靠重启，避免 startActivity+exit(0) 竞态
+                    restartApp(context)
                 } else {
                     snackbarHostState.showSnackbar(context.getString(R.string.backup_operation_success))
                     viewModel.resetState()
+                    backupListRefreshKey++
                 }
             }
             is BackupState.Error -> {
@@ -129,7 +132,9 @@ fun BackupScreen(
                         IconButton(onClick = { passwordVisible = !passwordVisible }) {
                             Icon(
                                 if (passwordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
-                                contentDescription = null
+                                contentDescription = stringResource(
+                                    if (passwordVisible) R.string.backup_hide_password else R.string.backup_show_password
+                                )
                             )
                         }
                     },
@@ -138,8 +143,9 @@ fun BackupScreen(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 if (backupState is BackupState.Progress && !isRestoring) {
+                    val backupPercent = (backupState as BackupState.Progress).percent
                     LinearProgressIndicator(
-                        progress = { (backupState as BackupState.Progress).percent / 100f },
+                        progress = { (backupPercent / 100f).coerceIn(0f, 1f) },
                         modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(modifier = Modifier.height(8.dp))
@@ -164,9 +170,49 @@ fun BackupScreen(
                 Text(stringResource(R.string.backup_restore_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(modifier = Modifier.height(12.dp))
 
+                // 备份文件夹内的备份直接列出（无需再导航文件选择器）；备份成功后刷新列表
+                val dirBackups = remember { mutableStateOf<List<Pair<String, Uri>>>(emptyList()) }
+                LaunchedEffect(backupListRefreshKey) { dirBackups.value = viewModel.listBackupsInDir() }
+
+                if (dirBackups.value.isNotEmpty()) {
+                    Text(
+                        stringResource(R.string.backup_in_folder),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    dirBackups.value.forEach { (name, uri) ->
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 2.dp)
+                                .clickable { restoreFileUri = uri },
+                            shape = MaterialTheme.shapes.medium,
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    Icons.Outlined.Restore, contentDescription = null,
+                                    modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    name, style = MaterialTheme.typography.bodyMedium, maxLines = 1,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                )
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+
                 if (isRestoring && backupState is BackupState.Progress) {
+                    val progressPercent = (backupState as BackupState.Progress).percent
                     LinearProgressIndicator(
-                        progress = { (backupState as BackupState.Progress).percent / 100f },
+                        progress = { (progressPercent / 100f).coerceIn(0f, 1f) },
                         modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(modifier = Modifier.height(8.dp))
@@ -208,7 +254,9 @@ fun BackupScreen(
                             IconButton(onClick = { restorePasswordVisible = !restorePasswordVisible }) {
                                 Icon(
                                     if (restorePasswordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
-                                    contentDescription = null
+                                    contentDescription = stringResource(
+                                        if (restorePasswordVisible) R.string.backup_hide_password else R.string.backup_show_password
+                                    )
                                 )
                             }
                         },
@@ -230,4 +278,17 @@ fun BackupScreen(
             }
         )
     }
+}
+
+/** 用 AlarmManager 可靠重启进程（避免 startActivity + exit(0) 竞态） */
+private fun restartApp(context: android.content.Context) {
+    val intent = context.packageManager.getLaunchIntentForPackage(context.packageName) ?: return
+    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK)
+    val pendingIntent = android.app.PendingIntent.getActivity(
+        context, 1001, intent,
+        android.app.PendingIntent.FLAG_IMMUTABLE or android.app.PendingIntent.FLAG_CANCEL_CURRENT
+    )
+    val alarmManager = context.getSystemService(android.content.Context.ALARM_SERVICE) as android.app.AlarmManager
+    alarmManager.set(android.app.AlarmManager.RTC, System.currentTimeMillis() + 300, pendingIntent)
+    Runtime.getRuntime().exit(0)
 }

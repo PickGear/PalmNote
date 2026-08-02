@@ -35,7 +35,7 @@ fun ImagesInputComponent(
         Spacer(modifier = Modifier.height(Spacing.xxs))
 
         LazyRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-            items(images.size) { i ->
+            items(images.size, key = { it }) { i ->
                 Box(
                     modifier = Modifier
                         .size(80.dp)

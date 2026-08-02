@@ -1,9 +1,10 @@
-﻿package com.palmnote.ui.dashboard
+package com.palmnote.ui.dashboard
+import javax.inject.Inject
+import dagger.hilt.android.lifecycle.HiltViewModel
 
 import androidx.compose.runtime.Stable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.palmnote.data.DataCache
 import com.palmnote.data.db.dao.CategoryCount
 import com.palmnote.data.db.entity.Anniversary
 import com.palmnote.data.db.entity.Budget
@@ -11,6 +12,8 @@ import com.palmnote.data.db.entity.Goal
 import com.palmnote.data.datastore.PreferencesManager
 import com.palmnote.domain.repository.*
 import com.palmnote.domain.util.DateUtils
+import com.palmnote.feature.vault.VaultEntry
+import com.palmnote.feature.vault.VaultRepository
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
@@ -20,10 +23,10 @@ import android.util.Log
 
 @Stable
 data class DashboardState(
-    val totalAssetValue: Double = 0.0,
+    val totalAssetValue: Long = 0,
     val activeAssetCount: Int = 0,
-    val monthlyExpense: Double = 0.0,
-    val monthlyIncome: Double = 0.0,
+    val monthlyExpense: Long = 0,
+    val monthlyIncome: Long = 0,
     val budget: Budget? = null,
     val budgetReminderEnabled: Boolean = true,
     val goalCount: Int = 0,
@@ -31,16 +34,20 @@ data class DashboardState(
     val anniversaryCount: Int = 0,
     val upcomingAnniversaries: List<Anniversary> = emptyList(),
     val recentGoals: List<Goal> = emptyList(),
-    val assetDistribution: List<CategoryCount> = emptyList()
+    val assetDistribution: List<CategoryCount> = emptyList(),
+    val vaultEntries: List<VaultEntry> = emptyList(),
+    val vaultCount: Int = 0
 )
 
-class DashboardViewModel(
+@HiltViewModel
+class DashboardViewModel @Inject constructor(
     private val assetRepository: AssetRepository,
     private val billRepository: BillRepository,
     private val budgetRepository: BudgetRepository,
     private val goalRepository: GoalRepository,
     private val anniversaryRepository: AnniversaryRepository,
-    private val preferencesManager: PreferencesManager
+    private val preferencesManager: PreferencesManager,
+    private val vaultRepository: VaultRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(DashboardState())
@@ -54,10 +61,10 @@ class DashboardViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DashboardCardConfig.defaults.filter { it.visible })
 
     init {
-        DataCache.get<DashboardState>("dashboard")?.let { _state.value = it }
         loadDashboardData()
         loadBudgetReminder()
         loadCardConfigs()
+        loadVaultData()
     }
 
     private fun loadCardConfigs() {
@@ -127,13 +134,13 @@ class DashboardViewModel(
                 assetRepository.getTotalAssetCount(),
                 assetRepository.getCategoryDistribution()
             ) { total, count, distribution ->
-                Triple(total ?: 0.0, count, distribution)
+                Triple(total ?: 0L, count, distribution)
             }
             val billFlow = combine(
                 billRepository.getMonthlyExpense(currentYearMonth),
                 billRepository.getMonthlyIncome(currentYearMonth)
             ) { expense, income ->
-                Pair(expense ?: 0.0, income ?: 0.0)
+                Pair(expense ?: 0L, income ?: 0L)
             }
             val gaFlow = combine(
                 goalRepository.getGoalCount(),
@@ -174,9 +181,25 @@ class DashboardViewModel(
                 recentGoals = s.recentGoals,
                 assetDistribution = s.assetDistribution
             )}
-                DataCache.set("dashboard", _state.value)
             }
         }
+    }
+    private fun loadVaultData() {
+        viewModelScope.launch {
+            combine(
+                vaultRepository.observeRecent(VAULT_RECENT_LIMIT),
+                vaultRepository.observeCount()
+            ) { recent, count ->
+                recent to count
+            }.catch { e -> Log.e("DashboardVM", "loadVaultData failed", e) }
+                .collect { (recent, count) ->
+                    _state.update { it.copy(vaultEntries = recent, vaultCount = count) }
+                }
+        }
+    }
+
+    private companion object {
+        const val VAULT_RECENT_LIMIT = 3
     }
 }
 

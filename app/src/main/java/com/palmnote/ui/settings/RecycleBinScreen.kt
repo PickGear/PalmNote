@@ -16,8 +16,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.palmnote.PalmNoteApp
-import com.palmnote.ui.components.simpleViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.palmnote.R
+import com.palmnote.domain.model.toYuanString
 import com.palmnote.ui.components.*
 import com.palmnote.ui.theme.*
 
@@ -25,7 +26,7 @@ import com.palmnote.ui.theme.*
 @Composable
 fun RecycleBinScreen(
     onNavigateBack: () -> Unit = {},
-    viewModel: RecycleBinViewModel = simpleViewModel { PalmNoteApp.container.recycleBinViewModel() }
+    viewModel: RecycleBinViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var selectedTab by remember { mutableIntStateOf(0) }
@@ -87,7 +88,7 @@ fun RecycleBinScreen(
 
             val items = when (selectedTab) {
                 0 -> state.deletedAssets.map { "${it.name} - ${it.category}" }
-                1 -> state.deletedBills.map { "${it.category} ${it.amount}" }
+                1 -> state.deletedBills.map { "${it.category} ${it.amount.toYuanString()}" }
                 2 -> state.deletedGoals.map { it.title }
                 3 -> state.deletedAnniversaries.map { it.displayTitle }
                 4 -> state.deletedMoments.map { it.title.ifEmpty { it.content.take(20) } }

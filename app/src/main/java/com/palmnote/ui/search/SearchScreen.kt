@@ -22,13 +22,14 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.palmnote.PalmNoteApp
-import com.palmnote.ui.components.simpleViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.palmnote.R
 import com.palmnote.data.db.entity.Anniversary
 import com.palmnote.data.db.entity.Asset
 import com.palmnote.data.db.entity.Bill
 import com.palmnote.data.db.entity.Goal
 import com.palmnote.data.db.entity.Moment
+import com.palmnote.domain.model.toMoney
 import com.palmnote.domain.util.CurrencyUtils
 import com.palmnote.domain.util.DateUtils
 import com.palmnote.ui.theme.*
@@ -42,7 +43,7 @@ fun SearchScreen(
     onNavigateToAnniversary: (Long) -> Unit = {},
     onNavigateToMoment: (Long) -> Unit = {},
     onBack: () -> Unit = {},
-    viewModel: SearchViewModel = simpleViewModel { PalmNoteApp.container.searchViewModel() }
+    viewModel: SearchViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
@@ -238,7 +239,7 @@ private fun BillSearchItem(bill: Bill, onClick: () -> Unit) {
                 )
             }
             Text(
-                CurrencyUtils.formatCurrency(bill.amount),
+                CurrencyUtils.formatCurrency(bill.amount.toMoney()),
                 fontWeight = FontWeight.Bold,
                 color = if (bill.type == "EXPENSE") AccentOrange else PrimaryGreenLight
             )

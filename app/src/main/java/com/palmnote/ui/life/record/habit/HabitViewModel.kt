@@ -1,10 +1,12 @@
 package com.palmnote.ui.life.record.habit
+import javax.inject.Inject
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import com.palmnote.R
 
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.palmnote.data.db.dao.GoalCheckInDao
 import com.palmnote.data.db.entity.Goal
 import com.palmnote.data.db.entity.GoalCheckIn
 import com.palmnote.domain.repository.GoalRepository
@@ -26,10 +28,10 @@ data class HabitUiState(
     val error: String? = null
 )
 
-class HabitViewModel(
-    private val context: Context,
+@HiltViewModel
+class HabitViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val goalRepo: GoalRepository,
-    private val checkInDao: GoalCheckInDao
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(HabitUiState())
     val uiState: StateFlow<HabitUiState> = _uiState.asStateFlow()
@@ -50,7 +52,7 @@ class HabitViewModel(
                 goalRepo.getHabitGoals().first().forEach { habit ->
                     habitJobs[habit.id]?.cancel()
                     habitJobs[habit.id] = launch {
-                        checkInDao.getCheckInsByGoal(habit.id).collect { checkIns ->
+                        goalRepo.getCheckInsByGoal(habit.id).collect { checkIns ->
                             val dates = checkIns.mapNotNull { c ->
                                 try {
                                     val millis = c.date
@@ -102,7 +104,7 @@ class HabitViewModel(
             try {
                 val today = LocalDate.now()
                 val todayMillis = today.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-                checkInDao.insertCheckIn(GoalCheckIn(goalId = goalId, date = todayMillis))
+                goalRepo.insertCheckIn(GoalCheckIn(goalId = goalId, date = todayMillis))
                 goalRepo.incrementGoalProgress(goalId)
                 load()
             } catch (e: Exception) {

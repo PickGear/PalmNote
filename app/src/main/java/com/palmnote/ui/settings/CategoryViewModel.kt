@@ -1,4 +1,7 @@
-﻿package com.palmnote.ui.settings
+package com.palmnote.ui.settings
+import kotlin.jvm.JvmSuppressWildcards
+import javax.inject.Inject
+import dagger.hilt.android.lifecycle.HiltViewModel
 
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Stable
@@ -59,8 +62,9 @@ data class CategoryState(
         get() = categoryTypes.getOrNull(selectedTypeIndex)?.key ?: "ASSET"
 }
 
-class CategoryViewModel(
-    private val cachedCategoryConfigs: StateFlow<List<CategoryConfig>>,
+@HiltViewModel
+class CategoryViewModel @Inject constructor(
+    private val cachedCategoryConfigs: @JvmSuppressWildcards StateFlow<List<CategoryConfig>>,
     private val repository: CategoryConfigRepository,
     private val preferencesManager: PreferencesManager,
     private val assetRepository: com.palmnote.domain.repository.AssetRepository,

@@ -1,4 +1,5 @@
 package com.palmnote.ui.settings
+import androidx.hilt.navigation.compose.hiltViewModel
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -79,7 +80,7 @@ private fun CustomCategoryDetailDialog(
 fun CategoryScreen(
     onNavigateBack: () -> Unit = {},
     initialType: String = "ASSET",
-    viewModel: CategoryViewModel = simpleViewModel { PalmNoteApp.container.categoryViewModel() }
+    viewModel: CategoryViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
@@ -348,18 +349,18 @@ fun CategoryScreen(
         if (showDeleteWarning) {
             val (billCount, assetCount) = counts
             val countText = when (state.currentType) {
-                "ASSET" -> "${assetCount} 件物品"
-                "BILL_EXPENSE", "BILL_INCOME" -> "${billCount} 条账单"
-                else -> "${billCount} 条账单、${assetCount} 件物品"
+                "ASSET" -> stringResource(R.string.category_count_items, assetCount)
+                "BILL_EXPENSE", "BILL_INCOME" -> stringResource(R.string.category_count_bills, billCount)
+                else -> stringResource(R.string.category_count_both, billCount, assetCount)
             }
             AppDialog(
                 onDismissRequest = { showDeleteWarning = false; deleteWarningData = null },
-                title = { Text("删除分类「$name」", fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(R.string.category_delete_title, name), fontWeight = FontWeight.Bold) },
                 text = {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("该分类关联了 $countText：")
-                        Text("· 全部删除 — 删除分类和所有关联记录", color = ErrorLight, style = MaterialTheme.typography.bodySmall)
-                        Text("· 保留记录 — 保留关联记录，图标变为红色×号", color = AccentOrange, style = MaterialTheme.typography.bodySmall)
+                        Text(stringResource(R.string.category_delete_related_hint, countText))
+                        Text(stringResource(R.string.category_delete_all_desc), color = ErrorLight, style = MaterialTheme.typography.bodySmall)
+                        Text(stringResource(R.string.category_keep_records_desc), color = AccentOrange, style = MaterialTheme.typography.bodySmall)
                     }
                 },
                 confirmButton = {
@@ -367,11 +368,11 @@ fun CategoryScreen(
                         TextButton(onClick = {
                             if (catId != null) viewModel.deleteCategoryWithData(name, catId)
                             showDeleteWarning = false; deleteWarningData = null
-                        }) { Text("全部删除", color = ErrorLight) }
+                        }) { Text(stringResource(R.string.category_delete_all), color = ErrorLight) }
                         TextButton(onClick = {
                             viewModel.deleteCategory(catId ?: 0L)
                             showDeleteWarning = false; deleteWarningData = null
-                        }) { Text("保留记录", color = AccentOrange) }
+                        }) { Text(stringResource(R.string.category_keep_records), color = AccentOrange) }
                     }
                 },
                 dismissButton = { TextButton(onClick = { showDeleteWarning = false; deleteWarningData = null }) { Text(stringResource(R.string.cancel)) } }
@@ -383,18 +384,32 @@ fun CategoryScreen(
         if (showMatchPrompt) {
             val (billCount, assetCount) = counts
             val countText = when (state.currentType) {
-                "ASSET" -> "${assetCount} 件物品"
-                "BILL_EXPENSE", "BILL_INCOME" -> "${billCount} 条账单"
-                else -> "${billCount} 条账单、${assetCount} 件物品"
+                "ASSET" -> stringResource(R.string.category_count_items, assetCount)
+                "BILL_EXPENSE", "BILL_INCOME" -> stringResource(R.string.category_count_bills, billCount)
+                else -> stringResource(R.string.category_count_both, billCount, assetCount)
             }
             val isPreset = pendingPresetData != null
             val isEdit = !isPreset && editingCustom != null
             AppDialog(
                 onDismissRequest = { showMatchPrompt = false; matchPromptData = null; pendingSaveCategory = null; pendingPresetData = null },
-                title = { Text("${if (isPreset) "重命名预设" else if (isEdit) "重命名" else "创建"}分类「$name」", fontWeight = FontWeight.Bold) },
+                title = { Text(
+                    stringResource(
+                        when {
+                            isPreset -> R.string.category_match_title_preset
+                            isEdit -> R.string.category_match_title_edit
+                            else -> R.string.category_match_title_create
+                        }, name
+                    ), fontWeight = FontWeight.Bold
+                ) },
                 text = {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("检测到 $countText 使用了同名分类。${if (isPreset) "重命名后预设的" else if (isEdit) "修改后的" else "新"}分类的图标和颜色将自动应用到这些历史记录上。")
+                        Text(stringResource(R.string.category_match_hint, countText, stringResource(
+                            when {
+                                isPreset -> R.string.category_adj_preset
+                                isEdit -> R.string.category_adj_edit
+                                else -> R.string.category_adj_new
+                            }
+                        )))
                     }
                 },
                 confirmButton = {
@@ -409,7 +424,13 @@ fun CategoryScreen(
                             }
                             showMatchPrompt = false; matchPromptData = null; pendingSaveCategory = null; pendingPresetData = null
                             showAddSheet = false
-                        }) { Text("确认${if (isPreset) "重命名" else if (isEdit) "修改" else "创建"}", color = AccentOrange) }
+                        }) { Text(stringResource(R.string.category_confirm_action, stringResource(
+                            when {
+                                isPreset -> R.string.category_action_rename
+                                isEdit -> R.string.category_action_edit
+                                else -> R.string.category_action_create
+                            }
+                        )), color = AccentOrange) }
                     }
                 },
                 dismissButton = { TextButton(onClick = { showMatchPrompt = false; matchPromptData = null; pendingSaveCategory = null; pendingPresetData = null }) { Text(stringResource(R.string.cancel)) } }

@@ -1,9 +1,13 @@
 package com.palmnote.ui.bills
+import kotlin.jvm.JvmSuppressWildcards
+import javax.inject.Inject
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.palmnote.R
-import com.palmnote.data.DataCache
 import com.palmnote.data.db.dao.CategoryTotal
 import com.palmnote.data.db.entity.AccountBook
 import com.palmnote.data.db.entity.Bill
@@ -11,10 +15,11 @@ import com.palmnote.data.db.entity.Budget
 import com.palmnote.data.db.entity.CategoryConfig
 import com.palmnote.data.db.entity.Wallet
 import com.palmnote.data.datastore.PreferencesManager
+import com.palmnote.domain.model.Money
+import com.palmnote.domain.model.toYuanString
 import com.palmnote.domain.repository.AccountBookRepository
 import com.palmnote.domain.repository.BillRepository
 import com.palmnote.domain.repository.BudgetRepository
-import com.palmnote.domain.repository.WalletRepository
 import com.palmnote.domain.util.DateUtils
 import com.palmnote.ui.components.CategoryItem
 import com.palmnote.ui.components.toComposeColor
@@ -26,6 +31,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.decodeFromString
 
 
 @Stable
@@ -34,12 +43,12 @@ data class BillState(
     val filteredBills: List<Bill> = emptyList(),
     val currentYearMonth: String = DateUtils.getCurrentYearMonth(),
     val selectedDay: Int? = null,
-    val monthlyExpense: Double = 0.0,
-    val monthlyIncome: Double = 0.0,
+    val monthlyExpense: Long = 0,
+    val monthlyIncome: Long = 0,
     val expenseByCategory: List<CategoryTotal> = emptyList(),
     val budget: Budget? = null,
     val budgetUsagePercent: Float = 0f,
-    val dailySummary: Map<Int, Pair<Double, Double>> = emptyMap(),
+    val dailySummary: Map<Int, Pair<Long, Long>> = emptyMap(),
     val selectedBookId: Long = AccountBook.ALL_BOOKS_ID,
     val accountBooks: List<AccountBook> = emptyList(),
     val allAccountBooks: List<AccountBook> = emptyList(),
@@ -52,13 +61,14 @@ data class BillState(
 
 private data class BillDataGroup(
     val bills: List<Bill>,
-    val expense: Double,
-    val income: Double,
+    val expense: Long,
+    val income: Long,
     val categories: List<CategoryTotal>,
     val budget: Budget?
 )
 
 @Stable
+@kotlinx.serialization.Serializable
 data class AddBillFormState(
     val id: Long? = null,
     val amount: String = "",
@@ -87,14 +97,15 @@ data class AddBillFormState(
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class BillViewModel(
-    private val context: Context,
-    private val cachedWallets: StateFlow<List<Wallet>>,
-    private val cachedCategoryConfigs: StateFlow<List<CategoryConfig>>,
-    private val cachedAccountBooks: StateFlow<List<AccountBook>>,
+@HiltViewModel
+class BillViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
+    private val savedStateHandle: androidx.lifecycle.SavedStateHandle,
+    private val cachedWallets: @JvmSuppressWildcards StateFlow<List<Wallet>>,
+    private val cachedCategoryConfigs: @JvmSuppressWildcards StateFlow<List<CategoryConfig>>,
+    private val cachedAccountBooks: @JvmSuppressWildcards StateFlow<List<AccountBook>>,
     private val billRepository: BillRepository,
     private val budgetRepository: BudgetRepository,
-    private val walletRepository: WalletRepository,
     private val accountBookRepository: AccountBookRepository,
     private val preferencesManager: PreferencesManager
 ) : ViewModel() {
@@ -163,20 +174,19 @@ class BillViewModel(
                 if (isAll) billRepository.getExpenseByCategory(ym) else billRepository.getExpenseByCategoryByBook(bookId, ym),
                 budgetRepository.getBudgetByMonthFlow(ym)
             ) { bills, expense, income, categories, budget ->
-                BillDataGroup(bills, expense ?: 0.0, income ?: 0.0, categories, budget)
+                BillDataGroup(bills, expense ?: 0, income ?: 0, categories, budget)
             }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-    private val dailySummary: StateFlow<Map<Int, Pair<Double, Double>>> = combine(_selectedBookId, _currentYearMonth) { a, b -> a to b }
-        .flatMapLatest { (bookId, ym) ->
-            val isAll = bookId == AccountBook.ALL_BOOKS_ID
-            (if (isAll) billRepository.getDailySummary(ym) else billRepository.getDailySummaryByBook(bookId, ym))
-                .map { daily ->
-                    val cal = java.util.Calendar.getInstance()
-                    daily.associate {
-                        cal.timeInMillis = it.date
-                        cal.get(java.util.Calendar.DAY_OF_MONTH) to Pair(it.expense, it.income)
-                    }
+    private val dailySummary: StateFlow<Map<Int, Pair<Long, Long>>> = billData
+        .map { data ->
+            (data?.bills ?: emptyList())
+                .groupBy { DateUtils.millisToLocalDate(it.date).dayOfMonth }
+                .mapValues { (_, bills) ->
+                    Pair(
+                        bills.filter { it.type == "EXPENSE" }.sumOf { it.amount },
+                        bills.filter { it.type == "INCOME" }.sumOf { it.amount }
+                    )
                 }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
@@ -196,19 +206,22 @@ class BillViewModel(
         val (data, daily, searchRes) = dataTriple
 
         val budgetPercent = if (data?.budget != null && data.budget.totalBudget > 0)
-            (data.expense / data.budget.totalBudget).toFloat() else 0f
+            (data.expense.toFloat() / data.budget.totalBudget).toFloat() else 0f
 
         val filterActive = filter.type != null || filter.category != null || filter.paymentMethod != null || filter.amountMin != null || filter.amountMax != null
-        val filtered = if (searching) searchRes
-        else if (!filterActive && query.isBlank()) emptyList()
-        else (data?.bills ?: emptyList()).filter { bill ->
-            (filter.type == null || bill.type == filter.type) &&
-            (filter.category == null || bill.category == filter.category) &&
-            (filter.paymentMethod == null || bill.paymentMethod == filter.paymentMethod) &&
-            (filter.amountMin == null || bill.amount >= filter.amountMin) &&
-            (filter.amountMax == null || bill.amount <= filter.amountMax) &&
-            (query.isBlank() || bill.note.contains(query, true) || bill.merchant.contains(query, true) ||
-             bill.location.contains(query, true) || bill.category.contains(query, true) || bill.amount.toString().contains(query, true))
+        val filtered = withContext(kotlinx.coroutines.Dispatchers.Default) {
+            if (searching) searchRes
+            else if (!filterActive && query.isBlank()) emptyList()
+            else (data?.bills ?: emptyList()).filter { bill ->
+                (filter.type == null || bill.type == filter.type) &&
+                (filter.category == null || bill.category == filter.category) &&
+                (filter.paymentMethod == null || bill.paymentMethod == filter.paymentMethod) &&
+                (filter.amountMin == null || bill.amount >= filter.amountMin) &&
+                (filter.amountMax == null || bill.amount <= filter.amountMax) &&
+                (query.isBlank() || bill.note.contains(query, true) || bill.merchant.contains(query, true) ||
+                    bill.location.contains(query, true) || bill.category.contains(query, true) ||
+                    bill.amount.toYuanString().contains(query, true))
+            }
         }
 
         BillState(
@@ -216,8 +229,8 @@ class BillViewModel(
             filteredBills = filtered,
             currentYearMonth = ym,
             selectedDay = day,
-            monthlyExpense = data?.expense ?: 0.0,
-            monthlyIncome = data?.income ?: 0.0,
+            monthlyExpense = data?.expense ?: 0,
+            monthlyIncome = data?.income ?: 0,
             expenseByCategory = data?.categories ?: emptyList(),
             budget = data?.budget,
             budgetUsagePercent = budgetPercent,
@@ -237,12 +250,23 @@ class BillViewModel(
     private var searchJob: Job? = null
 
     init {
-        DataCache.get<BillState>("bill")?.let { cached ->
-            _currentYearMonth.value = cached.currentYearMonth
-            _selectedDay.value = cached.selectedDay
-            _selectedBookId.value = cached.selectedBookId
-            _searchQuery.value = cached.searchQuery
-            _currentFilter.value = cached.currentFilter
+        savedStateHandle.get<String>("bill_year_month")?.let { _currentYearMonth.value = it }
+        savedStateHandle.get<Int>("bill_selected_day")?.let { v -> _selectedDay.value = v.takeIf { it > 0 } }
+        savedStateHandle.get<Long>("bill_selected_book")?.let { _selectedBookId.value = it }
+        savedStateHandle.get<String>("bill_search_query")?.let { _searchQuery.value = it }
+        val fType = savedStateHandle.get<String>("bill_filter_type")
+        val fCategory = savedStateHandle.get<String>("bill_filter_category")
+        val fMethod = savedStateHandle.get<String>("bill_filter_payment_method")
+        val fMin = savedStateHandle.get<Long>("bill_filter_amount_min")
+        val fMax = savedStateHandle.get<Long>("bill_filter_amount_max")
+        if (fType != null || fCategory != null || fMethod != null || fMin != null || fMax != null) {
+            _currentFilter.value = BillFilter(
+                type = fType?.ifEmpty { null },
+                category = fCategory?.ifEmpty { null },
+                paymentMethod = fMethod?.ifEmpty { null },
+                amountMin = fMin?.takeIf { it != -1L },
+                amountMax = fMax?.takeIf { it != -1L }
+            )
         }
         if (_selectedDay.value == null && _currentYearMonth.value == DateUtils.getCurrentYearMonth()) {
             _selectedDay.value = DateUtils.getDayOfMonth(System.currentTimeMillis())
@@ -263,7 +287,42 @@ class BillViewModel(
             }
         }
         viewModelScope.launch {
-            state.drop(1).collect { DataCache.set("bill", it) }
+            state.drop(1).collect { s ->
+                savedStateHandle["bill_year_month"] = s.currentYearMonth
+                savedStateHandle["bill_selected_day"] = s.selectedDay ?: -1
+                savedStateHandle["bill_selected_book"] = s.selectedBookId
+                savedStateHandle["bill_search_query"] = s.searchQuery
+                savedStateHandle["bill_filter_type"] = s.currentFilter.type ?: ""
+                savedStateHandle["bill_filter_category"] = s.currentFilter.category ?: ""
+                savedStateHandle["bill_filter_payment_method"] = s.currentFilter.paymentMethod ?: ""
+                savedStateHandle["bill_filter_amount_min"] = s.currentFilter.amountMin ?: -1L
+                savedStateHandle["bill_filter_amount_max"] = s.currentFilter.amountMax ?: -1L
+            }
+        }
+        // 恢复上次未提交的表单草稿（进程被杀重建后）
+        savedStateHandle.get<String>("bill_draft")?.let { json ->
+            try {
+                val draft = Json.decodeFromString<AddBillFormState>(json)
+                if (!draft.isEditing && !draft.isSaved) {
+                    _formState.value = draft.copy(
+                        isEditing = false, isSaving = false, isSaved = false,
+                        amountError = null, categoryError = null
+                    )
+                }
+            } catch (_: Exception) { savedStateHandle.remove<String>("bill_draft") }
+        }
+        // 自动保存新建表单草稿（防抖，避免频繁写）
+        viewModelScope.launch {
+            _formState.debounce(500).collect { form ->
+                val hasContent = form.amount.isNotBlank() || form.note.isNotBlank() ||
+                    form.merchant.isNotBlank() || form.category.isNotBlank() ||
+                    form.paymentMethod.isNotBlank() || form.location.isNotBlank()
+                if (form.isSaved || form.isEditing || !hasContent) {
+                    savedStateHandle.remove<String>("bill_draft")
+                } else {
+                    savedStateHandle["bill_draft"] = Json.encodeToString(form)
+                }
+            }
         }
     }
 
@@ -295,8 +354,7 @@ class BillViewModel(
     fun deleteAccountBookWithData(bookId: Long) {
         viewModelScope.launch {
             if (bookId == AccountBook.ALL_BOOKS_ID) return@launch
-            billRepository.softDeleteByBook(bookId)
-            accountBookRepository.softDeleteBook(bookId)
+            accountBookRepository.deleteAccountBookWithData(bookId)
         }
     }
 
@@ -361,7 +419,7 @@ class BillViewModel(
             _selectedBookId.value = bill.accountBookId
             _formState.value = AddBillFormState(
                 id = bill.id,
-                amount = bill.amount.toString(),
+                amount = bill.amount.toYuanString(),
                 type = bill.type,
                 category = bill.category,
                 subCategory = bill.subCategory,
@@ -396,7 +454,7 @@ class BillViewModel(
 
     fun saveBill() {
         val form = _formState.value
-        if (form.amount.isBlank() || form.amount.replace(",", "").toDoubleOrNull() == null) {
+        if (form.amount.isBlank() || Money.parse(form.amount) == null) {
             _formState.value = form.copy(amountError = context.getString(R.string.bill_error_amount_required))
             return
         }
@@ -417,7 +475,7 @@ class BillViewModel(
 
         viewModelScope.launch {
             try {
-                val amount = form.amount.replace(",", "").toDoubleOrNull() ?: run {
+                val amount = Money.parse(form.amount)?.cents ?: run {
                     _formState.value = form.copy(isSaving = false, amountError = context.getString(R.string.bill_error_amount_required))
                     return@launch
                 }
@@ -448,41 +506,9 @@ class BillViewModel(
                 )
 
                 if (form.isEditing) {
-                    val oldBill = billRepository.getBillById(bill.id)
-                    billRepository.updateBill(bill)
-                    if (oldBill != null) {
-                        val amountChanged = oldBill.amount != amount
-                        val typeChanged = oldBill.type != form.type
-                        val walletChanged = oldBill.walletId != form.walletId
-                        if (amountChanged || typeChanged || walletChanged) {
-                            when (oldBill.type) {
-                                "EXPENSE" -> { if (oldBill.walletId != null) walletRepository.adjustBalance(oldBill.walletId, oldBill.amount) }
-                                "INCOME" -> { if (oldBill.walletId != null) walletRepository.adjustBalance(oldBill.walletId, -oldBill.amount) }
-                                "TRANSFER" -> {
-                                    if (oldBill.walletId != null) walletRepository.adjustBalance(oldBill.walletId, oldBill.amount)
-                                    if (oldBill.toWalletId != null) walletRepository.adjustBalance(oldBill.toWalletId, -oldBill.amount)
-                                }
-                            }
-                            when (form.type) {
-                                "EXPENSE" -> form.walletId?.let { walletRepository.adjustBalance(it, -amount) }
-                                "INCOME" -> form.walletId?.let { walletRepository.adjustBalance(it, amount) }
-                                "TRANSFER" -> {
-                                    form.walletId?.let { walletRepository.adjustBalance(it, -amount) }
-                                    form.toWalletId?.let { walletRepository.adjustBalance(it, amount) }
-                                }
-                            }
-                        }
-                    }
+                    billRepository.updateBillWithWalletAdjustment(bill)
                 } else {
-                    billRepository.insertBill(bill)
-                    when (form.type) {
-                        "EXPENSE" -> form.walletId?.let { walletRepository.adjustBalance(it, -amount) }
-                        "INCOME" -> form.walletId?.let { walletRepository.adjustBalance(it, amount) }
-                        "TRANSFER" -> {
-                            form.walletId?.let { walletRepository.adjustBalance(it, -amount) }
-                            form.toWalletId?.let { walletRepository.adjustBalance(it, amount) }
-                        }
-                    }
+                    billRepository.createBillWithWalletAdjustment(bill)
                 }
 
                 _formState.value = form.copy(isSaving = false, isSaved = true)

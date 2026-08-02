@@ -1,4 +1,4 @@
-﻿package com.palmnote.ui.life.record.habit
+package com.palmnote.ui.life.record.habit
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -23,7 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.palmnote.PalmNoteApp
 import com.palmnote.R
-import com.palmnote.ui.components.simpleViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.palmnote.data.db.entity.Goal
 import com.palmnote.ui.components.AppDialog
 import com.palmnote.ui.components.SecondaryTopAppBar
@@ -36,7 +36,7 @@ import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HabitListScreen(onBack: () -> Unit, onItemClick: (Long) -> Unit, onAchievementClick: () -> Unit = {}, viewModel: HabitViewModel = simpleViewModel { PalmNoteApp.container.habitViewModel() }) {
+fun HabitListScreen(onBack: () -> Unit, onItemClick: (Long) -> Unit, onAchievementClick: () -> Unit = {}, viewModel: HabitViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) { viewModel.load() }
     var showStats by remember { mutableStateOf(true) }
@@ -54,7 +54,7 @@ fun HabitListScreen(onBack: () -> Unit, onItemClick: (Long) -> Unit, onAchieveme
             onDismissRequest = { deleteTarget = null },
             title = { Text(stringResource(R.string.confirm), fontWeight = FontWeight.Bold) },
             text = { Text(stringResource(R.string.life_confirm_delete_habit)) },
-            confirmButton = { TextButton(onClick = { viewModel.deleteHabit(deleteTarget!!); deleteTarget = null }) { Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error) } },
+            confirmButton = { TextButton(onClick = { deleteTarget?.let { viewModel.deleteHabit(it) }; deleteTarget = null }) { Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error) } },
             dismissButton = { TextButton(onClick = { deleteTarget = null }) { Text(stringResource(R.string.cancel)) } }
         )
     }
@@ -102,7 +102,7 @@ fun HabitListScreen(onBack: () -> Unit, onItemClick: (Long) -> Unit, onAchieveme
             }
 
             state.habits.forEach { habit ->
-                item {
+                item(key = habit.id) {
                     val streak = habit.streak
                     val totalCheckIns = habit.totalCheckInDays
                     val monthRate = if (habit.totalCount > 0) (habit.currentCount * 100 / habit.totalCount).coerceIn(0, 100) else 0

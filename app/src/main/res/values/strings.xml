@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_version">v1.2.0</string>
+    <string name="app_version">v1.3.0</string>
     <string name="app_name">掌记</string>
     
     <!-- Bottom Navigation -->
@@ -8,18 +8,14 @@
     <string name="nav_asset">物品</string>
     <string name="nav_bill">账单</string>
     <string name="nav_life">生活</string>
-    <string name="nav_settings">我的</string>
     
     <!-- Asset -->
-    <string name="asset_title">物品</string>
     <string name="asset_add">添加物品</string>
     <string name="asset_edit">编辑物品</string>
     <string name="asset_detail">物品详情</string>
     <string name="asset_name">物品名称</string>
     <string name="asset_category">分类</string>
     <string name="asset_price">购买价格</string>
-    <string name="asset_date">购买日期</string>
-    <string name="asset_channel">购买渠道</string>
     <string name="asset_location">存放位置</string>
     <string name="asset_warranty">保修日期</string>
     <string name="asset_status">状态</string>
@@ -29,26 +25,15 @@
     <string name="asset_cost_per_use">按次计算</string>
     
     <!-- Asset Status -->
-    <string name="status_active">使用中</string>
-    <string name="status_retired">已退役</string>
-    <string name="status_lost">已丢失</string>
-    <string name="status_sold">已售出</string>
     <string name="asset_held">持有中</string>
     <string name="asset_away">暂离中</string>
     <string name="asset_removed">已清出</string>
-    <string name="asset_per_use">单次 ¥%s</string>
-    <string name="asset_per_use_none">单次 -</string>
-    <string name="asset_daily_cost">日均 ¥%s</string>
-    <string name="asset_search_hint">搜索物品名称、分类、描述…</string>
     <string name="asset_clear">清除</string>
     <string name="asset_count">%d 件</string>
     <string name="asset_status_filter">状态</string>
     <string name="asset_maintenance_complete_confirm">确认完成本次维护？</string>
     <string name="asset_restore_confirm">确认恢复为持有状态？</string>
     <string name="asset_all">全部</string>
-    <string name="bill_filter_show_all">展开全部</string>
-    <string name="bill_category_more_count">+%d 更多</string>
-    <string name="bill_filter_show_less">收起</string>
     <string name="asset_all_categories">全部分类</string>
     <string name="asset_sort_recent">最近</string>
     <string name="asset_sort_name">名称</string>
@@ -90,7 +75,6 @@
     <string name="bill_category">分类</string>
     <string name="bill_date">日期</string>
     <string name="bill_note">备注</string>
-    <string name="bill_trend">收支趋势</string>
     <string name="bill_budget">预算管理</string>
     <string name="bill_switch_book">切换账本</string>
     <string name="bill_book_list">账本列表</string>
@@ -99,20 +83,11 @@
     <string name="bill_all_books">全账本</string>
     <string name="bill_report">报告</string>
     <string name="bill_budget_tab">预算</string>
-    <string name="bill_monthly_expense">本月支出</string>
-    <string name="bill_monthly_income">本月收入</string>
     <string name="bill_balance">结余</string>
-    <string name="bill_balance_amount">结余 %s</string>
-    <string name="bill_budget_usage">预算使用</string>
-    <string name="bill_remaining">剩余</string>
-    <string name="bill_over_budget">超支</string>
-    <string name="bill_remaining_amount">剩余 %s</string>
-    <string name="bill_over_budget_amount">超支 %s</string>
     <string name="bill_calendar">日历</string>
     <string name="bill_collapse">收起</string>
     <string name="bill_expand">展开</string>
     <string name="bill_all">全部</string>
-    <string name="bill_expense_category">支出分类</string>
     <string name="bill_detail">明细</string>
     <string name="bill_count">%d 条</string>
     <string name="bill_no_records">暂无记录</string>
@@ -125,17 +100,14 @@
     <!-- Settings -->
     <string name="settings_title">我的</string>
     <string name="settings_appearance">外观与个性化</string>
-    <string name="settings_theme_system">跟随系统</string>
     <string name="settings_theme_light">浅色模式</string>
     <string name="settings_theme_dark">深色模式</string>
     <string name="settings_general">偏好设置</string>
     <string name="settings_data">数据管理</string>
     <string name="settings_about">关于掌记</string>
-    <string name="settings_backup">备份数据</string>
     <string name="settings_export">导出数据</string>
     <string name="settings_recycle">回收站</string>
     <string name="settings_category">分类管理</string>
-    <string name="settings_data_overview">数据概览</string>
     <string name="settings_items">物品</string>
     <string name="settings_goals">目标</string>
     <string name="settings_anniversaries">纪念日</string>
@@ -143,7 +115,6 @@
     <string name="settings_profile_edit">编辑个人资料</string>
     <string name="settings_profile_nickname">昵称</string>
     <string name="settings_profile_signature">个性签名</string>
-    <string name="settings_profile_avatar">头像</string>
     <string name="settings_profile_change_avatar">更换头像</string>
     <string name="settings_profile_reset_avatar">重置</string>
     <string name="settings_dark_mode">深色模式</string>
@@ -154,11 +125,8 @@
     <string name="settings_switch_color_subtitle">自定义全局开关按钮的颜色</string>
     <string name="settings_follow_system">跟随系统</string>
     <string name="settings_default_start_page">默认启动页</string>
-    <string name="settings_default_start_page_subtitle">打开App时默认显示的页面</string>
     <string name="settings_default_bill_type">默认记账类型</string>
-    <string name="settings_default_bill_type_subtitle">打开记账页面时的默认类型</string>
     <string name="settings_budget_reminder">预算提醒</string>
-    <string name="settings_budget_reminder_subtitle">预算使用80%时提醒</string>
     <string name="settings_calendar_sync">同步纪念日到系统日历</string>
     <string name="settings_calendar_sync_subtitle">将纪念日同步到系统日历应用</string>
     <string name="settings_app_lock">应用锁</string>
@@ -191,7 +159,6 @@
     <string name="settings_import_data_subtitle">从备份ZIP文件恢复数据</string>
     <string name="settings_data_backup">数据备份</string>
     <string name="settings_data_backup_subtitle">备份和恢复完整数据</string>
-    <string name="settings_storage_cleanup">存储清理</string>
     <string name="settings_clear_data">清除数据</string>
     <string name="settings_clear_data_subtitle">删除个人数据，不可恢复</string>
     <string name="settings_clear_cache">清除缓存</string>
@@ -203,7 +170,6 @@
     <string name="settings_preset_color">预设颜色</string>
     <string name="settings_custom_color">自定义颜色</string>
     <string name="settings_hex_color">HEX色值</string>
-    <string name="settings_hex_color_error">请输入有效的6位色值</string>
     <string name="settings_color_done">完成</string>
     <string name="settings_select_start_page">默认启动页</string>
     <string name="settings_select_bill_type">默认记账类型</string>
@@ -218,11 +184,6 @@
     <string name="settings_calendar_permission_text">同步纪念日到系统日历需要访问你的日历。掌记不会读取或修改你的其他日历事件。</string>
     <string name="settings_calendar_permission_action">前往授权</string>
     <string name="settings_calendar_permission_denied">日历权限已被永久拒绝，请前往系统设置手动开启</string>
-    <string name="settings_app_lock_pin_title">设置PIN码</string>
-    <string name="settings_app_lock_pin_text">请输入6位PIN码</string>
-    <string name="settings_app_lock_pin_label">PIN码</string>
-    <string name="settings_app_lock_pin_confirm">请输入完整的6位PIN码</string>
-    <string name="settings_app_lock_pin_ok">确定</string>
     <string name="settings_birthday_advance_title">生日提前提醒天数</string>
     <string name="settings_anniversary_advance_title">纪念日提前提醒天数</string>
     <string name="settings_navigate_back">返回</string>
@@ -240,9 +201,14 @@
     <string name="confirm">确定</string>
     <string name="search">搜索</string>
     <string name="empty_title">暂无数据</string>
-    <string name="empty_subtitle">点击按钮添加</string>
     <string name="done">完成</string>
     <string name="back">返回</string>
+    <string name="create_new">新建</string>
+    <string name="backup_show_password">显示密码</string>
+    <string name="backup_hide_password">隐藏密码</string>
+    <string name="bill_import_error_too_large">文件过大，无法导入（上限 30MB）</string>
+    <string name="backup_in_folder">备份文件夹内的备份：</string>
+    <string name="backup_file">备份</string>
     <string name="more">更多</string>
     <string name="balance">余额</string>
     <string name="merchant">商家</string>
@@ -260,9 +226,6 @@
     <string name="bill_filter_amount_min">最低金额</string>
     <string name="bill_filter_amount_max">最高金额</string>
     <string name="bill_filter_category">分类</string>
-    <string name="bill_filter_category_all">全部分类</string>
-    <string name="bill_filter_payment_method">支付方式</string>
-    <string name="bill_filter_payment_method_all">全部方式</string>
     <string name="bill_filter_apply">应用筛选</string>
     <string name="bill_filter_clear">清除筛选</string>
     
@@ -316,10 +279,6 @@
     
     <!-- Life Module -->
     <string name="life_title">生活</string>
-    <string name="life_search">搜索生活条目</string>
-    <string name="life_plan">计划</string>
-    <string name="life_time">时间</string>
-    <string name="life_record">记录</string>
     <string name="life_saving">存钱计划</string>
     <string name="life_shopping">购物计划</string>
     <string name="life_todo">待办任务</string>
@@ -330,22 +289,10 @@
     <string name="life_focus">专注</string>
     <string name="life_countdown">倒计时</string>
     <string name="life_birthday">生日</string>
-    <string name="life_empty_title">暂无条目</string>
-    <string name="life_empty_subtitle">点击右上角 + 开始创建第一条记录</string>
-    <string name="life_empty_action">创建</string>
     <string name="life_ongoing">进行中</string>
-    <string name="life_completed">已完成</string>
-    <string name="life_archived">已归档</string>
     <string name="life_delete_confirm">确定删除？</string>
-    <string name="life_delete_hint">删除后可在回收站找回</string>
-    <string name="life_archive_success">已归档</string>
-    <string name="life_giveup_confirm">确定放弃？</string>
-    <string name="life_giveup_hint">当前的专注进度将丢失</string>
-    <string name="life_giveup">放弃</string>
     <string name="life_continue">继续专注</string>
     <string name="life_deposit">存入一笔</string>
-    <string name="life_amount_hint">输入金额</string>
-    <string name="life_unit_times">次</string>
     
     <!-- Life Module - Additional -->
     <string name="life_error_load_failed">加载失败</string>
@@ -354,18 +301,11 @@
     <string name="life_error_create_failed">创建失败</string>
     <string name="life_error_checkin_failed">签到失败</string>
     <string name="life_error_operation_failed">操作失败</string>
-    <string name="life_data_init_error">数据初始化异常，已跳过示例数据</string>
     <string name="life_data_load_error">数据加载异常，请稍后重试</string>
     <string name="life_data_temp_unavailable">专注数据暂时无法加载，可下拉刷新重试</string>
     
     <!-- Life Screen -->
-    <string name="life_screen_welcome">欢迎使用 PalmNote 生活</string>
-    <string name="life_screen_start_hint">选择一个开始你的生活记录</string>
-    <string name="life_screen_write_journal">写日记</string>
-    <string name="life_screen_start_checkin">开始打卡</string>
-    <string name="life_screen_deposit">存一笔</string>
     <string name="life_screen_retry">重试</string>
-    <string name="life_screen_search_hint">搜索生活条目…</string>
     <string name="life_empty_here">这里还没有内容</string>
     <string name="life_empty_hint">点击右下角 + 开始记录你的生活</string>
     <string name="life_screen_search_template_not_found">未找到匹配"%s"的模板</string>
@@ -404,20 +344,16 @@
     <string name="life_cancel">取消</string>
     <string name="life_back">返回</string>
     <string name="life_new_create">新建</string>
-    <string name="life_search_placeholder">搜索生活条目…</string>
     <string name="life_discard">放弃</string>
     
     <!-- Life - Detail Screens -->
     <string name="life_confirm_delete_record">确认删除这条记录？</string>
-    <string name="life_confirm_delete_this">确认删除该条记录？</string>
-    <string name="life_confirm_delete_this_item">确认删除该记录？</string>
     <string name="life_confirm_discard">确定放弃修改？</string>
     <string name="life_confirm_discard_hint">您有未保存的修改，放弃后将丢失。</string>
     <string name="life_continue_editing">继续编辑</string>
     <string name="life_edit_title">编辑 %s</string>
     <string name="life_create_title">新建 %s</string>
     <string name="life_input_title">输入标题</string>
-    <string name="life_save_failed">保存失败</string>
     
     <string name="life_item_detail_delete_confirm">确定删除？</string>
     <string name="life_item_detail_delete_hint">删除后可在回收站找回</string>
@@ -507,7 +443,6 @@
     <string name="life_todo_quad_important">重要不紧急</string>
     <string name="life_todo_quad_urgent">紧急不重要</string>
     <string name="life_todo_quad_normal">不紧急不重要</string>
-    <string name="life_todo_calendar_dev">日历视图开发中</string>
     <string name="life_todo_empty">暂无</string>
     
     <string name="life_journal_title">日记</string>
@@ -532,7 +467,6 @@
     <string name="life_saving_deleted">已删除</string>
     <string name="life_saving_undo">撤销</string>
     
-    <string name="life_saving_search_hint">搜索存钱计划…</string>
     
     <!-- Life - Habit -->
     <string name="life_habit_checkin">打卡</string>
@@ -574,16 +508,10 @@
     <string name="life_shopping_budget">预算 ¥%s</string>
     
     <!-- Life - Subscription -->
-    <string name="life_subscription_tab_active">订阅中</string>
-    <string name="life_subscription_tab_expired">已过期</string>
     
     <!-- Life - Travel -->
-    <string name="life_travel_tab_planning">计划中</string>
-    <string name="life_travel_tab_completed">已完成</string>
     
     <!-- Life - Todo -->
-    <string name="life_todo_tab_active">进行中</string>
-    <string name="life_todo_tab_completed">已完成</string>
     
     <!-- Life - Report -->
     <string name="life_report_tab_weekly">周报</string>
@@ -608,9 +536,6 @@
     
     <!-- Life - Mood -->
     <string name="life_mood_save">保存</string>
-    <string name="life_mood_quick_save">保存</string>
-    <string name="life_mood_quick_discard">放弃</string>
-    <string name="life_mood_delete_confirm">确认删除这条心情记录？</string>
     <string name="life_mood_happy">开心</string>
     <string name="life_mood_normal">平静</string>
     <string name="life_mood_upset">低落</string>
@@ -632,7 +557,6 @@
     <string name="life_mood_empty_subtitle">点击右上角+记录你的第一个心情</string>
     
     <!-- Life - Journal -->
-    <string name="life_journal_delete_confirm">确认删除这条日记？</string>
     
     <!-- Life - Deposit Sheet -->
     <string name="life_deposit_title">存入一笔</string>
@@ -642,10 +566,8 @@
     <string name="life_delete_confirm_default">确定删除这条记录？</string>
     
     <!-- Life - Dynamic Form -->
-    <string name="life_dynamic_discard">放弃</string>
     
     <!-- Life - Item Detail -->
-    <string name="life_item_delete_confirm">确认删除该记录？</string>
     
     <!-- Life - Template Create -->
     <string name="life_template_save_error">保存失败，内容已暂存到草稿</string>
@@ -686,7 +608,6 @@
     <string name="life_item_limit_info">该模板已有 %d 条数据，建议归档旧条目</string>
     
     <!-- Life - Accu Days related -->
-    <string name="life_accu_days_unit">天</string>
     
     <!-- Bill Import Errors -->
     <string name="bill_import_error_read_file">无法读取文件</string>
@@ -745,9 +666,6 @@
     <string name="asset_acquisition_date">获取日期</string>
     <string name="asset_purchase_channel">购买渠道</string>
     <string name="asset_room">房间</string>
-    <string name="asset_room_hint">输入房间位置</string>
-    <string name="asset_show_advanced_options">展开高级选项</string>
-    <string name="asset_hide_advanced_options">收起高级选项</string>
     <string name="asset_value_info">价值信息</string>
     <string name="asset_current_value">当前估值</string>
     <string name="asset_current_value_hint">输入当前估值</string>
@@ -871,7 +789,6 @@
     <string name="asset_upload">上传</string>
     <string name="asset_image_hint">首图默认为物品封面，最多上传4张</string>
     <string name="asset_input_name_hint">输入物品名称</string>
-    <string name="asset_total_count_format">共 %d 件</string>
     <string name="asset_custom_acquisition">自定义获取方式</string>
     <string name="asset_valuation_optional">估值（可选）</string>
     <string name="asset_custom_location_hint">输入自定义位置</string>
@@ -917,14 +834,6 @@
     <string name="calendar_event_person_format">人物: %s</string>
     
     <!-- Field Validation -->
-    <string name="field_error_required">%s不能为空</string>
-    <string name="field_error_invalid_number">请输入有效数字</string>
-    <string name="field_error_min_value">最小值: %d</string>
-    <string name="field_error_max_value">最大值: %d</string>
-    <string name="field_error_invalid_percent">请输入有效百分比</string>
-    <string name="field_error_percent_range">百分比范围 0-100</string>
-    <string name="field_error_invalid_rating">无效评分</string>
-    <string name="field_error_rating_range">评分范围 0-10</string>
     
     <!-- Date Format -->
     <string name="date_format_display">MM月dd日</string>
@@ -938,9 +847,9 @@
     <string name="date_weekday_thursday">星期四</string>
     <string name="date_weekday_friday">星期五</string>
     <string name="date_weekday_saturday">星期六</string>
-    <string name="date_format_weekday_full">%1$d月%2$d日 %3$s</string>
-    <string name="date_format_week_range_same">%1$d月%2$d日-%3$d日</string>
-    <string name="date_format_week_range_diff">%1$d月%2$d日-%3$d月%4$d日</string>
+    <string name="date_format_weekday_full">%1$s月%2$d日 %3$s</string>
+    <string name="date_format_week_range_same">%1$s月%2$d日-%3$d日</string>
+    <string name="date_format_week_range_diff">%1$s月%2$d日-%3$s月%4$d日</string>
     <string name="date_weekday_short_mon">周一</string>
     <string name="date_weekday_short_tue">周二</string>
     <string name="date_weekday_short_wed">周三</string>
@@ -1029,20 +938,13 @@
     <string name="app_lock_settings_title">应用锁设置</string>
     <string name="app_lock_change_pin_title">修改PIN码</string>
     <string name="app_lock_change_pin_subtitle">更改应用锁密码</string>
-    <string name="app_lock_forgot_pin_title_settings">忘记密码</string>
-    <string name="app_lock_forgot_pin_subtitle">清除应用数据以重置密码</string>
-    <string name="app_lock_forgot_pin_confirm_settings">确定要清除应用数据吗？这将删除所有本地数据，此操作不可逆。</string>
-    <string name="app_lock_forgot_pin_action_settings">清除应用数据</string>
     <string name="app_lock_biometric_enable">启用生物识别</string>
     <string name="app_lock_biometric_enable_subtitle">使用指纹或面部识别快速解锁</string>
-    <string name="app_lock_biometric_enabled">已启用</string>
-    <string name="app_lock_biometric_disabled">未启用</string>
     
     <!-- Reminder Time -->
     <string name="settings_reminder_time">提醒时间</string>
     <string name="settings_reminder_time_subtitle">设置每日提醒的具体时间</string>
     <string name="settings_reminder_time_bill_subtitle">设置记账提醒的具体时间</string>
-    <string name="settings_reminder_time_format" formatted="false">%02d:%02d</string>
     <string name="settings_select_reminder_time">选择提醒时间</string>
     
     <!-- Default Book -->
@@ -1058,8 +960,6 @@
     <string name="bill_payment_method">支付方式</string>
     <string name="bill_sub_category">子分类</string>
     <string name="bill_location">地点</string>
-    <string name="bill_filter_applied">筛选已应用</string>
-    <string name="bill_filter_cleared">筛选已清除</string>
     <string name="bill_tags">标签</string>
     <string name="bill_attachments">附件</string>
     <string name="bill_reimbursement_status">报销状态</string>
@@ -1314,21 +1214,8 @@
     <!-- Category Screen -->
     <string name="category_manage_title">分类管理</string>
     <string name="category_manage_add">添加分类</string>
-    <string name="category_manage_count_format">%d 个分类</string>
-    <string name="category_manage_system_default">系统默认</string>
     <string name="category_manage_delete_title">删除分类</string>
     <string name="category_manage_delete_confirm">确定要删除「%s」吗？该分类下的记录不会被删除。</string>
-    <string name="category_manage_enabled">已启用</string>
-    <string name="category_manage_disabled">已禁用</string>
-    <string name="category_manage_default">默认</string>
-    <string name="category_manage_system_category">系统分类</string>
-    <string name="category_manage_enable">启用</string>
-    <string name="category_manage_disable">禁用</string>
-    <string name="category_manage_edit">编辑分类</string>
-    <string name="category_manage_name">分类名称</string>
-    <string name="category_manage_icon">图标</string>
-    <string name="category_manage_color">颜色</string>
-    <string name="category_manage_name_required">请输入分类名称</string>
     <string name="category_manage_empty_title">暂无分类</string>
     <string name="category_manage_empty_hint">点击 + 添加第一个分类</string>
     
@@ -1356,7 +1243,6 @@
     <string name="recycle_bin_empty">回收站为空</string>
     <string name="recycle_bin_empty_hint">删除的记录将在这里显示，30天后自动清除</string>
     <string name="recycle_bin_restore">恢复</string>
-    <string name="recycle_bin_delete">删除</string>
     <string name="recycle_tab_assets">物品</string>
     <string name="recycle_tab_bills">账单</string>
     <string name="recycle_tab_goals">目标</string>
@@ -1384,9 +1270,6 @@
     <string name="backup_password">输入密码</string>
     <string name="backup_backing_up">正在备份…</string>
     <string name="backup_now">立即备份</string>
-    <string name="backup_existing">已有备份</string>
-    <string name="backup_empty">暂无备份</string>
-    <string name="backup_empty_hint">点击上方按钮创建第一个备份</string>
     <string name="backup_restore_title">恢复备份</string>
     <string name="backup_restore_desc">选择之前备份的 .palmnote 文件恢复数据，恢复后应用将自动重启</string>
     <string name="backup_restore_from_file">选择备份文件恢复</string>
@@ -1394,7 +1277,6 @@
     <string name="backup_restore_confirm">恢复将覆盖当前所有数据，此操作不可撤销。确定要恢复吗？</string>
     <string name="backup_restore">恢复</string>
 
-    <string name="backup_delete">删除</string>
     
     <!-- Common Components -->
     <string name="common_more">更多</string>
@@ -1471,7 +1353,6 @@
     <string name="settings_cache_clear_failed">清除失败: %s</string>
     <string name="close">关闭</string>
     <string name="settings_appearance_subtitle">主题、语言、主题色</string>
-    <string name="settings_general_subtitle">启动页、账单类型、预算提醒</string>
     <string name="settings_reminder_subtitle">日常提醒、账单提醒、生日提醒</string>
     <string name="settings_data_subtitle">导出、导入、回收站</string>
     <string name="life_saving_title">储蓄计划</string>
@@ -1510,8 +1391,6 @@
     <string name="life_empty_mood_subtitle">记录此刻的感受</string>
     <string name="life_empty_journal_title">还没有日记</string>
     <string name="life_empty_journal_subtitle">写下今天发生的事</string>
-    <string name="life_empty_focus_title">暂无专注记录</string>
-    <string name="life_empty_focus_subtitle">开始一段专注时光</string>
     <string name="life_empty_report_title">暂无报告数据</string>
     <string name="life_empty_report_subtitle">积累数据后自动生成报告</string>
     <string name="life_empty_default_title">暂无数据</string>
@@ -1527,11 +1406,7 @@
     <string name="privacy_dialog_text">感谢您使用 PalmNote。在开始之前，请仔细阅读并同意我们的用户协议和隐私政策。我们将收集必要的数据以提供应用功能，不会未经授权共享您的个人信息。</string>
     <string name="privacy_dialog_agree">同意</string>
     <string name="privacy_dialog_disagree">不同意</string>
-    <string name="privacy_dialog_view_policy">查看隐私政策</string>
-    <string name="privacy_dialog_view_terms">查看用户协议</string>
     <string name="privacy_dialog_view_links">点击"关于"页面可查看完整的《用户协议》和《隐私政策》</string>
-    <string name="privacy_policy_content">PalmNote（以下简称"本应用"）尊重并保护用户隐私。本应用不会收集任何个人身份信息，所有数据仅存储在用户设备本地。我们不会向任何第三方共享您的数据。本应用可能使用第三方SDK（如Coil图片加载库）以提供正常功能，这些SDK不会收集您的个人信息。如您有任何疑问，可通过应用内的联系方式与我们取得联系。</string>
-    <string name="terms_content">欢迎使用PalmNote。本应用是一款本地记录工具，所有数据存储在用户设备本地。用户应合理使用本应用，不得利用本应用从事违法违规活动。本应用按"现状"提供，不提供任何明示或暗示的保证。在适用法律允许的最大范围内，开发者不承担因使用本应用而产生的任何直接或间接损失。我们保留随时修改本协议的权利，修改后的协议一经发布即生效。</string>
 
     <string name="field_select_time">选择时间</string>
     <string name="field_enabled">已开启</string>
@@ -1675,45 +1550,10 @@
     <string name="life_focus_preview_today">今日专注 %d分钟</string>
     
     <!-- Life Template Field Labels -->
-    <string name="life_field_target_amount">目标金额</string>
-    <string name="life_field_saved_amount">已存金额</string>
-    <string name="life_field_target_date">目标日期</string>
-    <string name="life_field_budget_amount">预算金额</string>
-    <string name="life_field_spent">已花费</string>
-    <string name="life_field_store">店铺</string>
-    <string name="life_field_shopping_item">购物项目</string>
-    <string name="life_field_destination">目的地</string>
-    <string name="life_field_start_date">出发日期</string>
-    <string name="life_field_return_date">返程日期</string>
-    <string name="life_field_budget">预算</string>
-    <string name="life_field_total_pages">总页数</string>
-    <string name="life_field_current_pages">当前页数</string>
-    <string name="life_field_author">作者</string>
-    <string name="life_field_course_name">课程名称</string>
-    <string name="life_field_total_lessons">总节数</string>
-    <string name="life_field_completed_lessons">完成节数</string>
-    <string name="life_field_reminder">提醒</string>
-    <string name="life_field_start_date_label">起始日期</string>
-    <string name="life_field_date">日期</string>
-    <string name="life_field_notes">备注</string>
-    <string name="life_field_target_days">目标天数</string>
-    <string name="life_field_streak_days">连续天数</string>
-    <string name="life_field_billing_amount">扣费金额</string>
-    <string name="life_field_billing_cycle">扣费周期</string>
-    <string name="life_field_billing_day">扣费日</string>
-    <string name="life_field_next_billing">下次扣费</string>
     
     <!-- Life Template Field Units -->
-    <string name="life_unit_currency">¥</string>
-    <string name="life_unit_pages">页</string>
-    <string name="life_unit_days">天</string>
-    <string name="life_unit_lessons">节</string>
-    <string name="life_unit_number">号</string>
     
     <!-- Life Template Status Labels -->
-    <string name="life_status_ongoing">进行中</string>
-    <string name="life_status_completed">已完成</string>
-    <string name="life_status_archived">已归档</string>
     
     <!-- CSV Export/Import -->
     <string name="export_error_create_file">无法创建文件</string>
@@ -1751,4 +1591,123 @@
     <string name="cat_save">保存</string>
     <string name="transfer_from_required">请选择转出账户</string>
     <string name="transfer_to_required">请选择转入账户</string>
+    <string name="currency_symbol">¥</string>
+    <string name="budget_invalid_amount">请输入有效金额</string>
+    <string name="back_to_top">回到顶部</string>
+    <string name="countdown_clear_expired_title">清除过期倒计时</string>
+    <string name="countdown_clear_expired_confirm">确定清除已过期的倒计时吗？</string>
+    <string name="app_lock_biometric_verify_fail">生物识别验证失败</string>
+    <string name="app_lock_disabled_toast">应用锁已关闭</string>
+    <string name="app_lock_forgot_pin_confirm_lock">忘记PIN码后无法找回，只能清除本地数据来重置。这将删除所有账单、生活记录和设置等本地数据，且不可逆。确定继续吗？</string>
+    <string name="app_lock_forgot_pin_action_lock">清除并重置</string>
+    <string name="app_lock_locked_out">尝试次数过多，请稍后再试</string>
+    <string name="settings_language_english">English</string>
+    <string name="category_action_create">新建</string>
+    <string name="category_action_edit">编辑</string>
+    <string name="category_action_rename">重命名</string>
+    <string name="category_adj_edit">编辑分类</string>
+    <string name="category_adj_new">新建分类</string>
+    <string name="category_adj_preset">预设分类</string>
+    <string name="category_confirm_action">确认%1$s</string>
+    <string name="category_count_bills">%1$d 个账单</string>
+    <string name="category_count_both">%1$d 个账单，%2$d 个物品</string>
+    <string name="category_count_items">%1$d 个物品</string>
+    <string name="category_delete_all">删除全部</string>
+    <string name="category_delete_all_desc">删除分类及所有关联记录</string>
+    <string name="category_delete_related_hint">删除分类将同时删除该分类下的所有记录，此操作不可逆。</string>
+    <string name="category_delete_title">删除分类</string>
+    <string name="category_keep_records">保留记录</string>
+    <string name="category_keep_records_desc">仅删除分类，保留其记录</string>
+    <string name="category_match_hint">将 %1$s 关联到%2$s</string>
+    <string name="category_match_title_create">为「%1$s」新建匹配规则</string>
+    <string name="category_match_title_edit">为「%1$s」编辑匹配规则</string>
+    <string name="category_match_title_preset">为「%1$s」设置预设匹配规则</string>
+
+    <!-- 密码本 -->
+    <string name="settings_vault">密码本</string>
+    <string name="settings_vault_subtitle">管理保存的密码</string>
+    <string name="settings_more">更多</string>
+    <string name="settings_confirm">确定</string>
+    <string name="vault_title">密码本</string>
+    <string name="vault_unlock_title">输入密码本密码</string>
+    <string name="vault_setup_title">设置密码本密码</string>
+    <string name="vault_unlock_hint">请输入 6 位密码解锁</string>
+    <string name="vault_setup_hint_1">设置一个独立的 6 位密码</string>
+    <string name="vault_setup_hint_2">再次输入以确认</string>
+    <string name="vault_locked_out_hint">尝试次数过多，请稍后重试</string>
+    <string name="vault_locked_out">已锁定，%1$d 秒后重试</string>
+    <string name="vault_locked_out_short">尝试次数过多，请稍后重试</string>
+    <string name="vault_pin_wrong">密码错误</string>
+    <string name="vault_pin_mismatch">两次输入不一致</string>
+    <string name="vault_old_pin">输入旧密码</string>
+    <string name="vault_new_pin">输入新密码</string>
+    <string name="vault_old_pin_hint">输入当前密码以验证身份</string>
+    <string name="vault_new_pin_hint">输入新的 6 位密码</string>
+    <string name="vault_pin_changed">密码修改成功</string>
+    <string name="vault_old_pin_wrong">旧密码错误</string>
+    <string name="vault_search">搜索</string>
+    <string name="vault_search_hint">搜索标题/用户名/网址</string>
+    <string name="vault_all_categories">全部分类</string>
+    <string name="vault_add">新增</string>
+    <string name="vault_copy">复制</string>
+    <string name="vault_copied">已复制</string>
+    <string name="vault_copy_password">复制密码</string>
+    <string name="vault_updated_at">更新于 %1$s</string>
+    <string name="vault_empty">还没有密码条目</string>
+    <string name="vault_empty_hint">点击右下角 + 添加第一条密码</string>
+    <string name="vault_no_result">没有找到匹配的条目</string>
+    <string name="vault_edit">编辑</string>
+    <string name="vault_delete">删除</string>
+    <string name="vault_delete_title">删除条目</string>
+    <string name="vault_delete_confirm">确定要删除该条目吗？此操作不可逆。</string>
+    <string name="vault_deleted">已删除</string>
+    <string name="vault_deleted_hint">该条目已从密码本移除</string>
+    <string name="vault_field_title">标题</string>
+    <string name="vault_field_username">用户名</string>
+    <string name="vault_field_password">密码</string>
+    <string name="vault_field_url">网站</string>
+    <string name="vault_field_notes">备注</string>
+    <string name="vault_field_category">分类：%1$s</string>
+    <string name="vault_field_category_input">分类</string>
+    <string name="vault_toggle_visibility">显示/隐藏密码</string>
+    <string name="vault_edit_title">编辑密码本</string>
+    <string name="vault_add_title">新增密码本</string>
+    <string name="vault_error_title_required">请输入标题</string>
+    <string name="vault_error_password_required">请输入密码</string>
+    <string name="vault_error_save_failed">保存失败，请重试</string>
+    <string name="vault_generator_title">密码生成器</string>
+    <string name="vault_generator_empty">至少选择一种字符类型</string>
+    <string name="vault_generator_strength">强度：%1$s（约 %2$d bit）</string>
+    <string name="vault_generator_length">长度</string>
+    <string name="vault_generator_uppercase">大写字母</string>
+    <string name="vault_generator_lowercase">小写字母</string>
+    <string name="vault_generator_digits">数字</string>
+    <string name="vault_generator_symbols">符号</string>
+    <string name="vault_generator_regenerate">重新生成</string>
+    <string name="vault_generator_use">使用</string>
+    <string name="vault_strength_weak">弱</string>
+    <string name="vault_strength_medium">中</string>
+    <string name="vault_strength_strong">强</string>
+    <string name="vault_strength_very_strong">极强</string>
+    <string name="dashboard_card_vault">密码本</string>
+    <string name="vault_card_count">共 %1$d 条</string>
+    <string name="vault_card_empty">点击添加第一条密码</string>
+    <string name="vault_card_more">查看更多 →</string>
+    <string name="vault_settings_clipboard">剪贴板自动清除</string>
+    <string name="vault_settings_clipboard_value">当前：%1$d 秒</string>
+    <string name="vault_settings_clipboard_option">%1$d 秒</string>
+    <string name="vault_settings_clipboard_selected">当前</string>
+    <string name="vault_settings_require_auth">进入密码本需验证</string>
+    <string name="vault_settings_require_auth_hint">关闭后切换后台不再锁定</string>
+    <string name="vault_settings_count">已加密条目数</string>
+    <string name="vault_settings_count_value">%1$d 条</string>
+    <string name="vault_settings_change_pin">修改主密码</string>
+    <string name="vault_settings_change_pin_hint">更新密码本解锁密码</string>
+    <string name="vault_settings_reset">重置密码本</string>
+    <string name="vault_settings_reset_hint">删除全部条目并重置密码</string>
+    <string name="vault_reset_title">重置密码本</string>
+    <string name="vault_reset_confirm">这将删除全部密码条目并清除解锁密码，此操作不可逆。确定继续吗？</string>
+    <string name="vault_reset_action">重置</string>
+    <string name="vault_reset_done_title">已重置</string>
+    <string name="vault_reset_done_hint">密码本已重置，重新进入时需要设置新的解锁密码。</string>
 </resources>

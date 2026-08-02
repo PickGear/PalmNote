@@ -1,4 +1,6 @@
 package com.palmnote.ui.life.common
+import javax.inject.Inject
+import dagger.hilt.android.lifecycle.HiltViewModel
 
 import androidx.compose.foundation.background
 import androidx.compose.ui.draw.alpha
@@ -25,7 +27,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import com.palmnote.PalmNoteApp
-import com.palmnote.ui.components.simpleViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
@@ -57,7 +59,8 @@ private val emptyStateConfigs: Map<String, Triple<ImageVector, Int, Int>> = mapO
     "BarChart" to Triple(Icons.Default.BarChart, R.string.life_empty_report_title, R.string.life_empty_report_subtitle)
 )
 
-class GenericListViewModel(
+@HiltViewModel
+class GenericListViewModel @Inject constructor(
     private val itemRepo: LifeItemRepository
 ) : ViewModel() {
     fun loadPaged(templateId: Long): Flow<PagingData<LifeItem>> {
@@ -83,7 +86,7 @@ fun GenericTemplateListScreen(
     onBack: () -> Unit,
     onItemClick: (Long) -> Unit,
     onCreateClick: () -> Unit,
-    viewModel: GenericListViewModel = simpleViewModel { PalmNoteApp.container.genericListViewModel() }
+    viewModel: GenericListViewModel = hiltViewModel()
 ) {
     val pagingItems = viewModel.loadPaged(templateId).collectAsLazyPagingItems()
     val emptyConfig = remember(template.icon) { emptyStateConfigs[template.icon] ?: Triple(Icons.Default.Inbox, R.string.life_empty_default_title, R.string.life_empty_default_subtitle) }
@@ -93,12 +96,12 @@ fun GenericTemplateListScreen(
         topBar = {
             SecondaryTopAppBar(
                 title = { Text(template.displayName(), fontWeight = FontWeight.SemiBold) },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "\u8FD4\u56DE") } },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) } },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = onCreateClick, containerColor = tplColor) { Icon(Icons.Default.Add, "\u65B0\u5EFA", tint = Color.White) }
+            FloatingActionButton(onClick = onCreateClick, containerColor = tplColor) { Icon(Icons.Default.Add, stringResource(R.string.create_new), tint = Color.White) }
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->

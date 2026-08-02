@@ -185,6 +185,15 @@ enum class AppIcon(val imageVector: ImageVector, val tint: Color) {
     EditNote(Icons.Outlined.EditNote, Color(0xFF5C6BC0)),
     AutoStories(Icons.Outlined.AutoStories, Color(0xFFAB47BC)),
 
+    // 密码本
+    Lock(Icons.Outlined.Lock, Color(0xFF6750A4)),
+    LockOpen(Icons.Outlined.LockOpen, Color(0xFF6750A4)),
+    Key(Icons.Outlined.Key, Color(0xFF6750A4)),
+    Visibility(Icons.Outlined.Visibility, Color(0xFF78909C)),
+    VisibilityOff(Icons.Outlined.VisibilityOff, Color(0xFF78909C)),
+    Shuffle(Icons.Outlined.Shuffle, Color(0xFF6750A4)),
+    Language(Icons.Outlined.Language, Color(0xFF42A5F5)),
+
     // 物品管理
     Build(Icons.Outlined.Build, Color(0xFF8D6E63)),
     Kitchen(Icons.Outlined.Kitchen, Color(0xFF8D6E63)),

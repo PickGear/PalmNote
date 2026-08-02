@@ -4,6 +4,78 @@ All notable changes to PalmNote will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.3.0] - Unreleased
+
+### Added
+- **密码本模块**（`feature/vault`）：纯离线密码管理器，字段级 AES-256-GCM 加密 + 独立主密码（密钥包裹模式，改 PIN 无需重加密条目）
+- 密码本：列表/搜索/分类筛选、详情遮罩查看（👁 切换）、CRUD、密码生成器（长度+字符集+熵强度）、一键复制 30 秒自动清剪贴板（哈希追踪不误清）
+- 密码本安全：切后台立即锁定（清内存密钥与剪贴板）、失败 5 次锁定 30 秒（防暴力）、进入需验证可配置、重置密码本
+- 密码本入口：Dashboard 卡片（最近 3 条 + 条数统计，旧卡片配置自动合并）、设置页设置项（剪贴板清除/需验证/条目数/改主密码/重置）
+- 数据库 v4 → v5：新增 `vault_entries` 表（`Migration4To5`）
+- 测试：`VaultCryptoTest`（加密往返/篡改检测/密钥派生）、`VaultPasswordGeneratorTest`、`Migration4To5Test`，单测 75 → 94
+
+### Changed
+- 金额存储从 `Double`(元) 迁移为 `Long`(分)：账单/钱包/预算/资产/周期模板/计划清单全链路精确整数运算，消除浮点误差
+- 新增 `Money` 值类型（`domain/model/Money.kt`）与 `CurrencyUtils` 分单位格式化
+- 数据库 v3 → v4：迁移重建涉金额表并做 ×100 换算（含已有数据）
+- CI：接入 `lintDebug`（abortOnError）、`testDebugUnitTest`、Room schema 变更校验
+- `lint.abortOnError` false → true
+
+### Fixed
+- **严重：v2→v3 迁移索引名与实体自动生成名不一致，老用户升级必崩**（`idx_bills_*` → `index_bills_*`）
+- 微信 CSV 导入未剥离负号，可能导致金额为负污染账本
+- **每日"未记账"提醒误报**：按完整时间戳精确匹配改为当日日期区间匹配
+- **正数日/倒计时/生日/纪念日差一天**：`epoch/86400000`(UTC) 改为系统时区日期转换
+- 生日/纪念日 2/29 平年处理：`withYear` 异常 catch 中重复调用导致二次崩溃
+- 订阅账单提醒：31 号在小月自动落当月最后一天；提醒后回写 `lastBilledDate` 防重复
+- 日期格式国际化：`date_format_weekday_full` 等中英文参数类型不一致（lint StringFormatMatches）
+- **备份不包含应用锁 SharedPreferences**：恢复后旧版 SHA-256 PIN 因 salt 重置而无法验证，用户被锁在数据外
+- **备份前无 WAL checkpoint**：`-wal/-shm` 与主库可能不一致导致恢复损坏，改为 checkpoint 后复制一致快照
+- `getExternalFilesDir` 可能返回 null 导致备份 NPE，增加内部存储回退
+- 设置页版本号显示 v1.0.0 → v1.2.0（与 app_version 一致）
+- detekt 配置：`ComplexMethod`/`TooManyFunctions` 规则名过时导致任务无法运行
+
+### Security
+- **系统备份关闭**（`allowBackup=false`）：阻止明文数据库（含 PIN hash）被 Google 云备份
+- **应用锁启用时 FLAG_SECURE**：禁止截图/最近任务缩略图泄露财务数据
+- **锁定状态持久化**：失败次数/锁定时长写入 SharedPreferences，杀进程无法绕过暴力破解防护
+- **PBKDF2 迭代 100k → 600k**（OWASP 推荐）
+- **PIN 校验/设置移至 IO 线程**：600k 迭代不再阻塞主线程
+
+### i18n
+- 抽取硬编码中文文案：钱包/账本删除确认、分类删除/重命名对话框、预算金额错误、倒计时清除、回到顶部、语言选择"English"、货币符号"¥"（7 处输入框前缀）
+- 新增 27 个中英双语字符串资源
+- 倒计时清除逻辑修复：`epoch/86400000`(UTC) 差一天
+
+### Fixed (review pass)
+- **每日汇总按本地日分组**：参考 Cashew/Veri Fin 做法——账单存完整时间戳（保留具体时刻），日历/周报的按日聚合改为**应用层（Kotlin）按本地时区分组**，移除 SQL 按 UTC 日分组的 4 个聚合查询，彻底消除凌晨账错位/同日覆盖问题
+- **严重：Migration3To4 重建 `plan_list_items` 缺外键**、`wallets.icon` 缺 `DEFAULT 'Payments'`，Room 迁移后校验会崩——已补齐并与 schema 逐列/外键/索引完全一致
+- **备份 WAL checkpoint 结果未检查**：busy>0 时可能漏并 WAL 页导致备份丢最新数据，改为检查结果、失败回退原始 db+wal+shm
+- **订阅账单短月跳过**：billingDay 29/30/31 的订阅在短月被 `monthsBetween` 守卫压掉，改用 `plusMonths`（自动月末钳制）判断周期
+- **应用锁锁定状态**：`persistLockout` 改同步 `commit()`（防进程被杀丢状态）；init 时清理已过期的锁定计数，避免重启后输错一次就再次锁定
+- 全局账单金额搜索格式与列表过滤对齐（`printf('%.2f')` vs `toYuanString()`）
+- 移除 5 个文件被误加的 UTF-8 BOM
+- 新增 `BillRepository.getBillsByDateRangeByBook`；`DateUtils.millisToLocalDate` 公开化
+- 报表饼图角度/百分比整数除法 bug：`cat.total / total` 全为 0，改为 `.toDouble()` 运算
+- 账单过滤弹窗金额回显显示"分"而非"元"（`Long.toString()` → `toYuanString()`）
+- 钱包编辑/预算编辑弹窗初始金额显示"分"而非"元"
+- 账单列表搜索按金额匹配失效（内存过滤用分字符串），改为元字符串匹配
+- 应用锁锁定倒计时在进程重启后未初始化，改为从持久化状态恢复
+
+### Tests
+- 新增 `MoneyTest`：`parse`/`fromYuan`/算术/`toYuanString`/`toMoney` 共 14 个用例（含舍入、NaN/Infinity、负值、非法输入）
+- 新增 `BillDailySummaryTest`：按本地日分组的 3 个用例（含凌晨账归位）
+- 新增 `Migration3To4Test`（instrumentation）：v3→v4 迁移 6 张表金额 ×100 换算 + schema 校验（wallets 默认值/plan_list_items 外键）
+- 移除未使用的 `CurrencyUtils.formatYuan`
+
+### UI
+- 周报柱状图按星期槽位对齐，无记录的天留空
+- 月度折线图补零铺满整月，不再因稀疏数据被压缩
+
+### Added
+- `Migration3To4` 迁移
+- `BillRepository.getBillsByDateRange`
+
 ## [1.2.0] - 2026-07-28
 
 ### Added

@@ -1,4 +1,6 @@
 package com.palmnote.ui.life.common
+import javax.inject.Inject
+import dagger.hilt.android.lifecycle.HiltViewModel
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
@@ -7,24 +9,21 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.palmnote.PalmNoteApp
-import com.palmnote.ui.components.simpleViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
-import androidx.navigation.NavType
+import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
+import androidx.navigation.toRoute
 import com.palmnote.data.db.entity.LifeTemplate
 import com.palmnote.domain.repository.LifeTemplateRepository
-import com.palmnote.ui.life.LifeRoute
+import com.palmnote.ui.life.*
 import androidx.compose.foundation.layout.Box
-import androidx.compose.runtime.Composable
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
-import com.palmnote.ui.life.LifeScreen
 import com.palmnote.ui.life.plan.saving.SavingListScreen
 import com.palmnote.ui.life.plan.shopping.ShoppingKanbanScreen
 import com.palmnote.ui.life.plan.study.StudyListScreen
@@ -49,7 +48,8 @@ import kotlinx.coroutines.flow.*
 
 data class TplDispState(val template: LifeTemplate? = null, val isLoading: Boolean = true)
 
-class TplDispViewModel(
+@HiltViewModel
+class TplDispViewModel @Inject constructor(
     private val templateRepo: LifeTemplateRepository
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(TplDispState())
@@ -70,8 +70,8 @@ private val popOut = slideOutHorizontally(animationSpec = animSpec) { it }
 @Composable
 private fun DispatchScreen(tpl: LifeTemplate, tid: Long, navController: NavHostController) {
     val back: () -> Unit = { navController.popBackStack(); Unit }
-    val onClick: (Long) -> Unit = { id -> navController.navigate("life/item/$id"); Unit }
-    val onCreate: () -> Unit = { navController.navigate("life/create/$tid"); Unit }
+    val onClick: (Long) -> Unit = { id -> navController.navigate(LifeItemRoute(id)); Unit }
+    val onCreate: () -> Unit = { navController.navigate(LifeCreateRoute(tid)); Unit }
     when (tpl.icon) {
         "savings" -> SavingListScreen(templateId = tid, onBack = back, onItemClick = onClick, onCreateClick = onCreate)
         "shopping_cart" -> ShoppingKanbanScreen(templateId = tid, onBack = back, onItemClick = onClick, onCreateClick = onCreate)
@@ -102,30 +102,30 @@ private fun dispatchTemplateScreen(tpl: LifeTemplate, tid: Long, navController: 
 fun LifeNavHost(modifier: Modifier = Modifier, onChildNavigated: (Boolean) -> Unit = {}, navController: NavHostController = rememberNavController()) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     LaunchedEffect(navBackStackEntry?.destination?.route) {
-        onChildNavigated(navBackStackEntry?.destination?.route == LifeRoute.Home)
+        onChildNavigated(navBackStackEntry?.destination?.hasRoute<LifeHomeRoute>() == true)
     }
-    NavHost(navController = navController, startDestination = LifeRoute.Home, modifier = modifier,
+    NavHost(navController = navController, startDestination = LifeHomeRoute, modifier = modifier,
         enterTransition = { slideIn + fadeIn(tween(150)) },
         exitTransition = { slideOut + fadeOut(tween(150)) },
         popEnterTransition = { popIn + fadeIn(tween(150)) },
         popExitTransition = { popOut + fadeOut(tween(150)) }
     ) {
-        composable(LifeRoute.Home) {
+        composable<LifeHomeRoute> {
             LifeScreen(
-                onNavigateToTemplate = { tplId -> navController.navigate("life/template/$tplId") },
-                onNavigateToItem = { itemId -> navController.navigate("life/item/$itemId") },
-                onNavigateToCreate = { tplId -> navController.navigate("life/create/$tplId") },
-                onNavigateToFocus = { navController.navigate(LifeRoute.Focus) },
-                onNavigateToHabit = { navController.navigate(LifeRoute.Habit) },
-                onNavigateToMood = { navController.navigate(LifeRoute.Mood) },
-                onNavigateToJournal = { navController.navigate(LifeRoute.Journal) },
-                onNavigateToReport = { navController.navigate(LifeRoute.Report) },
-                onNavigateToManage = { navController.navigate(LifeRoute.TemplateManage) },
+                onNavigateToTemplate = { tplId -> navController.navigate(LifeTemplateRoute(tplId)) },
+                onNavigateToItem = { itemId -> navController.navigate(LifeItemRoute(itemId)) },
+                onNavigateToCreate = { tplId -> navController.navigate(LifeCreateRoute(tplId)) },
+                onNavigateToFocus = { navController.navigate(LifeFocusRoute) },
+                onNavigateToHabit = { navController.navigate(LifeHabitRoute) },
+                onNavigateToMood = { navController.navigate(LifeMoodRoute) },
+                onNavigateToJournal = { navController.navigate(LifeJournalRoute) },
+                onNavigateToReport = { navController.navigate(LifeReportRoute) },
+                onNavigateToManage = { navController.navigate(LifeTemplateManageRoute) },
             )
         }
-        composable("life/template/{templateId}", arguments = listOf(navArgument("templateId") { type = NavType.LongType })) { entry ->
-            val tid = entry.arguments?.getLong("templateId") ?: return@composable
-            val vm = simpleViewModel { PalmNoteApp.container.tplDispViewModel() }
+        composable<LifeTemplateRoute> { entry ->
+            val tid = entry.toRoute<LifeTemplateRoute>().templateId
+            val vm: TplDispViewModel = hiltViewModel()
             val s by vm.uiState.collectAsStateWithLifecycle()
             LaunchedEffect(tid) { vm.load(tid) }
             val tpl = s.template
@@ -135,23 +135,23 @@ fun LifeNavHost(modifier: Modifier = Modifier, onChildNavigated: (Boolean) -> Un
                 dispatchTemplateScreen(tpl, tid, navController)
             }
         }
-        composable("life/item/{itemId}", arguments = listOf(navArgument("itemId") { type = NavType.LongType })) { entry ->
-            val iid = entry.arguments?.getLong("itemId") ?: return@composable
-            val vm = simpleViewModel { PalmNoteApp.container.itemDetailViewModel() }; val s by vm.uiState.collectAsStateWithLifecycle(); LaunchedEffect(iid) { vm.load(iid) }
-            ItemDetailScreen(item = s.item, template = s.template, viewModel = vm, onBack = { navController.popBackStack() }, onEdit = { s.item?.let { item -> navController.navigate("life/edit/${item.id}") } }, onDelete = { vm.deleteItem(); navController.popBackStack() })
+        composable<LifeItemRoute> { entry ->
+            val iid = entry.toRoute<LifeItemRoute>().itemId
+            val vm: ItemDetailViewModel = hiltViewModel(); val s by vm.uiState.collectAsStateWithLifecycle(); LaunchedEffect(iid) { vm.load(iid) }
+            ItemDetailScreen(item = s.item, template = s.template, viewModel = vm, onBack = { navController.popBackStack() }, onEdit = { s.item?.let { item -> navController.navigate(LifeEditRoute(item.id)) } }, onDelete = { vm.deleteItem(); navController.popBackStack() })
         }
-        composable("life/create/{templateId}", arguments = listOf(navArgument("templateId") { type = NavType.LongType })) { entry ->
-            val tid = entry.arguments?.getLong("templateId") ?: return@composable
-            val vm = simpleViewModel { PalmNoteApp.container.createItemViewModel() }; val s by vm.uiState.collectAsStateWithLifecycle(); LaunchedEffect(tid) { vm.load(tid) }
-            LaunchedEffect(s.savedItemId) { if (s.savedItemId != null) { val id = s.savedItemId; vm.resetSaved(); navController.navigate("life/item/$id") { popUpTo("life/create/$tid") { inclusive = true } } } }
+        composable<LifeCreateRoute> { entry ->
+            val tid = entry.toRoute<LifeCreateRoute>().templateId
+            val vm: CreateItemViewModel = hiltViewModel(); val s by vm.uiState.collectAsStateWithLifecycle(); LaunchedEffect(tid) { vm.load(tid) }
+            LaunchedEffect(s.savedItemId) { if (s.savedItemId != null) { val id = s.savedItemId ?: return@LaunchedEffect; vm.resetSaved(); navController.navigate(LifeItemRoute(id)) { popUpTo(LifeCreateRoute(tid)) { inclusive = true } } } }
             val createTpl = s.template
             if (createTpl != null) {
                 DynamicFormScreen(template = createTpl, existingItem = null, onSave = { title, data -> vm.saveItem(title, data) }, onBack = { navController.popBackStack() }, viewModel = vm)
             }
         }
-        composable("life/edit/{itemId}", arguments = listOf(navArgument("itemId") { type = NavType.LongType })) { entry ->
-            val iid = entry.arguments?.getLong("itemId") ?: return@composable
-            val vm = simpleViewModel { PalmNoteApp.container.createItemViewModel() }; val s by vm.uiState.collectAsStateWithLifecycle(); LaunchedEffect(iid) { vm.loadEdit(iid) }
+        composable<LifeEditRoute> { entry ->
+            val iid = entry.toRoute<LifeEditRoute>().itemId
+            val vm: CreateItemViewModel = hiltViewModel(); val s by vm.uiState.collectAsStateWithLifecycle(); LaunchedEffect(iid) { vm.loadEdit(iid) }
             LaunchedEffect(s.savedItemId) { if (s.savedItemId != null) { vm.resetSaved(); navController.popBackStack() } }
             if (s.isLoading) {
                 Box(modifier = Modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
@@ -163,13 +163,13 @@ fun LifeNavHost(modifier: Modifier = Modifier, onChildNavigated: (Boolean) -> Un
                 }
             }
         }
-        composable(LifeRoute.Focus) { FocusTimerScreen(onBack = { navController.popBackStack() }) }
-        composable(LifeRoute.Habit) { HabitListScreen(onBack = { navController.popBackStack() }, onItemClick = { navController.navigate("life/item/$it") }, onAchievementClick = { navController.navigate(LifeRoute.Achievement) }) }
-        composable(LifeRoute.Mood) { MoodListScreen(onBack = { navController.popBackStack() }) }
-        composable(LifeRoute.Journal) { JournalListScreen(onBack = { navController.popBackStack() }, onItemClick = { navController.navigate("life/item/$it") }) }
-        composable(LifeRoute.Report) { ReportListScreen(onBack = { navController.popBackStack() }, onItemClick = { }) }
-        composable(LifeRoute.Achievement) { AchievementScreen(onBack = { navController.popBackStack() }) }
-        composable(LifeRoute.TemplateManage) { TemplateManageScreen(onBack = { navController.popBackStack() }, onCreateClick = { navController.navigate(LifeRoute.TemplateCreate) }) }
-        composable(LifeRoute.TemplateCreate) { TemplateCreateScreen(onBack = { navController.popBackStack() }, onCreated = { navController.popBackStack() }) }
+        composable<LifeFocusRoute> { FocusTimerScreen(onBack = { navController.popBackStack() }) }
+        composable<LifeHabitRoute> { HabitListScreen(onBack = { navController.popBackStack() }, onItemClick = { navController.navigate(LifeItemRoute(it)) }, onAchievementClick = { navController.navigate(LifeAchievementRoute) }) }
+        composable<LifeMoodRoute> { MoodListScreen(onBack = { navController.popBackStack() }) }
+        composable<LifeJournalRoute> { JournalListScreen(onBack = { navController.popBackStack() }, onItemClick = { navController.navigate(LifeItemRoute(it)) }) }
+        composable<LifeReportRoute> { ReportListScreen(onBack = { navController.popBackStack() }, onItemClick = { }) }
+        composable<LifeAchievementRoute> { AchievementScreen(onBack = { navController.popBackStack() }) }
+        composable<LifeTemplateManageRoute> { TemplateManageScreen(onBack = { navController.popBackStack() }, onCreateClick = { navController.navigate(LifeTemplateCreateRoute) }) }
+        composable<LifeTemplateCreateRoute> { TemplateCreateScreen(onBack = { navController.popBackStack() }, onCreated = { navController.popBackStack() }) }
     }
 }

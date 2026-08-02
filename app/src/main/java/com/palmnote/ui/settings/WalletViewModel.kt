@@ -1,23 +1,24 @@
-﻿package com.palmnote.ui.settings
+package com.palmnote.ui.settings
+import javax.inject.Inject
+import dagger.hilt.android.lifecycle.HiltViewModel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.palmnote.data.db.entity.Wallet
-import com.palmnote.domain.repository.BillRepository
 import com.palmnote.domain.repository.WalletRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 
-class WalletViewModel(
-    private val walletRepository: WalletRepository,
-    private val billRepository: BillRepository
+@HiltViewModel
+class WalletViewModel @Inject constructor(
+    private val walletRepository: WalletRepository
 ) : ViewModel() {
 
     val wallets: StateFlow<List<Wallet>> = walletRepository.getAllWallets()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val totalBalance: StateFlow<Double?> = walletRepository.getTotalBalance()
+    val totalBalance: StateFlow<Long?> = walletRepository.getTotalBalance()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     fun addWallet(wallet: Wallet) {
@@ -40,8 +41,7 @@ class WalletViewModel(
 
     fun deleteWalletWithData(walletId: Long) {
         viewModelScope.launch {
-            billRepository.softDeleteByWallet(walletId)
-            walletRepository.softDelete(walletId)
+            walletRepository.deleteWalletWithData(walletId)
         }
     }
 

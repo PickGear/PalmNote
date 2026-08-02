@@ -1,10 +1,11 @@
 package com.palmnote.data.repository
+import javax.inject.Inject
 
 import com.palmnote.data.db.dao.LifeTemplateDao
 import com.palmnote.data.db.entity.LifeTemplate
 import com.palmnote.domain.repository.LifeTemplateRepository
 import kotlinx.coroutines.flow.Flow
-class LifeTemplateRepositoryImpl(
+class LifeTemplateRepositoryImpl @Inject constructor(
     private val dao: LifeTemplateDao
 ) : LifeTemplateRepository {
     override fun getAllVisibleTemplates(): Flow<List<LifeTemplate>> = dao.getAllVisibleTemplates()

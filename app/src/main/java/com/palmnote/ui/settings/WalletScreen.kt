@@ -26,9 +26,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.palmnote.PalmNoteApp
-import com.palmnote.ui.components.simpleViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.palmnote.R
 import com.palmnote.data.db.entity.Wallet
+import com.palmnote.domain.model.toMoney
 import com.palmnote.domain.util.CurrencyUtils
 import com.palmnote.ui.bills.walletTypeResIds
 import com.palmnote.ui.components.*
@@ -40,7 +41,7 @@ fun WalletScreen(
     onNavigateBack: () -> Unit = {},
     onNavigateToAddWallet: () -> Unit = {},
     onNavigateToEditWallet: (Long) -> Unit = {},
-    viewModel: WalletViewModel = simpleViewModel { PalmNoteApp.container.walletViewModel() }
+    viewModel: WalletViewModel = hiltViewModel()
 ) {
     val wallets by viewModel.wallets.collectAsStateWithLifecycle()
     val totalBalance by viewModel.totalBalance.collectAsStateWithLifecycle()
@@ -98,7 +99,7 @@ fun WalletScreen(
                             Text(stringResource(R.string.wallet_total_assets), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f))
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                CurrencyUtils.formatCurrency(totalBalance ?: 0.0),
+                                CurrencyUtils.formatCurrency((totalBalance ?: 0L).toMoney()),
                                 style = MaterialTheme.typography.headlineMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onPrimary
@@ -158,7 +159,7 @@ fun WalletScreen(
         AppDialog(
             onDismissRequest = { showDeleteDialog = false },
             title = { Text(stringResource(R.string.wallet_delete_title), fontWeight = FontWeight.Bold) },
-            text = { Text("确定要删除「${walletToDeleteSnapshot.name}」吗？该账户下的所有账单数据将被一并删除。") },
+            text = { Text(stringResource(R.string.wallet_delete_confirm, walletToDeleteSnapshot.name)) },
             confirmButton = {
                 TextButton(onClick = { viewModel.deleteWalletWithData(walletToDeleteSnapshot.id); showDeleteDialog = false }) {
                     Text(stringResource(R.string.delete), color = ErrorLight)
@@ -239,7 +240,7 @@ private fun WalletItem(
             }
 
             Text(
-                CurrencyUtils.formatCurrency(wallet.currentBalance),
+                CurrencyUtils.formatCurrency(wallet.currentBalance.toMoney()),
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
                 color = if (wallet.currentBalance >= 0) MaterialTheme.colorScheme.onSurface else ErrorLight
@@ -287,11 +288,11 @@ private fun WalletDetailDialog(
                     }
                 }
                 HorizontalDivider()
-                DetailRow(stringResource(R.string.wallet_balance), CurrencyUtils.formatCurrency(wallet.currentBalance))
+                DetailRow(stringResource(R.string.wallet_balance), CurrencyUtils.formatCurrency(wallet.currentBalance.toMoney()))
                 DetailRow(stringResource(R.string.wallet_type), stringResource(walletTypeResIds[wallet.type] ?: R.string.wallet_type_other))
                 if (wallet.bankName.isNotEmpty()) DetailRow(stringResource(R.string.wallet_bank), wallet.bankName)
                 if (wallet.cardNumber.isNotEmpty()) DetailRow(stringResource(R.string.wallet_card_number), "****${wallet.cardNumber}")
-                DetailRow(stringResource(R.string.wallet_initial_balance), CurrencyUtils.formatCurrency(wallet.initialBalance))
+                DetailRow(stringResource(R.string.wallet_initial_balance), CurrencyUtils.formatCurrency(wallet.initialBalance.toMoney()))
             }
         },
         confirmButton = {

@@ -21,13 +21,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.palmnote.R
+import com.palmnote.domain.model.Money
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DepositSheet(
     savingItemName: String = "",
-    onConfirm: (Double) -> Unit,
+    onConfirm: (Long) -> Unit,
     onDismiss: () -> Unit
 ) {
     var amount by remember { mutableStateOf("") }
@@ -99,7 +100,7 @@ fun DepositSheet(
             // Save button
             Button(
                 onClick = {
-                    val amt = amount.toDoubleOrNull()
+                    val amt = Money.parse(amount)?.cents
                     if (amt != null && amt > 0 && !saving) {
                         saving = true
                         onConfirm(amt)
@@ -107,7 +108,7 @@ fun DepositSheet(
                 },
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 shape = RoundedCornerShape(14.dp),
-                enabled = amount.toDoubleOrNull() != null && (amount.toDoubleOrNull() ?: 0.0) > 0 && !saving,
+                enabled = (Money.parse(amount)?.cents ?: 0L) > 0 && !saving,
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
             ) {
                 if (saving) {

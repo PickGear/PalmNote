@@ -1,4 +1,6 @@
 package com.palmnote.ui.life.record.report
+import javax.inject.Inject
+import dagger.hilt.android.lifecycle.HiltViewModel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -9,7 +11,8 @@ import kotlinx.coroutines.flow.*
 
 data class ReportUiState(val reports: List<LifeReport> = emptyList(), val isLoading: Boolean = true)
 
-class ReportViewModel(
+@HiltViewModel
+class LifeReportViewModel @Inject constructor(
     private val repo: LifeReportRepository
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(ReportUiState())

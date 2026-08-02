@@ -12,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 
@@ -43,7 +44,7 @@ fun LifeLazyList(
                 containerColor = MaterialTheme.colorScheme.surfaceVariant,
                 contentColor = MaterialTheme.colorScheme.onSurfaceVariant
             ) {
-                Icon(Icons.Default.KeyboardArrowUp, "\u56DE\u5230\u9876\u90E8", modifier = Modifier.size(20.dp))
+                Icon(Icons.Default.KeyboardArrowUp, stringResource(com.palmnote.R.string.back_to_top), modifier = Modifier.size(20.dp))
             }
         }
     }

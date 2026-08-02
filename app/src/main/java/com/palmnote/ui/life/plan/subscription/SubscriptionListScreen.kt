@@ -1,4 +1,4 @@
-﻿package com.palmnote.ui.life.plan.subscription
+package com.palmnote.ui.life.plan.subscription
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -23,7 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.palmnote.PalmNoteApp
 import com.palmnote.R
-import com.palmnote.ui.components.simpleViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.palmnote.ui.components.AppDialog
 import com.palmnote.ui.components.EmptyState
 import com.palmnote.ui.components.SecondaryTopAppBar
@@ -33,7 +33,8 @@ import kotlinx.serialization.json.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SubscriptionListScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Long) -> Unit, onCreateClick: () -> Unit = {}, viewModel: SubscriptionViewModel = simpleViewModel { PalmNoteApp.container.subscriptionViewModel() }) {
+@Suppress("LongMethod", "CyclomaticComplexMethod")
+fun SubscriptionListScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Long) -> Unit, onCreateClick: () -> Unit = {}, viewModel: SubscriptionViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(templateId) { viewModel.load(templateId) }
     val subColor = LifeSubscription
@@ -43,7 +44,7 @@ fun SubscriptionListScreen(templateId: Long, onBack: () -> Unit, onItemClick: (L
             onDismissRequest = { deleteTarget = null },
             title = { Text(stringResource(R.string.life_confirm), fontWeight = FontWeight.Bold) },
             text = { Text(stringResource(R.string.life_confirm_delete_subscription)) },
-            confirmButton = { TextButton(onClick = { viewModel.deleteItem(deleteTarget!!); deleteTarget = null }) { Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error) } },
+            confirmButton = { TextButton(onClick = { deleteTarget?.let { viewModel.deleteItem(it) }; deleteTarget = null }) { Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error) } },
             dismissButton = { TextButton(onClick = { deleteTarget = null }) { Text(stringResource(R.string.cancel)) } }
         )
     }
@@ -69,7 +70,14 @@ fun SubscriptionListScreen(templateId: Long, onBack: () -> Unit, onItemClick: (L
         } else {
         LifeLazyList(modifier = Modifier.fillMaxSize().padding(innerPadding).padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             items(state.items, key = { it.id }) { item ->
-                val fields = try { val obj = Json.decodeFromString<JsonObject>(item.fieldsData); Triple((obj["amount"] as? JsonPrimitive)?.content ?: "", (obj["cycle"] as? JsonPrimitive)?.content ?: "", (obj["next_billing_date"] as? JsonPrimitive)?.content ?: "") } catch (_: Exception) { Triple("", "", "") }
+                val fields = try {
+                    val obj = Json.decodeFromString<JsonObject>(item.fieldsData)
+                    Triple(
+                        (obj["price"] as? JsonPrimitive)?.content ?: "",
+                        (obj["billingCycle"] as? JsonPrimitive)?.content ?: "",
+                        (obj["nextBilling"] as? JsonPrimitive)?.content ?: ""
+                    )
+                } catch (_: Exception) { Triple("", "", "") }
                 SwipeableItem(onDelete = { deleteTarget = item.id }) {
                     Card(modifier = Modifier.fillMaxWidth().clickable { onItemClick(item.id) }, shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
                         Box(modifier = Modifier.fillMaxWidth()) {

@@ -1,16 +1,17 @@
 package com.palmnote.domain.service
 
 import android.content.Context
+import android.util.Log
 import com.palmnote.R
 import com.palmnote.data.db.entity.CrossLink
 import com.palmnote.data.db.entity.LifeItem
 import com.palmnote.domain.model.EntityType
 import com.palmnote.domain.model.LinkType
+import com.palmnote.domain.model.Money
 import com.palmnote.domain.repository.CrossLinkRepository
 import com.palmnote.domain.repository.LifeItemRepository
 import com.palmnote.ui.notification.NotificationHelper
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -37,19 +38,19 @@ sealed class TriggerAction {
 class TriggerEngine(
     private val context: Context,
     private val itemRepoProvider: Provider<LifeItemRepository>,
-    private val crossLinkRepo: CrossLinkRepository
+    private val crossLinkRepo: CrossLinkRepository,
+    private val scope: CoroutineScope
 ) {
     private val json = Json { ignoreUnknownKeys = true }
-    private val scope = CoroutineScope(Dispatchers.IO)
     private val itemRepo: LifeItemRepository by lazy { itemRepoProvider.get() }
 
     private val rules: List<TriggerRule> = listOf(
         TriggerRule(
             triggerEvent = TriggerEvent.DEPOSIT_MADE,
             condition = { _, data ->
-                val target = data["targetAmount"]?.let { (it as? JsonPrimitive)?.content?.toDoubleOrNull() } ?: 0.0
-                val current = (data["currentAmount"]?.let { (it as? JsonPrimitive)?.content?.toDoubleOrNull() }
-                    ?: data["saved_amount"]?.let { (it as? JsonPrimitive)?.content?.toDoubleOrNull() } ?: 0.0)
+                val target = data["targetAmount"]?.let { (it as? JsonPrimitive)?.content?.let { v -> Money.parse(v)?.cents } } ?: 0L
+                val current = (data["currentAmount"]?.let { (it as? JsonPrimitive)?.content?.let { v -> Money.parse(v)?.cents } }
+                    ?: data["saved_amount"]?.let { (it as? JsonPrimitive)?.content?.let { v -> Money.parse(v)?.cents } } ?: 0L)
                 target > 0 && current >= target
             },
             actions = { item -> listOf(
@@ -83,14 +84,16 @@ class TriggerEngine(
     fun evaluate(event: TriggerEvent, item: LifeItem) {
         scope.launch {
             try {
-                val data = try { json.decodeFromString<JsonObject>(item.fieldsData) } catch (_: Exception) { JsonObject(emptyMap()) }
+                val data = try { json.decodeFromString<JsonObject>(item.fieldsData) } catch (e: Exception) { Log.w("TriggerEngine", "decode fieldsData failed", e); JsonObject(emptyMap()) }
                 val matched = rules.filter { it.triggerEvent == event && it.condition(item, data) }
                 for (rule in matched) {
                     for (action in rule.actions(item)) {
                         executeAction(action, item, data)
                     }
                 }
-            } catch (_: Exception) { }
+            } catch (e: Exception) {
+                Log.e("TriggerEngine", "evaluate failed", e)
+            }
         }
     }
 

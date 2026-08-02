@@ -1,15 +1,17 @@
-以下是调整后的完整 **PalmNote 设计规范 v4.7**：
+以下是调整后的完整 **PalmNote 设计规范 v5.0**：
 
 ---
 
 # PalmNote 设计规范
 
-> v4.7 | 2026-07-28 | Material3 + Jetpack Compose | 纯本地存储 | 手动 DI
+> v5.0 | 2026-08-02 | Material3 + Jetpack Compose | 纯本地存储 | Hilt DI
 > 本规范涵盖全局设计系统 + 生活模块 + 密码本模块专属规范。生活模块以 `[Life]` 标记，密码本模块以 `[Vault]` 标记。
+>
+> **v5.0 变更说明：** 架构对齐当前实现——依赖注入从手动 DI（AppContainer）回归 **Hilt**（KSP 编译期）；密码本模块 v1.3.0 已实现（`feature/vault`，字段级 AES-256-GCM + 独立主密码密钥包裹，DB v5 Migration4To5）；15.4 动态分类标注为规划中（当前 `LifeTemplate.category` 保持 `String`）；版本号升 1.3.0。
 >
 > **v4.7 变更说明：** 取消模块化架构（PalmModule / ModuleRegistry / Tab 动态配置），底栏恢复为固定 4 Tab（首页/物品/账本/生活）。新增模块（密码本、未来 AI/云备份）均通过 Dashboard 卡片入口，不占用底部 Tab。删除第 17 章模块化架构相关内容。
 >
-> **v4.6 变更说明：** 分类系统重大重构：静态三分类 → 用户可定义分类（LifeCategory 实体 / categoryId FK / 动态 Section 渲染 / 分类管理 UI）；FieldType 类型系统统一（enum 扩展至 19 种 / Wizard 全部可用 / DECIMAL 移除）；卡片渲染解耦（基于 layoutType 而非分类）；分类色重命名（时间→纪念）。详见以下各节。
+> **v4.6 变更说明：** 分类系统重构（规划）：静态三分类 → 用户可定义分类（LifeCategory 实体 / categoryId FK / 动态 Section 渲染 / 分类管理 UI）；FieldType 类型系统统一（enum 扩展至 19 种 / Wizard 全部可用 / DECIMAL 移除）；卡片渲染解耦（基于 layoutType 而非分类）；分类色重命名（时间→纪念）。详见 15.4 节标注。
 >
 > **v4.5 变更说明：** 生活模板字段类型扩充（TOGGLE / RATING / IMAGE / URL / CURRENCY / TAG）。
 >
@@ -1361,6 +1363,8 @@ data class FieldConfig(
 
 ### 15.4 动态分类系统
 
+> **⚠️ 规划中（未实现）**：本小节为分类系统重构的设计蓝图，尚未实施。**当前实现**：`LifeTemplate.category` 保持 `String`（值域 `PLAN`/`TIME`/`RECORD` 等），LifeScreen 按既有硬编码三分类分组，无 `life_categories` 表、无 `categoryId` FK、无分类管理 UI。是否实施待后续版本评估（v4.6 变更记录仅供参考）。
+
 #### 15.4.1 设计目标
 
 将 LifeScreen 的 Section 展示从硬编码 3 分类改为「用户可定义 N 分类」，消除"模板不知道该放哪"的困惑。分类仅用于 UI 分组，不绑定渲染逻辑。
@@ -1503,11 +1507,11 @@ categories.forEach { category ->
 └─────────────────────────────────┘
 ```
 
-#### 15.4.6 迁移方案
+#### 15.4.6 迁移方案（规划）
 
 | 步骤 | 操作 |
 |------|------|
-| 1 | DB v3→v4：创建 `life_categories` 表 |
+| 1 | DB 新建迁移：创建 `life_categories` 表 |
 | 2 | 插入 3 条预置分类（id=1 目标 / id=2 纪念 / id=3 记录） |
 | 3 | `LifeTemplate` 新增 `categoryId` 列，根据当前 `category` 值映射：`"PLAN"/"计划" → 1`，`"TIME"/"时间" → 2`，`"RECORD"/"记录" → 3` |
 | 4 | 删除旧 `category` 列 |
@@ -1523,7 +1527,7 @@ categories.forEach { category ->
 | 层 | 方案 |
 |-------|------|
 | UI 框架 | Jetpack Compose + Material 3 |
-| 依赖注入 | **手动 DI（AppContainer）** — 单例容器，Application.onCreate 时初始化所有依赖 |
+| 依赖注入 | **Hilt（KSP 编译期代码生成）** — `@HiltViewModel` / `@Inject` / `@Module @Provides` |
 | 数据库 | Room（预热：onCreate 时调用 `openHelper.writableDatabase`） |
 | 偏好存储 | DataStore Preferences |
 | 图片加载 | Coil 3 |
@@ -1536,45 +1540,45 @@ categories.forEach { category ->
 | 序列化 | Kotlinx Serialization |
 | 农历 | Lunar |
 | 生物识别 | AndroidX Biometric |
-| 分页 | Paging3 |
-| 密码本加密 | AES-256-GCM + 密钥包裹（PIN → PBKDF2 → 数据密钥 DK） |
+| 分页 | Paging3（预留；账单月度聚合视图不适用，LIMIT 5000） |
+| 密码本加密 | AES-256-GCM + 密钥包裹（独立主密码 → PBKDF2 → 数据密钥 DK） |
 
 ### 16.5 功能模块架构
 
-`[Vault]` 密码本代码位于 `com.palmnote.feature.vault`，独立于四大 Tab，作为外层 NavHost 路由（同级 Settings），入口为 Dashboard 卡片（可显隐）。
+`[Vault]` 密码本代码位于 `com.palmnote.feature.vault`，v1.3.0 已实现，独立于四大 Tab，作为外层 NavHost 路由（同级 Settings），入口为 Dashboard 卡片（可显隐）。依赖通过 Hilt 提供（`@Singleton`）。
 
 所有非 Tab 功能模块（密码本、未来 AI、云备份等）统一采用 Dashboard 卡片入口模式，不占用底部 Tab。
 
 > 详见 [feature-vault.md](feature-vault.md)。
 
-### 16.2 依赖注入架构变更（v4.2）
+### 16.2 依赖注入架构（Hilt）
 
-| 维度 | 之前 (v4.1) | 之后 (v4.2) |
-|------|:---------:|:---------:|
-| DI 框架 | Hilt/Dagger（KSP 代码生成） | 手动 DI（AppContainer 模式） |
-| 初始化开销 | ~30ms（Hilt 组件图构建） | 0ms |
-| 依赖查找 | 运行时反射 | 编译时直接取用 |
-| 编译速度 | 慢（KSP 生成） | 快 |
-| APK 体积 | 较大（Hilt 注入代码） | 较小 |
-| DI 模块数 | 3 个文件 | 1 个 `AppContainer.kt` |
-| ViewModel 创建 | `hiltViewModel()`（反射查找） | `simpleViewModel { container.xxx() }`（直接构造） |
+| 维度 | 方案 |
+|------|------|
+| DI 框架 | **Hilt**（KSP 代码生成，编译期安全） |
+| 初始化 | `@HiltAndroidApp`（PalmNoteApp）/ `@AndroidEntryPoint`（MainActivity） |
+| 依赖提供 | `@Module @Provides @Singleton`（AppModule / RepositoryModule） |
+| ViewModel | `@HiltViewModel` + `hiltViewModel()` |
+| Worker | `@HiltWorker`（Hilt-Work 集成） |
+| 作用域 | `@ApplicationScope`（SupervisorJob + Dispatchers.Default） |
 
 ### 16.3 性能优化
 
 | 优化项 | 说明 |
 |--------|------|
-| **Baseline Profile** | 71 条规则覆盖 Hoot/Startup 路径（Compose/Hilt/Room/导航），消除首帧 JIT 编译 |
+| **Baseline Profile** | 规则覆盖 Hoot/Startup 路径（Compose/Hilt/Room/导航），消除首帧 JIT 编译 |
 | **Room 预热** | Application.onCreate 时调用 `database.openHelper.writableDatabase` 强制初始化 |
-| **@Immutable 实体** | 24 个 Entity 数据类标注 `@Immutable`，减少 Compose 不必要的重组 |
-| **DataStore 批量读取** | 使用 `combine()` 一次性读取主题色/模式/隐私协议，减少 2 次启动时重组 |
-| **ViewModel 创建优化** | `simpleViewModel {}` 直接构造，零反射开销 |
+| **@Immutable 实体** | Entity 数据类标注 `@Immutable`，减少 Compose 不必要的重组 |
+| **DataStore 批量读取** | 使用 `combine()` 一次性读取主题色/模式/隐私协议，减少启动时重组 |
+| **ViewModel 创建** | `hiltViewModel()` 编译期绑定，零反射 |
 | **WorkManager 延迟** | 非关键 Worker 调度延迟到后台协程，不阻塞主线程 |
+| **账单列表** | LazyColumn 惰性渲染，LIMIT 5000 消除静默截断（月度聚合视图不适用 Paging） |
 
 ### 16.4 启动流程优化
 
 ```
-Application.onCreate()
-├── AppContainer.init()      → 所有依赖就绪
+Application.onCreate()  (@HiltAndroidApp)
+├── Hilt 注入（AppModule/RepositoryModule）→ 所有依赖就绪
 ├── applySavedLanguage()     → 语言设置
 ├── NotificationChannels     → 通知渠道
 └── applicationScope.launch {
@@ -1584,7 +1588,7 @@ Application.onCreate()
     └── seedIfEmpty()        → 模板种子
 }
 
-MainActivity.onCreate()
+MainActivity.onCreate()  (@AndroidEntryPoint)
 └── setContent {
     ├── collectAsState(combine) → DataStore 批量读取（1 次重组）
     ├── PalmNoteTheme()
@@ -1609,3 +1613,4 @@ MainActivity.onCreate()
 | **4.5** | **2026-07-28** | **生活模板字段类型扩充（TOGGLE / RATING / IMAGE / URL / CURRENCY / TAG）。** |
 | **4.6** | **2026-07-28** | **分类系统重构：静态三分类 → 用户可定义动态分类（LifeCategory 实体 / categoryId FK / 动态 Section 渲染 / 分类管理 UI）。FieldType 类型系统统一（enum 扩展至 19 种，Wizard 全量暴露，DECIMAL 移除）。卡片渲染解耦（基于 layoutType 而非分类）。分类色重命名（时间→纪念）。预置分类判定规则文档化。IMAGE 字段重新设计（系统相册/拍照）。模板编辑功能规范。** |
 | **4.7** | **2026-07-28** | **取消模块化架构（PalmModule / ModuleRegistry / Tab 动态配置），底栏恢复为固定 4 Tab。新增模块均通过 Dashboard 卡片入口（不占 Tab）。删除第 17 章。** |
+| **5.0** | **2026-08-02** | **架构对齐当前实现：依赖注入回归 Hilt（手动 DI / AppContainer 已移除）；密码本 v1.3.0 已实现（feature/vault，字段级 AES-256-GCM + 独立主密码密钥包裹，DB v5 Migration4To5）；15.4 动态分类标注为规划中未实现；版本升 1.3.0。** |

@@ -1,4 +1,6 @@
 package com.palmnote.ui.life.plan.subscription
+import javax.inject.Inject
+import dagger.hilt.android.lifecycle.HiltViewModel
 
 import androidx.lifecycle.viewModelScope
 import com.palmnote.ui.life.common.BaseLifeViewModel
@@ -12,7 +14,8 @@ import kotlinx.coroutines.flow.*
 
 data class SubscriptionUiState(val template: LifeTemplate? = null, val items: List<LifeItem> = emptyList(), val isLoading: Boolean = true)
 
-class SubscriptionViewModel(
+@HiltViewModel
+class SubscriptionViewModel @Inject constructor(
     itemRepo: LifeItemRepository,
     templateRepo: LifeTemplateRepository
 ) : BaseLifeViewModel<SubscriptionUiState>(itemRepo, templateRepo) {

@@ -43,10 +43,12 @@ import coil3.compose.AsyncImage
 import androidx.activity.compose.BackHandler
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.palmnote.PalmNoteApp
-import com.palmnote.ui.components.simpleViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.palmnote.data.db.entity.UsageRecord
 import com.palmnote.data.db.entity.getWarrantyStatusText
 import com.palmnote.data.db.entity.getInsuranceStatusText
+import com.palmnote.domain.model.Money
+import com.palmnote.domain.model.toMoney
 import com.palmnote.domain.util.CurrencyUtils
 import com.palmnote.domain.util.DateUtils
 import androidx.compose.ui.res.stringResource
@@ -63,7 +65,7 @@ fun AssetDetailScreen(
     assetId: Long,
     onNavigateBack: () -> Unit = {},
     onNavigateToEdit: (Long) -> Unit = {},
-    viewModel: AssetViewModel = simpleViewModel { PalmNoteApp.container.assetViewModel() }
+    viewModel: AssetViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     val detailState by viewModel.detailState.collectAsStateWithLifecycle()
@@ -102,7 +104,7 @@ fun AssetDetailScreen(
     val statusColor = getStatusColor(asset.status)
     val statusText = getStatusText(asset.status)
 
-    val presetVer by com.palmnote.PalmNoteApp.container.preferencesManager.presetCategoryOverrides
+    val presetVer by com.palmnote.PalmNoteApp.instance.preferencesManager.presetCategoryOverrides
         .collectAsStateWithLifecycle(initialValue = emptyMap())
     val customItems by viewModel.customCategories.collectAsStateWithLifecycle()
     val catInfo = remember(asset.category, presetVer, customItems) { getCategoryIcon(asset.category, customItems) }
@@ -186,9 +188,9 @@ fun AssetDetailScreen(
                             asset.status == "REMOVED" -> stringResource(R.string.asset_sold_price_label)
                             asset.acquisitionType == "PURCHASE" -> stringResource(R.string.asset_price)
                             else -> stringResource(R.string.asset_valuation_price)
-                        }, value = CurrencyUtils.formatCurrency(asset.displayPrice), color = AccentOrange)
+                        }, value = CurrencyUtils.formatCurrency(asset.displayPrice.toMoney()), color = AccentOrange)
                         StatItem(label = stringResource(R.string.asset_days_owned), value = "${detailState.daysOwned}", color = MaterialTheme.colorScheme.primary)
-                        StatItem(label = if (asset.costMode == "PER_USE") stringResource(R.string.asset_cost_single) else stringResource(R.string.asset_cost_daily_avg), value = CurrencyUtils.formatCurrency(if (asset.costMode == "PER_USE") detailState.costPerUse else detailState.costPerDay), color = MaterialTheme.colorScheme.onSurface)
+                        StatItem(label = if (asset.costMode == "PER_USE") stringResource(R.string.asset_cost_single) else stringResource(R.string.asset_cost_daily_avg), value = CurrencyUtils.formatCurrency(Money.fromYuan(if (asset.costMode == "PER_USE") detailState.costPerUse else detailState.costPerDay)), color = MaterialTheme.colorScheme.onSurface)
                     }
                 }
             }
@@ -241,8 +243,8 @@ fun AssetDetailScreen(
                 ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
                     Text(text = stringResource(R.string.asset_value_info), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(12.dp))
-                    if (asset.purchasePrice > 0) DetailRow(stringResource(R.string.asset_price), CurrencyUtils.formatCurrency(asset.purchasePrice))
-                    if (asset.currentValue > 0) DetailRow(stringResource(R.string.asset_current_value), CurrencyUtils.formatCurrency(asset.currentValue))
+                    if (asset.purchasePrice > 0) DetailRow(stringResource(R.string.asset_price), CurrencyUtils.formatCurrency(asset.purchasePrice.toMoney()))
+                    if (asset.currentValue > 0) DetailRow(stringResource(R.string.asset_current_value), CurrencyUtils.formatCurrency(asset.currentValue.toMoney()))
                     if (asset.depreciationRate > 0) DetailRow(stringResource(R.string.asset_depreciation_rate), "${"%.1f".format(asset.depreciationRate)}%")
                     DetailRow(stringResource(R.string.asset_cost_calculation), when (asset.costMode) { "DAILY" -> stringResource(R.string.asset_cost_daily); "PER_USE" -> stringResource(R.string.asset_cost_per_use); "DEPRECIATION" -> stringResource(R.string.asset_depreciation); else -> asset.costMode })
                 }
@@ -349,11 +351,11 @@ fun AssetDetailScreen(
                                 asset.lostDate?.let { DetailRow(stringResource(R.string.asset_lost_date), DateUtils.formatDisplayFullDate(context, it)) }
                                 if (asset.lostReason.isNotEmpty()) DetailRow(stringResource(R.string.asset_lost_reason), asset.lostReason)
                                 asset.soldDate?.let { DetailRow(stringResource(R.string.asset_sold_date), DateUtils.formatDisplayFullDate(context, it)) }
-                                asset.soldPrice?.let { DetailRow(stringResource(R.string.asset_sold_price_label), CurrencyUtils.formatCurrency(it)) }
+                                asset.soldPrice?.let { DetailRow(stringResource(R.string.asset_sold_price_label), CurrencyUtils.formatCurrency(it.toMoney())) }
                                 asset.soldChannel?.let { DetailRow(stringResource(R.string.asset_sold_channel), it) }
                                 asset.soldToWhom?.takeIf { it.isNotEmpty() }?.let { DetailRow(stringResource(R.string.asset_sold_to), it) }
                                 if (asset.purchasePrice > 0 && asset.soldPrice != null) {
-                                    DetailRow(stringResource(R.string.asset_profit_loss), (if (asset.soldPrice >= asset.purchasePrice) "+" else "") + CurrencyUtils.formatCurrency(asset.soldPrice - asset.purchasePrice))
+                                    DetailRow(stringResource(R.string.asset_profit_loss), (if (asset.soldPrice >= asset.purchasePrice) "+" else "") + CurrencyUtils.formatCurrency((asset.soldPrice - asset.purchasePrice).toMoney()))
                                 }
                             }
                         }
@@ -520,7 +522,7 @@ fun AssetDetailScreen(
                     if (clearType < 2) {
                         OutlinedTextField(value = reason, onValueChange = { reason = it; selectedPreset = -1 }, label = { Text(reasonLabel[clearType]) }, modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium)
                     } else {
-                        OutlinedTextField(value = price, onValueChange = { price = it }, label = { Text(stringResource(R.string.asset_sell_price)) }, prefix = { Text("¥") }, modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium)
+                        OutlinedTextField(value = price, onValueChange = { price = it }, label = { Text(stringResource(R.string.asset_sell_price)) }, prefix = { Text(stringResource(R.string.currency_symbol)) }, modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium)
                         OutlinedTextField(value = channel, onValueChange = { channel = it }, label = { Text(stringResource(R.string.asset_sell_channel_hint)) }, modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium)
                         OutlinedTextField(value = reason, onValueChange = { reason = it; selectedPreset = -1 }, label = { Text(reasonLabel[2]) }, modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium)
                     }
@@ -531,7 +533,7 @@ fun AssetDetailScreen(
                     when (clearType) {
                         0 -> viewModel.retireAsset(assetId, reason)
                         1 -> viewModel.markAssetLost(assetId, reason)
-                        2 -> viewModel.sellAsset(assetId, price.toDoubleOrNull() ?: 0.0, channel)
+                        2 -> viewModel.sellAsset(assetId, com.palmnote.domain.model.Money.parse(price)?.cents ?: 0L, channel)
                     }
                 }) { Text(stringResource(R.string.confirm), color = typeColors[clearType]) }
             }

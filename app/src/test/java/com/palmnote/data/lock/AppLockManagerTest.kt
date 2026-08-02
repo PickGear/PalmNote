@@ -5,6 +5,7 @@ import com.palmnote.ui.lock.AppLockState
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
@@ -35,7 +36,7 @@ class AppLockManagerTest {
         every { preferencesManager.getEncryptedPin() } returns "encrypted_pin_data"
         assertTrue(createManager().hasPin())
     }
-    @Test fun `verifyPin empty pin returns false`() {
+    @Test fun `verifyPin empty pin returns false`() = runTest {
         every { preferencesManager.getEncryptedPin() } returns ""
         assertFalse(createManager().verifyPin("123456"))
     }

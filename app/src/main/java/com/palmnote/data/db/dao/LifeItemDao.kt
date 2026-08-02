@@ -40,9 +40,6 @@ interface LifeItemDao {
     @Query("SELECT * FROM life_items WHERE isDeleted = 0 AND (title LIKE '%' || :query || '%' OR note LIKE '%' || :query || '%') ORDER BY updatedAt DESC LIMIT 50")
     suspend fun search(query: String): List<LifeItem>
 
-    @RawQuery(observedEntities = [LifeItem::class])
-    suspend fun searchFts(query: SimpleSQLiteQuery): List<LifeItem>
-
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertItem(item: LifeItem): Long
 

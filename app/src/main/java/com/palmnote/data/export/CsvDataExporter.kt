@@ -27,6 +27,7 @@ import java.util.*
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
+import com.palmnote.domain.model.Money
 import com.palmnote.domain.util.AppException
 
 class CsvDataExporter(
@@ -50,6 +51,10 @@ class CsvDataExporter(
             "warrantyExpireDate", "insuranceExpireDate", "lastMaintenanceDate",
             "nextMaintenanceDate", "retireDate", "lostDate", "soldDate",
             "reimbursedDate", "deletedAt", "createdAt", "updatedAt"
+        )
+        private val MONEY_FIELDS = setOf(
+            "amount", "purchasePrice", "currentValue", "soldPrice",
+            "initialBalance", "currentBalance", "totalBudget", "unitPrice"
         )
         private val LIST_FIELDS = setOf("tags", "applicableTypes", "multiRemindJson")
         private const val IMAGE_PREFIX = "img_"
@@ -342,6 +347,8 @@ class CsvDataExporter(
                 for ((name, bytes) in zipEntries) {
                     if (name.startsWith("images/") && name.length > 7) {
                         val filename = name.substringAfter("images/")
+                        // 防 zip-slip：拒绝含路径分隔符/相对路径的条目名
+                        if (filename.contains("..") || filename.contains("/") || filename.contains("\\")) continue
                         val destFile = File(imagesDir, filename)
                         destFile.writeBytes(bytes)
                         pathMapping[filename] = destFile.absolutePath
@@ -529,6 +536,7 @@ class CsvDataExporter(
             value == null -> ""
             value is Boolean -> if (value) "是" else "否"
             value is Long && fieldName in DATE_FIELDS -> dateFormatter.format(Instant.ofEpochMilli(value).atZone(ZoneId.systemDefault()))
+            value is Number && fieldName in MONEY_FIELDS -> String.format(java.util.Locale.US, "%.2f", value.toDouble() / 100.0)
             value is Number -> value.toString()
             value is String && fieldName == "images" -> processImagesForExport(value)
             value is String && fieldName in LIST_FIELDS -> parseAndJoin(value)
@@ -755,7 +763,7 @@ class CsvDataExporter(
                 subCategory = row["subCategory"] ?: "",
                 brand = row["brand"] ?: "",
                 model = row["model"] ?: "",
-                purchasePrice = row["purchasePrice"]?.toDoubleOrNull() ?: 0.0,
+                purchasePrice = row["purchasePrice"]?.let { Money.parse(it)?.cents } ?: 0,
                 acquisitionType = row["acquisitionType"] ?: "PURCHASE",
                 acquisitionDate = parseDateOrNull(row["acquisitionDate"]),
                 quantity = row["quantity"]?.toIntOrNull()?.coerceAtLeast(1) ?: 1,
@@ -776,7 +784,7 @@ class CsvDataExporter(
                 serialNumber = row["serialNumber"] ?: "",
                 receiptPath = row["receiptPath"] ?: "",
                 depreciationRate = row["depreciationRate"]?.toDoubleOrNull() ?: 0.0,
-                currentValue = row["currentValue"]?.toDoubleOrNull() ?: 0.0,
+                currentValue = row["currentValue"]?.let { Money.parse(it)?.cents } ?: 0,
                 maintenanceIntervalDays = row["maintenanceIntervalDays"]?.toIntOrNull() ?: 0,
                 lastMaintenanceDate = parseDateOrNull(row["lastMaintenanceDate"]),
                 nextMaintenanceDate = parseDateOrNull(row["nextMaintenanceDate"]),
@@ -790,7 +798,7 @@ class CsvDataExporter(
                 lostDate = parseDateOrNull(row["lostDate"]),
                 lostReason = row["lostReason"] ?: "",
                 soldDate = parseDateOrNull(row["soldDate"]),
-                soldPrice = row["soldPrice"]?.toDoubleOrNull(),
+                soldPrice = row["soldPrice"]?.let { Money.parse(it)?.cents },
                 soldChannel = row["soldChannel"],
                 soldToWhom = row["soldToWhom"],
                 sortOrder = row["sortOrder"]?.toIntOrNull() ?: 0,
@@ -808,7 +816,7 @@ class CsvDataExporter(
         return try {
             Bill(
                 id = row["id"]?.toLongOrNull() ?: 0,
-                amount = row["amount"]?.toDoubleOrNull() ?: return null,
+                amount = row["amount"]?.let { Money.parse(it)?.cents } ?: return null,
                 type = row["type"] ?: return null,
                 category = row["category"] ?: "",
                 subCategory = row["subCategory"] ?: "",
@@ -854,8 +862,8 @@ class CsvDataExporter(
                 color = row["color"] ?: "#4CAF50",
                 bankName = row["bankName"] ?: "",
                 cardNumber = row["cardNumber"] ?: "",
-                initialBalance = row["initialBalance"]?.toDoubleOrNull() ?: 0.0,
-                currentBalance = row["currentBalance"]?.toDoubleOrNull() ?: 0.0,
+                initialBalance = row["initialBalance"]?.let { Money.parse(it)?.cents } ?: 0,
+                currentBalance = row["currentBalance"]?.let { Money.parse(it)?.cents } ?: 0,
                 currency = row["currency"] ?: "CNY",
                 isDefault = row["isDefault"].toBoolean(),
                 isEnabled = row["isEnabled"].toBoolean(),
@@ -994,7 +1002,7 @@ class CsvDataExporter(
             RecurringTemplate(
                 id = row["id"]?.toLongOrNull() ?: 0,
                 name = row["name"] ?: return null,
-                amount = row["amount"]?.toDoubleOrNull() ?: return null,
+                amount = row["amount"]?.let { Money.parse(it)?.cents } ?: return null,
                 type = row["type"] ?: return null,
                 category = row["category"] ?: "",
                 frequency = row["frequency"] ?: return null,
@@ -1018,7 +1026,7 @@ class CsvDataExporter(
             Budget(
                 id = row["id"]?.toLongOrNull() ?: 0,
                 yearMonth = row["yearMonth"] ?: return null,
-                totalBudget = row["totalBudget"]?.toDoubleOrNull() ?: return null,
+                totalBudget = row["totalBudget"]?.let { Money.parse(it)?.cents } ?: return null,
                 reminderThreshold = row["reminderThreshold"]?.toDoubleOrNull() ?: 0.8,
                 reminderAtThreshold = row["reminderAtThreshold"].toBoolean(),
                 reminderOverBudget = row["reminderOverBudget"].toBoolean(),

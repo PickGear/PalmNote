@@ -13,6 +13,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.palmnote.R
+import com.palmnote.domain.model.toYuanString
 import com.palmnote.ui.components.AppBottomSheet
 import com.palmnote.ui.components.CategoryItem
 import com.palmnote.ui.components.CategoryPicker
@@ -30,8 +31,8 @@ fun BillFilterSheet(
     presetOverrides: Map<String, String> = emptyMap()
 ) {
     var selectedCategory by remember { mutableStateOf(currentFilter.category) }
-    var amountMin by remember { mutableStateOf(currentFilter.amountMin?.toString() ?: "") }
-    var amountMax by remember { mutableStateOf(currentFilter.amountMax?.toString() ?: "") }
+    var amountMin by remember { mutableStateOf(currentFilter.amountMin?.toYuanString() ?: "") }
+    var amountMax by remember { mutableStateOf(currentFilter.amountMax?.toYuanString() ?: "") }
     var selectedType by remember { mutableStateOf(currentFilter.type) }
     val context = LocalContext.current
 
@@ -132,8 +133,8 @@ fun BillFilterSheet(
                                 BillFilter(
                                     type = selectedType,
                                     category = selectedCategory,
-                                    amountMin = amountMin.toDoubleOrNull(),
-                                    amountMax = amountMax.toDoubleOrNull()
+                                    amountMin = com.palmnote.domain.model.Money.parse(amountMin)?.cents,
+                                    amountMax = com.palmnote.domain.model.Money.parse(amountMax)?.cents
                                 )
                             )
                             onDismiss()
@@ -151,8 +152,8 @@ fun BillFilterSheet(
                             BillFilter(
                                 type = selectedType,
                                 category = selectedCategory,
-                                amountMin = amountMin.toDoubleOrNull(),
-                                amountMax = amountMax.toDoubleOrNull()
+                                amountMin = com.palmnote.domain.model.Money.parse(amountMin)?.cents,
+                                amountMax = com.palmnote.domain.model.Money.parse(amountMax)?.cents
                             )
                         )
                         onDismiss()
@@ -173,8 +174,8 @@ data class BillFilter(
     val type: String? = null,
     val category: String? = null,
     val paymentMethod: String? = null,
-    val amountMin: Double? = null,
-    val amountMax: Double? = null
+    val amountMin: Long? = null, // 金额（分）
+    val amountMax: Long? = null // 金额（分）
 ) {
     val isActive: Boolean get() = type != null || category != null || paymentMethod != null || amountMin != null || amountMax != null
 }

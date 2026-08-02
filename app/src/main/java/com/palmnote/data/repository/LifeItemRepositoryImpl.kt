@@ -1,4 +1,5 @@
 package com.palmnote.data.repository
+import javax.inject.Inject
 
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
@@ -8,7 +9,7 @@ import com.palmnote.data.db.dao.LifeItemPagingSource
 import com.palmnote.data.db.entity.LifeItem
 import com.palmnote.domain.repository.LifeItemRepository
 import kotlinx.coroutines.flow.Flow
-class LifeItemRepositoryImpl(
+class LifeItemRepositoryImpl @Inject constructor(
     private val dao: LifeItemDao
 ) : LifeItemRepository {
     override fun getAllItems(): Flow<List<LifeItem>> = dao.getAllItems()
@@ -21,13 +22,7 @@ class LifeItemRepositoryImpl(
     override fun getTotalItemCount(): Flow<Int> = dao.getTotalItemCount()
     override fun getPagedItemsByTemplate(templateId: Long): Flow<PagingData<LifeItem>> = Pager(PagingConfig(pageSize = 20)) { LifeItemPagingSource(dao, templateId) }.flow
     override fun getPagedAllItems(): Flow<PagingData<LifeItem>> = Pager(PagingConfig(pageSize = 20)) { LifeItemPagingSource(dao) }.flow
-    override suspend fun search(query: String): List<LifeItem> = try {
-        val ftsQuery = query.split("\\s+".toRegex()).filter { it.isNotBlank() }.joinToString(" ") { "\"$it\"*" }
-        if (ftsQuery.isBlank()) dao.search(query)
-        else dao.searchFts(androidx.sqlite.db.SimpleSQLiteQuery("SELECT life_items.* FROM life_items INNER JOIN life_items_fts ON life_items.id = life_items_fts.rowid WHERE life_items_fts MATCH ? AND life_items.isDeleted = 0 ORDER BY life_items.updatedAt DESC LIMIT 50", arrayOf(ftsQuery)))
-    } catch (_: Exception) {
-        dao.search(query)
-    }
+    override suspend fun search(query: String): List<LifeItem> = dao.search(query)
     override suspend fun insertItem(item: LifeItem): Long = try {
         dao.insertItem(item)
     } catch (e: Exception) {

@@ -16,12 +16,12 @@ import org.junit.Test
 class BillRepositoryTest {
 
     private lateinit var billDao: BillDao
-    private lateinit var billRepository: BillRepository
+    private lateinit var billRepository: BillRepositoryImpl
 
     @Before
     fun setUp() {
         billDao = mockk(relaxUnitFun = true)
-        billRepository = BillRepository(billDao)
+        billRepository = BillRepositoryImpl(billDao, mockk(), mockk())
     }
 
     @Test
@@ -59,29 +59,20 @@ class BillRepositoryTest {
     @Test
     fun `getBillsByMonth returns bills for given month`() = runTest {
         val bills = listOf(
-            createTestBill(id = 1L, amount = 50.0),
-            createTestBill(id = 2L, amount = 30.0)
+            createTestBill(id = 1L, amount = 5000),
+            createTestBill(id = 2L, amount = 3000)
         )
         coEvery { billDao.getBillsByMonth("2026-07") } returns flowOf(bills)
 
         val result = billRepository.getBillsByMonth("2026-07").first()
 
         assertEquals(2, result.size)
-        assertEquals(50.0, result[0].amount, 0.01)
-    }
-
-    @Test
-    fun `softDeleteBill calls dao`() = runTest {
-        coEvery { billDao.softDeleteBill(any(), any()) } returns Unit
-
-        billRepository.softDeleteBill(1L)
-
-        coVerify { billDao.softDeleteBill(1L, any()) }
+        assertEquals(5000L, result[0].amount)
     }
 
     @Test
     fun `updateBill calls dao`() = runTest {
-        val bill = createTestBill(id = 1L, amount = 100.0)
+        val bill = createTestBill(id = 1L, amount = 10000)
         coEvery { billDao.updateBill(bill) } returns Unit
 
         billRepository.updateBill(bill)
@@ -91,7 +82,7 @@ class BillRepositoryTest {
 
     private fun createTestBill(
         id: Long = 0L,
-        amount: Double = 50.0,
+        amount: Long = 5000,
         type: String = "EXPENSE",
         category: String = "餐饮",
         merchant: String = ""

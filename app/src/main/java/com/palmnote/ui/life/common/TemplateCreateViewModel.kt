@@ -1,4 +1,6 @@
 package com.palmnote.ui.life.common
+import javax.inject.Inject
+import dagger.hilt.android.lifecycle.HiltViewModel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -9,7 +11,8 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.*
 
 
-class TemplateCreateViewModel(
+@HiltViewModel
+class TemplateCreateViewModel @Inject constructor(
     private val templateRepo: LifeTemplateRepository
 ) : ViewModel() {
 

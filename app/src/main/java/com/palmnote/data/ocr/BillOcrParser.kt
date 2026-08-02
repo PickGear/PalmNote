@@ -1,13 +1,14 @@
 ﻿package com.palmnote.data.ocr
 
 import com.palmnote.data.export.BillCsvImporter
+import com.palmnote.domain.model.Money
 import com.palmnote.domain.util.CategoryClassifier
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.regex.Pattern
 
 data class OcrBillResult(
-    val amount: Double? = null,
+    val amount: Long? = null, // 金额（分）
     val merchant: String = "",
     val date: Long? = null,
     val note: String = "",
@@ -51,7 +52,7 @@ class BillOcrParser {
             val note = findNote(block, merchant)
             val category = guessCategory(block, merchant, note)
             OcrBillResult(amount = amount, merchant = merchant, date = date, note = note, category = category)
-        }.filter { it.amount != null && it.amount > 0 }
+        }.filter { (it.amount ?: 0) > 0 }
     }
 
     private fun isNewTransaction(line: String, prevLines: List<String>): Boolean {
@@ -78,7 +79,7 @@ class BillOcrParser {
         return false
     }
 
-    private fun findAmount(lines: List<String>): Double? {
+    private fun findAmount(lines: List<String>): Long? {
         val candidates = mutableListOf<Double>()
 
         for (line in lines) {
@@ -99,7 +100,8 @@ class BillOcrParser {
             }
         }
 
-        return candidates.maxOrNull()
+        val best = candidates.maxOrNull() ?: return null
+        return Money.fromYuan(best).cents
     }
 
     private fun findMerchant(lines: List<String>): String {

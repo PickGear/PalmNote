@@ -1,4 +1,8 @@
 package com.palmnote.ui.life.common
+import android.content.Context
+import javax.inject.Inject
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 
 import android.app.Application
 import androidx.lifecycle.ViewModel
@@ -22,8 +26,9 @@ data class CreateItemUiState(
     val saveError: String? = null
 )
 
-class CreateItemViewModel(
-    private val application: Application,
+@HiltViewModel
+class CreateItemViewModel @Inject constructor(
+    @ApplicationContext private val application: Context,
     private val itemRepo: LifeItemRepository,
     private val templateRepo: LifeTemplateRepository,
     private val eventBus: TriggerEventBus

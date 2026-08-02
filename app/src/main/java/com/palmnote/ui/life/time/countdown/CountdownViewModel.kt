@@ -1,4 +1,7 @@
 package com.palmnote.ui.life.time.countdown
+import javax.inject.Inject
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import com.palmnote.R
 
 import android.content.Context
@@ -15,8 +18,9 @@ import kotlinx.coroutines.launch
 
 data class CountdownUiState(val template: LifeTemplate? = null, val items: List<LifeItem> = emptyList(), val isLoading: Boolean = true, val error: String? = null)
 
-class CountdownViewModel(
-    private val context: Context,
+@HiltViewModel
+class CountdownViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     itemRepo: LifeItemRepository,
     templateRepo: LifeTemplateRepository
 ) : BaseLifeViewModel<CountdownUiState>(itemRepo, templateRepo) {

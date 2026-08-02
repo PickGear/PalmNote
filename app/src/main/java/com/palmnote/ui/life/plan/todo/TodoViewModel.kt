@@ -1,4 +1,7 @@
 package com.palmnote.ui.life.plan.todo
+import javax.inject.Inject
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import com.palmnote.R
 
 import android.content.Context
@@ -20,8 +23,9 @@ data class TodoUiState(
     val error: String? = null
 )
 
-class TodoViewModel(
-    private val context: Context,
+@HiltViewModel
+class TodoViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val itemRepo: LifeItemRepository
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(TodoUiState())

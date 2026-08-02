@@ -7,6 +7,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.withContext
 import java.io.File
 
 class BackupRepository(
@@ -19,7 +20,7 @@ class BackupRepository(
     fun createBackup(password: String? = null): Flow<BackupState> = flow {
         emit(BackupState.Progress(0))
         try {
-            val file = backupManager.createBackup(context, password)
+            val file = backupManager.createBackup(context, db, password)
             emit(BackupState.Progress(100))
             emit(BackupState.Success(file.absolutePath))
         } catch (e: Exception) {
@@ -32,7 +33,7 @@ class BackupRepository(
         emit(BackupState.Progress(0))
         try {
             // 恢复前自动备份
-            backupManager.createPreRestoreBackup(context)
+            backupManager.createPreRestoreBackup(context, db)
             
             db.close()
             backupManager.restoreBackup(context, file, password)
@@ -46,8 +47,10 @@ class BackupRepository(
         }
     }.flowOn(Dispatchers.IO)
 
-    // 列出所有备份
-    fun listBackups(): List<BackupInfo> = backupManager.listBackups(context)
+    // 列出所有备份（IO）
+    suspend fun listBackups(): List<BackupInfo> = withContext(Dispatchers.IO) {
+        backupManager.listBackups(context)
+    }
 
     // 删除备份
     fun deleteBackup(file: File) = backupManager.deleteBackup(file)

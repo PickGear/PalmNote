@@ -1,6 +1,7 @@
 package com.palmnote.data.export
 
 import android.util.Log
+import com.palmnote.domain.model.Money
 import com.palmnote.domain.util.CategoryClassifier
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -8,7 +9,7 @@ import java.util.Locale
 data class ParsedBill(
     val date: Long,
     val type: String,
-    val amount: Double,
+    val amount: Long, // 金额（分）
     val category: String,
     val merchant: String,
     val note: String,
@@ -92,8 +93,8 @@ class BillCsvImporter {
                 val cols = parseCsvLine(line, sep)
                 val timeStr = cell(cols, dateIdx).ifBlank { return@mapNotNull null }
                 val amountStr = cell(cols, amountIdx).ifBlank { return@mapNotNull null }
-                val cleanAmount = amountStr.replace(",", "").replace("¥", "").replace("￥", "").replace(" ", "").replace("+", "")
-                val amount = cleanAmount.toDoubleOrNull() ?: return@mapNotNull null
+                val cleanAmount = amountStr.replace(",", "").replace("¥", "").replace("￥", "").replace(" ", "").replace("+", "").replace("-", "")
+                val amount = Money.parse(cleanAmount)?.cents ?: return@mapNotNull null
                 val status = cell(cols, statusIdx)
                 if (status.isNotBlank() && status !in listOf("已支付", "支付成功", "已到账", "已收钱")) return@mapNotNull null
                 val date = parseDate(timeStr) ?: return@mapNotNull null
@@ -127,9 +128,8 @@ class BillCsvImporter {
                 val cols = parseCsvLine(line, sep)
                 val timeStr = cell(cols, dateIdx).ifBlank { return@mapNotNull null }
                 val amountStr = cell(cols, amountIdx).ifBlank { return@mapNotNull null }
-                val cleanAmount = amountStr.replace(",", "").replace("¥", "").replace("￥", "").replace(" ", "").replace("+", "")
-                val amount = if (cleanAmount.startsWith("-")) cleanAmount.drop(1) else cleanAmount
-                val parsedAmount = amount.toDoubleOrNull() ?: return@mapNotNull null
+                val cleanAmount = amountStr.replace(",", "").replace("¥", "").replace("￥", "").replace(" ", "").replace("+", "").replace("-", "")
+                val amount = Money.parse(cleanAmount)?.cents ?: return@mapNotNull null
                 val ieType = cell(cols, ieIdx)
                 val merchant = cell(cols, merchantIdx)
                 val note = cell(cols, noteIdx).ifBlank { cell(cols, accountIdx) }
@@ -140,7 +140,7 @@ class BillCsvImporter {
                 ParsedBill(
                     date = date,
                     type = if (isIncome) "INCOME" else "EXPENSE",
-                    amount = parsedAmount,
+                    amount = amount,
                     category = if (category.isNotBlank()) normalizeCategory(category, if (isIncome) "INCOME" else "EXPENSE") else normalizeCategory(guessCategory(merchant, note, ""), if (isIncome) "INCOME" else "EXPENSE"),
                     merchant = merchant,
                     note = note,

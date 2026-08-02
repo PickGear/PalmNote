@@ -25,7 +25,10 @@ import com.palmnote.ui.lock.ChangePinDialog
 import com.palmnote.ui.lock.PinDotsDisplay
 import com.palmnote.ui.lock.PinKeyboard
 import com.palmnote.ui.lock.isBiometricAvailable
+import com.palmnote.ui.lock.showBiometricPrompt
 import com.palmnote.ui.theme.*
+import kotlinx.coroutines.launch
+import android.widget.Toast
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,10 +39,11 @@ fun AppLockSettingsScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val appLockManager = viewModel.appLockManager
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     var showChangePin by remember { mutableStateOf(false) }
     var showSetupPin by remember { mutableStateOf(false) }
-    var showForgotPin by remember { mutableStateOf(false) }
+    var showVerifyPin by remember { mutableStateOf(false) }
 
     val bioAvailable = remember { isBiometricAvailable(context) }
     var isLockEnabled by remember { mutableStateOf(appLockManager.isLockEnabled()) }
@@ -85,8 +89,7 @@ fun AppLockSettingsScreen(
                                         updateLockEnabled()
                                     }
                                 } else {
-                                    appLockManager.setEnabled(false)
-                                    updateLockEnabled()
+                                    showVerifyPin = true
                                 }
                             },
                             checkedTrackColor = LocalSwitchColor.current
@@ -114,17 +117,19 @@ fun AppLockSettingsScreen(
                                 )
                                 CapsuleSwitch(
                                     checked = state.biometricEnabled,
-                                    onCheckedChange = { viewModel.setBiometricEnabled(it) },
+                                    onCheckedChange = { enabled ->
+                                        if (enabled) {
+                                            showBiometricPrompt(context) { success ->
+                                                if (success) viewModel.setBiometricEnabled(true)
+                                                else Toast.makeText(context, R.string.app_lock_biometric_verify_fail, Toast.LENGTH_SHORT).show()
+                                            }
+                                        } else {
+                                            viewModel.setBiometricEnabled(false)
+                                        }
+                                    },
                                     checkedTrackColor = LocalSwitchColor.current
                                 )
                             }
-                        }
-                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-                        SettingRow(clickable = { showForgotPin = true }) {
-                            SettingRowContent(
-                                title = stringResource(R.string.app_lock_forgot_pin_title_settings),
-                                subtitle = stringResource(R.string.app_lock_forgot_pin_subtitle)
-                            )
                         }
                     }
                 }
@@ -161,24 +166,94 @@ fun AppLockSettingsScreen(
         )
     }
 
-    if (showForgotPin) {
-        AppDialog(
-            onDismissRequest = { showForgotPin = false },
-            title = { Text(stringResource(R.string.app_lock_forgot_pin), fontWeight = FontWeight.Bold) },
-            text = { Text(stringResource(R.string.app_lock_forgot_pin_confirm)) },
-            confirmButton = {
-                TextButton(onClick = {
-                    appLockManager.clearPin()
-                    appLockManager.setEnabled(false)
-                    showForgotPin = false
+    if (showVerifyPin) {
+        VerifyPinDialog(
+            appLockManager = appLockManager,
+            onDismiss = { showVerifyPin = false },
+            onSuccess = {
+                showVerifyPin = false
+                scope.launch {
+                    appLockManager.disableLock()
+                    viewModel.setBiometricEnabled(false)
                     updateLockEnabled()
-                }) { Text(stringResource(R.string.app_lock_forgot_pin_action), fontWeight = FontWeight.Bold) }
-            },
-            dismissButton = {
-                TextButton(onClick = { showForgotPin = false }) { Text(stringResource(R.string.settings_cancel), fontWeight = FontWeight.Bold) }
+                }
+                Toast.makeText(context, R.string.app_lock_disabled_toast, Toast.LENGTH_SHORT).show()
             }
         )
     }
+}
+
+@Composable
+private fun VerifyPinDialog(
+    appLockManager: AppLockManager,
+    onDismiss: () -> Unit,
+    onSuccess: () -> Unit
+) {
+    var pin by remember { mutableStateOf("") }
+    var error by remember { mutableStateOf("") }
+    var verifying by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+
+    val pinWrongText = stringResource(R.string.app_lock_pin_wrong)
+    val lockedOutText = stringResource(R.string.app_lock_locked_out)
+
+    AppDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = stringResource(R.string.app_lock_enter_old_pin),
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                if (error.isNotEmpty()) {
+                    Text(text = error, color = MaterialTheme.colorScheme.error, fontSize = 14.sp)
+                }
+                PinDotsDisplay(pin.length)
+                Spacer(modifier = Modifier.height(8.dp))
+                PinKeyboard(
+                    onDigitClick = { digit ->
+                        if (!verifying && pin.length < 6) {
+                            pin += digit
+                            error = ""
+                            if (pin.length == 6) {
+                                verifying = true
+                                val input = pin
+                                pin = ""
+                                scope.launch {
+                                    if (appLockManager.verifyPin(input)) {
+                                        onSuccess()
+                                    } else {
+                                        verifying = false
+                                        error = if (appLockManager.getLockoutRemainingMs() > 0) lockedOutText else pinWrongText
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    onDeleteClick = {
+                        if (!verifying && pin.isNotEmpty()) {
+                            pin = pin.dropLast(1)
+                            error = ""
+                        }
+                    },
+                    onBiometricClick = {},
+                    showBiometric = false
+                )
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.settings_cancel))
+            }
+        }
+    )
 }
 
 @Composable
@@ -191,6 +266,8 @@ private fun SetupPinDialog(
     var pin by remember { mutableStateOf("") }
     var confirmPin by remember { mutableStateOf("") }
     var error by remember { mutableStateOf("") }
+    var saving by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
     val pinMismatchText = stringResource(R.string.app_lock_pin_mismatch)
 
@@ -222,7 +299,7 @@ private fun SetupPinDialog(
                 Spacer(modifier = Modifier.height(8.dp))
                 PinKeyboard(
                     onDigitClick = { digit ->
-                        if (currentPin.length < 6) {
+                        if (!saving && currentPin.length < 6) {
                             when (step) {
                                 1 -> pin += digit
                                 else -> confirmPin += digit
@@ -233,9 +310,11 @@ private fun SetupPinDialog(
                                     1 -> step = 2
                                     else -> {
                                         if (pin == confirmPin) {
-                                            appLockManager.setPin(pin)
-                                            appLockManager.setEnabled(true)
-                                            onSuccess()
+                                            saving = true
+                                            scope.launch {
+                                                appLockManager.setPin(pin, enable = true)
+                                                onSuccess()
+                                            }
                                         } else {
                                             error = pinMismatchText
                                             confirmPin = ""

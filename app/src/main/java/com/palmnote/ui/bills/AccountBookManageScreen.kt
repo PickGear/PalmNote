@@ -25,7 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.palmnote.PalmNoteApp
 import com.palmnote.R
-import com.palmnote.ui.components.simpleViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.palmnote.data.db.entity.AccountBook
 import com.palmnote.data.db.entity.getDisplayName
 import com.palmnote.data.db.entity.getDisplayDescription
@@ -38,7 +38,7 @@ import com.palmnote.ui.theme.*
 @Composable
 fun AccountBookManageScreen(
     onNavigateBack: () -> Unit,
-    viewModel: BillViewModel = simpleViewModel { PalmNoteApp.container.billViewModel() }
+    viewModel: BillViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -171,7 +171,7 @@ fun AccountBookManageScreen(
             AppDialog(
                 onDismissRequest = { showDeleteDialog = false },
                 title = { Text(stringResource(R.string.account_book_delete_title)) },
-                text = { Text("确定要删除「${book.getDisplayName(context)}」吗？账本下的所有账单数据将被一并删除。") },
+                text = { Text(stringResource(R.string.account_book_delete_confirm, book.getDisplayName(context))) },
                 confirmButton = {
                     TextButton(onClick = { viewModel.deleteAccountBookWithData(book.id); showDeleteDialog = false }) {
                         Text(stringResource(R.string.delete), color = ErrorLight)

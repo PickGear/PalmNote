@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -24,8 +25,11 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.palmnote.PalmNoteApp
 import com.palmnote.R
+import com.palmnote.domain.model.Money
+import com.palmnote.domain.model.toMoney
+import com.palmnote.domain.model.toYuanString
 import com.palmnote.domain.util.CurrencyUtils
-import com.palmnote.ui.components.simpleViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.palmnote.data.db.entity.Wallet
 import com.palmnote.ui.components.*
 import com.palmnote.ui.theme.*
@@ -35,27 +39,27 @@ import com.palmnote.ui.theme.*
 fun WalletEditScreen(
     walletId: Long? = null,
     onNavigateBack: () -> Unit = {},
-    viewModel: WalletViewModel = simpleViewModel { PalmNoteApp.container.walletViewModel() }
+    viewModel: WalletViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     val isEditing = walletId != null && walletId > 0
 
     // Load wallet for editing
     val existingWallet by remember(walletId) {
-        if (isEditing) PalmNoteApp.container.walletRepository.getWalletByIdFlow(walletId!!)
+        if (isEditing) PalmNoteApp.instance.walletRepository.getWalletByIdFlow(walletId!!)
         else kotlinx.coroutines.flow.flowOf(null)
     }.collectAsStateWithLifecycle(initialValue = null)
 
-    var name by remember { mutableStateOf("") }
-    var type by remember { mutableStateOf("CASH") }
-    var icon by remember { mutableStateOf(com.palmnote.ui.theme.AppIcon.Payments) }
-    var color by remember { mutableStateOf("#4CAF50") }
-    var bankName by remember { mutableStateOf("") }
-    var cardNumber by remember { mutableStateOf("") }
-    var initialBalance by remember { mutableStateOf("0") }
-    var nameError by remember { mutableStateOf<String?>(null) }
-    var balanceError by remember { mutableStateOf<String?>(null) }
-    var initialized by remember { mutableStateOf(false) }
+    var name by rememberSaveable { mutableStateOf("") }
+    var type by rememberSaveable { mutableStateOf("CASH") }
+    var icon by rememberSaveable { mutableStateOf(com.palmnote.ui.theme.AppIcon.Payments) }
+    var color by rememberSaveable { mutableStateOf("#4CAF50") }
+    var bankName by rememberSaveable { mutableStateOf("") }
+    var cardNumber by rememberSaveable { mutableStateOf("") }
+    var initialBalance by rememberSaveable { mutableStateOf("0") }
+    var nameError by rememberSaveable { mutableStateOf<String?>(null) }
+    var balanceError by rememberSaveable { mutableStateOf<String?>(null) }
+    var initialized by rememberSaveable { mutableStateOf(false) }
 
     // Initialize form when wallet is loaded
     LaunchedEffect(existingWallet) {
@@ -67,7 +71,7 @@ fun WalletEditScreen(
             color = w.color
             bankName = w.bankName
             cardNumber = w.cardNumber
-            initialBalance = w.initialBalance.toString()
+            initialBalance = w.initialBalance.toYuanString()
             initialized = true
         }
     }
@@ -88,7 +92,7 @@ fun WalletEditScreen(
 
     fun save() {
         if (name.isBlank()) { nameError = walletNameRequired; return }
-        val balance = initialBalance.toDoubleOrNull()
+        val balance = Money.parse(initialBalance)?.cents
         if (balance == null) { balanceError = balanceInvalidMsg; return }
         if (balance < 0) { balanceError = balanceNegativeMsg; return }
         val wallet = Wallet(
@@ -100,8 +104,7 @@ fun WalletEditScreen(
             bankName = bankName.trim(),
             cardNumber = cardNumber.trim(),
             initialBalance = balance,
-            currentBalance = existingWallet?.let { it.currentBalance + (balance - it.initialBalance) } ?: balance,
-            isDefault = existingWallet?.isDefault ?: false,
+            currentBalance = existingWallet?.let { it.currentBalance + (balance - it.initialBalance) } ?: balance,            isDefault = existingWallet?.isDefault ?: false,
             isEnabled = existingWallet?.isEnabled ?: true,
             sortOrder = existingWallet?.sortOrder ?: 0
         )
@@ -208,7 +211,7 @@ fun WalletEditScreen(
                     onValueChange = { initialBalance = it; balanceError = null },
                     label = { Text(stringResource(R.string.wallet_initial_balance)) },
                     modifier = Modifier.fillMaxWidth(),
-                    prefix = { Text("¥") },
+                    prefix = { Text(stringResource(R.string.currency_symbol)) },
                     shape = MaterialTheme.shapes.medium,
                     singleLine = true,
                     isError = balanceError != null,
@@ -218,7 +221,7 @@ fun WalletEditScreen(
                 if (isEditing && existingWallet != null) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        stringResource(R.string.wallet_current_balance) + ": " + com.palmnote.domain.util.CurrencyUtils.formatCurrency(existingWallet!!.currentBalance),
+                        stringResource(R.string.wallet_current_balance) + ": " + com.palmnote.domain.util.CurrencyUtils.formatCurrency(existingWallet!!.currentBalance.toMoney()),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

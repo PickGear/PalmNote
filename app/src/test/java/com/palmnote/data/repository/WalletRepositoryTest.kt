@@ -1,5 +1,6 @@
 package com.palmnote.data.repository
 
+import com.palmnote.data.db.AppDatabase
 import com.palmnote.data.db.dao.WalletDao
 import com.palmnote.data.db.entity.Wallet
 import io.mockk.coEvery
@@ -18,19 +19,20 @@ import org.junit.Test
 class WalletRepositoryTest {
 
     private lateinit var walletDao: WalletDao
-    private lateinit var walletRepository: WalletRepository
+    private lateinit var walletRepository: WalletRepositoryImpl
     private lateinit var context: android.content.Context
 
     @Before
     fun setUp() {
         walletDao = mockk(relaxUnitFun = true)
         context = mockk(relaxUnitFun = true)
-        
+
         // 模拟Context.getString()
         every { context.getString(any()) } returns ""
         every { context.getString(any(), any()) } returns ""
-        
-        walletRepository = WalletRepository(walletDao, context)
+
+        // appDatabase 仅占位：withTransaction 类方法不在本单测覆盖（迁移测试在 androidTest 层）
+        walletRepository = WalletRepositoryImpl(walletDao, mockk(), mockk<AppDatabase>(relaxUnitFun = true), context)
     }
 
     @Test
@@ -90,23 +92,23 @@ class WalletRepositoryTest {
 
     @Test
     fun `updateBalance delegates to dao`() = runTest {
-        walletRepository.updateBalance(1, 500.0)
+        walletRepository.updateBalance(1, 50000)
 
-        coVerify { walletDao.updateBalance(1, 500.0, any()) }
+        coVerify { walletDao.updateBalance(1, 50000, any()) }
     }
 
     @Test
     fun `adjustBalance adds amount`() = runTest {
-        walletRepository.adjustBalance(1, 100.0)
+        walletRepository.adjustBalance(1, 10000)
 
-        coVerify { walletDao.adjustBalance(1, 100.0, any()) }
+        coVerify { walletDao.adjustBalance(1, 10000, any()) }
     }
 
     @Test
     fun `adjustBalance subtracts amount`() = runTest {
-        walletRepository.adjustBalance(1, -100.0)
+        walletRepository.adjustBalance(1, -10000)
 
-        coVerify { walletDao.adjustBalance(1, -100.0, any()) }
+        coVerify { walletDao.adjustBalance(1, -10000, any()) }
     }
 
     @Test
@@ -145,30 +147,11 @@ class WalletRepositoryTest {
 
     @Test
     fun `getTotalBalance returns sum`() = runTest {
-        coEvery { walletDao.getTotalBalance() } returns flowOf(1500.0)
+        coEvery { walletDao.getTotalBalance() } returns flowOf(150000L)
 
         val result = walletRepository.getTotalBalance().first()
 
-        assertEquals(1500.0, result!!, 0.001)
-    }
-
-    @Test
-    fun `initDefaultWallets does nothing when default exists`() = runTest {
-        coEvery { walletDao.getDefaultWallet() } returns Wallet(id = 1, name = "现金", type = "CASH", isDefault = true)
-
-        walletRepository.initDefaultWallets()
-
-        coVerify(exactly = 0) { walletDao.insert(any()) }
-    }
-
-    @Test
-    fun `initDefaultWallets inserts 8 defaults when none exists`() = runTest {
-        coEvery { walletDao.getDefaultWallet() } returns null
-        coEvery { walletDao.insert(any()) } returnsMany listOf(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L)
-
-        walletRepository.initDefaultWallets()
-
-        coVerify(exactly = 8) { walletDao.insert(any()) }
+        assertEquals(150000L, result)
     }
 
     @Test

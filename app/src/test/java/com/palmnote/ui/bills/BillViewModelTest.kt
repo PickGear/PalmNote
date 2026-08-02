@@ -1,17 +1,19 @@
 package com.palmnote.ui.bills
 
+import com.palmnote.data.db.entity.AccountBook
 import com.palmnote.data.db.entity.Bill
-import com.palmnote.data.repository.BillRepository
-import com.palmnote.data.repository.BudgetRepository
-import com.palmnote.data.repository.WalletRepository
-import com.palmnote.data.repository.AccountBookRepository
-import com.palmnote.data.repository.CategoryConfigRepository
+import com.palmnote.data.db.entity.CategoryConfig
+import com.palmnote.data.db.entity.Wallet
 import com.palmnote.data.datastore.PreferencesManager
-import io.mockk.coEvery
+import com.palmnote.domain.repository.AccountBookRepository
+import com.palmnote.domain.repository.BillRepository
+import com.palmnote.domain.repository.BudgetRepository
+import androidx.lifecycle.SavedStateHandle
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -20,7 +22,6 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -31,10 +32,11 @@ class BillViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var billRepository: BillRepository
     private lateinit var budgetRepository: BudgetRepository
-    private lateinit var walletRepository: WalletRepository
     private lateinit var accountBookRepository: AccountBookRepository
-    private lateinit var categoryConfigRepository: CategoryConfigRepository
     private lateinit var preferencesManager: PreferencesManager
+    private lateinit var cachedWallets: MutableStateFlow<List<Wallet>>
+    private lateinit var cachedCategoryConfigs: MutableStateFlow<List<CategoryConfig>>
+    private lateinit var cachedAccountBooks: MutableStateFlow<List<AccountBook>>
     private lateinit var context: android.content.Context
     private lateinit var viewModel: BillViewModel
 
@@ -43,23 +45,29 @@ class BillViewModelTest {
         Dispatchers.setMain(testDispatcher)
         billRepository = mockk(relaxUnitFun = true)
         budgetRepository = mockk(relaxUnitFun = true)
-        walletRepository = mockk(relaxUnitFun = true)
         accountBookRepository = mockk(relaxUnitFun = true)
-        categoryConfigRepository = mockk(relaxUnitFun = true)
         preferencesManager = mockk(relaxUnitFun = true)
         context = mockk(relaxUnitFun = true)
+        cachedWallets = MutableStateFlow(emptyList())
+        cachedCategoryConfigs = MutableStateFlow(emptyList())
+        cachedAccountBooks = MutableStateFlow(emptyList())
 
-        // 模拟所有Repository方法
-        every { accountBookRepository.getAllBooks() } returns flowOf(emptyList())
+        every { billRepository.getBillsByMonth(any()) } returns flowOf(emptyList())
+        every { billRepository.getBillsByBookAndMonth(any(), any()) } returns flowOf(emptyList())
+        every { billRepository.getMonthlyExpense(any()) } returns flowOf(null)
+        every { billRepository.getMonthlyIncome(any()) } returns flowOf(null)
+        every { billRepository.getMonthlyExpenseByBook(any(), any()) } returns flowOf(null)
+        every { billRepository.getMonthlyIncomeByBook(any(), any()) } returns flowOf(null)
+        every { billRepository.getExpenseByCategory(any()) } returns flowOf(emptyList())
+        every { billRepository.getExpenseByCategoryByBook(any(), any()) } returns flowOf(emptyList())
+        every { billRepository.getCategoryUsageCounts(any()) } returns flowOf(emptyList())
+        every { budgetRepository.getBudgetByMonthFlow(any()) } returns flowOf(null)
         every { accountBookRepository.getAllBooksIncludingHidden() } returns flowOf(emptyList())
-        every { walletRepository.getEnabledWallets() } returns flowOf(emptyList())
-        every { categoryConfigRepository.getAllCategories() } returns flowOf(emptyList())
-        coEvery { walletRepository.getDefaultWallet() } returns null
-        coEvery { preferencesManager.defaultBillType } returns flowOf("EXPENSE")
+        every { preferencesManager.defaultBillType } returns flowOf("EXPENSE")
 
         viewModel = BillViewModel(
-            context, billRepository, budgetRepository, walletRepository,
-            accountBookRepository, categoryConfigRepository, preferencesManager
+            context, SavedStateHandle(), cachedWallets, cachedCategoryConfigs, cachedAccountBooks,
+            billRepository, budgetRepository, accountBookRepository, preferencesManager
         )
     }
 
@@ -75,7 +83,7 @@ class BillViewModelTest {
         val state = viewModel.state.value
         assertEquals("EXPENSE", viewModel.formState.value.type)
         assertEquals("", viewModel.formState.value.category)
-        assertEquals(0.0, state.monthlyExpense, 0.01)
+        assertEquals(0L, state.monthlyExpense)
     }
 
     @Test
@@ -105,34 +113,35 @@ class BillViewModelTest {
     }
 
     @Test
-    fun `formState preserves type after resetForm`() = runTest {
+    fun `formState type resets to defaultBillType after resetForm`() = runTest {
         advanceUntilIdle()
 
         viewModel.updateForm { copy(type = "INCOME", category = "工资") }
         viewModel.resetForm()
 
-        assertEquals("INCOME", viewModel.formState.value.type)
-        assertEquals("工资", viewModel.formState.value.category)
+        assertEquals("EXPENSE", viewModel.formState.value.type)
+        assertEquals("", viewModel.formState.value.category)
     }
 
     @Test
-    fun `formState preserves walletId after resetForm`() = runTest {
+    fun `formState walletId resets to default wallet after resetForm`() = runTest {
         advanceUntilIdle()
 
         viewModel.updateForm { copy(walletId = 42L) }
         viewModel.resetForm()
 
-        assertEquals(42L, viewModel.formState.value.walletId)
+        assertEquals(null, viewModel.formState.value.walletId)
     }
 
     @Test
-    fun `formState preserves date after resetForm`() = runTest {
+    fun `formState date resets to now after resetForm`() = runTest {
         advanceUntilIdle()
 
         val testDate = 1700000000000L
         viewModel.updateForm { copy(date = testDate) }
         viewModel.resetForm()
 
-        assertEquals(testDate, viewModel.formState.value.date)
+        val resetDate = viewModel.formState.value.date
+        assertTrue(resetDate in (System.currentTimeMillis() - 5000L)..(System.currentTimeMillis() + 5000L))
     }
 }

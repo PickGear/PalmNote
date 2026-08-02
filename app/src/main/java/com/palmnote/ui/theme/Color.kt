@@ -177,3 +177,7 @@ fun lifePlanTint() = if (LocalIsDarkTheme.current) Color(0xFF1A1530) else Color(
 fun lifeTimeTint() = if (LocalIsDarkTheme.current) Color(0xFF301A1A) else Color(0xFFFFEBEE)
 @Composable
 fun lifeRecordTint() = if (LocalIsDarkTheme.current) Color(0xFF1A3020) else Color(0xFFE8F5E9)
+
+// ----- Vault Module Tint Colors (密码本) -----
+@Composable
+fun vaultTint() = if (LocalIsDarkTheme.current) Color(0xFFD0BCFF) else Color(0xFF6750A4)

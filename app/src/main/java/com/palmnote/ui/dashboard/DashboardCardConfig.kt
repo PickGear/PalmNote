@@ -12,7 +12,8 @@ enum class CardType {
     GOALS,
     ANNIVERSARIES,
     ASSET_DISTRIBUTION,
-    TODAY
+    TODAY,
+    VAULT
 }
 
 @Stable

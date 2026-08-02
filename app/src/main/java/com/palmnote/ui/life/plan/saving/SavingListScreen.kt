@@ -1,4 +1,4 @@
-﻿package com.palmnote.ui.life.plan.saving
+package com.palmnote.ui.life.plan.saving
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -27,7 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.palmnote.PalmNoteApp
 import com.palmnote.R
-import com.palmnote.ui.components.simpleViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.palmnote.data.db.entity.LifeItem
 import com.palmnote.ui.components.SecondaryTopAppBar
 import com.palmnote.ui.components.ModuleSearchBar
@@ -42,8 +43,8 @@ import kotlinx.serialization.json.JsonPrimitive
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SavingListScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Long) -> Unit, onCreateClick: () -> Unit = {}, viewModel: SavingPlanViewModel = simpleViewModel { PalmNoteApp.container.savingPlanViewModel() }) {
-    val state by viewModel.uiState.collectAsState()
+fun SavingListScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Long) -> Unit, onCreateClick: () -> Unit = {}, viewModel: SavingPlanViewModel = hiltViewModel()) {
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(templateId) { viewModel.load(templateId) }
     var filter by remember { mutableStateOf(0) }
     var showSearch by remember { mutableStateOf(false) }
@@ -138,8 +139,14 @@ fun SavingListScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Long) -
                                     }
                                     Spacer(modifier = Modifier.height(6.dp))
                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                        if (savedVal > 0) Text("\u00A5${"%,.0f".format(savedVal)}", fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface, fontSize = 12.sp)
-                                        if (targetVal > 0) { Spacer(modifier = Modifier.width(4.dp)); Text("/ \u00A5${"%,.0f".format(targetVal)}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp) }
+                                        if (savedVal > 0) Text(
+                                            "\u00A5${"%,.2f".format(savedVal)}", fontWeight = FontWeight.Medium,
+                                            color = MaterialTheme.colorScheme.onSurface, fontSize = 12.sp
+                                        )
+                                        if (targetVal > 0) { Spacer(modifier = Modifier.width(4.dp)); Text(
+                                            "/ \u00A5${"%,.2f".format(targetVal)}",
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp
+                                        ) }
                                     }
                                     Spacer(modifier = Modifier.height(6.dp))
                                     Box(modifier = Modifier.fillMaxWidth().height(4.dp).background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f), RoundedCornerShape(2.dp))) {

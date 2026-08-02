@@ -1,4 +1,7 @@
 package com.palmnote.ui.backup
+import javax.inject.Inject
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 
 import android.content.Context
 import android.net.Uri
@@ -7,6 +10,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.palmnote.data.backup.BackupManager
 import com.palmnote.data.backup.BackupState
+import com.palmnote.R
 import com.palmnote.data.db.AppDatabase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,10 +18,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 
-class BackupViewModel(
-    private val context: Context,
+@HiltViewModel
+class BackupViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val db: AppDatabase
 ) : ViewModel() {
 
@@ -42,7 +48,7 @@ class BackupViewModel(
                 emit(BackupState.Progress(0))
                 try {
                     // 1. Create backup in app cache
-                    val tempFile = backupManager.createBackup(context, _password.value)
+                    val tempFile = backupManager.createBackup(context, db, _password.value)
                     emit(BackupState.Progress(80))
 
                     // 2. Copy to user-chosen folder via SAF
@@ -95,6 +101,9 @@ class BackupViewModel(
                     emit(BackupState.Success(""))
                 } catch (e: Exception) {
                     emit(BackupState.Error(e.message ?: "Restore failed"))
+                } finally {
+                    // 无论恢复成功还是失败，确保数据库可重新打开，避免后续操作崩溃
+                    try { db.openHelper.writableDatabase } catch (_: Exception) {}
                 }
             }.flowOn(Dispatchers.IO).collect { state ->
                 _backupState.value = state
@@ -104,5 +113,31 @@ class BackupViewModel(
 
     fun resetState() {
         _backupState.value = BackupState.Idle
+    }
+
+    // ========== 备份目录持久化（SAF tree URI） ==========
+
+    private val backupPrefs = context.getSharedPreferences("backup_prefs", Context.MODE_PRIVATE)
+
+    /** 创建备份成功后记录用户选择的目录，恢复时直接列出该目录内备份 */
+    fun saveBackupDir(uri: Uri) {
+        backupPrefs.edit().putString("backup_dir_uri", uri.toString()).apply()
+    }
+
+    fun getBackupDir(): Uri? {
+        val s = backupPrefs.getString("backup_dir_uri", null) ?: return null
+        return runCatching { Uri.parse(s) }.getOrNull()
+    }
+
+    /** 列出已保存备份目录内的 .palmnote 备份文件（IO：DocumentsProvider 查询） */
+    suspend fun listBackupsInDir(): List<Pair<String, Uri>> = withContext(Dispatchers.IO) {
+        val dirUri = getBackupDir() ?: return@withContext emptyList()
+        runCatching {
+            val dir = DocumentFile.fromTreeUri(context, dirUri) ?: return@withContext emptyList()
+            dir.listFiles()
+                .filter { it.isFile && it.name?.endsWith(".palmnote") == true }
+                .map { (it.name ?: context.getString(R.string.backup_file)) to it.uri }
+                .sortedByDescending { it.first }
+        }.getOrDefault(emptyList())
     }
 }

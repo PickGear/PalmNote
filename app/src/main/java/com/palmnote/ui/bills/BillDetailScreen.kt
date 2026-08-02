@@ -24,11 +24,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.palmnote.PalmNoteApp
-import com.palmnote.ui.components.simpleViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.palmnote.R
 import com.palmnote.data.db.entity.Bill
+import com.palmnote.domain.model.toMoney
 import com.palmnote.domain.util.CurrencyUtils
 import com.palmnote.domain.util.DateUtils
 import com.palmnote.ui.components.*
@@ -41,12 +42,12 @@ fun BillDetailScreen(
     onNavigateBack: () -> Unit = {},
     onNavigateToEdit: (Long) -> Unit = {},
     walletNames: Map<Long, String> = emptyMap(),
-    viewModel: BillDetailViewModel = simpleViewModel { PalmNoteApp.container.billDetailViewModel() }
+    viewModel: BillDetailViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
-    val billPresetOverrides by PalmNoteApp.container.preferencesManager.presetCategoryOverrides
+    val billPresetOverrides by PalmNoteApp.instance.preferencesManager.presetCategoryOverrides
         .collectAsStateWithLifecycle(initialValue = emptyMap())
-    val billCustomCfg by PalmNoteApp.container.cachedCategoryConfigs
+    val billCustomCfg by PalmNoteApp.instance.cachedCategoryConfigs
         .collectAsStateWithLifecycle(initialValue = emptyList())
     val billCustomExpense = remember(billCustomCfg) {
         billCustomCfg.filter { it.type == "BILL_EXPENSE" }
@@ -96,7 +97,7 @@ fun BillDetailScreen(
                     Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                text = "${if (bill.type == "EXPENSE") "-" else if (bill.type == "TRANSFER") "" else "+"}${CurrencyUtils.formatCurrency(bill.amount)}",
+                                text = "${if (bill.type == "EXPENSE") "-" else if (bill.type == "TRANSFER") "" else "+"}${CurrencyUtils.formatCurrency(bill.amount.toMoney())}",
                                 style = MaterialTheme.typography.displaySmall,
                                 fontWeight = FontWeight.Bold,
                                 color = if (bill.type == "EXPENSE") ExpenseRed else if (bill.type == "TRANSFER") InfoBlue else IncomeGreen
@@ -129,13 +130,13 @@ fun BillDetailScreen(
                         }
                     } else {
                         val displayName = getBillDisplayName(catItem.name)
-                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(catItem.color.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) {
-                                        Icon(catItem.icon, null, tint = catItem.color, modifier = Modifier.size(20.dp))
-                                    }
-                                    Text(displayName, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
-                                }
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(catItem.color.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) {
+                                Icon(catItem.icon, null, tint = catItem.color, modifier = Modifier.size(20.dp))
                             }
+                            Text(displayName, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
+                        }
+                    }
                         }
                         HorizontalDivider()
                         DetailRow(stringResource(R.string.bill_type), if (bill.type == "TRANSFER") stringResource(R.string.bill_transfer) else if (bill.type == "EXPENSE") stringResource(R.string.bill_expense) else stringResource(R.string.bill_income))

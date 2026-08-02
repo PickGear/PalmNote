@@ -4,7 +4,9 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.runBlocking
@@ -14,6 +16,8 @@ val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "pa
 class PreferencesManager(
     private val context: Context
 ) {
+    /** DataStore 读取统一兜底：损坏/IO 异常时回退空偏好，避免崩溃 */
+    private val prefsFlow: Flow<Preferences> = context.dataStore.data.catch { emit(emptyPreferences()) }
     companion object {
         val THEME_MODE = stringPreferencesKey("theme_mode")
         val DEFAULT_BILL_TYPE = stringPreferencesKey("default_bill_type")
@@ -45,116 +49,134 @@ class PreferencesManager(
         val PROFILE_AVATAR_PATH = stringPreferencesKey("profile_avatar_path")
         val CATEGORY_COLOR_OVERRIDES = stringPreferencesKey("category_color_overrides")
         val PRESET_CATEGORY_OVERRIDES = stringPreferencesKey("preset_category_overrides")
+        val VAULT_SALT = stringPreferencesKey("vault_salt")
+        val VAULT_KEY_WRAP = stringPreferencesKey("vault_key_wrap")
+        val VAULT_REQUIRE_AUTH = booleanPreferencesKey("vault_require_auth")
+        val VAULT_CLIPBOARD_CLEAR_SECONDS = intPreferencesKey("vault_clipboard_clear_seconds")
     }
 
-    val themeMode: Flow<String> = context.dataStore.data.map { it[THEME_MODE] ?: "SYSTEM" }
-    val defaultBillType: Flow<String> = context.dataStore.data.map { it[DEFAULT_BILL_TYPE] ?: "EXPENSE" }
-    val budgetReminderEnabled: Flow<Boolean> = context.dataStore.data.map { it[BUDGET_REMINDER_ENABLED] ?: true }
-    val assetViewMode: Flow<Boolean> = context.dataStore.data.map { it[ASSET_VIEW_MODE] ?: false }
+    val themeMode: Flow<String> = prefsFlow.map { it[THEME_MODE] ?: "SYSTEM" }
+    val defaultBillType: Flow<String> = prefsFlow.map { it[DEFAULT_BILL_TYPE] ?: "EXPENSE" }
+    val budgetReminderEnabled: Flow<Boolean> = prefsFlow.map { it[BUDGET_REMINDER_ENABLED] ?: true }
+    val assetViewMode: Flow<Boolean> = prefsFlow.map { it[ASSET_VIEW_MODE] ?: false }
 
     suspend fun setThemeMode(mode: String) { context.dataStore.edit { it[THEME_MODE] = mode } }
     suspend fun setDefaultBillType(type: String) { context.dataStore.edit { it[DEFAULT_BILL_TYPE] = type } }
     suspend fun setBudgetReminderEnabled(enabled: Boolean) { context.dataStore.edit { it[BUDGET_REMINDER_ENABLED] = enabled } }
     suspend fun setAssetViewMode(isGrid: Boolean) { context.dataStore.edit { it[ASSET_VIEW_MODE] = isGrid } }
 
-    val calendarSyncEnabled: Flow<Boolean> = context.dataStore.data.map { it[CALENDAR_SYNC_ENABLED] ?: false }
+    val calendarSyncEnabled: Flow<Boolean> = prefsFlow.map { it[CALENDAR_SYNC_ENABLED] ?: false }
 
     suspend fun setCalendarSyncEnabled(enabled: Boolean) { context.dataStore.edit { it[CALENDAR_SYNC_ENABLED] = enabled } }
 
-    val switchColor: Flow<String> = context.dataStore.data.map { it[SWITCH_COLOR] ?: "#2D4A3E" }
+    val switchColor: Flow<String> = prefsFlow.map { it[SWITCH_COLOR] ?: "#2D4A3E" }
 
     suspend fun setSwitchColor(color: String) { context.dataStore.edit { it[SWITCH_COLOR] = color } }
 
-    val defaultStartPage: Flow<String> = context.dataStore.data.map { it[DEFAULT_START_PAGE] ?: "dashboard" }
+    val defaultStartPage: Flow<String> = prefsFlow.map { it[DEFAULT_START_PAGE] ?: "dashboard" }
 
     suspend fun setDefaultStartPage(route: String) { context.dataStore.edit { it[DEFAULT_START_PAGE] = route } }
 
-    val language: Flow<String> = context.dataStore.data.map { it[LANGUAGE] ?: "SYSTEM" }
+    val language: Flow<String> = prefsFlow.map { it[LANGUAGE] ?: "SYSTEM" }
 
     suspend fun setLanguage(lang: String) { context.dataStore.edit { it[LANGUAGE] = lang } }
 
-    val dashboardCardConfigs: Flow<List<DashboardCardConfig>> = context.dataStore.data.map { prefs ->
+    val dashboardCardConfigs: Flow<List<DashboardCardConfig>> = prefsFlow.map { prefs ->
         val json = prefs[DASHBOARD_CARD_CONFIGS]
-        if (json != null) DashboardCardConfig.fromJson(json) else DashboardCardConfig.defaults
+        val stored = if (json != null) DashboardCardConfig.fromJson(json) else DashboardCardConfig.defaults
+        // 新版本新增的卡片（如 VAULT）不在旧存储配置中，需要与 defaults 合并，避免用户丢失新卡片
+        val storedTypes = stored.map { it.type }.toSet()
+        DashboardCardConfig.defaults.mapNotNull { def ->
+            stored.find { it.type == def.type } ?: def.takeIf { it.type !in storedTypes }
+        }
     }
 
     suspend fun saveDashboardCardConfigs(configs: List<DashboardCardConfig>) {
         context.dataStore.edit { it[DASHBOARD_CARD_CONFIGS] = DashboardCardConfig.toJson(configs) }
     }
 
-    fun isAppLockEnabled(): Boolean = runBlocking { context.dataStore.data.first()[APP_LOCK_ENABLED] ?: false }
+    fun isAppLockEnabled(): Boolean = runBlocking(Dispatchers.IO) { prefsFlow.first()[APP_LOCK_ENABLED] ?: false }
+
+    val appLockEnabledFlow: Flow<Boolean> = prefsFlow.map { it[APP_LOCK_ENABLED] ?: false }
 
     suspend fun setAppLockEnabled(enabled: Boolean) {
         context.dataStore.edit { it[APP_LOCK_ENABLED] = enabled }
     }
 
-    fun setAppLockEnabledSync(enabled: Boolean) = runBlocking { setAppLockEnabled(enabled) }
+    fun setAppLockEnabledSync(enabled: Boolean) = runBlocking(Dispatchers.IO) { setAppLockEnabled(enabled) }
 
-    fun getEncryptedPin(): String = runBlocking { context.dataStore.data.first()[ENCRYPTED_PIN] ?: "" }
+    fun getEncryptedPin(): String = runBlocking(Dispatchers.IO) { prefsFlow.first()[ENCRYPTED_PIN] ?: "" }
 
     suspend fun setEncryptedPin(pin: String) {
         context.dataStore.edit { it[ENCRYPTED_PIN] = pin }
     }
 
-    val birthdayReminderAdvanceDays: Flow<Int> = context.dataStore.data.map { it[BIRTHDAY_REMINDER_ADVANCE_DAYS] ?: 3 }
+    suspend fun setAppLockCredentials(pin: String, enabled: Boolean) {
+        context.dataStore.edit {
+            it[ENCRYPTED_PIN] = pin
+            it[APP_LOCK_ENABLED] = enabled
+        }
+    }
+
+    val birthdayReminderAdvanceDays: Flow<Int> = prefsFlow.map { it[BIRTHDAY_REMINDER_ADVANCE_DAYS] ?: 3 }
 
     suspend fun setBirthdayReminderAdvanceDays(days: Int) { context.dataStore.edit { it[BIRTHDAY_REMINDER_ADVANCE_DAYS] = days } }
 
-    val anniversaryReminderAdvanceDays: Flow<Int> = context.dataStore.data.map { it[ANNIVERSARY_REMINDER_ADVANCE_DAYS] ?: 3 }
+    val anniversaryReminderAdvanceDays: Flow<Int> = prefsFlow.map { it[ANNIVERSARY_REMINDER_ADVANCE_DAYS] ?: 3 }
 
     suspend fun setAnniversaryReminderAdvanceDays(days: Int) { context.dataStore.edit { it[ANNIVERSARY_REMINDER_ADVANCE_DAYS] = days } }
 
-    val dailyReminderEnabled: Flow<Boolean> = context.dataStore.data.map { it[DAILY_REMINDER_ENABLED] ?: true }
+    val dailyReminderEnabled: Flow<Boolean> = prefsFlow.map { it[DAILY_REMINDER_ENABLED] ?: true }
 
     suspend fun setDailyReminderEnabled(enabled: Boolean) { context.dataStore.edit { it[DAILY_REMINDER_ENABLED] = enabled } }
 
-    val billReminderEnabled: Flow<Boolean> = context.dataStore.data.map { it[BILL_REMINDER_ENABLED] ?: true }
+    val billReminderEnabled: Flow<Boolean> = prefsFlow.map { it[BILL_REMINDER_ENABLED] ?: true }
 
     suspend fun setBillReminderEnabled(enabled: Boolean) { context.dataStore.edit { it[BILL_REMINDER_ENABLED] = enabled } }
 
-    val dailyReminderHour: Flow<Int> = context.dataStore.data.map { it[DAILY_REMINDER_HOUR] ?: 9 }
+    val dailyReminderHour: Flow<Int> = prefsFlow.map { it[DAILY_REMINDER_HOUR] ?: 9 }
 
     suspend fun setDailyReminderHour(hour: Int) { context.dataStore.edit { it[DAILY_REMINDER_HOUR] = hour } }
 
-    val dailyReminderMinute: Flow<Int> = context.dataStore.data.map { it[DAILY_REMINDER_MINUTE] ?: 0 }
+    val dailyReminderMinute: Flow<Int> = prefsFlow.map { it[DAILY_REMINDER_MINUTE] ?: 0 }
 
     suspend fun setDailyReminderMinute(minute: Int) { context.dataStore.edit { it[DAILY_REMINDER_MINUTE] = minute } }
 
-    val billReminderHour: Flow<Int> = context.dataStore.data.map { it[BILL_REMINDER_HOUR] ?: 21 }
+    val billReminderHour: Flow<Int> = prefsFlow.map { it[BILL_REMINDER_HOUR] ?: 21 }
 
     suspend fun setBillReminderHour(hour: Int) { context.dataStore.edit { it[BILL_REMINDER_HOUR] = hour } }
 
-    val billReminderMinute: Flow<Int> = context.dataStore.data.map { it[BILL_REMINDER_MINUTE] ?: 0 }
+    val billReminderMinute: Flow<Int> = prefsFlow.map { it[BILL_REMINDER_MINUTE] ?: 0 }
 
     suspend fun setBillReminderMinute(minute: Int) { context.dataStore.edit { it[BILL_REMINDER_MINUTE] = minute } }
 
-    val biometricEnabled: Flow<Boolean> = context.dataStore.data.map { it[BIOMETRIC_ENABLED] ?: false }
+    val biometricEnabled: Flow<Boolean> = prefsFlow.map { it[BIOMETRIC_ENABLED] ?: false }
 
     suspend fun setBiometricEnabled(enabled: Boolean) { context.dataStore.edit { it[BIOMETRIC_ENABLED] = enabled } }
 
-    val privacyAgreed: Flow<Boolean> = context.dataStore.data.map { it[PRIVACY_AGREED] ?: false }
+    val privacyAgreed: Flow<Boolean> = prefsFlow.map { it[PRIVACY_AGREED] ?: false }
 
     suspend fun setPrivacyAgreed(agreed: Boolean) { context.dataStore.edit { it[PRIVACY_AGREED] = agreed } }
 
-    val lifePlanExpanded: Flow<Boolean> = context.dataStore.data.map { it[LIFE_PLAN_EXPANDED] ?: true }
-    val lifeTimeExpanded: Flow<Boolean> = context.dataStore.data.map { it[LIFE_TIME_EXPANDED] ?: true }
-    val lifeRecordExpanded: Flow<Boolean> = context.dataStore.data.map { it[LIFE_RECORD_EXPANDED] ?: true }
+    val lifePlanExpanded: Flow<Boolean> = prefsFlow.map { it[LIFE_PLAN_EXPANDED] ?: true }
+    val lifeTimeExpanded: Flow<Boolean> = prefsFlow.map { it[LIFE_TIME_EXPANDED] ?: true }
+    val lifeRecordExpanded: Flow<Boolean> = prefsFlow.map { it[LIFE_RECORD_EXPANDED] ?: true }
 
     suspend fun setLifePlanExpanded(v: Boolean) { context.dataStore.edit { it[LIFE_PLAN_EXPANDED] = v } }
     suspend fun setLifeTimeExpanded(v: Boolean) { context.dataStore.edit { it[LIFE_TIME_EXPANDED] = v } }
     suspend fun setLifeRecordExpanded(v: Boolean) { context.dataStore.edit { it[LIFE_RECORD_EXPANDED] = v } }
 
-    val profileNickname: Flow<String> = context.dataStore.data.map { it[PROFILE_NICKNAME] ?: "" }
-    val profileSignature: Flow<String> = context.dataStore.data.map { it[PROFILE_SIGNATURE] ?: "" }
-    val profileAvatar: Flow<String> = context.dataStore.data.map { it[PROFILE_AVATAR] ?: "Spa" }
-    val profileAvatarPath: Flow<String> = context.dataStore.data.map { it[PROFILE_AVATAR_PATH] ?: "" }
+    val profileNickname: Flow<String> = prefsFlow.map { it[PROFILE_NICKNAME] ?: "" }
+    val profileSignature: Flow<String> = prefsFlow.map { it[PROFILE_SIGNATURE] ?: "" }
+    val profileAvatar: Flow<String> = prefsFlow.map { it[PROFILE_AVATAR] ?: "Spa" }
+    val profileAvatarPath: Flow<String> = prefsFlow.map { it[PROFILE_AVATAR_PATH] ?: "" }
 
     suspend fun setProfileNickname(name: String) { context.dataStore.edit { it[PROFILE_NICKNAME] = name } }
     suspend fun setProfileSignature(sig: String) { context.dataStore.edit { it[PROFILE_SIGNATURE] = sig } }
     suspend fun setProfileAvatar(avatar: String) { context.dataStore.edit { it[PROFILE_AVATAR] = avatar } }
     suspend fun setProfileAvatarPath(path: String) { context.dataStore.edit { it[PROFILE_AVATAR_PATH] = path } }
 
-    val categoryColorOverrides: Flow<Map<String, String>> = context.dataStore.data.map { prefs ->
+    val categoryColorOverrides: Flow<Map<String, String>> = prefsFlow.map { prefs ->
         val json = prefs[CATEGORY_COLOR_OVERRIDES]
         if (json != null) {
             try {
@@ -168,7 +190,7 @@ class PreferencesManager(
         context.dataStore.edit { it[CATEGORY_COLOR_OVERRIDES] = org.json.JSONObject(overrides.toMap()).toString() }
     }
 
-    val presetCategoryOverrides: Flow<Map<String, String>> = context.dataStore.data.map { prefs ->
+    val presetCategoryOverrides: Flow<Map<String, String>> = prefsFlow.map { prefs ->
         val json = prefs[PRESET_CATEGORY_OVERRIDES]
         if (json != null) {
             try {
@@ -180,5 +202,35 @@ class PreferencesManager(
 
     suspend fun savePresetCategoryOverrides(overrides: Map<String, String>) {
         context.dataStore.edit { it[PRESET_CATEGORY_OVERRIDES] = org.json.JSONObject(overrides.toMap()).toString() }
+    }
+
+    fun getVaultSalt(): String = runBlocking(Dispatchers.IO) { prefsFlow.first()[VAULT_SALT] ?: "" }
+
+    fun getVaultKeyWrap(): String = runBlocking(Dispatchers.IO) { prefsFlow.first()[VAULT_KEY_WRAP] ?: "" }
+
+    suspend fun setVaultCredentials(salt: String, keyWrap: String) {
+        context.dataStore.edit {
+            it[VAULT_SALT] = salt
+            it[VAULT_KEY_WRAP] = keyWrap
+        }
+    }
+
+    suspend fun clearVaultCredentials() {
+        context.dataStore.edit {
+            it.remove(VAULT_SALT)
+            it.remove(VAULT_KEY_WRAP)
+        }
+    }
+
+    val vaultRequireAuth: Flow<Boolean> = prefsFlow.map { it[VAULT_REQUIRE_AUTH] ?: true }
+
+    suspend fun setVaultRequireAuth(enabled: Boolean) {
+        context.dataStore.edit { it[VAULT_REQUIRE_AUTH] = enabled }
+    }
+
+    val vaultClipboardClearSeconds: Flow<Int> = prefsFlow.map { it[VAULT_CLIPBOARD_CLEAR_SECONDS] ?: 30 }
+
+    suspend fun setVaultClipboardClearSeconds(seconds: Int) {
+        context.dataStore.edit { it[VAULT_CLIPBOARD_CLEAR_SECONDS] = seconds }
     }
 }

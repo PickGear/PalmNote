@@ -3,35 +3,42 @@
 import android.content.Context
 import com.palmnote.PalmNoteApp
 import com.palmnote.R
+import com.palmnote.domain.model.Money
 import java.text.DecimalFormat
 
 object CurrencyUtils {
     private val currencyFormat = DecimalFormat("#,##0.00")
 
+    private val twoDecimals = DecimalFormat("#.##")
+
     private fun getAppContext(): Context = PalmNoteApp.instance
 
-    fun formatCurrency(amount: Double): String =
-        getAppContext().getString(R.string.currency_format, currencyFormat.format(amount))
+    /** 金额（分）转元字符串，如 123456 → ¥1,234.56 */
+    fun formatCurrency(amount: Money): String =
+        getAppContext().getString(R.string.currency_format, currencyFormat.format(amount.cents / 100.0))
 
-    fun formatCurrency(context: Context, amount: Double): String =
-        context.getString(R.string.currency_format, currencyFormat.format(amount))
+    fun formatCurrency(context: Context, amount: Money): String =
+        context.getString(R.string.currency_format, currencyFormat.format(amount.cents / 100.0))
 
-    fun formatCompact(amount: Double): String {
-        val twoDecimals = DecimalFormat("#.##")
+    /** 金额紧凑格式：≥1亿 显示亿，≥100万 显示万 */
+    fun formatCompact(amount: Money): String {
         val context = getAppContext()
         return when {
-            amount >= 10000_0000 -> context.getString(R.string.currency_compact_yi, twoDecimals.format(amount / 10000_0000))
-            amount >= 100_0000 -> context.getString(R.string.currency_compact_wan, twoDecimals.format(amount / 10000))
-            else -> context.getString(R.string.currency_format, currencyFormat.format(amount))
+            amount.cents >= 10000_0000_00L ->
+                context.getString(R.string.currency_compact_yi, twoDecimals.format(amount.cents / 100.0 / 10000_0000))
+            amount.cents >= 1_0000_0000L ->
+                context.getString(R.string.currency_compact_wan, twoDecimals.format(amount.cents / 100.0 / 10000))
+            else -> context.getString(R.string.currency_format, currencyFormat.format(amount.cents / 100.0))
         }
     }
 
-    fun formatCompact(context: Context, amount: Double): String {
-        val twoDecimals = DecimalFormat("#.##")
+    fun formatCompact(context: Context, amount: Money): String {
         return when {
-            amount >= 10000_0000 -> context.getString(R.string.currency_compact_yi, twoDecimals.format(amount / 10000_0000))
-            amount >= 100_0000 -> context.getString(R.string.currency_compact_wan, twoDecimals.format(amount / 10000))
-            else -> context.getString(R.string.currency_format, currencyFormat.format(amount))
+            amount.cents >= 10000_0000_00L ->
+                context.getString(R.string.currency_compact_yi, twoDecimals.format(amount.cents / 100.0 / 10000_0000))
+            amount.cents >= 1_0000_0000L ->
+                context.getString(R.string.currency_compact_wan, twoDecimals.format(amount.cents / 100.0 / 10000))
+            else -> context.getString(R.string.currency_format, currencyFormat.format(amount.cents / 100.0))
         }
     }
 }

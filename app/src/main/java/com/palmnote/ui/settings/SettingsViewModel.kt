@@ -1,4 +1,7 @@
-﻿package com.palmnote.ui.settings
+package com.palmnote.ui.settings
+import javax.inject.Inject
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 
 import android.content.Context
 import android.net.Uri
@@ -53,8 +56,9 @@ data class SettingsState(
     val profileAvatarPath: String = ""
 )
 
-class SettingsViewModel(
-    private val context: Context,
+@HiltViewModel
+class SettingsViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val preferencesManager: PreferencesManager,
     private val csvDataExporter: CsvDataExporter,
     private val calendarSyncManager: CalendarSyncManager,
@@ -265,7 +269,7 @@ class SettingsViewModel(
         }
     }
 
-    fun clearCache(context: Context) {
+    fun clearCache(@ApplicationContext context: Context) {
         viewModelScope.launch {
             try {
                 context.imageLoader.diskCache?.clear()

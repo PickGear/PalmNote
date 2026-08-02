@@ -2,6 +2,8 @@
 
 > v1.3 | 2026-07-28 | 与设计规范 [design-spec.md](design-spec.md) 配合阅读
 >
+> **状态：v1.3.0 已实现**（`feature/vault`，DB v5）。本文档为设计蓝图，实现细节以代码为准。
+>
 > 本文档为密码本（Vault）功能模块的完整设计。密码本是一个纯离线、字段级加密的密码管理模块，尊重 PalmNote "隐私优先、数据本地化" 的核心原则。
 
 ---
@@ -28,7 +30,7 @@
 
 ### 1.3 与现有架构的关系
 
-密码本代码位于 `com.palmnote.feature.vault` 包内（单模块 `:app`，非独立 Gradle 模块），通过 AppContainer 手动 DI 接入：
+密码本代码位于 `com.palmnote.feature.vault` 包内（单模块 `:app`，非独立 Gradle 模块），通过 Hilt 依赖注入接入：
 
 ```
 app (single module)
@@ -48,7 +50,7 @@ app (single module)
     ├── data/datastore/
     │   └── PreferencesManager.kt   ← 扩展 vault 相关 key
     ├── di/
-    │   └── AppContainer.kt         ← 新增 vault 依赖
+    │   └── HiltModules.kt          ← 注册 vault DAO/加密/锁定组件
     └── ui/
         ├── dashboard/
         │   └── DashboardCardConfig.kt  ← 扩展 VAULT 卡片类型
@@ -60,7 +62,7 @@ app (single module)
             └── SettingsScreen.kt    ← 扩展 vault 设置项
 ```
 
-密码本不引入新的 DI 框架，所有类通过 AppContainer 手动构造。
+密码本通过 Hilt 提供依赖（`@Singleton`），所有密码本类不依赖任何网络相关代码。
 
 ### 1.4 功能清单
 
@@ -145,53 +147,29 @@ interface VaultDao {
 
 ### 2.3 Room 迁移
 
-当前数据库版本为 **3**（`AppDatabase.kt`），密码本 + 动态分类合并为同一版本迁移：
+当前数据库版本为 **5**（`AppDatabase.kt`），密码本在 `Migration4To5` 中建表（动态分类为规划中，未实现）：
 
 ```kotlin
-val MIGRATION_3_TO_4 = object : Migration(3, 4) {
+val MIGRATION_4_5 = object : Migration(4, 5) {
     override fun migrate(db: SupportSQLiteDatabase) {
-        // 密码本表
         db.execSQL("""
             CREATE TABLE IF NOT EXISTS vault_entries (
                 id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-                title TEXT NOT NULL DEFAULT '',
+                title TEXT NOT NULL,
                 username TEXT NOT NULL DEFAULT '',
-                passwordEncrypted BLOB NOT NULL DEFAULT x'',
+                passwordEncrypted BLOB NOT NULL,
                 url TEXT NOT NULL DEFAULT '',
                 notes TEXT NOT NULL DEFAULT '',
                 category TEXT NOT NULL DEFAULT '其他',
-                createdAt INTEGER NOT NULL DEFAULT 0,
-                updatedAt INTEGER NOT NULL DEFAULT 0
+                createdAt INTEGER NOT NULL,
+                updatedAt INTEGER NOT NULL
             )
         """)
-        // 动态分类表（详见 design-spec.md 15.4）
-        db.execSQL("""
-            CREATE TABLE IF NOT EXISTS life_categories (
-                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-                name TEXT NOT NULL,
-                icon TEXT NOT NULL DEFAULT '',
-                color TEXT NOT NULL DEFAULT '',
-                sortOrder INTEGER NOT NULL DEFAULT 0,
-                isBuiltin INTEGER NOT NULL DEFAULT 0
-            )
-        """)
-        // 插入 3 条预置分类
-        db.execSQL("INSERT INTO life_categories (id, name, icon, sortOrder, isBuiltin) VALUES (1, '目标', 'Assignment', 0, 1)")
-        db.execSQL("INSERT INTO life_categories (id, name, icon, sortOrder, isBuiltin) VALUES (2, '纪念', 'CalendarMonth', 1, 1)")
-        db.execSQL("INSERT INTO life_categories (id, name, icon, sortOrder, isBuiltin) VALUES (3, '记录', 'AutoStories', 2, 1)")
-        // LifeTemplate 新增 categoryId 列 + 数据迁移
-        db.execSQL("ALTER TABLE life_templates ADD COLUMN categoryId INTEGER NOT NULL DEFAULT 1")
-        db.execSQL("UPDATE life_templates SET categoryId = 1 WHERE category IN ('PLAN', '计划')")
-        db.execSQL("UPDATE life_templates SET categoryId = 2 WHERE category IN ('TIME', '时间')")
-        db.execSQL("UPDATE life_templates SET categoryId = 3 WHERE category IN ('RECORD', '记录')")
-        // 自定义模板统一归入"记录"
-        db.execSQL("UPDATE life_templates SET categoryId = 3 WHERE categoryId NOT IN (1, 2, 3)")
-        db.execSQL("ALTER TABLE life_templates DROP COLUMN category")
     }
 }
 ```
 
-> 密码本和动态分类在同一迁移中完成（v3 → v4），避免版本号冲突。
+> 密码本表在 v4 → v5 迁移中独立建表。
 
 ---
 
@@ -258,15 +236,12 @@ AES-256-GCM.decrypt() → 明文密码
 
 ## 四、导航路由
 
-密码本作为外层 NavHost 路由（与 Settings、AddBill 同级），不占用底部 Tab。
+密码本作为外层 NavHost 路由（与 Settings、AddBill 同级），不占用底部 Tab。使用类型安全路由（`@Serializable`）：
 
 ```kotlin
-object Route {
-    // ... 现有路由
-    const val Vault = "vault"
-    const val VaultDetail = "vault/{entryId}"
-    const val VaultEdit = "vault/edit?entryId={entryId}"
-}
+@Serializable data object Vault
+@Serializable data class VaultDetail(val entryId: Long)
+@Serializable data class VaultEdit(val entryId: Long? = null)
 ```
 
 在 `PalmNoteNavHost()` 中添加 composable：
@@ -637,12 +612,12 @@ com.palmnote/
 ├── data/
 │    ├── db/AppDatabase.kt      ← 新增 vault_entries 表
 │    ├── datastore/PreferencesManager.kt  ← 扩展 vault key
-│    └── lock/AppLockManager.kt     ← 复用 PIN 验证
-├── di/AppContainer.kt         ← 新增 vault 依赖构造
+│    └── lock/AppLockManager.kt     ← 独立主密码，与应用锁无关
+├── di/HiltModules.kt         ← 注册 vault DAO 与单例组件
 ├── ui/
 │    ├── dashboard/DashboardCardConfig.kt ← 新增 VAULT 卡片
 │    ├── navigation/AppNavigation.kt      ← 新增 vault 路由
-│    └── lock/PinComponents.kt            ← 复用 PIN 输入
+│    └── lock/PinComponents.kt            ← 复用 PIN 输入组件
 └── domain/
      └── repository/VaultRepository.kt    ← 接口
 ```
@@ -704,7 +679,7 @@ VaultLockManager.unlock() → 进入 VaultScreen
 用户切到后台 → onStop → VaultLockManager.lock()
 ```
 
-> **注意：** 密码本锁定独立于应用锁的 5 分钟策略，即使应用锁未超时，进入密码本仍需重新输入 PIN。PIN 验证复用 `AppLockManager.verifyPin()` 逻辑（相同 `ENCRYPTED_PIN`）。
+> **注意：** 密码本锁定独立于应用锁（独立主密码，密钥包裹模式），即使应用锁未超时，进入密码本仍需重新输入密码本主密码；PIN 验证 = 解包数据密钥 DK 成功，与应用锁 PIN 无关。
 
 ### 9.3 VaultLockObserver 注册
 
@@ -926,5 +901,6 @@ feature/cloud/provider/
 |------|------|
 | 1 | 初版 |
 | 2 | 新增若干表 |
-| **3** | **当前版本（v1.2.0），包含所有已有模块** |
-| **4** | **新增 `vault_entries` 表 + `life_categories` 表 + LifeTemplate.categoryId 迁移（v1.3.0）** |
+| 3 | 金额单位迁移（元 → 分，Migration2To3） |
+| 4 | 金额 ×100 迁移（Migration3To4） |
+| **5** | **当前版本（v1.3.0）：新增 `vault_entries` 密码本表（Migration4To5）** |

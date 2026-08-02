@@ -20,8 +20,8 @@ data class Wallet(
     val color: String = "#4CAF50", // 颜色
     val bankName: String = "", // 银行名称（银行卡类型）
     val cardNumber: String = "", // 卡号后四位
-    val initialBalance: Double = 0.0, // 初始余额
-    val currentBalance: Double = 0.0, // 当前余额（自动计算）
+    val initialBalance: Long = 0, // 初始余额（分）
+    val currentBalance: Long = 0, // 当前余额（分）
     val currency: String = "CNY", // 币种
     val isDefault: Boolean = false, // 默认账户
     val isEnabled: Boolean = true, // 是否启用

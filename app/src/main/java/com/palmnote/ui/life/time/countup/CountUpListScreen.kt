@@ -1,4 +1,4 @@
-﻿package com.palmnote.ui.life.time.countup
+package com.palmnote.ui.life.time.countup
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -25,7 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.palmnote.PalmNoteApp
 import com.palmnote.R
-import com.palmnote.ui.components.simpleViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.palmnote.ui.components.EmptyState
 import com.palmnote.ui.life.common.SwipeableItem
 import com.palmnote.ui.components.AppDialog
@@ -39,7 +39,7 @@ import java.time.temporal.ChronoUnit
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CountUpListScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Long) -> Unit, onCreateClick: () -> Unit = {}, viewModel: CountUpViewModel = simpleViewModel { PalmNoteApp.container.countUpViewModel() }) {
+fun CountUpListScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Long) -> Unit, onCreateClick: () -> Unit = {}, viewModel: CountUpViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(templateId) { viewModel.load(templateId) }
     var deleteTarget by remember { mutableStateOf<Long?>(null) }
@@ -48,7 +48,7 @@ fun CountUpListScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Long) 
             onDismissRequest = { deleteTarget = null },
             title = { Text(stringResource(R.string.confirm), fontWeight = FontWeight.Bold) },
             text = { Text(stringResource(R.string.life_confirm_delete_countup)) },
-            confirmButton = { TextButton(onClick = { viewModel.deleteItem(deleteTarget!!); deleteTarget = null }) { Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error) } },
+            confirmButton = { TextButton(onClick = { deleteTarget?.let { viewModel.deleteItem(it) }; deleteTarget = null }) { Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error) } },
             dismissButton = { TextButton(onClick = { deleteTarget = null }) { Text(stringResource(R.string.cancel)) } }
         )
     }
