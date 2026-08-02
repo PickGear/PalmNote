@@ -15,7 +15,8 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  quality:
+    name: Quality (lint, detekt, unit tests)
     runs-on: ubuntu-latest
     timeout-minutes: 45
 
@@ -29,32 +30,15 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
-      - name: Lint
-        run: ./gradlew lintDebug
+      # 一次 Gradle 调用同时跑 lint + detekt + 单测（含 Robolectric 迁移测试）。
+      # --continue 让某项失败时不中断其余任务，一次跑完所有结果。
+      - name: Lint, detekt & unit tests
+        run: ./gradlew lintDebug detekt testDebugUnitTest --continue
 
-      - name: Detekt
-        run: ./gradlew detekt
-
-      - name: Unit tests
-        run: ./gradlew testDebugUnitTest
-
-      - name: Build debug
-        run: ./gradlew assembleDebug --stacktrace
-
-      - name: Build release (unsigned smoke, no baseline profile)
-        run: ./gradlew assembleRelease -x app:generateReleaseBaselineProfile -x app:generateBaselineProfile --stacktrace
-
-      - name: Instrumented tests (migrations, on emulator)
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 34
-          arch: x86_64
-          disable-animations: true
-          script: ./gradlew connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.palmnote.data.db.migration.Migration1To2Test,com.palmnote.data.db.migration.Migration2To3Test,com.palmnote.data.db.migration.Migration3To4Test,com.palmnote.data.db.migration.Migration4To5Test
-
+      # testDebugUnitTest 会触发 kspDebugKotlin（生成 app/schemas），
+      # 这里直接校验导出的 Room schema 是否已提交，无需再跑一次 Gradle。
       - name: Verify Room schema is up to date
         run: |
-          ./gradlew kspDebugKotlin
           CHANGED=$(git status --porcelain app/schemas)
           if [ -z "$CHANGED" ]; then
             echo "Room schemas are up to date."
@@ -65,10 +49,27 @@ jobs:
             exit 1
           fi
 
+  build:
+    name: Build (debug + release smoke)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Build debug + release (unsigned smoke, no baseline profile)
+        run: ./gradlew assembleDebug assembleRelease -x app:generateReleaseBaselineProfile -x app:generateBaselineProfile
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: PalmNote-debug
           path: app/build/outputs/apk/debug/*.apk
           retention-days: 7
-

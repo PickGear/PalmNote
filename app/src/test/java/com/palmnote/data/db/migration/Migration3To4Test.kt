@@ -1,21 +1,27 @@
 package com.palmnote.data.db.migration
 
+import android.app.Application
 import androidx.room.testing.MigrationTestHelper
 import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.palmnote.data.db.AppDatabase
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
 /**
  * v3 → v4 金额单位迁移测试（元 REAL → 分 INTEGER，×100 换算）。
  * 通过 MigrationTestHelper 用导出的 3.json 构建 v3 库、插入 REAL 金额数据，
- * 跑迁移后校验 schema 与数据。
+ * 跑迁移后校验 schema 与数据。用 Robolectric 本地 JVM 跑，无需模拟器。
+ *
+ * 注意：必须用无业务逻辑的 [Application]（而非合并清单里的 .PalmNoteApp），
+ * 否则 Hilt 注入会触发 SQLCipher System.loadLibrary("sqlcipher")，在 JVM 上必败。
  */
-@RunWith(AndroidJUnit4::class)
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [30], application = Application::class)
 class Migration3To4Test {
 
     @get:Rule
@@ -33,6 +39,36 @@ class Migration3To4Test {
 
     @Test
     fun migrate3To4_convertsAllMoneyColumnsToCents() {
+        seedV3MoneyRows()
+
+        val db = helper.runMigrationsAndValidate(DB, 4, true, MIGRATION_3_4)
+
+        db.query("SELECT amount FROM bills").use { c ->
+            c.moveToFirst(); assertEquals(1250L, c.getLong(0))
+        }
+        db.query("SELECT amount FROM recurring_templates").use { c ->
+            c.moveToFirst(); assertEquals(300000L, c.getLong(0))
+        }
+        db.query("SELECT initialBalance, currentBalance FROM wallets").use { c ->
+            c.moveToFirst()
+            assertEquals(10000L, c.getLong(0))
+            assertEquals(15050L, c.getLong(1))
+        }
+        db.query("SELECT totalBudget FROM budgets").use { c ->
+            c.moveToFirst(); assertEquals(200000L, c.getLong(0))
+        }
+        db.query("SELECT purchasePrice, currentValue FROM assets").use { c ->
+            c.moveToFirst()
+            assertEquals(500000L, c.getLong(0))
+            assertEquals(0L, c.getLong(1))
+        }
+        db.query("SELECT unitPrice FROM plan_list_items").use { c ->
+            c.moveToFirst(); assertEquals(1050L, c.getLong(0))
+        }
+        db.close()
+    }
+
+    private fun seedV3MoneyRows() {
         helper.createDatabase(DB, 3).apply {
             execSQL(
                 "INSERT INTO bills (amount, type, category, subCategory, note, date, yearMonth, " +
@@ -65,7 +101,8 @@ class Migration3To4Test {
                     "description, condition, serialNumber, receiptPath, depreciationRate, currentValue, " +
                     "maintenanceIntervalDays, maintenanceNotes, isFavorite, tags, retireReason, " +
                     "lostReason, sortOrder, isDeleted, createdAt, updatedAt) VALUES " +
-                    "('手机', '数码', '', '', '', 5000.0, 'PURCHASE', 'HELD', 'DAILY', 1, 0, 0.0, '', '', '', '', '', '', '', 'GOOD', '', '', 0.0, 0.0, 0, '', 0, '', '', '', 0, 0, 1, 1)"
+                    "('手机', '数码', '', '', '', 5000.0, 'PURCHASE', 'HELD', 'DAILY', 1, 0, 0.0, " +
+                    "'', '', '', '', '', '', '', 'GOOD', '', '', 0.0, 0.0, 0, '', 0, '', '', '', 0, 0, 1, 1)"
             )
             execSQL(
                 "INSERT INTO plan_list_items (listId, content, quantity, unitPrice, notes, " +
@@ -74,32 +111,6 @@ class Migration3To4Test {
             )
             close()
         }
-
-        val db = helper.runMigrationsAndValidate(DB, 4, true, MIGRATION_3_4)
-
-        db.query("SELECT amount FROM bills").use { c ->
-            c.moveToFirst(); assertEquals(1250L, c.getLong(0))
-        }
-        db.query("SELECT amount FROM recurring_templates").use { c ->
-            c.moveToFirst(); assertEquals(300000L, c.getLong(0))
-        }
-        db.query("SELECT initialBalance, currentBalance FROM wallets").use { c ->
-            c.moveToFirst()
-            assertEquals(10000L, c.getLong(0))
-            assertEquals(15050L, c.getLong(1))
-        }
-        db.query("SELECT totalBudget FROM budgets").use { c ->
-            c.moveToFirst(); assertEquals(200000L, c.getLong(0))
-        }
-        db.query("SELECT purchasePrice, currentValue FROM assets").use { c ->
-            c.moveToFirst()
-            assertEquals(500000L, c.getLong(0))
-            assertEquals(0L, c.getLong(1))
-        }
-        db.query("SELECT unitPrice FROM plan_list_items").use { c ->
-            c.moveToFirst(); assertEquals(1050L, c.getLong(0))
-        }
-        db.close()
     }
 
     @Test

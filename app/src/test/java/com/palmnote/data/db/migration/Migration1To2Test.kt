@@ -1,19 +1,26 @@
 package com.palmnote.data.db.migration
 
+import android.app.Application
 import androidx.room.testing.MigrationTestHelper
 import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.palmnote.data.db.AppDatabase
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
 /**
  * v1 → v2 迁移测试：仅创建索引。校验迁移后索引齐备且 schema 与 2.json 一致。
+ * 用 Robolectric 本地 JVM 跑，无需模拟器（CI 免费 runner 更稳定）。
+ *
+ * 注意：必须用无业务逻辑的 [Application]（而非合并清单里的 .PalmNoteApp），
+ * 否则 Hilt 注入会触发 SQLCipher System.loadLibrary("sqlcipher")，在 JVM 上必败。
  */
-@RunWith(AndroidJUnit4::class)
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [30], application = Application::class)
 class Migration1To2Test {
 
     @get:Rule
