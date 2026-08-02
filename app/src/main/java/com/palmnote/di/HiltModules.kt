@@ -44,6 +44,8 @@ import com.palmnote.data.db.migration.MIGRATION_3_4
 import com.palmnote.data.db.migration.MIGRATION_4_5
 import com.palmnote.data.export.CsvDataExporter
 import com.palmnote.data.lock.AppLockManager
+import com.palmnote.data.ocr.OcrEngine
+import com.palmnote.data.ocr.PaddleOcrEngine
 import com.palmnote.data.repository.AchievementRepositoryImpl
 import com.palmnote.data.repository.CrossLinkRepositoryImpl
 import com.palmnote.data.repository.FocusRecordRepositoryImpl
@@ -214,6 +216,17 @@ object AppModule {
         @ApplicationScope scope: CoroutineScope
     ): StateFlow<List<AccountBook>> =
         accountBookRepository.getAllBooks().stateIn(scope, SharingStarted.Eagerly, emptyList())
+}
+
+@Module
+@InstallIn(SingletonComponent::class)
+object OcrModule {
+
+    // 非单例：每次注入新实例，随 BillImportViewModel 生命周期创建/释放，
+    // 避免常驻 ONNX 会话占用内存（模型仅在首次 recognize 时懒加载）。
+    @Provides
+    fun provideOcrEngine(@ApplicationContext context: Context): OcrEngine =
+        PaddleOcrEngine(context)
 }
 
 @Module

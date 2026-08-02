@@ -21,3 +21,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "PalmNote"
 include(":app")
+include(":ppocr-sdk")

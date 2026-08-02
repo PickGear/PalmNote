@@ -10,23 +10,43 @@ The PalmNote project includes the following third-party components.
 Each component retains its own copyright and license terms.
 
 
-1. Google ML Kit (Bundled Chinese Text Recognition)
-----------------------------------------------------
-  Component : com.google.mlkit:text-recognition-chinese (bundled model)
-  Version   : 16.0.1
-  Copyright : (c) Google LLC
-  License   : Google proprietary software, subject to the Google
-              ML Kit Terms of Service and Google APIs Terms of Service.
-  URL       : https://developers.google.com/ml-kit
+1. PaddleOCR (PP-OCRv6 SDK and models)
+---------------------------------------
+  Component : com.paddle.ocr SDK (ppocr-sdk, vendored source)
+              + PP-OCRv6_tiny detection / recognition ONNX models
+  Source    : https://github.com/PaddlePaddle/PaddleOCR (deploy/ppocr-android)
+  Copyright : (c) 2026 PaddlePaddle Authors. All Rights Reserved.
+  License   : Apache License 2.0
 
-  NOTE: The bundled ML Kit text recognition model is proprietary and is
-  distributed under Google's terms, not under the GPL. PalmNote uses this
-  component under the permissions granted by Google's Terms of Service.
-  The ML Kit SDK model file is not free software; users who redistribute
-  this application should review Google's terms before doing so.
+  The SDK is used for offline Chinese text recognition (bill image import),
+  running fully on-device via ONNX Runtime. No network access is performed.
+
+  Model files are redistributed under the terms of the Apache License 2.0:
+    - models/det/inference.onnx        (PP-OCRv6_tiny text detection)
+    - models/det/inference.yml
+    - models/rec/inference.onnx        (PP-OCRv6_tiny text recognition)
+    - models/rec/inference.yml
 
 
-2. Lunar (Solar / Chinese Lunar Calendar)
+2. ONNX Runtime
+----------------
+  Component : com.microsoft.onnxruntime:onnxruntime-android
+  Version   : 1.21.1
+  Copyright : (c) Microsoft Corporation
+  License   : MIT License
+  URL       : https://onnxruntime.ai
+
+
+3. OpenCV
+----------
+  Component : com.quickbirdstudios:opencv (OpenCV 4.5.3 Android build)
+  Version   : 4.5.3
+  Copyright : (c) OpenCV team (Intel Corporation, Willow Garage, Itseez, etc.)
+  License   : Apache License 2.0
+  URL       : https://opencv.org
+
+
+4. Lunar (Solar / Chinese Lunar Calendar)
 -----------------------------------------
   Component : cn.6tail:lunar
   Version   : 1.7.7
@@ -35,8 +55,8 @@ Each component retains its own copyright and license terms.
   URL       : https://github.com/6tail/lunar-java
 
 
-3. AndroidX Libraries
----------------------
+5. AndroidX Libraries
+----------------------
   Component : androidx.* (core-ktx, activity, lifecycle, navigation,
               compose, room, datastore, work, sqlite, test, etc.)
   Copyright : (c) The Android Open Source Project
@@ -44,7 +64,7 @@ Each component retains its own copyright and license terms.
   URL       : https://developer.android.com/jetpack
 
 
-4. Kotlin / Kotlin Coroutines / Serialization
+6. Kotlin / Kotlin Coroutines / Serialization
 -----------------------------------------------
   Component : org.jetbrains.kotlin, kotlinx-coroutines,
               kotlinx-serialization
@@ -53,7 +73,7 @@ Each component retains its own copyright and license terms.
   URL       : https://kotlinlang.org
 
 
-5. Compose Multiplatform / Material 3
+7. Compose Multiplatform / Material 3
 ---------------------------------------
   Component : androidx.compose.* (via androidx compose-bom)
   Copyright : (c) The Android Open Source Project
@@ -61,7 +81,7 @@ Each component retains its own copyright and license terms.
   URL       : https://developer.android.com/jetpack/compose
 
 
-6. Hilt (Dagger)
+8. Hilt (Dagger)
 -----------------
   Component : com.google.dagger:hilt-android
   Copyright : (c) The Dagger Authors / Google LLC
@@ -69,7 +89,7 @@ Each component retains its own copyright and license terms.
   URL       : https://dagger.dev
 
 
-7. Coil
+9. Coil
 --------
   Component : io.coil-kt.coil3:coil-compose
   Copyright : (c) Coil Contributors
@@ -77,7 +97,7 @@ Each component retains its own copyright and license terms.
   URL       : https://coil-kt.github.io/coil
 
 
-8. Test Dependencies
+10. Test Dependencies
 ---------------------
   Component : JUnit 4, androidx.test, Espresso, MockK, Turbine
   License   : JUnit 4 (EPL-1.0), AndroidX Test (Apache 2.0),
