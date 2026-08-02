@@ -14,3 +14,7 @@ app/build/
 .opencode/
 Thumbs.db
 *.hprof
+*.apk
+*.aab
+*.jks
+*.keystore

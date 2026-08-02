@@ -60,4 +60,4 @@ This privacy policy may be updated from time to time. Updated policies will be p
 
 If you have any privacy-related questions, please contact us via:
 
-- GitHub: https://github.com/Bailinana/PalmNote/issues
+- GitHub: https://github.com/PickGear/PalmNote/issues
