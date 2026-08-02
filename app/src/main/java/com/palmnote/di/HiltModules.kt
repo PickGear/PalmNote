@@ -204,7 +204,7 @@ object AppModule {
     @Provides
     @Singleton
     @JvmSuppressWildcards fun provideCachedCategoryConfigs(
-        categoryConfigRepository: com.palmnote.data.repository.CategoryConfigRepositoryImpl,
+        categoryConfigRepository: com.palmnote.domain.repository.CategoryConfigRepository,
         @ApplicationScope scope: CoroutineScope
     ): StateFlow<List<CategoryConfig>> =
         categoryConfigRepository.getAllCategories().stateIn(scope, SharingStarted.Eagerly, emptyList())
@@ -212,7 +212,7 @@ object AppModule {
     @Provides
     @Singleton
     @JvmSuppressWildcards fun provideCachedAccountBooks(
-        accountBookRepository: com.palmnote.data.repository.AccountBookRepositoryImpl,
+        accountBookRepository: com.palmnote.domain.repository.AccountBookRepository,
         @ApplicationScope scope: CoroutineScope
     ): StateFlow<List<AccountBook>> =
         accountBookRepository.getAllBooks().stateIn(scope, SharingStarted.Eagerly, emptyList())

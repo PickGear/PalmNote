@@ -14,6 +14,7 @@ import com.palmnote.data.db.AppDatabase
 import com.palmnote.data.db.entity.*
 import com.palmnote.data.datastore.PreferencesManager
 import com.palmnote.ui.theme.AppIcon
+import androidx.room.withTransaction
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
@@ -358,29 +359,29 @@ class CsvDataExporter(
                 val idMaps = mutableMapOf<Class<*>, MutableMap<Long, Long>>()
                 var count = 0
 
-                // Wrap all DB writes in a single transaction for atomicity
-                db.runInTransaction {
-                    kotlinx.coroutines.runBlocking {
-                        for ((filename, bytes) in zipEntries) {
-                            if (filename.startsWith("images/") || !filename.endsWith(".csv")) continue
-                            val rows = csvToRows(String(bytes, Charsets.UTF_8))
-                            if (rows.isEmpty()) continue
-                            for (row in rows) {
-                                val clazz = CLASS_BY_TYPE_NAME[row["实体类型"]] ?: continue
-                                val result = insertRow(row, clazz, pathMapping)
-                                if (result != null) {
-                                    val (oldId, newId) = result
-                                    if (oldId != newId) {
-                                        idMaps.getOrPut(clazz) { mutableMapOf() }[oldId] = newId
-                                    }
-                                    count++
+                // Wrap all DB writes in a single transaction for atomicity.
+                // 用 withTransaction（suspend 事务）包裹 suspend DAO 调用；
+                // 旧写法 runInTransaction { runBlocking { ... } } 会与 Room 事务执行器争用单线程而可能死锁。
+                db.withTransaction {
+                    for ((filename, bytes) in zipEntries) {
+                        if (filename.startsWith("images/") || !filename.endsWith(".csv")) continue
+                        val rows = csvToRows(String(bytes, Charsets.UTF_8))
+                        if (rows.isEmpty()) continue
+                        for (row in rows) {
+                            val clazz = CLASS_BY_TYPE_NAME[row["实体类型"]] ?: continue
+                            val result = insertRow(row, clazz, pathMapping)
+                            if (result != null) {
+                                val (oldId, newId) = result
+                                if (oldId != newId) {
+                                    idMaps.getOrPut(clazz) { mutableMapOf() }[oldId] = newId
                                 }
+                                count++
                             }
                         }
+                    }
 
-                        if (idMaps.isNotEmpty()) {
-                            updateCrossReferences(idMaps)
-                        }
+                    if (idMaps.isNotEmpty()) {
+                        updateCrossReferences(idMaps)
                     }
                 }
 

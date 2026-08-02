@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.palmnote.PalmNoteApp
 import com.palmnote.R
+import com.palmnote.domain.util.DateUtils
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.palmnote.ui.components.EmptyState
 import com.palmnote.ui.life.common.SwipeableItem
@@ -86,7 +87,7 @@ fun CountUpListScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Long) 
                         ?: (obj["startDate"] as? JsonPrimitive)?.content?.toLongOrNull()
                 } catch (_: Exception) { null }
                 val days = if (startDate != null) {
-                    ChronoUnit.DAYS.between(LocalDate.ofEpochDay(startDate / 86400000L), LocalDate.now())
+                    ChronoUnit.DAYS.between(DateUtils.millisToLocalDate(startDate), LocalDate.now())
                 } else 0L
                 val milestones = listOf(100L, 200L, 365L, 500L, 750L, 1000L)
                 val nextMilestone = milestones.firstOrNull { it > days }

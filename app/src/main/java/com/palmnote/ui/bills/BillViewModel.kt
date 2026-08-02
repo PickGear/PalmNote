@@ -449,7 +449,7 @@ class BillViewModel @Inject constructor(
     }
 
     fun updateForm(update: AddBillFormState.() -> AddBillFormState) {
-        _formState.value = _formState.value.update()
+        _formState.update { update(it) }
     }
 
     fun saveBill() {

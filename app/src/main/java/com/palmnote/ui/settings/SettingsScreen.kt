@@ -28,6 +28,8 @@ import com.palmnote.PalmNoteApp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.palmnote.ui.components.AppDialog
 import com.palmnote.ui.components.CompactTopAppBar
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import com.palmnote.R
 import com.palmnote.ui.theme.*
 import com.palmnote.ui.theme.AppIcon
@@ -213,21 +215,24 @@ fun SettingsScreen(
         var editAvatar by remember { mutableStateOf(state.profileAvatar) }
         var editAvatarPath by remember { mutableStateOf(state.profileAvatarPath) }
         val context = androidx.compose.ui.platform.LocalContext.current
+        val scope = rememberCoroutineScope()
         val imagePickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
             uri?.let {
-                try {
-                    val inputStream = context.contentResolver.openInputStream(it)
-                    val avatarDir = File(context.filesDir, "avatars")
-                    avatarDir.mkdirs()
-                    val destFile = File(avatarDir, "profile_avatar.jpg")
-                    inputStream?.use { input ->
-                        destFile.outputStream().use { output ->
-                            input.copyTo(output)
+                scope.launch(Dispatchers.IO) {
+                    try {
+                        val inputStream = context.contentResolver.openInputStream(it)
+                        val avatarDir = File(context.filesDir, "avatars")
+                        avatarDir.mkdirs()
+                        val destFile = File(avatarDir, "profile_avatar.jpg")
+                        inputStream?.use { input ->
+                            destFile.outputStream().use { output ->
+                                input.copyTo(output)
+                            }
                         }
-                    }
-                    editAvatarPath = destFile.absolutePath
-                    editAvatar = ""
-                } catch (e: Exception) { }
+                        editAvatarPath = destFile.absolutePath
+                        editAvatar = ""
+                    } catch (e: Exception) { }
+                }
             }
         }
 

@@ -8,7 +8,9 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.palmnote.data.db.AppDatabase
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 
 
@@ -48,7 +50,7 @@ class DataClearViewModel @Inject constructor(
     fun clearAll() { viewModelScope.launch { try { db.clearAllTables(); clearImagesDir() } catch (e: Exception) { Log.w("DataClear", "clearAll failed", e) } } }
 
     /** 清理文件存储中的图片孤儿文件（DB 已清，文件不再引用） */
-    private fun clearImagesDir() {
+    private suspend fun clearImagesDir() = withContext(Dispatchers.IO) {
         File(context.filesDir, "images").listFiles()?.forEach { it.delete() }
     }
 }

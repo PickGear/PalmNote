@@ -90,9 +90,12 @@ android {
     }
 
     baselineProfile {
-        automaticGenerationDuringBuild = true
+        // 关闭自动生成：已提交静态 baseline-prof.txt，本地 release 构建不再依赖模拟器。
+        // 需要更新 profile 时手动执行 generateBaselineProfile 任务。
+        automaticGenerationDuringBuild = false
     }
 
+    // 输出文件名：PalmNote-<version>.apk（当前未开启 configuration cache，保持内部 API 用法）
     android.applicationVariants.all {
         outputs.all {
             if (this is com.android.build.gradle.internal.api.BaseVariantOutputImpl) {
@@ -104,13 +107,15 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions {
-        jvmTarget = "17"
-        freeCompilerArgs += listOf(
-            "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api",
-            "-opt-in=androidx.compose.foundation.ExperimentalFoundationApi",
-            "-Xjvm-default=all"
-        )
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+            freeCompilerArgs.addAll(
+                "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api",
+                "-opt-in=androidx.compose.foundation.ExperimentalFoundationApi",
+                "-Xjvm-default=all"
+            )
+        }
     }
     buildFeatures {
         compose = true

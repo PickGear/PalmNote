@@ -139,9 +139,10 @@ class BillOcrParser {
             for (pat in DATE_PATTERNS) {
                 val m = pat.matcher(line)
                 if (m.find()) {
-                    val dateStr = m.group(1)!!
-                        .replace("年", "-").replace("月", "-").replace("日", "")
-                        .replace("/", "-").replace(".", "-")
+                    val dateStr = m.group(1)?.let {
+                        it.replace("年", "-").replace("月", "-").replace("日", "")
+                            .replace("/", "-").replace(".", "-")
+                    } ?: continue
                     try {
                         return java.time.LocalDate.parse(dateStr, java.time.format.DateTimeFormatter.ofPattern("yyyy-M-d")).atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
                     } catch (_: Exception) { }
@@ -152,7 +153,7 @@ class BillOcrParser {
             for (pat in LOOSE_DATE_PATTERNS) {
                 val m = pat.matcher(line)
                 if (m.find()) {
-                    val dateStr = m.group(1)!!.replace("/", "-").replace(".", "-")
+                    val dateStr = m.group(1)?.replace("/", "-")?.replace(".", "-") ?: continue
                     try {
                         return java.time.LocalDate.parse(dateStr, java.time.format.DateTimeFormatter.ofPattern("yyyy-M-d")).atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
                     } catch (_: Exception) { }

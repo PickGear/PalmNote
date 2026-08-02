@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.palmnote.PalmNoteApp
 import com.palmnote.R
+import com.palmnote.domain.util.DateUtils
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.palmnote.ui.components.AppDialog
 import com.palmnote.ui.components.EmptyState
@@ -85,10 +86,10 @@ fun AnniversaryListScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Lo
                         ?: (obj["target_date"] as? JsonPrimitive)?.content?.toLongOrNull()
                 } catch (_: Exception) { null }
                 val days = if (dateMillis != null) {
-                    ChronoUnit.DAYS.between(LocalDate.ofEpochDay(dateMillis / 86400000L), LocalDate.now())
+                    ChronoUnit.DAYS.between(DateUtils.millisToLocalDate(dateMillis), LocalDate.now())
                 } else 0L
                 val dateText = if (dateMillis != null) {
-                    LocalDate.ofEpochDay(dateMillis / 86400000L).format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                    DateUtils.millisToLocalDate(dateMillis).format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
                 } else ""
 
                 SwipeableItem(onDelete = { deleteTarget = item.id }) {
