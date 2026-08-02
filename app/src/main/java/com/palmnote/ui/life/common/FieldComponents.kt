@@ -216,7 +216,7 @@ private fun RatingInput(value: String, onValueChange: (String) -> Unit) {
                 if (i <= rating) Icons.Default.Star else Icons.Default.StarBorder,
                 null,
                 tint = if (i <= rating) Color(0xFFFFCA28) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f),
-                modifier = Modifier.size(32.dp).clickable(
+                modifier = Modifier.size(32.dp).minimumInteractiveComponentSize().clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null
                 ) { onValueChange(i.toString()) }
@@ -304,7 +304,7 @@ private fun ColorInput(value: String, onValueChange: (String) -> Unit) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             palette.take(9).forEach { hex ->
                 val c = hex.toComposeColor(Color.Gray)
-                Box(modifier = Modifier.size(32.dp).clip(CircleShape).background(c).border(if (value == hex) 2.dp else 0.dp, if (value == hex) MaterialTheme.colorScheme.primary else Color.Transparent, CircleShape).clickable(
+                Box(modifier = Modifier.size(32.dp).minimumInteractiveComponentSize().clip(CircleShape).background(c).border(if (value == hex) 2.dp else 0.dp, if (value == hex) MaterialTheme.colorScheme.primary else Color.Transparent, CircleShape).clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null
                 ) { onValueChange(hex) })
@@ -314,7 +314,7 @@ private fun ColorInput(value: String, onValueChange: (String) -> Unit) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             palette.drop(9).forEach { hex ->
                 val c = hex.toComposeColor(Color.Gray)
-                Box(modifier = Modifier.size(32.dp).clip(CircleShape).background(c).border(if (value == hex) 2.dp else 0.dp, if (value == hex) MaterialTheme.colorScheme.primary else Color.Transparent, CircleShape).clickable(
+                Box(modifier = Modifier.size(32.dp).minimumInteractiveComponentSize().clip(CircleShape).background(c).border(if (value == hex) 2.dp else 0.dp, if (value == hex) MaterialTheme.colorScheme.primary else Color.Transparent, CircleShape).clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null
                 ) { onValueChange(hex) })

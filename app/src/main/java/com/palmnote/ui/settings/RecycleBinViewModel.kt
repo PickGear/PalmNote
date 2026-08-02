@@ -1,4 +1,6 @@
-﻿package com.palmnote.ui.settings
+package com.palmnote.ui.settings
+import javax.inject.Inject
+import dagger.hilt.android.lifecycle.HiltViewModel
 
 import androidx.compose.runtime.Stable
 import androidx.lifecycle.ViewModel
@@ -22,7 +24,8 @@ data class RecycleBinState(
     val deletedMoments: List<Moment> = emptyList()
 )
 
-class RecycleBinViewModel(
+@HiltViewModel
+class RecycleBinViewModel @Inject constructor(
     private val assetRepository: AssetRepository,
     private val billRepository: BillRepository,
     private val goalRepository: GoalRepository,

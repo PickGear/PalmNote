@@ -28,10 +28,10 @@ interface WalletDao {
     fun getDefaultWalletFlow(): Flow<Wallet?>
 
     @Query("SELECT SUM(currentBalance) FROM wallets WHERE isDeleted = 0 AND isEnabled = 1 AND type != 'CREDIT_CARD'")
-    fun getTotalBalance(): Flow<Double?>
+    fun getTotalBalance(): Flow<Long?>
 
     @Query("SELECT SUM(currentBalance) FROM wallets WHERE isDeleted = 0 AND isEnabled = 1 AND type = 'CREDIT_CARD'")
-    fun getTotalCreditCardBalance(): Flow<Double?>
+    fun getTotalCreditCardBalance(): Flow<Long?>
 
     @Query("SELECT COUNT(*) FROM wallets WHERE isDeleted = 0 AND isEnabled = 1")
     fun getEnabledWalletCount(): Flow<Int>
@@ -43,10 +43,10 @@ interface WalletDao {
     suspend fun update(wallet: Wallet)
 
     @Query("UPDATE wallets SET currentBalance = :balance, updatedAt = :now WHERE id = :id")
-    suspend fun updateBalance(id: Long, balance: Double, now: Long = System.currentTimeMillis())
+    suspend fun updateBalance(id: Long, balance: Long, now: Long = System.currentTimeMillis())
 
     @Query("UPDATE wallets SET currentBalance = currentBalance + :amount, updatedAt = :now WHERE id = :id")
-    suspend fun adjustBalance(id: Long, amount: Double, now: Long = System.currentTimeMillis())
+    suspend fun adjustBalance(id: Long, amount: Long, now: Long = System.currentTimeMillis())
 
     @Query("UPDATE wallets SET isDefault = 1, updatedAt = :now WHERE id = :id")
     suspend fun setDefault(id: Long, now: Long = System.currentTimeMillis())

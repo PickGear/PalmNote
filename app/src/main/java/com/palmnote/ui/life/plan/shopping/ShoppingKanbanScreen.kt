@@ -1,4 +1,4 @@
-﻿package com.palmnote.ui.life.plan.shopping
+package com.palmnote.ui.life.plan.shopping
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -31,7 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.palmnote.PalmNoteApp
 import com.palmnote.R
-import com.palmnote.ui.components.simpleViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.palmnote.ui.components.AppDialog
 import com.palmnote.ui.components.EmptyState
 import com.palmnote.ui.components.SecondaryTopAppBar
@@ -44,7 +44,7 @@ import kotlinx.serialization.json.JsonPrimitive
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ShoppingKanbanScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Long) -> Unit, onCreateClick: () -> Unit = {}, viewModel: ShoppingPlanViewModel = simpleViewModel { PalmNoteApp.container.shoppingPlanViewModel() }) {
+fun ShoppingKanbanScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Long) -> Unit, onCreateClick: () -> Unit = {}, viewModel: ShoppingPlanViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(templateId) { viewModel.load(templateId) }
 
@@ -58,7 +58,7 @@ fun ShoppingKanbanScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Lon
             onDismissRequest = { deleteTarget = null },
             title = { Text(stringResource(R.string.life_confirm), fontWeight = FontWeight.Bold) },
             text = { Text(stringResource(R.string.life_confirm_delete_shopping)) },
-            confirmButton = { TextButton(onClick = { viewModel.deleteItem(deleteTarget!!); deleteTarget = null }) { Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error) } },
+            confirmButton = { TextButton(onClick = { deleteTarget?.let { viewModel.deleteItem(it) }; deleteTarget = null }) { Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error) } },
             dismissButton = { TextButton(onClick = { deleteTarget = null }) { Text(stringResource(R.string.cancel)) } }
         )
     }

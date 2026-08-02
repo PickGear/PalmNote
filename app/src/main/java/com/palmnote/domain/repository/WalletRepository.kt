@@ -11,16 +11,19 @@ interface WalletRepository {
     fun getWalletsByType(type: String): Flow<List<Wallet>>
     suspend fun getDefaultWallet(): Wallet?
     fun getDefaultWalletFlow(): Flow<Wallet?>
-    fun getTotalBalance(): Flow<Double?>
-    fun getTotalCreditCardBalance(): Flow<Double?>
+    fun getTotalBalance(): Flow<Long?>
+    fun getTotalCreditCardBalance(): Flow<Long?>
     fun getEnabledWalletCount(): Flow<Int>
     suspend fun insert(wallet: Wallet): Long
     suspend fun update(wallet: Wallet)
-    suspend fun updateBalance(id: Long, balance: Double)
-    suspend fun adjustBalance(id: Long, amount: Double)
+    suspend fun updateBalance(id: Long, balance: Long)
+    suspend fun adjustBalance(id: Long, amount: Long)
     suspend fun setDefault(id: Long)
     suspend fun setEnabled(id: Long, enabled: Boolean)
     suspend fun softDelete(id: Long)
     suspend fun hardDelete(id: Long)
+
+    /** 事务：软删关联账单 + 软删钱包 */
+    suspend fun deleteWalletWithData(walletId: Long)
     suspend fun initDefaultWallets()
 }

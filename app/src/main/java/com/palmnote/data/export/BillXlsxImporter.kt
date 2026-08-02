@@ -3,6 +3,7 @@
 import android.content.Context
 import android.net.Uri
 import android.util.Log
+import com.palmnote.domain.model.Money
 import com.palmnote.domain.util.DateUtils
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserFactory
@@ -88,8 +89,8 @@ class BillXlsxImporter {
                 val timeStr = cols.getOrNull(dateIdx)?.trim()?.replace("T", " ")?.replace("Z", "") ?: return@mapNotNull null
                 if (timeStr.isBlank()) return@mapNotNull null
                 val amountStr = amountIdx?.let { cols.getOrNull(it)?.trim() } ?: return@mapNotNull null
-                val cleanAmount = amountStr.replace(",", "").replace("¥", "").replace("￥", "").replace(" ", "")
-                val amount = cleanAmount.toDoubleOrNull() ?: return@mapNotNull null
+                val cleanAmount = amountStr.replace(",", "").replace("¥", "").replace("￥", "").replace(" ", "").replace("+", "").replace("-", "")
+                val amount = Money.parse(cleanAmount)?.cents ?: return@mapNotNull null
                 val status = statusIdx?.let { cols.getOrNull(it)?.trim() } ?: ""
                 if (status.isNotEmpty() && status !in listOf("已支付", "支付成功", "已到账", "已收钱", "对方已收钱")) return@mapNotNull null
                 val merchant = merchantIdx?.let { cols.getOrNull(it)?.trim() } ?: ""

@@ -14,9 +14,9 @@ interface AssetRepository {
     fun searchAssets(query: String): Flow<List<Asset>>
     fun getTotalAssetCount(): Flow<Int>
     fun getAssetCountByStatus(status: String): Flow<Int>
-    fun getTotalAssetValue(): Flow<Double?>
-    fun getHeldAssetValue(): Flow<Double?>
-    fun getTotalSoldValue(): Flow<Double?>
+    fun getTotalAssetValue(): Flow<Long?>
+    fun getHeldAssetValue(): Flow<Long?>
+    fun getTotalSoldValue(): Flow<Long?>
     fun getCategoryDistribution(): Flow<List<CategoryCount>>
     fun getDeletedAssets(): Flow<List<Asset>>
     fun getAssetsWithValidWarranty(): Flow<List<Asset>>
@@ -31,7 +31,7 @@ interface AssetRepository {
     suspend fun awayAsset(id: Long, tags: String, reason: String)
     suspend fun retireAsset(id: Long, reason: String)
     suspend fun markAssetLost(id: Long, reason: String)
-    suspend fun sellAsset(id: Long, soldPrice: Double, soldChannel: String, soldToWhom: String)
+    suspend fun sellAsset(id: Long, soldPrice: Long, soldChannel: String, soldToWhom: String)
     suspend fun reactivateAsset(id: Long)
     suspend fun completeMaintenance(id: Long, date: Long, nextDate: Long?, notes: String)
     suspend fun linkBill(id: Long, billId: Long)

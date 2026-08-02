@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -31,7 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.palmnote.PalmNoteApp
-import com.palmnote.ui.components.simpleViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.palmnote.R
 import com.palmnote.data.db.entity.FocusRecord
 import com.palmnote.ui.components.AppDialog
@@ -45,18 +46,18 @@ import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FocusTimerScreen(onBack: () -> Unit, viewModel: FocusViewModel = simpleViewModel { PalmNoteApp.container.focusViewModel() }) {
+fun FocusTimerScreen(onBack: () -> Unit, viewModel: FocusViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val todayRecords by viewModel.todayRecords.collectAsStateWithLifecycle(initialValue = emptyList())
     LaunchedEffect(Unit) { viewModel.load() }
     val focusColor = LifeFocus
 
-    var selectedMinutes by remember { mutableStateOf(25) }
-    var remainingSeconds by remember { mutableStateOf(25 * 60) }
-    var isRunning by remember { mutableStateOf(false) }
-    var startTimeMillis by remember { mutableStateOf(0L) }
-    var taskLabel by remember { mutableStateOf("") }
-    var showGiveUpDialog by remember { mutableStateOf(false) }
+    var selectedMinutes by rememberSaveable { mutableStateOf(25) }
+    var remainingSeconds by rememberSaveable { mutableStateOf(25 * 60) }
+    var isRunning by rememberSaveable { mutableStateOf(false) }
+    var startTimeMillis by rememberSaveable { mutableStateOf(0L) }
+    var taskLabel by rememberSaveable { mutableStateOf("") }
+    var showGiveUpDialog by rememberSaveable { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 

@@ -1,4 +1,5 @@
-﻿package com.palmnote.ui.bills
+package com.palmnote.ui.bills
+import androidx.hilt.navigation.compose.hiltViewModel
 
 import androidx.compose.animation.*
 import androidx.activity.compose.BackHandler
@@ -46,6 +47,7 @@ import com.palmnote.R
 import com.palmnote.data.db.entity.Bill
 import com.palmnote.data.db.entity.getDisplayName
 import com.palmnote.data.db.entity.getDisplayDescription
+import com.palmnote.domain.model.toMoney
 import com.palmnote.domain.util.CurrencyUtils
 import com.palmnote.domain.util.DateUtils
 import com.palmnote.ui.components.*
@@ -60,7 +62,7 @@ fun BillScreen(
     onNavigateToReport: (Long, String) -> Unit = { _, _ -> },
     onNavigateToImportCsv: () -> Unit = {},
     onNavigateToAccountBook: () -> Unit = {},
-    viewModel: BillViewModel = simpleViewModel { PalmNoteApp.container.billViewModel() }
+    viewModel: BillViewModel = hiltViewModel()
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -68,7 +70,7 @@ fun BillScreen(
     val customIncomeCategories by viewModel.customIncomeCategories.collectAsStateWithLifecycle()
     val allCustomExpenseCategories by viewModel.allCustomExpenseCategories.collectAsStateWithLifecycle()
     val allCustomIncomeCategories by viewModel.allCustomIncomeCategories.collectAsStateWithLifecycle()
-    val billPresetOverrides by PalmNoteApp.container.preferencesManager.presetCategoryOverrides
+    val billPresetOverrides by PalmNoteApp.instance.preferencesManager.presetCategoryOverrides
         .collectAsStateWithLifecycle(initialValue = emptyMap())
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     
@@ -409,14 +411,14 @@ fun BillScreen(
                                     Spacer(modifier = Modifier.weight(1f))
                                     if (dayIncome > 0) {
                                         Text(
-                                            text = stringResource(R.string.bill_income_short, CurrencyUtils.formatCurrency(dayIncome)),
+                                            text = stringResource(R.string.bill_income_short, CurrencyUtils.formatCurrency(dayIncome.toMoney())),
                                             style = MaterialTheme.typography.labelSmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
                                     if (dayExpense > 0) {
                                         Text(
-                                            text = stringResource(R.string.bill_expense_short, CurrencyUtils.formatCurrency(dayExpense)),
+                                            text = stringResource(R.string.bill_expense_short, CurrencyUtils.formatCurrency(dayExpense.toMoney())),
                                             style = MaterialTheme.typography.labelSmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
@@ -573,7 +575,7 @@ fun BillListItem(bill: Bill, wallets: Map<Long, String> = emptyMap(), onDetail: 
                     }
                 }
                 Column(horizontalAlignment = Alignment.End, modifier = Modifier.width(100.dp)) {
-                    Text(text = "${if (bill.type == "EXPENSE") "-" else if (bill.type == "TRANSFER") "" else "+"}${CurrencyUtils.formatCompact(context, bill.amount)}", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = if (bill.type == "EXPENSE") ExpenseRed else if (bill.type == "TRANSFER") InfoBlue else StatusActive, textAlign = TextAlign.End, modifier = Modifier.fillMaxWidth())
+                    Text(text = "${if (bill.type == "EXPENSE") "-" else if (bill.type == "TRANSFER") "" else "+"}${CurrencyUtils.formatCompact(context, bill.amount.toMoney())}", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = if (bill.type == "EXPENSE") ExpenseRed else if (bill.type == "TRANSFER") InfoBlue else StatusActive, textAlign = TextAlign.End, modifier = Modifier.fillMaxWidth())
                     bill.walletId?.let { walletId ->
                         wallets[walletId]?.let { walletName ->
                             Text(walletName, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 2.dp))

@@ -1,9 +1,8 @@
 package com.palmnote.domain.util
 
-import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.util.Calendar
+import java.util.Locale
 
 class DateUtilsTest {
 
@@ -29,10 +28,16 @@ class DateUtilsTest {
 
     @Test
     fun `formatDisplayYearDate returns year month day format`() {
-        val timestamp = System.currentTimeMillis()
-        val result = DateUtils.formatDisplayYearDate(timestamp)
-        assertTrue(result.contains("年"))
-        assertTrue(result.contains("月"))
-        assertTrue(result.contains("日"))
+        val originalLocale = Locale.getDefault()
+        try {
+            Locale.setDefault(Locale.SIMPLIFIED_CHINESE)
+            val timestamp = System.currentTimeMillis()
+            val result = DateUtils.formatDisplayYearDate(timestamp)
+            assertTrue(result.contains("年"))
+            assertTrue(result.contains("月"))
+            assertTrue(result.contains("日"))
+        } finally {
+            Locale.setDefault(originalLocale)
+        }
     }
 }

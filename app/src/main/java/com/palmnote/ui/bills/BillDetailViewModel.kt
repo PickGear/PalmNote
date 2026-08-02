@@ -1,4 +1,6 @@
-﻿package com.palmnote.ui.bills
+package com.palmnote.ui.bills
+import javax.inject.Inject
+import dagger.hilt.android.lifecycle.HiltViewModel
 
 import androidx.compose.runtime.Stable
 import androidx.lifecycle.ViewModel
@@ -14,7 +16,8 @@ import kotlinx.coroutines.launch
 @Stable
 data class BillDetailState(val bill: Bill? = null)
 
-class BillDetailViewModel(
+@HiltViewModel
+class BillDetailViewModel @Inject constructor(
     private val billRepository: BillRepository
 ) : ViewModel() {
     private val _state = MutableStateFlow(BillDetailState())

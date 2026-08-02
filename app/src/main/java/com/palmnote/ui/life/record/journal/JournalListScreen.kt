@@ -21,7 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.palmnote.PalmNoteApp
 import com.palmnote.R
-import com.palmnote.ui.components.simpleViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.palmnote.data.db.entity.LifeMoment
 import com.palmnote.ui.components.AppDialog
 import com.palmnote.ui.components.SecondaryTopAppBar
@@ -36,7 +36,7 @@ import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun JournalListScreen(onBack: () -> Unit, onItemClick: (Long) -> Unit, viewModel: JournalViewModel = simpleViewModel { PalmNoteApp.container.journalViewModel() }) {
+fun JournalListScreen(onBack: () -> Unit, onItemClick: (Long) -> Unit, viewModel: JournalViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) { viewModel.load() }
     var showSheet by remember { mutableStateOf(false) }
@@ -48,7 +48,7 @@ fun JournalListScreen(onBack: () -> Unit, onItemClick: (Long) -> Unit, viewModel
             onDismissRequest = { deleteTarget = null },
             title = { Text(stringResource(R.string.confirm), fontWeight = FontWeight.Bold) },
             text = { Text(stringResource(R.string.life_confirm_delete_record)) },
-            confirmButton = { TextButton(onClick = { viewModel.deleteMoment(deleteTarget!!.id); deleteTarget = null }) { Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error) } },
+            confirmButton = { TextButton(onClick = { deleteTarget?.let { viewModel.deleteMoment(it.id) }; deleteTarget = null }) { Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error) } },
             dismissButton = { TextButton(onClick = { deleteTarget = null }) { Text(stringResource(R.string.cancel)) } }
         )
     }
@@ -132,7 +132,7 @@ private fun JournalEntrySheet(
                 Text(stringResource(R.string.life_mood), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 listOf("HAPPY" to "\uD83D\uDE04", "GOOD" to "\uD83D\uDE42", "NORMAL" to "\uD83D\uDE14", "SAD" to "\uD83D\uDE22", "ANGRY" to "\uD83D\uDE21").forEach { (key, emoji) ->
                     Surface(
-                        modifier = Modifier.size(36.dp).clickable { mood = key },
+                        modifier = Modifier.size(36.dp).minimumInteractiveComponentSize().clickable { mood = key },
                         shape = RoundedCornerShape(18.dp),
                         color = if (mood == key) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.background,
                         border = if (mood == key) androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary) else null

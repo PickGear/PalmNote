@@ -28,11 +28,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.palmnote.PalmNoteApp
-import com.palmnote.ui.components.simpleViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.palmnote.R
 import com.palmnote.data.db.dao.CategoryTotal
 import com.palmnote.data.db.dao.DailySummary
 import com.palmnote.data.db.dao.MonthTotal
+import com.palmnote.domain.model.Money
+import com.palmnote.domain.model.toMoney
 import com.palmnote.domain.util.CurrencyUtils
 import com.palmnote.domain.util.DateUtils
 import com.palmnote.ui.components.*
@@ -47,14 +49,14 @@ fun ReportScreen(
     onNavigateToAddBill: () -> Unit = {},
     selectedBookId: Long = -1L,
     bookName: String? = null,
-    viewModel: ReportViewModel = simpleViewModel { PalmNoteApp.container.billReportViewModel() }
+    viewModel: ReportViewModel = hiltViewModel()
 ) {
     val resolvedBookName = bookName ?: stringResource(R.string.report_all_books)
     LaunchedEffect(selectedBookId) {
         viewModel.setSelectedBookId(selectedBookId)
     }
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val reportCustomCfg by PalmNoteApp.container.cachedCategoryConfigs
+    val reportCustomCfg by PalmNoteApp.instance.cachedCategoryConfigs
         .collectAsStateWithLifecycle(initialValue = emptyList())
     val reportCustomExpense = remember(reportCustomCfg) {
         reportCustomCfg.filter { it.type == "BILL_EXPENSE" && it.isEnabled }
@@ -252,7 +254,7 @@ private fun SummarySection(state: ReportState) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
-                text = "${CurrencyUtils.formatCompact(total)}",
+                text = "${CurrencyUtils.formatCompact(total.toMoney())}",
                 style = MaterialTheme.typography.headlineMedium.copy(
                     fontWeight = FontWeight.Bold,
                     fontSize = 28.sp
@@ -266,7 +268,7 @@ private fun SummarySection(state: ReportState) {
             horizontalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             Text(
-                text = stringResource(R.string.report_daily_avg, CurrencyUtils.formatCompact(state.data.avgDaily)),
+                text = stringResource(R.string.report_daily_avg, CurrencyUtils.formatCompact(Money(state.data.avgDaily.toLong()))),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -322,7 +324,7 @@ private fun DonutChartSection(state: ReportState, onNavigateToAddBill: () -> Uni
 
                 var startAngle = -90f
                 displayCategories.forEach { cat ->
-                    val sweepAngle = (cat.total / total * availableAngle).toFloat()
+                    val sweepAngle = if (total > 0) (cat.total.toDouble() / total * availableAngle).toFloat() else 0f
                     val isSelected = selectedCategory == cat.category
                     val offset = if (isSelected) 8f else 0f
                     val midAngle = Math.toRadians((startAngle + sweepAngle / 2).toDouble())
@@ -349,7 +351,7 @@ private fun DonutChartSection(state: ReportState, onNavigateToAddBill: () -> Uni
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "${CurrencyUtils.formatCompact(total)}",
+                    text = "${CurrencyUtils.formatCompact(total.toMoney())}",
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                 )
                 Text(
@@ -364,7 +366,7 @@ private fun DonutChartSection(state: ReportState, onNavigateToAddBill: () -> Uni
 
         Column(modifier = Modifier.weight(1f)) {
             displayCategories.forEach { cat ->
-                val fraction = (cat.total / total * 100).toInt()
+                val fraction = if (total > 0) (cat.total.toDouble() / total * 100).toInt() else 0
                 val color = getCatColor(cat.category, isExpense, if (isExpense) customExpense else customIncome)
                 Row(
                     modifier = Modifier
@@ -472,9 +474,9 @@ private fun CategoryRankingSection(state: ReportState,
 }
 
 @Composable
-private fun CategoryRankingItem(cat: CategoryTotal, total: Double, isExpense: Boolean,
+private fun CategoryRankingItem(cat: CategoryTotal, total: Long, isExpense: Boolean,
     customItems: List<CategoryItem> = emptyList()) {
-    val fraction = if (total > 0) (cat.total / total).toFloat() else 0f
+    val fraction = if (total > 0) (cat.total.toFloat() / total).toFloat() else 0f
     val color = getCatColor(cat.category, isExpense, customItems)
     val categoryItem = (if (isExpense) expenseCategoryItems else incomeCategoryItems).find { it.name == cat.category }
 
@@ -518,7 +520,7 @@ private fun CategoryRankingItem(cat: CategoryTotal, total: Double, isExpense: Bo
                     )
                 }
                 Text(
-                    text = "${CurrencyUtils.formatCompact(cat.total)}",
+                    text = "${CurrencyUtils.formatCompact(cat.total.toMoney())}",
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Medium
                 )
@@ -611,10 +613,30 @@ private fun WeeklyBarChart(dailySummary: List<DailySummary>, isExpense: Boolean)
         }
         val cal = java.util.Calendar.getInstance()
 
-        dailySummary.takeLast(7).forEachIndexed { index, day ->
-            val value = (if (isExpense) day.expense else day.income).toFloat()
-            val barHeight = (value / maxValue) * chartH
-            val x = leftPad + gap + index * (barWidth + gap)
+        // 按星期槽位放置柱子（0=周一 … 6=周日），无记录的天留空
+        val slotValues = Array<Pair<Int, Long>?>(7) { null }
+        dailySummary.takeLast(7).forEach { day ->
+            cal.timeInMillis = day.date
+            val weekday = cal.get(java.util.Calendar.DAY_OF_WEEK)
+            val slot = when (weekday) {
+                java.util.Calendar.MONDAY -> 0
+                java.util.Calendar.TUESDAY -> 1
+                java.util.Calendar.WEDNESDAY -> 2
+                java.util.Calendar.THURSDAY -> 3
+                java.util.Calendar.FRIDAY -> 4
+                java.util.Calendar.SATURDAY -> 5
+                java.util.Calendar.SUNDAY -> 6
+                else -> -1
+            }
+            if (slot in 0..6) {
+                slotValues[slot] = slot to (if (isExpense) day.expense else day.income)
+            }
+        }
+
+        slotValues.forEachIndexed { slot, valueAndWeekday ->
+            val value = valueAndWeekday?.second ?: return@forEachIndexed
+            val barHeight = (value.toFloat() / maxValue) * chartH
+            val x = leftPad + gap + slot * (barWidth + gap)
             val y = size.height - bottomPad - barHeight
 
             drawRoundRect(
@@ -624,21 +646,9 @@ private fun WeeklyBarChart(dailySummary: List<DailySummary>, isExpense: Boolean)
                 cornerRadius = CornerRadius(4.dp.toPx(), 4.dp.toPx())
             )
 
-            cal.timeInMillis = day.date
-            val dayOfWeek = cal.get(java.util.Calendar.DAY_OF_WEEK)
-            val labelIndex = when (dayOfWeek) {
-                java.util.Calendar.MONDAY -> 0
-                java.util.Calendar.TUESDAY -> 1
-                java.util.Calendar.WEDNESDAY -> 2
-                java.util.Calendar.THURSDAY -> 3
-                java.util.Calendar.FRIDAY -> 4
-                java.util.Calendar.SATURDAY -> 5
-                java.util.Calendar.SUNDAY -> 6
-                else -> 0
-            }
-            if (labelIndex < weekdays.size) {
+            if (slot < weekdays.size) {
                 drawContext.canvas.nativeCanvas.drawText(
-                    weekdays[labelIndex],
+                    weekdays[slot],
                     x + barWidth / 2,
                     size.height - 4.dp.toPx(),
                     textPaint
@@ -656,6 +666,9 @@ private fun MonthlyLineChart(dailySummary: List<DailySummary>, isExpense: Boolea
         return
     }
 
+    val monthRef = DateUtils.millisToLocalDate(dailySummary.first().date)
+    val daysInMonth = monthRef.lengthOfMonth()
+    val byDay = dailySummary.associateBy { DateUtils.millisToLocalDate(it.date).dayOfMonth }
     val maxValue = dailySummary.maxOf { if (isExpense) it.expense else it.income }.toFloat().coerceAtLeast(1f)
 
     Canvas(
@@ -678,10 +691,11 @@ private fun MonthlyLineChart(dailySummary: List<DailySummary>, isExpense: Boolea
             )
         }
 
-        val points = dailySummary.mapIndexed { index, day ->
-            val value = (if (isExpense) day.expense else day.income).toFloat()
-            val x = leftPad + chartW * index / (dailySummary.size - 1).coerceAtLeast(1)
-            val y = size.height - bottomPad - (value / maxValue) * chartH
+        // 按自然日铺满整月，无记录的天补 0，避免折线被压缩
+        val points = (1..daysInMonth).map { day ->
+            val value = if (isExpense) byDay[day]?.expense ?: 0 else byDay[day]?.income ?: 0
+            val x = leftPad + chartW * (day - 1) / (daysInMonth - 1).coerceAtLeast(1)
+            val y = size.height - bottomPad - (value.toFloat() / maxValue) * chartH
             Offset(x, y)
         }
 

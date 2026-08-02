@@ -5,7 +5,9 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
+import com.palmnote.R
 import com.palmnote.ui.theme.Spacing
 
 @Composable
@@ -22,7 +24,7 @@ fun MoneyInputComponent(
         modifier = modifier.fillMaxWidth(),
         singleLine = true,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-        prefix = { Text("¥") },
+        prefix = { Text(stringResource(R.string.currency_symbol)) },
         placeholder = { Text("0.00") }
     )
 }

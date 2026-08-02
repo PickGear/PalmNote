@@ -25,7 +25,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.palmnote.PalmNoteApp
-import com.palmnote.ui.components.simpleViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.palmnote.ui.components.AppDialog
 import com.palmnote.ui.components.CompactTopAppBar
 import com.palmnote.R
@@ -90,8 +90,9 @@ fun SettingsScreen(
     onNavigateToManageCategory: () -> Unit = {},
     onNavigateToDataStorage: () -> Unit = {},
     onNavigateToAppLock: () -> Unit = {},
+    onNavigateToVault: () -> Unit = {},
     onNavigateToAbout: () -> Unit = {},
-    viewModel: SettingsViewModel = simpleViewModel { PalmNoteApp.container.settingsViewModel() }
+    viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var showProfileEdit by remember { mutableStateOf(false) }
@@ -186,6 +187,14 @@ fun SettingsScreen(
                         SettingsRowItem(icon = Icons.Outlined.Storage, title = stringResource(R.string.settings_data), subtitle = stringResource(R.string.settings_data_subtitle), tint = LifeRecord, onClick = onNavigateToDataStorage)
                         HorizontalDivider(modifier = Modifier.padding(horizontal = 56.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                         SettingsRowItem(icon = Icons.Outlined.Lock, title = stringResource(R.string.settings_app_lock), subtitle = stringResource(R.string.settings_app_lock_subtitle), tint = ModuleSettings, onClick = onNavigateToAppLock)
+                        HorizontalDivider(modifier = Modifier.padding(horizontal = 56.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                        SettingsRowItem(
+                            icon = Icons.Outlined.Key,
+                            title = stringResource(R.string.settings_vault),
+                            subtitle = stringResource(R.string.settings_vault_subtitle),
+                            tint = vaultTint(),
+                            onClick = onNavigateToVault
+                        )
                         HorizontalDivider(modifier = Modifier.padding(horizontal = 56.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                         SettingsRowItem(icon = Icons.Outlined.Info, title = stringResource(R.string.settings_about_app), subtitle = stringResource(R.string.settings_about_version), tint = PrimaryGreenLight, onClick = onNavigateToAbout)
                     }

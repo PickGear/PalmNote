@@ -2,11 +2,12 @@ package com.palmnote.ui.settings
 
 import app.cash.turbine.test
 import com.palmnote.data.db.entity.Wallet
-import com.palmnote.data.repository.WalletRepository
+import com.palmnote.domain.repository.WalletRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
@@ -17,7 +18,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 
-@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+@OptIn(ExperimentalCoroutinesApi::class)
 class WalletViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
@@ -35,6 +36,8 @@ class WalletViewModelTest {
         Dispatchers.resetMain()
     }
 
+    private fun createViewModel(): WalletViewModel = WalletViewModel(walletRepository)
+
     @Test
     fun `wallets exposes repository data`() = runTest {
         val wallets = listOf(
@@ -44,7 +47,7 @@ class WalletViewModelTest {
         coEvery { walletRepository.getAllWallets() } returns MutableStateFlow(wallets)
         coEvery { walletRepository.getTotalBalance() } returns MutableStateFlow(null)
 
-        viewModel = WalletViewModel(walletRepository)
+        viewModel = createViewModel()
 
         viewModel.wallets.test {
             assertEquals(emptyList<Wallet>(), awaitItem())
@@ -60,7 +63,7 @@ class WalletViewModelTest {
         coEvery { walletRepository.getAllWallets() } returns walletFlow
         coEvery { walletRepository.getTotalBalance() } returns MutableStateFlow(null)
 
-        viewModel = WalletViewModel(walletRepository)
+        viewModel = createViewModel()
 
         viewModel.wallets.test {
             assertEquals(emptyList<Wallet>(), awaitItem())
@@ -75,14 +78,14 @@ class WalletViewModelTest {
     @Test
     fun `totalBalance exposes repository data`() = runTest {
         coEvery { walletRepository.getAllWallets() } returns MutableStateFlow(emptyList())
-        coEvery { walletRepository.getTotalBalance() } returns MutableStateFlow(2500.0)
+        coEvery { walletRepository.getTotalBalance() } returns MutableStateFlow(250000L)
 
-        viewModel = WalletViewModel(walletRepository)
+        viewModel = createViewModel()
 
         viewModel.totalBalance.test {
             assertEquals(null, awaitItem())
             val balance = awaitItem()
-            assertEquals(2500.0, balance!!, 0.001)
+            assertEquals(250000L, balance)
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -92,7 +95,7 @@ class WalletViewModelTest {
         coEvery { walletRepository.getAllWallets() } returns MutableStateFlow(emptyList())
         coEvery { walletRepository.getTotalBalance() } returns MutableStateFlow(null)
 
-        viewModel = WalletViewModel(walletRepository)
+        viewModel = createViewModel()
 
         val wallet = Wallet(name = "支付宝", type = "E_WALLET")
         viewModel.addWallet(wallet)
@@ -106,7 +109,7 @@ class WalletViewModelTest {
         coEvery { walletRepository.getAllWallets() } returns MutableStateFlow(emptyList())
         coEvery { walletRepository.getTotalBalance() } returns MutableStateFlow(null)
 
-        viewModel = WalletViewModel(walletRepository)
+        viewModel = createViewModel()
 
         viewModel.deleteWallet(1L)
         testDispatcher.scheduler.advanceUntilIdle()
@@ -119,7 +122,7 @@ class WalletViewModelTest {
         coEvery { walletRepository.getAllWallets() } returns MutableStateFlow(emptyList())
         coEvery { walletRepository.getTotalBalance() } returns MutableStateFlow(null)
 
-        viewModel = WalletViewModel(walletRepository)
+        viewModel = createViewModel()
 
         viewModel.setDefault(1L)
         testDispatcher.scheduler.advanceUntilIdle()
@@ -132,7 +135,7 @@ class WalletViewModelTest {
         coEvery { walletRepository.getAllWallets() } returns MutableStateFlow(emptyList())
         coEvery { walletRepository.getTotalBalance() } returns MutableStateFlow(null)
 
-        viewModel = WalletViewModel(walletRepository)
+        viewModel = createViewModel()
 
         val wallet = Wallet(id = 1, name = "现金", type = "CASH")
         viewModel.updateWallet(wallet)

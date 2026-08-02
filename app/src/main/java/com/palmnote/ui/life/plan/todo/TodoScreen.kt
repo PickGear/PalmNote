@@ -1,4 +1,4 @@
-﻿package com.palmnote.ui.life.plan.todo
+package com.palmnote.ui.life.plan.todo
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -29,7 +29,7 @@ import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.palmnote.PalmNoteApp
-import com.palmnote.ui.components.simpleViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.palmnote.R
 import com.palmnote.data.db.entity.LifeItem
 import com.palmnote.ui.components.AppDialog
@@ -47,7 +47,7 @@ fun TodoScreen(
     onBack: () -> Unit,
     onItemClick: (Long) -> Unit,
     onCreateClick: () -> Unit = {},
-    viewModel: TodoViewModel = simpleViewModel { PalmNoteApp.container.todoViewModel() }
+    viewModel: TodoViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(templateId) { if (templateId > 0) viewModel.load(templateId) }
@@ -67,7 +67,7 @@ fun TodoScreen(
             onDismissRequest = { deleteTarget = null },
             title = { Text(stringResource(R.string.life_confirm), fontWeight = FontWeight.Bold) },
             text = { Text(stringResource(R.string.life_confirm_delete_todo)) },
-            confirmButton = { TextButton(onClick = { viewModel.deleteItem(deleteTarget!!); deleteTarget = null }) { Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error) } },
+            confirmButton = { TextButton(onClick = { deleteTarget?.let { viewModel.deleteItem(it) }; deleteTarget = null }) { Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error) } },
             dismissButton = { TextButton(onClick = { deleteTarget = null }) { Text(stringResource(R.string.cancel)) } }
         )
     }
@@ -112,7 +112,14 @@ fun TodoScreen(
                             val isDone = item.status == "COMPLETED"
                             SwipeableItem(onDelete = { deleteTarget = item.id }) {
                                 Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(if (isDone) Icons.Default.CheckBox else Icons.Default.CheckBoxOutlineBlank, null, tint = if (isDone) LifeRecord else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(24.dp).clickable { viewModel.toggleComplete(item) })
+                                    Icon(
+                                        if (isDone) Icons.Default.CheckBox else Icons.Default.CheckBoxOutlineBlank,
+                                        null,
+                                        tint = if (isDone) LifeRecord else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(24.dp)
+                                            .minimumInteractiveComponentSize()
+                                            .clickable { viewModel.toggleComplete(item) }
+                                    )
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(item.title, fontSize = 14.sp, fontWeight = FontWeight.Medium, textDecoration = if (isDone) TextDecoration.LineThrough else TextDecoration.None, modifier = Modifier.weight(1f).clickable { onItemClick(item.id) })
                                     val pri = getTodoPriority(item)
@@ -139,7 +146,14 @@ fun TodoScreen(
                         var calendarMonth by remember { mutableStateOf(java.time.YearMonth.now()) }
                         val daysInMonth = calendarMonth.lengthOfMonth()
                         val firstDayOfWeek = calendarMonth.atDay(1).dayOfWeek.value % 7
-                        val dayItems = remember(state.items) { state.items.groupBy { try { java.time.LocalDate.ofEpochDay((it.createdAt / 86400000L)).dayOfMonth } catch (_: Exception) { 0 } } }
+                        val dayItems = remember(state.items) {
+                            state.items.groupBy {
+                                try {
+                                    java.time.Instant.ofEpochMilli(it.createdAt)
+                                        .atZone(java.time.ZoneId.systemDefault()).toLocalDate().dayOfMonth
+                                } catch (_: Exception) { 0 }
+                            }
+                        }
                         data class CalDay(val day: Int, val hasItem: Boolean)
                         val cells = remember(firstDayOfWeek, daysInMonth, dayItems) {
                             mutableListOf<CalDay>().apply {
@@ -207,7 +221,7 @@ private fun QuadBox(
                         if (isDone) Icons.Default.CheckBox else Icons.Default.CheckBoxOutlineBlank,
                         null,
                         tint = if (isDone) LifeRecord else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(24.dp).clickable { viewModel.toggleComplete(item) }
+                        modifier = Modifier.size(24.dp).minimumInteractiveComponentSize().clickable { viewModel.toggleComplete(item) }
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(

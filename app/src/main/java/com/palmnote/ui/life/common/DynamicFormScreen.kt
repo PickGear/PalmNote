@@ -9,6 +9,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.mapSaver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -29,6 +31,12 @@ import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
+/** 动态表单字段值（String→String）的 rememberSaveable Saver */
+private val stringMapSaver = mapSaver<MutableMap<String, String>>(
+    save = { map -> map.entries.associate { it.key to it.value } },
+    restore = { map -> mutableStateMapOf<String, String>().apply { map.forEach { (k, v) -> put(k, v as? String ?: "") } } }
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DynamicFormScreen(
@@ -39,14 +47,15 @@ fun DynamicFormScreen(
     viewModel: CreateItemViewModel? = null
 ) {
     val isEdit = existingItem != null
-    var title by remember { mutableStateOf(existingItem?.title ?: "") }
-    val fieldValues = remember { mutableStateMapOf<String, String>() }
+    var title by rememberSaveable { mutableStateOf(existingItem?.title ?: "") }
+    val fieldValues = rememberSaveable(saver = stringMapSaver) { mutableStateMapOf<String, String>() }
     val json = remember { Json { ignoreUnknownKeys = true } }
-    var saving by remember { mutableStateOf(false) }
-    var saveSuccess by remember { mutableStateOf(false) }
-    var saveError by remember { mutableStateOf(false) }
-    var saveErrorMessage by remember { mutableStateOf("") }
-    var showDiscardDialog by remember { mutableStateOf(false) }
+    var saving by rememberSaveable { mutableStateOf(false) }
+    var saveSuccess by rememberSaveable { mutableStateOf(false) }
+    var saveError by rememberSaveable { mutableStateOf(false) }
+    var saveErrorMessage by rememberSaveable { mutableStateOf("") }
+    var showDiscardDialog by rememberSaveable { mutableStateOf(false) }
+    var initialized by rememberSaveable { mutableStateOf(false) }
     val vmState by viewModel?.uiState?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(CreateItemUiState()) }
     val context = androidx.compose.ui.platform.LocalContext.current
 
@@ -104,11 +113,13 @@ fun DynamicFormScreen(
                     if (value is JsonPrimitive) {
                         val strValue = value.content
                         originalFieldValues[key] = strValue
-                        fieldValues[key] = strValue
+                        // 仅在首次进入时预填 DB 值；旋转/进程恢复后保留 rememberSaveable 的编辑
+                        if (!initialized) fieldValues[key] = strValue
                     }
                 }
             } catch (e: Exception) { android.util.Log.w("DynamicForm", "fieldsData parse failed", e) }
         }
+        initialized = true
     }
 
     BackHandler(enabled = hasUnsavedChanges && !saving) {

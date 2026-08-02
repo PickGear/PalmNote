@@ -29,7 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.palmnote.PalmNoteApp
-import com.palmnote.ui.components.simpleViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.palmnote.data.db.entity.LifeItem
 import com.palmnote.data.db.entity.LifeTemplate
 import com.palmnote.data.db.entity.getDisplayDescription
@@ -45,6 +45,7 @@ import com.palmnote.ui.theme.*
 import com.palmnote.ui.theme.PalmNoteTheme
 
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import androidx.datastore.preferences.core.booleanPreferencesKey
@@ -65,16 +66,25 @@ fun LifeScreen(
     onNavigateToJournal: () -> Unit = {},
     onNavigateToReport: () -> Unit = {},
     onNavigateToManage: () -> Unit = {},
-    viewModel: LifeViewModel = simpleViewModel { PalmNoteApp.container.lifeViewModel() }
+    viewModel: LifeViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var showSearch by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
     BackHandler(enabled = showSearch) { showSearch = false; searchQuery = "" }
     val contextLife = LocalContext.current
-    val planExpanded by contextLife.dataStore.data.map { it[booleanPreferencesKey("life_plan_expanded")] ?: true }.collectAsStateWithLifecycle(initialValue = true)
-    val timeExpanded by contextLife.dataStore.data.map { it[booleanPreferencesKey("life_time_expanded")] ?: true }.collectAsStateWithLifecycle(initialValue = true)
-    val recordExpanded by contextLife.dataStore.data.map { it[booleanPreferencesKey("life_record_expanded")] ?: true }.collectAsStateWithLifecycle(initialValue = true)
+    val sectionExpanded by remember {
+        contextLife.dataStore.data.map { data ->
+            Triple(
+                data[booleanPreferencesKey("life_plan_expanded")] ?: true,
+                data[booleanPreferencesKey("life_time_expanded")] ?: true,
+                data[booleanPreferencesKey("life_record_expanded")] ?: true
+            )
+        }.distinctUntilChanged()
+    }.collectAsStateWithLifecycle(initialValue = Triple(true, true, true))
+    val planExpanded = sectionExpanded.first
+    val timeExpanded = sectionExpanded.second
+    val recordExpanded = sectionExpanded.third
     var showFuncPage by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -211,7 +221,7 @@ private fun FunctionSheet(
                     item {
                         SectionHeader(stringResource(R.string.life_section_title_plan), LifePlan)
                     }
-                    items(planTemplates) { tpl ->
+                    items(planTemplates, key = { it.id }) { tpl ->
                         TemplateCard(tpl, onTemplateClick)
                     }
                 }
@@ -219,7 +229,7 @@ private fun FunctionSheet(
                     item {
                         SectionHeader(stringResource(R.string.life_section_title_time), LifeTime)
                     }
-                    items(timeTemplates) { tpl ->
+                    items(timeTemplates, key = { it.id }) { tpl ->
                         TemplateCard(tpl, onTemplateClick)
                     }
                 }
@@ -227,7 +237,7 @@ private fun FunctionSheet(
                     item {
                         SectionHeader(stringResource(R.string.life_section_title_record), LifeRecord)
                     }
-                    items(recordTemplates) { tpl ->
+                    items(recordTemplates, key = { it.id }) { tpl ->
                         TemplateCard(tpl, onTemplateClick)
                     }
                 }

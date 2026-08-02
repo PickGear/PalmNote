@@ -1,4 +1,6 @@
 package com.palmnote.ui.life.record.habit
+import javax.inject.Inject
+import dagger.hilt.android.lifecycle.HiltViewModel
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -23,7 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.palmnote.PalmNoteApp
 import com.palmnote.R
-import com.palmnote.ui.components.simpleViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.palmnote.ui.components.AppDialog
 import com.palmnote.ui.components.SecondaryTopAppBar
 import androidx.lifecycle.ViewModel
@@ -41,7 +43,8 @@ data class AchievementUiState(
     val isLoading: Boolean = true
 )
 
-class AchievementViewModel(
+@HiltViewModel
+class AchievementViewModel @Inject constructor(
     private val achievementRepo: AchievementRepository
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(AchievementUiState())
@@ -56,7 +59,7 @@ class AchievementViewModel(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AchievementScreen(onBack: () -> Unit, viewModel: AchievementViewModel = simpleViewModel { PalmNoteApp.container.achievementViewModel() }) {
+fun AchievementScreen(onBack: () -> Unit, viewModel: AchievementViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val dateFmt = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) }
     var selectedAchievement by remember { mutableStateOf<Achievement?>(null) }

@@ -21,7 +21,7 @@ import androidx.room.PrimaryKey
 data class Bill(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
-    val amount: Double,
+    val amount: Long, // 金额（分）
     val type: String, // EXPENSE, INCOME, TRANSFER
     val category: String,
     val subCategory: String = "", // 子分类
@@ -62,7 +62,7 @@ data class RecurringTemplate(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     val name: String, // 模板名称，如"房租"、"工资"
-    val amount: Double,
+    val amount: Long, // 金额（分）
     val type: String, // EXPENSE, INCOME
     val category: String,
     val frequency: String, // DAILY, WEEKLY, MONTHLY, YEARLY

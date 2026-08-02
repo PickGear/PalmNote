@@ -24,8 +24,41 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
+      - name: Lint
+        run: ./gradlew lintDebug
+
+      - name: Detekt
+        run: ./gradlew detekt
+
+      - name: Unit tests
+        run: ./gradlew testDebugUnitTest
+
       - name: Build debug
-        run: ./gradlew assembleDebug
+        run: ./gradlew assembleDebug --stacktrace
+
+      - name: Build release (unsigned smoke, no baseline profile)
+        run: ./gradlew assembleRelease -x app:generateReleaseBaselineProfile -x app:generateBaselineProfile --stacktrace
+
+      - name: Instrumented tests (migrations, on emulator)
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          disable-animations: true
+          script: ./gradlew connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.palmnote.data.db.migration.Migration1To2Test,com.palmnote.data.db.migration.Migration2To3Test,com.palmnote.data.db.migration.Migration3To4Test,com.palmnote.data.db.migration.Migration4To5Test
+
+      - name: Verify Room schema is up to date
+        run: |
+          ./gradlew kspDebugKotlin
+          CHANGED=$(git status --porcelain app/schemas)
+          if [ -z "$CHANGED" ]; then
+            echo "Room schemas are up to date."
+          else
+            echo "::error::Room schema JSON changed. Commit the updated schema in app/schemas."
+            echo "$CHANGED"
+            git diff app/schemas
+            exit 1
+          fi
 
       - name: Upload APK
         uses: actions/upload-artifact@v4

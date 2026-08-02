@@ -49,7 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.stringResource
 import com.palmnote.PalmNoteApp
-import com.palmnote.ui.components.simpleViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.delay
@@ -58,6 +58,7 @@ import coil3.compose.AsyncImage
 import com.palmnote.R
 import com.palmnote.data.db.entity.Asset
 import com.palmnote.data.db.entity.getWarrantyStatusText
+import com.palmnote.domain.model.toMoney
 import com.palmnote.domain.util.CurrencyUtils
 import com.palmnote.domain.util.DateUtils
 import com.palmnote.ui.components.*
@@ -120,23 +121,23 @@ fun getAcquisitionColor(type: String): Color = when (type) {
 }
 
 @Composable
-fun getCostText(costMode: String, purchasePrice: Double, useCount: Int, daysOwned: Int): String = when (costMode) {
-    "PER_USE" -> if (useCount > 0) stringResource(R.string.asset_cost_per_use_price, String.format("%.1f", purchasePrice / useCount)) else stringResource(R.string.asset_cost_per_use_none)
-    else -> stringResource(R.string.asset_cost_daily_price, String.format("%.1f", purchasePrice / daysOwned))
+fun getCostText(costMode: String, purchasePrice: Long, useCount: Int, daysOwned: Int): String = when (costMode) {
+    "PER_USE" -> if (useCount > 0) stringResource(R.string.asset_cost_per_use_price, String.format("%.1f", purchasePrice / 100.0 / useCount)) else stringResource(R.string.asset_cost_per_use_none)
+    else -> stringResource(R.string.asset_cost_daily_price, String.format("%.1f", purchasePrice / 100.0 / daysOwned))
 }
 
 @Composable
 fun AssetScreen(
     onNavigateToDetail: (Long) -> Unit = {},
     onNavigateToAdd: () -> Unit = {},
-    viewModel: AssetViewModel = simpleViewModel { PalmNoteApp.container.assetViewModel() }
+    viewModel: AssetViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val focusManager = LocalFocusManager.current
     var showSearch by remember { mutableStateOf(false) }
-    val assetPresetOverrides by com.palmnote.PalmNoteApp.container.preferencesManager.presetCategoryOverrides
+    val assetPresetOverrides by com.palmnote.PalmNoteApp.instance.preferencesManager.presetCategoryOverrides
         .collectAsStateWithLifecycle(initialValue = emptyMap())
-    val assetCustomCfg by com.palmnote.PalmNoteApp.container.cachedCategoryConfigs
+    val assetCustomCfg by com.palmnote.PalmNoteApp.instance.cachedCategoryConfigs
         .collectAsStateWithLifecycle(initialValue = emptyList())
     val assetCustomItems = remember(assetCustomCfg) {
         assetCustomCfg.filter { it.type == "ASSET" }
@@ -246,7 +247,7 @@ fun AssetScreen(
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = CurrencyUtils.formatCompact(state.heldValue),
+                                text = CurrencyUtils.formatCompact(state.heldValue.toMoney()),
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.primary
@@ -791,7 +792,7 @@ fun EnhancedAssetCard(
                     )
 
                     Text(
-                        text = CurrencyUtils.formatCurrency(asset.purchasePrice),
+                        text = CurrencyUtils.formatCurrency(asset.purchasePrice.toMoney()),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -1026,7 +1027,7 @@ fun GridAssetCard(
                 )
                 Spacer(modifier = Modifier.weight(1f))
                 Text(
-                    text = CurrencyUtils.formatCurrency(asset.purchasePrice),
+                    text = CurrencyUtils.formatCurrency(asset.purchasePrice.toMoney()),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,

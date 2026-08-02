@@ -1,29 +1,29 @@
-## Description
+## 描述
 
-Please briefly describe the content and motivation of this PR.
+请简要说明本 PR 的内容与动机。
 
-## Related Issue
+## 关联 Issue
 
-Fixes #(issue number)
+Fixes #(issue 编号)
 
-## Type
+## 类型
 
-- [ ] feat (new feature)
-- [ ] fix (bug fix)
-- [ ] refactor (refactoring)
-- [ ] perf (performance)
-- [ ] docs (documentation)
-- [ ] i18n (internationalization)
-- [ ] chore (build/config/misc)
+- [ ] feat（新功能）
+- [ ] fix（缺陷修复）
+- [ ] refactor（重构）
+- [ ] perf（性能优化）
+- [ ] docs（文档）
+- [ ] i18n（国际化）
+- [ ] chore（构建/配置/杂项）
 
-## Checklist
+## 检查清单
 
-- [ ] Code follows the project's coding conventions
-- [ ] Build passes: `./gradlew assembleDebug`
-- [ ] Commits follow Conventional Commits format
+- [ ] 代码符合项目编码规范
+- [ ] 构建通过：`./gradlew assembleDebug`
+- [ ] 提交信息符合 Conventional Commits 规范
 
-## Screenshots (optional)
+## 截图（可选）
 
-| Before | After |
-|--------|-------|
-|        |       |
+| 修改前 | 修改后 |
+|--------|--------|
+|        |        |

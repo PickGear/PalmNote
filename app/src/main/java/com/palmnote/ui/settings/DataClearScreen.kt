@@ -18,7 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.palmnote.PalmNoteApp
 import com.palmnote.R
-import com.palmnote.ui.components.simpleViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.palmnote.ui.components.*
 import com.palmnote.ui.theme.*
 
@@ -26,7 +26,7 @@ import com.palmnote.ui.theme.*
 @Composable
 fun DataClearScreen(
     onNavigateBack: () -> Unit = {},
-    viewModel: DataClearViewModel = simpleViewModel { PalmNoteApp.container.dataClearViewModel() }
+    viewModel: DataClearViewModel = hiltViewModel()
 ) {
     var showConfirmDialog by remember { mutableStateOf(false) }
     var clearTarget by remember { mutableStateOf("") }

@@ -21,7 +21,8 @@ import java.util.Locale
 object DateUtils {
     const val MILLIS_PER_DAY = 86400000L
 
-    private val zone: ZoneId = ZoneId.systemDefault()
+    // 动态读取当前系统时区，避免固定一次导致用户中途改时区后日期逻辑错乱
+    private val zone: ZoneId get() = ZoneId.systemDefault()
 
     // ── Formatters (replacing SimpleDateFormat — thread-safe) ──
 
@@ -42,7 +43,7 @@ object DateUtils {
 
     // ── Helpers ──
 
-    private fun millisToLocalDate(millis: Long): LocalDate =
+    fun millisToLocalDate(millis: Long): LocalDate =
         Instant.ofEpochMilli(millis).atZone(zone).toLocalDate()
 
     private fun millisToLocalDateTime(millis: Long): LocalDateTime =
@@ -139,12 +140,8 @@ object DateUtils {
         }
         val weekday = context.getString(weekdayResId)
         val locale = LocaleListCompat.getDefault().get(0) ?: Locale.getDefault()
-        return if (locale.language == "zh") {
-            context.getString(R.string.date_format_weekday_full, ld.monthValue, day, weekday)
-        } else {
-            val monthName = ld.month.getDisplayName(TextStyle.SHORT, locale)
-            context.getString(R.string.date_format_weekday_full, monthName, day, weekday)
-        }
+        val monthName = ld.month.getDisplayName(TextStyle.SHORT, locale)
+        return context.getString(R.string.date_format_weekday_full, monthName, day, weekday)
     }
 
     fun getDayOfMonth(timestamp: Long): Int =
@@ -209,22 +206,12 @@ object DateUtils {
         val startDay = start.dayOfMonth
         val endDay = end.dayOfMonth
         val locale = LocaleListCompat.getDefault().get(0) ?: Locale.getDefault()
-        return if (locale.language == "zh") {
-            val startMonth = start.monthValue
-            val endMonth = end.monthValue
-            if (startMonth == endMonth) {
-                context.getString(R.string.date_format_week_range_same, startMonth, startDay, endDay)
-            } else {
-                context.getString(R.string.date_format_week_range_diff, startMonth, startDay, endMonth, endDay)
-            }
+        val startMonth = start.month.getDisplayName(TextStyle.SHORT, locale)
+        val endMonth = end.month.getDisplayName(TextStyle.SHORT, locale)
+        return if (start.monthValue == end.monthValue) {
+            context.getString(R.string.date_format_week_range_same, startMonth, startDay, endDay)
         } else {
-            val startMonth = start.month.getDisplayName(TextStyle.SHORT, locale)
-            val endMonth = end.month.getDisplayName(TextStyle.SHORT, locale)
-            if (start.monthValue == end.monthValue) {
-                context.getString(R.string.date_format_week_range_same, startMonth, startDay, endDay)
-            } else {
-                context.getString(R.string.date_format_week_range_diff, startMonth, startDay, endMonth, endDay)
-            }
+            context.getString(R.string.date_format_week_range_diff, startMonth, startDay, endMonth, endDay)
         }
     }
 

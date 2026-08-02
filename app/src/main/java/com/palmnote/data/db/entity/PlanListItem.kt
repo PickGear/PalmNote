@@ -22,13 +22,13 @@ data class PlanListItem(
     val listId: Long,
     val content: String,
     val quantity: Int = 1,
-    val unitPrice: Double? = null,
+    val unitPrice: Long? = null, // 单价（分）
     val notes: String = "",
     val isCompleted: Boolean = false,
     val sortOrder: Int = 0,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()
 ) {
-    val totalPrice: Double?
+    val totalPrice: Long?
         get() = unitPrice?.let { it * quantity }
 }

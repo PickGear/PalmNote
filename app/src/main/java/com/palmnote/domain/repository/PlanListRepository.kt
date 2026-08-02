@@ -13,8 +13,8 @@ interface PlanListRepository {
     suspend fun getItemById(id: Long): PlanListItem?
     fun getItemCount(listId: Long): Flow<Int>
     fun getCompletedItemCount(listId: Long): Flow<Int>
-    fun getTotalCost(listId: Long): Flow<Double?>
-    fun getCompletedTotalCost(listId: Long): Flow<Double?>
+    fun getTotalCost(listId: Long): Flow<Long?>
+    fun getCompletedTotalCost(listId: Long): Flow<Long?>
     suspend fun insertList(list: PlanList): Long
     suspend fun updateList(list: PlanList)
     suspend fun setListCompleted(id: Long, isCompleted: Boolean)
