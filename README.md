@@ -178,7 +178,7 @@ git clone https://github.com/PickGear/PalmNote.git
 
 ## 开源协议
 
-本项目基于 [GPL-3.0](LICENSE) 许可证发布。
+本项目基于 [GPL-3.0](LICENSE) 许可证发布。第三方组件及依赖的版权与许可证声明见 [NOTICE](NOTICE)。
 
 ## 联系方式
 
