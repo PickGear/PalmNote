@@ -46,7 +46,8 @@ android {
         }
 
         ndk {
-            abiFilters += listOf("arm64-v8a", "armeabi-v7a")
+            // release 仅 arm64-v8a：手机/平板已全面 64 位，省去 ~30MB 32 位 native 库体积
+            abiFilters += listOf("arm64-v8a")
         }
     }
 
@@ -77,9 +78,9 @@ android {
             }
         }
         debug {
-            // debug 琛ュ厖 x86_64 浠ヤ究鏈満妯℃嫙鍣ㄥ畨瑁咃紙release 淇濇寔 arm 绮剧畝浣撶Н锛?
+            // debug 补充 x86_64 以便本机模拟器安装（release 仅 arm64-v8a 精简体积）
             ndk {
-                abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64")
+                abiFilters += listOf("arm64-v8a", "x86_64")
             }
         }
     }
@@ -168,9 +169,8 @@ dependencies {
     // Coil 3.x
     implementation(libs.coil.compose)
 
-    // ML Kit OCR - Chinese text recognition
-    implementation(libs.mlkit.text.recognition.chinese)
-    implementation(libs.coroutines.play.services)
+    // PaddleOCR OCR - PP-OCRv6 via ONNX Runtime (ppocr-sdk)
+    implementation(project(":ppocr-sdk"))
 
     // Paging3
     implementation("androidx.paging:paging-runtime-ktx:3.3.4")
