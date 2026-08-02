@@ -7,13 +7,14 @@ navigation = "2.8.5"
 compose-bom = "2025.06.01"
 coil = "3.0.4"
 datastore = "1.1.1"
-mlkit = "16.0.1"
 sqlcipher = "4.13.0"
 work = "2.10.0"
 core-ktx = "1.15.0"
 activity-compose = "1.9.3"
 lifecycle = "2.8.7"
 coroutines = "1.10.2"
+onnxruntime = "1.18.0"
+opencv = "4.5.3"
 lunar = "1.7.7"
 kotlinx-serialization-json = "1.8.0"
 junit = "4.13.2"
@@ -64,18 +65,18 @@ datastore-preferences = { module = "androidx.datastore:datastore-preferences", v
 # Coil
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
 
-# ML Kit
-mlkit-text-recognition-chinese = { module = "com.google.mlkit:text-recognition-chinese", version.ref = "mlkit" }
-
 # SQLCipher
 sqlcipher-android = { module = "net.zetetic:sqlcipher-android", version.ref = "sqlcipher" }
+
+# PaddleOCR (PP-OCRv6, ONNX Runtime mobile 精简版以控制 APK 体积)
+onnxruntime-mobile = { module = "com.microsoft.onnxruntime:onnxruntime-mobile", version.ref = "onnxruntime" }
+opencv-android = { module = "com.quickbirdstudios:opencv", version.ref = "opencv" }
 
 # Serialization
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization-json" }
 
 # Coroutines
 coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
-coroutines-play-services = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version.ref = "coroutines" }
 
 # WorkManager
 work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "work" }
@@ -98,6 +99,7 @@ hilt-androidx-compiler = { module = "androidx.hilt:hilt-compiler", version.ref =
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
+android-library = { id = "com.android.library", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }

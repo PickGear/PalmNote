@@ -13,9 +13,6 @@ import android.net.Uri
 import androidx.compose.runtime.Stable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.mlkit.vision.common.InputImage
-import com.google.mlkit.vision.text.TextRecognition
-import com.google.mlkit.vision.text.chinese.ChineseTextRecognizerOptions
 import com.palmnote.R
 import com.palmnote.data.db.entity.Bill
 import com.palmnote.data.export.BillCsvImporter
@@ -23,11 +20,13 @@ import com.palmnote.data.export.BillXlsxImporter
 import com.palmnote.data.export.ParsedBill
 import com.palmnote.data.ocr.BillOcrParser
 import com.palmnote.data.ocr.OcrBillResult
+import com.palmnote.data.ocr.OcrEngine
 import com.palmnote.data.db.entity.Wallet
 import com.palmnote.domain.model.Money
 import com.palmnote.domain.repository.BillRepository
 import com.palmnote.domain.util.DateUtils
 
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -35,7 +34,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import java.nio.charset.Charset
 
@@ -72,13 +70,13 @@ data class BillImportState(
 class BillImportViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val billRepository: BillRepository,
-    private val cachedWallets: @JvmSuppressWildcards StateFlow<List<Wallet>>
+    private val cachedWallets: @JvmSuppressWildcards StateFlow<List<Wallet>>,
+    private val ocrEngine: OcrEngine
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(BillImportState())
     val state: StateFlow<BillImportState> = _state.asStateFlow()
     private val ocrParser = BillOcrParser()
-    private val recognizer = TextRecognition.getClient(ChineseTextRecognizerOptions.Builder().build())
 
     init {
         viewModelScope.launch {
@@ -88,7 +86,10 @@ class BillImportViewModel @Inject constructor(
         }
     }
 
-    override fun onCleared() { recognizer.close(); super.onCleared() }
+    override fun onCleared() {
+        CoroutineScope(Dispatchers.IO).launch { ocrEngine.release() }
+        super.onCleared()
+    }
 
     fun setMode(mode: ImportMode) {
         _state.value = BillImportState(mode = mode)
@@ -176,8 +177,7 @@ class BillImportViewModel @Inject constructor(
                     val bitmap = context.contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, sample) }
                         ?: throw Exception(context.getString(R.string.bill_import_error_read_image))
                     val rotated = rotateBitmapIfNeeded(context, uri, bitmap)
-                    val image = InputImage.fromBitmap(rotated, 0)
-                    recognizer.process(image).await().text
+                    ocrEngine.recognize(rotated)
                 }
                 val results = ocrParser.parseMultiple(text)
                 if (results.isEmpty()) {

@@ -253,6 +253,16 @@ val lifeColorPalette = listOf(
 
 存储策略：数据库存枚举 name 字符串，UI 层通过 `AppIcon.fromName(name)` 转为 `ImageVector`（带 fallback，不会抛异常）。
 
+### 5.0 应用启动图标（launcher icon）
+
+**应用启动图标为项目原创矢量设计**（`res/drawable/ic_launcher_foreground.xml`），非第三方素材：
+
+- 前景：手写 pathData 的账单/列表线条图形，深绿色 `#2D4A3E`
+- 背景：纯色 `#FFFFFF`（`ic_launcher_background.xml`）
+- 自适应图标（`mipmap-anydpi-v26`），无位图素材、无外部下载资源，不存在版权/授权问题
+
+（注：`AppIcon` 枚举基于 AndroidX `material-icons-extended` 的 Material Symbols 线性图标，Apache 2.0，用于应用内 UI，与启动图标无关。）
+
 ### 5.2 图标尺寸规范
 
 | 场景 | 容器 | 图标大小 |
