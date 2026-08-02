@@ -99,9 +99,11 @@ Each component retains its own copyright and license terms.
 
 10. Test Dependencies
 ---------------------
-  Component : JUnit 4, androidx.test, Espresso, MockK, Turbine
+  Component : JUnit 4, androidx.test, Espresso, MockK, Turbine, Robolectric,
+              sqlite4java
   License   : JUnit 4 (EPL-1.0), AndroidX Test (Apache 2.0),
-              MockK (Apache 2.0), Turbine (Apache 2.0)
+              MockK (Apache 2.0), Turbine (Apache 2.0),
+              Robolectric (MIT), sqlite4java (BSD-2-Clause)
 
 Full text of the Apache License 2.0 and the MIT License can be found at:
   https://www.apache.org/licenses/LICENSE-2.0

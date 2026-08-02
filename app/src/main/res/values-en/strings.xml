@@ -166,7 +166,7 @@
     <string name="settings_clear_cache">Clear Cache</string>
     <string name="settings_clear_cache_subtitle">Clean temporary cache files, safe operation</string>
     <string name="settings_about_app">About Palm Note</string>
-    <string name="settings_about_version">Version 1.0.0</string>
+    <string name="settings_about_version">Version 1.3.0</string>
     <string name="settings_days">%d days</string>
     <string name="settings_color_pick_title">Select Switch Color</string>
     <string name="settings_preset_color">Preset Colors</string>

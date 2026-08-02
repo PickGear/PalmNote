@@ -9,20 +9,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ### Added
 - **密码本模块**（`feature/vault`）：纯离线密码管理器，字段级 AES-256-GCM 加密 + 独立主密码（密钥包裹模式，改 PIN 无需重加密条目）
 - 密码本：列表/搜索/分类筛选、详情遮罩查看（👁 切换）、CRUD、密码生成器（长度+字符集+熵强度）、一键复制 30 秒自动清剪贴板（哈希追踪不误清）
-- 密码本安全：切后台立即锁定（清内存密钥与剪贴板）、失败 5 次锁定 30 秒（防暴力）、进入需验证可配置、重置密码本
-- 密码本入口：Dashboard 卡片（最近 3 条 + 条数统计，旧卡片配置自动合并）、设置页设置项（剪贴板清除/需验证/条目数/改主密码/重置）
+- 密码本安全：**生物识别解锁**（Keystore 不可导出密钥包裹 DK + BiometricPrompt/CryptoObject）、**无锁模式**（可跳过密码设置，DK 用非认证 Keystore 密钥包裹，随时可升级为 PIN/生物识别）、自动锁定规则可配置（立即/跟系统锁屏/超时 5 分钟，默认跟系统）、失败 5 次锁定 30 秒（防暴力，`LockoutTracker` 复用）、进入需验证可配置、重置密码本
+- 密码本入口：Dashboard 卡片（仅显示条数统计，隐藏条目标题保护隐私，旧卡片配置自动合并）、设置页设置项（剪贴板清除/需验证/条目数/改主密码/重置）
 - 数据库 v4 → v5：新增 `vault_entries` 表（`Migration4To5`）
 - **数据库加密 SQLCipher**：全库加密（`net.zetetic:sqlcipher-android`），Room 经 `EncryptedOpenHelperFactory` 接入，明文库自动迁移，密钥存 SharedPreferences（跨设备恢复可用）
 - **OCR 引擎替换**：ML Kit 闭源模型 → 自研 `OcrEngine` 接口 + **PaddleOCR PP-OCRv6**（`ppocr-sdk` 模块，ONNX Runtime 离线推理，模型打包 assets）；移除 ML Kit 依赖与 `coroutines-play-services`
 - APK 体积优化：release 仅 arm64-v8a + `onnxruntime-mobile`，从 ~86MB 降至 ~42.6MB（后因 mobile 精简算子集不兼容 PP-OCRv6 模型导致 OCR 失败，回退为完整版 `onnxruntime-android 1.21.1`）
-- 测试：`VaultCryptoTest`（加密往返/篡改检测/密钥派生）、`VaultPasswordGeneratorTest`、`Migration4To5Test`，单测 75 → 94
+- 测试：`VaultCryptoTest`（加密往返/篡改检测/密钥派生）、`VaultPasswordGeneratorTest`、`Migration4To5Test`，单测 75 → 150（含 6 个 Room 迁移测试）
 
 ### Changed
 - 金额存储从 `Double`(元) 迁移为 `Long`(分)：账单/钱包/预算/资产/周期模板/计划清单全链路精确整数运算，消除浮点误差
 - 新增 `Money` 值类型（`domain/model/Money.kt`）与 `CurrencyUtils` 分单位格式化
 - 数据库 v3 → v4：迁移重建涉金额表并做 ×100 换算（含已有数据）
 - 数据库 v1 → v5 全链路迁移回归（`MIGRATION_1_2`/`2_3`/`3_4`/`4_5` 补注册）
-- CI：接入 `lintDebug`（abortOnError）、`testDebugUnitTest`、Room schema 变更校验
+- CI：接入 `lintDebug`（abortOnError）、`testDebugUnitTest`（含 Room 迁移测试）、Room schema 变更校验
+- CI：迁移测试改用 **Robolectric** JVM 运行（免费 runner 无 KVM，模拟器易挂起）；并行拆分为 quality/build 两 job、每 job 单次 Gradle 调用，依赖 build cache 跨 job 复用
 - `lint.abortOnError` false → true
 - detekt baseline 重生成：冻结既有 UI 代码债务（LifeScreen/BillDao/ReportScreen）
 
@@ -48,8 +49,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 - **系统备份关闭**（`allowBackup=false`）：阻止明文数据库（含 PIN hash）被 Google 云备份
 - **应用锁启用时 FLAG_SECURE**：禁止截图/最近任务缩略图泄露财务数据
 - **锁定状态持久化**：失败次数/锁定时长写入 SharedPreferences，杀进程无法绕过暴力破解防护
-- **PBKDF2 迭代 100k → 600k**（OWASP 推荐）
-- **PIN 校验/设置移至 IO 线程**：600k 迭代不再阻塞主线程
+- **PBKDF2 迭代应用锁与密码本统一为 25k**：兼顾解锁延迟与暴力破解成本（旧 SHA-256 PIN 自动迁移）
+- **PIN 校验/设置移至 IO 线程**：PBKDF2 迭代不再阻塞主线程
 
 ### i18n
 - 抽取硬编码中文文案：钱包/账本删除确认、分类删除/重命名对话框、预算金额错误、倒计时清除、回到顶部、语言选择"English"、货币符号"¥"（7 处输入框前缀）

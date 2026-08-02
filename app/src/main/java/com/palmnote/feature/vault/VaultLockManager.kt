@@ -16,11 +16,11 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * 瀵嗙爜鏈攣瀹氱鐞嗭紙鍗曚緥锛夈€?
+ * 密码本锁定管理（单例）。
  *
- * - 鐙珛浜庡簲鐢ㄩ攣锛氬嵆浣垮簲鐢ㄩ攣鏈秴鏃讹紝鍒囧悗鍙?閲嶆柊杩涘叆瀵嗙爜鏈粛闇€閲嶆柊楠岃瘉銆?
- * - 澶辫触璁℃暟涓庨攣瀹氭椂闀挎寔涔呭寲锛堣繘绋嬭鏉€涓嶉噸缃級锛岄槻鏆村姏鐮磋В銆?
- * - 閿佸畾鍗虫竻闄ゅ唴瀛樻暟鎹瘑閽ワ紙[VaultKeyManager.lock]锛夈€?
+ * - 独立于应用锁：即使应用锁未超时，切后台重新进入密码本仍需重新验证。
+ * - 失败计数与锁定时长持久化（进程被杀不重置），防暴力破解。
+ * - 锁定即清除内存数据密钥（[VaultKeyManager.lock]）。
  */
 @Singleton
 class VaultLockManager @Inject constructor(
@@ -35,19 +35,19 @@ class VaultLockManager @Inject constructor(
     val state: StateFlow<LockState> = _state.asStateFlow()
 
     private var hasKey = false
-    // 闃叉毚鍔涚牬瑙ｈ拷韪紙澶辫触娆℃暟/閿佸畾鏈熸寔涔呭寲锛岃繘绋嬭鏉€涓嶄涪锛?
+    // 防暴力破解追踪（失败次数/锁定期持久化，进程被杀不丢）
     private val lockoutTracker = LockoutTracker(
         context = context,
         prefsName = PREFS_NAME,
         keyFailedAttempts = KEY_FAILED_ATTEMPTS,
         keyLockoutUntil = KEY_LOCKOUT_UNTIL,
     )
-    // 涓茶鍖栬В閿侊紝閬垮厤骞跺彂瑙﹀彂澶辫触璁℃暟闈炲師瀛愰€掑锛堥槻鏆村姏绐楀彛鎵╁ぇ锛?
+    // 串行化解锁，避免并发触发失败计数非原子递增（防暴力窗口扩大）
     private val unlockMutex = Mutex()
 
     fun initialize() {
         hasKey = keyManager.isInitialized()
-        // 鑻ュ凡瑙ｉ攣锛堝唴瀛樹腑 DK 浠嶅湪锛屽浠庡垪琛ㄩ〉瀵艰埅鍒拌鎯呴〉锛夊垯淇濇寔 UNLOCKED锛岄伩鍏嶆瘡娆″鑸噸鏂拌緭 PIN
+        // 若已解锁（内存中 DK 仍在，如从列表页导航到详情页）则保持 UNLOCKED，避免每次导航重新输 PIN
         if (keyManager.isUnlocked) {
             _state.value = LockState.UNLOCKED
         } else {
@@ -59,10 +59,10 @@ class VaultLockManager @Inject constructor(
 
     fun isLockedOut(): Boolean = lockoutTracker.isLockedOut()
 
-    /** 鏄惁宸插惎鐢ㄧ敓鐗╄瘑鍒В閿侊紙瀛樺湪 Keystore 鍖呰９锛夈€?*/
+    /** 是否已启用生物识别解锁（存在 Keystore 包裹）。*/
     fun biometricEnabled(): Boolean = keyManager.isBiometricEnabled()
 
-    /** 鐢熺墿璇嗗埆璁よ瘉閫氳繃鍚庤В瀵?DK 骞惰В閿併€傝繑鍥炴槸鍚︽垚鍔熴€?*/
+    /** 生物识别认证通过后解密 DK 并解锁。返回是否成功。*/
     suspend fun unlockWithBiometric(cipher: javax.crypto.Cipher): Boolean = withContext(Dispatchers.IO) {
         val ok = keyManager.decryptWithBiometric(cipher)
         if (ok) {
@@ -72,18 +72,18 @@ class VaultLockManager @Inject constructor(
         ok
     }
 
-    /** 鍦?BiometricPrompt 鍓嶅垵濮嬪寲瑙ｅ瘑 Cipher銆傝繑鍥?null 琛ㄧず鏃犵敓鐗╄瘑鍒瘑閽ャ€?*/
+    /** 在 BiometricPrompt 前初始化解密 Cipher。返回 null 表示无生物识别密钥。*/
     fun createBioDecryptCipher(): javax.crypto.Cipher? = keyManager.createBioDecryptCipher()
 
-    /** 璁剧疆鐢熺墿璇嗗埆瑙ｉ攣锛堥渶宸茶В閿侊級銆?*/
+    /** 设置生物识别解锁（需已解锁）。*/
     suspend fun setupBiometric(): Boolean = keyManager.setupBiometric()
 
-    /** 鍏抽棴鐢熺墿璇嗗埆瑙ｉ攣銆?*/
+    /** 关闭生物识别解锁。*/
     suspend fun disableBiometric() = keyManager.disableBiometric()
 
     fun getLockoutRemainingMs(): Long = lockoutTracker.getLockoutRemainingMs()
 
-    /** 棣栨璁剧疆涓诲瘑鐮併€?*/
+    /** 首次设置主密码。*/
     suspend fun setup(pin: String): Boolean = withContext(Dispatchers.IO) {
         if (hasKey) {
             return@withContext false
@@ -95,7 +95,7 @@ class VaultLockManager @Inject constructor(
         true
     }
 
-    /** 鏃犻攣妯″紡锛氶娆′娇鐢ㄤ笉璁惧瘑鐮侊紝鎵撳紑鍗崇敤銆?*/
+    /** 无锁模式：首次使用不设密码，打开即用。*/
     suspend fun setupNoLock(): Boolean = withContext(Dispatchers.IO) {
         if (hasKey) {
             return@withContext false
@@ -105,39 +105,39 @@ class VaultLockManager @Inject constructor(
             hasKey = true
             lockoutTracker.reset()
             _state.value = LockState.UNLOCKED
-            // 鏃犻攣妯″紡鏃犻渶楠岃瘉锛屽叧闂洖閿侊紝閬垮厤鍒囧悗鍙板悗姘镐箙鍗″湪 PIN 闂?
+            // 无锁模式无需验证，关闭回锁，避免切后台后永久卡在 PIN 门
             preferencesManager.setVaultRequireAuth(false)
         }
         ok
     }
 
-    /** 鏄惁鏃犻攣妯″紡銆?*/
+    /** 是否无锁模式。*/
     fun isNoLockMode(): Boolean = keyManager.isNoLockMode()
 
-    /** 鏃犻攣妯″紡瑙ｉ攣锛堟棤闇€楠岃瘉锛夈€?*/
+    /** 无锁模式解锁（无需验证）。*/
     suspend fun unlockNoLock(): Boolean = withContext(Dispatchers.IO) {
         val ok = keyManager.unlockNoLock()
         if (ok) {
             lockoutTracker.reset()
             _state.value = LockState.UNLOCKED
-            // 鏃犻攣妯″紡鍏抽棴鍥為攣锛岄伩鍏嶅垏鍚庡彴鍚庨攣姝?
+            // 无锁模式关闭回锁，避免切后台后锁死
             preferencesManager.setVaultRequireAuth(false)
         }
         ok
     }
 
-    /** 浠庢棤閿佹ā寮忓崌绾т负 PIN 閿併€?*/
+    /** 从无锁模式升级为 PIN 锁。*/
     suspend fun upgradeToPin(pin: String): Boolean = withContext(Dispatchers.IO) {
         val ok = keyManager.upgradeToPin(pin)
         if (ok) {
             _state.value = LockState.UNLOCKED
-            // 鍗囩骇涓?PIN 閿佸悗鎭㈠鍥為攣
+            // 升级为 PIN 锁后恢复回锁
             preferencesManager.setVaultRequireAuth(true)
         }
         ok
     }
 
-    /** 楠岃瘉 PIN 瑙ｉ攣銆傚け璐ラ€掑璁℃暟骞跺湪瓒呰繃涓婇檺鍚庨攣瀹氫竴娈垫椂闂淬€?*/
+    /** 验证 PIN 解锁。失败递增计数并在超过上限后锁定一段时间。*/
     suspend fun unlock(pin: String): Boolean = withContext(Dispatchers.IO) {
         unlockMutex.withLock {
             if (isLockedOut()) {
@@ -154,7 +154,7 @@ class VaultLockManager @Inject constructor(
         }
     }
 
-    /** 宸茶В閿佺姸鎬佷笅淇敼涓诲瘑鐮併€?*/
+    /** 已解锁状态下修改主密码。*/
     suspend fun changePin(newPin: String): Boolean {
         val ok = keyManager.changePin(newPin)
         if (!ok) {
@@ -187,4 +187,3 @@ class VaultLockManager @Inject constructor(
         const val KEY_LOCKOUT_UNTIL = "vault_lockout_until"
     }
 }
-
