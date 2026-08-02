@@ -78,10 +78,12 @@ See [CHANGELOG.md](CHANGELOG.md).
 - Fully offline password manager: title / username / password / URL / notes / category
 - Password generator (configurable length & charset, entropy strength)
 - Search, category filter, masked password view, one-tap copy (auto-clear clipboard after 30s)
-- Independent master password, field-level AES-256-GCM encryption, auto-lock on background
+- Independent master password or **no-lock mode** (skip PIN), field-level AES-256-GCM encryption
+- **Biometric unlock** (fingerprint/face, Keystore key wrapping)
+- Configurable auto-lock rules (immediate / follow system lock screen / timeout)
 
 ### 🔒 Security
-- App lock (PIN + biometric, PBKDF2 hashing)
+- App lock (PIN + biometric, PBKDF2 hashing), configurable auto-lock rules
 - Full-database encryption with SQLCipher (AES-256)
 - Vault field-level AES-GCM encryption + key wrapping
 - AES-GCM encrypted backups

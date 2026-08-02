@@ -81,10 +81,13 @@ app (single module)
 | **一键复制** | 工具 | ✅ | 复制用户名/密码/网址到剪贴板，30 秒后自动清空（哈希追踪不误清） | ❌ |
 | **Dashboard 快捷入口** | 导航 | ✅ | 首页卡片显示最近条目 + 条数统计，点击进入密码本 | ❌ |
 | **卡片显隐** | 个性化 | ✅ | 与其他 Dashboard 卡片统一管理，可关闭 | ❌ |
-| **独立主密码** | 安全 | ✅ | 独立 PIN（PBKDF2-SHA256 120k 迭代），密钥包裹模式，与应用锁独立 | ❌ |
+| **独立主密码** | 安全 | ✅ | 独立 PIN（PBKDF2-SHA256 25k 迭代），密钥包裹模式，与应用锁独立 | ❌ |
+| **生物识别解锁** | 安全 | ✅ | Keystore 不可导出密钥（`setUserAuthenticationRequired=true`）额外包裹 DK，BiometricPrompt + CryptoObject 认证后解密 | ❌ |
+| **无锁模式** | 安全 | ✅ | 可跳过密码设置：DK 用非认证 Keystore 密钥包裹（数据仍加密落盘），打开即用，可随时升级为 PIN/生物识别 | ❌ |
 | **进入需验证** | 安全 | ✅ | 可配置：关闭后切后台不再锁定（安全降级） | ❌ |
-| **立即锁定** | 安全 | ✅ | 切到后台即锁定密码本，清除密码明文与剪贴板 | ❌ |
-| **失败锁定** | 安全 | ✅ | 连续 5 次 PIN 错误锁定 30 秒（持久化，杀进程不可绕过） | ❌ |
+| **自动锁定规则** | 安全 | ✅ | 可配置：立即（immediate）/ 跟系统锁屏（system，默认）/ 超时 5 分钟（timeout） | ❌ |
+| **立即锁定** | 安全 | ✅ | 按自动锁定规则触发（默认跟随系统锁屏），锁定即清除密码明文与剪贴板 | ❌ |
+| **失败锁定** | 安全 | ✅ | 连续 5 次 PIN 错误锁定 30 秒（`LockoutTracker`，持久化，杀进程不可绕过） | ❌ |
 | **改主密码** | 安全 | ✅ | 密钥包裹模式，改 PIN 无需重加密条目 | ❌ |
 | **重置密码本** | 安全 | ✅ | 清除密钥与全部条目 | ❌ |
 | **智能分类建议** | AI 功能 | 🔜 | 需配置 AI 端点，仅发送 title + url（v2.x） | ✅ 可选 |
@@ -191,7 +194,7 @@ val MIGRATION_4_5 = object : Migration(4, 5) {
 ```
 用户输入 PIN
     ↓
-PBKDF2-SHA256（120,000 次迭代 + 随机盐 S₁）
+PBKDF2-SHA256（25,000 次迭代 + 随机盐 S₁）
     ↓
 临时密钥 K（256 位）
     ↓
@@ -207,6 +210,12 @@ PBKDF2-SHA256（120,000 次迭代 + 随机盐 S₁）
 | `vault_salt` | 随机 16 字节盐（S₁） | 首次生成，不变 |
 | `vault_key_wrap` | 加密后的数据密钥（DK 的密文 + IV + tag） | PIN 不变则不更新 |
 | `vault_nonce_counter` | GCM nonce 计数器 | 每次加密递增 |
+| `vault_bio_key_wrap` | 生物识别 Keystore 密钥包裹的 DK 密文 + IV | 开启生物识别后存在 |
+| `vault_require_auth` | 进入是否需验证 | 无锁模式下为 false |
+
+**生物识别解锁：** 用 Android Keystore 不可导出密钥（`setUserAuthenticationRequired=true`，不出 TEE）额外包裹同一份 DK。生物识别认证通过 → Keystore 解锁该密钥 → 解密 `vault_bio_key_wrap` 得到 DK。改 PIN 不影响（DK 不变）。
+
+**无锁模式：** DK 用非认证 Keystore 密钥（`NOLOCK_KEY_ALIAS`）包裹，`vault_salt` 存占位标记 `no_lock`。数据仍 AES-256-GCM 加密落盘，打开即用无需验证；可在设置中升级为 PIN 锁（`upgradeToPin` 重新派生 K 包裹 DK）。
 
 ### 3.2 加密流程（写入）
 
@@ -516,7 +525,7 @@ object VaultPasswordGenerator {
 | 默认显示 | ✅ 首次启动默认开启 |
 | 显隐控制 | 卡片管理 UI 中可关闭 |
 | 拖拽排序 | 可拖拽到任意位置 |
-| 内容 | 显示最近 3 条条目标题 + "共 N 条密码" |
+| 内容 | **仅显示条数统计** + "进入密码本"（v1.3.0 起不显示条目标题，保护主屏隐私） |
 | 点击 | 跳转到 VaultScreen |
 | 空状态 | 显示"点击添加第一条密码" |
 
@@ -530,15 +539,16 @@ val VAULT_CARD_VISIBLE = booleanPreferencesKey("vault_card_visible")
 
 ### 6.3 卡片内容
 
+> **隐私提示（v1.3.0 实现）：** Dashboard 卡片只显示条数统计与"查看"入口，**不展示任何条目标题**（避免在主屏泄露密码条目名）。标题/用户名等敏感元数据仅在进入密码本后可见。
+
 ```
 ┌───────────────────────────────┐
 │ 🔒 密码本             共 12 条│
 ├───────────────────────────────┤
-│ • GitHub                      │
-│ • 网银 - 工商银行              │
-│ • admin@example.com           │
 │                               │
-│ 查看更多 →                    │
+│ 已加密保存 N 条密码           │
+│                               │
+│ 进入密码本 →                  │
 └───────────────────────────────┘
 ```
 
@@ -662,24 +672,39 @@ class VaultLockManager @Inject constructor(
 
     fun initialize()               // 检测 salt 是否存在 → NEED_SETUP / LOCKED
     suspend fun setup(pin: String): Boolean       // 首次设置主密码
+    suspend fun setupNoLock(): Boolean            // 无锁模式：跳过密码设置
     suspend fun unlock(pin: String): Boolean      // PIN 验证 = 解包 DK 成功
+    suspend fun unlockNoLock(): Boolean           // 无锁模式：Keystore 解开 DK（无需验证）
+    suspend fun upgradeToPin(pin: String): Boolean // 无锁 → PIN 锁迁移
+    suspend fun unlockWithBiometric(cipher: Cipher): Boolean // 生物识别认证后解 DK
+    fun createBioDecryptCipher(): Cipher?         // BiometricPrompt 前 init 解密 Cipher
+    suspend fun setupBiometric(): Boolean         // 开启生物识别（需已解锁）
+    suspend fun disableBiometric()                // 关闭生物识别
     suspend fun changePin(newPin: String): Boolean
-    fun lock()                     // 切后台立即锁定：清 DK + 剪贴板
+    fun lock()                     // 按自动锁定规则回锁：清 DK + 剪贴板
     suspend fun requireAuth(): Boolean            // vault_require_auth 配置
     suspend fun reset()            // 清空密钥与条目
-    fun isLockedOut(): Boolean     // 失败 5 次锁 30 秒
+    fun isLockedOut(): Boolean     // 失败 5 次锁 30 秒（LockoutTracker）
 }
 ```
 
-> 密钥实际持有与加解密在 `VaultKeyManager`（内存 `dataKey`），`VaultLockManager` 负责状态机与防暴力。失败次数/锁定时长写入 SharedPreferences，杀进程不可绕过。锁定状态不写盘，进程被杀默认锁定。
+> 密钥实际持有与加解密在 `VaultKeyManager`（内存 `dataKey`），`VaultLockManager` 负责状态机与防暴力。失败次数/锁定时长由 `LockoutTracker`（`data/lock`，与应用锁复用）写入 SharedPreferences，杀进程不可绕过。锁定状态不写盘，进程被杀默认锁定。
 
 ### 9.2 锁定行为
 
+自动锁定规则由 `AutoLockHelper`（`data/lock`）决策，应用锁与密码本共用，用户可配置三种模式：
+
+| 模式 | 回锁时机 |
+|------|---------|
+| `immediate` | 切到后台约 1 秒后立即回锁 |
+| `system`（默认） | 跟随系统锁屏：手机屏锁了才回锁；仅切后台/快速切换不锁（有系统锁 = 用户在场） |
+| `timeout` | 手机锁屏 或 切后台超过 5 分钟才回锁 |
+
 | 场景 | 应用锁 | 密码本 |
 |------|--------|--------|
-| 切到后台 | 5 分钟后锁定 | **立即锁定** |
-| 应用从锁屏恢复 | 需要解锁 | 需单独解锁 |
-| 正在查看密码详情时切应用 | 密码本锁 | 密码本立即锁定 + 清除密码明文 |
+| 切到后台 | 按自动锁定规则回锁 | 按自动锁定规则回锁 |
+| 应用从锁屏恢复 | 按规则需要解锁 | 需单独解锁 |
+| 正在查看密码详情时切应用 | 密码本锁 | 按规则回锁 + 清除密码明文 |
 | 关闭应用后再打开 | 需要解锁 | 需要解锁（内存状态丢失，默认锁定） |
 
 **PIN 重新输入流程：**
@@ -693,10 +718,10 @@ VaultLockManager.isLocked() == true ?
     ↓ 验证通过
 VaultLockManager.unlock() → 进入 VaultScreen
     ↓
-用户切到后台 → onStop → VaultLockManager.lock()
+用户切到后台 → AutoLockHelper.shouldLock() 判定 → 需回锁则 lock()
 ```
 
-> **注意：** 密码本锁定独立于应用锁（独立主密码，密钥包裹模式），即使应用锁未超时，进入密码本仍需重新输入密码本主密码；PIN 验证 = 解包数据密钥 DK 成功，与应用锁 PIN 无关。
+> **注意：** 密码本锁定独立于应用锁（独立主密码，密钥包裹模式），即使应用锁未超时，进入密码本仍需重新输入密码本主密码（无锁模式除外）；PIN 验证 = 解包数据密钥 DK 成功，与应用锁 PIN 无关。无锁模式下 `vault_require_auth=false`，进入不需验证，但仍按自动锁定规则清除内存密钥。
 
 ### 9.3 VaultLockObserver 注册
 
@@ -771,32 +796,41 @@ class VaultClipboardManager @Inject constructor(
 
 ```
 设置
-├── 应用锁
-├── 密码本            ← 新增
-│   ├── 剪贴板自动清除         [30 秒 ▼]
-│   ├── 进入密码本需验证       [✓]
-│   ├── 已加密条目数: N 条     [不可操作，仅展示]
-│   ├── 修改主密码             [点击]  ← 验证旧 PIN → 输入新 PIN
-│   └── 重置密码本             [点击]  ← 二次确认，清空全部
+├── 应用锁与密码本（统一入口，含自动锁定规则 [跟系统锁屏 ▼]）
+│   ├── 自动锁定规则           [跟系统锁屏 ▼]  ← immediate / system / timeout
+│   ├── 密码本：
+│   │   ├── 剪贴板自动清除         [30 秒 ▼]
+│   │   ├── 进入密码本需验证       [✓]
+│   │   ├── 生物识别解锁           [✓]  ← 需硬件 + 已设 PIN/密码
+│   │   ├── 已加密条目数: N 条     [不可操作，仅展示]
+│   │   ├── 修改主密码             [点击]  ← 验证旧 PIN → 输入新 PIN
+│   │   └── 重置密码本             [点击]  ← 二次确认，清空全部
 ├── 云服务（v2.x 预留，当前不显示）
 └── ...
 ```
+
+> **注意：** v1.3.0 中应用锁与密码本设置已合并为 `设置 → 应用锁与密码本` 单一入口；密码本无锁模式下不显示"修改主密码"，改为"升级为 PIN 锁"。
 
 ### 10.2 可配置项
 
 | 设置项 | Key | 类型 | 默认值 | 说明 |
 |--------|-----|------|--------|------|
+| 自动锁定规则 | `auto_lock_mode` | 枚举 | `system` | `immediate` 立即 / `system` 跟系统锁屏 / `timeout` 超时 5 分钟（应用锁与密码本共用） |
 | 剪贴板自动清除 | `vault_clipboard_clear_seconds` | 枚举 | 30 | 0=关闭 / 10 / 30 / 60 秒 |
-| 进入需验证 | `vault_require_auth` | Boolean | true | 关闭后切后台不再锁定（安全降级） |
+| 进入需验证 | `vault_require_auth` | Boolean | true | 关闭后切后台不再锁定（安全降级）；无锁模式强制为 false |
+| 生物识别解锁 | `vault_biometric_enabled` | Boolean | false | Keystore 密钥包裹 DK，需硬件支持 |
 | 加密条目数 | `vault_entry_count` | 只读 | — | 显示 `vault_entries` 表总行数 |
-| 修改主密码 | — | 操作 | — | 密钥包裹模式，改 PIN 无需重加密条目 |
-| 重置密码本 | — | 操作 | — | 清空密钥（salt/key_wrap）与全部条目 |
+| 修改主密码 / 升级为 PIN 锁 | — | 操作 | — | 密钥包裹模式，改 PIN 无需重加密条目；无锁模式下为 `upgradeToPin` |
+| 重置密码本 | — | 操作 | — | 清空密钥（salt/key_wrap/bio/no-lock）与全部条目 |
 
 ### 10.3 DataStore Key（追加到 PreferencesManager）
 
 ```kotlin
 val VAULT_CLIPBOARD_CLEAR_SECONDS = intPreferencesKey("vault_clipboard_clear_seconds")
 val VAULT_REQUIRE_AUTH = booleanPreferencesKey("vault_require_auth")
+val VAULT_BIOMETRIC_ENABLED = booleanPreferencesKey("vault_biometric_enabled")
+val VAULT_NO_LOCK = booleanPreferencesKey("vault_no_lock")
+val AUTO_LOCK_MODE = stringPreferencesKey("auto_lock_mode")
 ```
 
 ---
