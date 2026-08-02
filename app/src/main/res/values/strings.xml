@@ -187,7 +187,7 @@
     <string name="settings_export_data_subtitle">导出全部数据为CSV-ZIP</string>
     <string name="settings_export_file_suffix">_数据.zip</string>
     <string name="settings_import_data">导入数据</string>
-    <string name="settings_import_data_subtitle">从CSV文件恢复数据</string>
+    <string name="settings_import_data_subtitle">从备份ZIP文件恢复数据</string>
     <string name="settings_data_backup">数据备份</string>
     <string name="settings_data_backup_subtitle">备份和恢复完整数据</string>
     <string name="settings_storage_cleanup">存储清理</string>
@@ -960,6 +960,7 @@
     <string name="app_lock_pin_success">PIN码设置成功</string>
     <string name="app_lock_pin_mismatch">两次输入不一致</string>
     <string name="app_lock_pin_wrong">PIN码错误</string>
+    <string name="app_lock_too_many_attempts">尝试次数过多，请 %d 秒后重试</string>
     <string name="app_lock_delete">删除</string>
     <string name="app_lock_biometric">生物识别</string>
     <string name="app_lock_biometric_title">生物识别验证</string>
