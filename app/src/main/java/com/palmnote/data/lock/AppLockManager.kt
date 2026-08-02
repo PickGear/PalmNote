@@ -7,6 +7,8 @@ import com.palmnote.ui.lock.AppLockState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import java.security.MessageDigest
@@ -23,6 +25,8 @@ class AppLockManager(
 
     private var cachedIsLockEnabled: Boolean = false
     private var cachedHasPin: Boolean = false
+    private var failedAttempts = 0
+    private var lockoutUntilMs = 0L
 
     init {
         cachedIsLockEnabled = preferencesManager.isAppLockEnabled()
@@ -37,22 +41,49 @@ class AppLockManager(
 
     fun hasPin(): Boolean = cachedHasPin
 
+    fun biometricEnabledFlow(): Flow<Boolean> = preferencesManager.biometricEnabled
+
+    fun isBiometricEnabled(): Boolean = runBlocking(Dispatchers.IO) { preferencesManager.biometricEnabled.first() }
+
     fun verifyPin(pin: String): Boolean {
+        if (isLockedOut()) return false
         val storedPin = preferencesManager.getEncryptedPin()
         if (storedPin.isEmpty()) return false
 
-        // PBKDF2 (new format)
-        if (storedPin.startsWith(PBKDF2_PREFIX)) {
-            return verifyPbkdf2Pin(pin, storedPin)
+        val isValid = if (storedPin.startsWith(PBKDF2_PREFIX)) {
+            verifyPbkdf2Pin(pin, storedPin)
+        } else {
+            val legacyValid = hashPinLegacy(pin) == storedPin
+            if (legacyValid) {
+                val newHash = hashPin(pin)
+                runBlocking(Dispatchers.IO) { preferencesManager.setEncryptedPin(newHash) }
+            }
+            legacyValid
         }
 
-        // Legacy SHA-256 verification
-        val isValid = hashPinLegacy(pin) == storedPin
         if (isValid) {
-            val newHash = hashPin(pin)
-            runBlocking(Dispatchers.IO) { preferencesManager.setEncryptedPin(newHash) }
+            failedAttempts = 0
+        } else {
+            failedAttempts++
+            if (failedAttempts >= MAX_FAILED_ATTEMPTS) {
+                lockoutUntilMs = System.currentTimeMillis() + LOCKOUT_DURATION_MS
+            }
         }
         return isValid
+    }
+
+    fun getFailedAttempts(): Int = failedAttempts
+
+    fun getLockoutRemainingMs(): Long {
+        val remaining = lockoutUntilMs - System.currentTimeMillis()
+        return if (remaining > 0) remaining else 0
+    }
+
+    fun isLockedOut(): Boolean = System.currentTimeMillis() < lockoutUntilMs
+
+    fun resetFailedAttempts() {
+        failedAttempts = 0
+        lockoutUntilMs = 0
     }
 
     fun setPin(pin: String) {
@@ -138,5 +169,7 @@ class AppLockManager(
         private const val SALT_SIZE = 16
         private const val KEY_LENGTH = 256
         private const val PBKDF2_PREFIX = "pbkdf2:"
+        private const val MAX_FAILED_ATTEMPTS = 5
+        private const val LOCKOUT_DURATION_MS = 3000L
     }
 }

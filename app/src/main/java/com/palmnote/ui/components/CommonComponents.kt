@@ -1011,7 +1011,8 @@ fun DatePickerField(
     }
 
     if (showDatePicker) {
-        val datePickerState = rememberDatePickerState(initialSelectedDateMillis = selectedDate ?: System.currentTimeMillis())
+        val initialDate = selectedDate ?: java.time.LocalDate.now().atStartOfDay(java.time.ZoneOffset.UTC).toInstant().toEpochMilli()
+        val datePickerState = rememberDatePickerState(initialSelectedDateMillis = initialDate)
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
             tonalElevation = 0.dp,

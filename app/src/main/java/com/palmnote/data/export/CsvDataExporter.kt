@@ -228,6 +228,7 @@ class CsvDataExporter(
                 )
 
                 var totalCount = 0
+                var imageCount = 0
                 val usageByAssetId = usageRecords.groupBy { it.assetId }
                 val usageJsonByAssetId = usageByAssetId.mapValues { (_, records) ->
                     records.joinToString(",", "[", "]") { r ->
@@ -245,6 +246,16 @@ class CsvDataExporter(
                         usageJsonByAssetId[asset.id] ?: ""
                     })
                 )
+
+                val themeMode = preferencesManager.themeMode.first()
+                val defaultBillType = preferencesManager.defaultBillType.first()
+                val budgetReminderEnabled = preferencesManager.budgetReminderEnabled.first()
+                val prefsJson = JsonObject(buildMap {
+                    put("themeMode", JsonPrimitive(themeMode))
+                    put("defaultBillType", JsonPrimitive(defaultBillType))
+                    put("budgetReminderEnabled", JsonPrimitive(budgetReminderEnabled))
+                }).toString()
+
                 val outputStream = context.contentResolver.openOutputStream(uri)
                     ?: return@withContext Result.failure(Exception(context.getString(R.string.export_error_create_file)))
                 outputStream.use { os ->
@@ -265,10 +276,31 @@ class CsvDataExporter(
                             zos.write(data)
                             zos.closeEntry()
                         }
+
+                        val prefsData = prefsJson.toByteArray(Charsets.UTF_8)
+                        val prefsEntry = ZipEntry(PREFERENCES_ENTRY)
+                        prefsEntry.size = prefsData.size.toLong()
+                        zos.putNextEntry(prefsEntry)
+                        zos.write(prefsData)
+                        zos.closeEntry()
+
+                        for ((name, file) in imageFileMap) {
+                            if (!file.exists()) continue
+                            val imageBytes = file.readBytes()
+                            val imageEntry = ZipEntry("images/$name")
+                            imageEntry.size = imageBytes.size.toLong()
+                            zos.putNextEntry(imageEntry)
+                            zos.write(imageBytes)
+                            zos.closeEntry()
+                            imageCount++
+                        }
+
                         zos.flush()
                     }
                 }
-                Result.success(context.getString(R.string.export_success, totalCount))
+                val msg = if (imageCount > 0) context.getString(R.string.export_success_images, totalCount, imageCount)
+                          else context.getString(R.string.export_success, totalCount)
+                Result.success(msg)
             } catch (e: AppException) {
                 Result.failure(e)
             } catch (e: java.io.IOException) {

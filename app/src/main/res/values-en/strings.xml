@@ -187,7 +187,7 @@
     <string name="settings_export_data_subtitle">Export all data as CSV-ZIP</string>
     <string name="settings_export_file_suffix">_data.zip</string>
     <string name="settings_import_data">Import Data</string>
-    <string name="settings_import_data_subtitle">Restore data from CSV file</string>
+    <string name="settings_import_data_subtitle">Restore data from backup ZIP</string>
     <string name="settings_data_backup">Data Backup</string>
     <string name="settings_data_backup_subtitle">Backup and restore complete data</string>
     <string name="settings_storage_cleanup">Storage Cleanup</string>
@@ -920,6 +920,7 @@
     <string name="app_lock_pin_success">PIN code set successfully</string>
     <string name="app_lock_pin_mismatch">PIN codes do not match</string>
     <string name="app_lock_pin_wrong">Incorrect PIN</string>
+    <string name="app_lock_too_many_attempts">Too many attempts, try again in %d seconds</string>
     <string name="app_lock_delete">Delete</string>
     <string name="app_lock_biometric">Biometric</string>
     <string name="app_lock_biometric_title">Biometric Authentication</string>

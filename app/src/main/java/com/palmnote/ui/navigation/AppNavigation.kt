@@ -314,7 +314,6 @@ fun PalmNoteNavHost() {
                 onNavigateToRecycleBin = { navController.navigate(Route.RecycleBin) },
                 onNavigateToDataClear = { navController.navigate(Route.DataClear) },
                 onNavigateToBackup = { navController.navigate(Route.Backup) },
-                onNavigateToImportBill = { navController.navigate(Route.BillImport) },
                 viewModel = simpleViewModel { PalmNoteApp.container.settingsViewModel() }
             )
         }

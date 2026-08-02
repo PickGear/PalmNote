@@ -1,7 +1,10 @@
 ﻿package com.palmnote.ui.bills
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Matrix
+import android.media.ExifInterface
 import android.net.Uri
 import androidx.compose.runtime.Stable
 import androidx.lifecycle.ViewModel
@@ -149,7 +152,8 @@ class BillImportViewModel(
                 val text = withContext(Dispatchers.IO) {
                     val bitmap = context.contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it) }
                         ?: throw Exception(context.getString(R.string.bill_import_error_read_image))
-                    val image = InputImage.fromBitmap(bitmap, 0)
+                    val rotated = rotateBitmapIfNeeded(context, uri, bitmap)
+                    val image = InputImage.fromBitmap(rotated, 0)
                     recognizer.process(image).await().text
                 }
                 val results = ocrParser.parseMultiple(text)
@@ -273,6 +277,25 @@ class BillImportViewModel(
     }
 
     fun reset() { _state.value = BillImportState(mode = _state.value.mode) }
+
+    private fun rotateBitmapIfNeeded(context: Context, uri: Uri, bitmap: Bitmap): Bitmap {
+        val degrees = try {
+            context.contentResolver.openInputStream(uri)?.use { stream ->
+                val exif = ExifInterface(stream)
+                when (exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)) {
+                    ExifInterface.ORIENTATION_ROTATE_90 -> 90
+                    ExifInterface.ORIENTATION_ROTATE_180 -> 180
+                    ExifInterface.ORIENTATION_ROTATE_270 -> 270
+                    else -> null
+                }
+            }
+        } catch (_: Exception) { null }
+        return if (degrees != null && degrees != 0) {
+            val rotated = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, Matrix().apply { postRotate(degrees.toFloat()) }, true)
+            bitmap.recycle()
+            rotated
+        } else bitmap
+    }
 
     private fun detectEncoding(rawBytes: ByteArray): String {
         if (rawBytes.size < 2) return "UTF-8"

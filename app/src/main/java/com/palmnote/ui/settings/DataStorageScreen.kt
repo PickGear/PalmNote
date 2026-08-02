@@ -30,7 +30,6 @@ fun DataStorageScreen(
     onNavigateToRecycleBin: () -> Unit,
     onNavigateToDataClear: () -> Unit,
     onNavigateToBackup: () -> Unit,
-    onNavigateToImportBill: () -> Unit,
     viewModel: SettingsViewModel
 ) {
     var showClearCacheDialog by remember { mutableStateOf(false) }
@@ -42,6 +41,10 @@ fun DataStorageScreen(
 
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri ->
         uri?.let { viewModel.exportData(it) }
+    }
+
+    val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        uri?.let { viewModel.importData(it) }
     }
 
     LaunchedEffect(state.resultMessage) {
@@ -80,7 +83,7 @@ fun DataStorageScreen(
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 12.dp))
                     SettingsMenuItem(icon = Icons.Outlined.FileDownload, title = stringResource(R.string.settings_export_data), subtitle = stringResource(R.string.settings_export_data_subtitle), tint = InfoBlue, onClick = { exportLauncher.launch(appName + exportSuffix) })
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 12.dp))
-                    SettingsMenuItem(icon = Icons.Outlined.FileUpload, title = stringResource(R.string.settings_import_data), subtitle = stringResource(R.string.settings_import_data_subtitle), tint = AccentOrange, onClick = onNavigateToImportBill)
+                    SettingsMenuItem(icon = Icons.Outlined.FileUpload, title = stringResource(R.string.settings_import_data), subtitle = stringResource(R.string.settings_import_data_subtitle), tint = AccentOrange, onClick = { importLauncher.launch(arrayOf("application/zip")) })
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 12.dp))
                     SettingsMenuItem(icon = Icons.Outlined.Backup, title = stringResource(R.string.settings_data_backup), subtitle = stringResource(R.string.settings_data_backup_subtitle), tint = ModuleLife, onClick = onNavigateToBackup)
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 12.dp))
