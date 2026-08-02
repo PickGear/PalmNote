@@ -41,9 +41,14 @@ fun AppLockSettingsScreen(
     var showSetupPin by remember { mutableStateOf(false) }
     var showForgotPin by remember { mutableStateOf(false) }
 
-    val isLockEnabled = appLockManager.isLockEnabled()
-    val hasPin = appLockManager.hasPin()
     val bioAvailable = remember { isBiometricAvailable(context) }
+    var isLockEnabled by remember { mutableStateOf(appLockManager.isLockEnabled()) }
+    var hasPin by remember { mutableStateOf(appLockManager.hasPin()) }
+
+    fun updateLockEnabled() {
+        isLockEnabled = appLockManager.isLockEnabled()
+        hasPin = appLockManager.hasPin()
+    }
 
     Scaffold(
         topBar = {
@@ -77,9 +82,11 @@ fun AppLockSettingsScreen(
                                         showSetupPin = true
                                     } else {
                                         appLockManager.setEnabled(true)
+                                        updateLockEnabled()
                                     }
                                 } else {
                                     appLockManager.setEnabled(false)
+                                    updateLockEnabled()
                                 }
                             },
                             checkedTrackColor = LocalSwitchColor.current
@@ -144,9 +151,11 @@ fun AppLockSettingsScreen(
             onDismiss = {
                 showSetupPin = false
                 if (!hasPin) appLockManager.setEnabled(false)
+                updateLockEnabled()
             },
             onSuccess = {
                 showSetupPin = false
+                updateLockEnabled()
                 android.widget.Toast.makeText(context, R.string.app_lock_pin_success, android.widget.Toast.LENGTH_SHORT).show()
             }
         )
@@ -162,6 +171,7 @@ fun AppLockSettingsScreen(
                     appLockManager.clearPin()
                     appLockManager.setEnabled(false)
                     showForgotPin = false
+                    updateLockEnabled()
                 }) { Text(stringResource(R.string.app_lock_forgot_pin_action), fontWeight = FontWeight.Bold) }
             },
             dismissButton = {

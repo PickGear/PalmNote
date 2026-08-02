@@ -1,7 +1,6 @@
 package com.palmnote.ui.settings
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -120,12 +119,15 @@ fun SettingsScreen(
             item {
                 Spacer(Modifier.height(8.dp))
                 Surface(
-                    modifier = Modifier.fillMaxWidth().clickable { showProfileEdit = true },
+                    modifier = Modifier.fillMaxWidth(),
                     shape = MaterialTheme.shapes.large,
                     color = MaterialTheme.colorScheme.surface
                 ) {
                     Column(modifier = Modifier.padding(20.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().clickable { showProfileEdit = true },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             val avatarIcon = try { AppIcon.valueOf(state.profileAvatar).imageVector } catch (_: Exception) { Icons.Filled.Spa }
                             Box(
                                 modifier = Modifier.size(52.dp).clip(CircleShape).background(PrimaryGreenLight.copy(alpha = 0.15f)),
@@ -192,25 +194,7 @@ fun SettingsScreen(
 
             item { Spacer(Modifier.height(24.dp)) }
 
-            item {
-                Column(
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = stringResource(R.string.app_name),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        text = "v1.1.0",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
+            item { Spacer(Modifier.height(8.dp)) }
         }
     }
 

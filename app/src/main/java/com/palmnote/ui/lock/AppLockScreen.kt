@@ -17,6 +17,8 @@ import androidx.compose.ui.unit.dp
 import com.palmnote.R
 import com.palmnote.data.lock.AppLockManager
 import com.palmnote.ui.theme.*
+import kotlinx.coroutines.delay
+import kotlin.math.ceil
 
 @Composable
 fun AppLockScreen(
@@ -29,19 +31,33 @@ fun AppLockScreen(
     var error by remember { mutableStateOf("") }
     var confirmPin by remember { mutableStateOf("") }
     var isConfirming by remember { mutableStateOf(false) }
+    var lockoutRemaining by remember { mutableLongStateOf(0L) }
     val context = LocalContext.current
 
     val pinSuccessText = stringResource(R.string.app_lock_pin_success)
     val pinMismatchText = stringResource(R.string.app_lock_pin_mismatch)
     val pinWrongText = stringResource(R.string.app_lock_pin_wrong)
-
-    LaunchedEffect(lockState) {
-        if (lockState is AppLockState.Unlocked) {
-            onUnlocked()
-        }
-    }
+    val tooManyAttemptsText = stringResource(R.string.app_lock_too_many_attempts)
 
     val actualIsSetupMode = isSetupMode || lockState is AppLockState.NeedSetup
+
+    LaunchedEffect(lockState) {
+        if (lockState is AppLockState.Unlocked) onUnlocked()
+    }
+
+    val bioEnabled by appLockManager.biometricEnabledFlow().collectAsStateWithLifecycle(false)
+
+    LaunchedEffect(lockoutRemaining) {
+        if (lockoutRemaining > 0) {
+            var remaining = lockoutRemaining
+            while (remaining > 0) {
+                delay(1000L)
+                remaining -= 1000L
+                lockoutRemaining = maxOf(remaining, 0L)
+            }
+            appLockManager.resetFailedAttempts()
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -75,7 +91,9 @@ fun AppLockScreen(
 
         if (error.isNotEmpty()) {
             Text(
-                text = error,
+                text = if (lockoutRemaining > 0)
+                    tooManyAttemptsText.format(ceil(lockoutRemaining / 1000.0).toInt())
+                else error,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.error
             )
@@ -88,54 +106,56 @@ fun AppLockScreen(
 
         PinKeyboard(
             onDigitClick = { digit ->
-                if (pin.length < 6) {
+                if (lockoutRemaining == 0L && pin.length < 6) {
                     pin += digit
                     error = ""
-                    if (pin.length == 6) {
-                        if (actualIsSetupMode) {
-                            if (isConfirming) {
-                                if (pin == confirmPin) {
-                                    appLockManager.setPin(pin)
-                                    appLockManager.setEnabled(true)
-                                    appLockManager.unlock()
-                                    Toast.makeText(context, pinSuccessText, Toast.LENGTH_SHORT).show()
-                                } else {
-                                    error = pinMismatchText
-                                    pin = ""
-                                    isConfirming = false
-                                    confirmPin = ""
-                                }
+                if (pin.length == 6) {
+                    if (actualIsSetupMode) {
+                        if (isConfirming) {
+                            if (pin == confirmPin) {
+                                appLockManager.setPin(pin)
+                                appLockManager.setEnabled(true)
+                                appLockManager.unlock()
+                                Toast.makeText(context, pinSuccessText, Toast.LENGTH_SHORT).show()
                             } else {
-                                confirmPin = pin
-                                isConfirming = true
+                                error = pinMismatchText
                                 pin = ""
+                                isConfirming = false
+                                confirmPin = ""
                             }
                         } else {
-                            if (appLockManager.verifyPin(pin)) {
-                                appLockManager.unlock()
+                            confirmPin = pin
+                            isConfirming = true
+                            pin = ""
+                        }
+                    } else {
+                        if (appLockManager.verifyPin(pin)) {
+                            appLockManager.unlock()
+                        } else {
+                            val remaining = appLockManager.getLockoutRemainingMs()
+                            if (remaining > 0) {
+                                lockoutRemaining = remaining
                             } else {
                                 error = pinWrongText
-                                pin = ""
                             }
+                            pin = ""
                         }
                     }
                 }
+                }
             },
             onDeleteClick = {
-                if (pin.isNotEmpty()) {
+                if (lockoutRemaining == 0L && pin.isNotEmpty()) {
                     pin = pin.dropLast(1)
                     error = ""
                 }
             },
             onBiometricClick = {
                 showBiometricPrompt(context) { success ->
-                    if (success) {
-                        appLockManager.unlock()
-                    }
+                    if (success) appLockManager.unlock()
                 }
             },
-            showBiometric = !actualIsSetupMode && isBiometricAvailable(context)
+            showBiometric = !actualIsSetupMode && bioEnabled && isBiometricAvailable(context)
         )
-
     }
 }
