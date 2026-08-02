@@ -61,6 +61,11 @@ class PalmNoteApp : Application(), Configuration.Provider {
         super.onCreate()
         instance = this
         installCrashHandler()
+        try {
+            com.palmnote.data.db.EncryptedOpenHelperFactory.ensureLibraryLoaded()
+        } catch (_: UnsatisfiedLinkError) {
+            android.util.Log.e("PalmNote", "sqlcipher native library load failed")
+        }
         cachedStartPage = runBlocking(Dispatchers.IO) {
             preferencesManager.defaultStartPage.first()
         }
