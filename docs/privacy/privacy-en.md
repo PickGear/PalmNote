@@ -38,9 +38,11 @@ This application requires the following permissions for normal functionality:
 
 ## 4. Data Security
 
-- Database files are stored in the app's private directory, inaccessible to other apps
+- Database files are encrypted with SQLCipher (AES-256), key stored in the app's private directory
 - Backup files can be optionally encrypted with AES-GCM
 - App lock supports PIN/Pattern/Biometric authentication
+- Vault entries are field-level encrypted with AES-256-GCM (separate master password, key-wrapping)
+- OCR runs fully on-device with PaddleOCR (ONNX Runtime); images never leave the device
 
 ## 5. Data Deletion
 
