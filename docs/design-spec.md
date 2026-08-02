@@ -1,13 +1,21 @@
-以下是调整后的完整 **PalmNote 设计规范 v4.2**：
+以下是调整后的完整 **PalmNote 设计规范 v4.7**：
 
 ---
 
 # PalmNote 设计规范
 
-> v4.2 | 2026-07-22 | Material3 + Jetpack Compose | 纯本地存储 | 手动 DI
-> 本规范涵盖全局设计系统 + 生活模块专属规范。生活模块新增部分以 `[Life]` 标记。
+> v4.7 | 2026-07-28 | Material3 + Jetpack Compose | 纯本地存储 | 手动 DI
+> 本规范涵盖全局设计系统 + 生活模块 + 密码本模块专属规范。生活模块以 `[Life]` 标记，密码本模块以 `[Vault]` 标记。
 >
-> **v4.2 变更说明：** 移除 Hilt/Dagger，更换为手动 DI（AppContainer）；更新底部导航栏规范（60dp、CenterVertically、无动画、缓存 inset）；更新卡片间距统一为 8dp；移除 Dashboard 内部 Scaffold；新增性能优化章节；更新架构栈。
+> **v4.7 变更说明：** 取消模块化架构（PalmModule / ModuleRegistry / Tab 动态配置），底栏恢复为固定 4 Tab（首页/物品/账本/生活）。新增模块（密码本、未来 AI/云备份）均通过 Dashboard 卡片入口，不占用底部 Tab。删除第 17 章模块化架构相关内容。
+>
+> **v4.6 变更说明：** 分类系统重大重构：静态三分类 → 用户可定义分类（LifeCategory 实体 / categoryId FK / 动态 Section 渲染 / 分类管理 UI）；FieldType 类型系统统一（enum 扩展至 19 种 / Wizard 全部可用 / DECIMAL 移除）；卡片渲染解耦（基于 layoutType 而非分类）；分类色重命名（时间→纪念）。详见以下各节。
+>
+> **v4.5 变更说明：** 生活模板字段类型扩充（TOGGLE / RATING / IMAGE / URL / CURRENCY / TAG）。
+>
+> **v4.4 变更说明：** 新增密码本模块设计文档（[feature-vault.md](feature-vault.md)）；权限章节补充 INTERNET 运行时请求规范；架构章节补充 Vault + 未来 AI/Cloud 模块引用。
+>
+> **v4.3 变更说明：** 对齐代码实际实现；修正颜色值（ExpenseRed/IncomeGreen/Amber/底部导航选中色）；修正组件命名（XiaomiSwitch → CapsuleSwitch）；修正模板颜色引用方式（composable 函数 → val 属性）；修正备份方式（WebDAV → 本地 ZIP）；补全技术栈（Paging3/Biometric/Lunar）；修正 AppIcon 查询方式（valueOf → fromName）。
 
 ---
 
@@ -56,6 +64,7 @@
 | 目标 Goal | `#EAF4EC` | `#1A2E20` | `goalTint()` |
 | 纪念日 Anniversary | `#FFF0EE` | `#2E1A1C` | `anniversaryTint()` |
 | 瞬间 Moment | `#F4EFFE` | `#221A30` | `momentTint()` |
+| **密码本 Vault** | **`#6750A4`** | **`#D0BCFF`** | **`vaultTint()`** |
 
 ### 1.4 语义色
 
@@ -76,9 +85,9 @@
 | ModuleLife | `#C2185B` | 生活模块、设置项图标 |
 | StatusLost | `#FF6B6B` | 状态丢失 |
 | StatusActive | `#34A853` | 状态活跃、设置项图标 |
-| IncomeGreen | `#2E7D32` | 收入（深绿） |
-| ExpenseRed | `#C62828` | 支出（深红） |
-| Amber | `#FFB300` | 缓存、设置项图标 |
+| IncomeGreen | `#34A853` | 收入（绿） |
+| ExpenseRed | `#EA4335` | 支出（红） |
+| Amber | `#FBBC04` | 缓存、设置项图标 |
 | Purple | `#9C27B0` | 搜索分类图标 |
 
 ### 1.6 Switch 颜色
@@ -87,13 +96,22 @@
 
 ### 1.7 `[Life]` 生活模块色彩体系
 
-#### 1.7.1 三大分类色
+#### 1.7.1 预置分类色
 
-| 分类 | Light 色值 | Dark 色值 | tint 函数 | 说明 |
-|------|-----------|----------|----------|------|
-| 计划 PLAN | `#EDE7F6` | `#1A1530` | `lifePlanTint()` | 靛蓝基调 |
-| 时间 TIME | `#FFEBEE` | `#301A1A` | `lifeTimeTint()` | 珊瑚红基调 |
-| 记录 RECORD | `#E8F5E9` | `#1A3020` | `lifeRecordTint()` | 翡翠绿基调 |
+预置 3 个分类（用户可新增/重命名/删除），每个分类有独立色调：
+
+| 预置分类 | Light 色值 | Dark 色值 | tint 函数 | 说明 |
+|---------|-----------|----------|----------|------|
+| 🎯 目标 | `#EDE7F6` | `#1A1530` | `lifePlanTint()` | 靛蓝基调，有完成状态的追踪 |
+| 📅 纪念 | `#FFEBEE` | `#301A1A` | `lifeTimeTint()` | 珊瑚红基调，锚定在日期上 |
+| 📓 记录 | `#E8F5E9` | `#1A3020` | `lifeRecordTint()` | 翡翠绿基调，持续累积的日志 |
+
+> **判定规则：** 每条模板仅唯一命中一个分类。
+> - **目标**：有明确完成状态的模板（存款/学习/待办/旅行/阅读/购物）
+> - **纪念**：锚定在一个日期上的模板（生日/纪念日/倒计时/正数日）
+> - **记录**：持续累积、无自然终态的模板（日记/心情/打卡/订阅/报告）
+>
+> 用户创建自定义模板时可自由选择任一分类，也可新增自定义分类。
 
 #### 1.7.2 预设模板专属色
 
@@ -231,7 +249,7 @@ val lifeColorPalette = listOf(
 
 **统一使用 `AppIcon` 枚举（120+ 个），定义在 `ui/theme/AppIcon.kt`。**
 
-存储策略：数据库存枚举 name 字符串，UI 层通过 `AppIcon.valueOf(name)` 转为 `ImageVector`。
+存储策略：数据库存枚举 name 字符串，UI 层通过 `AppIcon.fromName(name)` 转为 `ImageVector`（带 fallback，不会抛异常）。
 
 ### 5.2 图标尺寸规范
 
@@ -251,7 +269,7 @@ val lifeColorPalette = listOf(
 
 生活模块延续全局 `AppIcon` 枚举体系，新增图标全部添加到 `AppIcon.kt`，风格与现有图标保持一致（Material Symbols 线性风格，Rounded）。
 
-存储策略：数据库存枚举 name 字符串，UI 层通过 `AppIcon.valueOf(name)` 转为 `ImageVector`。
+存储策略：数据库存枚举 name 字符串，UI 层通过 `AppIcon.fromName(name)` 转为 `ImageVector`（带 fallback，不会抛异常）。
 
 #### 5.3.2 新增 AppIcon 枚举
 
@@ -259,9 +277,9 @@ val lifeColorPalette = listOf(
 
 | AppIcon 枚举名 | 用途 |
 |---------------|------|
-| `Assignment` | 计划分类入口 |
-| `CalendarMonth` | 时间分类入口 |
-| `AutoStories` | 记录分类入口 |
+| `Assignment` | 预置分类：「目标」图标 |
+| `CalendarMonth` | 预置分类：「纪念」图标 |
+| `AutoStories` | 预置分类：「记录」图标 |
 
 **预设模板图标：**
 
@@ -310,7 +328,7 @@ val lifeColorPalette = listOf(
 | 状态 | 颜色 |
 |------|------|
 | 默认 | `onSurfaceVariant` |
-| 激活/选中 | 模板专属色（如存钱用 `lifeSavingColor()`） |
+| 激活/选中 | 模板专属色（如存钱用 `LifeSaving`） |
 | 禁用 | `onSurfaceVariant` + 0.3f alpha |
 | 强调 | `warning()` |
 
@@ -397,7 +415,7 @@ Card(
     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant, MaterialTheme.shapes.large)
 ) {
-    Column(Modifier.padding(16.dp), content)
+    Column(Modifier.padding(12.dp), content)
 }
 ```
 
@@ -406,7 +424,7 @@ Card(
 | 圆角 | large（16dp） |
 | 阴影 | 无（0.dp） |
 | 边框 | 1dp `outlineVariant` |
-| 内边距 | 16dp |
+| 内边距 | 12dp |
 | 背景色 | `colorScheme.surface`（部分卡片使用模块 tint） |
 
 **点击处理：** `.clip(MaterialTheme.shapes.large).clickable(onClick)`，确保 ripple 裁剪到圆角。
@@ -475,7 +493,7 @@ Card(
 |------|---------|------|--------|---------|
 | 1 | `EditNote` | 新建待办 | `lifeTodoColor()` | 跳转待办创建页 |
 | 2 | `CheckCircle` | 打卡 | `lifeHabitColor()` | 弹出打卡 BottomSheet |
-| 3 | `Savings` | 存一笔 | `lifeSavingColor()` | 弹出存钱 BottomSheet |
+| 3 | `Savings` | 存一笔 | `LifeSaving` | 弹出存钱 BottomSheet |
 | 4 | `SentimentSatisfied` | 记心情 | `lifeMoodColor()` | 弹出心情选择 BottomSheet |
 | 5 | `Timer` | 专注 | `lifeFocusColor()` | 进入专注计时页面 |
 | 6 | `MenuBook` | 记阅读 | `lifeReadingColor()` | 弹出阅读记录 BottomSheet |
@@ -583,7 +601,7 @@ Card(
 | 下划线宽度 | 24dp |
 
 `[Life]` 特殊规则：
-- 三大分类 Tab 选中色使用分类色（计划=`lifePlanTint()`，时间=`lifeTimeTint()`，记录=`lifeRecordTint()`）
+- 预置分类 Tab 选中色使用对应分类色（`LifePlan` / `LifeTime` / `LifeRecord`）；用户新增的分类使用其自定义色
 - 模板内 Tab（如阅读计划的"想读/在读/已读"）选中色使用模板专属色
 
 ### 6.12 底部导航栏
@@ -623,7 +641,7 @@ Card(
 
 当用户处于生活模块内部页面（分类页、模板列表页、详情页等）时，底部导航栏保持全局 4-Tab 结构不变，"生活" Tab 保持选中态。**生活模块内部不替换底部导航栏。**
 
-生活主页（LifeScreen）的内容区域内部使用**可折叠的三区分类入口**（计划/时间/记录）代替模块内部二级导航，用户点击分类标题进入对应分类页，通过 TopAppBar 返回按钮回到生活主页。
+生活主页（LifeScreen）的内容区域内部使用**可折叠的动态分类入口**（默认 3 个预置分类 + 用户新增分类）代替模块内部二级导航，每个分类区展示该分类下有 ACTIVE 条目的模板卡片。用户点击分类区不跳转页面，直接浏览下方模板卡片列表。分类区支持自定义排序和显隐。
 
 ### 6.13 TopAppBar
 
@@ -637,7 +655,7 @@ Card(
 
 **例外：** 搜索页顶栏使用自定义 Surface + Row 布局（非 CompactTopAppBar），搜索框胶囊样式 48dp 高。
 
-### 6.14 XiaomiSwitch（胶囊开关）
+### 6.14 CapsuleSwitch（胶囊开关）
 
 | 属性 | 值 |
 |------|-----|
@@ -894,6 +912,12 @@ Card(
 
 > **说明：** 位置权限仅用于日记自动获取位置名称和经纬度。天气和温度由用户手动选择/输入，不依赖网络。
 
+`[Vault]` 补充：
+
+| 权限 | 触发时机 | UI 流程 |
+|------|---------|---------|
+| `INTERNET` | 用户首次在设置中开启云服务（AI 或云备份） | 云服务总开关 → 说明弹窗（数据流向说明） → 启用。网络权限在 AndroidManifest 中声明，但默认不发起任何网络请求，仅在用户主动开启云服务后使用。用户不开启则应用行为与纯离线版本完全一致 |
+
 ---
 
 ## 九、日期/数字格式化
@@ -1060,37 +1084,34 @@ LocalSwitchColor.current                   // 开关选中色
 ### 13.3 `[Life]` 生活模块颜色引用
 
 ```kotlin
-// 三大分类色
-lifePlanTint()          // 计划分类 tint
-lifeTimeTint()          // 时间分类 tint
-lifeRecordTint()        // 记录分类 tint
+// 预置分类色（val 属性，非 composable）
+LifePlan = Color(0xFF7C8CF0)       // 预置分类「目标」
+LifeTime = Color(0xFFF07070)       // 预置分类「纪念」
+LifeRecord = Color(0xFF50C890)     // 预置分类「记录」
 
-// 预设模板色（通过 LifeTemplate.color 字段动态获取）
-template.color.toColor() // 从模板配置中读取 hex 色值
+// 预设模板色（val 属性）
+LifeSaving = Color(0xFFEC407A)       // 存钱计划
+LifeShopping = Color(0xFF7C8CF0)     // 购物计划
+LifeTravel = Color(0xFFFF7043)       // 旅行计划
+LifeReading = Color(0xFF26A69A)      // 阅读计划
+LifeStudy = Color(0xFFAB47BC)        // 学习计划
+LifeTodo = Color(0xFF5C6BC0)         // 待办任务
+LifeCountdown = Color(0xFFF07070)    // 倒计时
+LifeCountUp = Color(0xFF50C890)      // 正数日
+LifeBirthday = Color(0xFFFFCA28)     // 生日
+LifeHabit = Color(0xFFFF7043)        // 打卡记录
+LifeMoodColor = Color(0xFFFFCA28)    // 心情记录
+LifeJournal = Color(0xFFAB47BC)      // 日记
+LifeFocus = Color(0xFF00ACC1)        // 专注记录
+LifeSubscription = Color(0xFF66BB6A) // 订阅记录
+LifeReport = Color(0xFF42A5F5)       // 周报月报
 
-// 或通过函数获取
-lifeSavingColor()       // 存钱计划 #EC407A
-lifeShoppingColor()     // 购物计划 #7C8CF0
-lifeTravelColor()       // 旅行计划 #FF7043
-lifeReadingColor()      // 阅读计划 #26A69A
-lifeStudyColor()        // 学习计划 #AB47BC
-lifeTodoColor()         // 待办任务 #5C6BC0
-lifeCountdownColor()    // 倒计时 #F07070
-lifeCountupColor()      // 正数日 #50C890
-lifeBirthdayColor()     // 生日 #FFCA28
-lifeHabitColor()        // 打卡记录 #FF7043
-lifeMoodColor()         // 心情记录 #FFCA28
-lifeJournalColor()      // 日记 #AB47BC
-lifeFocusColor()        // 专注记录 #00ACC1
-lifeSubscriptionColor() // 订阅记录 #66BB6A
-lifeReportColor()       // 周报月报 #42A5F5
-
-// 心情色
-lifeMoodHappy()         // #FFCA28
-lifeMoodNormal()        // #78909C
-lifeMoodUpset()         // #5C6BC0
-lifeMoodSad()           // #EF5350
-lifeMoodAngry()         // #E53935
+// 心情色（val 属性）
+LifeMoodHappy = Color(0xFFFFCA28)   // 开心
+LifeMoodNormal = Color(0xFF78909C)  // 平静
+LifeMoodUpset = Color(0xFF5C6BC0)   // 心烦
+LifeMoodSad = Color(0xFFEF5350)     // 难过
+LifeMoodAngry = Color(0xFFE53935)   // 生气
 ```
 
 ---
@@ -1146,16 +1167,23 @@ lifeMoodAngry()         // #E53935
 ### 15.1 生活主页（LifeScreen）
 
 ```
-LifeScreen
+LifeScreen（动态 Section 渲染）
 ├── TopAppBar：标题 "生活"，primary 色，右侧搜索图标
 ├── 问候区：日期 + 问候语 + 心情快捷入口（AppIcon.SentimentSatisfied）
 ├── 概览区：3 个数据卡片（待办数 / 习惯完成率 / 今日专注时长）
 ├── 通知区：订阅提醒 / 生日提醒 / 预算结余提醒
-├── 计划区：可折叠，标题 + 计划分类色图标，展示 PLAN 下 ACTIVE 条目摘要
-├── 时间区：可折叠，标题 + 时间分类色图标，展示未来 30 天内时间事件
-├── 记录区：可折叠，标题 + 记录分类色图标，展示今日待打卡 + 最近记录
+├── 动态分类区：遍历所有 LifeCategory，每个渲染一个可折叠 LifeSection
+│   ├── 🎯 目标区（预置）：可折叠，展示 ACTIVE 条目摘要
+│   ├── 📅 纪念区（预置）：可折叠，展示天数计算 + 即将到来
+│   ├── 📓 记录区（预置）：可折叠，展示今日待打卡 + 最近记录
+│   ├── 健康区（用户新增）：可折叠，展示对应模板条目
+│   └── ...（用户可新增/重命名/删除分类）
 └── FAB：展开式 8 个菜单项
 ```
+
+> **分类区渲染规则：** LifeScreen 从 `life_categories` 表读取全部分类，按 `sortOrder` 排序，遍历渲染。每个 Section 的卡片样式由模板的 `layoutType` 决定（PROGRESS→PlanCard, DATE_COUNT→TimeCard, TIMELINE→TimelineCard, STATS→StatsCard），不再依赖分类名称硬编码判断。
+>
+> **空分类：** 分类下所有模板均无数据时，该 Section 折叠显示分类标题+模板图标摘要。
 
 ### 15.2 路由定义
 
@@ -1164,11 +1192,6 @@ LifeScreen
 ```kotlin
 // 生活主页
 const val LIFE = "life"
-
-// 分类页
-const val LIFE_PLAN = "life/plan"
-const val LIFE_TIME = "life/time"
-const val LIFE_RECORD = "life/record"
 
 // 预设模板列表页（共 16 个）
 const val LIFE_SAVING = "life/plan/saving"
@@ -1193,11 +1216,303 @@ const val LIFE_TEMPLATE_LIST = "life/template/{templateId}"
 const val LIFE_ITEM_DETAIL = "life/item/{itemId}"
 const val LIFE_TEMPLATE_CREATE = "life/template/create"
 const val LIFE_TEMPLATE_MANAGE = "life/template/manage"
+const val LIFE_CATEGORY_MANAGE = "life/category/manage"    // 分类管理
 const val LIFE_ACHIEVEMENTS = "life/achievements"
 
 // 特殊页面
 const val LIFE_FOCUS_TIMER = "life/focus/timer"
 ```
+
+> **v4.6 变更：** 移除硬编码的 `LIFE_PLAN` / `LIFE_TIME` / `LIFE_RECORD` 分类页路由（分类现为动态数据，由 LifeScreen 的 Section 直接展示）。预设模板路由（`LIFE_SAVING` 等）保留兼容，新代码尽量通过 `LIFE_TEMPLATE_LIST` + templateId 导航。
+
+### 15.3 模板字段类型系统
+
+`[Life]` 自定义模板使用统一的 `FieldType` enum 作为单一数据源。所有渲染组件（`FieldComponents.kt` / `FieldInputComponent.kt`）和创建 Wizard 均从此 enum 派生，消除三方并行定义。
+
+#### 15.3.1 统一 FieldType 枚举
+
+```kotlin
+enum class FieldType {
+    // 文本类
+    TEXT, SHORT_TEXT, URL, EMAIL, PHONE,
+    // 数值类
+    NUMBER, PERCENT, RATING, SLIDER,
+    // 选择类
+    SELECT, MULTI_SELECT, BOOLEAN, COLOR, TAG,
+    // 时间类
+    DATE, TIME, DURATION,
+    // 媒体类
+    IMAGE, LOCATION
+}
+```
+
+**变更要点：**
+
+| 变更 | 说明 |
+|------|------|
+| 新增 | `SHORT_TEXT`, `SLIDER`, `URL`, `EMAIL`, `PHONE`, `COLOR`, `DURATION`, `TAG` |
+| 移除 | `DECIMAL`（NUMBER 已覆盖，原 Wizard 中的 DECIMAL 实际 fallback 到 TextInput） |
+| 保持 | `TEXT`, `NUMBER`, `DATE`, `TIME`, `BOOLEAN`, `SELECT`, `MULTI_SELECT`, `RATING`, `IMAGE`, `LOCATION`, `PERCENT` |
+
+#### 15.3.2 字段配置（FieldConfig）
+
+```kotlin
+data class FieldConfig(
+    val key: String,              // 唯一标识
+    val label: String,            // 显示标签
+    val type: FieldType,          // 字段类型
+    val required: Boolean = false,
+    val defaultValue: String = "",
+    val options: List<String> = emptyList(),  // 仅 SELECT / MULTI_SELECT
+    val placeholder: String = "",
+    val validation: String = "",             // 正则校验（预留）
+    val unit: String = "",                   // 仅 NUMBER
+    val min: Double? = null,                 // 仅 NUMBER / SLIDER
+    val max: Double? = null,                 // 仅 NUMBER / SLIDER
+    val showInCard: Boolean = false,         // 是否显示在预览卡片
+    val showInList: Boolean = false,
+    val sortOrder: Int = 0
+)
+```
+
+#### 15.3.3 Wizard 字段创建 UI
+
+**Step 2（FieldStep）** 改造：
+
+```
+字段 #1   ☰  [×]               ← 拖拽把手 + 删除按钮
+┌──────────────────────────────┐
+│  字段名称                      │
+└──────────────────────────────┘
+类型分组 Tab: [文本] [数值] [选择] [时间] [媒体]
+┌──────────────────────────────┐
+│  TEXT  SHORT_TEXT  URL       │  ← FilterChip 水平排列
+│  EMAIL  PHONE                │
+└──────────────────────────────┘
+必填  □    卡片显示  □
+占位提示: [________]
+─── 类型专属选项 ───               ← 根据类型动态显示
+单位: [____]  最小: [__] 最大: [__]  (仅 NUMBER)
+选项: [编辑 ▼]                    (仅 SELECT / MULTI_SELECT)
+```
+
+**SELECT / MULTI_SELECT 选项编辑弹窗：**
+
+```
+┌── 编辑选项 ──────────────────┐
+│  选项 1    [×]               │
+│  选项 2    [×]               │
+│  [+ 添加]                    │
+│                              │
+│        [取消]  [确认]        │
+└──────────────────────────────┘
+```
+
+#### 15.3.4 IMAGE 字段实现规格
+
+| 规格项 | 规则 |
+|--------|------|
+| 触发 | 点击 → 底部菜单（📷 拍照 / 🖼️ 从相册选择） |
+| 相册选择 | `ActivityResultContracts.PickVisualMedia`（系统默认图片选择器） |
+| 拍照 | `ActivityResultContracts.TakePicture`（FileProvider URI） |
+| 存储 | 复制到 `filesDir/images/life/{itemId}/{uuid}.jpg` |
+| 缩略图 | Coil `AsyncImage` + `BitmapFactory.inSampleSize` 降采样 |
+| 尺寸限制 | 长边最大 1080px |
+| 单条目上限 | 最多 9 张 |
+| EXIF | 保留旋转信息，移除 GPS 坐标 |
+
+#### 15.3.5 字段类型与 rendering 对照
+
+| 类型 | 输入组件 | 显示组件 |
+|------|---------|---------|
+| TEXT | OutlinedTextField（多行） | 纯文本 |
+| SHORT_TEXT | OutlinedTextField（单行） | 纯文本 |
+| URL | OutlinedTextField + URI 键盘 | 链接样式（primary 色） |
+| EMAIL | OutlinedTextField + Email 键盘 | 链接样式 |
+| PHONE | OutlinedTextField + Phone 键盘 | 链接样式 |
+| NUMBER | OutlinedTextField + Decimal 键盘 + 后缀单位 | 数值 + 单位（¥ 格式当 unit="元"） |
+| PERCENT | Slider 0-100 | 进度条 + 百分比 |
+| RATING | 5 星点击 | 5 星显示 |
+| SLIDER | Slider 可配置值域 + 步长 | 值 + 单位 |
+| SELECT | ExposedDropdownMenu | 选项文字 |
+| MULTI_SELECT | Checkbox 列表 | 逗号分隔 |
+| BOOLEAN | CapsuleSwitch | ✓/✗ |
+| COLOR | 色板 + HEX 输入 | 色块 + HEX |
+| TAG | 自由输入 + Chips | Chips 排列 |
+| DATE | DatePickerDialog | yyyy-MM-dd |
+| TIME | TimePicker | HH:mm |
+| DURATION | OutlinedTextField | HH:MM:SS |
+| IMAGE | 系统相册/拍照 | 缩略图 Grid |
+| LOCATION | OutlinedTextField + Place 图标 | 纯文本 |
+
+#### 15.3.6 模板编辑功能
+
+自定义模板创建后可编辑（TemplateManageScreen 增加编辑按钮）：
+
+| 可编辑属性 | 限制 |
+|-----------|------|
+| 名称/描述/图标/颜色 | 无限制 |
+| 添加字段 | 无限制 |
+| 删除字段 | 已有数据该字段值丢失 |
+| 重排字段 | 无限制 |
+| 修改字段配置（label/required/options 等） | 无限制 |
+| 修改字段类型 | ❌ 不允许（已有数据解析可能失败） |
+| 修改分类归属 | 无限制 |
+
+### 15.4 动态分类系统
+
+#### 15.4.1 设计目标
+
+将 LifeScreen 的 Section 展示从硬编码 3 分类改为「用户可定义 N 分类」，消除"模板不知道该放哪"的困惑。分类仅用于 UI 分组，不绑定渲染逻辑。
+
+#### 15.4.2 数据模型
+
+```kotlin
+@Entity(tableName = "life_categories")
+data class LifeCategory(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val name: String,              // 用户可自定义
+    val icon: String = "",         // AppIcon 枚举名
+    val color: String = "",        // HEX 色值
+    val sortOrder: Int = 0,        // Section 显示顺序
+    val isBuiltin: Boolean = false // 预置分类不可删除
+)
+```
+
+`LifeTemplate` 变更：
+
+| 变更 | 旧 | 新 |
+|------|----|----|
+| 分类引用 | `category: String` | `categoryId: Long`（FK → life_categories.id） |
+| 默认值 | `"PLAN"`、`"TIME"`、`"RECORD"` | `1`（目标）、`2`（纪念）、`3`（记录） |
+
+#### 15.4.3 预置数据
+
+App 首次运行时自动插入 3 条预置分类（`isBuiltin = true`）：
+
+| id | name | 规则 | 包含内置模板 |
+|----|------|------|------------|
+| 1 | 🎯 目标 | 有明确完成状态的追踪 | 存款/学习/阅读/待办/购物/旅行 |
+| 2 | 📅 纪念 | 锚定在一个重要日期上 | 生日/纪念日/倒计时/正数日 |
+| 3 | 📓 记录 | 持续累积，无自然终态 | 日记/心情/打卡/订阅/报告 |
+
+**判定规则：** 每个模板唯一命中一个分类。规则互斥性验证：
+
+| 模板 | 有终态？ | 单日期锚定？ | 持续累积？ | → 分类 |
+|------|---------|-------------|-----------|--------|
+| 存款/学习/阅读/待办/购物/旅行 | ✅ | ❌ | ❌ | 🎯 目标 |
+| 生日/纪念日/倒计时/正数日 | ❌ | ✅ | ❌ | 📅 纪念 |
+| 日记/心情/打卡/订阅/报告 | ❌ | ❌ | ✅ | 📓 记录 |
+
+#### 15.4.4 UI 变化
+
+**Wizard Step 0（分类选择）** — 从硬编码 3 选项改为动态读取 `life_categories` 表：
+
+```
+┌──────────────────────────────────┐
+│  ○ 🎯 目标                        │
+│     有完成状态，追踪进度到 100%     │
+│     例：存款计划、待办、阅读        │
+│                                   │
+│  ○ 📅 纪念                        │
+│     锚定在一个重要日期，计算天数     │
+│     例：生日、倒计时               │
+│                                   │
+│  ○ 📓 记录                        │
+│     持续累积，没有结束的那一天       │
+│     例：日记、打卡、订阅            │
+│                                   │
+│  [+ 新建分类]                     │  ← 新增分类入口
+└──────────────────────────────────┘
+```
+
+**LifeScreen — 动态 Section 渲染：**
+
+```kotlin
+// LifeViewModel — 从硬编码 3 分组改为动态分组
+val categories: Flow<List<LifeCategory>> = categoryRepo.getAll()
+val groupedTemplates: Flow<Map<Long, List<LifeTemplate>>> =
+    combine(templates, categories) { tpls, cats ->
+        tpls.groupBy { it.categoryId }
+    }
+
+// LifeScreen — 遍历分类渲染 Section
+categories.forEach { category ->
+    val catTemplates = groupedTemplates[category.id] ?: emptyList()
+    if (catTemplates.isNotEmpty() || category.isBuiltin) {
+        LifeSection(
+            title = category.name,
+            icon = iconFromName(category.icon),
+            color = category.color,
+            cardType = deriveCardType(catTemplates),  // 基于 layoutType
+            ...
+        )
+    }
+}
+```
+
+**卡片渲染解耦：** 不再根据分类名判断用 PlanCard 还是 TimeCard，改为根据 `template.layoutType`：
+
+| layoutType | 卡片组件 |
+|------------|---------|
+| `PROGRESS` | PlanCard（进度条 + 数值摘要） |
+| `DATE_COUNT` | TimeCard（天数计算 + 倒计时/正数） |
+| `TIMELINE` | TimelineCard（时间线条目） |
+| `STATS` | StatsCard（统计摘要） |
+
+**FunctionSheet（FAB 底部弹出）** — 同样改为动态分组：
+
+```
+┌── 选择创建类型 ─────────────────┐
+│                                 │
+│ 🎯 目标                         │
+│   [存款计划] [学习计划] [阅读]    │
+│                                 │
+│ 📅 纪念                         │
+│   [生日] [纪念日]               │
+│                                 │
+│ 📓 记录                         │
+│   [日记] [打卡] [心情]          │
+│                                 │
+│ 🏥 健康（用户新增分类）          │
+│   [体重记录] [健身计划]         │
+└─────────────────────────────────┘
+```
+
+#### 15.4.5 分类管理
+
+| 操作 | 入口 | 规则 |
+|------|------|------|
+| 新建分类 | TemplateManageScreen → 管理分类 → 新建 | 输入名称、选择图标、颜色 |
+| 重命名 | 分类管理列表 → 点击编辑 | 修改名称 |
+| 重排 | 分类管理列表 → 拖拽排序 | 调整 Section 顺序 |
+| 删除 | 分类管理列表 → 左滑/长按 | 预置分类不可删；删除时弹窗选择模板迁移目标分类 |
+
+**分类管理 Screen 原型：**
+
+```
+┌── 管理分类 ───────────── [完成] ┐
+│                                 │
+│  当前分类                       │
+│  1  🎯 目标               [✎]  │
+│  2  📅 纪念               [✎]  │
+│  3  📓 记录               [✎]  │
+│  4  🏥 健康（用户新增）  [✎][×] │  ← 可删除
+│                                 │
+│         [+ 新建分类]            │
+└─────────────────────────────────┘
+```
+
+#### 15.4.6 迁移方案
+
+| 步骤 | 操作 |
+|------|------|
+| 1 | DB v3→v4：创建 `life_categories` 表 |
+| 2 | 插入 3 条预置分类（id=1 目标 / id=2 纪念 / id=3 记录） |
+| 3 | `LifeTemplate` 新增 `categoryId` 列，根据当前 `category` 值映射：`"PLAN"/"计划" → 1`，`"TIME"/"时间" → 2`，`"RECORD"/"记录" → 3` |
+| 4 | 删除旧 `category` 列 |
+| 5 | `LifeDataSeeder` 改为写入 `categoryId` |
+| 6 | `LifeViewModel` 移除 name-based fallback 分组逻辑 |
 
 ---
 
@@ -1215,8 +1530,22 @@ const val LIFE_FOCUS_TIMER = "life/focus/timer"
 | 导航 | Navigation Compose（fade 动画） |
 | 图表 | Compose Canvas 自绘（无第三方库） |
 | 状态管理 | ViewModel + StateFlow |
-| 备份 | AES-GCM + WebDAV |
+| 备份 | AES-GCM + PBKDF2（本地 ZIP 备份） |
 | OCR | ML Kit（本地离线识别） |
+| 后台任务 | WorkManager |
+| 序列化 | Kotlinx Serialization |
+| 农历 | Lunar |
+| 生物识别 | AndroidX Biometric |
+| 分页 | Paging3 |
+| 密码本加密 | AES-256-GCM + 密钥包裹（PIN → PBKDF2 → 数据密钥 DK） |
+
+### 16.5 功能模块架构
+
+`[Vault]` 密码本代码位于 `com.palmnote.feature.vault`，独立于四大 Tab，作为外层 NavHost 路由（同级 Settings），入口为 Dashboard 卡片（可显隐）。
+
+所有非 Tab 功能模块（密码本、未来 AI、云备份等）统一采用 Dashboard 卡片入口模式，不占用底部 Tab。
+
+> 详见 [feature-vault.md](feature-vault.md)。
 
 ### 16.2 依赖注入架构变更（v4.2）
 
@@ -1262,7 +1591,9 @@ MainActivity.onCreate()
     └── NavHost(fade 动画)
         └── 当前页面（导航栏同步出现，无动画延迟）
 }
-
+ 
+---
+ 
 | 版本 | 日期 | 内容 |
 |------|------|------|
 | 1.0 | 2026-06-30 | 初版 |
@@ -1273,4 +1604,8 @@ MainActivity.onCreate()
 | 3.0 | 2026-07-03 | 全面对齐：修正 Card 边框 1dp、分隔线双规则、AppDialog 按钮文案去统一化、新增小节（权限/备份/编码禁止 clickable 缺 clip 和 items 缺 key）、14 组件章节重组 |
 | 4.0 | 2026-07-03 | 生活模块集成：新增 1.7 生活模块色彩体系、5.3 生活模块图标规范、6.17 生活模块专属组件、7.2 生活模块动画补充、8 权限补充、10 文案补充、11 图表补充、13.3 生活模块颜色引用、15 生活模块导航结构与路由定义 |
 | **4.2** | **2026-07-22** | **架构重构：移除 Hilt → 手动 DI（AppContainer）。底部导航栏：60dp、CenterVertically、无动画、缓存 inset。卡片间距统一 8dp。移除 Dashboard 内部 Scaffold。导航动画 spring → tween(200)。新增架构与性能章节。** |
-| **4.3** | **2026-07-23** | **账本筛选优化：切换账本/月份自动清除筛选并提示；筛选 Sheet 新增"清除筛选"按钮；搜索与筛选联动保活。BillScreen Snackbar 移至页面顶部悬浮。DataCache 改用线程安全 LRU 缓存。DataClearViewModel 补全生活模块表清除。DashboardViewModel 加异常处理。AssetViewModel 图片保存失败处理。AppLockManager IO 线程化。** |
+| **4.3** | **2026-07-28** | **对齐代码实现：修正颜色值（ExpenseRed/IncomeGreen/Amber/底部导航选中色）；组件命名 XiaomiSwitch → CapsuleSwitch；模板颜色引用 val 属性替代 composable 函数；AppIcon 查询 fromName 替代 valueOf；ModuleCard 内边距 12dp；备份方式 WebDAV → 本地 ZIP；补全技术栈（Paging3/Biometric/Lunar/WorkManager/Serialization）；移除 Hilt 残留。** |
+| **4.4** | **2026-07-28** | **新增密码本模块设计文档（[feature-vault.md](feature-vault.md)）；权限章节补充 INTERNET 运行时请求规范；架构章节补充 Vault + 未来 AI/Cloud 模块引用。** |
+| **4.5** | **2026-07-28** | **生活模板字段类型扩充（TOGGLE / RATING / IMAGE / URL / CURRENCY / TAG）。** |
+| **4.6** | **2026-07-28** | **分类系统重构：静态三分类 → 用户可定义动态分类（LifeCategory 实体 / categoryId FK / 动态 Section 渲染 / 分类管理 UI）。FieldType 类型系统统一（enum 扩展至 19 种，Wizard 全量暴露，DECIMAL 移除）。卡片渲染解耦（基于 layoutType 而非分类）。分类色重命名（时间→纪念）。预置分类判定规则文档化。IMAGE 字段重新设计（系统相册/拍照）。模板编辑功能规范。** |
+| **4.7** | **2026-07-28** | **取消模块化架构（PalmModule / ModuleRegistry / Tab 动态配置），底栏恢复为固定 4 Tab。新增模块均通过 Dashboard 卡片入口（不占 Tab）。删除第 17 章。** |
