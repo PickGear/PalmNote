@@ -1,0 +1,88 @@
+PalmNote Third-Party Notices
+============================
+
+PalmNote - A fully local-first life tracking tool
+Copyright (C) 2026 PickGear
+This project is licensed under the GNU General Public License v3.0.
+See the LICENSE file for details.
+
+The PalmNote project includes the following third-party components.
+Each component retains its own copyright and license terms.
+
+
+1. Google ML Kit (Bundled Chinese Text Recognition)
+----------------------------------------------------
+  Component : com.google.mlkit:text-recognition-chinese (bundled model)
+  Version   : 16.0.1
+  Copyright : (c) Google LLC
+  License   : Google proprietary software, subject to the Google
+              ML Kit Terms of Service and Google APIs Terms of Service.
+  URL       : https://developers.google.com/ml-kit
+
+  NOTE: The bundled ML Kit text recognition model is proprietary and is
+  distributed under Google's terms, not under the GPL. PalmNote uses this
+  component under the permissions granted by Google's Terms of Service.
+  The ML Kit SDK model file is not free software; users who redistribute
+  this application should review Google's terms before doing so.
+
+
+2. Lunar (Solar / Chinese Lunar Calendar)
+-----------------------------------------
+  Component : cn.6tail:lunar
+  Version   : 1.7.7
+  Copyright : (c) 2018 6tail
+  License   : MIT License
+  URL       : https://github.com/6tail/lunar-java
+
+
+3. AndroidX Libraries
+---------------------
+  Component : androidx.* (core-ktx, activity, lifecycle, navigation,
+              compose, room, datastore, work, sqlite, test, etc.)
+  Copyright : (c) The Android Open Source Project
+  License   : Apache License 2.0
+  URL       : https://developer.android.com/jetpack
+
+
+4. Kotlin / Kotlin Coroutines / Serialization
+-----------------------------------------------
+  Component : org.jetbrains.kotlin, kotlinx-coroutines,
+              kotlinx-serialization
+  Copyright : (c) JetBrains s.r.o. and contributors
+  License   : Apache License 2.0
+  URL       : https://kotlinlang.org
+
+
+5. Compose Multiplatform / Material 3
+---------------------------------------
+  Component : androidx.compose.* (via androidx compose-bom)
+  Copyright : (c) The Android Open Source Project
+  License   : Apache License 2.0
+  URL       : https://developer.android.com/jetpack/compose
+
+
+6. Hilt (Dagger)
+-----------------
+  Component : com.google.dagger:hilt-android
+  Copyright : (c) The Dagger Authors / Google LLC
+  License   : Apache License 2.0
+  URL       : https://dagger.dev
+
+
+7. Coil
+--------
+  Component : io.coil-kt.coil3:coil-compose
+  Copyright : (c) Coil Contributors
+  License   : Apache License 2.0
+  URL       : https://coil-kt.github.io/coil
+
+
+8. Test Dependencies
+---------------------
+  Component : JUnit 4, androidx.test, Espresso, MockK, Turbine
+  License   : JUnit 4 (EPL-1.0), AndroidX Test (Apache 2.0),
+              MockK (Apache 2.0), Turbine (Apache 2.0)
+
+Full text of the Apache License 2.0 and the MIT License can be found at:
+  https://www.apache.org/licenses/LICENSE-2.0
+  https://opensource.org/licenses/MIT
