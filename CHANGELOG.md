@@ -12,14 +12,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 - 密码本安全：切后台立即锁定（清内存密钥与剪贴板）、失败 5 次锁定 30 秒（防暴力）、进入需验证可配置、重置密码本
 - 密码本入口：Dashboard 卡片（最近 3 条 + 条数统计，旧卡片配置自动合并）、设置页设置项（剪贴板清除/需验证/条目数/改主密码/重置）
 - 数据库 v4 → v5：新增 `vault_entries` 表（`Migration4To5`）
+- **数据库加密 SQLCipher**：全库加密（`net.zetetic:sqlcipher-android`），Room 经 `EncryptedOpenHelperFactory` 接入，明文库自动迁移，密钥存 SharedPreferences（跨设备恢复可用）
+- **OCR 引擎替换**：ML Kit 闭源模型 → 自研 `OcrEngine` 接口 + **PaddleOCR PP-OCRv6**（`ppocr-sdk` 模块，ONNX Runtime 离线推理，模型打包 assets）；移除 ML Kit 依赖与 `coroutines-play-services`
+- APK 体积优化：release 仅 arm64-v8a + `onnxruntime-mobile`，从 ~86MB 降至 ~42.6MB
 - 测试：`VaultCryptoTest`（加密往返/篡改检测/密钥派生）、`VaultPasswordGeneratorTest`、`Migration4To5Test`，单测 75 → 94
 
 ### Changed
 - 金额存储从 `Double`(元) 迁移为 `Long`(分)：账单/钱包/预算/资产/周期模板/计划清单全链路精确整数运算，消除浮点误差
 - 新增 `Money` 值类型（`domain/model/Money.kt`）与 `CurrencyUtils` 分单位格式化
 - 数据库 v3 → v4：迁移重建涉金额表并做 ×100 换算（含已有数据）
+- 数据库 v1 → v5 全链路迁移回归（`MIGRATION_1_2`/`2_3`/`3_4`/`4_5` 补注册）
 - CI：接入 `lintDebug`（abortOnError）、`testDebugUnitTest`、Room schema 变更校验
 - `lint.abortOnError` false → true
+- detekt baseline 重生成：冻结既有 UI 代码债务（LifeScreen/BillDao/ReportScreen）
 
 ### Fixed
 - **严重：v2→v3 迁移索引名与实体自动生成名不一致，老用户升级必崩**（`idx_bills_*` → `index_bills_*`）
@@ -34,6 +39,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 - `getExternalFilesDir` 可能返回 null 导致备份 NPE，增加内部存储回退
 - 设置页版本号显示 v1.0.0 → v1.2.0（与 app_version 一致）
 - detekt 配置：`ComplexMethod`/`TooManyFunctions` 规则名过时导致任务无法运行
+- 死代码清理（未使用 DAO 方法/类）
+- 今日待办入口跳转失效
+- 账单列表查询加索引优化（`index_bills_*`）
+- 报表页加载态缺失（首次加载闪空白）
 
 ### Security
 - **系统备份关闭**（`allowBackup=false`）：阻止明文数据库（含 PIN hash）被 Google 云备份

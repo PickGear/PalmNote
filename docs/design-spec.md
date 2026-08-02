@@ -1,11 +1,13 @@
-以下是调整后的完整 **PalmNote 设计规范 v5.0**：
+以下是调整后的完整 **PalmNote 设计规范 v5.1**：
 
 ---
 
 # PalmNote 设计规范
 
-> v5.0 | 2026-08-02 | Material3 + Jetpack Compose | 纯本地存储 | Hilt DI
+> v5.1 | 2026-08-02 | Material3 + Jetpack Compose | 纯本地存储 | Hilt DI
 > 本规范涵盖全局设计系统 + 生活模块 + 密码本模块专属规范。生活模块以 `[Life]` 标记，密码本模块以 `[Vault]` 标记。
+>
+> **v5.1 变更说明：** 安全与 OCR 升级——**数据库 SQLCipher 全库加密**（`EncryptedOpenHelperFactory`，明文库自动迁移）；**OCR 引擎由 ML Kit 替换为 PaddleOCR PP-OCRv6**（`OcrEngine` 接口抽象 + `PaddleOcrEngine`，ONNX Runtime 离线推理，模型打包 assets，release 仅 arm64-v8a）。**对齐修正：15.2 路由改为类型安全路由（`LifeRoute.kt`，`@Serializable`）；15.3 FieldType 标注 19 种扩充为规划蓝图（当前 11 种）；15.1/6.12 动态分类与 15.4 规划标注一致；INTERNET 权限标注预留未声明。**
 >
 > **v5.0 变更说明：** 架构对齐当前实现——依赖注入从手动 DI（AppContainer）回归 **Hilt**（KSP 编译期）；密码本模块 v1.3.0 已实现（`feature/vault`，字段级 AES-256-GCM + 独立主密码密钥包裹，DB v5 Migration4To5）；15.4 动态分类标注为规划中（当前 `LifeTemplate.category` 保持 `String`）；版本号升 1.3.0。
 >
@@ -653,7 +655,7 @@ Card(
 
 当用户处于生活模块内部页面（分类页、模板列表页、详情页等）时，底部导航栏保持全局 4-Tab 结构不变，"生活" Tab 保持选中态。**生活模块内部不替换底部导航栏。**
 
-生活主页（LifeScreen）的内容区域内部使用**可折叠的动态分类入口**（默认 3 个预置分类 + 用户新增分类）代替模块内部二级导航，每个分类区展示该分类下有 ACTIVE 条目的模板卡片。用户点击分类区不跳转页面，直接浏览下方模板卡片列表。分类区支持自定义排序和显隐。
+生活主页（LifeScreen）的内容区域内部使用**可折叠的动态分类入口**（默认 3 个预置分类 + 用户新增分类）代替模块内部二级导航，每个分类区展示该分类下有 ACTIVE 条目的模板卡片。用户点击分类区不跳转页面，直接浏览下方模板卡片列表。分类区支持自定义排序和显隐。**（⚠️ 动态分类为 v4.6 设计蓝图，规划中未实现；当前按硬编码三分类分组，详见 15.4。）**
 
 ### 6.13 TopAppBar
 
@@ -924,11 +926,11 @@ Card(
 
 > **说明：** 位置权限仅用于日记自动获取位置名称和经纬度。天气和温度由用户手动选择/输入，不依赖网络。
 
-`[Vault]` 补充：
+`[Vault]` 补充（云服务为 v2.x 预留设计，当前未实现）：
 
 | 权限 | 触发时机 | UI 流程 |
 |------|---------|---------|
-| `INTERNET` | 用户首次在设置中开启云服务（AI 或云备份） | 云服务总开关 → 说明弹窗（数据流向说明） → 启用。网络权限在 AndroidManifest 中声明，但默认不发起任何网络请求，仅在用户主动开启云服务后使用。用户不开启则应用行为与纯离线版本完全一致 |
+| `INTERNET` | **预留**：用户首次在设置中开启云服务（AI 或云备份） | 云服务总开关 → 说明弹窗（数据流向说明） → 启用。当前版本（v1.3.0）**未声明** `INTERNET` 权限，应用无法联网；仅在后续版本实现云服务并按需声明后使用 |
 
 ---
 
@@ -1178,6 +1180,8 @@ LifeMoodAngry = Color(0xFFE53935)   // 生气
 
 ### 15.1 生活主页（LifeScreen）
 
+> **⚠️ 本节为动态分类重构（v4.6 设计蓝图）的目标形态，尚未实施。** 当前实现为硬编码三分类（`PLAN`/`TIME`/`RECORD`），按模板 `category` 值分组渲染，无 `life_categories` 表、无动态分类区。详见 15.4 节规划标注。
+
 ```
 LifeScreen（动态 Section 渲染）
 ├── TopAppBar：标题 "生活"，primary 色，右侧搜索图标
@@ -1199,47 +1203,37 @@ LifeScreen（动态 Section 渲染）
 
 ### 15.2 路由定义
 
-在 `Route` object 中新增：
+`[Life]` 模块内嵌 NavHost，使用类型安全路由（`ui/life/LifeRoute.kt`，`@Serializable`）：
 
 ```kotlin
 // 生活主页
-const val LIFE = "life"
+@Serializable data object LifeHomeRoute
 
-// 预设模板列表页（共 16 个）
-const val LIFE_SAVING = "life/plan/saving"
-const val LIFE_SHOPPING = "life/plan/shopping"
-const val LIFE_TRAVEL = "life/plan/travel"
-const val LIFE_READING = "life/plan/reading"
-const val LIFE_STUDY = "life/plan/study"
-const val LIFE_TODO = "life/plan/todo"
-const val LIFE_COUNTDOWN = "life/time/countdown"
-const val LIFE_COUNTUP = "life/time/countup"
-const val LIFE_BIRTHDAY = "life/time/birthday"
-const val LIFE_ANNIVERSARY = "life/time/anniversary"
-const val LIFE_HABIT = "life/record/habit"
-const val LIFE_MOOD = "life/record/mood"
-const val LIFE_JOURNAL = "life/record/journal"
-const val LIFE_FOCUS = "life/record/focus"
-const val LIFE_SUBSCRIPTION = "life/record/subscription"
-const val LIFE_REPORT = "life/record/report"
+// 动态路由（携带参数）
+@Serializable data class LifeTemplateRoute(val templateId: Long)   // 模板列表页
+@Serializable data class LifeItemRoute(val itemId: Long)           // 条目详情页
+@Serializable data class LifeCreateRoute(val templateId: Long)     // 新建条目（Wizard）
+@Serializable data class LifeEditRoute(val itemId: Long)           // 编辑条目
 
-// 通用页面
-const val LIFE_TEMPLATE_LIST = "life/template/{templateId}"
-const val LIFE_ITEM_DETAIL = "life/item/{itemId}"
-const val LIFE_TEMPLATE_CREATE = "life/template/create"
-const val LIFE_TEMPLATE_MANAGE = "life/template/manage"
-const val LIFE_CATEGORY_MANAGE = "life/category/manage"    // 分类管理
-const val LIFE_ACHIEVEMENTS = "life/achievements"
-
-// 特殊页面
-const val LIFE_FOCUS_TIMER = "life/focus/timer"
+// 通用页面（固定路由）
+@Serializable data object LifeFocusRoute      // 专注计时
+@Serializable data object LifeHabitRoute      // 习惯打卡
+@Serializable data object LifeMoodRoute       // 心情记录
+@Serializable data object LifeJournalRoute    // 日记
+@Serializable data object LifeTodoRoute       // 今日待办
+@Serializable data object LifeReportRoute     // 周报/月报
+@Serializable data object LifeAchievementRoute// 成就徽章
+@Serializable data object LifeTemplateManageRoute // 模板管理
+@Serializable data object LifeTemplateCreateRoute // 模板创建
 ```
 
-> **v4.6 变更：** 移除硬编码的 `LIFE_PLAN` / `LIFE_TIME` / `LIFE_RECORD` 分类页路由（分类现为动态数据，由 LifeScreen 的 Section 直接展示）。预设模板路由（`LIFE_SAVING` 等）保留兼容，新代码尽量通过 `LIFE_TEMPLATE_LIST` + templateId 导航。
+> **说明：** 预设模板（存钱/旅行/阅读等）与时间类（倒计时/生日/纪念日等）不再有独立路由，统一通过 `LifeTemplateRoute(templateId)` 动态导航。`LIFE_CATEGORY_MANAGE`（分类管理）为动态分类蓝图（15.4）的一部分，规划中未实现。
 
 ### 15.3 模板字段类型系统
 
 `[Life]` 自定义模板使用统一的 `FieldType` enum 作为单一数据源。所有渲染组件（`FieldComponents.kt` / `FieldInputComponent.kt`）和创建 Wizard 均从此 enum 派生，消除三方并行定义。
+
+> **⚠️ 本节的 19 种 FieldType 扩充为 v4.6 设计蓝图，尚未实施。** 当前实现（`domain/model/FieldType.kt`）为 11 种：`TEXT, NUMBER, DATE, BOOLEAN, SELECT, MULTI_SELECT, IMAGE, LOCATION, TIME, PERCENT, RATING`。以下 15.3.1/15.3.3 的 `SHORT_TEXT/SLIDER/URL/EMAIL/PHONE/COLOR/DURATION/TAG` 及对应 Wizard UI 均规划中。
 
 #### 15.3.1 统一 FieldType 枚举
 
@@ -1538,14 +1532,14 @@ categories.forEach { category ->
 |-------|------|
 | UI 框架 | Jetpack Compose + Material 3 |
 | 依赖注入 | **Hilt（KSP 编译期代码生成）** — `@HiltViewModel` / `@Inject` / `@Module @Provides` |
-| 数据库 | Room（预热：onCreate 时调用 `openHelper.writableDatabase`） |
+| 数据库 | Room（预热：onCreate 时调用 `openHelper.writableDatabase`） + SQLCipher 全库加密 |
 | 偏好存储 | DataStore Preferences |
 | 图片加载 | Coil 3 |
 | 导航 | Navigation Compose（fade 动画） |
 | 图表 | Compose Canvas 自绘（无第三方库） |
 | 状态管理 | ViewModel + StateFlow |
 | 备份 | AES-GCM + PBKDF2（本地 ZIP 备份） |
-| OCR | ML Kit（本地离线识别） |
+| OCR | PaddleOCR PP-OCRv6（本地离线识别，ONNX Runtime） |
 | 后台任务 | WorkManager |
 | 序列化 | Kotlinx Serialization |
 | 农历 | Lunar |
@@ -1576,10 +1570,10 @@ categories.forEach { category ->
 
 | 优化项 | 说明 |
 |--------|------|
-| **Baseline Profile** | 规则覆盖 Hoot/Startup 路径（Compose/Hilt/Room/导航），消除首帧 JIT 编译 |
+| **Baseline Profile** | 规则覆盖 Home/Startup 路径（Compose/Hilt/Room/导航），消除首帧 JIT 编译 |
 | **Room 预热** | Application.onCreate 时调用 `database.openHelper.writableDatabase` 强制初始化 |
 | **@Immutable 实体** | Entity 数据类标注 `@Immutable`，减少 Compose 不必要的重组 |
-| **DataStore 批量读取** | 使用 `combine()` 一次性读取主题色/模式/隐私协议，减少启动时重组 |
+| **DataStore 读取** | 统一的 `prefsFlow`（`catch` 兜底空偏好）派生各属性 flow，避免重复订阅 `data` 流 |
 | **ViewModel 创建** | `hiltViewModel()` 编译期绑定，零反射 |
 | **WorkManager 延迟** | 非关键 Worker 调度延迟到后台协程，不阻塞主线程 |
 | **账单列表** | LazyColumn 惰性渲染，LIMIT 5000 消除静默截断（月度聚合视图不适用 Paging） |
@@ -1624,3 +1618,4 @@ MainActivity.onCreate()  (@AndroidEntryPoint)
 | **4.6** | **2026-07-28** | **分类系统重构：静态三分类 → 用户可定义动态分类（LifeCategory 实体 / categoryId FK / 动态 Section 渲染 / 分类管理 UI）。FieldType 类型系统统一（enum 扩展至 19 种，Wizard 全量暴露，DECIMAL 移除）。卡片渲染解耦（基于 layoutType 而非分类）。分类色重命名（时间→纪念）。预置分类判定规则文档化。IMAGE 字段重新设计（系统相册/拍照）。模板编辑功能规范。** |
 | **4.7** | **2026-07-28** | **取消模块化架构（PalmModule / ModuleRegistry / Tab 动态配置），底栏恢复为固定 4 Tab。新增模块均通过 Dashboard 卡片入口（不占 Tab）。删除第 17 章。** |
 | **5.0** | **2026-08-02** | **架构对齐当前实现：依赖注入回归 Hilt（手动 DI / AppContainer 已移除）；密码本 v1.3.0 已实现（feature/vault，字段级 AES-256-GCM + 独立主密码密钥包裹，DB v5 Migration4To5）；15.4 动态分类标注为规划中未实现；版本升 1.3.0。** |
+| **5.1** | **2026-08-02** | **安全与 OCR 升级：数据库 SQLCipher 全库加密（EncryptedOpenHelperFactory，明文库自动迁移）；OCR 引擎 ML Kit → PaddleOCR PP-OCRv6（OcrEngine 接口 + PaddleOcrEngine，ONNX Runtime 离线推理，模型打包 assets，release 仅 arm64-v8a）；APK 体积 86MB → 42.6MB。对齐修正：15.2 路由改类型安全路由（LifeRoute.kt）；15.3 FieldType 扩充标注为规划（当前 11 种）；INTERNET 权限标注预留未声明。** |

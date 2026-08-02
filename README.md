@@ -82,6 +82,7 @@
 
 ### 🔒 安全
 - 应用锁（PIN + 生物识别，PBKDF2 加密）
+- SQLCipher 全库加密（AES-256）
 - 密码本字段级 AES-GCM 加密 + 密钥包裹
 - AES-GCM 加密备份
 - 纯本地存储，全部功能无需联网
@@ -99,7 +100,8 @@
 | 图表 | Compose Canvas 自绘 |
 | 依赖注入 | Hilt |
 | 备份加密 | AES-GCM + PBKDF2 |
-| OCR | ML Kit（本地离线） |
+| 数据库加密 | SQLCipher |
+| OCR | PaddleOCR PP-OCRv6（本地离线，ONNX Runtime） |
 | 后台任务 | WorkManager |
 | 序列化 | Kotlinx Serialization |
 | 农历 | Lunar |
@@ -116,7 +118,7 @@ com.palmnote/
 │   ├── db/         # Room DAO/Entity/迁移
 │   ├── export/     # CSV/ZIP 导入导出
 │   ├── lock/       # 应用锁加密
-│   ├── ocr/        # ML Kit OCR
+│   ├── ocr/        # PaddleOCR 识别（ppocr-sdk）
 │   ├── repository/ # Repository 实现
 │   ├── sync/       # 日历同步
 │   └── worker/     # WorkManager 后台任务
@@ -175,6 +177,9 @@ git clone https://github.com/PickGear/PalmNote.git
 
 - 提交 Bug 或功能请求 → [Issues](https://github.com/PickGear/PalmNote/issues)
 - 提交代码 → [Pull Requests](https://github.com/PickGear/PalmNote/pulls)
+- 贡献指南 → [CONTRIBUTING.md](CONTRIBUTING.md)
+- 安全漏洞报告 → [SECURITY.md](SECURITY.md)
+- 社区行为准则 → [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
 
 ## 开源协议
 
