@@ -1,8 +1,10 @@
 # PalmNote 密码本模块设计文档
 
-> v1.3 | 2026-07-28 | 与设计规范 [design-spec.md](design-spec.md) 配合阅读
+> v1.3 | 2026-08-02 | 与设计规范 [design-spec.md](design-spec.md) 配合阅读
 >
-> **状态：v1.3.0 已实现**（`feature/vault`，DB v5）。本文档为设计蓝图，实现细节以代码为准。
+> **状态：v1.3.0 已实现**（`feature/vault`，DB v5）。本文档为设计蓝图 + 实现状态对照，实现细节以代码为准。
+>
+> **实现状态图例：** ✅ 已实现（v1.3.0）｜ 🔜 预留（v2.x 规划，未实现）
 >
 > 本文档为密码本（Vault）功能模块的完整设计。密码本是一个纯离线、字段级加密的密码管理模块，尊重 PalmNote "隐私优先、数据本地化" 的核心原则。
 
@@ -16,7 +18,7 @@
 
 - 纯本地存储，无需联网
 - 字段级 AES-256-GCM 加密
-- 复用应用锁 PIN 进行密钥派生
+- 独立主密码（PBKDF2 密钥派生 + 密钥包裹），与应用锁独立
 - Dashboard 卡片快捷入口（可显隐）
 
 ### 1.2 设计原则
@@ -25,7 +27,7 @@
 |------|------|
 | **隐私优先** | 所有敏感数据（密码字段）加密存储，密钥永不离设备 |
 | **离线可用** | 核心功能 100% 离线，无需任何网络权限 |
-| **零摩擦** | 复用已有 PIN / 生物识别，不引入第二套认证体系 |
+| **零摩擦** | 独立主密码 + 密钥包裹模式，改 PIN 无需重加密条目 |
 | **可选扩展** | 入口可关闭，不影响不使用密码本的用户 |
 
 ### 1.3 与现有架构的关系
@@ -35,57 +37,62 @@
 ```
 app (single module)
 └── src/main/java/com/palmnote/
-    ├── feature/vault/          ← 新增，密码本所有代码
-    │   ├── VaultEntry.kt
-    │   ├── VaultDao.kt
-    │   ├── VaultRepository.kt
-    │   ├── VaultEncryption.kt
-    │   ├── VaultLockManager.kt
-    │   └── vault/              ← UI 层
-    │       ├── VaultScreen.kt
-    │       ├── VaultDetailScreen.kt
-    │       ├── VaultEditScreen.kt
-    │       ├── VaultViewModel.kt
-    │       └── VaultPasswordGenerator.kt
+    ├── feature/vault/              ← 数据/加密层
+    │   ├── VaultEntry.kt           # Room Entity
+    │   ├── VaultDao.kt             # Room DAO
+    │   ├── VaultRepository.kt      # 仓库
+    │   ├── VaultCrypto.kt          # AES-256-GCM 原语
+    │   ├── VaultKeyManager.kt      # 密钥管理器（DK 包裹/解锁/改PIN）
+    │   ├── VaultLockManager.kt     # 锁定状态 + 失败次数/锁定时长
+    │   ├── VaultClipboardManager.kt# 剪贴板安全（哈希追踪自动清除）
+    │   ├── VaultPasswordGenerator.kt # 密码生成器 + 熵强度
+    │   └── vault/                  # UI 层
+    │       ├── VaultScreen.kt / VaultViewModel.kt
+    │       ├── VaultDetailScreen.kt / VaultDetailViewModel.kt
+    │       ├── VaultEditScreen.kt / VaultEditViewModel.kt
+    │       ├── VaultLockGate.kt    # PIN 解锁门
+    │       ├── VaultPasswordGeneratorSheet.kt
+    │       └── VaultSettingsScreen.kt / VaultSettingsViewModel.kt
     ├── data/datastore/
-    │   └── PreferencesManager.kt   ← 扩展 vault 相关 key
+    │   └── PreferencesManager.kt   ← vault_salt / vault_key_wrap / 设置项 key
     ├── di/
-    │   └── HiltModules.kt          ← 注册 vault DAO/加密/锁定组件
+    │   └── HiltModules.kt          ← 注册 vault DAO/密钥/锁定/剪贴板组件
     └── ui/
         ├── dashboard/
-        │   └── DashboardCardConfig.kt  ← 扩展 VAULT 卡片类型
-        ├── navigation/
-        │   └── AppNavigation.kt     ← 新增 vault 路由
-        ├── lock/
-        │   └── PinComponents.kt     ← 复用 PIN 输入组件
-        └── settings/
-            └── SettingsScreen.kt    ← 扩展 vault 设置项
+        │   └── DashboardCardConfig.kt  ← VAULT 卡片类型
+        └── navigation/
+            └── Routes.kt           ← Vault / VaultDetail / VaultEdit / VaultSettings 路由
 ```
 
-密码本通过 Hilt 提供依赖（`@Singleton`），所有密码本类不依赖任何网络相关代码。
+> 密码本通过 Hilt 提供依赖（`@Singleton`），所有密码本类不依赖任何网络相关代码，未声明 `INTERNET` 权限。
 
 ### 1.4 功能清单
 
-| 能力 | 类型 | 说明 | 网络依赖 |
-|------|------|------|---------|
-| **新增密码条目** | CRUD | 录入标题/用户名/密码/网址/备注/分类 | ❌ |
-| **密码生成器** | 工具 | 内置随机生成器，可配置长度和字符类型（大小写/数字/符号） | ❌ |
-| **列表浏览** | 查看 | 按更新时间倒序展示所有条目 | ❌ |
-| **查看密码详情** | 查看 | 展示完整信息，密码默认遮罩，点击 👁 切换明文 | ❌ |
-| **编辑条目** | CRUD | 修改已有密码条目所有字段 | ❌ |
-| **删除条目** | CRUD | 单条删除 | ❌ |
-| **搜索** | 工具 | 实时过滤标题/用户名/网址 | ❌ |
-| **分类筛选** | 工具 | 下拉菜单按分类过滤 | ❌ |
-| **一键复制** | 工具 | 复制用户名/密码/网址到剪贴板，30 秒后自动清空 | ❌ |
-| **Dashboard 快捷入口** | 导航 | 首页卡片显示最近条目 + 条数统计，点击进入密码本 | ❌ |
-| **卡片显隐** | 个性化 | 与其他 Dashboard 卡片统一管理，可关闭 | ❌ |
-| **复用应用锁 PIN** | 安全 | 进入密码本时验证 PIN / 生物识别 | ❌ |
-| **立即锁定** | 安全 | 切到后台即锁定密码本，清除密码明文与剪贴板 | ❌ |
-| **智能分类建议** | AI 功能 | 需配置 AI 端点，仅发送 title + url | ✅ 可选 |
-| **安全审计** | AI 功能 | 检测弱密码/重复密码/泄露风险，本地离线执行 | ❌ |
-| **加密云备份** | 备份 | 加密后备份到用户自备 WebDAV/SFTP | ✅ 可选 |
+| 能力 | 类型 | 状态 | 说明 | 网络依赖 |
+|------|------|------|------|---------|
+| **新增密码条目** | CRUD | ✅ | 录入标题/用户名/密码/网址/备注/分类 | ❌ |
+| **密码生成器** | 工具 | ✅ | 内置随机生成器，可配置长度和字符类型（大小写/数字/符号），含熵强度提示 | ❌ |
+| **列表浏览** | 查看 | ✅ | 按更新时间倒序展示所有条目 | ❌ |
+| **查看密码详情** | 查看 | ✅ | 展示完整信息，密码默认遮罩，点击 👁 切换明文 | ❌ |
+| **编辑条目** | CRUD | ✅ | 修改已有密码条目所有字段 | ❌ |
+| **删除条目** | CRUD | ✅ | 单条删除 | ❌ |
+| **搜索** | 工具 | ✅ | 实时过滤标题/用户名/网址，支持分类内搜索 | ❌ |
+| **分类筛选** | 工具 | ✅ | 下拉菜单按分类过滤，支持分类内搜索 | ❌ |
+| **一键复制** | 工具 | ✅ | 复制用户名/密码/网址到剪贴板，30 秒后自动清空（哈希追踪不误清） | ❌ |
+| **Dashboard 快捷入口** | 导航 | ✅ | 首页卡片显示最近条目 + 条数统计，点击进入密码本 | ❌ |
+| **卡片显隐** | 个性化 | ✅ | 与其他 Dashboard 卡片统一管理，可关闭 | ❌ |
+| **独立主密码** | 安全 | ✅ | 独立 PIN（PBKDF2-SHA256 120k 迭代），密钥包裹模式，与应用锁独立 | ❌ |
+| **进入需验证** | 安全 | ✅ | 可配置：关闭后切后台不再锁定（安全降级） | ❌ |
+| **立即锁定** | 安全 | ✅ | 切到后台即锁定密码本，清除密码明文与剪贴板 | ❌ |
+| **失败锁定** | 安全 | ✅ | 连续 5 次 PIN 错误锁定 30 秒（持久化，杀进程不可绕过） | ❌ |
+| **改主密码** | 安全 | ✅ | 密钥包裹模式，改 PIN 无需重加密条目 | ❌ |
+| **重置密码本** | 安全 | ✅ | 清除密钥与全部条目 | ❌ |
+| **智能分类建议** | AI 功能 | 🔜 | 需配置 AI 端点，仅发送 title + url（v2.x） | ✅ 可选 |
+| **安全审计** | AI 功能 | 🔜 | 检测弱密码/重复密码/泄露风险，本地离线执行（v2.x） | ❌ |
+| **加密云备份** | 备份 | 🔜 | 加密后备份到用户自备 WebDAV/SFTP（v2.x） | ✅ 可选 |
+| **TOTP / Autofill / Passkey** | 扩展 | 🔜 | 见 11.3（v2.x） | — |
 
-> **备注：** 所有标注"可选"网络的能力，默认不加载网络代码。用户不主动配置，应用行为与纯离线版本完全一致。
+> **备注：** 所有标注"可选"网络的能力为 v2.x 预留，当前版本不加载网络代码、未声明 `INTERNET` 权限。用户行为与纯离线版本完全一致。
 
 ---
 
@@ -165,6 +172,8 @@ val MIGRATION_4_5 = object : Migration(4, 5) {
                 updatedAt INTEGER NOT NULL
             )
         """)
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_vault_entries_updatedAt ON vault_entries(updatedAt)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_vault_entries_category ON vault_entries(category)")
     }
 }
 ```
@@ -182,7 +191,7 @@ val MIGRATION_4_5 = object : Migration(4, 5) {
 ```
 用户输入 PIN
     ↓
-PBKDF2-SHA256（100,000 次迭代 + 随机盐 S₁）
+PBKDF2-SHA256（120,000 次迭代 + 随机盐 S₁）
     ↓
 临时密钥 K（256 位）
     ↓
@@ -236,46 +245,46 @@ AES-256-GCM.decrypt() → 明文密码
 
 ## 四、导航路由
 
-密码本作为外层 NavHost 路由（与 Settings、AddBill 同级），不占用底部 Tab。使用类型安全路由（`@Serializable`）：
+密码本作为外层 NavHost 路由（与 Settings、AddBill 同级），不占用底部 Tab。使用类型安全路由（`Routes.kt`，`@Serializable`）：
 
 ```kotlin
 @Serializable data object Vault
 @Serializable data class VaultDetail(val entryId: Long)
 @Serializable data class VaultEdit(val entryId: Long? = null)
+@Serializable data object VaultSettings
 ```
 
-在 `PalmNoteNavHost()` 中添加 composable：
+在 NavHost 中以类型安全方式注册 composable：
 
 ```kotlin
-composable(Route.Vault) {
+composable<Vault> {
     VaultScreen(
-        onNavigateToDetail = { id -> navController.navigate("vault/$id") },
-        onNavigateToEdit = { id -> navController.navigate("vault/edit?entryId=$id") },
+        onNavigateToDetail = { id -> navController.navigate(VaultDetail(id)) },
+        onNavigateToEdit = { id -> navController.navigate(VaultEdit(id)) },
+        onNavigateToSettings = { navController.navigate(VaultSettings) },
         onNavigateBack = { navController.popBackStack() }
     )
 }
 
-composable(
-    Route.VaultDetail,
-    arguments = listOf(navArgument("entryId") { type = NavType.LongType })
-) { backStackEntry ->
-    val entryId = backStackEntry.arguments?.getLong("entryId") ?: 0L
+composable<VaultDetail> { backStackEntry ->
+    val entryId = backStackEntry.toRoute<VaultDetail>().entryId
     VaultDetailScreen(
         entryId = entryId,
-        onNavigateToEdit = { id -> navController.navigate("vault/edit?entryId=$id") },
+        onNavigateToEdit = { id -> navController.navigate(VaultEdit(id)) },
         onNavigateBack = { navController.popBackStack() }
     )
 }
 
-composable(
-    Route.VaultEdit,
-    arguments = listOf(navArgument("entryId") { type = NavType.LongType; defaultValue = -1L })
-) { backStackEntry ->
-    val entryId = backStackEntry.arguments?.getLong("entryId").takeIf { it != -1L }
+composable<VaultEdit> { backStackEntry ->
+    val entryId = backStackEntry.toRoute<VaultEdit>().entryId
     VaultEditScreen(
         entryId = entryId,
         onNavigateBack = { navController.popBackStack() }
     )
+}
+
+composable<VaultSettings> {
+    VaultSettingsScreen(onNavigateBack = { navController.popBackStack() })
 }
 ```
 
@@ -286,7 +295,8 @@ Dashboard 卡片点击
     ↓
 VaultScreen（列表 / 搜索 / 分类）
     ├─ 点击条目 → VaultDetailScreen（查看 / 复制 / 编辑 / 删除）
-    └─ 点击新增 → VaultEditScreen（新增 / 编辑表单）
+    ├─ 点击新增 → VaultEditScreen（新增 / 编辑表单）
+    └─ 设置入口 → VaultSettingsScreen（剪贴板/需验证/条目数/改PIN/重置）
 ```
 
 ---
@@ -597,29 +607,31 @@ fun toggleCloudService(enabled: Boolean) {
 
 ```
 com.palmnote/
-├── feature.vault/          ← 新增
-│    ├── VaultEntry.kt
-│    ├── VaultDao.kt
-│    ├── VaultRepository.kt
-│    ├── VaultEncryption.kt     ← AES-256-GCM（仅依赖 JDK crypto）
-│    ├── VaultLockManager.kt    ← 生命周期观察 + 锁定状态
-│    └── vault/
-│        ├── VaultScreen.kt
-│        ├── VaultDetailScreen.kt
-│        ├── VaultEditScreen.kt
-│        ├── VaultPasswordGenerator.kt ← SecureRandom，零网络
-│        └── VaultViewModel.kt
+├── feature.vault/          ← 数据/加密层
+│    ├── VaultEntry.kt              # Room Entity（vault_entries）
+│    ├── VaultDao.kt                # Room DAO
+│    ├── VaultRepository.kt         # 仓库
+│    ├── VaultCrypto.kt             # AES-256-GCM 原语（仅依赖 JDK crypto）
+│    ├── VaultKeyManager.kt         # 密钥管理（salt+key_wrap 包裹/解锁/改PIN/重置）
+│    ├── VaultLockManager.kt        # 锁定状态 + 失败次数/锁定时长持久化
+│    ├── VaultClipboardManager.kt   # 剪贴板安全（SHA-256 哈希追踪自动清除）
+│    ├── VaultPasswordGenerator.kt  # 密码生成器 + 熵强度（SecureRandom，零网络）
+│    └── vault/                     # UI 层
+│        ├── VaultScreen.kt / VaultViewModel.kt
+│        ├── VaultDetailScreen.kt / VaultDetailViewModel.kt
+│        ├── VaultEditScreen.kt / VaultEditViewModel.kt
+│        ├── VaultLockGate.kt       # PIN 解锁门
+│        ├── VaultPasswordGeneratorSheet.kt
+│        └── VaultSettingsScreen.kt / VaultSettingsViewModel.kt
 ├── data/
-│    ├── db/AppDatabase.kt      ← 新增 vault_entries 表
-│    ├── datastore/PreferencesManager.kt  ← 扩展 vault key
-│    └── lock/AppLockManager.kt     ← 独立主密码，与应用锁无关
-├── di/HiltModules.kt         ← 注册 vault DAO 与单例组件
+│    ├── db/AppDatabase.kt          # 新增 vault_entries 表（Migration4To5）
+│    └── datastore/PreferencesManager.kt  # vault_salt / vault_key_wrap / 设置项 key
+├── di/HiltModules.kt               # 注册 vault DAO/密钥/锁定/剪贴板/仓库
 ├── ui/
-│    ├── dashboard/DashboardCardConfig.kt ← 新增 VAULT 卡片
-│    ├── navigation/AppNavigation.kt      ← 新增 vault 路由
-│    └── lock/PinComponents.kt            ← 复用 PIN 输入组件
+│    ├── dashboard/DashboardCardConfig.kt  # VAULT 卡片
+│    └── navigation/Routes.kt       # Vault / VaultDetail / VaultEdit / VaultSettings 路由
 └── domain/
-     └── repository/VaultRepository.kt    ← 接口
+     └── repository/VaultRepository.kt    # 接口
 ```
 
 ### 8.2 关键约束
@@ -634,27 +646,32 @@ com.palmnote/
 
 ### 9.1 VaultLockManager 设计
 
-密码本拥有独立于应用锁的锁定状态。`VaultLockManager` 管理锁定/解锁状态切换：
+密码本拥有独立于应用锁的锁定状态。`VaultLockManager`（Hilt `@Singleton`）管理锁定/解锁状态切换，委托 `VaultKeyManager` 做实际密钥解锁，并持久化失败次数与锁定时长（SharedPreferences）：
 
 ```kotlin
-class VaultLockManager {
-    private var isLocked: Boolean = true          // 默认锁定
-    private var unlockedAt: Long = 0L
-    private var clipboardContentHash: String? = null  // 见 9.3
-    
-    fun isLocked(): Boolean = isLocked
-    fun unlock() { isLocked = false; unlockedAt = System.currentTimeMillis() }
-    fun lock() { isLocked = true; clearDecryptedPassword(); clearVaultClipboard() }
-    
-    /** 清除内存中的明文密码（由 VaultEncryption 持有） */
-    fun clearDecryptedPassword() { ... }
-    
-    /** 清除密码本条目的剪贴板内容 */
-    fun clearVaultClipboard() { ... }
+@Singleton
+class VaultLockManager @Inject constructor(
+    private val keyManager: VaultKeyManager,
+    private val clipboardManager: VaultClipboardManager,
+    private val preferencesManager: PreferencesManager,
+) {
+    enum class LockState { NEED_SETUP, LOCKED, UNLOCKED }
+
+    private val _state = MutableStateFlow<LockState>(LockState.LOCKED)
+    val state: StateFlow<LockState> = _state.asStateFlow()
+
+    fun initialize()               // 检测 salt 是否存在 → NEED_SETUP / LOCKED
+    suspend fun setup(pin: String): Boolean       // 首次设置主密码
+    suspend fun unlock(pin: String): Boolean      // PIN 验证 = 解包 DK 成功
+    suspend fun changePin(newPin: String): Boolean
+    fun lock()                     // 切后台立即锁定：清 DK + 剪贴板
+    suspend fun requireAuth(): Boolean            // vault_require_auth 配置
+    suspend fun reset()            // 清空密钥与条目
+    fun isLockedOut(): Boolean     // 失败 5 次锁 30 秒
 }
 ```
 
-锁定状态仅驻留内存，不写入 DataStore。应用进程被杀后重新进入需要 PIN 重新解锁。
+> 密钥实际持有与加解密在 `VaultKeyManager`（内存 `dataKey`），`VaultLockManager` 负责状态机与防暴力。失败次数/锁定时长写入 SharedPreferences，杀进程不可绕过。锁定状态不写盘，进程被杀默认锁定。
 
 ### 9.2 锁定行为
 
@@ -683,62 +700,62 @@ VaultLockManager.unlock() → 进入 VaultScreen
 
 ### 9.3 VaultLockObserver 注册
 
-`VaultLockObserver` 观察 Fragment/Activity 生命周期，在每个使用密码本的路由页面注册：
-
-```kotlin
-class VaultLockObserver(
-    private val lockManager: VaultLockManager
-) : DefaultLifecycleObserver {
-    override fun onStop(owner: LifecycleOwner) {
-        lockManager.lock()  // 切后台立即锁定
-    }
-}
-```
-
-**注册方式：** 在 `VaultScreen`、`VaultDetailScreen`、`VaultEditScreen` 的 `DisposableEffect` 中注册：
+`VaultLockGate` 是进入密码本 UI 的门控 composable：状态为 `LOCKED` 时显示 PIN 输入界面，`UNLOCKED` 时渲染内容，`NEED_SETUP` 时引导设置主密码。锁定由 `VaultLockManager` 在进入/退出各 Vault 路由时统一管理：
 
 ```kotlin
 @Composable
-fun VaultScreen(...) {
-    val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(lifecycleOwner) {
-        val observer = VaultLockObserver(lockManager)
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+fun VaultLockGate(
+    lockManager: VaultLockManager,
+    content: @Composable () -> Unit,
+) {
+    val state by lockManager.state.collectAsState()
+    when (state) {
+        LockState.NEED_SETUP -> VaultSetupPin(...)
+        LockState.LOCKED -> VaultPinEntry(...)
+        LockState.UNLOCKED -> content()
     }
-    // ... rest of UI
 }
 ```
 
-密码本外部页面（Dashboard、Settings 等）不注册此 Observer，不受密码本锁定策略影响。
+每个 Vault 页面（VaultScreen / VaultDetailScreen / VaultEditScreen / VaultSettingsScreen）外层包 `VaultLockGate`；页面退出（`DisposableEffect` onDispose / 路由弹出）调用 `lockManager.lock()`。密码本外部页面（Dashboard、Settings 等）不受密码本锁定策略影响。
 
 ### 9.4 剪贴板自动清除
 
 - 复制密码后 30 秒自动清空剪贴板（默认值，用户可在设置中调整）
 - 选项：关闭 / 10 秒 / 30 秒 / 60 秒
 
-**追踪机制：** 每次密码本执行复制操作时，记录剪贴板内容的 SHA-256 哈希：
+**追踪机制：** `VaultClipboardManager` 每次密码本执行复制操作时，记录剪贴板内容的 SHA-256 哈希：
 
 ```kotlin
-fun copyToClipboard(context: Context, label: String, text: String) {
-    val clip = ClipData.newPlainText(label, text)
-    clipboardManager.setPrimaryClip(clip)
-    // 记录哈希用于后续清除判断
-    clipboardContentHash = sha256(text)
-    scheduleClipboardClear()
-}
+@Singleton
+class VaultClipboardManager @Inject constructor(
+    @ApplicationContext private val context: Context,
+    @ApplicationScope private val scope: CoroutineScope,
+    private val preferencesManager: PreferencesManager,
+) {
+    private var pendingHash: String? = null
+    private var clearJob: Job? = null
 
-private fun scheduleClipboardClear() {
-    clearJob?.cancel()
-    clearJob = coroutineScope.launch {
-        delay(clipboardAutoClearMillis)  // 默认 30_000ms
-        val current = clipboardManager.primaryClip?.getItemAt(0)?.text?.toString()
-        // 仅清除密码本写入的内容（非用户手动复制的内容）
-        if (current != null && sha256(current) == clipboardContentHash) {
-            clipboardManager.setPrimaryClip(ClipData.newPlainText("", ""))
+    fun copy(label: String, text: String) {
+        val clipboard = context.getSystemService(ClipboardManager::class.java)
+        clipboard.setPrimaryClip(ClipData.newPlainText(label, text))
+        pendingHash = sha256(text)                 // 记录哈希用于后续清除判断
+        clearJob?.cancel()
+        clearJob = scope.launch {
+            val seconds = preferencesManager.vaultClipboardClearSeconds.first()
+            if (seconds <= 0) { pendingHash = null; return@launch }  // 0 = 关闭
+            delay(seconds * 1000L)
+            val current = clipboard.primaryClip?.getItemAt(0)?.text?.toString()
+            // 仅清除密码本写入的内容（非用户手动复制的内容）
+            if (current != null && sha256(current) == pendingHash) {
+                clipboard.setPrimaryClip(ClipData.newPlainText("", ""))
+            }
+            pendingHash = null
         }
-        clipboardContentHash = null
     }
+
+    /** 锁定时立即清空自身写入的剪贴板内容。 */
+    fun clearIfOwned() { ... }
 }
 ```
 
@@ -758,8 +775,10 @@ private fun scheduleClipboardClear() {
 ├── 密码本            ← 新增
 │   ├── 剪贴板自动清除         [30 秒 ▼]
 │   ├── 进入密码本需验证       [✓]
-│   └── 已加密条目数: N 条     [不可操作，仅展示]
-├── 云服务
+│   ├── 已加密条目数: N 条     [不可操作，仅展示]
+│   ├── 修改主密码             [点击]  ← 验证旧 PIN → 输入新 PIN
+│   └── 重置密码本             [点击]  ← 二次确认，清空全部
+├── 云服务（v2.x 预留，当前不显示）
 └── ...
 ```
 
@@ -770,6 +789,8 @@ private fun scheduleClipboardClear() {
 | 剪贴板自动清除 | `vault_clipboard_clear_seconds` | 枚举 | 30 | 0=关闭 / 10 / 30 / 60 秒 |
 | 进入需验证 | `vault_require_auth` | Boolean | true | 关闭后切后台不再锁定（安全降级） |
 | 加密条目数 | `vault_entry_count` | 只读 | — | 显示 `vault_entries` 表总行数 |
+| 修改主密码 | — | 操作 | — | 密钥包裹模式，改 PIN 无需重加密条目 |
+| 重置密码本 | — | 操作 | — | 清空密钥（salt/key_wrap）与全部条目 |
 
 ### 10.3 DataStore Key（追加到 PreferencesManager）
 
@@ -800,7 +821,7 @@ val VAULT_REQUIRE_AUTH = booleanPreferencesKey("vault_require_auth")
 | 备份范围 | 整合到现有 ZIP 备份，vault 数据单独加密为 `.vault` 文件 |
 | 加密 | 独立 AES-256-GCM 密钥（与数据库加密密钥不同），上传前已加密，提供商无法读取内容 |
 | 传输 | 用户自备 WebDAV（推荐）/ SFTP / **GitHub 仓库** |
-| 恢复 | 需要验证应用锁 PIN 解密 vault 部分 |
+| 恢复 | 需要验证密码本主密码解密 vault 部分 |
 | 自动备份周期 | 每天 / 每周 / 手动 |
 
 **WebDAV vs SFTP：**
@@ -876,9 +897,9 @@ feature/cloud/provider/
 
 | 版本 | 密码本 | AI | 云备份 | 构建 |
 |------|--------|----|--------|------|
-| v1.2.x | ✅ 纯离线 | — | — | 单版本 |
-| v1.3.x | ✅ 基础功能完善 | — | — | 单版本 |
-| v2.0+ | ✅ | ✅ 可选端点 | ✅ 可选 WebDAV / SFTP / GitHub | 单版本 |
+| v1.2.x | — | — | — | 单版本 |
+| v1.3.x | ✅ 已实现（离线/字段级加密/锁定/剪贴板/设置） | — | — | 单版本 |
+| v2.0+ | ✅ | 🔜 可选端点 | 🔜 可选 WebDAV / SFTP / GitHub | 单版本 |
 
 ---
 
@@ -900,7 +921,7 @@ feature/cloud/provider/
 | 版本 | 变更 |
 |------|------|
 | 1 | 初版 |
-| 2 | 新增若干表 |
-| 3 | 金额单位迁移（元 → 分，Migration2To3） |
-| 4 | 金额 ×100 迁移（Migration3To4） |
+| 2 | 新增若干表 + 账单索引 |
+| 3 | 账单索引补齐（`index_bills_*`） |
+| 4 | 金额单位迁移（元 → 分，Migration3To4，×100 换算含已有数据） |
 | **5** | **当前版本（v1.3.0）：新增 `vault_entries` 密码本表（Migration4To5）** |

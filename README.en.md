@@ -82,6 +82,7 @@ See [CHANGELOG.md](CHANGELOG.md).
 
 ### 🔒 Security
 - App lock (PIN + biometric, PBKDF2 hashing)
+- Full-database encryption with SQLCipher (AES-256)
 - Vault field-level AES-GCM encryption + key wrapping
 - AES-GCM encrypted backups
 - 100% local storage, all features work offline
@@ -99,7 +100,8 @@ See [CHANGELOG.md](CHANGELOG.md).
 | Charts | Custom Canvas drawing |
 | DI | Hilt |
 | Backup Encryption | AES-GCM + PBKDF2 |
-| OCR | ML Kit (on-device) |
+| Database Encryption | SQLCipher |
+| OCR | PaddleOCR PP-OCRv6 (on-device, ONNX Runtime) |
 | Background Tasks | WorkManager |
 | Serialization | Kotlinx Serialization |
 | Chinese Lunar Calendar | Lunar |
@@ -116,7 +118,7 @@ com.palmnote/
 │   ├── db/         # Room DAO/Entity/migrations
 │   ├── export/     # CSV/ZIP import/export
 │   ├── lock/       # App lock encryption
-│   ├── ocr/        # ML Kit OCR
+│   ├── ocr/        # PaddleOCR recognition (ppocr-sdk)
 │   ├── repository/ # Repository implementations
 │   ├── sync/       # Calendar sync
 │   └── worker/     # WorkManager background tasks
@@ -173,6 +175,9 @@ git clone https://github.com/PickGear/PalmNote.git
 
 - Report bugs or request features → [Issues](https://github.com/PickGear/PalmNote/issues)
 - Submit code → [Pull Requests](https://github.com/PickGear/PalmNote/pulls)
+- Contribution guidelines → [CONTRIBUTING.md](CONTRIBUTING.md)
+- Security vulnerability reporting → [SECURITY.md](SECURITY.md)
+- Community code of conduct → [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
 
 ## License
 

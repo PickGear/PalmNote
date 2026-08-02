@@ -12,6 +12,7 @@ PalmNote is a local life recording application providing the following features:
 
 - Accounting (income/expense tracking, categories, budgets)
 - Asset management (accounts, net worth statistics)
+- Password vault (offline, field-level encrypted)
 - Life recording (habit tracking, mood journal, focus timer, etc. - 16 modules)
 
 This application is **free and open source**, released under the GPL-3.0 license.
