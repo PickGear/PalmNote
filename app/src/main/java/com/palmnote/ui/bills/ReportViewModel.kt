@@ -38,9 +38,9 @@ data class ReportState(
     val weekEnd: Long = DateUtils.getWeekEnd(),
     val data: ReportData = ReportData(),
     val isLoading: Boolean = false,
+    val error: String? = null,
     val selectedBookId: Long = -1L
 )
-
 @HiltViewModel
 class ReportViewModel @Inject constructor(
     private val billRepository: BillRepository
@@ -118,7 +118,7 @@ class ReportViewModel @Inject constructor(
         dataJob?.cancel()
         dataJob = viewModelScope.launch {
             try {
-                _state.update { it.copy(isLoading = true) }
+                _state.update { it.copy(isLoading = true, error = null) }
                 val s = _state.value
                 val isExpense = s.incomeExpenseTab == 0
                 when (s.periodTab) {
@@ -128,7 +128,7 @@ class ReportViewModel @Inject constructor(
                 }
                 _state.update { it.copy(isLoading = false) }
             } catch (e: Exception) {
-                _state.update { it.copy(isLoading = false) }
+                _state.update { it.copy(isLoading = false, error = e.message) }
             }
         }
     }

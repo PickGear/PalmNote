@@ -47,16 +47,6 @@ data class Moment(
             else -> AppIcon.SentimentNeutral
         }
 
-    val moodText: String
-        get() = when (mood) {
-            "GREAT" -> "开心"
-            "GOOD" -> "不错"
-            "OK" -> "一般"
-            "BAD" -> "难过"
-            "TERRIBLE" -> "糟糕"
-            else -> ""
-        }
-
     val weatherIcon: AppIcon
         get() = when (weather) {
             "SUNNY" -> AppIcon.WbSunny
@@ -66,31 +56,6 @@ data class Moment(
             "WINDY" -> AppIcon.Air
             "FOGGY" -> AppIcon.Cloud
             else -> AppIcon.Cloud
-        }
-
-    val weatherText: String
-        get() = when (weather) {
-            "SUNNY" -> "晴"
-            "CLOUDY" -> "多云"
-            "RAINY" -> "雨"
-            "SNOWY" -> "雪"
-            "WINDY" -> "大风"
-            "FOGGY" -> "雾"
-            else -> ""
-        }
-
-    val categoryText: String
-        get() = when (category) {
-            "TRAVEL" -> "旅行"
-            "FOOD" -> "美食"
-            "FAMILY" -> "家庭"
-            "WORK" -> "工作"
-            "FRIEND" -> "朋友"
-            "HOBBY" -> "爱好"
-            "NATURE" -> "自然"
-            "PET" -> "宠物"
-            "CUSTOM" -> "其他"
-            else -> ""
         }
 
     val categoryIcon: AppIcon
@@ -108,18 +73,4 @@ data class Moment(
 
     val hasMedia: Boolean
         get() = images.isNotEmpty() || videoPath.isNotEmpty() || audioPath.isNotEmpty()
-
-    val displayDate: String
-        get() {
-            val cal = java.util.Calendar.getInstance()
-            cal.timeInMillis = timestamp
-            val nowCal = java.util.Calendar.getInstance()
-            return when {
-                cal.get(java.util.Calendar.YEAR) == nowCal.get(java.util.Calendar.YEAR) &&
-                cal.get(java.util.Calendar.DAY_OF_YEAR) == nowCal.get(java.util.Calendar.DAY_OF_YEAR) -> "今天"
-                cal.get(java.util.Calendar.YEAR) == nowCal.get(java.util.Calendar.YEAR) &&
-                cal.get(java.util.Calendar.DAY_OF_YEAR) == nowCal.get(java.util.Calendar.DAY_OF_YEAR) - 1 -> "昨天"
-                else -> "${cal.get(java.util.Calendar.MONTH) + 1}月${cal.get(java.util.Calendar.DAY_OF_MONTH)}日"
-            }
-        }
 }

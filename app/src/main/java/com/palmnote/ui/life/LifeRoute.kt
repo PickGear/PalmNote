@@ -31,6 +31,9 @@ data object LifeMoodRoute
 data object LifeJournalRoute
 
 @Serializable
+data object LifeTodoRoute
+
+@Serializable
 data object LifeReportRoute
 
 @Serializable

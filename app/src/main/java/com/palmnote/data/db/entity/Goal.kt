@@ -69,26 +69,6 @@ data class Goal(
         get() = if (deadline != null) {
             ((deadline - System.currentTimeMillis()) / DateUtils.MILLIS_PER_DAY).toInt()
         } else Int.MAX_VALUE
-
-    val priorityText: String
-        get() = when (priority) {
-            "HIGH" -> "高优先"
-            "MEDIUM" -> "中优先"
-            "LOW" -> "低优先"
-            else -> "中优先"
-        }
-
-    val categoryText: String
-        get() = when (category) {
-            "FITNESS" -> "运动健身"
-            "READING" -> "阅读学习"
-            "SKILL" -> "技能提升"
-            "HABIT" -> "日常习惯"
-            "PROJECT" -> "项目计划"
-            "SAVING" -> "储蓄理财"
-            "CUSTOM" -> "自定义"
-            else -> category.ifEmpty { "未分类" }
-        }
 }
 
 @Entity(tableName = "goal_check_ins", indices = [

@@ -6,6 +6,8 @@ import com.palmnote.data.LifeDataSeeder
 import com.palmnote.data.backup.BackupRepository
 import com.palmnote.data.datastore.PreferencesManager
 import com.palmnote.data.db.AppDatabase
+import com.palmnote.data.db.DbKeyStore
+import com.palmnote.data.db.EncryptedOpenHelperFactory
 import com.palmnote.data.db.dao.AccountBookDao
 import com.palmnote.data.db.dao.AchievementDao
 import com.palmnote.data.db.dao.AnniversaryDao
@@ -90,10 +92,17 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideDatabase(@ApplicationContext context: Context): AppDatabase =
+    fun provideDbKeyStore(@ApplicationContext context: Context): DbKeyStore = DbKeyStore(context)
+
+    @Provides
+    @Singleton
+    fun provideDatabase(
+        @ApplicationContext context: Context,
+        keyStore: DbKeyStore
+    ): AppDatabase =
         Room.databaseBuilder(context, AppDatabase::class.java, AppDatabase.DATABASE_NAME)
+            .openHelperFactory(EncryptedOpenHelperFactory(context, keyStore))
             .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
-            .fallbackToDestructiveMigration()
             .build()
 
     @Provides fun provideAssetDao(db: AppDatabase): AssetDao = db.assetDao()

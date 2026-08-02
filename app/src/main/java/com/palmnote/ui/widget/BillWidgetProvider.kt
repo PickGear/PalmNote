@@ -11,9 +11,12 @@ import androidx.room.Room
 import com.palmnote.MainActivity
 import com.palmnote.R
 import com.palmnote.data.db.AppDatabase
+import com.palmnote.data.db.DbKeyStore
+import com.palmnote.data.db.EncryptedOpenHelperFactory
 import com.palmnote.data.db.migration.MIGRATION_1_2
 import com.palmnote.data.db.migration.MIGRATION_2_3
 import com.palmnote.data.db.migration.MIGRATION_3_4
+import com.palmnote.data.db.migration.MIGRATION_4_5
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -29,12 +32,14 @@ class BillWidgetProvider : AppWidgetProvider() {
             var db: AppDatabase? = null
             try {
                 val yearMonth = DateTimeFormatter.ofPattern("yyyy-MM").format(LocalDate.now())
+                val appContext = context.applicationContext
                 db = Room.databaseBuilder(
-                    context.applicationContext,
+                    appContext,
                     AppDatabase::class.java,
                     AppDatabase.DATABASE_NAME
-                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
-                    .fallbackToDestructiveMigration()
+                ).openHelperFactory(
+                    EncryptedOpenHelperFactory(appContext, DbKeyStore(appContext))
+                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
                     .build()
                 val expense = db.billDao().getMonthlyExpense(yearMonth).first()
                 val income = db.billDao().getMonthlyIncome(yearMonth).first()

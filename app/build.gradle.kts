@@ -159,6 +159,9 @@ dependencies {
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)
 
+    // SQLCipher 数据库加密
+    implementation(libs.sqlcipher.android)
+
     // DataStore
     implementation(libs.datastore.preferences)
 

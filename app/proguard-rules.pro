@@ -29,6 +29,11 @@
 # Widget
 -keep class com.palmnote.ui.widget.BillWidgetProvider
 
+# SQLCipher
+-keep class net.zetetic.database.sqlcipher.** { *; }
+-keep class net.zetetic.database.** { *; }
+-dontwarn net.zetetic.database.**
+
 # 移除调试日志（release 混淆时生效）；保留 w/e 错误级日志
 -assumenosideeffects class android.util.Log {
     public static int v(...);

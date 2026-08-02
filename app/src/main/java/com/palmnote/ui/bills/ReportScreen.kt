@@ -113,6 +113,17 @@ fun ReportScreen(
             item { Spacer(modifier = Modifier.height(12.dp)) }
             item { PeriodTabRow(state, viewModel) }
             item { Spacer(modifier = Modifier.height(16.dp)) }
+            if (state.isLoading) {
+                item { Box(modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() } }
+                item { Spacer(modifier = Modifier.height(16.dp)) }
+            }
+            if (state.error != null) {
+                item {
+                    Box(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+                        Text(state.error!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            }
             item { SummarySection(state) }
             item { Spacer(modifier = Modifier.height(20.dp)) }
             item { DonutChartSection(state, onNavigateToAddBill, reportCustomExpense, reportCustomIncome) }

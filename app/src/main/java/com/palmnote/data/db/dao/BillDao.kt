@@ -187,7 +187,7 @@ interface BillDao {
     @Query("""
         SELECT category, SUM(amount) as total, COUNT(*) as count
         FROM bills
-        WHERE type = 'EXPENSE' AND substr(yearMonth,1,4) = :year AND isDeleted = 0
+        WHERE type = 'EXPENSE' AND yearMonth >= :year || '-01' AND yearMonth <= :year || '-12' AND isDeleted = 0
         GROUP BY category
         ORDER BY total DESC
     """)
@@ -196,23 +196,23 @@ interface BillDao {
     @Query("""
         SELECT category, SUM(amount) as total, COUNT(*) as count
         FROM bills
-        WHERE type = 'INCOME' AND substr(yearMonth,1,4) = :year AND isDeleted = 0
+        WHERE type = 'INCOME' AND yearMonth >= :year || '-01' AND yearMonth <= :year || '-12' AND isDeleted = 0
         GROUP BY category
         ORDER BY total DESC
     """)
     fun getYearlyIncomeByCategory(year: String): Flow<List<CategoryTotalWithCount>>
 
-    @Query("SELECT SUM(amount) FROM bills WHERE type = 'EXPENSE' AND substr(yearMonth,1,4) = :year AND isDeleted = 0")
+    @Query("SELECT SUM(amount) FROM bills WHERE type = 'EXPENSE' AND yearMonth >= :year || '-01' AND yearMonth <= :year || '-12' AND isDeleted = 0")
     fun getYearlyExpense(year: String): Flow<Long?>
 
-    @Query("SELECT SUM(amount) FROM bills WHERE type = 'INCOME' AND substr(yearMonth,1,4) = :year AND isDeleted = 0")
+    @Query("SELECT SUM(amount) FROM bills WHERE type = 'INCOME' AND yearMonth >= :year || '-01' AND yearMonth <= :year || '-12' AND isDeleted = 0")
     fun getYearlyIncome(year: String): Flow<Long?>
 
     @Query("""
         SELECT yearMonth, 
                SUM(CASE WHEN type = 'EXPENSE' THEN amount ELSE 0 END) as total
         FROM bills
-        WHERE substr(yearMonth,1,4) = :year AND isDeleted = 0
+        WHERE yearMonth >= :year || '-01' AND yearMonth <= :year || '-12' AND isDeleted = 0
         GROUP BY yearMonth
         ORDER BY yearMonth ASC
     """)
@@ -222,7 +222,7 @@ interface BillDao {
         SELECT yearMonth, 
                SUM(CASE WHEN type = 'INCOME' THEN amount ELSE 0 END) as total
         FROM bills
-        WHERE substr(yearMonth,1,4) = :year AND isDeleted = 0
+        WHERE yearMonth >= :year || '-01' AND yearMonth <= :year || '-12' AND isDeleted = 0
         GROUP BY yearMonth
         ORDER BY yearMonth ASC
     """)
