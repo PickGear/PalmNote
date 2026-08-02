@@ -166,7 +166,7 @@
     <string name="settings_clear_cache">清除缓存</string>
     <string name="settings_clear_cache_subtitle">清理临时缓存文件，安全操作</string>
     <string name="settings_about_app">关于掌记</string>
-    <string name="settings_about_version">版本 1.0.0</string>
+    <string name="settings_about_version">版本 1.3.0</string>
     <string name="settings_days">%d 天</string>
     <string name="settings_color_pick_title">选择开关颜色</string>
     <string name="settings_preset_color">预设颜色</string>
