@@ -89,6 +89,13 @@ android {
         abortOnError = true
     }
 
+    testOptions {
+        unitTests {
+            // Robolectric 需要访问 Android 资源（如 manifest/asset）
+            isIncludeAndroidResources = true
+        }
+    }
+
     baselineProfile {
         // 关闭自动生成：已提交静态 baseline-prof.txt，本地 release 构建不再依赖模拟器。
         // 需要更新 profile 时手动执行 generateBaselineProfile 任务。
@@ -125,6 +132,19 @@ android {
         arg("room.schemaLocation", "$projectDir/schemas")
         arg("room.incremental", "true")
         arg("room.generateKotlin", "true")
+    }
+    sourceSets {
+        // Room 2.7 MigrationTestHelper 从 assets 读取导出的 schema，
+        // 直接把 schemas 目录挂为 assets，保持单一来源、随 ksp 自动更新。
+        // androidTest：instrumentation 测试直接读 APK assets。
+        // debug：Robolectric 单测读取的 merged assets 只包含 debug sourceSet，
+        //   所以把 schemas 挂到 debug（而非 test），避免打进 release APK。
+        getByName("androidTest") {
+            assets.srcDirs("$projectDir/schemas")
+        }
+        getByName("debug") {
+            assets.srcDirs("$projectDir/schemas")
+        }
     }
     packaging {
         resources {
@@ -217,12 +237,12 @@ dependencies {
     testImplementation(libs.coroutines.test)
     testImplementation(libs.turbine)
     testImplementation(libs.room.testing)
+    testImplementation(libs.robolectric)
+    testImplementation("androidx.test:monitor:1.7.2")
 
     // Android instrumentation tests
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.espresso.core)
     androidTestImplementation("androidx.benchmark:benchmark-macro-junit4:1.3.1")
-    androidTestImplementation(libs.room.testing)
-    androidTestImplementation("androidx.sqlite:sqlite-framework:2.4.0")
     androidTestImplementation("androidx.test:core:1.6.1")
 }
