@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.palmnote.PalmNoteApp
 import com.palmnote.R
+import com.palmnote.domain.util.DateUtils
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.palmnote.ui.components.EmptyState
 import com.palmnote.ui.life.common.SwipeableItem
@@ -116,7 +117,7 @@ fun CountdownListScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Long
                         ?: (obj["targetDate"] as? JsonPrimitive)?.content?.toLongOrNull()
                 } catch (_: Exception) { null }
                 val days = if (dateMillis != null) {
-                    ChronoUnit.DAYS.between(LocalDate.now(), LocalDate.ofEpochDay(dateMillis / 86400000L))
+                    ChronoUnit.DAYS.between(LocalDate.now(), DateUtils.millisToLocalDate(dateMillis))
                 } else null
                 val isExpired = days != null && days < 0
 
@@ -138,7 +139,7 @@ fun CountdownListScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Long
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(item.title, fontWeight = FontWeight.Medium, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                 if (dateMillis != null) {
-                                    val date = LocalDate.ofEpochDay(dateMillis / 86400000L)
+                                    val date = DateUtils.millisToLocalDate(dateMillis)
                                     val dateStr = date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
                                     Text(if (isExpired) stringResource(R.string.life_countdown_expired_text, dateStr) else stringResource(R.string.life_countdown_active_text, dateStr), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }

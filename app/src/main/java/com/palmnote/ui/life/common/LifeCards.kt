@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.sp
 import com.palmnote.R
 import com.palmnote.data.db.entity.LifeItem
 import com.palmnote.data.db.entity.LifeTemplate
+import com.palmnote.domain.util.DateUtils
 import com.palmnote.ui.components.toComposeColor
 import com.palmnote.ui.theme.*
 import java.time.LocalDate
@@ -113,13 +114,25 @@ private fun extractFieldSummary(context: android.content.Context, item: LifeItem
             when (key) {
                 "targetAmount", "target_amount" -> { val v = value.jsonPrimitive.content; parts.add("\u00A5${v}") }
                 "currentAmount", "saved_amount" -> { val v = value.jsonPrimitive.content; parts.add("\u00A5${v}") }
-                "deadline" -> { val v = value.jsonPrimitive.content.toLongOrNull(); if (v != null) { val d = LocalDate.ofEpochDay(v / 86400000L); parts.add("${context.getString(R.string.life_card_goal)} ${d.year}-${d.monthValue}") } }
+                "deadline" -> {
+                    val v = value.jsonPrimitive.content.toLongOrNull()
+                    if (v != null) {
+                        val d = DateUtils.millisToLocalDate(v)
+                        parts.add("${context.getString(R.string.life_card_goal)} ${d.year}-${d.monthValue}")
+                    }
+                }
                 "totalPages", "total_pages" -> parts.add("${value.jsonPrimitive.content} ${context.getString(R.string.life_card_pages)}")
                 "currentPage", "current_page" -> parts.add("${value.jsonPrimitive.content} ${context.getString(R.string.life_card_pages)}")
                 "author" -> parts.add(value.jsonPrimitive.content)
                 "budget" -> parts.add("${context.getString(R.string.life_card_budget)} \u00A5${value.jsonPrimitive.content}")
                 "destination" -> parts.add(value.jsonPrimitive.content)
-                "startDate", "start_date" -> { val v = value.jsonPrimitive.content.toLongOrNull(); if (v != null) { val d = LocalDate.ofEpochDay(v / 86400000L); parts.add(d.toString()) } }
+                "startDate", "start_date" -> {
+                    val v = value.jsonPrimitive.content.toLongOrNull()
+                    if (v != null) {
+                        val d = DateUtils.millisToLocalDate(v)
+                        parts.add(d.toString())
+                    }
+                }
                 "content" -> { val v = value.jsonPrimitive.content; parts.add(v.take(30) + if (v.length > 30) "..." else "") }
                 "currentStreak" -> { val v = value.jsonPrimitive.content; parts.add(context.getString(R.string.life_card_streak_days, v.toIntOrNull() ?: 0)) }
                 "targetDays" -> { val v = value.jsonPrimitive.content; parts.add(context.getString(R.string.life_card_target_days, v.toIntOrNull() ?: 0)) }
@@ -142,7 +155,7 @@ private fun extractDateSummary(item: LifeItem): String {
             ?: obj["target_date"]?.jsonPrimitive?.content?.toLongOrNull()
             ?: obj["date"]?.jsonPrimitive?.content?.toLongOrNull()
             ?: return "")
-        val d = LocalDate.ofEpochDay(dateStr / 86400000L)
+        val d = DateUtils.millisToLocalDate(dateStr)
         d.toString()
     } catch (_: Exception) { "" }
 }
@@ -172,7 +185,7 @@ private fun calcDays(item: LifeItem): Long? {
             ?: (obj["date"] as? JsonPrimitive)?.content?.toLongOrNull()
             ?: (obj["birthday_date"] as? JsonPrimitive)?.content?.toLongOrNull()
         if (dateStr != null) {
-            val target = LocalDate.ofEpochDay(dateStr / 86400000L)
+            val target = DateUtils.millisToLocalDate(dateStr)
             ChronoUnit.DAYS.between(LocalDate.now(), target)
         } else null
     } catch (_: Exception) { null }

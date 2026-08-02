@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.palmnote.PalmNoteApp
 import com.palmnote.R
+import com.palmnote.domain.util.DateUtils
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.palmnote.ui.components.EmptyState
 import com.palmnote.ui.life.common.SwipeableItem
@@ -94,7 +95,7 @@ fun BirthdayListScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Long)
 
                 val birthDate = fields.first
                 val days = if (birthDate != null) {
-                    val bd = LocalDate.ofEpochDay(birthDate / 86400000L)
+                    val bd = DateUtils.millisToLocalDate(birthDate)
                     val target = try {
                         val nextBd = bd.withYear(LocalDate.now().year)
                         if (nextBd.isBefore(LocalDate.now())) nextBd.plusYears(1) else nextBd
@@ -107,7 +108,7 @@ fun BirthdayListScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Long)
                 } else null
 
                 val dateText = if (birthDate != null) {
-                    val bd = LocalDate.ofEpochDay(birthDate / 86400000L)
+                    val bd = DateUtils.millisToLocalDate(birthDate)
                     "${fields.second}\u00B7${bd.format(DateTimeFormatter.ofPattern(context.getString(R.string.date_format_display)))}"
                 } else fields.second
 
