@@ -131,6 +131,8 @@
     <string name="settings_calendar_sync_subtitle">Sync anniversaries to system calendar</string>
     <string name="settings_app_lock">App Lock</string>
     <string name="settings_app_lock_subtitle">Protect privacy, verify on startup</string>
+    <string name="settings_security">App Lock &amp; Password Vault</string>
+    <string name="settings_security_subtitle">PIN lock, biometrics, vault settings</string>
     <string name="settings_reminder">Reminders</string>
     <string name="settings_reminder_daily_section">Daily Reminder</string>
     <string name="settings_reminder_advance_section">Advance Notice</string>
@@ -896,6 +898,14 @@
     
     <!-- App Lock Settings -->
     <string name="app_lock_settings_title">App Lock Settings</string>
+    <string name="app_lock_auto_lock">Auto Lock</string>
+    <string name="app_lock_auto_lock_value">%1$s</string>
+    <string name="app_lock_auto_lock_system">Follow system lock screen</string>
+    <string name="app_lock_auto_lock_system_hint">Lock when screen locks; not on background switch (recommended)</string>
+    <string name="app_lock_auto_lock_immediate">Lock immediately</string>
+    <string name="app_lock_auto_lock_immediate_hint">Lock as soon as app goes to background</string>
+    <string name="app_lock_auto_lock_timeout">Lock on timeout</string>
+    <string name="app_lock_auto_lock_timeout_hint">Lock after timeout or screen lock</string>
     <string name="app_lock_change_pin_title">Change PIN</string>
     <string name="app_lock_change_pin_subtitle">Change app lock password</string>
     <string name="app_lock_biometric_enable">Enable Biometric</string>
@@ -1639,6 +1649,10 @@
     <string name="settings_more">More</string>
     <string name="settings_confirm">OK</string>
     <string name="vault_title">Password Vault</string>
+    <string name="vault_biometric_title">Verify fingerprint to unlock vault</string>
+    <string name="vault_biometric_subtitle">Use fingerprint for quick unlock</string>
+    <string name="vault_biometric_cancel">Cancel</string>
+    <string name="vault_skip_setup">Skip for now, use without password</string>
     <string name="vault_unlock_title">Enter vault password</string>
     <string name="vault_setup_title">Set vault password</string>
     <string name="vault_unlock_hint">Enter your 6-digit PIN to unlock</string>
@@ -1702,6 +1716,7 @@
     <string name="dashboard_card_vault">Password Vault</string>
     <string name="vault_card_count">%1$d entries</string>
     <string name="vault_card_empty">Tap to add your first entry</string>
+    <string name="vault_card_privacy_hint">Entry titles hidden for privacy, tap to view</string>
     <string name="vault_card_more">View all →</string>
     <string name="vault_settings_clipboard">Clipboard auto-clear</string>
     <string name="vault_settings_clipboard_value">Current: %1$d s</string>
@@ -1709,6 +1724,12 @@
     <string name="vault_settings_clipboard_selected">Current</string>
     <string name="vault_settings_require_auth">Require unlock to enter</string>
     <string name="vault_settings_require_auth_hint">When off, background switching no longer locks</string>
+    <string name="vault_settings_no_lock_title">Password protection off</string>
+    <string name="vault_settings_no_lock_hint">Opens without verification. Set a password to enable protection</string>
+    <string name="vault_settings_set_pin">Enable password protection</string>
+    <string name="vault_settings_set_pin_hint">Set a vault unlock password</string>
+    <string name="vault_settings_biometric">Biometric unlock</string>
+    <string name="vault_settings_biometric_hint">Use fingerprint for quick vault unlock</string>
     <string name="vault_settings_count">Encrypted entries</string>
     <string name="vault_settings_count_value">%1$d</string>
     <string name="vault_settings_change_pin">Change master PIN</string>

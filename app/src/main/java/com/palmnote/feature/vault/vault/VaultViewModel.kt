@@ -25,6 +25,7 @@ import kotlinx.coroutines.launch
 data class VaultUiState(
     val lockState: LockState = LockState.LOCKED,
     val requireAuth: Boolean = true,
+    val biometricEnabled: Boolean = false,
     val entries: List<VaultEntry> = emptyList(),
     val categories: List<String> = emptyList(),
     val query: String = "",
@@ -60,6 +61,7 @@ class VaultViewModel @Inject constructor(
         VaultUiState(
             lockState = lock,
             requireAuth = requireAuth,
+            biometricEnabled = lockManager.biometricEnabled(),
             query = query,
             category = category,
             pinError = pinError,
@@ -84,6 +86,19 @@ class VaultViewModel @Inject constructor(
 
     init {
         lockManager.initialize()
+        // 无锁模式自动解锁（无需验证）
+        viewModelScope.launch {
+            if (lockManager.isNoLockMode() && lockManager.state.value == LockState.LOCKED) {
+                lockManager.unlockNoLock()
+            }
+        }
+    }
+
+    /** 无锁模式：跳过设置，直接进入。 */
+    fun setupNoLock() {
+        viewModelScope.launch {
+            lockManager.setupNoLock()
+        }
     }
 
     fun onQueryChange(query: String) {
@@ -115,6 +130,20 @@ class VaultViewModel @Inject constructor(
             }
         }
     }
+
+    /** 生物识别认证通过后解密 DK 解锁。 */
+    fun unlockWithBiometric(cipher: javax.crypto.Cipher) {
+        viewModelScope.launch {
+            pinErrorState.value = null
+            if (lockManager.unlockWithBiometric(cipher)) {
+                countdownJob?.cancel()
+                lockoutState.value = 0L
+            }
+        }
+    }
+
+    /** 在 BiometricPrompt 前初始化解密 Cipher。返回 null 表示无生物识别密钥。 */
+    fun createBioDecryptCipher(): javax.crypto.Cipher? = lockManager.createBioDecryptCipher()
 
     fun lock() {
         countdownJob?.cancel()

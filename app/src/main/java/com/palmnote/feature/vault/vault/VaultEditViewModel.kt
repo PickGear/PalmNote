@@ -20,6 +20,7 @@ import kotlinx.coroutines.launch
 data class VaultEditUiState(
     val lockState: LockState = LockState.LOCKED,
     val requireAuth: Boolean = true,
+    val biometricEnabled: Boolean = false,
     val isEdit: Boolean = false,
     val loading: Boolean = true,
     val entry: VaultEntry? = null
@@ -46,6 +47,7 @@ class VaultEditViewModel @Inject constructor(
         VaultEditUiState(
             lockState = lock,
             requireAuth = requireAuth,
+            biometricEnabled = lockManager.biometricEnabled(),
             isEdit = entryId != null,
             loading = loading,
             entry = entry
@@ -54,6 +56,13 @@ class VaultEditViewModel @Inject constructor(
 
     init {
         lockManager.initialize()
+        if (lockManager.isNoLockMode()) {
+            viewModelScope.launch {
+                if (lockManager.state.value == VaultLockManager.LockState.LOCKED) {
+                    lockManager.unlockNoLock()
+                }
+            }
+        }
         if (entryId != null) {
             viewModelScope.launch {
                 loadingState.value = true
@@ -74,6 +83,12 @@ class VaultEditViewModel @Inject constructor(
 
     fun unlock(pin: String) {
         viewModelScope.launch { lockManager.unlock(pin) }
+    }
+
+    fun createBioDecryptCipher(): javax.crypto.Cipher? = lockManager.createBioDecryptCipher()
+
+    fun unlockWithBiometric(cipher: javax.crypto.Cipher) {
+        viewModelScope.launch { lockManager.unlockWithBiometric(cipher) }
     }
 
     fun lock() {

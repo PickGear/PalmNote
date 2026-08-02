@@ -12,7 +12,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.security.MessageDigest
@@ -29,30 +28,25 @@ class AppLockManager(
 
     private var cachedIsLockEnabled: Boolean = false
     private var cachedHasPin: Boolean = false
+    // 缓存加密 PIN，避免每次校验都 runBlocking 读 DataStore（显著降低解锁延迟）
+    private var cachedEncryptedPin: String = ""
 
     private val prefs: SharedPreferences by lazy {
         context.getSharedPreferences("app_lock_prefs", Context.MODE_PRIVATE)
     }
 
-    // 失败次数/锁定时长持久化到 SharedPreferences，防止杀进程重置后无限暴力尝试
-    private var failedAttempts: Int = 0
-    private var lockoutUntilMs: Long = 0L
+    // 防暴力破解追踪（失败次数/锁定期持久化，进程被杀不丢）
+    private val lockoutTracker = LockoutTracker(
+        context = context,
+        prefsName = "app_lock_prefs",
+        keyFailedAttempts = KEY_FAILED_ATTEMPTS,
+        keyLockoutUntil = KEY_LOCKOUT_UNTIL,
+    )
 
     init {
         cachedIsLockEnabled = preferencesManager.isAppLockEnabled()
-        cachedHasPin = preferencesManager.getEncryptedPin().isNotEmpty()
-        failedAttempts = prefs.getInt(KEY_FAILED_ATTEMPTS, 0)
-        lockoutUntilMs = prefs.getLong(KEY_LOCKOUT_UNTIL, 0L)
-        // 锁定已过期的陈旧状态清掉，避免重启后输错一次就再次被锁
-        if (lockoutUntilMs < System.currentTimeMillis()) {
-            failedAttempts = 0
-            lockoutUntilMs = 0L
-            // 构造期（主线程）：用 apply 异步写，避免同步 commit 阻塞；此时锁尚未生效，可接受
-            prefs.edit()
-                .putInt(KEY_FAILED_ATTEMPTS, 0)
-                .putLong(KEY_LOCKOUT_UNTIL, 0L)
-                .apply()
-        }
+        cachedEncryptedPin = preferencesManager.getEncryptedPin()
+        cachedHasPin = cachedEncryptedPin.isNotEmpty()
     }
 
     fun isLockEnabled(): Boolean = cachedIsLockEnabled
@@ -66,7 +60,7 @@ class AppLockManager(
     /** 校验 PIN；PBKDF2 迭代较重，放 IO 线程执行避免阻塞 UI */
     suspend fun verifyPin(pin: String): Boolean = withContext(Dispatchers.IO) {
         if (isLockedOut()) return@withContext false
-        val storedPin = preferencesManager.getEncryptedPin()
+        val storedPin = cachedEncryptedPin
         if (storedPin.isEmpty()) return@withContext false
 
         val isValid = if (storedPin.startsWith(PBKDF2_PREFIX)) {
@@ -75,46 +69,39 @@ class AppLockManager(
             val legacyValid = hashPinLegacy(pin) == storedPin
             if (legacyValid) {
                 // 旧 SHA-256 哈希迁移到 PBKDF2，并清理明文 salt
-                preferencesManager.setEncryptedPin(hashPin(pin))
+                val migrated = hashPin(pin)
+                preferencesManager.setEncryptedPin(migrated)
+                cachedEncryptedPin = migrated
                 prefs.edit().remove("pin_salt").apply()
             }
             legacyValid
         }
 
         if (isValid) {
-            failedAttempts = 0
-            lockoutUntilMs = 0L
-            persistLockout()
+            lockoutTracker.onSuccess()
         } else {
-            failedAttempts++
-            if (failedAttempts >= MAX_FAILED_ATTEMPTS) {
-                lockoutUntilMs = System.currentTimeMillis() + LOCKOUT_DURATION_MS
-            }
-            persistLockout()
+            lockoutTracker.onFailedAttempt()
         }
         isValid
     }
 
-    fun getLockoutRemainingMs(): Long {
-        val remaining = lockoutUntilMs - System.currentTimeMillis()
-        return if (remaining > 0) remaining else 0
-    }
+    fun getLockoutRemainingMs(): Long = lockoutTracker.getLockoutRemainingMs()
 
-    fun isLockedOut(): Boolean = System.currentTimeMillis() < lockoutUntilMs
+    fun isLockedOut(): Boolean = lockoutTracker.isLockedOut()
 
     suspend fun resetFailedAttempts() = withContext(Dispatchers.IO) {
-        failedAttempts = 0
-        lockoutUntilMs = 0L
-        persistLockout()
+        lockoutTracker.reset()
     }
 
     suspend fun setPin(pin: String, enable: Boolean = false) = withContext(Dispatchers.IO) {
+        val hashed = hashPin(pin)
         if (enable) {
-            preferencesManager.setAppLockCredentials(hashPin(pin), true)
+            preferencesManager.setAppLockCredentials(hashed, true)
             cachedIsLockEnabled = true
         } else {
-            preferencesManager.setEncryptedPin(hashPin(pin))
+            preferencesManager.setEncryptedPin(hashed)
         }
+        cachedEncryptedPin = hashed
         cachedHasPin = true
     }
 
@@ -180,14 +167,6 @@ class AppLockManager(
         return "${PBKDF2_PREFIX}${PBKDF2_ITERATIONS}:${Base64.getEncoder().encodeToString(salt)}:${Base64.getEncoder().encodeToString(hash)}"
     }
 
-    private fun persistLockout() {
-        // 同步写：锁定状态是防暴力破解的关键，异步 apply 在进程被杀时可能丢失
-        prefs.edit()
-            .putInt(KEY_FAILED_ATTEMPTS, failedAttempts)
-            .putLong(KEY_LOCKOUT_UNTIL, lockoutUntilMs)
-            .commit()
-    }
-
     private fun verifyPbkdf2Pin(pin: String, stored: String): Boolean {
         return try {
             val parts = stored.removePrefix(PBKDF2_PREFIX).split(":")
@@ -227,8 +206,6 @@ class AppLockManager(
         private const val SALT_SIZE = 16
         private const val KEY_LENGTH = 256
         private const val PBKDF2_PREFIX = "pbkdf2:"
-        private const val MAX_FAILED_ATTEMPTS = 5
-        private const val LOCKOUT_DURATION_MS = 30000L
         private const val KEY_FAILED_ATTEMPTS = "failed_attempts"
         private const val KEY_LOCKOUT_UNTIL = "lockout_until"
     }

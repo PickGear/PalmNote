@@ -267,6 +267,24 @@ fun isBiometricAvailable(context: Context): Boolean {
 }
 
 fun showBiometricPrompt(context: Context, onResult: (Boolean) -> Unit) {
+    showBiometricPrompt(
+        context = context,
+        title = context.getString(R.string.app_lock_biometric_title),
+        subtitle = context.getString(R.string.app_lock_biometric_subtitle),
+        cancelText = context.getString(R.string.app_lock_biometric_cancel),
+        onResult = onResult
+    )
+}
+
+/** 通用生物识别弹窗；传入 [cipher] 时使用 CryptoObject（用于解密受 Keystore 保护的密钥）。 */
+fun showBiometricPrompt(
+    context: Context,
+    title: String,
+    subtitle: String,
+    cancelText: String,
+    cipher: javax.crypto.Cipher? = null,
+    onResult: (Boolean) -> Unit
+) {
     val activity = context as? FragmentActivity ?: return
     val executor = ContextCompat.getMainExecutor(context)
 
@@ -289,13 +307,19 @@ fun showBiometricPrompt(context: Context, onResult: (Boolean) -> Unit) {
     val biometricPrompt = BiometricPrompt(activity, executor, callback)
 
     val promptInfo = BiometricPrompt.PromptInfo.Builder()
-        .setTitle(context.getString(R.string.app_lock_biometric_title))
-        .setSubtitle(context.getString(R.string.app_lock_biometric_subtitle))
-        .setNegativeButtonText(context.getString(R.string.app_lock_biometric_cancel))
+        .setTitle(title)
+        .setSubtitle(subtitle)
+        .setNegativeButtonText(cancelText)
         .setAllowedAuthenticators(
             BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.BIOMETRIC_WEAK
         )
         .build()
 
-    biometricPrompt.authenticate(promptInfo)
+    val crypto = cipher?.let { BiometricPrompt.CryptoObject(it) }
+    if (crypto != null) {
+        // 注意：androidx.biometric 1.1.0 的参数顺序是 (PromptInfo, CryptoObject)
+        biometricPrompt.authenticate(promptInfo, crypto)
+    } else {
+        biometricPrompt.authenticate(promptInfo)
+    }
 }

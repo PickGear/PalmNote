@@ -100,37 +100,12 @@ internal fun VaultCard(state: DashboardState, onNavigateToVault: () -> Unit) {
                 }
             }
             Spacer(Modifier.height(12.dp))
-            if (state.vaultEntries.isEmpty()) {
-                Text(
-                    text = stringResource(R.string.vault_card_empty),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            } else {
-                state.vaultEntries.forEach { entry ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Key,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.outline,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            text = entry.title,
-                            style = MaterialTheme.typography.bodyMedium,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                }
-            }
+            // 隐私保护：不展示条目标题（明文敏感），仅用计数 + 引导
+            Text(
+                text = stringResource(if (state.vaultCount > 0) R.string.vault_card_privacy_hint else R.string.vault_card_empty),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
             Spacer(Modifier.height(8.dp))
             Text(
                 text = stringResource(R.string.vault_card_more),

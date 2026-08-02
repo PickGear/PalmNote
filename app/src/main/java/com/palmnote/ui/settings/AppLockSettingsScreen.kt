@@ -1,6 +1,7 @@
 package com.palmnote.ui.settings
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
@@ -34,6 +35,7 @@ import android.widget.Toast
 @Composable
 fun AppLockSettingsScreen(
     onNavigateBack: () -> Unit,
+    onNavigateToVault: () -> Unit = {},
     viewModel: SettingsViewModel
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -44,6 +46,7 @@ fun AppLockSettingsScreen(
     var showChangePin by remember { mutableStateOf(false) }
     var showSetupPin by remember { mutableStateOf(false) }
     var showVerifyPin by remember { mutableStateOf(false) }
+    var showAutoLockDialog by remember { mutableStateOf(false) }
 
     val bioAvailable = remember { isBiometricAvailable(context) }
     var isLockEnabled by remember { mutableStateOf(appLockManager.isLockEnabled()) }
@@ -135,7 +138,31 @@ fun AppLockSettingsScreen(
                 }
             }
 
+            item {
+                ModuleCard(modifier = Modifier.fillMaxWidth()) {
+                    SettingRow(clickable = { showAutoLockDialog = true }) {
+                        SettingRowContent(
+                            title = stringResource(R.string.app_lock_auto_lock),
+                            subtitle = stringResource(R.string.app_lock_auto_lock_value, autoLockModeLabel(state.autoLockMode, context)),
+                            showChevron = true
+                        )
+                    }
+                }
+            }
+
             item { Spacer(Modifier.height(32.dp)) }
+
+            item {
+                ModuleCard(modifier = Modifier.fillMaxWidth()) {
+                    SettingRow(clickable = onNavigateToVault) {
+                        SettingRowContent(
+                            title = stringResource(R.string.settings_vault),
+                            subtitle = stringResource(R.string.settings_vault_subtitle),
+                            showChevron = true
+                        )
+                    }
+                }
+            }
         }
     }
 
@@ -147,6 +174,39 @@ fun AppLockSettingsScreen(
                 showChangePin = false
                 android.widget.Toast.makeText(context, R.string.app_lock_pin_changed, android.widget.Toast.LENGTH_SHORT).show()
             }
+        )
+    }
+
+    if (showAutoLockDialog) {
+        AppDialog(
+            title = { Text(stringResource(R.string.app_lock_auto_lock)) },
+            text = {
+                val modes = listOf(
+                    Triple(
+                        com.palmnote.data.datastore.PreferencesManager.AUTO_LOCK_MODE_SYSTEM,
+                        R.string.app_lock_auto_lock_system,
+                        R.string.app_lock_auto_lock_system_hint
+                    ),
+                    Triple(
+                        com.palmnote.data.datastore.PreferencesManager.AUTO_LOCK_MODE_IMMEDIATE,
+                        R.string.app_lock_auto_lock_immediate,
+                        R.string.app_lock_auto_lock_immediate_hint
+                    ),
+                    Triple(
+                        com.palmnote.data.datastore.PreferencesManager.AUTO_LOCK_MODE_TIMEOUT,
+                        R.string.app_lock_auto_lock_timeout,
+                        R.string.app_lock_auto_lock_timeout_hint
+                    )
+                )
+                Column(Modifier.padding(vertical = 8.dp)) {
+                    modes.forEach { (mode, title, hint) ->
+                        AutoLockModeOption(state.autoLockMode, mode, title, hint) {
+                            viewModel.setAutoLockMode(it)
+                        }
+                    }
+                }
+            },
+            onDismissRequest = { showAutoLockDialog = false }
         )
     }
 
@@ -344,4 +404,33 @@ private fun SetupPinDialog(
             }
         }
     )
+}
+
+@Composable
+private fun AutoLockModeOption(
+    currentMode: String,
+    mode: String,
+    titleRes: Int,
+    hintRes: Int,
+    onSelect: (String) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onSelect(mode) }
+            .padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(stringResource(titleRes), style = MaterialTheme.typography.bodyLarge)
+            Text(stringResource(hintRes), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        RadioButton(selected = currentMode == mode, onClick = { onSelect(mode) })
+    }
+}
+
+private fun autoLockModeLabel(mode: String, context: android.content.Context): String = when (mode) {
+    com.palmnote.data.datastore.PreferencesManager.AUTO_LOCK_MODE_IMMEDIATE -> context.getString(R.string.app_lock_auto_lock_immediate)
+    com.palmnote.data.datastore.PreferencesManager.AUTO_LOCK_MODE_TIMEOUT -> context.getString(R.string.app_lock_auto_lock_timeout)
+    else -> context.getString(R.string.app_lock_auto_lock_system)
 }

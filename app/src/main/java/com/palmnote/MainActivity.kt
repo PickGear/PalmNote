@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.ProcessLifecycleOwner
+import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.palmnote.data.datastore.PreferencesManager
@@ -62,11 +63,6 @@ import kotlinx.coroutines.flow.combine
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
 
-    /** 延迟锁阈值：离开 app < 该时长回来不锁（豁免 SAF 选择器/系统弹窗/快速切换） */
-    private companion object {
-        const val LOCK_DELAY_MS = 30_000L
-    }
-
     @javax.inject.Inject
     lateinit var appLockManager: com.palmnote.data.lock.AppLockManager
 
@@ -74,9 +70,9 @@ class MainActivity : AppCompatActivity() {
     lateinit var preferencesManager: com.palmnote.data.datastore.PreferencesManager
 
     private var appBackgroundedAt = 0L
+    private var cachedAutoLockMode = com.palmnote.data.datastore.PreferencesManager.AUTO_LOCK_MODE_SYSTEM
 
-    // 延迟锁：系统 UI（SAF 选择器/权限弹窗/生物识别弹窗）会让主 Activity onStop，
-    // ProcessLifecycleOwner 会误判为切后台而立即锁。改为：离开 <30 秒不锁（豁免系统 UI 与快速切换），
+    // 自动锁定规则（选择权交给用户）：immediate=切后台立即锁 / system=跟随系统锁屏（默认） / timeout=锁屏+超时。
     // 冷启动仍立即锁（安全兜底）。
     private val lockObserver = LifecycleEventObserver { _, event ->
         when (event) {
@@ -88,7 +84,7 @@ class MainActivity : AppCompatActivity() {
             Lifecycle.Event.ON_START -> {
                 val backgroundedAt = appBackgroundedAt
                 appBackgroundedAt = 0L
-                if (backgroundedAt > 0 && System.currentTimeMillis() - backgroundedAt >= LOCK_DELAY_MS) {
+                if (com.palmnote.data.lock.AutoLockHelper.shouldLock(this, cachedAutoLockMode, backgroundedAt)) {
                     appLockManager.lock()
                 }
             }
@@ -106,6 +102,11 @@ class MainActivity : AppCompatActivity() {
         }
 
         ProcessLifecycleOwner.get().lifecycle.addObserver(lockObserver)
+
+        // 缓存自动锁定模式，供回锁判断使用
+        lifecycleScope.launch {
+            preferencesManager.autoLockMode.collect { cachedAutoLockMode = it }
+        }
 
         // 冷启动/进程被杀恢复（非配置变更）时锁定；旋转（配置变更）不锁。
         // 用 isChangingConfigurations() 而非 savedInstanceState==null：进程被杀后从最近任务恢复

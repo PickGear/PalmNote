@@ -21,6 +21,7 @@ import kotlinx.coroutines.launch
 data class VaultDetailUiState(
     val lockState: LockState = LockState.LOCKED,
     val requireAuth: Boolean = true,
+    val biometricEnabled: Boolean = false,
     val entry: VaultEntry? = null,
     val isLoading: Boolean = true,
     val deleted: Boolean = false
@@ -47,11 +48,18 @@ class VaultDetailViewModel @Inject constructor(
         loadingState,
         deletedState
     ) { lock, requireAuth, entry, loading, deleted ->
-        VaultDetailUiState(lock, requireAuth, entry, loading, deleted)
+        VaultDetailUiState(lock, requireAuth, lockManager.biometricEnabled(), entry, loading, deleted)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), VaultDetailUiState())
 
     init {
         lockManager.initialize()
+        if (lockManager.isNoLockMode()) {
+            viewModelScope.launch {
+                if (lockManager.state.value == VaultLockManager.LockState.LOCKED) {
+                    lockManager.unlockNoLock()
+                }
+            }
+        }
         reload()
     }
 
@@ -73,6 +81,14 @@ class VaultDetailViewModel @Inject constructor(
 
     fun unlock(pin: String) {
         viewModelScope.launch { lockManager.unlock(pin) }
+    }
+
+    fun biometricEnabled(): Boolean = lockManager.biometricEnabled()
+
+    fun createBioDecryptCipher(): javax.crypto.Cipher? = lockManager.createBioDecryptCipher()
+
+    fun unlockWithBiometric(cipher: javax.crypto.Cipher) {
+        viewModelScope.launch { lockManager.unlockWithBiometric(cipher) }
     }
 
     fun lock() {

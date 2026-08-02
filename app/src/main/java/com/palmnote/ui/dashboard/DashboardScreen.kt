@@ -2,6 +2,7 @@ package com.palmnote.ui.dashboard
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -180,7 +181,8 @@ fun DashboardScreen(
                                     .fillMaxWidth()
                                     .zIndex(if (isDragged) 100f else 0f)
                                     .graphicsLayer {
-                                        alpha = if (isDragged) 0f else animProgress.value
+                                        // 拖拽时原卡片保留半透明占位，避免露出"透明洞"（0.3f 仍可看出位置）
+                                        alpha = if (isDragged) 0.3f else animProgress.value
                                         translationY = if (isDragged) 0f else (1f - animProgress.value) * 12.dp.toPx()
                                     }
                                     .onGloballyPositioned {
@@ -255,7 +257,7 @@ fun DashboardScreen(
                     Spacer(modifier = Modifier.height(80.dp))
                 }
 
-                // 娴眰
+                // 浮动拖拽层
                 draggedType?.let { type ->
                     val cardShape = MaterialTheme.shapes.large
                     Box(
@@ -270,6 +272,8 @@ fun DashboardScreen(
                                 shape = cardShape
                                 clip = true
                             }
+                            .background(MaterialTheme.colorScheme.surface, cardShape)
+                            .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f), cardShape)
                     ) {
                         DashboardCardContent(
                             type = type,

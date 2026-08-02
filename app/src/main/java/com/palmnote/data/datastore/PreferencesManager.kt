@@ -53,6 +53,14 @@ class PreferencesManager(
         val VAULT_KEY_WRAP = stringPreferencesKey("vault_key_wrap")
         val VAULT_REQUIRE_AUTH = booleanPreferencesKey("vault_require_auth")
         val VAULT_CLIPBOARD_CLEAR_SECONDS = intPreferencesKey("vault_clipboard_clear_seconds")
+        val VAULT_BIO_ENABLED = booleanPreferencesKey("vault_bio_enabled")
+        val VAULT_BIO_KEY_WRAP = stringPreferencesKey("vault_bio_key_wrap")
+        val VAULT_NO_LOCK = booleanPreferencesKey("vault_no_lock")
+        val AUTO_LOCK_MODE = stringPreferencesKey("auto_lock_mode")
+
+        const val AUTO_LOCK_MODE_IMMEDIATE = "immediate"
+        const val AUTO_LOCK_MODE_SYSTEM = "system"
+        const val AUTO_LOCK_MODE_TIMEOUT = "timeout"
     }
 
     val themeMode: Flow<String> = prefsFlow.map { it[THEME_MODE] ?: "SYSTEM" }
@@ -226,6 +234,43 @@ class PreferencesManager(
 
     suspend fun setVaultRequireAuth(enabled: Boolean) {
         context.dataStore.edit { it[VAULT_REQUIRE_AUTH] = enabled }
+    }
+
+    val vaultBiometricEnabled: Flow<Boolean> = prefsFlow.map { it[VAULT_BIO_ENABLED] ?: false }
+
+    suspend fun setVaultBiometricEnabled(enabled: Boolean) {
+        context.dataStore.edit { it[VAULT_BIO_ENABLED] = enabled }
+    }
+
+    fun getVaultBioKeyWrap(): String = runBlocking(Dispatchers.IO) { prefsFlow.first()[VAULT_BIO_KEY_WRAP] ?: "" }
+
+    suspend fun setVaultBioKeyWrap(wrap: String) {
+        context.dataStore.edit { it[VAULT_BIO_KEY_WRAP] = wrap }
+    }
+
+    suspend fun clearVaultBio() {
+        context.dataStore.edit {
+            it.remove(VAULT_BIO_ENABLED)
+            it.remove(VAULT_BIO_KEY_WRAP)
+        }
+    }
+
+    /** 密码本是否为无锁模式（DK 用无认证 Keystore 密钥包裹，打开即用）。 */
+    val vaultNoLock: Flow<Boolean> = prefsFlow.map { it[VAULT_NO_LOCK] ?: false }
+
+    suspend fun setVaultNoLock(enabled: Boolean) {
+        context.dataStore.edit { it[VAULT_NO_LOCK] = enabled }
+    }
+
+    suspend fun clearVaultNoLock() {
+        context.dataStore.edit { it.remove(VAULT_NO_LOCK) }
+    }
+
+    /** 自动锁定模式：immediate=切后台立即锁 / system=跟随系统锁屏（默认） / timeout=锁屏+超时。 */
+    val autoLockMode: Flow<String> = prefsFlow.map { it[AUTO_LOCK_MODE] ?: AUTO_LOCK_MODE_SYSTEM }
+
+    suspend fun setAutoLockMode(mode: String) {
+        context.dataStore.edit { it[AUTO_LOCK_MODE] = mode }
     }
 
     val vaultClipboardClearSeconds: Flow<Int> = prefsFlow.map { it[VAULT_CLIPBOARD_CLEAR_SECONDS] ?: 30 }

@@ -9,13 +9,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.LockOpen
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -25,6 +25,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -34,6 +35,7 @@ import com.palmnote.R
 import com.palmnote.feature.vault.VaultLockManager.LockState
 import com.palmnote.ui.lock.PinDotsDisplay
 import com.palmnote.ui.lock.PinKeyboard
+import com.palmnote.ui.lock.showBiometricPrompt
 import com.palmnote.ui.theme.vaultTint
 
 /**
@@ -45,8 +47,12 @@ fun VaultLockGate(
     lockState: LockState,
     error: String?,
     lockoutRemainingMs: Long,
+    biometricEnabled: Boolean,
+    createBioDecryptCipher: () -> javax.crypto.Cipher?,
+    onBiometricUnlock: (javax.crypto.Cipher) -> Unit,
     onSetup: (String) -> Unit,
-    onUnlock: (String) -> Unit
+    onUnlock: (String) -> Unit,
+    onSkip: (() -> Unit)? = null
 ) {
     var step by remember { mutableIntStateOf(1) }
     var pin by remember { mutableStateOf("") }
@@ -54,6 +60,7 @@ fun VaultLockGate(
     var localError by remember { mutableStateOf<String?>(null) }
 
     val isSetup = lockState == LockState.NEED_SETUP
+    val context = LocalContext.current
 
     LaunchedEffect(lockState) {
         step = 1
@@ -162,9 +169,28 @@ fun VaultLockGate(
                 }
                 localError = null
             },
-            onBiometricClick = {},
-            showBiometric = false
+            onBiometricClick = {
+                if (lockedOut || !biometricEnabled) return@PinKeyboard
+                val cipher = createBioDecryptCipher() ?: return@PinKeyboard
+                showBiometricPrompt(
+                    context = context,
+                    title = context.getString(R.string.vault_biometric_title),
+                    subtitle = context.getString(R.string.vault_biometric_subtitle),
+                    cancelText = context.getString(R.string.vault_biometric_cancel),
+                    cipher = cipher
+                ) { success ->
+                    if (success) onBiometricUnlock(cipher)
+                }
+            },
+            showBiometric = biometricEnabled && !isSetup
         )
+
+        if (isSetup && onSkip != null) {
+            Spacer(Modifier.height(16.dp))
+            TextButton(onClick = onSkip) {
+                Text(stringResource(R.string.vault_skip_setup), color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
     }
 }
 

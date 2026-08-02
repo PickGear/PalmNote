@@ -51,6 +51,7 @@ data class SettingsState(
     val billReminderHour: Int = 21,
     val billReminderMinute: Int = 0,
     val biometricEnabled: Boolean = false,
+    val autoLockMode: String = com.palmnote.data.datastore.PreferencesManager.AUTO_LOCK_MODE_SYSTEM,
     val resultMessage: String? = null,
     val profileNickname: String = "",
     val profileSignature: String = "",
@@ -98,6 +99,7 @@ class SettingsViewModel @Inject constructor(
                 preferencesManager.billReminderHour,
                 preferencesManager.billReminderMinute,
                 preferencesManager.biometricEnabled,
+                preferencesManager.autoLockMode,
                 preferencesManager.profileNickname,
                 preferencesManager.profileSignature,
                 preferencesManager.profileAvatar,
@@ -126,14 +128,15 @@ class SettingsViewModel @Inject constructor(
                         billReminderHour = (i(13) as? Int) ?: 21,
                         billReminderMinute = (i(14) as? Int) ?: 0,
                         biometricEnabled = (i(15) as? Boolean) ?: false,
-                        profileNickname = (i(16) as? String) ?: "",
-                        profileSignature = (i(17) as? String) ?: "",
-                        profileAvatar = (i(18) as? String) ?: "Spa",
-                        profileAvatarPath = (i(19) as? String) ?: "",
-                        assetCount = (i(20) as? Int) ?: 0,
-                        goalCount = (i(21) as? Int) ?: 0,
-                        momentCount = (i(22) as? Int) ?: 0,
-                        anniversaryCount = (i(23) as? Int) ?: 0
+                        autoLockMode = (i(16) as? String) ?: com.palmnote.data.datastore.PreferencesManager.AUTO_LOCK_MODE_SYSTEM,
+                        profileNickname = (i(17) as? String) ?: "",
+                        profileSignature = (i(18) as? String) ?: "",
+                        profileAvatar = (i(19) as? String) ?: "Spa",
+                        profileAvatarPath = (i(20) as? String) ?: "",
+                        assetCount = (i(21) as? Int) ?: 0,
+                        goalCount = (i(22) as? Int) ?: 0,
+                        momentCount = (i(23) as? Int) ?: 0,
+                        anniversaryCount = (i(24) as? Int) ?: 0
                     )
                 }
             }.catch { Log.w("SettingsVM", "Settings flow failed", it) }.collect()
@@ -243,6 +246,10 @@ class SettingsViewModel @Inject constructor(
 
     fun setBiometricEnabled(enabled: Boolean) {
         viewModelScope.launch { preferencesManager.setBiometricEnabled(enabled) }
+    }
+
+    fun setAutoLockMode(mode: String) {
+        viewModelScope.launch { preferencesManager.setAutoLockMode(mode) }
     }
 
     fun setProfileNickname(name: String) { viewModelScope.launch { preferencesManager.setProfileNickname(name) } }

@@ -239,8 +239,7 @@ fun PalmNoteNavHost() {
                 onNavigateToManageCategory = { navController.navigate(ManageCategory) },
                 onNavigateToDataStorage = { navController.navigate(DataStorage) },
                 onNavigateToAbout = { navController.navigate(About) },
-                onNavigateToAppLock = { navController.navigate(AppLockSettings) },
-                onNavigateToVault = { navController.navigate(VaultSettings) }
+                onNavigateToAppLock = { navController.navigate(AppLockSettings) }
             )
         }
 
@@ -308,6 +307,7 @@ fun PalmNoteNavHost() {
         composable<AppLockSettings> {
             AppLockSettingsScreen(
                 onNavigateBack = { navController.popBackStack() },
+                onNavigateToVault = { navController.navigate(VaultSettings) },
                 viewModel = hiltViewModel()
             )
         }

@@ -12,14 +12,16 @@ import javax.crypto.spec.SecretKeySpec
  * 密码本加密原语（纯函数、无状态、无 Android 依赖，便于单元测试）。
  *
  * 密钥体系（密钥包裹）：
- *   PIN ──PBKDF2-SHA256(120000)──▶ K（派生密钥）
+ *   PIN ──PBKDF2-SHA256(25000)──▶ K（派生密钥）
  *   用 K（AES-GCM）加密/解包数据密钥 DK（256bit）→ vault_key_wrap
  *   用 DK（AES-GCM，随机 IV）加密每条密码字段 → passwordEncrypted
  *
  * 存储格式（encrypt 输出）：iv(12B) + 密文（含 16B GCM tag）。
+ *
+ * 迭代次数 25000：与 App 应用锁一致；移动端约几十 ms，解锁无感知延迟。
  */
 object VaultCrypto {
-    const val PBKDF2_ITERATIONS = 120000
+    const val PBKDF2_ITERATIONS = 25000
     private const val PBKDF2_ALGORITHM = "PBKDF2WithHmacSHA256"
     private const val GCM_TRANSFORMATION = "AES/GCM/NoPadding"
     private const val GCM_TAG_BITS = 128
