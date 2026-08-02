@@ -22,8 +22,10 @@ import com.palmnote.data.worker.LifeDailyCheckWorker
 import android.util.Log
 import java.util.Calendar
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 
 @Stable
@@ -272,11 +274,13 @@ class SettingsViewModel @Inject constructor(
     fun clearCache(@ApplicationContext context: Context) {
         viewModelScope.launch {
             try {
-                context.imageLoader.diskCache?.clear()
-                context.imageLoader.memoryCache?.clear()
-                context.cacheDir.listFiles()?.forEach { file ->
-                    if (file.isFile && (file.name.startsWith("csvimport") || file.name.startsWith("coil"))) {
-                        file.delete()
+                withContext(Dispatchers.IO) {
+                    context.imageLoader.diskCache?.clear()
+                    context.imageLoader.memoryCache?.clear()
+                    context.cacheDir.listFiles()?.forEach { file ->
+                        if (file.isFile && (file.name.startsWith("csvimport") || file.name.startsWith("coil"))) {
+                            file.delete()
+                        }
                     }
                 }
                 _state.value = _state.value.copy(resultMessage = context.getString(R.string.settings_cache_cleared))

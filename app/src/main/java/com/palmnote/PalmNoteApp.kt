@@ -66,12 +66,11 @@ class PalmNoteApp : Application(), Configuration.Provider {
         } catch (_: UnsatisfiedLinkError) {
             android.util.Log.e("PalmNote", "sqlcipher native library load failed")
         }
-        cachedStartPage = runBlocking(Dispatchers.IO) {
-            preferencesManager.defaultStartPage.first()
-        }
         applySavedLanguage()
         NotificationHelper.createChannels(this)
         applicationScope.launch {
+            // 异步读取启动页配置，避免在 Application.onCreate 主线程同步阻塞 DataStore
+            cachedStartPage = preferencesManager.defaultStartPage.first()
             database.openHelper.writableDatabase
             walletRepository.initDefaultWallets()
             accountBookRepository.initDefaultBooks()
