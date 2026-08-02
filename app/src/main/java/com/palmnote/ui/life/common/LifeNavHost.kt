@@ -61,6 +61,23 @@ class TplDispViewModel @Inject constructor(
     }
 }
 
+data class TodoTplState(val template: LifeTemplate? = null, val isLoading: Boolean = true)
+
+@HiltViewModel
+class TodoTemplateViewModel @Inject constructor(
+    private val templateRepo: LifeTemplateRepository
+) : ViewModel() {
+    private val _uiState = MutableStateFlow(TodoTplState())
+    val uiState: StateFlow<TodoTplState> = _uiState.asStateFlow()
+    fun load() {
+        templateRepo.getAllTemplates()
+            .map { templates -> templates.firstOrNull { it.icon == "checklist" } }
+            .onEach { tpl ->
+                _uiState.update { it.copy(template = tpl, isLoading = false) }
+            }.launchIn(viewModelScope)
+    }
+}
+
 private val animSpec = tween<androidx.compose.ui.unit.IntOffset>(300)
 private val slideIn = slideInHorizontally(animationSpec = animSpec) { it }
 private val slideOut = slideOutHorizontally(animationSpec = animSpec) { -it / 3 }
@@ -121,6 +138,7 @@ fun LifeNavHost(modifier: Modifier = Modifier, onChildNavigated: (Boolean) -> Un
                 onNavigateToJournal = { navController.navigate(LifeJournalRoute) },
                 onNavigateToReport = { navController.navigate(LifeReportRoute) },
                 onNavigateToManage = { navController.navigate(LifeTemplateManageRoute) },
+                onNavigateToTodo = { navController.navigate(LifeTodoRoute) },
             )
         }
         composable<LifeTemplateRoute> { entry ->
@@ -167,6 +185,19 @@ fun LifeNavHost(modifier: Modifier = Modifier, onChildNavigated: (Boolean) -> Un
         composable<LifeHabitRoute> { HabitListScreen(onBack = { navController.popBackStack() }, onItemClick = { navController.navigate(LifeItemRoute(it)) }, onAchievementClick = { navController.navigate(LifeAchievementRoute) }) }
         composable<LifeMoodRoute> { MoodListScreen(onBack = { navController.popBackStack() }) }
         composable<LifeJournalRoute> { JournalListScreen(onBack = { navController.popBackStack() }, onItemClick = { navController.navigate(LifeItemRoute(it)) }) }
+        composable<LifeTodoRoute> {
+            val vm: TodoTemplateViewModel = hiltViewModel()
+            val s by vm.uiState.collectAsStateWithLifecycle()
+            LaunchedEffect(Unit) { vm.load() }
+            val tpl = s.template
+            if (s.isLoading) {
+                Box(modifier = Modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+            } else if (tpl != null) {
+                dispatchTemplateScreen(tpl, tpl.id, navController)
+            } else {
+                LaunchedEffect(Unit) { navController.popBackStack() }
+            }
+        }
         composable<LifeReportRoute> { ReportListScreen(onBack = { navController.popBackStack() }, onItemClick = { }) }
         composable<LifeAchievementRoute> { AchievementScreen(onBack = { navController.popBackStack() }) }
         composable<LifeTemplateManageRoute> { TemplateManageScreen(onBack = { navController.popBackStack() }, onCreateClick = { navController.navigate(LifeTemplateCreateRoute) }) }

@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.Environment
 import com.palmnote.R
 import com.palmnote.data.db.AppDatabase
+import com.palmnote.data.db.DbKeyStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -130,6 +131,12 @@ class BackupManager {
             val lockPrefs = File(sharedPrefsDir, "$LOCK_PREFS_NAME.xml")
             if (lockPrefs.exists()) {
                 addFileToZip(zipOut, lockPrefs, "shared_prefs/${lockPrefs.name}")
+            }
+
+            // 5. SQLCipher 数据库密钥，缺失则跨设备恢复后加密库无法解密
+            val dbKeyPrefs = File(sharedPrefsDir, "${DbKeyStore.PREFS_NAME}.xml")
+            if (dbKeyPrefs.exists()) {
+                addFileToZip(zipOut, dbKeyPrefs, "shared_prefs/${dbKeyPrefs.name}")
             }
         }
 

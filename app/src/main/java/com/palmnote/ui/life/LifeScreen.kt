@@ -66,6 +66,7 @@ fun LifeScreen(
     onNavigateToJournal: () -> Unit = {},
     onNavigateToReport: () -> Unit = {},
     onNavigateToManage: () -> Unit = {},
+    onNavigateToTodo: () -> Unit = {},
     viewModel: LifeViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -150,7 +151,7 @@ fun LifeScreen(
                 filteredPlans = filteredPlans, filteredTimes = filteredTimes, filteredRecords = filteredRecords,
                 planExpanded = planExpanded, timeExpanded = timeExpanded, recordExpanded = recordExpanded,
                 onPlanToggle = { scope.launch { contextLife.dataStore.edit { it[booleanPreferencesKey("life_plan_expanded")] = !planExpanded } } }, onTimeToggle = { scope.launch { contextLife.dataStore.edit { it[booleanPreferencesKey("life_time_expanded")] = !timeExpanded } } }, onRecordToggle = { scope.launch { contextLife.dataStore.edit { it[booleanPreferencesKey("life_record_expanded")] = !recordExpanded } } },
-                onTemplateClick = onNavigateToTemplate, onHabitClick = onNavigateToHabit, onFocusClick = onNavigateToFocus, onRetry = { viewModel.retry() },
+                onTemplateClick = onNavigateToTemplate, onHabitClick = onNavigateToHabit, onFocusClick = onNavigateToFocus, onTodayTodosClick = onNavigateToTodo, onRetry = { viewModel.retry() },
                 snackbarHostState = snackbarHostState, scope = scope
             )
         }
@@ -302,7 +303,7 @@ private fun LifeContent(
     filteredPlans: List<LifeTemplate>, filteredTimes: List<LifeTemplate>, filteredRecords: List<LifeTemplate>,
     planExpanded: Boolean, timeExpanded: Boolean, recordExpanded: Boolean,
     onPlanToggle: () -> Unit, onTimeToggle: () -> Unit, onRecordToggle: () -> Unit,
-    onTemplateClick: (Long) -> Unit, onHabitClick: () -> Unit, onFocusClick: () -> Unit, onRetry: () -> Unit,
+    onTemplateClick: (Long) -> Unit, onHabitClick: () -> Unit, onFocusClick: () -> Unit, onTodayTodosClick: () -> Unit, onRetry: () -> Unit,
     snackbarHostState: SnackbarHostState, scope: kotlinx.coroutines.CoroutineScope
 ) {
     Box(modifier = Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.TopCenter) {
@@ -324,7 +325,7 @@ private fun LifeContent(
             enter = fadeIn(tween(120)) + expandVertically(tween(120)),
             exit = fadeOut(tween(300)) + shrinkVertically(tween(300))
         ) {
-            StatsRow(state = state, scope = scope, snackbarHostState = snackbarHostState, onHabitClick = onHabitClick, onFocusClick = onFocusClick)
+            StatsRow(state = state, scope = scope, snackbarHostState = snackbarHostState, onHabitClick = onHabitClick, onFocusClick = onFocusClick, onTodayTodosClick = onTodayTodosClick)
         }
         if (!showSearch) Spacer(modifier = Modifier.height(16.dp))
         var hasVisible = false
@@ -363,13 +364,13 @@ private fun LifeContent(
 }
 
 @Composable
-private fun StatsRow(state: LifeUiState, scope: kotlinx.coroutines.CoroutineScope, snackbarHostState: SnackbarHostState, onHabitClick: () -> Unit, onFocusClick: () -> Unit) {
+private fun StatsRow(state: LifeUiState, scope: kotlinx.coroutines.CoroutineScope, snackbarHostState: SnackbarHostState, onHabitClick: () -> Unit, onFocusClick: () -> Unit, onTodayTodosClick: () -> Unit) {
     Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         val cards = mutableListOf<OverviewCard>()
         cards.add(OverviewCard("${state.todayTodos}", stringResource(R.string.life_screen_overview_today_todos), LifeTime))
         cards.add(OverviewCard("${state.habitCompletionRate}%", stringResource(R.string.life_screen_overview_habit_rate), LifeRecord))
         cards.add(OverviewCard("${state.todayFocusMinutes}m", stringResource(R.string.life_screen_overview_today_focus), LifeFocus))
-        val click0: () -> Unit = { /* 今日待办 - 暂不跳转 */ }
+        val click0: () -> Unit = onTodayTodosClick
         val click1: () -> Unit = { onHabitClick() }
         val click2: () -> Unit = { onFocusClick() }
         val clicks = listOf(click0, click1, click2)
