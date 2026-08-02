@@ -16,6 +16,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Key
+import androidx.compose.material.icons.outlined.Fingerprint
 import androidx.compose.material.icons.outlined.LockReset
 import androidx.compose.material.icons.outlined.Password
 import androidx.compose.material.icons.outlined.Timer
@@ -102,26 +103,77 @@ fun VaultSettingsScreen(
             )
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
+            if (!state.isNoLockMode) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Outlined.VisibilityOff, null, tint = vaultTint(), modifier = Modifier.size(24.dp))
+                    Spacer(Modifier.width(16.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.vault_settings_require_auth),
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                        Text(
+                            text = stringResource(R.string.vault_settings_require_auth_hint),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Switch(checked = state.requireAuth, onCheckedChange = viewModel::setRequireAuth)
+                }
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+            } else {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Outlined.VisibilityOff, null, tint = vaultTint(), modifier = Modifier.size(24.dp))
+                    Spacer(Modifier.width(16.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.vault_settings_no_lock_title),
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                        Text(
+                            text = stringResource(R.string.vault_settings_no_lock_hint),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+            }
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(Icons.Outlined.VisibilityOff, null, tint = vaultTint(), modifier = Modifier.size(24.dp))
+                Icon(Icons.Outlined.Fingerprint, null, tint = vaultTint(), modifier = Modifier.size(24.dp))
                 Spacer(Modifier.width(16.dp))
                 Column(Modifier.weight(1f)) {
                     Text(
-                        text = stringResource(R.string.vault_settings_require_auth),
+                        text = stringResource(R.string.vault_settings_biometric),
                         style = MaterialTheme.typography.bodyLarge
                     )
                     Text(
-                        text = stringResource(R.string.vault_settings_require_auth_hint),
+                        text = stringResource(R.string.vault_settings_biometric_hint),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                Switch(checked = state.requireAuth, onCheckedChange = viewModel::setRequireAuth)
+                Switch(
+                    checked = state.biometricEnabled,
+                    enabled = state.initialized && state.biometricAvailable,
+                    onCheckedChange = viewModel::setBiometric
+                )
             }
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
@@ -150,8 +202,8 @@ fun VaultSettingsScreen(
             if (state.initialized) {
                 VaultSettingRow(
                     icon = Icons.Outlined.Password,
-                    title = stringResource(R.string.vault_settings_change_pin),
-                    subtitle = stringResource(R.string.vault_settings_change_pin_hint),
+                    title = stringResource(if (state.isNoLockMode) R.string.vault_settings_set_pin else R.string.vault_settings_change_pin),
+                    subtitle = stringResource(if (state.isNoLockMode) R.string.vault_settings_set_pin_hint else R.string.vault_settings_change_pin_hint),
                     onClick = { showChangePin = true }
                 )
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
@@ -202,7 +254,8 @@ fun VaultSettingsScreen(
                     }
                 }
             },
-            onDismiss = { showChangePin = false }
+            onDismiss = { showChangePin = false },
+            skipVerify = state.isNoLockMode
         )
     }
 
@@ -322,9 +375,10 @@ private fun ClipboardSecondsDialog(
 @Composable
 private fun ChangeVaultPinDialog(
     onConfirm: (String, String) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    skipVerify: Boolean = false
 ) {
-    var step by remember { mutableStateOf(1) }
+    var step by remember { mutableStateOf(if (skipVerify) 2 else 1) }
     var oldPin by remember { mutableStateOf("") }
     var newPin by remember { mutableStateOf("") }
     var confirmNewPin by remember { mutableStateOf("") }
@@ -382,7 +436,7 @@ private fun ChangeVaultPinDialog(
                                     2 -> step = 3
                                     else -> {
                                         if (newPin == confirmNewPin) {
-                                            onConfirm(oldPin, newPin)
+                                            onConfirm(if (skipVerify) "" else oldPin, newPin)
                                         } else {
                                             error = pinMismatch
                                             step = 2

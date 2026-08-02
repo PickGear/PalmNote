@@ -131,6 +131,8 @@
     <string name="settings_calendar_sync_subtitle">将纪念日同步到系统日历应用</string>
     <string name="settings_app_lock">应用锁</string>
     <string name="settings_app_lock_subtitle">保护隐私，启动时需要验证</string>
+    <string name="settings_security">应用锁与密码本</string>
+    <string name="settings_security_subtitle">PIN 锁、生物识别、密码本设置</string>
     <string name="settings_reminder">提醒设置</string>
     <string name="settings_reminder_daily_section">日常提醒</string>
     <string name="settings_reminder_advance_section">提前通知</string>
@@ -936,6 +938,14 @@
     
     <!-- App Lock Settings -->
     <string name="app_lock_settings_title">应用锁设置</string>
+    <string name="app_lock_auto_lock">自动锁定</string>
+    <string name="app_lock_auto_lock_value">%1$s</string>
+    <string name="app_lock_auto_lock_system">跟随系统锁屏</string>
+    <string name="app_lock_auto_lock_system_hint">手机锁屏时锁定；仅切后台不锁（推荐）</string>
+    <string name="app_lock_auto_lock_immediate">立即锁定</string>
+    <string name="app_lock_auto_lock_immediate_hint">切到后台立即锁定（最高安全）</string>
+    <string name="app_lock_auto_lock_timeout">超时锁定</string>
+    <string name="app_lock_auto_lock_timeout_hint">切后台超时或锁屏后锁定</string>
     <string name="app_lock_change_pin_title">修改PIN码</string>
     <string name="app_lock_change_pin_subtitle">更改应用锁密码</string>
     <string name="app_lock_biometric_enable">启用生物识别</string>
@@ -1629,6 +1639,10 @@
     <string name="settings_more">更多</string>
     <string name="settings_confirm">确定</string>
     <string name="vault_title">密码本</string>
+    <string name="vault_biometric_title">验证指纹以解锁密码本</string>
+    <string name="vault_biometric_subtitle">使用指纹快速解锁</string>
+    <string name="vault_biometric_cancel">取消</string>
+    <string name="vault_skip_setup">暂不设置密码，直接使用</string>
     <string name="vault_unlock_title">输入密码本密码</string>
     <string name="vault_setup_title">设置密码本密码</string>
     <string name="vault_unlock_hint">请输入 6 位密码解锁</string>
@@ -1692,6 +1706,7 @@
     <string name="dashboard_card_vault">密码本</string>
     <string name="vault_card_count">共 %1$d 条</string>
     <string name="vault_card_empty">点击添加第一条密码</string>
+    <string name="vault_card_privacy_hint">密码条目标题已隐藏，点击查看</string>
     <string name="vault_card_more">查看更多 →</string>
     <string name="vault_settings_clipboard">剪贴板自动清除</string>
     <string name="vault_settings_clipboard_value">当前：%1$d 秒</string>
@@ -1699,6 +1714,12 @@
     <string name="vault_settings_clipboard_selected">当前</string>
     <string name="vault_settings_require_auth">进入密码本需验证</string>
     <string name="vault_settings_require_auth_hint">关闭后切换后台不再锁定</string>
+    <string name="vault_settings_no_lock_title">未开启密码保护</string>
+    <string name="vault_settings_no_lock_hint">当前无需验证即可打开，可设置密码开启保护</string>
+    <string name="vault_settings_set_pin">开启密码保护</string>
+    <string name="vault_settings_set_pin_hint">设置密码本解锁密码</string>
+    <string name="vault_settings_biometric">生物识别解锁</string>
+    <string name="vault_settings_biometric_hint">使用指纹快速解锁密码本</string>
     <string name="vault_settings_count">已加密条目数</string>
     <string name="vault_settings_count_value">%1$d 条</string>
     <string name="vault_settings_change_pin">修改主密码</string>

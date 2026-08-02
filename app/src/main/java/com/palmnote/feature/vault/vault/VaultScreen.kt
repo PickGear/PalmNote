@@ -1,6 +1,7 @@
 ﻿package com.palmnote.feature.vault.vault
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -38,7 +39,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -47,22 +50,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import android.widget.Toast
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.DefaultLifecycleObserver
-import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.palmnote.R
 import com.palmnote.feature.vault.VaultEntry
 import com.palmnote.feature.vault.VaultLockManager.LockState
 import com.palmnote.ui.components.CompactTopAppBar
-import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.Locale
 
 /**
@@ -84,8 +85,12 @@ fun VaultScreen(
             lockState = state.lockState,
             error = state.pinError,
             lockoutRemainingMs = state.lockoutRemainingMs,
+            biometricEnabled = state.biometricEnabled,
+            createBioDecryptCipher = viewModel::createBioDecryptCipher,
+            onBiometricUnlock = viewModel::unlockWithBiometric,
             onSetup = viewModel::setupPin,
-            onUnlock = viewModel::unlock
+            onUnlock = viewModel::unlock,
+            onSkip = viewModel::setupNoLock
         )
         return
     }
@@ -101,23 +106,45 @@ fun VaultScreen(
     )
 }
 /**
- * 切到后台立即锁定（清除内存密钥与剪贴板）。requireAuth 关闭时跳过（安全降级）。
+ * 自动锁定（清除内存密钥与剪贴板），规则与 App 锁一致、选择权交给用户：
+ *  - immediate：切后台立即锁
+ *  - system（默认）：跟随系统锁屏——手机屏锁了才锁，仅切后台/快速切换不锁
+ *  - timeout：锁屏或切后台超时才锁
+ * 监听 App 级 ProcessLifecycleOwner 而非 NavBackStackEntry（Vault 内导航不误锁）。
+ * requireAuth 关闭时跳过（安全降级）。
  */
 @Composable
 fun VaultLockOnBackground(lock: () -> Unit, requireAuth: () -> Boolean) {
-    val lifecycleOwner = LocalLifecycleOwner.current
+    val context = LocalContext.current
     val latestLock by rememberUpdatedState(lock)
     val latestRequireAuth by rememberUpdatedState(requireAuth)
-    DisposableEffect(lifecycleOwner) {
-        val observer = object : DefaultLifecycleObserver {
-            override fun onStop(owner: LifecycleOwner) {
-                if (latestRequireAuth()) {
-                    latestLock()
+    var backgroundedAt by remember { mutableLongStateOf(0L) }
+    var autoLockMode by remember {
+        mutableStateOf(com.palmnote.data.datastore.PreferencesManager.AUTO_LOCK_MODE_SYSTEM)
+    }
+    LaunchedEffect(Unit) {
+        com.palmnote.PalmNoteApp.instance.preferencesManager.autoLockMode.collect { autoLockMode = it }
+    }
+    DisposableEffect(Unit) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_STOP -> {
+                    if (latestRequireAuth()) {
+                        backgroundedAt = System.currentTimeMillis()
+                    }
                 }
+                Lifecycle.Event.ON_START -> {
+                    val ts = backgroundedAt
+                    backgroundedAt = 0L
+                    if (latestRequireAuth() && com.palmnote.data.lock.AutoLockHelper.shouldLock(context, autoLockMode, ts)) {
+                        latestLock()
+                    }
+                }
+                else -> {}
             }
         }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+        ProcessLifecycleOwner.get().lifecycle.addObserver(observer)
+        onDispose { ProcessLifecycleOwner.get().lifecycle.removeObserver(observer) }
     }
 }
 
@@ -281,7 +308,10 @@ private fun VaultEntryCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable(onClick = onClick)
+                .combinedClickable(
+                    onClick = onClick,
+                    onLongClick = onCopy
+                )
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -313,11 +343,24 @@ private fun VaultEntryCard(
                         overflow = TextOverflow.Ellipsis
                     )
                 }
-                Text(
-                    text = stringResource(R.string.vault_updated_at, formatDate(entry.updatedAt)),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.outline
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (entry.category.isNotBlank() && entry.category != "其他") {
+                        Text(
+                            text = entry.category,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier
+                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), MaterialTheme.shapes.small)
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                        Spacer(Modifier.width(6.dp))
+                    }
+                    Text(
+                        text = stringResource(R.string.vault_updated_at, com.palmnote.domain.util.DateUtils.formatDate(entry.updatedAt)),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                }
             }
             IconButton(onClick = onCopy) {
                 Icon(
@@ -370,6 +413,3 @@ private fun entryIcon(url: String): ImageVector {
         else -> Icons.Outlined.Key
     }
 }
-
-private fun formatDate(timestamp: Long): String =
-    SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date(timestamp))
