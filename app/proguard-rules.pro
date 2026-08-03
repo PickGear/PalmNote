@@ -34,6 +34,14 @@
 -keep class net.zetetic.database.** { *; }
 -dontwarn net.zetetic.database.**
 
+# Hilt（库自带 consumer rules，显式保留安全网）
+-keep class dagger.hilt.** { *; }
+-keep class * extends dagger.hilt.android.internal.managers.ViewComponentManager$FragmentContextWrapper { *; }
+
+# Room DAO（KSP 生成代码）
+-keep class * extends androidx.room.RoomDatabase
+-keep class * { *; }  # Room DAO 接口
+
 # OpenCV（PaddleOCR 依赖，R8 下需保留完整类）
 -keep class org.opencv.** { *; }
 -dontwarn org.opencv.**

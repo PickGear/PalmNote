@@ -1,8 +1,10 @@
 package com.palmnote.feature.vault
 
 import android.content.ClipData
+import android.content.ClipDescription
 import android.content.ClipboardManager
 import android.content.Context
+import android.os.PersistableBundle
 import com.palmnote.data.datastore.PreferencesManager
 import com.palmnote.di.ApplicationScope
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -32,7 +34,12 @@ class VaultClipboardManager @Inject constructor(
     fun copy(label: String, text: String) {
         if (text.isEmpty()) return
         val clipboard = context.getSystemService(ClipboardManager::class.java)
-        clipboard.setPrimaryClip(ClipData.newPlainText(label, text))
+        val clip = ClipData.newPlainText(label, text).apply {
+            description.extras = PersistableBundle().apply {
+                putBoolean(ClipDescription.EXTRA_IS_SENSITIVE, true)
+            }
+        }
+        clipboard.setPrimaryClip(clip)
         pendingHash = sha256(text)
         clearJob?.cancel()
         clearJob = scope.launch {

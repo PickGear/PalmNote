@@ -27,7 +27,6 @@ data class Wallet(
     val isEnabled: Boolean = true, // 是否启用
     val sortOrder: Int = 0,
     val description: String = "",
-    val isDeleted: Boolean = false,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()
 ) {

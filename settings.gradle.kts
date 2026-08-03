@@ -21,4 +21,8 @@ dependencyResolutionManagement {
 
 rootProject.name = "PalmNote"
 include(":app")
+include(":core")
+include(":feature:bills")
+include(":feature:asset")
+include(":feature:life")
 include(":ppocr-sdk")

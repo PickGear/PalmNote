@@ -1,6 +1,7 @@
 package com.palmnote.domain.repository
 
 import com.palmnote.data.db.entity.Bill
+import com.palmnote.domain.model.BillType
 import com.palmnote.domain.util.DateUtils
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -28,7 +29,7 @@ class BillDailySummaryTest {
         LocalDateTime.of(year, month, day, hour, minute)
             .atZone(ZoneId.of("Asia/Shanghai")).toInstant().toEpochMilli()
 
-    private fun bill(date: Long, amount: Long, type: String) = Bill(
+    private fun bill(date: Long, amount: Long, type: BillType) = Bill(
         amount = amount, type = type, category = "", date = date, yearMonth = ""
     )
 
@@ -39,10 +40,10 @@ class BillDailySummaryTest {
     fun `groups full timestamps by local day including early morning bills`() {
         // 凌晨 03:00 的账按 UTC 折算是前一天（7/4 19:00），但必须归到本地日 7/5
         val bills = listOf(
-            bill(ts(2026, 7, 5, 14, 30), 1000, "EXPENSE"),
-            bill(ts(2026, 7, 5, 3, 0), 2000, "EXPENSE"),
-            bill(ts(2026, 7, 5, 9, 0), 500, "INCOME"),
-            bill(ts(2026, 7, 6, 10, 0), 700, "EXPENSE"),
+            bill(ts(2026, 7, 5, 14, 30), 1000, BillType.EXPENSE),
+            bill(ts(2026, 7, 5, 3, 0), 2000, BillType.EXPENSE),
+            bill(ts(2026, 7, 5, 9, 0), 500, BillType.INCOME),
+            bill(ts(2026, 7, 6, 10, 0), 700, BillType.EXPENSE),
         )
 
         val daily = bills.groupToDailySummaries()
@@ -58,8 +59,8 @@ class BillDailySummaryTest {
     @Test
     fun `same day bills merge into one summary sorted ascending`() {
         val bills = listOf(
-            bill(ts(2026, 7, 6, 10, 0), 700, "EXPENSE"),
-            bill(ts(2026, 7, 5, 9, 0), 500, "EXPENSE"),
+            bill(ts(2026, 7, 6, 10, 0), 700, BillType.EXPENSE),
+            bill(ts(2026, 7, 5, 9, 0), 500, BillType.EXPENSE),
         )
 
         val daily = bills.groupToDailySummaries()

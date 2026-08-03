@@ -13,7 +13,8 @@ import com.palmnote.domain.model.EntityType
 import com.palmnote.domain.repository.CrossLinkRepository
 import com.palmnote.domain.repository.LifeItemRepository
 import com.palmnote.domain.repository.LifeTemplateRepository
-import com.palmnote.domain.service.TriggerEventBus
+import com.palmnote.domain.event.EventBus
+import com.palmnote.domain.event.DomainEvent
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
@@ -33,7 +34,7 @@ class ItemDetailViewModel @Inject constructor(
     private val itemRepo: LifeItemRepository,
     private val templateRepo: LifeTemplateRepository,
     private val crossLinkRepo: CrossLinkRepository,
-    private val eventBus: TriggerEventBus
+    private val eventBus: EventBus
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(ItemDetailUiState())
     val uiState: StateFlow<ItemDetailUiState> = _uiState.asStateFlow()
@@ -67,7 +68,7 @@ class ItemDetailViewModel @Inject constructor(
             val current = (fields[savedKey] as? JsonPrimitive)?.content?.let { Money.parse(it)?.cents } ?: 0L
             val newFields = JsonObject(fields + (savedKey to JsonPrimitive((current + amountCents).toYuanString())))
             itemRepo.updateFieldsData(item.id, newFields.toString())
-            itemRepo.getItemById(item.id)?.let { eventBus.postDepositMade(it) }
+            itemRepo.getItemById(item.id)?.let { eventBus.publish(DomainEvent.SavingDeposit(it.id, 0, 0)) }
             load(item.id)
         }
     }
@@ -76,7 +77,7 @@ class ItemDetailViewModel @Inject constructor(
         val item = _uiState.value.item ?: return
         viewModelScope.launch {
             itemRepo.updateStatus(item.id, status)
-            itemRepo.getItemById(item.id)?.let { eventBus.postStatusChanged(it) }
+            itemRepo.getItemById(item.id)?.let { eventBus.publish(DomainEvent.LifeItemCreated(it.id)) }
             load(item.id)
         }
     }
@@ -85,7 +86,7 @@ class ItemDetailViewModel @Inject constructor(
         val item = _uiState.value.item ?: return
         viewModelScope.launch {
             try {
-                itemRepo.softDelete(item.id)
+                itemRepo.delete(item.id)
             } catch (e: Exception) {
                 _uiState.update { it.copy(isLoading = false) }
             }

@@ -1,5 +1,6 @@
 package com.palmnote.ui.asset
 import kotlin.jvm.JvmSuppressWildcards
+import com.palmnote.domain.model.AssetStatus
 import android.content.Context
 import javax.inject.Inject
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -7,7 +8,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 
 import android.content.ContentValues
 import android.net.Uri
-import android.util.Log
+import com.palmnote.domain.util.AppLogger
 import android.os.Environment
 import android.provider.MediaStore
 import androidx.compose.runtime.Stable
@@ -122,7 +123,7 @@ data class AddAssetFormState(
     val costMode: String = "DAILY",
     val description: String = "",
     val images: String = "",
-    val status: String = "HELD",
+    val status: AssetStatus = AssetStatus.HELD,
     val condition: String = "GOOD",
     val serialNumber: String = "",
     val isFavorite: Boolean = false,
@@ -244,9 +245,9 @@ class AssetViewModel @Inject constructor(
             }
 
             val countsFlow = combine(
-                assetRepository.getAssetCountByStatus("HELD"),
-                assetRepository.getAssetCountByStatus("AWAY"),
-                assetRepository.getAssetCountByStatus("REMOVED")
+                assetRepository.getAssetCountByStatus(AssetStatus.HELD),
+                assetRepository.getAssetCountByStatus(AssetStatus.AWAY),
+                assetRepository.getAssetCountByStatus(AssetStatus.REMOVED)
             ) { held, away, removed ->
                 StatusCounts(held, away, removed)
             }
@@ -296,9 +297,9 @@ class AssetViewModel @Inject constructor(
             val matchesCategory = category == null || asset.category == category
             val matchesStatus = when (statusFilter) {
                 AssetFilter.ALL -> true
-                AssetFilter.HELD -> asset.status == "HELD"
-                AssetFilter.AWAY -> asset.status == "AWAY"
-                AssetFilter.REMOVED -> asset.status == "REMOVED"
+                AssetFilter.HELD -> asset.status == AssetStatus.HELD
+                AssetFilter.AWAY -> asset.status == AssetStatus.AWAY
+                AssetFilter.REMOVED -> asset.status == AssetStatus.REMOVED
             }
             val matchesSearch = query.isEmpty() ||
                 asset.name.contains(query, ignoreCase = true) ||
@@ -473,9 +474,9 @@ class AssetViewModel @Inject constructor(
         }
     }
 
-    fun softDeleteAsset(id: Long) {
+    fun deleteAsset(id: Long) {
         viewModelScope.launch {
-            assetRepository.softDeleteAsset(id)
+            assetRepository.deleteAsset(id)
             hideDialog()
         }
     }
@@ -623,7 +624,7 @@ class AssetViewModel @Inject constructor(
             }
             file.absolutePath
         } catch (e: Exception) {
-            Log.e("AssetViewModel", "Failed to save image", e)
+            AppLogger.e("AssetViewModel", "Failed to save image", e)
             null
         }
     }
@@ -656,7 +657,7 @@ class AssetViewModel @Inject constructor(
                         values.put(MediaStore.Images.Media.IS_PENDING, 0)
                         application.contentResolver.update(it, values, null, null)
                     }
-                } catch (e: Exception) { Log.e("AssetViewModel", "Download image failed", e) }
+                } catch (e: Exception) { AppLogger.e("AssetViewModel", "Download image failed", e) }
             }
         }
     }

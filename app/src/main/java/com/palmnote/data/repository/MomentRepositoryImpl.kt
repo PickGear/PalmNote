@@ -23,7 +23,6 @@ class MomentRepositoryImpl @Inject constructor(
 
     override fun getMomentCount(): Flow<Int> = momentDao.getMomentCount()
 
-    override fun getDeletedMoments(): Flow<List<Moment>> = momentDao.getDeletedMoments()
 
     override suspend fun insertMoment(moment: Moment): Long = momentDao.insertMoment(moment)
 
@@ -31,11 +30,8 @@ class MomentRepositoryImpl @Inject constructor(
 
     override suspend fun setFavorite(id: Long, isFavorite: Boolean) = momentDao.setFavorite(id, isFavorite)
 
-    override suspend fun softDeleteMoment(id: Long) = momentDao.softDeleteMoment(id)
+    override suspend fun deleteMoment(id: Long) = momentDao.deleteMoment(id)
 
-    override suspend fun restoreMoment(id: Long) = momentDao.restoreMoment(id)
-
-    override suspend fun hardDeleteMoment(id: Long) = momentDao.hardDeleteMoment(id)
 
     override suspend fun search(query: String): List<Moment> = momentDao.search(query)
 }

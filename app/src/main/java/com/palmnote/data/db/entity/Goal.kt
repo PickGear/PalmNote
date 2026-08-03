@@ -9,9 +9,7 @@ import androidx.compose.runtime.Immutable
 import com.palmnote.ui.theme.AppIcon
 
 @Entity(tableName = "goals", indices = [
-    Index(value = ["goalType", "isDeleted"], name = "idx_goal_type_deleted"),
     Index(value = ["category"], name = "idx_goal_category"),
-    Index(value = ["isDeleted"], name = "idx_goal_deleted"),
     Index(value = ["deadline"], name = "idx_goal_deadline")
 ])
 @Immutable
@@ -48,8 +46,6 @@ data class Goal(
     val linkedAssetId: Long? = null, // 关联资产(如跑步→跑鞋)
     val isPublic: Boolean = false, // 是否公开展示
     val notes: String = "", // 进度笔记
-    val isDeleted: Boolean = false,
-    val deletedAt: Long? = null,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()
 ) {

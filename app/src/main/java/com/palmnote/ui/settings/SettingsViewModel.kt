@@ -1,5 +1,6 @@
 package com.palmnote.ui.settings
 import javax.inject.Inject
+import com.palmnote.domain.model.BillType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 
@@ -19,7 +20,7 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.palmnote.data.worker.LifeDailyCheckWorker
-import android.util.Log
+import com.palmnote.domain.util.AppLogger
 import java.util.Calendar
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
@@ -31,7 +32,7 @@ import kotlinx.coroutines.withContext
 @Stable
 data class SettingsState(
     val themeMode: String = "SYSTEM",
-    val defaultBillType: String = "EXPENSE",
+    val defaultBillType: BillType = BillType.EXPENSE,
     val budgetReminderEnabled: Boolean = true,
     val calendarSyncEnabled: Boolean = false,
     val switchColor: String = "#2D4A3E",
@@ -113,7 +114,7 @@ class SettingsViewModel @Inject constructor(
                 _state.update { current ->
                     current.copy(
                         themeMode = (i(0) as? String) ?: "SYSTEM",
-                        defaultBillType = (i(1) as? String) ?: "EXPENSE",
+                        defaultBillType = BillType.from((i(1) as? String) ?: "EXPENSE"),
                         budgetReminderEnabled = (i(2) as? Boolean) ?: true,
                         calendarSyncEnabled = (i(3) as? Boolean) ?: false,
                         switchColor = (i(4) as? String) ?: "#2D4A3E",
@@ -139,7 +140,7 @@ class SettingsViewModel @Inject constructor(
                         anniversaryCount = (i(24) as? Int) ?: 0
                     )
                 }
-            }.catch { Log.w("SettingsVM", "Settings flow failed", it) }.collect()
+            }.catch { AppLogger.w("SettingsVM", "Settings flow failed", it) }.collect()
         }
     }
 

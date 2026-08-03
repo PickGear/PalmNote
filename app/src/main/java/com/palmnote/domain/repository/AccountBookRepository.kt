@@ -13,7 +13,7 @@ interface AccountBookRepository {
     suspend fun updateBook(book: AccountBook)
     suspend fun setDefault(id: Long)
     suspend fun setHidden(id: Long, hidden: Boolean)
-    suspend fun softDeleteBook(id: Long)
+    suspend fun deleteBook(id: Long)
 
     /** 事务：软删关联账单 + 软删账本 */
     suspend fun deleteAccountBookWithData(bookId: Long)

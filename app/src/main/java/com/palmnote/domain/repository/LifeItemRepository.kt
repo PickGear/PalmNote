@@ -21,7 +21,5 @@ interface LifeItemRepository {
     suspend fun updateStatus(id: Long, status: String)
     suspend fun updateFieldsData(id: Long, fieldsData: String)
     suspend fun setFavorite(id: Long, favorite: Boolean)
-    suspend fun softDelete(id: Long)
-    suspend fun restore(id: Long)
-    suspend fun hardDelete(id: Long)
+    suspend fun delete(id: Long)
 }

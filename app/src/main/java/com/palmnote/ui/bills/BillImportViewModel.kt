@@ -1,5 +1,7 @@
 package com.palmnote.ui.bills
 import kotlin.jvm.JvmSuppressWildcards
+import com.palmnote.domain.model.BillType
+import com.palmnote.domain.model.PaymentMethod
 import javax.inject.Inject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -61,7 +63,7 @@ data class BillImportState(
     val ocrDate: String = "",
     val ocrCategory: String = "其他",
     val ocrNote: String = "",
-    val ocrType: String = "EXPENSE",
+    val ocrType: BillType = BillType.EXPENSE,
     val ocrWalletId: Long? = null,
     val wallets: List<com.palmnote.data.db.entity.Wallet> = emptyList()
 )
@@ -226,7 +228,7 @@ class BillImportViewModel @Inject constructor(
     fun updateOcrDate(v: String) { _state.value = _state.value.copy(ocrDate = v) }
     fun updateOcrCategory(v: String) { _state.value = _state.value.copy(ocrCategory = v) }
     fun updateOcrNote(v: String) { _state.value = _state.value.copy(ocrNote = v) }
-    fun updateOcrType(t: String) { _state.value = _state.value.copy(ocrType = t) }
+    fun updateOcrType(t: BillType) { _state.value = _state.value.copy(ocrType = t) }
     fun updateOcrWallet(id: Long?) { _state.value = _state.value.copy(ocrWalletId = id) }
 
     fun importSelected() {
@@ -275,9 +277,9 @@ class BillImportViewModel @Inject constructor(
         val existing = billRepository.getAllBills().first()
         val bills = parsed.map { pb ->
             Bill(
-                amount = pb.amount, type = pb.type, category = pb.category, note = pb.note,
+                amount = pb.amount, type = BillType.from(pb.type), category = pb.category, note = pb.note,
                 date = pb.date, yearMonth = DateUtils.formatYearMonth(pb.date), walletId = walletId,
-                paymentMethod = pb.paymentMethod, merchant = pb.merchant,
+                paymentMethod = PaymentMethod.from(pb.paymentMethod), merchant = pb.merchant,
                 transactionId = pb.transactionId,
                 createdAt = System.currentTimeMillis(), updatedAt = System.currentTimeMillis()
             )

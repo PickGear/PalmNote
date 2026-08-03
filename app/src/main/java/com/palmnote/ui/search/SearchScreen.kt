@@ -1,6 +1,7 @@
 package com.palmnote.ui.search
 
 import androidx.compose.foundation.clickable
+import com.palmnote.domain.model.BillType
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -241,7 +242,7 @@ private fun BillSearchItem(bill: Bill, onClick: () -> Unit) {
             Text(
                 CurrencyUtils.formatCurrency(bill.amount.toMoney()),
                 fontWeight = FontWeight.Bold,
-                color = if (bill.type == "EXPENSE") AccentOrange else PrimaryGreenLight
+                color = if (bill.type == BillType.EXPENSE) AccentOrange else PrimaryGreenLight
             )
         }
     }

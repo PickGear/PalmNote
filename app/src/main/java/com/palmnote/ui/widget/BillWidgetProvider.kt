@@ -5,50 +5,66 @@ import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
-import android.util.Log
 import android.widget.RemoteViews
-import androidx.room.Room
 import com.palmnote.MainActivity
 import com.palmnote.R
 import com.palmnote.data.db.AppDatabase
-import com.palmnote.data.db.DbKeyStore
-import com.palmnote.data.db.EncryptedOpenHelperFactory
-import com.palmnote.data.db.migration.MIGRATION_1_2
-import com.palmnote.data.db.migration.MIGRATION_2_3
-import com.palmnote.data.db.migration.MIGRATION_3_4
-import com.palmnote.data.db.migration.MIGRATION_4_5
+import com.palmnote.data.db.dao.BillDao
+import com.palmnote.domain.util.AppLogger
+import dagger.hilt.EntryPoint
+import dagger.hilt.InstallIn
+import dagger.hilt.android.EntryPointAccessors
+import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
+/**
+ * 记账桌面小组件：显示当月收支概览。
+ * 通过 Hilt EntryPoint 访问数据库，不再自行创建 Room 实例。
+ */
 class BillWidgetProvider : AppWidgetProvider() {
 
-    override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
+    @EntryPoint
+    @InstallIn(SingletonComponent::class)
+    interface WidgetEntryPoint {
+        fun billDao(): BillDao
+    }
+
+    override fun onUpdate(
+        context: Context,
+        appWidgetManager: AppWidgetManager,
+        appWidgetIds: IntArray
+    ) {
         val pendingResult = goAsync()
-        runBlocking(Dispatchers.IO) {
-            var db: AppDatabase? = null
+        val scope = CoroutineScope(Dispatchers.IO)
+
+        scope.launch {
             try {
+                val entryPoint = EntryPointAccessors.fromApplication(
+                    context.applicationContext, WidgetEntryPoint::class.java
+                )
+                val billDao = entryPoint.billDao()
                 val yearMonth = DateTimeFormatter.ofPattern("yyyy-MM").format(LocalDate.now())
-                val appContext = context.applicationContext
-                db = Room.databaseBuilder(
-                    appContext,
-                    AppDatabase::class.java,
-                    AppDatabase.DATABASE_NAME
-                ).openHelperFactory(
-                    EncryptedOpenHelperFactory(appContext, DbKeyStore(appContext))
-                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
-                    .build()
-                val expense = db.billDao().getMonthlyExpense(yearMonth).first()
-                val income = db.billDao().getMonthlyIncome(yearMonth).first()
+
+                val expense = billDao.getMonthlyExpense(yearMonth).first()
+                val income = billDao.getMonthlyIncome(yearMonth).first()
                 val fmt = java.text.NumberFormat.getCurrencyInstance(Locale.getDefault())
 
                 for (appWidgetId in appWidgetIds) {
                     val views = RemoteViews(context.packageName, R.layout.widget_layout)
-                    views.setTextViewText(R.id.widget_expense, fmt.format((expense ?: 0L) / 100.0))
-                    views.setTextViewText(R.id.widget_income, fmt.format((income ?: 0L) / 100.0))
+                    views.setTextViewText(
+                        R.id.widget_expense,
+                        fmt.format((expense ?: 0L) / 100.0)
+                    )
+                    views.setTextViewText(
+                        R.id.widget_income,
+                        fmt.format((income ?: 0L) / 100.0)
+                    )
                     val intent = Intent(context, MainActivity::class.java)
                     val pendingIntent = PendingIntent.getActivity(
                         context, 0, intent,
@@ -58,9 +74,8 @@ class BillWidgetProvider : AppWidgetProvider() {
                     appWidgetManager.updateAppWidget(appWidgetId, views)
                 }
             } catch (e: Exception) {
-                Log.e("BillWidgetProvider", "Widget update failed", e)
+                AppLogger.e("BillWidgetProvider", "Widget update failed", e)
             } finally {
-                db?.close()
                 pendingResult.finish()
             }
         }

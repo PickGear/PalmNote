@@ -27,17 +27,13 @@ class GoalRepositoryImpl @Inject constructor(
 
     override fun getTotalStreak(): Flow<Int?> = goalDao.getTotalStreak()
 
-    override fun getDeletedGoals(): Flow<List<Goal>> = goalDao.getDeletedGoals()
 
     override suspend fun insertGoal(goal: Goal): Long = goalDao.insertGoal(goal)
 
     override suspend fun updateGoal(goal: Goal) = goalDao.updateGoal(goal)
 
-    override suspend fun softDeleteGoal(id: Long) = goalDao.softDeleteGoal(id)
+    override suspend fun deleteGoal(id: Long) = goalDao.deleteGoal(id)
 
-    override suspend fun restoreGoal(id: Long) = goalDao.restoreGoal(id)
-
-    override suspend fun hardDeleteGoal(id: Long) = goalDao.hardDeleteGoal(id)
 
     override suspend fun incrementGoalProgress(id: Long) = goalDao.incrementGoalProgress(id)
 

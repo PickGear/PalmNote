@@ -70,7 +70,7 @@ class GenericListViewModel @Inject constructor(
     fun deleteItem(id: Long) {
         viewModelScope.launch {
             try {
-                itemRepo.softDelete(id)
+                itemRepo.delete(id)
             } catch (e: Exception) {
                 android.util.Log.w("GenericListVM", "delete failed", e)
             }

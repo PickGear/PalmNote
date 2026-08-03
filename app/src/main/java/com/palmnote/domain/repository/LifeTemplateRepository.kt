@@ -13,7 +13,5 @@ interface LifeTemplateRepository {
     suspend fun insertTemplate(template: LifeTemplate): Long
     suspend fun updateTemplate(template: LifeTemplate)
     suspend fun setTemplateHidden(id: Long, hidden: Boolean)
-    suspend fun softDeleteTemplate(id: Long)
-    suspend fun restoreTemplate(id: Long)
-    suspend fun hardDeleteTemplateById(id: Long)
+    suspend fun deleteTemplate(id: Long)
 }
