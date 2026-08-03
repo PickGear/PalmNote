@@ -1,7 +1,7 @@
 package com.palmnote.data.worker
 
 import android.content.Context
-import android.util.Log
+import com.palmnote.domain.util.AppLogger
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
@@ -23,16 +23,16 @@ class AutoBackupWorker @AssistedInject constructor(
 
     override suspend fun doWork(): Result {
         return try {
-            Log.d(TAG, "Starting auto backup")
+            AppLogger.d(TAG, "Starting auto backup")
 
             backupRepository.createBackup().collect { state ->
-                Log.d(TAG, "Backup state: $state")
+                AppLogger.d(TAG, "Backup state: $state")
             }
 
-            Log.d(TAG, "Auto backup completed successfully")
+            AppLogger.d(TAG, "Auto backup completed successfully")
             Result.success()
         } catch (e: Exception) {
-            Log.e(TAG, "Auto backup failed", e)
+            AppLogger.e(TAG, "Auto backup failed", e)
             if (runAttemptCount < 3) Result.retry() else Result.failure()
         }
     }

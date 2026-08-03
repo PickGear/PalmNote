@@ -1,5 +1,6 @@
 package com.palmnote.ui.bills
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.palmnote.domain.model.BillType
 
 import androidx.compose.animation.*
 import androidx.activity.compose.BackHandler
@@ -84,8 +85,8 @@ fun BillScreen(
         derivedStateOf {
             val base = if (state.currentFilter.isActive || state.searchQuery.isNotBlank()) state.filteredBills else state.bills
             val byType = when (selectedFilter) {
-                "EXPENSE" -> base.filter { it.type == "EXPENSE" }
-                "INCOME" -> base.filter { it.type == "INCOME" }
+                "EXPENSE" -> base.filter { it.type == BillType.EXPENSE }
+                "INCOME" -> base.filter { it.type == BillType.INCOME }
                 else -> base
             }
             val sd = state.selectedDay
@@ -394,8 +395,8 @@ fun BillScreen(
             } else {
                 groupedBills.forEach { (_, bills) ->
                     item {
-                        val dayIncome = bills.filter { it.type == "INCOME" }.sumOf { it.amount }
-                        val dayExpense = bills.filter { it.type == "EXPENSE" }.sumOf { it.amount }
+                        val dayIncome = bills.filter { it.type == BillType.INCOME }.sumOf { it.amount }
+                        val dayExpense = bills.filter { it.type == BillType.EXPENSE }.sumOf { it.amount }
                         AnimatedCard(instant = billListState.isScrollInProgress) {
                             Row(
                                 modifier = Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 4.dp, start = 12.dp, end = 12.dp),
@@ -497,7 +498,7 @@ fun BillListItem(bill: Bill, wallets: Map<Long, String> = emptyMap(), onDetail: 
     customExpenseItems: List<CategoryItem>? = null, customIncomeItems: List<CategoryItem>? = null,
     presetOverrides: Map<String, String> = emptyMap()) {
     val context = LocalContext.current
-    val isExpense = bill.type == "EXPENSE"
+    val isExpense = bill.type == BillType.EXPENSE
     val categoryItem = remember(bill.category, bill.type, customExpenseItems, customIncomeItems, presetOverrides) {
         val presetList = if (isExpense) expenseCategoryItems else incomeCategoryItems
         presetList.find { it.name == bill.category }?.let {
@@ -506,7 +507,7 @@ fun BillListItem(bill: Bill, wallets: Map<Long, String> = emptyMap(), onDetail: 
     }
     val catColor = categoryItem?.color ?: ErrorLight
     val displayName = remember(bill.category, bill.type, presetOverrides) {
-        val prefix = if (bill.type == "EXPENSE") "EXPENSE_" else "INCOME_"
+        val prefix = if (bill.type == BillType.EXPENSE) "EXPENSE_" else "INCOME_"
         val overrideKey = "preset_$prefix${bill.category}"
         val json = presetOverrides[overrideKey]
         if (json != null) {
@@ -549,15 +550,15 @@ fun BillListItem(bill: Bill, wallets: Map<Long, String> = emptyMap(), onDetail: 
         ) {
             Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp).padding(start = 12.dp, end = 12.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Top) {
                 Row(modifier = Modifier.weight(1f, false), verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(if (bill.type == "TRANSFER") InfoBlue.copy(alpha = 0.12f) else catColor.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) {
+                    Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(if (bill.type == BillType.TRANSFER) InfoBlue.copy(alpha = 0.12f) else catColor.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) {
                         Icon(
-                            if (bill.type == "TRANSFER") Icons.Outlined.SwapVert else categoryItem?.icon ?: Icons.Outlined.Cancel,
-                            null, tint = if (bill.type == "TRANSFER") InfoBlue else catColor, modifier = Modifier.size(20.dp)
+                            if (bill.type == BillType.TRANSFER) Icons.Outlined.SwapVert else categoryItem?.icon ?: Icons.Outlined.Cancel,
+                            null, tint = if (bill.type == BillType.TRANSFER) InfoBlue else catColor, modifier = Modifier.size(20.dp)
                         )
                     }
                     Column {
-                        Text(if (bill.type == "TRANSFER") stringResource(R.string.bill_transfer) else displayName, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
-                        val merchantText = if (bill.type == "TRANSFER") null else if (bill.merchant.isNotEmpty() && bill.location.isNotEmpty()) {
+                        Text(if (bill.type == BillType.TRANSFER) stringResource(R.string.bill_transfer) else displayName, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                        val merchantText = if (bill.type == BillType.TRANSFER) null else if (bill.merchant.isNotEmpty() && bill.location.isNotEmpty()) {
                             "${bill.merchant} · ${bill.location}"
                         } else if (bill.merchant.isNotEmpty()) {
                             bill.merchant
@@ -567,7 +568,7 @@ fun BillListItem(bill: Bill, wallets: Map<Long, String> = emptyMap(), onDetail: 
                         if (merchantText != null) {
                             Text(merchantText, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 2.dp))
                         }
-                        if (bill.type == "TRANSFER" && bill.walletId != null && bill.toWalletId != null) {
+                        if (bill.type == BillType.TRANSFER && bill.walletId != null && bill.toWalletId != null) {
                             val fromName = wallets[bill.walletId] ?: ""
                             val toName = wallets[bill.toWalletId] ?: ""
                             Text("$fromName → $toName", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 2.dp))
@@ -575,7 +576,7 @@ fun BillListItem(bill: Bill, wallets: Map<Long, String> = emptyMap(), onDetail: 
                     }
                 }
                 Column(horizontalAlignment = Alignment.End, modifier = Modifier.width(100.dp)) {
-                    Text(text = "${if (bill.type == "EXPENSE") "-" else if (bill.type == "TRANSFER") "" else "+"}${CurrencyUtils.formatCompact(context, bill.amount.toMoney())}", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = if (bill.type == "EXPENSE") ExpenseRed else if (bill.type == "TRANSFER") InfoBlue else StatusActive, textAlign = TextAlign.End, modifier = Modifier.fillMaxWidth())
+                    Text(text = "${if (bill.type == BillType.EXPENSE) "-" else if (bill.type == BillType.TRANSFER) "" else "+"}${CurrencyUtils.formatCompact(context, bill.amount.toMoney())}", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = if (bill.type == BillType.EXPENSE) ExpenseRed else if (bill.type == BillType.TRANSFER) InfoBlue else StatusActive, textAlign = TextAlign.End, modifier = Modifier.fillMaxWidth())
                     bill.walletId?.let { walletId ->
                         wallets[walletId]?.let { walletName ->
                             Text(walletName, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 2.dp))

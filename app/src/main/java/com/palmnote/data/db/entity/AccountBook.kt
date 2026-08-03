@@ -23,8 +23,6 @@ data class AccountBook(
     val isDefault: Boolean = false,
     val isAllBooks: Boolean = false,
     val isHidden: Boolean = false,
-    val isDeleted: Boolean = false,
-    val deletedAt: Long? = null,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()
 ) {

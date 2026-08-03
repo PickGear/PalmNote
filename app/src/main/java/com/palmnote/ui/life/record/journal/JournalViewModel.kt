@@ -44,7 +44,7 @@ class JournalViewModel @Inject constructor(
     fun deleteMoment(id: Long) {
         viewModelScope.launch {
             try {
-                lifeMomentRepository.softDeleteMoment(id)
+                lifeMomentRepository.deleteMoment(id)
                 load()
             } catch (e: Exception) {
                 _uiState.update { it.copy(error = e.message ?: context.getString(R.string.life_error_delete_failed)) }

@@ -33,20 +33,10 @@ abstract class BaseLifeViewModel<T : Any>(
     fun deleteItem(id: Long, onUndo: () -> Unit = {}) {
         viewModelScope.launch {
             try {
-                itemRepo.softDelete(id)
+                itemRepo.delete(id)
                 onUndo()
             } catch (e: Exception) {
                 android.util.Log.w("BaseLifeVM", "deleteItem failed", e)
-            }
-        }
-    }
-
-    fun restoreItem(id: Long) {
-        viewModelScope.launch {
-            try {
-                itemRepo.restore(id)
-            } catch (e: Exception) {
-                android.util.Log.w("BaseLifeVM", "restoreItem failed", e)
             }
         }
     }

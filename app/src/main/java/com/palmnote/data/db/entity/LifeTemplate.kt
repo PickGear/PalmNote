@@ -9,8 +9,7 @@ import com.palmnote.R
 
 @Entity(tableName = "life_templates", indices = [
     Index(value = ["category"], name = "idx_template_category"),
-    Index(value = ["isDeleted"], name = "idx_template_deleted"),
-    Index(value = ["isHidden", "isDeleted"], name = "idx_template_visible")
+    Index(value = ["isHidden"], name = "idx_template_visible")
 ])
 @Immutable
 data class LifeTemplate(
@@ -30,8 +29,6 @@ data class LifeTemplate(
     val isHidden: Boolean = false,
     val isSpecial: Boolean = false,
     val sortOrder: Int = 0,
-    val isDeleted: Boolean = false,
-    val deletedAt: Long? = null,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()
 )

@@ -67,7 +67,7 @@ class CalendarSyncManager(
         try {
             val calendarId = getOrCreateCalendarId() ?: return@withContext Result.failure(Exception(context.getString(R.string.calendar_sync_error_create_failed)))
             val resolver = context.contentResolver
-            val anniversaries = anniversaryRepository.getAllAnniversaries().first().filter { !it.isDeleted && it.isYearly }
+            val anniversaries = anniversaryRepository.getAllAnniversaries().first().filter { it.isYearly }
 
             deleteExistingEvents(resolver, calendarId)
             var count = 0

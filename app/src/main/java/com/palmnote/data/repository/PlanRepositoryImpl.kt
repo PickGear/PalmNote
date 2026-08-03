@@ -16,5 +16,5 @@ class PlanRepositoryImpl @Inject constructor(
 
     override suspend fun updatePlan(plan: Plan) = planDao.updatePlan(plan)
 
-    override suspend fun softDeletePlan(id: Long) = planDao.softDeletePlan(id)
+    override suspend fun deletePlan(id: Long) = planDao.deletePlan(id)
 }

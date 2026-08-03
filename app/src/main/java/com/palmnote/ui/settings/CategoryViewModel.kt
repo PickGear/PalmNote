@@ -235,8 +235,8 @@ class CategoryViewModel @Inject constructor(
 
     fun deleteCategoryWithData(categoryName: String, categoryId: Long) {
         viewModelScope.launch {
-            billRepository.softDeleteByCategory(categoryName)
-            assetRepository.softDeleteByCategory(categoryName)
+            billRepository.deleteByCategory(categoryName)
+            assetRepository.deleteByCategory(categoryName)
             repository.deleteCategoryById(categoryId)
         }
     }

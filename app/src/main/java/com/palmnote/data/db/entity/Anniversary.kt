@@ -33,8 +33,6 @@ data class Anniversary(
     val emoji: String = "", // 遗留字段，已迁移至 icon
     val linkedMomentId: Long? = null,
     val isPinned: Boolean = false, // 置顶
-    val isDeleted: Boolean = false,
-    val deletedAt: Long? = null,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()
 ) {

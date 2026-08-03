@@ -119,24 +119,17 @@ class WalletRepositoryTest {
     }
 
     @Test
-    fun `softDelete delegates to dao`() = runTest {
-        walletRepository.softDelete(1)
+    fun `delete delegates to dao`() = runTest {
+        walletRepository.delete(1)
 
-        coVerify { walletDao.softDelete(1, any()) }
-    }
-
-    @Test
-    fun `hardDelete delegates to dao`() = runTest {
-        walletRepository.hardDelete(1)
-
-        coVerify { walletDao.hardDelete(1) }
+        coVerify { walletDao.deleteWallet(1) }
     }
 
     @Test
     fun `getAllWallets returns all wallets`() = runTest {
         val wallets = listOf(
             Wallet(id = 1, name = "现金", type = "CASH"),
-            Wallet(id = 2, name = "已删除钱包", type = "CASH", isDeleted = true)
+            Wallet(id = 2, name = "微信", type = "E_WALLET")
         )
         coEvery { walletDao.getAllWallets() } returns flowOf(wallets)
 

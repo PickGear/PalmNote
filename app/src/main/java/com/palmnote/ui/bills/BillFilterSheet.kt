@@ -1,6 +1,8 @@
 package com.palmnote.ui.bills
 
 import androidx.compose.foundation.layout.*
+import com.palmnote.domain.model.BillType
+import com.palmnote.domain.model.PaymentMethod
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
@@ -62,13 +64,13 @@ fun BillFilterSheet(
             Spacer(modifier = Modifier.height(8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 FilterChip(
-                    selected = selectedType == "EXPENSE",
-                    onClick = { selectedType = if (selectedType == "EXPENSE") null else "EXPENSE" },
+                    selected = selectedType == BillType.EXPENSE,
+                    onClick = { selectedType = if (selectedType == BillType.EXPENSE) null else BillType.EXPENSE },
                     label = { Text(stringResource(R.string.bill_filter_type_expense)) }
                 )
                 FilterChip(
-                    selected = selectedType == "INCOME",
-                    onClick = { selectedType = if (selectedType == "INCOME") null else "INCOME" },
+                    selected = selectedType == BillType.INCOME,
+                    onClick = { selectedType = if (selectedType == BillType.INCOME) null else BillType.INCOME },
                     label = { Text(stringResource(R.string.bill_filter_type_income)) }
                 )
             }
@@ -96,8 +98,8 @@ fun BillFilterSheet(
 
             Text(stringResource(R.string.bill_filter_category), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium)
             Spacer(modifier = Modifier.height(8.dp))
-            val categories = if (selectedType == "INCOME") incomeCategories else expenseCategories
-            val categoryType = if (selectedType == "INCOME") "BILL_INCOME" else "BILL_EXPENSE"
+            val categories = if (selectedType == BillType.INCOME) incomeCategories else expenseCategories
+            val categoryType = if (selectedType == BillType.INCOME) "BILL_INCOME" else "BILL_EXPENSE"
             CategoryPicker(
                 selected = selectedCategory ?: "",
                 onSelected = { catName ->
@@ -107,7 +109,7 @@ fun BillFilterSheet(
                 rows = 3,
                 columns = 5,
                 onManageCategories = onManageCategories?.let { { it(categoryType) } },
-                getDisplayName = { filterDisplayName(it, selectedType ?: "EXPENSE") }
+                getDisplayName = { filterDisplayName(it, (selectedType ?: BillType.EXPENSE).value) }
             )
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -171,9 +173,9 @@ fun BillFilterSheet(
 
 @Stable
 data class BillFilter(
-    val type: String? = null,
+    val type: BillType? = null,
     val category: String? = null,
-    val paymentMethod: String? = null,
+    val paymentMethod: PaymentMethod? = null,
     val amountMin: Long? = null, // 金额（分）
     val amountMax: Long? = null // 金额（分）
 ) {

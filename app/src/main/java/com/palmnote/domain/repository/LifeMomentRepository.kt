@@ -9,6 +9,6 @@ interface LifeMomentRepository {
     suspend fun getMomentById(id: Long): LifeMoment?
     suspend fun insertMoment(moment: LifeMoment): Long
     suspend fun updateMoment(moment: LifeMoment)
-    suspend fun softDeleteMoment(id: Long)
+    suspend fun deleteMoment(id: Long)
     fun getMomentCount(): Flow<Int>
 }

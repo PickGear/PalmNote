@@ -8,5 +8,5 @@ interface PlanRepository {
     suspend fun getPlanById(id: Long): Plan?
     suspend fun insertPlan(plan: Plan): Long
     suspend fun updatePlan(plan: Plan)
-    suspend fun softDeletePlan(id: Long)
+    suspend fun deletePlan(id: Long)
 }

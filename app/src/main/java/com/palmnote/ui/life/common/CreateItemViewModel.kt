@@ -12,7 +12,8 @@ import com.palmnote.data.db.entity.LifeItem
 import com.palmnote.data.db.entity.LifeTemplate
 import com.palmnote.domain.repository.LifeItemRepository
 import com.palmnote.domain.repository.LifeTemplateRepository
-import com.palmnote.domain.service.TriggerEventBus
+import com.palmnote.domain.event.EventBus
+import com.palmnote.domain.event.DomainEvent
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -31,7 +32,7 @@ class CreateItemViewModel @Inject constructor(
     @ApplicationContext private val application: Context,
     private val itemRepo: LifeItemRepository,
     private val templateRepo: LifeTemplateRepository,
-    private val eventBus: TriggerEventBus
+    private val eventBus: EventBus
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(CreateItemUiState())
     val uiState: StateFlow<CreateItemUiState> = _uiState.asStateFlow()
@@ -83,7 +84,7 @@ class CreateItemViewModel @Inject constructor(
                     itemRepo.insertItem(LifeItem(templateId = tpl.id, title = title, fieldsData = fieldsData))
                 }
                 itemRepo.getItemById(id)?.let { item ->
-                    eventBus.postCreated(item)
+                    eventBus.publish(DomainEvent.LifeItemCreated(item.id))
                 }
                 _uiState.update { it.copy(savedItemId = id, saveError = null) }
             } catch (e: Exception) {

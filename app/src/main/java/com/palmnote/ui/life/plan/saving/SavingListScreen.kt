@@ -51,7 +51,6 @@ fun SavingListScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Long) -
     var searchQuery by remember { mutableStateOf("") }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-    var lastDeletedId by remember { mutableStateOf<Long?>(null) }
     var showDeleteSheet by remember { mutableStateOf(false) }
     var pendingDeleteItem by remember { mutableStateOf<LifeItem?>(null) }
 
@@ -165,18 +164,13 @@ fun SavingListScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Long) -
     if (showDeleteSheet && pendingDeleteItem != null) {
         val item = pendingDeleteItem!!
         val deletedMsg = stringResource(R.string.life_saving_deleted)
-        val undoLabel = stringResource(R.string.life_saving_undo)
         DeleteConfirmSheet(
             itemSummary = item.title,
             onDelete = {
                 showDeleteSheet = false
-                lastDeletedId = item.id
                 viewModel.deleteItem(item.id)
                 scope.launch {
-                    val result = snackbarHostState.showSnackbar(deletedMsg, actionLabel = undoLabel, duration = SnackbarDuration.Short)
-                    if (result == SnackbarResult.ActionPerformed) {
-                        lastDeletedId?.let { viewModel.restoreItem(it); lastDeletedId = null }
-                    }
+                    snackbarHostState.showSnackbar(deletedMsg, duration = SnackbarDuration.Short)
                 }
             },
             onDismiss = { showDeleteSheet = false; pendingDeleteItem = null }

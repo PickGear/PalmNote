@@ -8,6 +8,7 @@ import com.palmnote.data.db.dao.LifeItemDao
 import com.palmnote.data.db.dao.LifeItemPagingSource
 import com.palmnote.data.db.entity.LifeItem
 import com.palmnote.domain.repository.LifeItemRepository
+import com.palmnote.domain.util.AppLogger
 import kotlinx.coroutines.flow.Flow
 class LifeItemRepositoryImpl @Inject constructor(
     private val dao: LifeItemDao
@@ -26,49 +27,37 @@ class LifeItemRepositoryImpl @Inject constructor(
     override suspend fun insertItem(item: LifeItem): Long = try {
         dao.insertItem(item)
     } catch (e: Exception) {
-        android.util.Log.e("LifeItemRepo", "insertItem failed", e)
+        AppLogger.e("LifeItemRepo", "insertItem failed", e)
         throw e
     }
     override suspend fun updateItem(item: LifeItem) = try {
         dao.updateItem(id = item.id, title = item.title, fieldsData = item.fieldsData, status = item.status, note = item.note, sortOrder = item.sortOrder, isFavorite = item.isFavorite)
     } catch (e: Exception) {
-        android.util.Log.e("LifeItemRepo", "updateItem failed", e)
+        AppLogger.e("LifeItemRepo", "updateItem failed", e)
         throw e
     }
     override suspend fun updateStatus(id: Long, status: String) = try {
         dao.updateStatus(id, status)
     } catch (e: Exception) {
-        android.util.Log.e("LifeItemRepo", "updateStatus failed", e)
+        AppLogger.e("LifeItemRepo", "updateStatus failed", e)
         throw e
     }
     override suspend fun updateFieldsData(id: Long, fieldsData: String) = try {
         dao.updateFieldsData(id, fieldsData)
     } catch (e: Exception) {
-        android.util.Log.e("LifeItemRepo", "updateFieldsData failed", e)
+        AppLogger.e("LifeItemRepo", "updateFieldsData failed", e)
         throw e
     }
     override suspend fun setFavorite(id: Long, favorite: Boolean) = try {
         dao.setFavorite(id, favorite)
     } catch (e: Exception) {
-        android.util.Log.e("LifeItemRepo", "setFavorite failed", e)
+        AppLogger.e("LifeItemRepo", "setFavorite failed", e)
         throw e
     }
-    override suspend fun softDelete(id: Long) = try {
-        dao.softDelete(id)
+    override suspend fun delete(id: Long) = try {
+        dao.deleteItem(id)
     } catch (e: Exception) {
-        android.util.Log.e("LifeItemRepo", "softDelete failed", e)
-        throw e
-    }
-    override suspend fun restore(id: Long) = try {
-        dao.restore(id)
-    } catch (e: Exception) {
-        android.util.Log.e("LifeItemRepo", "restore failed", e)
-        throw e
-    }
-    override suspend fun hardDelete(id: Long) = try {
-        dao.hardDeleteById(id)
-    } catch (e: Exception) {
-        android.util.Log.e("LifeItemRepo", "hardDelete failed", e)
+        AppLogger.e("LifeItemRepo", "softDelete failed", e)
         throw e
     }
 }

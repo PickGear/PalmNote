@@ -1,6 +1,8 @@
 package com.palmnote.ui.bills
 
 import androidx.compose.foundation.background
+import com.palmnote.domain.model.BillType
+import com.palmnote.domain.model.PaymentMethod
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -97,19 +99,19 @@ fun BillDetailScreen(
                     Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                text = "${if (bill.type == "EXPENSE") "-" else if (bill.type == "TRANSFER") "" else "+"}${CurrencyUtils.formatCurrency(bill.amount.toMoney())}",
+                                text = "${if (bill.type == BillType.EXPENSE) "-" else if (bill.type == BillType.TRANSFER) "" else "+"}${CurrencyUtils.formatCurrency(bill.amount.toMoney())}",
                                 style = MaterialTheme.typography.displaySmall,
                                 fontWeight = FontWeight.Bold,
-                                color = if (bill.type == "EXPENSE") ExpenseRed else if (bill.type == "TRANSFER") InfoBlue else IncomeGreen
+                                color = if (bill.type == BillType.EXPENSE) ExpenseRed else if (bill.type == BillType.TRANSFER) InfoBlue else IncomeGreen
                             )
                     val catItem = remember(bill.category, bill.type, billCustomExpense, billCustomIncome) {
-                        val item = (if (bill.type == "EXPENSE") expenseCategoryItems else incomeCategoryItems).find { it.name == bill.category }
+                        val item = (if (bill.type == BillType.EXPENSE) expenseCategoryItems else incomeCategoryItems).find { it.name == bill.category }
                         item?.let { it.copy(color = ColorResolver.resolve(it.name, it.color)) }
-                            ?: (if (bill.type == "EXPENSE") billCustomExpense else billCustomIncome).find { it.name == bill.category }
+                            ?: (if (bill.type == BillType.EXPENSE) billCustomExpense else billCustomIncome).find { it.name == bill.category }
                             ?: com.palmnote.ui.components.CategoryItem(bill.category, Icons.Outlined.Cancel, ErrorLight)
                     }
                     fun getBillDisplayName(cat: String): String {
-                        val prefix = if (bill.type == "EXPENSE") "EXPENSE_" else "INCOME_"
+                        val prefix = if (bill.type == BillType.EXPENSE) "EXPENSE_" else "INCOME_"
                         val overrideKey = "preset_$prefix$cat"
                         val json = billPresetOverrides[overrideKey]
                         if (json != null) {
@@ -121,7 +123,7 @@ fun BillDetailScreen(
                         val resId = getLocalizedCategoryName(cat)
                         return if (resId != null) context.getString(resId) else cat
                     }
-                    if (bill.type == "TRANSFER") {
+                    if (bill.type == BillType.TRANSFER) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(InfoBlue.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) {
                                 Icon(Icons.Outlined.SwapVert, null, tint = InfoBlue, modifier = Modifier.size(20.dp))
@@ -139,16 +141,16 @@ fun BillDetailScreen(
                     }
                         }
                         HorizontalDivider()
-                        DetailRow(stringResource(R.string.bill_type), if (bill.type == "TRANSFER") stringResource(R.string.bill_transfer) else if (bill.type == "EXPENSE") stringResource(R.string.bill_expense) else stringResource(R.string.bill_income))
+                        DetailRow(stringResource(R.string.bill_type), if (bill.type == BillType.TRANSFER) stringResource(R.string.bill_transfer) else if (bill.type == BillType.EXPENSE) stringResource(R.string.bill_expense) else stringResource(R.string.bill_income))
                         DetailRow(stringResource(R.string.bill_date), DateUtils.formatDisplayDate(context, bill.date))
-                        if (bill.type == "TRANSFER") {
+                        if (bill.type == BillType.TRANSFER) {
                             DetailRow(stringResource(R.string.bill_wallet), walletNames[bill.walletId] ?: "")
                             DetailRow(stringResource(R.string.bill_transfer_to), walletNames[bill.toWalletId] ?: "")
                         } else {
                             bill.walletId?.let { DetailRow(stringResource(R.string.bill_wallet), walletNames[it] ?: "") }
                         }
-                        if (bill.type != "TRANSFER" && bill.merchant.isNotEmpty()) DetailRow(stringResource(R.string.bill_merchant), bill.merchant)
-                        if (bill.paymentMethod.isNotEmpty()) DetailRow(stringResource(R.string.bill_payment_method), stringResource(getLocalizedPaymentMethod(bill.paymentMethod)))
+                        if (bill.type != BillType.TRANSFER && bill.merchant.isNotEmpty()) DetailRow(stringResource(R.string.bill_merchant), bill.merchant)
+                        if (bill.paymentMethod != PaymentMethod.OTHER) DetailRow(stringResource(R.string.bill_payment_method), stringResource(getLocalizedPaymentMethod(bill.paymentMethod.value)))
                         if (bill.note.isNotEmpty()) DetailRow(stringResource(R.string.bill_note), bill.note)
                         if (bill.subCategory.isNotEmpty()) DetailRow(stringResource(R.string.bill_sub_category), bill.subCategory)
                         if (bill.location.isNotEmpty()) DetailRow(stringResource(R.string.bill_location), bill.location)

@@ -40,25 +40,28 @@ interface CategoryConfigDao {
     @Query("UPDATE category_configs SET isEnabled = :enabled, updatedAt = :now WHERE id = :id")
     suspend fun setEnabled(id: Long, enabled: Boolean, now: Long = System.currentTimeMillis())
 
+    @Query("DELETE FROM category_configs WHERE id = :id")
+    suspend fun deleteTag(id: Long)
+
     @Query("DELETE FROM category_configs")
     suspend fun deleteAll()
 }
 
 @Dao
 interface CustomTagDao {
-    @Query("SELECT * FROM custom_tags WHERE isDeleted = 0 ORDER BY usageCount DESC, name ASC")
+    @Query("SELECT * FROM custom_tags ORDER BY usageCount DESC, name ASC")
     fun getAllTags(): Flow<List<CustomTag>>
 
-    @Query("SELECT * FROM custom_tags WHERE applicableTypes LIKE '%' || :type || '%' AND isDeleted = 0 ORDER BY usageCount DESC")
+    @Query("SELECT * FROM custom_tags WHERE applicableTypes LIKE '%' || :type || '%' ORDER BY usageCount DESC")
     fun getTagsByType(type: String): Flow<List<CustomTag>>
 
-    @Query("SELECT * FROM custom_tags WHERE name LIKE '%' || :query || '%' AND isDeleted = 0")
+    @Query("SELECT * FROM custom_tags WHERE name LIKE '%' || :query || '%'")
     fun searchTags(query: String): Flow<List<CustomTag>>
 
     @Query("SELECT * FROM custom_tags WHERE id = :id")
     suspend fun getTagById(id: Long): CustomTag?
 
-    @Query("SELECT * FROM custom_tags WHERE name = :name AND isDeleted = 0 LIMIT 1")
+    @Query("SELECT * FROM custom_tags WHERE name = :name LIMIT 1")
     suspend fun getTagByName(name: String): CustomTag?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -70,11 +73,10 @@ interface CustomTagDao {
     @Query("UPDATE custom_tags SET usageCount = usageCount + 1, updatedAt = :now WHERE id = :id")
     suspend fun incrementUsage(id: Long, now: Long = System.currentTimeMillis())
 
-    @Query("UPDATE custom_tags SET isDeleted = 1, updatedAt = :now WHERE id = :id")
-    suspend fun softDelete(id: Long, now: Long = System.currentTimeMillis())
+
 
     @Query("DELETE FROM custom_tags WHERE id = :id")
-    suspend fun hardDelete(id: Long)
+    suspend fun deleteTag(id: Long)
 
     @Query("DELETE FROM custom_tags")
     suspend fun deleteAll()

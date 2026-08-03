@@ -18,7 +18,7 @@ class LifeMomentRepositoryImpl @Inject constructor(
 
     override suspend fun updateMoment(moment: LifeMoment) = lifeMomentDao.updateMoment(moment)
 
-    override suspend fun softDeleteMoment(id: Long) = lifeMomentDao.softDeleteMoment(id)
+    override suspend fun deleteMoment(id: Long) = lifeMomentDao.deleteLifeMoment(id)
 
     override fun getMomentCount(): Flow<Int> = lifeMomentDao.getMomentCount()
 }

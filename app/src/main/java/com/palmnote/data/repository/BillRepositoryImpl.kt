@@ -4,16 +4,22 @@ import javax.inject.Inject
 import androidx.room.withTransaction
 import com.palmnote.data.db.AppDatabase
 import com.palmnote.data.db.dao.BillDao
+import com.palmnote.data.db.dao.BillRecycleBinDao
 import com.palmnote.data.db.dao.CategoryTotal
 import com.palmnote.data.db.dao.CategoryTotalWithCount
 import com.palmnote.data.db.dao.MonthTotal
 import com.palmnote.data.db.dao.WalletDao
 import com.palmnote.data.db.entity.Bill
+import com.palmnote.data.db.entity.BillRecycleBin
+import com.palmnote.data.db.entity.toBill
+import com.palmnote.data.db.entity.toRecycleBin
+import com.palmnote.domain.model.BillType
 import kotlinx.coroutines.flow.Flow
 import com.palmnote.domain.repository.BillRepository
 class BillRepositoryImpl @Inject constructor(
     private val billDao: BillDao,
     private val walletDao: WalletDao,
+    private val recycleBinDao: BillRecycleBinDao,
     private val appDatabase: AppDatabase
 ) : BillRepository {
     override fun getAllBills(): Flow<List<Bill>> = billDao.getAllBills()
@@ -22,7 +28,7 @@ class BillRepositoryImpl @Inject constructor(
 
     override fun getBillsByMonth(yearMonth: String): Flow<List<Bill>> = billDao.getBillsByMonth(yearMonth)
 
-    override fun getBillsByMonthAndType(yearMonth: String, type: String): Flow<List<Bill>> =
+    override fun getBillsByMonthAndType(yearMonth: String, type: BillType): Flow<List<Bill>> =
         billDao.getBillsByMonthAndType(yearMonth, type)
 
     override fun getMonthlyBillCount(yearMonth: String): Flow<Int> = billDao.getMonthlyBillCount(yearMonth)
@@ -49,7 +55,6 @@ class BillRepositoryImpl @Inject constructor(
     override fun getBillsByDateRange(startDate: Long, endDate: Long): Flow<List<Bill>> = billDao.getBillsByDateRange(startDate, endDate)
     override fun getBillsByDateRangeByBook(bookId: Long, startDate: Long, endDate: Long): Flow<List<Bill>> = billDao.getBillsByDateRangeByBook(bookId, startDate, endDate)
 
-    override fun getDeletedBills(): Flow<List<Bill>> = billDao.getDeletedBills()
 
     override fun getAllYearMonths(): Flow<List<String>> = billDao.getAllYearMonths()
 
@@ -79,9 +84,9 @@ class BillRepositoryImpl @Inject constructor(
 
     private suspend fun revertOldBalance(bill: Bill) {
         when (bill.type) {
-            "EXPENSE" -> bill.walletId?.let { walletDao.adjustBalance(it, bill.amount) }
-            "INCOME" -> bill.walletId?.let { walletDao.adjustBalance(it, -bill.amount) }
-            "TRANSFER" -> {
+            BillType.EXPENSE -> bill.walletId?.let { walletDao.adjustBalance(it, bill.amount) }
+            BillType.INCOME -> bill.walletId?.let { walletDao.adjustBalance(it, -bill.amount) }
+            BillType.TRANSFER -> {
                 bill.walletId?.let { walletDao.adjustBalance(it, bill.amount) }
                 bill.toWalletId?.let { walletDao.adjustBalance(it, -bill.amount) }
             }
@@ -90,30 +95,31 @@ class BillRepositoryImpl @Inject constructor(
 
     private suspend fun applyNewBalance(bill: Bill) {
         when (bill.type) {
-            "EXPENSE" -> bill.walletId?.let { walletDao.adjustBalance(it, -bill.amount) }
-            "INCOME" -> bill.walletId?.let { walletDao.adjustBalance(it, bill.amount) }
-            "TRANSFER" -> {
+            BillType.EXPENSE -> bill.walletId?.let { walletDao.adjustBalance(it, -bill.amount) }
+            BillType.INCOME -> bill.walletId?.let { walletDao.adjustBalance(it, bill.amount) }
+            BillType.TRANSFER -> {
                 bill.walletId?.let { walletDao.adjustBalance(it, -bill.amount) }
                 bill.toWalletId?.let { walletDao.adjustBalance(it, bill.amount) }
             }
         }
     }
 
-    override suspend fun softDeleteBill(id: Long) = appDatabase.withTransaction {
+    override suspend fun deleteBill(id: Long) = appDatabase.withTransaction {
         val bill = billDao.getBillById(id) ?: return@withTransaction
-        billDao.softDeleteBill(id)
-        // 账单不再计入，钱包余额回退
+        recycleBinDao.insert(bill.toRecycleBin())
+        billDao.deleteById(id)
         revertOldBalance(bill)
     }
 
     override suspend fun restoreBill(id: Long) = appDatabase.withTransaction {
-        val bill = billDao.getBillByIdIncludingDeleted(id) ?: return@withTransaction
-        billDao.restoreBill(id)
-        // 账单重新计入，钱包余额恢复
+        val item = recycleBinDao.getById(id) ?: return@withTransaction
+        val bill = item.toBill()
+        billDao.insertBill(bill)
+        recycleBinDao.deleteById(id)
         applyNewBalance(bill)
     }
 
-    override suspend fun hardDeleteBill(id: Long) = billDao.hardDeleteBill(id)
+    override suspend fun hardDeleteBill(id: Long) = recycleBinDao.deleteById(id)
 
     override suspend fun search(query: String): List<Bill> = billDao.search(query)
 
@@ -200,7 +206,7 @@ class BillRepositoryImpl @Inject constructor(
         billDao.getYearlyIncomeByCategoryByBook(bookId, year)
 
     override fun getCategoryUsageCounts(type: String): Flow<List<CategoryTotalWithCount>> =
-        billDao.getCategoryUsageCounts(type)
+        billDao.getCategoryUsageCounts(BillType.from(type))
 
     override suspend fun updateCategoryNameInBills(oldName: String, newName: String) =
         billDao.updateCategoryName(oldName, newName)
@@ -208,18 +214,18 @@ class BillRepositoryImpl @Inject constructor(
     override suspend fun countByCategory(category: String): Int =
         billDao.countByCategory(category)
 
-    override suspend fun softDeleteByCategory(category: String) =
-        billDao.softDeleteByCategory(category)
+    override suspend fun deleteByCategory(category: String) =
+        billDao.deleteByCategory(category)
 
     override suspend fun countByWallet(walletId: Long): Int =
         billDao.countByWallet(walletId)
 
-    override suspend fun softDeleteByWallet(walletId: Long) =
-        billDao.softDeleteByWallet(walletId)
+    override suspend fun deleteByWallet(walletId: Long) =
+        billDao.deleteByWallet(walletId)
 
     override suspend fun countByBook(bookId: Long): Int =
         billDao.countByBook(bookId)
 
-    override suspend fun softDeleteByBook(bookId: Long) =
-        billDao.softDeleteByBook(bookId)
+    override suspend fun deleteByBook(bookId: Long) =
+        billDao.deleteByBook(bookId)
 }

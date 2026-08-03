@@ -115,7 +115,7 @@ class HabitViewModel @Inject constructor(
 
     fun deleteHabit(id: Long) {
         viewModelScope.launch {
-            try { goalRepo.softDeleteGoal(id) } catch (_: Exception) {}
+            try { goalRepo.deleteGoal(id) } catch (_: Exception) {}
             load()
         }
     }

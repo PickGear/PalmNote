@@ -28,7 +28,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 
 @HiltAndroidApp
 class PalmNoteApp : Application(), Configuration.Provider {
@@ -136,7 +135,7 @@ class PalmNoteApp : Application(), Configuration.Provider {
     }
 
     private fun applySavedLanguage() {
-        val savedLanguage = runBlocking(Dispatchers.IO) { preferencesManager.language.first() }
+        val savedLanguage = preferencesManager.getLanguage()
         com.palmnote.ui.settings.LanguageHelper.applyLanguage(savedLanguage)
     }
 }

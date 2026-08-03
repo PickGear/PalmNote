@@ -1,7 +1,7 @@
 package com.palmnote.domain.service
 
 import android.content.Context
-import android.util.Log
+import com.palmnote.domain.util.AppLogger
 import com.palmnote.R
 import com.palmnote.data.db.entity.CrossLink
 import com.palmnote.data.db.entity.LifeItem
@@ -84,7 +84,7 @@ class TriggerEngine(
     fun evaluate(event: TriggerEvent, item: LifeItem) {
         scope.launch {
             try {
-                val data = try { json.decodeFromString<JsonObject>(item.fieldsData) } catch (e: Exception) { Log.w("TriggerEngine", "decode fieldsData failed", e); JsonObject(emptyMap()) }
+                val data = try { json.decodeFromString<JsonObject>(item.fieldsData) } catch (e: Exception) { AppLogger.w("TriggerEngine", "decode fieldsData failed", e); JsonObject(emptyMap()) }
                 val matched = rules.filter { it.triggerEvent == event && it.condition(item, data) }
                 for (rule in matched) {
                     for (action in rule.actions(item)) {
@@ -92,7 +92,20 @@ class TriggerEngine(
                     }
                 }
             } catch (e: Exception) {
-                Log.e("TriggerEngine", "evaluate failed", e)
+                AppLogger.e("TriggerEngine", "evaluate failed", e)
+            }
+        }
+    }
+
+    /** 通过 itemId 评估触发器（EventBus 模式） */
+    fun evaluate(event: TriggerEvent, itemId: Long) {
+        scope.launch {
+            try {
+                val itemRepo = itemRepoProvider.get()
+                val item = itemRepo.getItemById(itemId) ?: return@launch
+                evaluate(event, item)
+            } catch (e: Exception) {
+                AppLogger.e("TriggerEngine", "evaluate by id failed", e)
             }
         }
     }

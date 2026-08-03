@@ -8,6 +8,7 @@ import com.palmnote.data.datastore.PreferencesManager
 import com.palmnote.domain.repository.AccountBookRepository
 import com.palmnote.domain.repository.BillRepository
 import com.palmnote.domain.repository.BudgetRepository
+import com.palmnote.domain.model.BillType
 import androidx.lifecycle.SavedStateHandle
 import io.mockk.every
 import io.mockk.mockk
@@ -81,7 +82,7 @@ class BillViewModelTest {
         advanceUntilIdle()
 
         val state = viewModel.state.value
-        assertEquals("EXPENSE", viewModel.formState.value.type)
+        assertEquals(BillType.EXPENSE, viewModel.formState.value.type)
         assertEquals("", viewModel.formState.value.category)
         assertEquals(0L, state.monthlyExpense)
     }
@@ -116,10 +117,10 @@ class BillViewModelTest {
     fun `formState type resets to defaultBillType after resetForm`() = runTest {
         advanceUntilIdle()
 
-        viewModel.updateForm { copy(type = "INCOME", category = "工资") }
+        viewModel.updateForm { copy(type = BillType.INCOME, category = "工资") }
         viewModel.resetForm()
 
-        assertEquals("EXPENSE", viewModel.formState.value.type)
+        assertEquals(BillType.EXPENSE, viewModel.formState.value.type)
         assertEquals("", viewModel.formState.value.category)
     }
 

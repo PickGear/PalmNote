@@ -1,6 +1,7 @@
 package com.palmnote.ui.asset
 
 import androidx.compose.foundation.BorderStroke
+import com.palmnote.domain.model.AssetStatus
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -185,7 +186,7 @@ fun AssetDetailScreen(
                     Spacer(Modifier.height(20.dp))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
                         StatItem(label = when {
-                            asset.status == "REMOVED" -> stringResource(R.string.asset_sold_price_label)
+                            asset.status == AssetStatus.REMOVED -> stringResource(R.string.asset_sold_price_label)
                             asset.acquisitionType == "PURCHASE" -> stringResource(R.string.asset_price)
                             else -> stringResource(R.string.asset_valuation_price)
                         }, value = CurrencyUtils.formatCurrency(asset.displayPrice.toMoney()), color = AccentOrange)
@@ -326,25 +327,25 @@ fun AssetDetailScreen(
                 }
             }
             // Status Info (for non-held)
-            if (asset.status != "HELD") {
+            if (asset.status != AssetStatus.HELD) {
                 item {
                     val statusBg = when (asset.status) {
-                        "AWAY" -> billTint()
-                        "REMOVED" -> anniversaryTint()
+                        AssetStatus.AWAY -> billTint()
+                        AssetStatus.REMOVED -> anniversaryTint()
                         else -> MaterialTheme.colorScheme.surface
                     }
 
                     ModuleCard(tint = statusBg, modifier = Modifier.fillMaxWidth()) {
-                        val statusTitle = when (asset.status) { "AWAY" -> stringResource(R.string.asset_away_info); "REMOVED" -> stringResource(R.string.asset_removed_info); else -> stringResource(R.string.asset_status_info_label) }
+                        val statusTitle = when (asset.status) { AssetStatus.AWAY -> stringResource(R.string.asset_away_info); AssetStatus.REMOVED -> stringResource(R.string.asset_removed_info); else -> stringResource(R.string.asset_status_info_label) }
                         Text(text = statusTitle, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         Spacer(modifier = Modifier.height(8.dp))
                         when (asset.status) {
-                            "AWAY" -> {
+                            AssetStatus.AWAY -> {
                                 tags.takeIf { it.isNotEmpty() }?.let { DetailRow(stringResource(R.string.asset_away_reason), it.joinToString("、")) }
                                 asset.retireDate?.let { DetailRow(stringResource(R.string.asset_away_date), DateUtils.formatDisplayFullDate(context, it)) }
                                 if (asset.retireReason.isNotEmpty()) DetailRow(stringResource(R.string.asset_description), asset.retireReason)
                             }
-                            "REMOVED" -> {
+                            AssetStatus.REMOVED -> {
                                 tags.takeIf { it.isNotEmpty() }?.let { DetailRow(stringResource(R.string.asset_clear_reason), it.joinToString("、")) }
                                 asset.retireDate?.let { DetailRow(stringResource(R.string.asset_retire_date), DateUtils.formatDisplayFullDate(context, it)) }
                                 if (asset.retireReason.isNotEmpty()) DetailRow(stringResource(R.string.asset_retire_reason), asset.retireReason)
@@ -358,6 +359,7 @@ fun AssetDetailScreen(
                                     DetailRow(stringResource(R.string.asset_profit_loss), (if (asset.soldPrice >= asset.purchasePrice) "+" else "") + CurrencyUtils.formatCurrency((asset.soldPrice - asset.purchasePrice).toMoney()))
                                 }
                             }
+                            else -> {}
                         }
                         Spacer(modifier = Modifier.height(8.dp))
                         var showReactConfirm by remember { mutableStateOf(false) }
@@ -437,17 +439,17 @@ fun AssetDetailScreen(
                         StatusActionButton(
                             onClick = { viewModel.reactivateAsset(assetId) },
                             label = stringResource(R.string.asset_status_held), icon = Icons.Outlined.CheckCircle,
-                            color = StatusHeld, enabled = asset.status != "HELD"
+                            color = StatusHeld, enabled = asset.status != AssetStatus.HELD
                         )
                         StatusActionButton(
                             onClick = { viewModel.showAwayDialog() },
                             label = stringResource(R.string.asset_status_away), icon = Icons.Outlined.Schedule,
-                            color = StatusAway, enabled = asset.status == "HELD"
+                            color = StatusAway, enabled = asset.status == AssetStatus.HELD
                         )
                         StatusActionButton(
                             onClick = { viewModel.showClearDialog() },
                             label = stringResource(R.string.asset_status_removed_label), icon = Icons.Outlined.Archive,
-                            color = StatusRemoved, enabled = asset.status == "HELD",
+                            color = StatusRemoved, enabled = asset.status == AssetStatus.HELD,
                             filled = true
                         )
                     }
@@ -546,7 +548,7 @@ fun AssetDetailScreen(
             text = { Text(stringResource(R.string.asset_dialog_delete_confirm, asset.name)) },
             confirmButton = {
                 TextButton(onClick = {
-                    viewModel.softDeleteAsset(assetId)
+                    viewModel.deleteAsset(assetId)
                     viewModel.hideDeleteDialog()
                     onNavigateBack()
                 }) { Text(stringResource(R.string.delete), color = ErrorLight) }

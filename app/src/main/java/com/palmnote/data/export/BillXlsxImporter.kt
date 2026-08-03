@@ -1,8 +1,9 @@
 ﻿package com.palmnote.data.export
 
 import android.content.Context
+import com.palmnote.domain.model.BillType
 import android.net.Uri
-import android.util.Log
+import com.palmnote.domain.util.AppLogger
 import com.palmnote.domain.model.Money
 import com.palmnote.domain.util.DateUtils
 import org.xmlpull.v1.XmlPullParser
@@ -104,9 +105,9 @@ class BillXlsxImporter {
 
                 ParsedBill(
                     date = date,
-                    type = if (isIncome) "INCOME" else "EXPENSE",
+                    type = if (isIncome) BillType.INCOME.value else BillType.EXPENSE.value,
                     amount = amount,
-                    category = BillCsvImporter.normalizeCategory(BillCsvImporter.guessCategory(merchant, note, typeStr), if (isIncome) "INCOME" else "EXPENSE"),
+                    category = BillCsvImporter.normalizeCategory(BillCsvImporter.guessCategory(merchant, note, typeStr), if (isIncome) BillType.INCOME.value else BillType.EXPENSE.value),
                     merchant = merchant,
                     note = note.ifEmpty { goodsDesc.ifEmpty { typeStr } },
                     paymentMethod = BillCsvImporter.mapPaymentMethod(method)
@@ -139,7 +140,7 @@ class BillXlsxImporter {
                 }
                 parser.next()
             }
-        } catch (e: Exception) { Log.w("XlsxImport", "parseSharedStrings failed", e) }
+        } catch (e: Exception) { AppLogger.w("XlsxImport", "parseSharedStrings failed", e) }
         return result
     }
 
@@ -187,7 +188,7 @@ class BillXlsxImporter {
                 }
                 parser.next()
             }
-        } catch (e: Exception) { Log.w("XlsxImport", "parseSheet failed", e) }
+        } catch (e: Exception) { AppLogger.w("XlsxImport", "parseSheet failed", e) }
         if (rawRows.isEmpty()) return emptyList()
         val globalMax = rawRows.maxOf { it.keys.max() }
         return rawRows.map { row -> (0..globalMax).map { row[it] ?: "" } }
@@ -210,7 +211,7 @@ class BillXlsxImporter {
     private fun parseXlsxDate(timeStr: String): Long? {
         val clean = timeStr.trim()
         for (pat in listOf("yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd HH:mm", "yyyy-MM-dd")) {
-            try { return SimpleDateFormat(pat, Locale.getDefault()).parse(clean)?.time } catch (e: Exception) { Log.w("XlsxImport", "parseXlsxDate failed for pattern: $pat", e) }
+            try { return SimpleDateFormat(pat, Locale.getDefault()).parse(clean)?.time } catch (e: Exception) { AppLogger.w("XlsxImport", "parseXlsxDate failed for pattern: $pat", e) }
         }
         val num = clean.toDoubleOrNull()
         if (num != null && num > 40000 && num < 60000) {

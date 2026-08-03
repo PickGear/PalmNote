@@ -7,16 +7,17 @@ import androidx.room.PrimaryKey
 import com.palmnote.R
 import androidx.compose.runtime.Immutable
 import com.palmnote.domain.util.DateUtils
+import com.palmnote.domain.model.AssetStatus
 
 @Entity(
     tableName = "assets",
     indices = [
-        Index(value = ["status", "isDeleted"]),
-        Index(value = ["category", "isDeleted"]),
-        Index(value = ["warrantyExpireDate", "isDeleted"]),
-        Index(value = ["nextMaintenanceDate", "isDeleted"]),
-        Index(value = ["insuranceExpireDate", "isDeleted"]),
-        Index(value = ["isFavorite", "isDeleted"])
+        Index(value = ["status"]),
+        Index(value = ["category"]),
+        Index(value = ["warrantyExpireDate"]),
+        Index(value = ["nextMaintenanceDate"]),
+        Index(value = ["insuranceExpireDate"]),
+        Index(value = ["isFavorite"])
     ]
 )
 @Immutable
@@ -31,7 +32,7 @@ data class Asset(
     val purchasePrice: Long = 0, // 购买价（分）
     val acquisitionType: String = "PURCHASE", // PURCHASE, GIFT, LOTTERY, PRIZE, INHERITANCE, OTHER
     val acquisitionDate: Long? = null,
-    val status: String = "HELD", // HELD, AWAY, REMOVED
+    val status: AssetStatus = AssetStatus.HELD, // HELD, AWAY, REMOVED
     val costMode: String = "DAILY", // DAILY, PER_USE, DEPRECIATION
     val quantity: Int = 1,
     val useCount: Int = 0,
@@ -67,8 +68,6 @@ data class Asset(
     val soldChannel: String? = null,
     val soldToWhom: String? = null, // 售出给谁
     val sortOrder: Int = 0,
-    val isDeleted: Boolean = false,
-    val deletedAt: Long? = null,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()
 ) {
@@ -103,7 +102,7 @@ data class Asset(
 
     val displayPrice: Long
         get() = when {
-            status == "REMOVED" && soldPrice != null -> soldPrice
+            status == AssetStatus.REMOVED && soldPrice != null -> soldPrice
             currentValue > 0 -> currentValue
             else -> purchasePrice
         }

@@ -1,6 +1,7 @@
 package com.palmnote.domain.repository
 
 import com.palmnote.data.db.dao.CategoryCount
+import com.palmnote.domain.model.AssetStatus
 import com.palmnote.data.db.entity.Asset
 import kotlinx.coroutines.flow.Flow
 
@@ -13,20 +14,17 @@ interface AssetRepository {
     fun getAssetsByAcquisitionType(type: String): Flow<List<Asset>>
     fun searchAssets(query: String): Flow<List<Asset>>
     fun getTotalAssetCount(): Flow<Int>
-    fun getAssetCountByStatus(status: String): Flow<Int>
+    fun getAssetCountByStatus(status: AssetStatus): Flow<Int>
     fun getTotalAssetValue(): Flow<Long?>
     fun getHeldAssetValue(): Flow<Long?>
     fun getTotalSoldValue(): Flow<Long?>
     fun getCategoryDistribution(): Flow<List<CategoryCount>>
-    fun getDeletedAssets(): Flow<List<Asset>>
     fun getAssetsWithValidWarranty(): Flow<List<Asset>>
     fun getAssetsWithExpiredWarranty(): Flow<List<Asset>>
     fun getAllAssetsSortedByStatus(): Flow<List<Asset>>
     suspend fun insertAsset(asset: Asset): Long
     suspend fun updateAsset(asset: Asset)
-    suspend fun softDeleteAsset(id: Long)
-    suspend fun restoreAsset(id: Long)
-    suspend fun hardDeleteAsset(id: Long)
+    suspend fun deleteAsset(id: Long)
     suspend fun incrementUseCount(assetId: Long)
     suspend fun awayAsset(id: Long, tags: String, reason: String)
     suspend fun retireAsset(id: Long, reason: String)
@@ -38,5 +36,7 @@ interface AssetRepository {
     suspend fun search(query: String): List<Asset>
     suspend fun updateCategoryNameInAssets(oldName: String, newName: String)
     suspend fun countByCategory(category: String): Int
-    suspend fun softDeleteByCategory(category: String)
+    suspend fun deleteByCategory(category: String)
+    suspend fun restoreAsset(id: Long)
+    suspend fun hardDeleteAsset(id: Long)
 }

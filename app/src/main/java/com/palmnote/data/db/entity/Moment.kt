@@ -32,8 +32,6 @@ data class Moment(
     val linkedAssetId: Long? = null,
     val linkedAnniversaryId: Long? = null,
     val linkedGoalId: Long? = null,
-    val isDeleted: Boolean = false,
-    val deletedAt: Long? = null,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()
 ) {

@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface PlanDao {
-    @Query("SELECT * FROM plans WHERE isDeleted = 0 ORDER BY sortOrder ASC")
+    @Query("SELECT * FROM plans ORDER BY sortOrder ASC")
     fun getAllPlans(): Flow<List<Plan>>
 
     @Query("SELECT * FROM plans WHERE id = :id")
@@ -18,6 +18,6 @@ interface PlanDao {
     @Update
     suspend fun updatePlan(plan: Plan)
 
-    @Query("UPDATE plans SET isDeleted = 1, deletedAt = :deletedAt WHERE id = :id")
-    suspend fun softDeletePlan(id: Long, deletedAt: Long = System.currentTimeMillis())
+    @Query("DELETE FROM plans WHERE id = :id")
+    suspend fun deletePlan(id: Long)
 }

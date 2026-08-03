@@ -1,5 +1,6 @@
 package com.palmnote.ui.bills
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.palmnote.domain.model.BillType
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -63,7 +64,7 @@ fun AddBillScreen(
     val presetOverrides by com.palmnote.PalmNoteApp.instance.preferencesManager.presetCategoryOverrides
         .collectAsStateWithLifecycle(initialValue = emptyMap())
     val categories = remember(formState.type, customExpenseCategories, customIncomeCategories, categoryUsageCounts, presetOverrides) {
-        val isExpense = formState.type == "EXPENSE"
+        val isExpense = formState.type == BillType.EXPENSE
         val rawPresets = if (isExpense) expenseCategoryItems else incomeCategoryItems
         val prefix = if (isExpense) "EXPENSE_" else "INCOME_"
         val filteredPresets = rawPresets.filter { item ->
@@ -112,9 +113,9 @@ fun AddBillScreen(
                         .padding(3.dp),
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    val expenseSelected = formState.type == "EXPENSE"
-                    val incomeSelected = formState.type == "INCOME"
-                    val transferSelected = formState.type == "TRANSFER"
+                    val expenseSelected = formState.type == BillType.EXPENSE
+                    val incomeSelected = formState.type == BillType.INCOME
+                    val transferSelected = formState.type == BillType.TRANSFER
                     Box(
                         modifier = Modifier
                             .weight(1f)
@@ -123,7 +124,7 @@ fun AddBillScreen(
                             .clickable(
                                 indication = null,
                                 interactionSource = remember { MutableInteractionSource() }
-                            ) { viewModel.updateForm { copy(type = "EXPENSE", category = "", toWalletId = null) } }
+                            ) { viewModel.updateForm { copy(type = BillType.EXPENSE, category = "", toWalletId = null) } }
                             .padding(vertical = 10.dp),
                         contentAlignment = Alignment.Center
                     ) {
@@ -142,7 +143,7 @@ fun AddBillScreen(
                             .clickable(
                                 indication = null,
                                 interactionSource = remember { MutableInteractionSource() }
-                            ) { viewModel.updateForm { copy(type = "INCOME", category = "", toWalletId = null) } }
+                            ) { viewModel.updateForm { copy(type = BillType.INCOME, category = "", toWalletId = null) } }
                             .padding(vertical = 10.dp),
                         contentAlignment = Alignment.Center
                     ) {
@@ -161,7 +162,7 @@ fun AddBillScreen(
                             .clickable(
                                 indication = null,
                                 interactionSource = remember { MutableInteractionSource() }
-                            ) { viewModel.updateForm { copy(type = "TRANSFER", category = "", toWalletId = null) } }
+                            ) { viewModel.updateForm { copy(type = BillType.TRANSFER, category = "", toWalletId = null) } }
                             .padding(vertical = 10.dp),
                         contentAlignment = Alignment.Center
                     ) {
@@ -201,7 +202,7 @@ fun AddBillScreen(
             }
 
             // Category
-            items(if (formState.type != "TRANSFER") 1 else 0) {
+            items(if (formState.type != BillType.TRANSFER) 1 else 0) {
                 ModuleCard(tint = MaterialTheme.colorScheme.surface) {
                     Text(
                         text = stringResource(R.string.bill_category),
@@ -217,11 +218,11 @@ fun AddBillScreen(
                         onSelected = { viewModel.updateForm { copy(category = it, categoryError = null) } },
                         categories = categories,
                         onManageCategories = {
-                            val categoryType = if (formState.type == "EXPENSE") "BILL_EXPENSE" else "BILL_INCOME"
+                            val categoryType = if (formState.type == BillType.EXPENSE) "BILL_EXPENSE" else "BILL_INCOME"
                             onNavigateToCategory(categoryType)
                         },
                         getDisplayName = { key ->
-                            val prefix = if (formState.type == "EXPENSE") "EXPENSE_" else "INCOME_"
+                            val prefix = if (formState.type == BillType.EXPENSE) "EXPENSE_" else "INCOME_"
                             val overrideKey = "preset_$prefix$key"
                             val json = presetOverrides[overrideKey]
                             val customName = if (json != null) {
@@ -242,7 +243,7 @@ fun AddBillScreen(
 
                 ModuleCard(tint = MaterialTheme.colorScheme.surface) {
                     Text(
-                        text = if (formState.type == "TRANSFER") stringResource(R.string.bill_transfer_from) else stringResource(R.string.bill_wallet),
+                        text = if (formState.type == BillType.TRANSFER) stringResource(R.string.bill_transfer_from) else stringResource(R.string.bill_wallet),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold
                     )
@@ -328,7 +329,7 @@ fun AddBillScreen(
                             }
                         }
                     }
-                    if (formState.type == "TRANSFER") {
+                    if (formState.type == BillType.TRANSFER) {
                         Spacer(modifier = Modifier.height(8.dp))
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                             IconButton(onClick = {
@@ -458,7 +459,7 @@ fun AddBillScreen(
             }
 
             // Merchant
-            items(if (formState.type != "TRANSFER") 1 else 0) {
+            items(if (formState.type != BillType.TRANSFER) 1 else 0) {
                 ModuleCard(tint = MaterialTheme.colorScheme.surface) {
                     Text(
                         text = stringResource(R.string.merchant),
@@ -478,7 +479,7 @@ fun AddBillScreen(
             }
             
             // Location
-            items(if (formState.type != "TRANSFER") 1 else 0) {
+            items(if (formState.type != BillType.TRANSFER) 1 else 0) {
                 ModuleCard(tint = MaterialTheme.colorScheme.surface) {
                     Text(
                         text = stringResource(R.string.bill_location),
@@ -554,8 +555,8 @@ fun AddBillScreen(
                     shape = MaterialTheme.shapes.medium,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = when (formState.type) {
-                            "EXPENSE" -> ExpenseRed
-                            "TRANSFER" -> InfoBlue
+                            BillType.EXPENSE -> ExpenseRed
+                            BillType.TRANSFER -> InfoBlue
                             else -> StatusActive
                         }
                     )

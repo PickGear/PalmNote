@@ -1,11 +1,19 @@
 package com.palmnote.data.repository
 import javax.inject.Inject
+import com.palmnote.domain.model.AssetStatus
 
+import androidx.room.withTransaction
+import com.palmnote.data.db.AppDatabase
 import com.palmnote.data.db.dao.AssetDao
+import com.palmnote.data.db.dao.AssetRecycleBinDao
 import com.palmnote.data.db.entity.Asset
+import com.palmnote.data.db.entity.toRecycleBin
+import com.palmnote.data.db.entity.toAsset
 import com.palmnote.domain.repository.AssetRepository
 class AssetRepositoryImpl @Inject constructor(
-    private val assetDao: AssetDao
+    private val assetDao: AssetDao,
+    private val assetRecycleBinDao: AssetRecycleBinDao,
+    private val appDatabase: AppDatabase
 ) : AssetRepository {
     override fun getAllAssets() = assetDao.getAllAssets()
 
@@ -23,7 +31,7 @@ class AssetRepositoryImpl @Inject constructor(
 
     override fun getTotalAssetCount() = assetDao.getTotalAssetCount()
 
-    override fun getAssetCountByStatus(status: String) = assetDao.getAssetCountByStatus(status)
+    override fun getAssetCountByStatus(status: AssetStatus) = assetDao.getAssetCountByStatus(status)
 
     override fun getTotalAssetValue() = assetDao.getTotalAssetValue()
 
@@ -33,7 +41,6 @@ class AssetRepositoryImpl @Inject constructor(
 
     override fun getCategoryDistribution() = assetDao.getCategoryDistribution()
 
-    override fun getDeletedAssets() = assetDao.getDeletedAssets()
 
     override fun getAssetsWithValidWarranty() = assetDao.getAssetsWithValidWarranty()
 
@@ -45,11 +52,20 @@ class AssetRepositoryImpl @Inject constructor(
 
     override suspend fun updateAsset(asset: Asset) = assetDao.updateAsset(asset)
 
-    override suspend fun softDeleteAsset(id: Long) = assetDao.softDeleteAsset(id)
+    override suspend fun deleteAsset(id: Long) = appDatabase.withTransaction {
+        val asset = assetDao.getAssetById(id) ?: return@withTransaction
+        assetRecycleBinDao.insert(asset.toRecycleBin())
+        assetDao.deleteAsset(id)
+    }
 
-    override suspend fun restoreAsset(id: Long) = assetDao.restoreAsset(id)
+    override suspend fun restoreAsset(id: Long) = appDatabase.withTransaction {
+        val item = assetRecycleBinDao.getById(id) ?: return@withTransaction
+        assetDao.insertAsset(item.toAsset())
+        assetRecycleBinDao.deleteById(id)
+    }
 
-    override suspend fun hardDeleteAsset(id: Long) = assetDao.hardDeleteAsset(id)
+    override suspend fun hardDeleteAsset(id: Long) = assetRecycleBinDao.deleteById(id)
+
 
     override suspend fun incrementUseCount(assetId: Long) = assetDao.incrementUseCount(assetId)
 
@@ -80,6 +96,6 @@ class AssetRepositoryImpl @Inject constructor(
     override suspend fun countByCategory(category: String): Int =
         assetDao.countByCategory(category)
 
-    override suspend fun softDeleteByCategory(category: String) =
-        assetDao.softDeleteByCategory(category)
+    override suspend fun deleteByCategory(category: String) =
+        assetDao.deleteByCategory(category)
 }

@@ -16,8 +16,6 @@ data class Plan(
     val icon: AppIcon = AppIcon.Flag,
     val category: String = "LIFE", // WORK, STUDY, LIFE, HEALTH
     val sortOrder: Int = 0,
-    val isDeleted: Boolean = false,
-    val deletedAt: Long? = null,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()
 )

@@ -6,19 +6,19 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface AccountBookDao {
-    @Query("SELECT * FROM account_books WHERE isDeleted = 0 ORDER BY sortOrder ASC, createdAt ASC")
+    @Query("SELECT * FROM account_books ORDER BY sortOrder ASC, createdAt ASC")
     fun getAllBooksIncludingHidden(): Flow<List<AccountBook>>
 
-    @Query("SELECT * FROM account_books WHERE isDeleted = 0 AND isHidden = 0 ORDER BY sortOrder ASC, createdAt ASC")
+    @Query("SELECT * FROM account_books WHERE isHidden = 0 ORDER BY sortOrder ASC, createdAt ASC")
     fun getAllBooks(): Flow<List<AccountBook>>
 
-    @Query("SELECT * FROM account_books WHERE isDeleted = 0 AND isHidden = 1 ORDER BY sortOrder ASC, createdAt ASC")
+    @Query("SELECT * FROM account_books WHERE isHidden = 1 ORDER BY sortOrder ASC, createdAt ASC")
     fun getHiddenBooks(): Flow<List<AccountBook>>
 
-    @Query("SELECT * FROM account_books WHERE id = :id AND isDeleted = 0")
+    @Query("SELECT * FROM account_books WHERE id = :id")
     suspend fun getBookById(id: Long): AccountBook?
 
-    @Query("SELECT * FROM account_books WHERE isDefault = 1 AND isDeleted = 0 AND isHidden = 0 LIMIT 1")
+    @Query("SELECT * FROM account_books WHERE isDefault = 1 AND isHidden = 0 LIMIT 1")
     suspend fun getDefaultBook(): AccountBook?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -42,9 +42,7 @@ interface AccountBookDao {
     @Query("UPDATE account_books SET isHidden = :hidden, updatedAt = :now WHERE id = :id")
     suspend fun setHidden(id: Long, hidden: Boolean, now: Long = System.currentTimeMillis())
 
-    @Query("UPDATE account_books SET isDeleted = 1, deletedAt = :deletedAt, updatedAt = :deletedAt WHERE id = :id")
-    suspend fun softDeleteBook(id: Long, deletedAt: Long = System.currentTimeMillis())
 
     @Query("DELETE FROM account_books WHERE id = :id")
-    suspend fun hardDeleteBook(id: Long)
+    suspend fun deleteBook(id: Long)
 }

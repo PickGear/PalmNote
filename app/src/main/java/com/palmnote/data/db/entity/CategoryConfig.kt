@@ -43,7 +43,6 @@ data class CustomTag(
     val icon: AppIcon = AppIcon.Flag, // 标签图标
     val usageCount: Int = 0, // 使用次数
     val applicableTypes: String = "", // JSON array: ["ASSET", "BILL", "GOAL", "MOMENT"]
-    val isDeleted: Boolean = false,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()
 )

@@ -1,6 +1,7 @@
 package com.palmnote.ui.bills
 
 import android.net.Uri
+import com.palmnote.domain.model.BillType
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -270,7 +271,7 @@ private fun FileBillRow(bill: ParsedBill, selected: Boolean, onToggle: () -> Uni
             Column(modifier = Modifier.weight(1f)) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text(bill.merchant.ifEmpty { bill.category }, fontWeight = FontWeight.Medium, style = MaterialTheme.typography.bodyMedium)
-                    Text(CurrencyUtils.formatCurrency(bill.amount.toMoney()), fontWeight = FontWeight.Bold, color = if (bill.type == "EXPENSE") ExpenseRed else IncomeGreen)
+                    Text(CurrencyUtils.formatCurrency(bill.amount.toMoney()), fontWeight = FontWeight.Bold, color = if (bill.type == BillType.EXPENSE.value) ExpenseRed else IncomeGreen)
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(DateUtils.formatDisplayDate(context, bill.date), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -304,14 +305,14 @@ private fun OcrPreviewContent(state: BillImportState, viewModel: BillImportViewM
             Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
                 Spacer(modifier = Modifier.height(12.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf("EXPENSE" to R.string.bill_expense, "INCOME" to R.string.bill_income).forEach { (t, labelRes) ->
+                    listOf(BillType.EXPENSE to R.string.bill_expense, BillType.INCOME to R.string.bill_income).forEach { (t, labelRes) ->
                         FilterChip(
                             selected = state.ocrType == t,
                             onClick = { viewModel.updateOcrType(t) },
                             label = { Text(stringResource(labelRes)) },
                             colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = (if (t == "EXPENSE") ExpenseRed else StatusActive).copy(alpha = 0.15f),
-                                selectedLabelColor = if (t == "EXPENSE") ExpenseRed else StatusActive
+                                selectedContainerColor = (if (t == BillType.EXPENSE) ExpenseRed else StatusActive).copy(alpha = 0.15f),
+                                selectedLabelColor = if (t == BillType.EXPENSE) ExpenseRed else StatusActive
                             )
                         )
                     }

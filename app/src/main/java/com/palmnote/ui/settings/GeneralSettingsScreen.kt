@@ -1,6 +1,7 @@
 package com.palmnote.ui.settings
 
 import android.Manifest
+import com.palmnote.domain.model.BillType
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -86,7 +87,7 @@ fun GeneralSettingsScreen(
     val themes = mapOf("SYSTEM" to stringResource(R.string.settings_follow_system), "LIGHT" to stringResource(R.string.settings_theme_light), "DARK" to stringResource(R.string.settings_theme_dark))
     val languageLabels = mapOf("SYSTEM" to stringResource(R.string.settings_follow_system), "zh" to stringResource(R.string.settings_language_chinese), "en" to stringResource(R.string.settings_language_english))
     val startPages = mapOf("dashboard" to stringResource(R.string.settings_home), "asset" to stringResource(R.string.settings_items), "bill" to stringResource(R.string.bill_title), "life" to stringResource(R.string.life_title))
-    val billTypes = mapOf("EXPENSE" to stringResource(R.string.settings_bill_expense), "INCOME" to stringResource(R.string.settings_bill_income))
+    val billTypes = mapOf(BillType.EXPENSE.value to stringResource(R.string.settings_bill_expense), BillType.INCOME.value to stringResource(R.string.settings_bill_income))
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -136,7 +137,7 @@ fun GeneralSettingsScreen(
                     }
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                     SettingRow(clickable = { showBillTypePicker = true }) {
-                        SettingRowContent(title = stringResource(R.string.settings_default_bill_type), value = billTypes[state.defaultBillType], showChevron = true)
+                        SettingRowContent(title = stringResource(R.string.settings_default_bill_type), value = billTypes[state.defaultBillType.value], showChevron = true)
                     }
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                     SettingRow {
@@ -247,8 +248,8 @@ fun GeneralSettingsScreen(
     if (showBillTypePicker) {
         val billTypeExpense = stringResource(R.string.settings_bill_expense)
         val billTypeIncome = stringResource(R.string.settings_bill_income)
-        val billTypeColors = mapOf("EXPENSE" to ExpenseRed, "INCOME" to IncomeGreen)
-        val billTypeOptions = listOf(Triple("EXPENSE", billTypeExpense, Icons.AutoMirrored.Outlined.TrendingDown), Triple("INCOME", billTypeIncome, Icons.AutoMirrored.Outlined.TrendingUp))
+        val billTypeColors = mapOf(BillType.EXPENSE.value to ExpenseRed, BillType.INCOME.value to IncomeGreen)
+        val billTypeOptions = listOf(Triple(BillType.EXPENSE.value, billTypeExpense, Icons.AutoMirrored.Outlined.TrendingDown), Triple(BillType.INCOME.value, billTypeIncome, Icons.AutoMirrored.Outlined.TrendingUp))
         AppDialog(
             onDismissRequest = { showBillTypePicker = false }, title = { Text(stringResource(R.string.settings_select_bill_type), fontWeight = FontWeight.Bold) },
             text = { Column { billTypeOptions.forEach { (type, label, icon) ->
@@ -256,7 +257,7 @@ fun GeneralSettingsScreen(
                 Row(modifier = Modifier.fillMaxWidth().clip(MaterialTheme.shapes.medium).clickable { viewModel.setDefaultBillType(type); showBillTypePicker = false }.padding(vertical = 8.dp, horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(tint.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) { Icon(icon, null, tint = tint, modifier = Modifier.size(20.dp)) }
                     Spacer(Modifier.width(12.dp)); Text(label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-                    RadioButton(selected = state.defaultBillType == type, onClick = { viewModel.setDefaultBillType(type); showBillTypePicker = false }, colors = RadioButtonDefaults.colors(selectedColor = LocalSwitchColor.current))
+                    RadioButton(selected = state.defaultBillType.value == type, onClick = { viewModel.setDefaultBillType(type); showBillTypePicker = false }, colors = RadioButtonDefaults.colors(selectedColor = LocalSwitchColor.current))
                 }
                 if (type != billTypeOptions.last().first) HorizontalDivider(modifier = Modifier.padding(horizontal = 52.dp))
             } } },

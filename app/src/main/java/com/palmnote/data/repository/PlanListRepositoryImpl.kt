@@ -37,7 +37,7 @@ class PlanListRepositoryImpl @Inject constructor(
 
     override suspend fun setListCompleted(id: Long, isCompleted: Boolean) = planListDao.setCompleted(id, isCompleted)
 
-    override suspend fun softDeleteList(id: Long) = planListDao.softDeleteList(id)
+    override suspend fun deleteList(id: Long) = planListDao.deleteList(id)
 
     override suspend fun insertItem(item: PlanListItem): Long = planListItemDao.insertItem(item)
 

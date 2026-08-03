@@ -114,7 +114,7 @@ class WalletViewModelTest {
         viewModel.deleteWallet(1L)
         testDispatcher.scheduler.advanceUntilIdle()
 
-        coVerify { walletRepository.softDelete(1L) }
+        coVerify { walletRepository.delete(1L) }
     }
 
     @Test

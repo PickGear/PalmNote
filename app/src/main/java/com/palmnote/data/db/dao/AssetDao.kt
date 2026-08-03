@@ -1,89 +1,88 @@
 ﻿package com.palmnote.data.db.dao
 
 import androidx.room.*
+import com.palmnote.domain.model.AssetStatus
 import com.palmnote.data.db.entity.Asset
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface AssetDao {
-    @Query("SELECT * FROM assets WHERE isDeleted = 0 ORDER BY isFavorite DESC, sortOrder ASC, updatedAt DESC")
+    @Query("SELECT * FROM assets ORDER BY isFavorite DESC, sortOrder ASC, updatedAt DESC")
     fun getAllAssets(): Flow<List<Asset>>
 
-    @Query("SELECT * FROM assets WHERE id = :id AND isDeleted = 0")
+    @Query("SELECT * FROM assets WHERE id = :id")
     suspend fun getAssetById(id: Long): Asset?
 
-    @Query("SELECT * FROM assets WHERE id = :id AND isDeleted = 0")
+    @Query("SELECT * FROM assets WHERE id = :id")
     fun getAssetByIdFlow(id: Long): Flow<Asset?>
 
-    @Query("SELECT * FROM assets WHERE category = :category AND isDeleted = 0 ORDER BY isFavorite DESC, sortOrder ASC")
+    @Query("SELECT * FROM assets WHERE category = :category ORDER BY isFavorite DESC, sortOrder ASC")
     fun getAssetsByCategory(category: String): Flow<List<Asset>>
 
-    @Query("SELECT * FROM assets WHERE status = :status AND isDeleted = 0 ORDER BY updatedAt DESC")
+    @Query("SELECT * FROM assets WHERE status = :status ORDER BY updatedAt DESC")
     fun getAssetsByStatus(status: String): Flow<List<Asset>>
 
-    @Query("SELECT * FROM assets WHERE acquisitionType = :type AND isDeleted = 0 ORDER BY updatedAt DESC")
+    @Query("SELECT * FROM assets WHERE acquisitionType = :type ORDER BY updatedAt DESC")
     fun getAssetsByAcquisitionType(type: String): Flow<List<Asset>>
 
-    @Query("SELECT * FROM assets WHERE (name LIKE '%' || :query || '%' OR brand LIKE '%' || :query || '%' OR model LIKE '%' || :query || '%' OR description LIKE '%' || :query || '%' OR tags LIKE '%' || :query || '%') AND isDeleted = 0")
+    @Query("SELECT * FROM assets WHERE (name LIKE '%' || :query || '%' OR brand LIKE '%' || :query || '%' OR model LIKE '%' || :query || '%' OR description LIKE '%' || :query || '%' OR tags LIKE '%' || :query || '%')")
     fun searchAssets(query: String): Flow<List<Asset>>
 
-    @Query("SELECT * FROM assets WHERE isFavorite = 1 AND isDeleted = 0 ORDER BY updatedAt DESC")
+    @Query("SELECT * FROM assets WHERE isFavorite = 1 ORDER BY updatedAt DESC")
     fun getFavoriteAssets(): Flow<List<Asset>>
 
-    @Query("SELECT * FROM assets WHERE nextMaintenanceDate IS NOT NULL AND nextMaintenanceDate <= :now AND status = 'HELD' AND isDeleted = 0")
+    @Query("SELECT * FROM assets WHERE nextMaintenanceDate IS NOT NULL AND nextMaintenanceDate <= :now AND status = 'HELD'")
     fun getAssetsNeedingMaintenance(now: Long = System.currentTimeMillis()): Flow<List<Asset>>
 
-    @Query("SELECT * FROM assets WHERE warrantyExpireDate IS NOT NULL AND warrantyExpireDate > :now AND ((warrantyExpireDate - :now) / 86400000) <= 30 AND status = 'HELD' AND isDeleted = 0")
+    @Query("SELECT * FROM assets WHERE warrantyExpireDate IS NOT NULL AND warrantyExpireDate > :now AND ((warrantyExpireDate - :now) / 86400000) <= 30 AND status = 'HELD'")
     fun getAssetsNeedingWarrantyAlert(now: Long = System.currentTimeMillis()): Flow<List<Asset>>
 
-    @Query("SELECT * FROM assets WHERE insuranceExpireDate IS NOT NULL AND insuranceExpireDate > :now AND ((insuranceExpireDate - :now) / 86400000) <= 30 AND status = 'HELD' AND isDeleted = 0")
+    @Query("SELECT * FROM assets WHERE insuranceExpireDate IS NOT NULL AND insuranceExpireDate > :now AND ((insuranceExpireDate - :now) / 86400000) <= 30 AND status = 'HELD'")
     fun getAssetsNeedingInsuranceAlert(now: Long = System.currentTimeMillis()): Flow<List<Asset>>
 
-    @Query("SELECT * FROM assets WHERE room = :room AND isDeleted = 0 ORDER BY name ASC")
+    @Query("SELECT * FROM assets WHERE room = :room ORDER BY name ASC")
     fun getAssetsByRoom(room: String): Flow<List<Asset>>
 
-    @Query("SELECT DISTINCT room FROM assets WHERE room != '' AND isDeleted = 0 ORDER BY room ASC")
+    @Query("SELECT DISTINCT room FROM assets WHERE room != '' ORDER BY room ASC")
     fun getAllRooms(): Flow<List<String>>
 
-    @Query("SELECT DISTINCT brand FROM assets WHERE brand != '' AND isDeleted = 0 ORDER BY brand ASC")
+    @Query("SELECT DISTINCT brand FROM assets WHERE brand != '' ORDER BY brand ASC")
     fun getAllBrands(): Flow<List<String>>
 
-    @Query("SELECT COUNT(*) FROM assets WHERE isDeleted = 0")
+    @Query("SELECT COUNT(*) FROM assets WHERE 1=1")
     fun getTotalAssetCount(): Flow<Int>
 
-    @Query("SELECT COUNT(*) FROM assets WHERE status = :status AND isDeleted = 0")
-    fun getAssetCountByStatus(status: String): Flow<Int>
+    @Query("SELECT COUNT(*) FROM assets WHERE status = :status")
+    fun getAssetCountByStatus(status: AssetStatus): Flow<Int>
 
-    @Query("SELECT SUM(purchasePrice) FROM assets WHERE isDeleted = 0 AND status != 'REMOVED'")
+    @Query("SELECT SUM(purchasePrice) FROM assets WHERE status != 'REMOVED'")
     fun getTotalAssetValue(): Flow<Long?>
 
-    @Query("SELECT SUM(purchasePrice) FROM assets WHERE isDeleted = 0 AND status = 'HELD'")
+    @Query("SELECT SUM(purchasePrice) FROM assets WHERE status = 'HELD'")
     fun getHeldAssetValue(): Flow<Long?>
 
-    @Query("SELECT SUM(soldPrice) FROM assets WHERE status = 'REMOVED' AND isDeleted = 0 AND soldPrice IS NOT NULL")
+    @Query("SELECT SUM(soldPrice) FROM assets WHERE status = 'REMOVED' AND soldPrice IS NOT NULL")
     fun getTotalSoldValue(): Flow<Long?>
 
-    @Query("SELECT SUM(currentValue) FROM assets WHERE status = 'HELD' AND isDeleted = 0 AND currentValue > 0")
+    @Query("SELECT SUM(currentValue) FROM assets WHERE status = 'HELD' AND currentValue > 0")
     fun getTotalCurrentValue(): Flow<Long?>
 
-    @Query("SELECT category, COUNT(*) as count, SUM(purchasePrice) as totalValue FROM assets WHERE isDeleted = 0 GROUP BY category ORDER BY count DESC")
+    @Query("SELECT category, COUNT(*) as count, SUM(purchasePrice) as totalValue FROM assets GROUP BY category ORDER BY count DESC")
     fun getCategoryDistribution(): Flow<List<CategoryCount>>
 
-    @Query("SELECT brand, COUNT(*) as count, SUM(purchasePrice) as totalValue FROM assets WHERE brand != '' AND isDeleted = 0 GROUP BY brand ORDER BY count DESC LIMIT 10")
+    @Query("SELECT brand, COUNT(*) as count, SUM(purchasePrice) as totalValue FROM assets WHERE brand != '' GROUP BY brand ORDER BY count DESC LIMIT 10")
     fun getBrandDistribution(): Flow<List<BrandCount>>
 
-    @Query("SELECT * FROM assets WHERE isDeleted = 1 ORDER BY deletedAt DESC")
-    fun getDeletedAssets(): Flow<List<Asset>>
 
-    @Query("SELECT * FROM assets WHERE warrantyExpireDate IS NOT NULL AND warrantyExpireDate > :now AND isDeleted = 0 ORDER BY warrantyExpireDate ASC")
+    @Query("SELECT * FROM assets WHERE warrantyExpireDate IS NOT NULL AND warrantyExpireDate > :now ORDER BY warrantyExpireDate ASC")
     fun getAssetsWithValidWarranty(now: Long = System.currentTimeMillis()): Flow<List<Asset>>
 
-    @Query("SELECT * FROM assets WHERE warrantyExpireDate IS NOT NULL AND warrantyExpireDate <= :now AND isDeleted = 0")
+    @Query("SELECT * FROM assets WHERE warrantyExpireDate IS NOT NULL AND warrantyExpireDate <= :now")
     fun getAssetsWithExpiredWarranty(now: Long = System.currentTimeMillis()): Flow<List<Asset>>
 
     @Query("""
         SELECT * FROM assets
-        WHERE isDeleted = 0
+       
         ORDER BY
             CASE WHEN status = 'HELD' THEN 0
                  WHEN status = 'AWAY' THEN 1
@@ -94,10 +93,10 @@ interface AssetDao {
     """)
     fun getAllAssetsSortedByStatus(): Flow<List<Asset>>
 
-    @Query("SELECT * FROM assets WHERE condition = :condition AND isDeleted = 0")
+    @Query("SELECT * FROM assets WHERE condition = :condition")
     fun getAssetsByCondition(condition: String): Flow<List<Asset>>
 
-    @Query("SELECT * FROM assets WHERE isDeleted = 0 AND (name LIKE '%' || :query || '%' OR brand LIKE '%' || :query || '%' OR model LIKE '%' || :query || '%' OR serialNumber LIKE '%' || :query || '%' OR description LIKE '%' || :query || '%') ORDER BY updatedAt DESC")
+    @Query("SELECT * FROM assets WHERE (name LIKE '%' || :query || '%' OR brand LIKE '%' || :query || '%' OR model LIKE '%' || :query || '%' OR serialNumber LIKE '%' || :query || '%' OR description LIKE '%' || :query || '%') ORDER BY updatedAt DESC")
     suspend fun search(query: String): List<Asset>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -106,14 +105,8 @@ interface AssetDao {
     @Update
     suspend fun updateAsset(asset: Asset)
 
-    @Query("UPDATE assets SET isDeleted = 1, deletedAt = :deletedAt, updatedAt = :deletedAt WHERE id = :id")
-    suspend fun softDeleteAsset(id: Long, deletedAt: Long = System.currentTimeMillis())
-
-    @Query("UPDATE assets SET isDeleted = 0, deletedAt = null, updatedAt = :restoredAt WHERE id = :id")
-    suspend fun restoreAsset(id: Long, restoredAt: Long = System.currentTimeMillis())
-
     @Query("DELETE FROM assets WHERE id = :id")
-    suspend fun hardDeleteAsset(id: Long)
+    suspend fun deleteAsset(id: Long)
 
     @Query("UPDATE assets SET useCount = useCount + 1, updatedAt = :now WHERE id = :assetId")
     suspend fun incrementUseCount(assetId: Long, now: Long = System.currentTimeMillis())
@@ -154,17 +147,19 @@ interface AssetDao {
     @Query("UPDATE assets SET linkedBillId = :billId, updatedAt = :now WHERE id = :id")
     suspend fun linkBill(id: Long, billId: Long, now: Long = System.currentTimeMillis())
 
+
+    @Query("DELETE FROM assets WHERE category = :category")
+    suspend fun deleteByCategory(category: String)
+
     @Query("DELETE FROM assets")
     suspend fun deleteAll()
 
-    @Query("UPDATE assets SET category = :newName WHERE category = :oldName AND isDeleted = 0")
+    @Query("UPDATE assets SET category = :newName WHERE category = :oldName")
     suspend fun updateCategoryName(oldName: String, newName: String)
 
-    @Query("SELECT COUNT(*) FROM assets WHERE category = :category AND isDeleted = 0")
+    @Query("SELECT COUNT(*) FROM assets WHERE category = :category")
     suspend fun countByCategory(category: String): Int
 
-    @Query("UPDATE assets SET isDeleted = 1, deletedAt = :now WHERE category = :category AND isDeleted = 0")
-    suspend fun softDeleteByCategory(category: String, now: Long = System.currentTimeMillis())
 }
 
 data class CategoryCount(

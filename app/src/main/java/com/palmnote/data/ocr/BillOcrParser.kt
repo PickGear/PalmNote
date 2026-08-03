@@ -1,6 +1,7 @@
 ﻿package com.palmnote.data.ocr
 
 import com.palmnote.data.export.BillCsvImporter
+import com.palmnote.domain.model.BillType
 import com.palmnote.domain.model.Money
 import com.palmnote.domain.util.CategoryClassifier
 import java.text.SimpleDateFormat
@@ -188,7 +189,7 @@ class BillOcrParser {
     private fun guessCategory(lines: List<String>, merchant: String, note: String): String {
         val text = lines.joinToString(" ") + " " + merchant + " " + note
         val raw = CategoryClassifier.guessCategory(text)
-        return BillCsvImporter.normalizeCategory(raw, "EXPENSE")
+        return BillCsvImporter.normalizeCategory(raw, BillType.EXPENSE.value)
     }
 
     companion object {
