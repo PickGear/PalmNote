@@ -1,8 +1,13 @@
 package com.palmnote.data.export
 
 import android.content.Context
+import com.palmnote.domain.model.AssetStatus
+import com.palmnote.domain.model.BillType
+import com.palmnote.domain.model.PaymentMethod
+import com.palmnote.domain.model.RecurringFrequency
+import com.palmnote.domain.model.TimeOfDay
 import android.net.Uri
-import android.util.Log
+import com.palmnote.domain.util.AppLogger
 import com.palmnote.R
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -51,7 +56,7 @@ class CsvDataExporter(
             "lastCheckInDate", "usedAt", "acquisitionDate",
             "warrantyExpireDate", "insuranceExpireDate", "lastMaintenanceDate",
             "nextMaintenanceDate", "retireDate", "lostDate", "soldDate",
-            "reimbursedDate", "deletedAt", "createdAt", "updatedAt"
+            "reimbursedDate", "createdAt", "updatedAt"
         )
         private val MONEY_FIELDS = setOf(
             "amount", "purchasePrice", "currentValue", "soldPrice",
@@ -70,13 +75,13 @@ class CsvDataExporter(
 
         private val CODE_TO_CN: Map<Class<*>, Map<String, Map<String, String>>> = mapOf(
             Asset::class.java to mapOf(
-                "status" to mapOf("HELD" to "持有中", "AWAY" to "暂离中", "REMOVED" to "已清出"),
+                "status" to mapOf(AssetStatus.HELD.value to "持有中", AssetStatus.AWAY.value to "暂离中", AssetStatus.REMOVED.value to "已清出"),
                 "acquisitionType" to mapOf("PURCHASE" to "购买", "GIFT" to "赠送", "LOTTERY" to "抽奖", "PRIZE" to "奖品", "INHERITANCE" to "继承", "OTHER" to "其他"),
                 "condition" to mapOf("NEW" to "全新", "GOOD" to "良好", "FAIR" to "一般", "POOR" to "较差"),
                 "costMode" to mapOf("DAILY" to "按天计算", "PER_USE" to "按次计算", "DEPRECIATION" to "折旧")
             ),
             Bill::class.java to mapOf(
-                "type" to mapOf("EXPENSE" to "支出", "INCOME" to "收入", "TRANSFER" to "转账"),
+                "type" to mapOf(BillType.EXPENSE.value to "支出", BillType.INCOME.value to "收入", BillType.TRANSFER.value to "转账"),
                 "paymentMethod" to mapOf("CASH" to "现金", "WECHAT" to "微信", "ALIPAY" to "支付宝", "CARD" to "银行卡", "BANK_TRANSFER" to "银行转账", "OTHER" to "其他"),
                 "linkType" to mapOf("PURCHASE" to "购买", "MAINTENANCE" to "维护", "WARRANTY" to "质保", "INSURANCE" to "保险"),
                 "timeOfDay" to mapOf("MORNING" to "早上", "AFTERNOON" to "下午", "EVENING" to "晚上", "NIGHT" to "深夜")
@@ -106,7 +111,7 @@ class CsvDataExporter(
                 "mood" to mapOf("GREAT" to "开心", "GOOD" to "不错", "OK" to "一般", "BAD" to "难过")
             ),
             RecurringTemplate::class.java to mapOf(
-                "type" to mapOf("EXPENSE" to "支出", "INCOME" to "收入"),
+                "type" to mapOf(BillType.EXPENSE.value to "支出", BillType.INCOME.value to "收入"),
                 "frequency" to mapOf("DAILY" to "每日", "WEEKLY" to "每周", "MONTHLY" to "每月", "YEARLY" to "每年")
             )
         )
@@ -123,7 +128,6 @@ class CsvDataExporter(
             "id" to "编号", "name" to "名称", "type" to "类型",
             "category" to "分类", "subCategory" to "子分类",
             "color" to "颜色", "icon" to "图标", "description" to "描述",
-            "isDeleted" to "已删除", "deletedAt" to "删除时间",
             "createdAt" to "创建时间", "updatedAt" to "更新时间",
             "sortOrder" to "排序", "tags" to "标签", "images" to "图片",
             "note" to "备注", "date" to "日期",
@@ -401,7 +405,7 @@ class CsvDataExporter(
                             val enabled = str == "true" || str == "是"
                             preferencesManager.setBudgetReminderEnabled(enabled)
                         }
-                    } catch (e: Exception) { Log.e("CsvDataExporter", "Import preferences failed", e) }
+                    } catch (e: Exception) { AppLogger.e("CsvDataExporter", "Import preferences failed", e) }
                 }
 
                 Result.success(count)
@@ -665,7 +669,7 @@ class CsvDataExporter(
 
     private suspend fun insertRow(row: Map<String, String>, clazz: Class<*>, pathMapping: Map<String, String>): Pair<Long, Long>? {
         val translatedRow = translateRow(row, clazz)
-        return INSERT_HANDLER[clazz]?.invoke(translatedRow, pathMapping)
+        return insertHandler[clazz]?.invoke(translatedRow, pathMapping)
     }
 
     private fun translateRow(row: Map<String, String>, entityClass: Class<*>): Map<String, String> {
@@ -676,7 +680,7 @@ class CsvDataExporter(
         }
     }
 
-    private val INSERT_HANDLER: Map<Class<*>, suspend (Map<String, String>, Map<String, String>) -> Pair<Long, Long>?> = mapOf(
+    private val insertHandler: Map<Class<*>, suspend (Map<String, String>, Map<String, String>) -> Pair<Long, Long>?> = mapOf(
         Asset::class.java to { r, pm -> rowToAsset(r, pm)?.let { a ->
             val oldId = a.id
             val newId = db.assetDao().insertAsset(a)
@@ -691,7 +695,7 @@ class CsvDataExporter(
                         val note = (rec["note"] as? JsonPrimitive)?.contentOrNull ?: ""
                         db.usageRecordDao().insertUsageRecord(UsageRecord(assetId = newId, usedAt = usedAt, note = note))
                     }
-                } catch (e: Exception) { Log.e("CsvDataExporter", "Import usage records failed", e) }
+                } catch (e: Exception) { AppLogger.e("CsvDataExporter", "Import usage records failed", e) }
             }
             oldId to newId
         } },
@@ -755,7 +759,6 @@ class CsvDataExporter(
     // ── Row-to-entity converters ──
 
     private fun rowToAsset(row: Map<String, String>, pathMapping: Map<String, String>): Asset? {
-        val (isDeleted, deletedAt) = parseDeletedInfo(row)
         return try {
             Asset(
                 id = row["id"]?.toLongOrNull() ?: 0,
@@ -768,7 +771,7 @@ class CsvDataExporter(
                 acquisitionType = row["acquisitionType"] ?: "PURCHASE",
                 acquisitionDate = parseDateOrNull(row["acquisitionDate"]),
                 quantity = row["quantity"]?.toIntOrNull()?.coerceAtLeast(1) ?: 1,
-                status = row["status"] ?: "HELD",
+                status = AssetStatus.from(row["status"] ?: "HELD"),
                 costMode = row["costMode"] ?: "DAILY",
                 useCount = row["useCount"]?.toIntOrNull() ?: 0,
                 totalUsageHours = row["totalUsageHours"]?.toDoubleOrNull() ?: 0.0,
@@ -803,8 +806,6 @@ class CsvDataExporter(
                 soldChannel = row["soldChannel"],
                 soldToWhom = row["soldToWhom"],
                 sortOrder = row["sortOrder"]?.toIntOrNull() ?: 0,
-                isDeleted = isDeleted,
-                deletedAt = deletedAt,
                 createdAt = parseDateOrNull(row["createdAt"]) ?: System.currentTimeMillis(),
                 updatedAt = parseDateOrNull(row["updatedAt"]) ?: System.currentTimeMillis()
             )
@@ -812,22 +813,21 @@ class CsvDataExporter(
     }
 
     private fun rowToBill(row: Map<String, String>, pathMapping: Map<String, String>): Bill? {
-        val (isDeleted, deletedAt) = parseDeletedInfo(row)
         val billDate = parseDateOrNull(row["date"]) ?: return null
         return try {
             Bill(
                 id = row["id"]?.toLongOrNull() ?: 0,
                 amount = row["amount"]?.let { Money.parse(it)?.cents } ?: return null,
-                type = row["type"] ?: return null,
+                type = BillType.from(row["type"] ?: return null),
                 category = row["category"] ?: "",
                 subCategory = row["subCategory"] ?: "",
                 note = row["note"] ?: "",
                 date = billDate,
                 yearMonth = row["yearMonth"] ?: yearMonthFormatter.format(java.time.Instant.ofEpochMilli(billDate).atZone(java.time.ZoneId.systemDefault())),
-                timeOfDay = row["timeOfDay"] ?: "",
+                timeOfDay = TimeOfDay.from(row["timeOfDay"] ?: ""),
                 walletId = row["walletId"]?.toLongOrNull(),
                 toWalletId = row["toWalletId"]?.toLongOrNull(),
-                paymentMethod = row["paymentMethod"] ?: "",
+                paymentMethod = PaymentMethod.from(row["paymentMethod"] ?: ""),
                 merchant = row["merchant"] ?: "",
                 location = row["location"] ?: "",
                 tags = joinToJson(row["tags"]),
@@ -835,7 +835,7 @@ class CsvDataExporter(
                 linkedAssetId = row["linkedAssetId"]?.toLongOrNull(),
                 linkType = row["linkType"],
                 recurringId = row["recurringId"]?.toLongOrNull(),
-                recurringFrequency = row["recurringFrequency"] ?: "",
+                recurringFrequency = RecurringFrequency.from(row["recurringFrequency"] ?: ""),
                 splitGroupId = row["splitGroupId"] ?: "",
                 isReimbursable = row["isReimbursable"].toBoolean(),
                 isReimbursed = row["isReimbursed"].toBoolean(),
@@ -844,8 +844,6 @@ class CsvDataExporter(
                 latitude = row["latitude"]?.toDoubleOrNull(),
                 longitude = row["longitude"]?.toDoubleOrNull(),
                 isAutoGenerated = row["isAutoGenerated"].toBoolean(),
-                isDeleted = isDeleted,
-                deletedAt = deletedAt,
                 createdAt = parseDateOrNull(row["createdAt"]) ?: System.currentTimeMillis(),
                 updatedAt = parseDateOrNull(row["updatedAt"]) ?: System.currentTimeMillis()
             )
@@ -853,7 +851,6 @@ class CsvDataExporter(
     }
 
     private fun rowToWallet(row: Map<String, String>): Wallet? {
-        val (isDeleted, _) = parseDeletedInfo(row)
         return try {
             Wallet(
                 id = row["id"]?.toLongOrNull() ?: 0,
@@ -870,7 +867,6 @@ class CsvDataExporter(
                 isEnabled = row["isEnabled"].toBoolean(),
                 sortOrder = row["sortOrder"]?.toIntOrNull() ?: 0,
                 description = row["description"] ?: "",
-                isDeleted = isDeleted,
                 createdAt = parseDateOrNull(row["createdAt"]) ?: System.currentTimeMillis(),
                 updatedAt = parseDateOrNull(row["updatedAt"]) ?: System.currentTimeMillis()
             )
@@ -878,7 +874,6 @@ class CsvDataExporter(
     }
 
     private fun rowToGoal(row: Map<String, String>): Goal? {
-        val (isDeleted, deletedAt) = parseDeletedInfo(row)
         return try {
             Goal(
                 id = row["id"]?.toLongOrNull() ?: 0,
@@ -907,8 +902,6 @@ class CsvDataExporter(
                 linkedAssetId = row["linkedAssetId"]?.toLongOrNull(),
                 isPublic = row["isPublic"].toBoolean(),
                 notes = row["notes"] ?: "",
-                isDeleted = isDeleted,
-                deletedAt = deletedAt,
                 createdAt = parseDateOrNull(row["createdAt"]) ?: System.currentTimeMillis(),
                 updatedAt = parseDateOrNull(row["updatedAt"]) ?: System.currentTimeMillis()
             )
@@ -916,7 +909,6 @@ class CsvDataExporter(
     }
 
     private fun rowToAnniversary(row: Map<String, String>): Anniversary? {
-        val (isDeleted, deletedAt) = parseDeletedInfo(row)
         return try {
             Anniversary(
                 id = row["id"]?.toLongOrNull() ?: 0,
@@ -940,8 +932,6 @@ class CsvDataExporter(
                 icon = AppIcon.fromName(row["icon"] ?: "Favorite"),
                 linkedMomentId = row["linkedMomentId"]?.toLongOrNull(),
                 isPinned = row["isPinned"].toBoolean(),
-                isDeleted = isDeleted,
-                deletedAt = deletedAt,
                 createdAt = parseDateOrNull(row["createdAt"]) ?: System.currentTimeMillis(),
                 updatedAt = parseDateOrNull(row["updatedAt"]) ?: System.currentTimeMillis()
             )
@@ -949,7 +939,6 @@ class CsvDataExporter(
     }
 
     private fun rowToMoment(row: Map<String, String>, pathMapping: Map<String, String>): Moment? {
-        val (isDeleted, deletedAt) = parseDeletedInfo(row)
         return try {
             Moment(
                 id = row["id"]?.toLongOrNull() ?: 0,
@@ -974,8 +963,6 @@ class CsvDataExporter(
                 linkedAssetId = row["linkedAssetId"]?.toLongOrNull(),
                 linkedAnniversaryId = row["linkedAnniversaryId"]?.toLongOrNull(),
                 linkedGoalId = row["linkedGoalId"]?.toLongOrNull(),
-                isDeleted = isDeleted,
-                deletedAt = deletedAt,
                 createdAt = parseDateOrNull(row["createdAt"]) ?: System.currentTimeMillis(),
                 updatedAt = parseDateOrNull(row["updatedAt"]) ?: System.currentTimeMillis()
             )
@@ -998,15 +985,14 @@ class CsvDataExporter(
     }
 
     private fun rowToRecurringTemplate(row: Map<String, String>): RecurringTemplate? {
-        val (isDeleted, _) = parseDeletedInfo(row)
         return try {
             RecurringTemplate(
                 id = row["id"]?.toLongOrNull() ?: 0,
                 name = row["name"] ?: return null,
                 amount = row["amount"]?.let { Money.parse(it)?.cents } ?: return null,
-                type = row["type"] ?: return null,
+                type = BillType.from(row["type"] ?: return null),
                 category = row["category"] ?: "",
-                frequency = row["frequency"] ?: return null,
+                frequency = RecurringFrequency.from(row["frequency"] ?: return null),
                 dayOfMonth = row["dayOfMonth"]?.toIntOrNull() ?: 0,
                 dayOfWeek = row["dayOfWeek"]?.toIntOrNull() ?: 0,
                 isActive = row["isActive"].toBoolean(),
@@ -1015,7 +1001,6 @@ class CsvDataExporter(
                 autoGenerate = row["autoGenerate"].toBoolean(),
                 remindBeforeDays = row["remindBeforeDays"]?.toIntOrNull() ?: 1,
                 note = row["note"] ?: "",
-                isDeleted = isDeleted,
                 createdAt = parseDateOrNull(row["createdAt"]) ?: System.currentTimeMillis(),
                 updatedAt = parseDateOrNull(row["updatedAt"]) ?: System.currentTimeMillis()
             )
@@ -1057,7 +1042,6 @@ class CsvDataExporter(
     }
 
     private fun rowToCustomTag(row: Map<String, String>): CustomTag? {
-        val (isDeleted, _) = parseDeletedInfo(row)
         return try {
             CustomTag(
                 id = row["id"]?.toLongOrNull() ?: 0,
@@ -1066,7 +1050,6 @@ class CsvDataExporter(
                 icon = AppIcon.fromName(row["icon"] ?: "Flag"),
                 usageCount = row["usageCount"]?.toIntOrNull() ?: 0,
                 applicableTypes = joinToJson(row["applicableTypes"]),
-                isDeleted = isDeleted,
                 createdAt = parseDateOrNull(row["createdAt"]) ?: System.currentTimeMillis(),
                 updatedAt = parseDateOrNull(row["updatedAt"]) ?: System.currentTimeMillis()
             )
@@ -1088,10 +1071,6 @@ class CsvDataExporter(
 
     // ── Value converters ──
 
-    private fun parseDeletedInfo(row: Map<String, String>): Pair<Boolean, Long?> {
-        val isDeleted = row["isDeleted"].toBoolean()
-        return isDeleted to (if (isDeleted) parseDateOrNull(row["deletedAt"]) else null)
-    }
 
     private fun parseDateOrNull(value: String?): Long? {
         if (value.isNullOrBlank()) return null

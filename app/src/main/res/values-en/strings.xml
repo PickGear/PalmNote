@@ -958,7 +958,7 @@
     <string name="bill_import_wechat_bill">WeChat Bill</string>
     <string name="bill_import_alipay_bill">Alipay Bill</string>
     <string name="bill_import_selected_count">Import %d bills</string>
-    <string name="bill_import_ocr_recognized">Recognized %1$d transactions, %1$d selected</string>
+    <string name="bill_import_ocr_recognized">Recognized %1$d transactions, %2$d selected</string>
     <string name="bill_import_ocr_result">Recognition Result</string>
     <string name="bill_import_amount">Amount</string>
     <string name="bill_import_merchant">Merchant</string>

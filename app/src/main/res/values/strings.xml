@@ -849,9 +849,9 @@
     <string name="date_weekday_thursday">星期四</string>
     <string name="date_weekday_friday">星期五</string>
     <string name="date_weekday_saturday">星期六</string>
-    <string name="date_format_weekday_full">%1$s月%2$d日 %3$s</string>
-    <string name="date_format_week_range_same">%1$s月%2$d日-%3$d日</string>
-    <string name="date_format_week_range_diff">%1$s月%2$d日-%3$s月%4$d日</string>
+    <string name="date_format_weekday_full">%1$s%2$d日 %3$s</string>
+    <string name="date_format_week_range_same">%1$s%2$d日-%3$d日</string>
+    <string name="date_format_week_range_diff">%1$s%2$d日-%3$s%4$d日</string>
     <string name="date_weekday_short_mon">周一</string>
     <string name="date_weekday_short_tue">周二</string>
     <string name="date_weekday_short_wed">周三</string>
@@ -998,7 +998,7 @@
     <string name="bill_import_wechat_bill">微信账单</string>
     <string name="bill_import_alipay_bill">支付宝账单</string>
     <string name="bill_import_selected_count">导入 %d 条账单</string>
-    <string name="bill_import_ocr_recognized">识别到 %1$d 笔交易，已选 %1$d 笔</string>
+    <string name="bill_import_ocr_recognized">识别到 %1$d 笔交易，已选 %2$d 笔</string>
     <string name="bill_import_ocr_result">识别结果</string>
     <string name="bill_import_amount">金额</string>
     <string name="bill_import_merchant">商户</string>

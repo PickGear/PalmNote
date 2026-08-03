@@ -45,7 +45,7 @@ class AnniversaryViewModel @Inject constructor(
     fun deleteItem(id: Long) {
         viewModelScope.launch {
             try {
-                itemRepo.softDelete(id)
+                itemRepo.delete(id)
             } catch (e: Exception) {
                 _uiState.update { it.copy(error = e.message ?: context.getString(R.string.life_error_delete_failed)) }
             }

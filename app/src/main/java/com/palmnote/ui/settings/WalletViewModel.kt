@@ -35,7 +35,7 @@ class WalletViewModel @Inject constructor(
 
     fun deleteWallet(id: Long) {
         viewModelScope.launch {
-            walletRepository.softDelete(id)
+            walletRepository.delete(id)
         }
     }
 

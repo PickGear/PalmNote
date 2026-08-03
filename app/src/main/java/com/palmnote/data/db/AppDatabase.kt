@@ -6,7 +6,6 @@ import androidx.room.TypeConverters
 import com.palmnote.data.db.converter.Converters
 import com.palmnote.data.db.dao.*
 import com.palmnote.data.db.entity.*
-import com.palmnote.feature.vault.VaultEntry
 
 @Database(
     entities = [
@@ -16,9 +15,9 @@ import com.palmnote.feature.vault.VaultEntry
         AccountBook::class, PlanList::class, PlanListItem::class, Plan::class,
         LifeTemplate::class, LifeItem::class, CrossLink::class, Achievement::class,
         LifeReport::class, TodoItem::class, LifeMoment::class, MoodDiary::class, FocusRecord::class,
-        VaultEntry::class
+        BillRecycleBin::class, AssetRecycleBin::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -51,7 +50,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun moodDiaryDao(): MoodDiaryDao
     abstract fun lifeMomentDao(): LifeMomentDao
 
-    abstract fun vaultDao(): com.palmnote.feature.vault.VaultDao
+    abstract fun billRecycleBinDao(): BillRecycleBinDao
+    abstract fun assetRecycleBinDao(): AssetRecycleBinDao
 
     companion object {
         const val DATABASE_NAME = "palmnote_db"

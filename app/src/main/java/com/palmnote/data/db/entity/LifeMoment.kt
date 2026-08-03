@@ -7,7 +7,6 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "life_moments", indices = [
     Index(value = ["date"], name = "idx_moment_date"),
-    Index(value = ["isDeleted"], name = "idx_moment_deleted"),
     Index(value = ["lifeItemId"], name = "idx_moment_life_item")
 ])
 @Immutable
@@ -29,8 +28,6 @@ data class LifeMoment(
     val category: String = "",
     val isFavorite: Boolean = false,
     val lifeItemId: Long? = null,
-    val isDeleted: Boolean = false,
-    val deletedAt: Long? = null,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()
 )

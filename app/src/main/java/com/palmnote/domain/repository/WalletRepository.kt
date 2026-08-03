@@ -20,8 +20,7 @@ interface WalletRepository {
     suspend fun adjustBalance(id: Long, amount: Long)
     suspend fun setDefault(id: Long)
     suspend fun setEnabled(id: Long, enabled: Boolean)
-    suspend fun softDelete(id: Long)
-    suspend fun hardDelete(id: Long)
+    suspend fun delete(id: Long)
 
     /** 事务：软删关联账单 + 软删钱包 */
     suspend fun deleteWalletWithData(walletId: Long)

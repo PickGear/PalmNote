@@ -18,7 +18,6 @@ class AnniversaryRepositoryImpl @Inject constructor(
     override fun getNotificationEnabledAnniversaries(): Flow<List<Anniversary>> =
         anniversaryDao.getNotificationEnabledAnniversaries()
 
-    override fun getDeletedAnniversaries(): Flow<List<Anniversary>> = anniversaryDao.getDeletedAnniversaries()
 
     override fun getAnniversaryCount(): Flow<Int> = anniversaryDao.getAnniversaryCount()
 
@@ -28,11 +27,8 @@ class AnniversaryRepositoryImpl @Inject constructor(
     override suspend fun updateAnniversary(anniversary: Anniversary) =
         anniversaryDao.updateAnniversary(anniversary)
 
-    override suspend fun softDeleteAnniversary(id: Long) = anniversaryDao.softDeleteAnniversary(id)
+    override suspend fun deleteAnniversary(id: Long) = anniversaryDao.deleteAnniversary(id)
 
-    override suspend fun restoreAnniversary(id: Long) = anniversaryDao.restoreAnniversary(id)
-
-    override suspend fun hardDeleteAnniversary(id: Long) = anniversaryDao.hardDeleteAnniversary(id)
 
     override suspend fun search(query: String): List<Anniversary> = anniversaryDao.search(query)
 }

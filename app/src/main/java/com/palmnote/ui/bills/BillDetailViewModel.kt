@@ -31,6 +31,6 @@ class BillDetailViewModel @Inject constructor(
     }
 
     fun deleteBill(billId: Long) {
-        viewModelScope.launch { billRepository.softDeleteBill(billId) }
+        viewModelScope.launch { billRepository.deleteBill(billId) }
     }
 }

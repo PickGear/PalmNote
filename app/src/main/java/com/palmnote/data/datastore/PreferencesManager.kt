@@ -4,18 +4,32 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.runBlocking
+import com.palmnote.domain.model.AutoLockMode
 import com.palmnote.ui.dashboard.DashboardCardConfig
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+import javax.inject.Singleton
+
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "palmnote_preferences")
 
-class PreferencesManager(
-    private val context: Context
+@Singleton
+class PreferencesManager @Inject constructor(
+    @ApplicationContext private val context: Context,
+    @com.palmnote.di.ApplicationScope private val scope: CoroutineScope
 ) {
+    /** DataStore 内存缓存：Eagerly 启动，进程活着就常驻 */
+    private val prefsState: StateFlow<Preferences> = context.dataStore.data
+        .catch { emit(emptyPreferences()) }
+        .stateIn(scope, SharingStarted.Eagerly, emptyPreferences())
+
     /** DataStore 读取统一兜底：损坏/IO 异常时回退空偏好，避免崩溃 */
     private val prefsFlow: Flow<Preferences> = context.dataStore.data.catch { emit(emptyPreferences()) }
     companion object {
@@ -103,7 +117,7 @@ class PreferencesManager(
         context.dataStore.edit { it[DASHBOARD_CARD_CONFIGS] = DashboardCardConfig.toJson(configs) }
     }
 
-    fun isAppLockEnabled(): Boolean = runBlocking(Dispatchers.IO) { prefsFlow.first()[APP_LOCK_ENABLED] ?: false }
+    fun isAppLockEnabled(): Boolean = prefsState.value[APP_LOCK_ENABLED] ?: false
 
     val appLockEnabledFlow: Flow<Boolean> = prefsFlow.map { it[APP_LOCK_ENABLED] ?: false }
 
@@ -111,9 +125,10 @@ class PreferencesManager(
         context.dataStore.edit { it[APP_LOCK_ENABLED] = enabled }
     }
 
-    fun setAppLockEnabledSync(enabled: Boolean) = runBlocking(Dispatchers.IO) { setAppLockEnabled(enabled) }
+    fun setAppLockEnabledSync(enabled: Boolean) { scope.launch { setAppLockEnabled(enabled) } }
 
-    fun getEncryptedPin(): String = runBlocking(Dispatchers.IO) { prefsFlow.first()[ENCRYPTED_PIN] ?: "" }
+    fun getEncryptedPin(): String = prefsState.value[ENCRYPTED_PIN] ?: ""
+    fun getLanguage(): String = prefsState.value[LANGUAGE] ?: "SYSTEM"
 
     suspend fun setEncryptedPin(pin: String) {
         context.dataStore.edit { it[ENCRYPTED_PIN] = pin }
@@ -212,9 +227,9 @@ class PreferencesManager(
         context.dataStore.edit { it[PRESET_CATEGORY_OVERRIDES] = org.json.JSONObject(overrides.toMap()).toString() }
     }
 
-    fun getVaultSalt(): String = runBlocking(Dispatchers.IO) { prefsFlow.first()[VAULT_SALT] ?: "" }
+    fun getVaultSalt(): String = prefsState.value[VAULT_SALT] ?: ""
 
-    fun getVaultKeyWrap(): String = runBlocking(Dispatchers.IO) { prefsFlow.first()[VAULT_KEY_WRAP] ?: "" }
+    fun getVaultKeyWrap(): String = prefsState.value[VAULT_KEY_WRAP] ?: ""
 
     suspend fun setVaultCredentials(salt: String, keyWrap: String) {
         context.dataStore.edit {
@@ -242,7 +257,7 @@ class PreferencesManager(
         context.dataStore.edit { it[VAULT_BIO_ENABLED] = enabled }
     }
 
-    fun getVaultBioKeyWrap(): String = runBlocking(Dispatchers.IO) { prefsFlow.first()[VAULT_BIO_KEY_WRAP] ?: "" }
+    fun getVaultBioKeyWrap(): String = prefsState.value[VAULT_BIO_KEY_WRAP] ?: ""
 
     suspend fun setVaultBioKeyWrap(wrap: String) {
         context.dataStore.edit { it[VAULT_BIO_KEY_WRAP] = wrap }

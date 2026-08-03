@@ -1,6 +1,7 @@
 package com.palmnote.data.export
 
-import android.util.Log
+import com.palmnote.domain.util.AppLogger
+import com.palmnote.domain.model.BillType
 import com.palmnote.domain.model.Money
 import com.palmnote.domain.util.CategoryClassifier
 import java.text.SimpleDateFormat
@@ -102,9 +103,9 @@ class BillCsvImporter {
 
                 ParsedBill(
                     date = date,
-                    type = if (isIncome) "INCOME" else "EXPENSE",
+                    type = if (isIncome) BillType.INCOME.value else BillType.EXPENSE.value,
                     amount = amount,
-                    category = normalizeCategory(guessCategory(cell(cols, merchantIdx), cell(cols, noteIdx), cell(cols, typeIdx)), if (isIncome) "INCOME" else "EXPENSE"),
+                    category = normalizeCategory(guessCategory(cell(cols, merchantIdx), cell(cols, noteIdx), cell(cols, typeIdx)), if (isIncome) BillType.INCOME.value else BillType.EXPENSE.value),
                     merchant = cell(cols, merchantIdx),
                     note = cell(cols, noteIdx).ifBlank { cell(cols, goodsIdx).ifBlank { cell(cols, typeIdx) } },
                     paymentMethod = mapPaymentMethod(cell(cols, methodIdx)),
@@ -139,9 +140,9 @@ class BillCsvImporter {
 
                 ParsedBill(
                     date = date,
-                    type = if (isIncome) "INCOME" else "EXPENSE",
+                    type = if (isIncome) BillType.INCOME.value else BillType.EXPENSE.value,
                     amount = amount,
-                    category = if (category.isNotBlank()) normalizeCategory(category, if (isIncome) "INCOME" else "EXPENSE") else normalizeCategory(guessCategory(merchant, note, ""), if (isIncome) "INCOME" else "EXPENSE"),
+                    category = if (category.isNotBlank()) normalizeCategory(category, if (isIncome) BillType.INCOME.value else BillType.EXPENSE.value) else normalizeCategory(guessCategory(merchant, note, ""), if (isIncome) BillType.INCOME.value else BillType.EXPENSE.value),
                     merchant = merchant,
                     note = note,
                     paymentMethod = "ALIPAY"
@@ -156,7 +157,7 @@ class BillCsvImporter {
             try {
                 val parsed = SimpleDateFormat(pat, Locale.getDefault()).parse(clean)
                 if (parsed != null) return parsed.time
-            } catch (e: Exception) { Log.w("CsvImport", "parseDate failed", e) }
+            } catch (e: Exception) { AppLogger.w("CsvImport", "parseDate failed", e) }
         }
         return null
     }
@@ -166,7 +167,7 @@ class BillCsvImporter {
         private val INCOME_CATEGORIES = setOf("工资", "奖金", "兼职", "副业", "报销", "投资", "股票", "理财", "分红", "利息", "租金", "二手", "红包", "赠与", "人情", "退款", "中奖", "保险理赔", "继承", "其他")
 
         fun normalizeCategory(category: String, type: String): String {
-            val valid = if (type == "EXPENSE") EXPENSE_CATEGORIES else INCOME_CATEGORIES
+            val valid = if (type == BillType.EXPENSE.value) EXPENSE_CATEGORIES else INCOME_CATEGORIES
             val norm = when (category) {
                 // 转账/其他
                 "转账" -> "其他"

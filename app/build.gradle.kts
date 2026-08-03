@@ -126,6 +126,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     ksp {
@@ -195,6 +196,10 @@ dependencies {
     implementation(libs.coil.compose)
 
     // PaddleOCR OCR - PP-OCRv6 via ONNX Runtime (ppocr-sdk)
+    implementation(project(":core"))
+    implementation(project(":feature:bills"))
+    implementation(project(":feature:asset"))
+    implementation(project(":feature:life"))
     implementation(project(":ppocr-sdk"))
 
     // Paging3

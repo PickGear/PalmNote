@@ -16,6 +16,8 @@ import com.palmnote.data.db.entity.CategoryConfig
 import com.palmnote.data.db.entity.Wallet
 import com.palmnote.data.datastore.PreferencesManager
 import com.palmnote.domain.model.Money
+import com.palmnote.domain.model.BillType
+import com.palmnote.domain.model.PaymentMethod
 import com.palmnote.domain.model.toYuanString
 import com.palmnote.domain.repository.AccountBookRepository
 import com.palmnote.domain.repository.BillRepository
@@ -72,14 +74,14 @@ private data class BillDataGroup(
 data class AddBillFormState(
     val id: Long? = null,
     val amount: String = "",
-    val type: String = "EXPENSE",
+    val type: BillType = BillType.EXPENSE,
     val category: String = "",
     val subCategory: String = "",
     val note: String = "",
     val date: Long = System.currentTimeMillis(),
     val walletId: Long? = null,
     val toWalletId: Long? = null,
-    val paymentMethod: String = "",
+    val paymentMethod: PaymentMethod = PaymentMethod.OTHER,
     val merchant: String = "",
     val location: String = "",
     val tags: String = "",
@@ -184,8 +186,8 @@ class BillViewModel @Inject constructor(
                 .groupBy { DateUtils.millisToLocalDate(it.date).dayOfMonth }
                 .mapValues { (_, bills) ->
                     Pair(
-                        bills.filter { it.type == "EXPENSE" }.sumOf { it.amount },
-                        bills.filter { it.type == "INCOME" }.sumOf { it.amount }
+                        bills.filter { it.type == BillType.EXPENSE }.sumOf { it.amount },
+                        bills.filter { it.type == BillType.INCOME }.sumOf { it.amount }
                     )
                 }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
@@ -261,9 +263,9 @@ class BillViewModel @Inject constructor(
         val fMax = savedStateHandle.get<Long>("bill_filter_amount_max")
         if (fType != null || fCategory != null || fMethod != null || fMin != null || fMax != null) {
             _currentFilter.value = BillFilter(
-                type = fType?.ifEmpty { null },
+                type = fType?.ifEmpty { null }?.let { BillType.from(it) },
                 category = fCategory?.ifEmpty { null },
-                paymentMethod = fMethod?.ifEmpty { null },
+                paymentMethod = fMethod?.ifEmpty { null }?.let { PaymentMethod.from(it) },
                 amountMin = fMin?.takeIf { it != -1L },
                 amountMax = fMax?.takeIf { it != -1L }
             )
@@ -292,7 +294,7 @@ class BillViewModel @Inject constructor(
                 savedStateHandle["bill_selected_day"] = s.selectedDay ?: -1
                 savedStateHandle["bill_selected_book"] = s.selectedBookId
                 savedStateHandle["bill_search_query"] = s.searchQuery
-                savedStateHandle["bill_filter_type"] = s.currentFilter.type ?: ""
+                savedStateHandle["bill_filter_type"] = s.currentFilter.type?.value ?: ""
                 savedStateHandle["bill_filter_category"] = s.currentFilter.category ?: ""
                 savedStateHandle["bill_filter_payment_method"] = s.currentFilter.paymentMethod ?: ""
                 savedStateHandle["bill_filter_amount_min"] = s.currentFilter.amountMin ?: -1L
@@ -316,7 +318,7 @@ class BillViewModel @Inject constructor(
             _formState.debounce(500).collect { form ->
                 val hasContent = form.amount.isNotBlank() || form.note.isNotBlank() ||
                     form.merchant.isNotBlank() || form.category.isNotBlank() ||
-                    form.paymentMethod.isNotBlank() || form.location.isNotBlank()
+                    form.paymentMethod != PaymentMethod.OTHER || form.location.isNotBlank()
                 if (form.isSaved || form.isEditing || !hasContent) {
                     savedStateHandle.remove<String>("bill_draft")
                 } else {
@@ -395,7 +397,7 @@ class BillViewModel @Inject constructor(
     }
 
     fun setFilterType(type: String) {
-        _currentFilter.value = _currentFilter.value.copy(type = if (type == "ALL") null else type)
+        _currentFilter.value = _currentFilter.value.copy(type = if (type == "ALL") null else BillType.from(type))
     }
 
     fun toggleFilterSheet() { _showFilterSheet.value = !_showFilterSheet.value }
@@ -410,7 +412,7 @@ class BillViewModel @Inject constructor(
     fun clearFilter() { _currentFilter.value = BillFilter() }
 
     fun deleteBill(billId: Long) {
-        viewModelScope.launch { billRepository.softDeleteBill(billId) }
+        viewModelScope.launch { billRepository.deleteBill(billId) }
     }
 
     fun initFormForEdit(billId: Long) {
@@ -445,7 +447,7 @@ class BillViewModel @Inject constructor(
     fun resetForm(selectedDate: Long? = null) {
         val date = selectedDate ?: System.currentTimeMillis()
         val walletId = cachedWallets.value.find { it.isDefault }?.id ?: cachedWallets.value.firstOrNull()?.id
-        _formState.value = AddBillFormState(date = date, type = defaultBillType, walletId = walletId)
+        _formState.value = AddBillFormState(date = date, type = BillType.from(defaultBillType), walletId = walletId)
     }
 
     fun updateForm(update: AddBillFormState.() -> AddBillFormState) {
@@ -458,15 +460,15 @@ class BillViewModel @Inject constructor(
             _formState.value = form.copy(amountError = context.getString(R.string.bill_error_amount_required))
             return
         }
-        if (form.category.isBlank() && form.type != "TRANSFER") {
+        if (form.category.isBlank() && form.type != BillType.TRANSFER) {
             _formState.value = form.copy(categoryError = context.getString(R.string.bill_error_category_required))
             return
         }
-        if (form.type == "TRANSFER" && form.walletId == null) {
+        if (form.type == BillType.TRANSFER && form.walletId == null) {
             _formState.value = form.copy(amountError = context.getString(R.string.transfer_from_required))
             return
         }
-        if (form.type == "TRANSFER" && form.toWalletId == null) {
+        if (form.type == BillType.TRANSFER && form.toWalletId == null) {
             _formState.value = form.copy(amountError = context.getString(R.string.transfer_to_required))
             return
         }
@@ -491,7 +493,7 @@ class BillViewModel @Inject constructor(
                     yearMonth = DateUtils.formatYearMonth(form.date),
                     accountBookId = state.value.selectedBookId,
                     walletId = form.walletId,
-                    toWalletId = if (form.type == "TRANSFER") form.toWalletId else null,
+                    toWalletId = if (form.type == BillType.TRANSFER) form.toWalletId else null,
                     paymentMethod = form.paymentMethod,
                     merchant = form.merchant.trim(),
                     location = form.location.trim(),

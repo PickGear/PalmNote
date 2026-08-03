@@ -56,7 +56,7 @@ class TodoViewModel @Inject constructor(
 
     fun deleteItem(id: Long) {
         viewModelScope.launch {
-            try { itemRepo.softDelete(id) } catch (_: Exception) {}
+            try { itemRepo.delete(id) } catch (_: Exception) {}
         }
     }
 }

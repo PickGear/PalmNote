@@ -25,8 +25,6 @@ data class LifeItem(
     val note: String = "",
     val sortOrder: Int = 0,
     val isFavorite: Boolean = false,
-    val isDeleted: Boolean = false,
-    val deletedAt: Long? = null,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()
 )

@@ -36,11 +36,11 @@ class AccountBookRepositoryImpl @Inject constructor(
 
     override suspend fun setHidden(id: Long, hidden: Boolean) = accountBookDao.setHidden(id, hidden)
 
-    override suspend fun softDeleteBook(id: Long) = accountBookDao.softDeleteBook(id)
+    override suspend fun deleteBook(id: Long) = accountBookDao.deleteBook(id)
 
     override suspend fun deleteAccountBookWithData(bookId: Long) = appDatabase.withTransaction {
-        billDao.softDeleteByBook(bookId)
-        accountBookDao.softDeleteBook(bookId)
+        billDao.deleteByBook(bookId)
+        accountBookDao.deleteBook(bookId)
     }
 
     override suspend fun initDefaultBooks() = appDatabase.withTransaction {

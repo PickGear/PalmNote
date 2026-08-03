@@ -4,7 +4,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 
 import android.content.Context
-import android.util.Log
+import com.palmnote.domain.util.AppLogger
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.palmnote.data.db.AppDatabase
@@ -20,9 +20,9 @@ class DataClearViewModel @Inject constructor(
     private val db: AppDatabase
 ) : ViewModel() {
 
-    fun clearAssets() { viewModelScope.launch { try { db.assetDao().deleteAll(); clearImagesDir() } catch (e: Exception) { Log.w("DataClear", "clearAssets failed", e) } } }
+    fun clearAssets() { viewModelScope.launch { try { db.assetDao().deleteAll(); clearImagesDir() } catch (e: Exception) { AppLogger.w("DataClear", "clearAssets failed", e) } } }
 
-    fun clearBills() { viewModelScope.launch { try { db.billDao().deleteAll(); db.budgetDao().deleteAll(); db.walletDao().deleteAll(); db.recurringTemplateDao().deleteAll(); clearImagesDir() } catch (e: Exception) { Log.w("DataClear", "clearBills failed", e) } } }
+    fun clearBills() { viewModelScope.launch { try { db.billDao().deleteAll(); db.budgetDao().deleteAll(); db.walletDao().deleteAll(); db.recurringTemplateDao().deleteAll(); clearImagesDir() } catch (e: Exception) { AppLogger.w("DataClear", "clearBills failed", e) } } }
 
     fun clearLife() {
         viewModelScope.launch {
@@ -43,11 +43,11 @@ class DataClearViewModel @Inject constructor(
                 db.lifeReportDao().deleteAll()
                 db.lifeMomentDao().deleteAll()
                 clearImagesDir()
-            } catch (e: Exception) { Log.w("DataClear", "clearLife failed", e) }
+            } catch (e: Exception) { AppLogger.w("DataClear", "clearLife failed", e) }
         }
     }
 
-    fun clearAll() { viewModelScope.launch { try { db.clearAllTables(); clearImagesDir() } catch (e: Exception) { Log.w("DataClear", "clearAll failed", e) } } }
+    fun clearAll() { viewModelScope.launch { try { db.clearAllTables(); clearImagesDir() } catch (e: Exception) { AppLogger.w("DataClear", "clearAll failed", e) } } }
 
     /** 清理文件存储中的图片孤儿文件（DB 已清，文件不再引用） */
     private suspend fun clearImagesDir() = withContext(Dispatchers.IO) {

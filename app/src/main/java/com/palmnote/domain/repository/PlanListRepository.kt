@@ -18,7 +18,7 @@ interface PlanListRepository {
     suspend fun insertList(list: PlanList): Long
     suspend fun updateList(list: PlanList)
     suspend fun setListCompleted(id: Long, isCompleted: Boolean)
-    suspend fun softDeleteList(id: Long)
+    suspend fun deleteList(id: Long)
     suspend fun insertItem(item: PlanListItem): Long
     suspend fun insertItems(items: List<PlanListItem>)
     suspend fun updateItem(item: PlanListItem)

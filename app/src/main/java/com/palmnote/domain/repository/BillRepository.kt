@@ -5,6 +5,7 @@ import com.palmnote.data.db.dao.CategoryTotalWithCount
 import com.palmnote.data.db.dao.DailySummary
 import com.palmnote.data.db.dao.MonthTotal
 import com.palmnote.data.db.entity.Bill
+import com.palmnote.domain.model.BillType
 import com.palmnote.domain.util.DateUtils
 import kotlinx.coroutines.flow.Flow
 
@@ -18,8 +19,8 @@ fun List<Bill>.groupToDailySummaries(): List<DailySummary> =
         .map { (day, bills) ->
             DailySummary(
                 date = day.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli(),
-                expense = bills.filter { it.type == "EXPENSE" }.sumOf { it.amount },
-                income = bills.filter { it.type == "INCOME" }.sumOf { it.amount }
+                expense = bills.filter { it.type == BillType.EXPENSE }.sumOf { it.amount },
+                income = bills.filter { it.type == BillType.INCOME }.sumOf { it.amount }
             )
         }
         .sortedBy { it.date }
@@ -28,7 +29,7 @@ interface BillRepository {
     fun getAllBills(): Flow<List<Bill>>
     suspend fun getBillById(id: Long): Bill?
     fun getBillsByMonth(yearMonth: String): Flow<List<Bill>>
-    fun getBillsByMonthAndType(yearMonth: String, type: String): Flow<List<Bill>>
+    fun getBillsByMonthAndType(yearMonth: String, type: BillType): Flow<List<Bill>>
     fun getMonthlyBillCount(yearMonth: String): Flow<Int>
     fun getMonthlyExpense(yearMonth: String): Flow<Long?>
     fun getMonthlyIncome(yearMonth: String): Flow<Long?>
@@ -41,13 +42,10 @@ interface BillRepository {
     fun getBillsByDate(date: Long): Flow<List<Bill>>
     fun getBillsByDateRange(startDate: Long, endDate: Long): Flow<List<Bill>>
     fun getBillsByDateRangeByBook(bookId: Long, startDate: Long, endDate: Long): Flow<List<Bill>>
-    fun getDeletedBills(): Flow<List<Bill>>
     fun getAllYearMonths(): Flow<List<String>>
     suspend fun insertBill(bill: Bill): Long
     suspend fun updateBill(bill: Bill)
-    suspend fun softDeleteBill(id: Long)
-    suspend fun restoreBill(id: Long)
-    suspend fun hardDeleteBill(id: Long)
+    suspend fun deleteBill(id: Long)
 
     /** 事务：写账单 + 按类型调整钱包余额（新建） */
     suspend fun createBillWithWalletAdjustment(bill: Bill): Long
@@ -86,9 +84,11 @@ interface BillRepository {
     fun getCategoryUsageCounts(type: String): Flow<List<CategoryTotalWithCount>>
     suspend fun updateCategoryNameInBills(oldName: String, newName: String)
     suspend fun countByCategory(category: String): Int
-    suspend fun softDeleteByCategory(category: String)
+    suspend fun deleteByCategory(category: String)
     suspend fun countByWallet(walletId: Long): Int
-    suspend fun softDeleteByWallet(walletId: Long)
+    suspend fun deleteByWallet(walletId: Long)
     suspend fun countByBook(bookId: Long): Int
-    suspend fun softDeleteByBook(bookId: Long)
+    suspend fun deleteByBook(bookId: Long)
+    suspend fun restoreBill(id: Long)
+    suspend fun hardDeleteBill(id: Long)
 }

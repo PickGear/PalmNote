@@ -17,7 +17,5 @@ class LifeTemplateRepositoryImpl @Inject constructor(
     override suspend fun insertTemplate(template: LifeTemplate): Long = dao.insertTemplate(template)
     override suspend fun updateTemplate(template: LifeTemplate) = dao.updateTemplate(template)
     override suspend fun setTemplateHidden(id: Long, hidden: Boolean) = dao.setTemplateHidden(id, hidden)
-    override suspend fun softDeleteTemplate(id: Long) = dao.softDeleteTemplate(id)
-    override suspend fun restoreTemplate(id: Long) = dao.restoreTemplate(id)
-    override suspend fun hardDeleteTemplateById(id: Long) = dao.hardDeleteTemplateById(id)
+    override suspend fun deleteTemplate(id: Long) = dao.deleteTemplate(id)
 }

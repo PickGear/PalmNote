@@ -50,13 +50,12 @@ class WalletRepositoryImpl @Inject constructor(
 
     override suspend fun setEnabled(id: Long, enabled: Boolean) = walletDao.setEnabled(id, enabled)
 
-    override suspend fun softDelete(id: Long) = walletDao.softDelete(id)
+    override suspend fun delete(id: Long) = walletDao.deleteWallet(id)
 
-    override suspend fun hardDelete(id: Long) = walletDao.hardDelete(id)
 
     override suspend fun deleteWalletWithData(walletId: Long) = appDatabase.withTransaction {
-        billDao.softDeleteByWallet(walletId)
-        walletDao.softDelete(walletId)
+        billDao.deleteByWallet(walletId)
+        walletDao.deleteWallet(walletId)
     }
 
     override suspend fun initDefaultWallets() = appDatabase.withTransaction {

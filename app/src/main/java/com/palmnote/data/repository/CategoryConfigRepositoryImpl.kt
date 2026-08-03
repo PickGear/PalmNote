@@ -80,7 +80,7 @@ class CategoryConfigRepositoryImpl @Inject constructor(
         customTagDao.incrementUsage(id)
 
     override suspend fun deleteTag(id: Long) =
-        customTagDao.softDelete(id)
+        customTagDao.deleteTag(id)
 
     // ========== 初始化默认分类 ==========
     override suspend fun initDefaultCategories() {

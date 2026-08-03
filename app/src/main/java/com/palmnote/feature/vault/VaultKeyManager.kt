@@ -4,7 +4,7 @@ import android.os.Build
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
-import android.util.Log
+import com.palmnote.domain.util.AppLogger
 import com.palmnote.data.datastore.PreferencesManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -141,7 +141,7 @@ class VaultKeyManager @Inject constructor(
                 ks.deleteEntry(NOLOCK_KEY_ALIAS)
             }
         } catch (e: Exception) {
-            Log.w(TAG, "reset: delete keystore key failed", e)
+            AppLogger.w(TAG, "reset: delete keystore key failed", e)
         }
         cachedSalt = ""
         cachedKeyWrap = ""
@@ -177,7 +177,7 @@ class VaultKeyManager @Inject constructor(
             cachedBioKeyWrap = wrap
             true
         } catch (e: Exception) {
-            Log.w(TAG, "setupBiometric failed", e)
+            AppLogger.w(TAG, "setupBiometric failed", e)
             false
         }
     }
@@ -195,7 +195,7 @@ class VaultKeyManager @Inject constructor(
             dataKey = SecretKeySpec(dkBytes, "AES")
             true
         } catch (e: Exception) {
-            Log.w(TAG, "decryptWithBiometric failed", e)
+            AppLogger.w(TAG, "decryptWithBiometric failed", e)
             false
         }
     }
@@ -210,7 +210,7 @@ class VaultKeyManager @Inject constructor(
                 ks.deleteEntry(BIO_KEY_ALIAS)
             }
         } catch (e: Exception) {
-            Log.w(TAG, "disableBiometric failed", e)
+            AppLogger.w(TAG, "disableBiometric failed", e)
         }
         cachedBioKeyWrap = ""
     }
@@ -248,7 +248,7 @@ class VaultKeyManager @Inject constructor(
             cipher.init(Cipher.DECRYPT_MODE, key, GCMParameterSpec(128, iv))
             cipher
         } catch (e: Exception) {
-            Log.w(TAG, "createBioDecryptCipher failed", e)
+            AppLogger.w(TAG, "createBioDecryptCipher failed", e)
             null
         }
     }
@@ -275,7 +275,7 @@ class VaultKeyManager @Inject constructor(
             dataKey = SecretKeySpec(dkBytes, "AES")
             true
         } catch (e: Exception) {
-            Log.w(TAG, "unlockNoLock failed", e)
+            AppLogger.w(TAG, "unlockNoLock failed", e)
             false
         }
     }
@@ -298,7 +298,7 @@ class VaultKeyManager @Inject constructor(
             dataKey = dk
             true
         } catch (e: Exception) {
-            Log.w(TAG, "setupNoLock failed", e)
+            AppLogger.w(TAG, "setupNoLock failed", e)
             false
         }
     }
@@ -350,7 +350,7 @@ class VaultKeyManager @Inject constructor(
             cachedInitialized = true
             true
         } catch (e: Exception) {
-            Log.w(TAG, "upgradeToPin failed", e)
+            AppLogger.w(TAG, "upgradeToPin failed", e)
             false
         }
     }

@@ -1,6 +1,7 @@
 package com.palmnote.ui.asset
 
 import androidx.compose.foundation.background
+import com.palmnote.domain.model.AssetStatus
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -87,15 +88,14 @@ fun getCategoryDisplayName(category: String, context: android.content.Context, o
     else category
 }
 
-private val statusColorMap = mapOf("HELD" to StatusHeld, "AWAY" to StatusAway, "REMOVED" to StatusRemoved)
-fun getStatusColor(status: String): Color = statusColorMap[status] ?: StatusHeld
+private val statusColorMap = mapOf(AssetStatus.HELD to StatusHeld, AssetStatus.AWAY to StatusAway, AssetStatus.REMOVED to StatusRemoved)
+fun getStatusColor(status: AssetStatus): Color = statusColorMap[status] ?: StatusHeld
 
 @Composable
-fun getStatusText(status: String): String = when (status) {
-    "HELD" -> stringResource(R.string.asset_held)
-    "AWAY" -> stringResource(R.string.asset_away)
-    "REMOVED" -> stringResource(R.string.asset_removed)
-    else -> stringResource(R.string.asset_held)
+fun getStatusText(status: AssetStatus): String = when (status) {
+    AssetStatus.HELD -> stringResource(R.string.asset_held)
+    AssetStatus.AWAY -> stringResource(R.string.asset_away)
+    AssetStatus.REMOVED -> stringResource(R.string.asset_removed)
 }
 
 @Composable

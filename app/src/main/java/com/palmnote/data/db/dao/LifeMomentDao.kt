@@ -6,10 +6,10 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface LifeMomentDao {
-    @Query("SELECT * FROM life_moments WHERE isDeleted = 0 ORDER BY date DESC, createdAt DESC LIMIT :limit")
+    @Query("SELECT * FROM life_moments ORDER BY date DESC, createdAt DESC LIMIT :limit")
     fun getRecentMoments(limit: Int = 3): Flow<List<LifeMoment>>
 
-    @Query("SELECT * FROM life_moments WHERE isDeleted = 0 ORDER BY date DESC, createdAt DESC")
+    @Query("SELECT * FROM life_moments ORDER BY date DESC, createdAt DESC")
     fun getAllMoments(): Flow<List<LifeMoment>>
 
     @Query("SELECT * FROM life_moments WHERE id = :id")
@@ -21,11 +21,12 @@ interface LifeMomentDao {
     @Update
     suspend fun updateMoment(moment: LifeMoment)
 
-    @Query("UPDATE life_moments SET isDeleted = 1, deletedAt = :deletedAt WHERE id = :id")
-    suspend fun softDeleteMoment(id: Long, deletedAt: Long = System.currentTimeMillis())
 
-    @Query("SELECT COUNT(*) FROM life_moments WHERE isDeleted = 0")
+    @Query("SELECT COUNT(*) FROM life_moments WHERE 1=1")
     fun getMomentCount(): Flow<Int>
+
+    @Query("DELETE FROM life_moments WHERE id = :id")
+    suspend fun deleteLifeMoment(id: Long)
 
     @Query("DELETE FROM life_moments")
     suspend fun deleteAll()

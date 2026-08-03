@@ -30,7 +30,7 @@ fun RecycleBinScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var selectedTab by remember { mutableIntStateOf(0) }
-    val tabs = listOf(stringResource(R.string.recycle_tab_assets), stringResource(R.string.recycle_tab_bills), stringResource(R.string.recycle_tab_goals), stringResource(R.string.recycle_tab_anniversaries), stringResource(R.string.recycle_tab_moments))
+    val tabs = listOf(stringResource(R.string.recycle_tab_assets), stringResource(R.string.recycle_tab_bills))
     var showClearDialog by remember { mutableStateOf(false) }
 
     if (showClearDialog) {
@@ -89,9 +89,6 @@ fun RecycleBinScreen(
             val items = when (selectedTab) {
                 0 -> state.deletedAssets.map { "${it.name} - ${it.category}" }
                 1 -> state.deletedBills.map { "${it.category} ${it.amount.toYuanString()}" }
-                2 -> state.deletedGoals.map { it.title }
-                3 -> state.deletedAnniversaries.map { it.displayTitle }
-                4 -> state.deletedMoments.map { it.title.ifEmpty { it.content.take(20) } }
                 else -> emptyList()
             }
 
@@ -110,9 +107,6 @@ fun RecycleBinScreen(
                         val id = when (selectedTab) {
                             0 -> state.deletedAssets.getOrNull(index)?.id ?: index.toLong()
                             1 -> state.deletedBills.getOrNull(index)?.id ?: index.toLong()
-                            2 -> state.deletedGoals.getOrNull(index)?.id ?: index.toLong()
-                            3 -> state.deletedAnniversaries.getOrNull(index)?.id ?: index.toLong()
-                            4 -> state.deletedMoments.getOrNull(index)?.id ?: index.toLong()
                             else -> index.toLong()
                         }
                         "recycle_$id"
@@ -136,9 +130,6 @@ fun RecycleBinScreen(
                                         when (selectedTab) {
                                             0 -> viewModel.restoreAsset(state.deletedAssets[index].id)
                                             1 -> viewModel.restoreBill(state.deletedBills[index].id)
-                                            2 -> viewModel.restoreGoal(state.deletedGoals[index].id)
-                                            3 -> viewModel.restoreAnniversary(state.deletedAnniversaries[index].id)
-                                            4 -> viewModel.restoreMoment(state.deletedMoments[index].id)
                                         }
                                     }) {
                                         Text(stringResource(R.string.recycle_bin_restore), color = MaterialTheme.colorScheme.primary)
@@ -147,9 +138,6 @@ fun RecycleBinScreen(
                                         when (selectedTab) {
                                             0 -> viewModel.hardDeleteAsset(state.deletedAssets[index].id)
                                             1 -> viewModel.hardDeleteBill(state.deletedBills[index].id)
-                                            2 -> viewModel.hardDeleteGoal(state.deletedGoals[index].id)
-                                            3 -> viewModel.hardDeleteAnniversary(state.deletedAnniversaries[index].id)
-                                            4 -> viewModel.hardDeleteMoment(state.deletedMoments[index].id)
                                         }
                                     }) {
                                         Text(stringResource(R.string.delete), color = ErrorLight)
