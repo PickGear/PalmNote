@@ -1708,6 +1708,10 @@
     <string name="vault_toggle_visibility">显示/隐藏密码</string>
     <string name="vault_edit_title">编辑密码本</string>
     <string name="vault_add_title">新增密码本</string>
+    <string name="vault_section_login">登录信息</string>
+    <string name="vault_section_site">站点信息</string>
+    <string name="vault_section_notes">备注</string>
+    <string name="vault_generate_password">生成密码</string>
     <string name="vault_error_title_required">请输入标题</string>
     <string name="vault_error_password_required">请输入密码</string>
     <string name="vault_error_save_failed">保存失败，请重试</string>

@@ -1,31 +1,43 @@
-﻿package com.palmnote.feature.vault.vault
+package com.palmnote.feature.vault.vault
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.Notes
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.outlined.Key
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Shuffle
+import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -49,12 +61,14 @@ import com.palmnote.R
 import com.palmnote.feature.vault.PasswordStrength
 import com.palmnote.feature.vault.VaultLockManager.LockState
 import com.palmnote.feature.vault.VaultPasswordGenerator
+import com.palmnote.ui.components.ModuleCard
 import com.palmnote.ui.components.SecondaryTopAppBar
+import com.palmnote.ui.theme.vaultTint
 
 /**
- * 密码本新增/编辑页：表单 + 密码生成器入口。
+ * 密码本新增/编辑页：登录图标头部 + 分组卡片表单 + 密码生成器入口。
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun VaultEditScreen(
     viewModel: VaultEditViewModel = hiltViewModel(),
@@ -70,9 +84,10 @@ fun VaultEditScreen(
     var url by remember { mutableStateOf("") }
     var notes by remember { mutableStateOf("") }
     var category by remember { mutableStateOf("") }
-    var categoryExpanded by remember { mutableStateOf(false) }
     var showGenerator by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf<String?>(null) }
+    var titleError by remember { mutableStateOf<String?>(null) }
+    var passwordError by remember { mutableStateOf<String?>(null) }
+    var saveError by remember { mutableStateOf<String?>(null) }
     var saving by remember { mutableStateOf(false) }
     var showForgotPinConfirm by remember { mutableStateOf(false) }
 
@@ -142,13 +157,15 @@ fun VaultEditScreen(
                     IconButton(
                         onClick = {
                             if (saving) return@IconButton
-                            error = null
+                            titleError = null
+                            passwordError = null
+                            saveError = null
                             if (title.isBlank()) {
-                                error = titleRequired
+                                titleError = titleRequired
                                 return@IconButton
                             }
                             if (password.isBlank()) {
-                                error = passwordRequired
+                                passwordError = passwordRequired
                                 return@IconButton
                             }
                             saving = true
@@ -164,7 +181,7 @@ fun VaultEditScreen(
                                     if (ok) {
                                         onNavigateBack()
                                     } else {
-                                        error = saveFailed
+                                        saveError = saveFailed
                                     }
                                 }
                             )
@@ -182,115 +199,171 @@ fun VaultEditScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp, vertical = 16.dp),
+                .padding(horizontal = 16.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            OutlinedTextField(
-                value = title,
-                onValueChange = { title = it; error = null },
-                label = { Text(stringResource(R.string.vault_field_title)) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
-            )
-            OutlinedTextField(
-                value = username,
-                onValueChange = { username = it },
-                label = { Text(stringResource(R.string.vault_field_username)) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
-            )
-            OutlinedTextField(
-                value = password,
-                onValueChange = { password = it; error = null },
-                label = { Text(stringResource(R.string.vault_field_password)) },
-                singleLine = true,
-                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                trailingIcon = {
-                    Row {
-                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                            Icon(
-                                imageVector = if (passwordVisible) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
-                                contentDescription = stringResource(R.string.vault_toggle_visibility)
-                            )
-                        }
-                        IconButton(onClick = { showGenerator = true }) {
-                            Icon(
-                                imageVector = Icons.Outlined.Shuffle,
-                                contentDescription = stringResource(R.string.vault_generator_title)
-                            )
-                        }
-                    }
-                },
-                modifier = Modifier.fillMaxWidth()
-            )
-            if (password.isNotEmpty()) {
-                val (label, color, fraction) = passwordStrength(password)
-                Text(
-                    text = stringResource(R.string.vault_edit_password_strength, label),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = color
-                )
-                LinearProgressIndicator(
-                    progress = { fraction },
-                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-                    color = color,
-                    trackColor = color.copy(alpha = 0.15f)
-                )
-            }
-            OutlinedTextField(
-                value = url,
-                onValueChange = { url = it },
-                label = { Text(stringResource(R.string.vault_field_url)) },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
-                modifier = Modifier.fillMaxWidth()
-            )
-            OutlinedTextField(
-                value = notes,
-                onValueChange = { notes = it },
-                label = { Text(stringResource(R.string.vault_field_notes)) },
-                minLines = 2,
-                modifier = Modifier.fillMaxWidth()
-            )
-            ExposedDropdownMenuBox(
-                expanded = categoryExpanded,
-                onExpandedChange = { categoryExpanded = it }
-            ) {
-                OutlinedTextField(
-                    value = category,
-                    onValueChange = { category = it; error = null },
-                    label = { Text(stringResource(R.string.vault_field_category_input)) },
-                    singleLine = true,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .menuAnchor(),
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded) }
-                )
-                ExposedDropdownMenu(
-                    expanded = categoryExpanded,
-                    onDismissRequest = { categoryExpanded = false },
-                    containerColor = MaterialTheme.colorScheme.surface
+            // ═══════════════════════════════════════
+            // 登录头部（图标 + 标题输入）
+            // ═══════════════════════════════════════
+            ModuleCard(tint = MaterialTheme.colorScheme.surface) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    categories.forEach { cat ->
-                        DropdownMenuItem(
-                            text = { Text(cat) },
-                            onClick = {
-                                category = cat
-                                categoryExpanded = false
-                            }
+                    Box(
+                        modifier = Modifier
+                            .size(64.dp)
+                            .background(vaultTint().copy(alpha = 0.15f), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Key,
+                            contentDescription = null,
+                            tint = vaultTint(),
+                            modifier = Modifier.size(30.dp)
                         )
                     }
+                    Spacer(Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = title,
+                        onValueChange = { title = it; titleError = null },
+                        label = { Text(stringResource(R.string.vault_field_title)) },
+                        singleLine = true,
+                        isError = titleError != null,
+                        supportingText = titleError?.let { { Text(it) } },
+                        shape = MaterialTheme.shapes.medium,
+                        colors = vaultFieldDefaults(),
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
             }
 
-            if (error != null) {
-                Text(
-                    text = error ?: "",
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodyMedium
+            // ═══════════════════════════════════════
+            // 登录信息
+            // ═══════════════════════════════════════
+            ModuleCard(tint = MaterialTheme.colorScheme.surface) {
+                SectionHeader(Icons.Outlined.Person, stringResource(R.string.vault_section_login))
+                Spacer(Modifier.height(4.dp))
+
+                VaultTextField(
+                    value = username,
+                    onValueChange = { username = it },
+                    label = stringResource(R.string.vault_field_username),
+                    leading = Icons.Outlined.Person
+                )
+                Spacer(Modifier.height(10.dp))
+
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it; passwordError = null },
+                    label = { Text(stringResource(R.string.vault_field_password)) },
+                    singleLine = true,
+                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    isError = passwordError != null,
+                    supportingText = passwordError?.let { { Text(it) } },
+                    leadingIcon = { Icon(Icons.Outlined.Key, null, tint = vaultTint()) },
+                    trailingIcon = {
+                        Row {
+                            IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                Icon(
+                                    imageVector = if (passwordVisible) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
+                                    contentDescription = stringResource(R.string.vault_toggle_visibility)
+                                )
+                            }
+                            IconButton(onClick = { showGenerator = true }) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Shuffle,
+                                    contentDescription = stringResource(R.string.vault_generate_password),
+                                    tint = vaultTint()
+                                )
+                            }
+                        }
+                    },
+                    shape = MaterialTheme.shapes.medium,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                if (password.isNotEmpty()) {
+                    Spacer(Modifier.height(10.dp))
+                    PasswordStrengthBar(password = password)
+                }
+                if (saveError != null) {
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = saveError ?: "",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+
+            // ═══════════════════════════════════════
+            // 站点信息
+            // ═══════════════════════════════════════
+            ModuleCard(tint = MaterialTheme.colorScheme.surface) {
+                SectionHeader(Icons.Outlined.Tune, stringResource(R.string.vault_section_site))
+                Spacer(Modifier.height(4.dp))
+
+                VaultTextField(
+                    value = url,
+                    onValueChange = { url = it },
+                    label = stringResource(R.string.vault_field_url),
+                    keyboardType = KeyboardType.Uri
+                )
+
+                if (categories.isNotEmpty()) {
+                    Spacer(Modifier.height(14.dp))
+                    Text(
+                        text = stringResource(R.string.vault_field_category_input),
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        categories.forEach { cat ->
+                            FilterChip(
+                                selected = category == cat,
+                                onClick = { category = cat },
+                                label = { Text(cat, style = MaterialTheme.typography.bodySmall) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = vaultTint().copy(alpha = 0.15f),
+                                    selectedLabelColor = vaultTint()
+                                )
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(8.dp))
+                }
+                OutlinedTextField(
+                    value = category,
+                    onValueChange = { category = it },
+                    label = { Text(stringResource(R.string.vault_field_category_input)) },
+                    singleLine = true,
+                    shape = MaterialTheme.shapes.medium,
+                    colors = vaultFieldDefaults(),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
+            // ═══════════════════════════════════════
+            // 备注
+            // ═══════════════════════════════════════
+            ModuleCard(tint = MaterialTheme.colorScheme.surface) {
+                SectionHeader(Icons.AutoMirrored.Outlined.Notes, stringResource(R.string.vault_section_notes))
+                Spacer(Modifier.height(4.dp))
+                OutlinedTextField(
+                    value = notes,
+                    onValueChange = { notes = it },
+                    label = { Text(stringResource(R.string.vault_field_notes)) },
+                    minLines = 3,
+                    shape = MaterialTheme.shapes.medium,
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
         }
@@ -300,9 +373,95 @@ fun VaultEditScreen(
         VaultPasswordGeneratorSheet(
             onUse = { generated ->
                 password = generated
-                error = null
+                passwordError = null
             },
             onDismiss = { showGenerator = false }
+        )
+    }
+}
+
+/** 站点信息区使用的通用输入框（带 leading 图标）。 */
+@Composable
+private fun VaultTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    leading: androidx.compose.ui.graphics.vector.ImageVector? = null,
+    keyboardType: KeyboardType = KeyboardType.Text
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(label) },
+        singleLine = true,
+        leadingIcon = if (leading != null) {
+            { Icon(leading, null, tint = vaultTint()) }
+        } else {
+            null
+        },
+        keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+        shape = MaterialTheme.shapes.medium,
+        colors = vaultFieldDefaults(),
+        modifier = Modifier.fillMaxWidth()
+    )
+}
+
+@Composable
+private fun vaultFieldDefaults() = OutlinedTextFieldDefaults.colors(
+    focusedBorderColor = MaterialTheme.colorScheme.primary,
+    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+    focusedContainerColor = MaterialTheme.colorScheme.surface,
+    unfocusedContainerColor = MaterialTheme.colorScheme.surface
+)
+
+/** 分组标题：图标 + 标题。 */
+@Composable
+private fun SectionHeader(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(18.dp),
+            tint = vaultTint()
+        )
+        Spacer(Modifier.width(8.dp))
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.Bold
+        )
+    }
+}
+
+/** 密码强度分段条：4 段格子显示，段数与当前强度匹配点亮。 */
+@Composable
+private fun PasswordStrengthBar(password: String) {
+    val (label, color, fraction) = passwordStrength(password)
+    val segments = 4
+    val filled = (fraction * segments).toInt().coerceIn(0, segments)
+
+    Column {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            repeat(segments) { index ->
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(4.dp)
+                        .background(
+                            if (index < filled) color else color.copy(alpha = 0.15f),
+                            RoundedCornerShape(2.dp)
+                        )
+                )
+            }
+        }
+        Spacer(Modifier.height(6.dp))
+        Text(
+            text = stringResource(R.string.vault_edit_password_strength, label),
+            style = MaterialTheme.typography.bodySmall,
+            color = color
         )
     }
 }
