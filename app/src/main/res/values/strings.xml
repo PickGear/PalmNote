@@ -133,6 +133,7 @@
     <string name="settings_app_lock_subtitle">保护隐私，启动时需要验证</string>
     <string name="settings_security">应用锁与密码本</string>
     <string name="settings_security_subtitle">PIN 锁、生物识别、密码本设置</string>
+    <string name="settings_security_subtitle_on">已开启，点此管理</string>
     <string name="settings_reminder">提醒设置</string>
     <string name="settings_reminder_daily_section">日常提醒</string>
     <string name="settings_reminder_advance_section">提前通知</string>
@@ -824,6 +825,7 @@
     
     <!-- Backup Error Messages -->
     <string name="backup_error_corrupted">备份文件损坏或为空</string>
+    <string name="backup_error_cross_device">此备份由其他设备创建，数据库密钥无法解密，无法恢复。请在原设备重新备份。</string>
     <string name="backup_error_create_failed">备份失败</string>
     <string name="backup_error_restore_failed">恢复失败</string>
     
@@ -938,6 +940,10 @@
     
     <!-- App Lock Settings -->
     <string name="app_lock_settings_title">应用锁设置</string>
+    <string name="app_lock_settings_section_lock">锁定</string>
+    <string name="app_lock_settings_section_autolock">自动锁定</string>
+    <string name="app_lock_settings_section_vault">密码本</string>
+    <string name="app_lock_security_hint">提示：请牢记应用锁 PIN。忘记 PIN 时只能通过重置数据恢复。</string>
     <string name="app_lock_auto_lock">自动锁定</string>
     <string name="app_lock_auto_lock_value">%1$s</string>
     <string name="app_lock_auto_lock_system">跟随系统锁屏</string>
@@ -946,6 +952,10 @@
     <string name="app_lock_auto_lock_immediate_hint">切到后台立即锁定（最高安全）</string>
     <string name="app_lock_auto_lock_timeout">超时锁定</string>
     <string name="app_lock_auto_lock_timeout_hint">切后台超时或锁屏后锁定</string>
+    <string name="app_lock_auto_lock_changed">自动锁定模式已更新</string>
+    <string name="app_lock_auto_lock_timeout_duration">超时时长</string>
+    <string name="app_lock_auto_lock_minutes">%1$d 分钟</string>
+    <string name="app_lock_auto_lock_timeout_value">超时锁定（%1$d 分钟）</string>
     <string name="app_lock_change_pin_title">修改PIN码</string>
     <string name="app_lock_change_pin_subtitle">更改应用锁密码</string>
     <string name="app_lock_biometric_enable">启用生物识别</string>
@@ -1607,6 +1617,8 @@
     <string name="countdown_clear_expired_title">清除过期倒计时</string>
     <string name="countdown_clear_expired_confirm">确定清除已过期的倒计时吗？</string>
     <string name="app_lock_biometric_verify_fail">生物识别验证失败</string>
+    <string name="app_lock_biometric_enable_verify_title">验证 PIN 后开启生物识别</string>
+    <string name="app_lock_biometric_enabled_toast">已开启生物识别解锁</string>
     <string name="app_lock_disabled_toast">应用锁已关闭</string>
     <string name="app_lock_forgot_pin_confirm_lock">忘记PIN码后无法找回，只能清除本地数据来重置。这将删除所有账单、生活记录和设置等本地数据，且不可逆。确定继续吗？</string>
     <string name="app_lock_forgot_pin_action_lock">清除并重置</string>
@@ -1643,6 +1655,11 @@
     <string name="vault_biometric_subtitle">使用指纹快速解锁</string>
     <string name="vault_biometric_cancel">取消</string>
     <string name="vault_skip_setup">暂不设置密码，直接使用</string>
+    <string name="vault_no_lock_banner">当前未开启密码保护，可随时在设置中开启</string>
+    <string name="vault_forgot_pin">忘记主密码？重置密码本</string>
+    <string name="vault_forgot_pin_confirm_title">重置密码本？</string>
+    <string name="vault_forgot_pin_confirm_text">忘记主密码后无法恢复密码本数据。重置将删除全部条目并重新设置主密码，确定继续？</string>
+    <string name="vault_forgot_pin_reset">重置并重新设置</string>
     <string name="vault_unlock_title">输入密码本密码</string>
     <string name="vault_setup_title">设置密码本密码</string>
     <string name="vault_unlock_hint">请输入 6 位密码解锁</string>
@@ -1652,12 +1669,16 @@
     <string name="vault_locked_out">已锁定，%1$d 秒后重试</string>
     <string name="vault_locked_out_short">尝试次数过多，请稍后重试</string>
     <string name="vault_pin_wrong">密码错误</string>
+    <string name="vault_bio_failed">指纹已失效，请到密码本设置重新开启</string>
     <string name="vault_pin_mismatch">两次输入不一致</string>
     <string name="vault_old_pin">输入旧密码</string>
     <string name="vault_new_pin">输入新密码</string>
     <string name="vault_old_pin_hint">输入当前密码以验证身份</string>
     <string name="vault_new_pin_hint">输入新的 6 位密码</string>
+    <string name="vault_new_pin_confirm_hint">再次输入以确认</string>
     <string name="vault_pin_changed">密码修改成功</string>
+    <string name="vault_pin_setup_success">设置成功</string>
+    <string name="vault_lock_interrupted">密码本已锁定，请重新操作</string>
     <string name="vault_old_pin_wrong">旧密码错误</string>
     <string name="vault_search">搜索</string>
     <string name="vault_search_hint">搜索标题/用户名/网址</string>
@@ -1665,6 +1686,7 @@
     <string name="vault_add">新增</string>
     <string name="vault_copy">复制</string>
     <string name="vault_copied">已复制</string>
+    <string name="vault_copied_autoclear">已复制，%1$d 秒后自动清空剪贴板</string>
     <string name="vault_copy_password">复制密码</string>
     <string name="vault_updated_at">更新于 %1$s</string>
     <string name="vault_empty">还没有密码条目</string>
@@ -1703,23 +1725,32 @@
     <string name="vault_strength_medium">中</string>
     <string name="vault_strength_strong">强</string>
     <string name="vault_strength_very_strong">极强</string>
+    <string name="vault_edit_password_strength">密码强度：%1$s</string>
     <string name="dashboard_card_vault">密码本</string>
     <string name="vault_card_count">共 %1$d 条</string>
+    <string name="vault_card_empty_subtitle">暂无条目</string>
     <string name="vault_card_empty">点击添加第一条密码</string>
     <string name="vault_card_privacy_hint">密码条目标题已隐藏，点击查看</string>
     <string name="vault_card_more">查看更多 →</string>
     <string name="vault_settings_clipboard">剪贴板自动清除</string>
+    <string name="vault_settings_section_general">通用</string>
+    <string name="vault_settings_section_security">安全</string>
+    <string name="vault_settings_hint">提示：主密码用于加密密码数据，请妥善保管；忘记主密码可重置密码本（会清空全部条目）。</string>
     <string name="vault_settings_clipboard_value">当前：%1$d 秒</string>
     <string name="vault_settings_clipboard_option">%1$d 秒</string>
     <string name="vault_settings_clipboard_selected">当前</string>
-    <string name="vault_settings_require_auth">进入密码本需验证</string>
-    <string name="vault_settings_require_auth_hint">关闭后切换后台不再锁定</string>
-    <string name="vault_settings_no_lock_title">未开启密码保护</string>
-    <string name="vault_settings_no_lock_hint">当前无需验证即可打开，可设置密码开启保护</string>
+    <string name="vault_settings_require_auth">后台自动锁定</string>
+    <string name="vault_settings_require_auth_hint">开启后切换后台会锁定，重新进入需验证主密码</string>
     <string name="vault_settings_set_pin">开启密码保护</string>
     <string name="vault_settings_set_pin_hint">设置密码本解锁密码</string>
     <string name="vault_settings_biometric">生物识别解锁</string>
     <string name="vault_settings_biometric_hint">使用指纹快速解锁密码本</string>
+    <string name="vault_settings_biometric_no_lock_hint">需先设置主密码后开启</string>
+    <string name="vault_bio_verify_title">验证主密码后开启生物识别</string>
+    <string name="vault_bio_setup_title">验证指纹以开启生物识别</string>
+    <string name="vault_bio_setup_subtitle">开启后可使用指纹快速解锁密码本</string>
+    <string name="vault_bio_enable_failed">生物识别开启失败，请重试</string>
+    <string name="vault_bio_upgrade_hint">开启生物识别需先设置主密码</string>
     <string name="vault_settings_count">已加密条目数</string>
     <string name="vault_settings_count_value">%1$d 条</string>
     <string name="vault_settings_change_pin">修改主密码</string>

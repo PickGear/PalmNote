@@ -2,9 +2,24 @@
 
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.palmnote.data.db.EncryptedOpenHelperFactory
+import net.zetetic.database.sqlcipher.SQLiteDatabase
 
-val MIGRATION_5_6 = object : Migration(5, 6) {
+/**
+ * v5 → v6：金额表重建 + 软删除列迁移 + 密码本表迁移。
+ *
+ * 密码本在 v5 时位于主库 `vault_entries`，v6 起迁移到独立库 `palmnote_vault.db`。
+ * 迁移时会先把主库残留的旧密码本数据搬运到独立库（best-effort，任何失败都回退为仅删除），
+ * 再删除主库旧表以满足 Room schema 校验——避免静默丢失 v5 阶段的数据。
+ *
+ * 测试环境（无 vault 路径/密钥）构造 [MIGRATION_5_6] 走仅删除分支。
+ */
+class Migration5To6(
+    private val vaultDbPath: String?,
+    private val vaultKey: ByteArray?
+) : Migration(5, 6) {
     override fun migrate(db: SupportSQLiteDatabase) {
+
 
         db.execSQL(
             """
@@ -283,7 +298,7 @@ CREATE TABLE IF NOT EXISTS `assets_recycle_bin` (`id` INTEGER PRIMARY KEY AUTOIN
             """
         )
 
-        db.execSQL("""DROP TABLE IF EXISTS vault_entries""")
+        preserveLegacyVault(db)
 
         db.execSQL(
             """
@@ -331,4 +346,64 @@ END
         )
 
     }
+
+    /**
+     * 主库旧密码本数据 → 独立库 best-effort 搬运，然后无条件删除主库旧表（Room schema 校验要求）。
+     * 任何异常（如测试环境无 SQLCipher native 库）都回退为仅删除，绝不阻塞迁移。
+     */
+    private fun preserveLegacyVault(db: SupportSQLiteDatabase) {
+        val path = vaultDbPath
+        val key = vaultKey
+        try {
+            if (path != null && key != null) {
+                var hasRows = false
+                db.query("SELECT COUNT(*) FROM vault_entries").use { c ->
+                    if (c.moveToFirst()) hasRows = c.getInt(0) > 0
+                }
+                if (hasRows) {
+                    EncryptedOpenHelperFactory.ensureLibraryLoaded()
+                    SQLiteDatabase.openOrCreateDatabase(path, key, null, null).use { vault ->
+                        vault.execSQL(
+                            """CREATE TABLE IF NOT EXISTS vault_entries (
+                                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                                title TEXT NOT NULL, username TEXT NOT NULL, passwordEncrypted BLOB NOT NULL,
+                                url TEXT NOT NULL, notes TEXT NOT NULL, category TEXT NOT NULL,
+                                createdAt INTEGER NOT NULL, updatedAt INTEGER NOT NULL
+                            )"""
+                        )
+                        // 目标库已有条目（迁移曾部分执行后重试/崩溃恢复）则跳过，避免重复插入
+                        var vaultHasRows = false
+                        vault.query("SELECT COUNT(*) FROM vault_entries").use { vc ->
+                            if (vc.moveToFirst()) vaultHasRows = vc.getInt(0) > 0
+                        }
+                        if (vaultHasRows) return@use
+                        val stmt = vault.compileStatement(
+                            "INSERT INTO vault_entries (title, username, passwordEncrypted, url, notes, category, createdAt, updatedAt) VALUES (?,?,?,?,?,?,?,?)"
+                        )
+                        db.query("SELECT title, username, passwordEncrypted, url, notes, category, createdAt, updatedAt FROM vault_entries").use { c ->
+                            while (c.moveToNext()) {
+                                stmt.clearBindings()
+                                stmt.bindString(1, c.getString(0))
+                                stmt.bindString(2, c.getString(1))
+                                stmt.bindBlob(3, c.getBlob(2))
+                                stmt.bindString(4, c.getString(3))
+                                stmt.bindString(5, c.getString(4))
+                                stmt.bindString(6, c.getString(5))
+                                stmt.bindLong(7, c.getLong(6))
+                                stmt.bindLong(8, c.getLong(7))
+                                stmt.execute()
+                            }
+                        }
+                        stmt.close()
+                    }
+                }
+            }
+        } catch (t: Throwable) {
+            android.util.Log.w("Migration5To6", "legacy vault copy failed, legacy data dropped", t)
+        }
+        db.execSQL("DROP TABLE IF EXISTS vault_entries")
+    }
 }
+
+/** 测试/兜底实例：无 vault 路径与密钥时仅删除旧表。 */
+val MIGRATION_5_6: Migration = Migration5To6(null, null)

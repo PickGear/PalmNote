@@ -68,8 +68,9 @@ object AppModule {
     @Singleton
     fun provideBackupRepository(
         @ApplicationContext context: Context,
-        db: AppDatabase
-    ): BackupRepository = BackupRepository(context, db)
+        db: AppDatabase,
+        dbKeyStore: DbKeyStore
+    ): BackupRepository = BackupRepository(context, db, dbKeyStore)
 
     @Provides
     @Singleton
@@ -147,7 +148,10 @@ object DatabaseModule {
                 com.palmnote.data.db.migration.MIGRATION_2_3,
                 com.palmnote.data.db.migration.MIGRATION_3_4,
                 com.palmnote.data.db.migration.MIGRATION_4_5,
-                com.palmnote.data.db.migration.MIGRATION_5_6
+                com.palmnote.data.db.migration.Migration5To6(
+                    context.getDatabasePath(com.palmnote.feature.vault.VaultDatabase.DATABASE_NAME).absolutePath,
+                    dbKeyStore.getOrCreateKey()
+                )
             )
             .addCallback(object : androidx.room.RoomDatabase.Callback() {
                 override fun onCreate(db: SupportSQLiteDatabase) {

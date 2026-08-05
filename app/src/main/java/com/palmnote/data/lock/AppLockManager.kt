@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -44,6 +45,14 @@ class AppLockManager(
     )
 
     init {
+        // 冷启动时 DataStore 可能尚未完成首次读取，prefsState.value 可能是空快照；
+        // 这里先按当前值填充缓存，真正的就绪校正由 refreshFromStore() 在 MainActivity 等待
+        // DataStore 首次发射后调用（见 MainActivity 冷启动锁定逻辑）。
+        refreshFromStore()
+    }
+
+    /** 从 DataStore 当前快照刷新缓存（冷启动等待数据就绪后调用，避免读到空值跳过上锁）。 */
+    fun refreshFromStore() {
         cachedIsLockEnabled = preferencesManager.isAppLockEnabled()
         cachedEncryptedPin = preferencesManager.getEncryptedPin()
         cachedHasPin = cachedEncryptedPin.isNotEmpty()
@@ -56,6 +65,9 @@ class AppLockManager(
     fun biometricEnabledFlow(): Flow<Boolean> = preferencesManager.biometricEnabled
 
     fun appLockEnabledFlow(): Flow<Boolean> = preferencesManager.appLockEnabledFlow
+
+    /** 是否已设置 PIN 的 DataStore flow（供设置页响应式开关）。 */
+    fun hasPinFlow(): Flow<Boolean> = preferencesManager.encryptedPinFlow.map { it.isNotEmpty() }
 
     /** 校验 PIN；PBKDF2 迭代较重，放 IO 线程执行避免阻塞 UI */
     suspend fun verifyPin(pin: String): Boolean = withContext(Dispatchers.IO) {

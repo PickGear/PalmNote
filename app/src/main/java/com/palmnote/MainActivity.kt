@@ -59,6 +59,7 @@ import com.palmnote.R
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
@@ -69,8 +70,17 @@ class MainActivity : AppCompatActivity() {
     @javax.inject.Inject
     lateinit var preferencesManager: com.palmnote.data.datastore.PreferencesManager
 
+    @javax.inject.Inject
+    lateinit var vaultLockManager: com.palmnote.feature.vault.VaultLockManager
+
     private var appBackgroundedAt = 0L
     private var cachedAutoLockMode = com.palmnote.data.datastore.PreferencesManager.AUTO_LOCK_MODE_SYSTEM
+    private var cachedAutoLockTimeoutMinutes = com.palmnote.data.datastore.PreferencesManager.DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES
+
+    // 密码本自动锁定（与页面级 VaultLockOnBackground 一致，但覆盖所有页面）：
+    // 离开密码本页切后台时同样按规则回锁，避免内存 DK 跨后台长期驻留
+    private var vaultBackgroundedAt = 0L
+    private var vaultRequireAuth = true
 
     // 自动锁定规则（选择权交给用户）：immediate=切后台立即锁 / system=跟随系统锁屏（默认） / timeout=锁屏+超时。
     // 冷启动仍立即锁（安全兜底）。
@@ -80,12 +90,21 @@ class MainActivity : AppCompatActivity() {
                 if (appLockManager.isLockEnabled() && appLockManager.hasPin()) {
                     appBackgroundedAt = System.currentTimeMillis()
                 }
+                if (vaultRequireAuth) {
+                    vaultBackgroundedAt = System.currentTimeMillis()
+                }
             }
             Lifecycle.Event.ON_START -> {
                 val backgroundedAt = appBackgroundedAt
                 appBackgroundedAt = 0L
-                if (com.palmnote.data.lock.AutoLockHelper.shouldLock(this, cachedAutoLockMode, backgroundedAt)) {
+                val vaultTs = vaultBackgroundedAt
+                vaultBackgroundedAt = 0L
+                val timeoutMs = cachedAutoLockTimeoutMinutes * 60_000L
+                if (com.palmnote.data.lock.AutoLockHelper.shouldLock(this, cachedAutoLockMode, backgroundedAt, timeoutMs)) {
                     appLockManager.lock()
+                }
+                if (vaultRequireAuth && com.palmnote.data.lock.AutoLockHelper.shouldLock(this, cachedAutoLockMode, vaultTs, timeoutMs)) {
+                    vaultLockManager.lock()
                 }
             }
             else -> {}
@@ -103,16 +122,31 @@ class MainActivity : AppCompatActivity() {
 
         ProcessLifecycleOwner.get().lifecycle.addObserver(lockObserver)
 
-        // 缓存自动锁定模式，供回锁判断使用
+        // 缓存自动锁定模式与超时，供回锁判断使用
         lifecycleScope.launch {
             preferencesManager.autoLockMode.collect { cachedAutoLockMode = it }
+        }
+        lifecycleScope.launch {
+            preferencesManager.autoLockTimeoutMinutes.collect { cachedAutoLockTimeoutMinutes = it }
+        }
+        lifecycleScope.launch {
+            preferencesManager.vaultRequireAuth.collect { vaultRequireAuth = it }
         }
 
         // 冷启动/进程被杀恢复（非配置变更）时锁定；旋转（配置变更）不锁。
         // 用 isChangingConfigurations() 而非 savedInstanceState==null：进程被杀后从最近任务恢复
         // 时 savedInstanceState 可能非 null（系统恢复了 UI 状态），但应重新上锁。
-        if (!isChangingConfigurations() && appLockManager.isLockEnabled() && appLockManager.hasPin()) {
-            appLockManager.lock()
+        // 注意：AppLockManager 在 init 时读到的 DataStore 快照可能仍是空（冷启动竞态），
+        // 因此这里等 DataStore 首次发射后再刷新缓存并决定是否上锁，避免锁被绕过。
+        if (!isChangingConfigurations()) {
+            lifecycleScope.launch {
+                preferencesManager.appLockEnabledFlow.first()
+                preferencesManager.encryptedPinFlow.first()
+                appLockManager.refreshFromStore()
+                if (appLockManager.isLockEnabled() && appLockManager.hasPin()) {
+                    appLockManager.lock()
+                }
+            }
         }
 
         setContent {
