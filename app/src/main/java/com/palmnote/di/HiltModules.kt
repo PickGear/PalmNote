@@ -248,6 +248,14 @@ object VaultDatabaseModule {
 
     @Provides
     @Singleton
+    fun provideVaultRepository(
+        dao: com.palmnote.feature.vault.VaultDao,
+        keyManager: com.palmnote.feature.vault.VaultKeyManager
+    ): com.palmnote.feature.vault.VaultRepository =
+        com.palmnote.feature.vault.VaultRepositoryImpl(dao, keyManager)
+
+    @Provides
+    @Singleton
     fun provideVaultDatabase(
         @ApplicationContext context: Context,
         dbKeyStore: DbKeyStore

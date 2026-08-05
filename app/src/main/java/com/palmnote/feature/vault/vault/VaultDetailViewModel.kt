@@ -43,7 +43,7 @@ class VaultDetailViewModel @Inject constructor(
     private val lockManager: VaultLockManager,
     private val repository: VaultRepository,
     private val clipboardManager: VaultClipboardManager,
-    preferencesManager: PreferencesManager
+    private val preferencesManager: PreferencesManager
 ) : ViewModel() {
 
     private val entryId: Long = savedStateHandle["entryId"] ?: INVALID_ID
@@ -52,6 +52,21 @@ class VaultDetailViewModel @Inject constructor(
     private val deletedState = MutableStateFlow(false)
     private val gateErrorState = MutableStateFlow(GateError())
     private var countdownJob: Job? = null
+
+    /** 剪贴板自动清除秒数（复制成功 snackbar 提示用）。 */
+    val clipboardClearSeconds: StateFlow<Int> = preferencesManager.vaultClipboardClearSeconds.stateIn(
+        viewModelScope, SharingStarted.WhileSubscribed(5000L),
+        DEFAULT_CLIPBOARD_CLEAR_SECONDS
+    )
+
+    val autoLockMode: StateFlow<String> = preferencesManager.autoLockMode.stateIn(
+        viewModelScope, SharingStarted.WhileSubscribed(5000L),
+        PreferencesManager.AUTO_LOCK_MODE_SYSTEM
+    )
+    val autoLockTimeoutMinutes: StateFlow<Int> = preferencesManager.autoLockTimeoutMinutes.stateIn(
+        viewModelScope, SharingStarted.WhileSubscribed(5000L),
+        PreferencesManager.DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES
+    )
 
     val uiState: StateFlow<VaultDetailUiState> = combine(
         combine(lockManager.state, preferencesManager.vaultRequireAuth) { lock, requireAuth -> lock to requireAuth },
@@ -207,5 +222,6 @@ class VaultDetailViewModel @Inject constructor(
     private companion object {
         const val INVALID_ID = -1L
         const val COUNTDOWN_INTERVAL_MS = 1000L
+        const val DEFAULT_CLIPBOARD_CLEAR_SECONDS = 30
     }
 }

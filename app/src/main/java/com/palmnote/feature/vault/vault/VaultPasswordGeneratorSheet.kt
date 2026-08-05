@@ -53,7 +53,7 @@ fun VaultPasswordGeneratorSheet(
     onUse: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
-    val sheetState = rememberModalBottomSheetState()
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var length by remember { mutableIntStateOf(DEFAULT_LENGTH) }
     var useUpper by remember { mutableStateOf(true) }
     var useLower by remember { mutableStateOf(true) }
