@@ -63,54 +63,51 @@ internal fun DashboardCardContent(
 
 @Composable
 internal fun VaultCard(state: DashboardState, onNavigateToVault: () -> Unit) {
+    // 与 Goals/Anniversaries 卡片保持同一视觉与交互规范：
+    // surface 底 + outlineVariant 边框 + 圆形图标 + 右侧箭头导航（而非整卡 clickable，
+    // 避免与 Dashboard 的长按拖拽换位手势冲突）
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null
-            ) { onNavigateToVault() },
+        modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-        border = BorderStroke(1.dp, vaultTint().copy(alpha = 0.35f))
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
-        Column(Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = Icons.Outlined.Lock,
-                    contentDescription = null,
-                    tint = vaultTint()
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    text = stringResource(R.string.dashboard_card_vault),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.weight(1f)
-                )
-                if (state.vaultCount > 0) {
-                    Text(
-                        text = stringResource(R.string.vault_card_count, state.vaultCount),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(vaultTint().copy(alpha = 0.15f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Outlined.Lock, null, tint = vaultTint(), modifier = Modifier.size(20.dp))
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column {
+                        Text(stringResource(R.string.dashboard_card_vault), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text(
+                            text = if (state.vaultCount > 0) stringResource(R.string.vault_card_count, state.vaultCount) else stringResource(R.string.vault_card_empty_subtitle),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                Box(modifier = Modifier.size(48.dp).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onNavigateToVault() }, contentAlignment = Alignment.Center) {
+                    Icon(Icons.Filled.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
-            Spacer(Modifier.height(12.dp))
             // 隐私保护：不展示条目标题（明文敏感），仅用计数 + 引导
+            Spacer(modifier = Modifier.height(12.dp))
             Text(
-                text = stringResource(if (state.vaultCount > 0) R.string.vault_card_privacy_hint else R.string.vault_card_empty),
-                style = MaterialTheme.typography.bodyMedium,
+                text = if (state.vaultCount > 0) stringResource(R.string.vault_card_privacy_hint) else stringResource(R.string.vault_card_empty),
+                style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(Modifier.height(8.dp))
-            Text(
-                text = stringResource(R.string.vault_card_more),
-                style = MaterialTheme.typography.labelMedium,
-                color = vaultTint()
             )
         }
     }

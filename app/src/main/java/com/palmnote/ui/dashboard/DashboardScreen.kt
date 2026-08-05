@@ -82,9 +82,12 @@ fun DashboardScreen(
 
     var draggedType by remember { mutableStateOf<CardType?>(null) }
     var overlayTopPx by remember { mutableFloatStateOf(0f) }
-    var initialTouchOffset by remember { mutableFloatStateOf(0f) }
     var showCardDialog by remember { mutableStateOf(false) }
     var lastSwapTime by remember { mutableLongStateOf(0L) }
+    // 拖拽起点（卡片相对外层 Box 的 y）与累计位移，拖动过程中保持不变，
+    // 避免交换后卡片位置/节点坐标变化导致 overlay 跳动、反复横跳
+    var dragStartOffsetPx by remember { mutableFloatStateOf(0f) }
+    var dragTotalY by remember { mutableFloatStateOf(0f) }
 
     val filterVisible: (DashboardCardConfig) -> Boolean = { config ->
         when (config.type) {
@@ -191,18 +194,20 @@ fun DashboardScreen(
                                     }
                                     .pointerInput(config.type) {
                                         detectDragGesturesAfterLongPress(
-                                            onDragStart = { offset ->
+                                            onDragStart = { _ ->
                                                 hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                                                 draggedType = config.type
-                                                initialTouchOffset = offset.y
                                                 val cardY = cardGlobalYs[config.type] ?: 0f
-                                                overlayTopPx = cardY - boxGlobalY.floatValue
+                                                dragStartOffsetPx = cardY - boxGlobalY.floatValue
+                                                dragTotalY = 0f
+                                                overlayTopPx = dragStartOffsetPx
                                                 lastSwapTime = System.currentTimeMillis()
                                             },
-                                            onDrag = { change, _ ->
+                                            onDrag = { change, dragAmount ->
                                                 change.consume()
-                                                val cardY = cardGlobalYs[config.type] ?: return@detectDragGesturesAfterLongPress
-                                                overlayTopPx = cardY + change.position.y - boxGlobalY.floatValue - initialTouchOffset
+                                                // 累加增量位移（与布局无关），避免交换后节点坐标变化导致跳动
+                                                dragTotalY += dragAmount.y
+                                                overlayTopPx = dragStartOffsetPx + dragTotalY
 
                                                 val freshConfigs = viewModel.visibleConfigs.value.filter(filterVisible)
                                                 val idx = freshConfigs.indexOfFirst { it.type == config.type }
@@ -234,10 +239,12 @@ fun DashboardScreen(
                                             },
                                             onDragEnd = {
                                                 draggedType = null
+                                                dragTotalY = 0f
                                                 lastSwapTime = 0L
                                             },
                                             onDragCancel = {
                                                 draggedType = null
+                                                dragTotalY = 0f
                                                 lastSwapTime = 0L
                                             }
                                         )

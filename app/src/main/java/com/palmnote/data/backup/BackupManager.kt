@@ -2,11 +2,13 @@ package com.palmnote.data.backup
 
 import android.content.Context
 import android.os.Environment
+import android.util.Xml
 import com.palmnote.R
 import com.palmnote.data.db.AppDatabase
 import com.palmnote.data.db.DbKeyStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.xmlpull.v1.XmlPullParser
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -15,7 +17,9 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
 
-class BackupManager {
+class BackupManager(
+    private val dbKeyStore: DbKeyStore? = null
+) {
 
     companion object {
         private const val BACKUP_DIR = "PalmNote"
@@ -110,7 +114,22 @@ class BackupManager {
                 if (shmFile.exists()) addFileToZip(zipOut, shmFile, "db/${AppDatabase.DATABASE_NAME}-shm")
             }
 
-            // 2. 备份 DataStore 文件
+            // 2. 密码本独立库（SQLCipher 加密，解密密钥随 db_key_prefs 一并备份），
+            //    带 -wal/-shm 一起打包保证一致性；缺失会导致恢复后密码本条目丢失
+            val vaultDb = context.getDatabasePath(com.palmnote.feature.vault.VaultDatabase.DATABASE_NAME)
+            if (vaultDb.exists()) {
+                addFileToZip(zipOut, vaultDb, "vault-db/${com.palmnote.feature.vault.VaultDatabase.DATABASE_NAME}")
+                val vaultWal = File(vaultDb.path + "-wal")
+                if (vaultWal.exists()) {
+                    addFileToZip(zipOut, vaultWal, "vault-db/${com.palmnote.feature.vault.VaultDatabase.DATABASE_NAME}-wal")
+                }
+                val vaultShm = File(vaultDb.path + "-shm")
+                if (vaultShm.exists()) {
+                    addFileToZip(zipOut, vaultShm, "vault-db/${com.palmnote.feature.vault.VaultDatabase.DATABASE_NAME}-shm")
+                }
+            }
+
+            // 3. 备份 DataStore 文件
             val datastoreDir = File(context.filesDir, "datastore")
             if (datastoreDir.exists()) {
                 datastoreDir.listFiles()?.forEach { file ->
@@ -184,15 +203,20 @@ class BackupManager {
                         if (tempZip.exists()) tempZip.delete()
                         decryptToTemp(backupFile, password, tempZip, CryptoUtils.LEGACY_PBKDF2_ITERATIONS)
                     }
+                    validateDbKeyRecoverable(context, tempZip)
                     restoreFromZip(context, tempZip)
                 }
                 // 新明文备份：PNB3 + ZIP + SHA-256 校验
                 magic == MAGIC_PLAIN_V3 -> {
                     extractPlainWithChecksum(backupFile, tempZip)
+                    validateDbKeyRecoverable(context, tempZip)
                     restoreFromZip(context, tempZip)
                 }
                 // 旧明文备份：纯 ZIP
-                else -> restoreFromZip(context, backupFile)
+                else -> {
+                    validateDbKeyRecoverable(context, backupFile)
+                    restoreFromZip(context, backupFile)
+                }
             }
         } finally {
             // 无论成功失败都清理临时文件
@@ -246,6 +270,60 @@ class BackupManager {
         }
     }
 
+    /**
+     * 跨设备/重装恢复校验：SQLCipher 数据库密钥 db_key 由原设备 Keystore 包裹，
+     * 备份中的 db_key 在本机解不开则恢复后加密库不可读（会静默丢数据/崩溃）。
+     * 提前拦截并抛错（此时尚未写盘，当前数据由回滚保护保留）。
+     */
+    private fun validateDbKeyRecoverable(context: Context, zipFile: File) {
+        val keyStore = dbKeyStore ?: return
+        val prefXml = readZipEntryText(zipFile, "shared_prefs/${DbKeyStore.PREFS_NAME}.xml") ?: return
+        val wrapped = parseDbKeyFromPrefsXml(prefXml) ?: return
+        if (!keyStore.canDecryptWrappedKey(wrapped)) {
+            throw IllegalArgumentException(context.getString(R.string.backup_error_cross_device))
+        }
+    }
+
+    /** 读取 ZIP 中指定条目的完整文本；条目缺失返回 null。 */
+    private fun readZipEntryText(zipFile: File, entryName: String): String? {
+        return try {
+            ZipInputStream(FileInputStream(zipFile)).use { zipIn ->
+                var entry = zipIn.nextEntry
+                while (entry != null) {
+                    if (entry.name == entryName) {
+                        return@use zipIn.readBytes().toString(Charsets.UTF_8)
+                    }
+                    zipIn.closeEntry()
+                    entry = zipIn.nextEntry
+                }
+                null
+            }
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    /** 解析 SharedPreferences XML，提取 db_key 值（Base64）。 */
+    private fun parseDbKeyFromPrefsXml(xml: String): String? {
+        return try {
+            val parser = Xml.newPullParser()
+            parser.setInput(xml.reader())
+            var event = parser.eventType
+            while (event != XmlPullParser.END_DOCUMENT) {
+                if (event == XmlPullParser.START_TAG &&
+                    parser.name == "string" &&
+                    parser.getAttributeValue(null, "name") == DbKeyStore.KEY_NAME
+                ) {
+                    return parser.nextText()
+                }
+                event = parser.next()
+            }
+            null
+        } catch (_: Exception) {
+            null
+        }
+    }
+
     // 从ZIP文件恢复（带回滚保护）
     private fun restoreFromZip(context: Context, zipFile: File) {
         val dbDir = context.getDatabasePath(AppDatabase.DATABASE_NAME).parentFile?.canonicalFile
@@ -296,6 +374,17 @@ class BackupManager {
                             if (!cleanName.contains("..") && !cleanName.startsWith("/")) {
                                 val targetFile = File(prefsDir, cleanName).canonicalFile
                                 if (targetFile.canonicalPath.startsWith(prefsDir.canonicalPath)) {
+                                    targetFile.parentFile?.mkdirs()
+                                    extractFile(zipIn, targetFile)
+                                }
+                            }
+                        }
+                        entryName.startsWith("vault-db/") -> {
+                            // 密码本独立库，同样落在 databases 目录，由 dbDir 回滚保护覆盖
+                            val cleanName = entryName.removePrefix("vault-db/")
+                            if (!cleanName.contains("..") && !cleanName.startsWith("/")) {
+                                val targetFile = File(dbDir, cleanName).canonicalFile
+                                if (targetFile.canonicalPath.startsWith(dbDir.canonicalPath)) {
                                     targetFile.parentFile?.mkdirs()
                                     extractFile(zipIn, targetFile)
                                 }

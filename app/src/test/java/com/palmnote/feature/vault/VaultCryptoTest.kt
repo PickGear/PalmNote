@@ -98,6 +98,40 @@ class VaultCryptoTest {
     }
 
     @Test
+    fun deriveKey_legacyAndCurrent_iterations_differ() {
+        val salt = VaultCrypto.generateSalt()
+        val legacy = VaultCrypto.deriveKey("123456", salt, VaultCrypto.LEGACY_PBKDF2_ITERATIONS)
+        val current = VaultCrypto.deriveKey("123456", salt)
+        assertNotEquals(legacy.encoded.toList(), current.encoded.toList())
+    }
+
+    @Test
+    fun threeKdfParams_areDistinct() {
+        val salt = VaultCrypto.generateSalt()
+        val legacy = VaultCrypto.deriveKey("123456", salt, VaultCrypto.LEGACY_PBKDF2_ITERATIONS).encoded.toList()
+        val interim = VaultCrypto.deriveKey("123456", salt, VaultCrypto.INTERIM_PBKDF2_ITERATIONS).encoded.toList()
+        val current = VaultCrypto.deriveKey("123456", salt).encoded.toList()
+        assertNotEquals(legacy, interim)
+        assertNotEquals(legacy, current)
+        assertNotEquals(interim, current)
+    }
+
+    @Test
+    fun decrypt_legacyWrappedKey_stillUsableWithLegacyIterations() {
+        // 历史包裹（旧参数派生）必须仍可用对应参数解开（解锁回退迁移依赖此契约）
+        val salt = VaultCrypto.generateSalt()
+        val legacyK = VaultCrypto.deriveKey("123456", salt, VaultCrypto.LEGACY_PBKDF2_ITERATIONS)
+        val dk = VaultCrypto.generateDataKey()
+        val wrapped = VaultCrypto.encrypt(legacyK, dk.encoded)
+
+        val unwrapped = VaultCrypto.decrypt(
+            VaultCrypto.deriveKey("123456", salt, VaultCrypto.LEGACY_PBKDF2_ITERATIONS),
+            wrapped
+        )
+        assertArrayEquals(dk.encoded, unwrapped)
+    }
+
+    @Test
     fun generatedDataKey_hasExpectedLength() {
         assertEquals(32, VaultCrypto.generateDataKey().encoded.size)
     }

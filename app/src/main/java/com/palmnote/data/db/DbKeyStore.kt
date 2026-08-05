@@ -41,6 +41,18 @@ class DbKeyStore @Inject constructor(@ApplicationContext context: Context) {
         return key
     }
 
+    /** 当前设备的 Keystore 密钥能否解开给定包裹（备份恢复前校验）。
+     *  备份中的 db_key 由原设备 Keystore 包裹，跨设备/重装后无法解开 → 恢复不可行。 */
+    fun canDecryptWrappedKey(wrappedB64: String): Boolean {
+        if (wrappedB64.isBlank()) return false
+        return try {
+            decrypt(Base64.decode(wrappedB64, Base64.NO_WRAP))
+            true
+        } catch (_: Exception) {
+            false
+        }
+    }
+
     private fun getOrCreateKeystoreKey(): SecretKey {
         val ks = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
         ks.getKey(ALIAS, null)?.let { return it as SecretKey }
@@ -76,7 +88,7 @@ class DbKeyStore @Inject constructor(@ApplicationContext context: Context) {
 
     companion object {
         const val PREFS_NAME = "db_key_prefs"
-        private const val KEY_NAME = "db_key"
+        const val KEY_NAME = "db_key"
         private const val ALIAS = "palmnote_db_key"
     }
 }

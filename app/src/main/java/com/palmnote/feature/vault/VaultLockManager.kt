@@ -55,6 +55,18 @@ class VaultLockManager @Inject constructor(
         }
     }
 
+    /** 冷启动竞态修正：若因 DataStore 未加载被误判为 NEED_SETUP，等 vault_salt 首次发射后重新计算状态。
+     *  无锁模式在 init 时可能因快照未就绪漏判，此处一并补自动解锁。 */
+    suspend fun reinitializeWhenReady() {
+        if (_state.value != LockState.NEED_SETUP) return
+        preferencesManager.vaultSalt.first()
+        initialize()
+        // 无锁模式：DataStore 就绪后补一次自动解锁，否则会卡在 PIN 门（unlock 对无锁恒 false）
+        if (keyManager.isNoLockMode() && _state.value == LockState.LOCKED) {
+            unlockNoLock()
+        }
+    }
+
     val isUnlocked: Boolean get() = _state.value == LockState.UNLOCKED
 
     fun isLockedOut(): Boolean = lockoutTracker.isLockedOut()
@@ -62,42 +74,48 @@ class VaultLockManager @Inject constructor(
     /** 是否已启用生物识别解锁（存在 Keystore 包裹）。*/
     fun biometricEnabled(): Boolean = keyManager.isBiometricEnabled()
 
-    /** 生物识别认证通过后解密 DK 并解锁。返回是否成功。*/
-    suspend fun unlockWithBiometric(cipher: javax.crypto.Cipher): Boolean = withContext(Dispatchers.IO) {
-        val ok = keyManager.decryptWithBiometric(cipher)
-        if (ok) {
-            lockoutTracker.reset()
-            _state.value = LockState.UNLOCKED
-        }
-        ok
-    }
-
-    /** 在 BiometricPrompt 前初始化解密 Cipher。返回 null 表示无生物识别密钥。*/
-    fun createBioDecryptCipher(): javax.crypto.Cipher? = keyManager.createBioDecryptCipher()
-
-    /** 设置生物识别解锁（需已解锁）。*/
+    /** 开启生物识别（纯在场弹窗认证通过后包裹 DK 落盘）。*/
     suspend fun setupBiometric(): Boolean = keyManager.setupBiometric()
+
+    /** 生物识别认证通过后解开 DK 并解锁（纯在场弹窗 + 有效期窗口）。 */
+    suspend fun unlockBiometric(): Boolean = withContext(Dispatchers.IO) {
+        unlockMutex.withLock {
+            val ok = keyManager.unlockBiometric()
+            if (ok) {
+                lockoutTracker.reset()
+                _state.value = LockState.UNLOCKED
+            }
+            ok
+        }
+    }
 
     /** 关闭生物识别解锁。*/
     suspend fun disableBiometric() = keyManager.disableBiometric()
 
     fun getLockoutRemainingMs(): Long = lockoutTracker.getLockoutRemainingMs()
 
-    /** 首次设置主密码。*/
+    /** 首次设置主密码。守卫用实时初始化状态，防止冷启动竞态下误判未初始化而覆盖真实凭据。 */
     suspend fun setup(pin: String): Boolean = withContext(Dispatchers.IO) {
-        if (hasKey) {
+        // 先等 DataStore 就绪：冷启动初期 prefsState 为空快照，isInitialized() 会误报未初始化，
+        // 若此时放行会用新盐/DK 覆盖磁盘真实凭据（S-2）。等首次发射后再校验。
+        preferencesManager.vaultSalt.first()
+        if (keyManager.isInitialized()) {
             return@withContext false
         }
-        keyManager.setup(pin)
-        hasKey = true
-        lockoutTracker.reset()
-        _state.value = LockState.UNLOCKED
-        true
+        val ok = keyManager.setup(pin)
+        if (ok) {
+            hasKey = true
+            lockoutTracker.reset()
+            _state.value = LockState.UNLOCKED
+        }
+        ok
     }
 
-    /** 无锁模式：首次使用不设密码，打开即用。*/
+    /** 无锁模式：首次使用不设密码，打开即用。 */
     suspend fun setupNoLock(): Boolean = withContext(Dispatchers.IO) {
-        if (hasKey) {
+        // 与 setup() 同理：等 DataStore 就绪再校验，防止冷启动窗口覆盖真实凭据
+        preferencesManager.vaultSalt.first()
+        if (keyManager.isInitialized()) {
             return@withContext false
         }
         val ok = keyManager.setupNoLock()
@@ -114,16 +132,18 @@ class VaultLockManager @Inject constructor(
     /** 是否无锁模式。*/
     fun isNoLockMode(): Boolean = keyManager.isNoLockMode()
 
-    /** 无锁模式解锁（无需验证）。*/
+    /** 无锁模式解锁（无需验证）。 */
     suspend fun unlockNoLock(): Boolean = withContext(Dispatchers.IO) {
-        val ok = keyManager.unlockNoLock()
-        if (ok) {
-            lockoutTracker.reset()
-            _state.value = LockState.UNLOCKED
-            // 无锁模式关闭回锁，避免切后台后锁死
-            preferencesManager.setVaultRequireAuth(false)
+        unlockMutex.withLock {
+            val ok = keyManager.unlockNoLock()
+            if (ok) {
+                lockoutTracker.reset()
+                _state.value = LockState.UNLOCKED
+                // 无锁模式关闭回锁，避免切后台后锁死
+                preferencesManager.setVaultRequireAuth(false)
+            }
+            ok
         }
-        ok
     }
 
     /** 从无锁模式升级为 PIN 锁。*/
@@ -172,6 +192,7 @@ class VaultLockManager @Inject constructor(
     suspend fun requireAuth(): Boolean = preferencesManager.vaultRequireAuth.first()
 
     suspend fun reset() = withContext(Dispatchers.IO) {
+        clipboardManager.clearIfOwned()
         keyManager.reset()
         lockoutTracker.reset()
         hasKey = false

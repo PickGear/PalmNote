@@ -65,16 +65,19 @@ class PreferencesManager @Inject constructor(
         val PRESET_CATEGORY_OVERRIDES = stringPreferencesKey("preset_category_overrides")
         val VAULT_SALT = stringPreferencesKey("vault_salt")
         val VAULT_KEY_WRAP = stringPreferencesKey("vault_key_wrap")
+        val VAULT_KDF_ITERATIONS = intPreferencesKey("vault_kdf_iterations")
         val VAULT_REQUIRE_AUTH = booleanPreferencesKey("vault_require_auth")
         val VAULT_CLIPBOARD_CLEAR_SECONDS = intPreferencesKey("vault_clipboard_clear_seconds")
         val VAULT_BIO_ENABLED = booleanPreferencesKey("vault_bio_enabled")
         val VAULT_BIO_KEY_WRAP = stringPreferencesKey("vault_bio_key_wrap")
         val VAULT_NO_LOCK = booleanPreferencesKey("vault_no_lock")
         val AUTO_LOCK_MODE = stringPreferencesKey("auto_lock_mode")
+        val AUTO_LOCK_TIMEOUT_MINUTES = intPreferencesKey("auto_lock_timeout_minutes")
 
         const val AUTO_LOCK_MODE_IMMEDIATE = "immediate"
         const val AUTO_LOCK_MODE_SYSTEM = "system"
         const val AUTO_LOCK_MODE_TIMEOUT = "timeout"
+        const val DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES = 5
     }
 
     val themeMode: Flow<String> = prefsFlow.map { it[THEME_MODE] ?: "SYSTEM" }
@@ -105,11 +108,14 @@ class PreferencesManager @Inject constructor(
 
     val dashboardCardConfigs: Flow<List<DashboardCardConfig>> = prefsFlow.map { prefs ->
         val json = prefs[DASHBOARD_CARD_CONFIGS]
-        val stored = if (json != null) DashboardCardConfig.fromJson(json) else DashboardCardConfig.defaults
-        // 新版本新增的卡片（如 VAULT）不在旧存储配置中，需要与 defaults 合并，避免用户丢失新卡片
-        val storedTypes = stored.map { it.type }.toSet()
-        DashboardCardConfig.defaults.mapNotNull { def ->
-            stored.find { it.type == def.type } ?: def.takeIf { it.type !in storedTypes }
+        if (json == null) {
+            DashboardCardConfig.defaults
+        } else {
+            val stored = DashboardCardConfig.fromJson(json)
+            // 保留用户自定义的存储顺序（拖拽排序依赖该顺序持久化），
+            // 仅把新版本新增的卡片（如 VAULT）追加到末尾，避免用户丢失新卡片
+            val storedTypes = stored.map { it.type }.toSet()
+            stored + DashboardCardConfig.defaults.filter { it.type !in storedTypes }
         }
     }
 
@@ -128,6 +134,10 @@ class PreferencesManager @Inject constructor(
     fun setAppLockEnabledSync(enabled: Boolean) { scope.launch { setAppLockEnabled(enabled) } }
 
     fun getEncryptedPin(): String = prefsState.value[ENCRYPTED_PIN] ?: ""
+
+    /** 加密 PIN 的 DataStore flow（供冷启动等待首次加载后做锁定决策）。 */
+    val encryptedPinFlow: Flow<String> = prefsFlow.map { it[ENCRYPTED_PIN] ?: "" }
+
     fun getLanguage(): String = prefsState.value[LANGUAGE] ?: "SYSTEM"
 
     suspend fun setEncryptedPin(pin: String) {
@@ -229,12 +239,20 @@ class PreferencesManager @Inject constructor(
 
     fun getVaultSalt(): String = prefsState.value[VAULT_SALT] ?: ""
 
+    /** vault_salt 的 DataStore flow（用于冷启动后重校验密码本初始化状态）。 */
+    val vaultSalt: Flow<String> = prefsFlow.map { it[VAULT_SALT] ?: "" }
+
     fun getVaultKeyWrap(): String = prefsState.value[VAULT_KEY_WRAP] ?: ""
 
-    suspend fun setVaultCredentials(salt: String, keyWrap: String) {
+    /** 创建 PIN 包裹所用的 PBKDF2 迭代次数；0 = 历史包裹（无参数记录，需回退探测）。 */
+    fun getVaultKdfIterations(): Int = prefsState.value[VAULT_KDF_ITERATIONS] ?: 0
+
+    /** 原子写入 salt + 包裹 + 派生参数（单次 DataStore edit）。 */
+    suspend fun setVaultCredentials(salt: String, keyWrap: String, kdfIterations: Int) {
         context.dataStore.edit {
             it[VAULT_SALT] = salt
             it[VAULT_KEY_WRAP] = keyWrap
+            if (kdfIterations > 0) it[VAULT_KDF_ITERATIONS] = kdfIterations
         }
     }
 
@@ -242,6 +260,7 @@ class PreferencesManager @Inject constructor(
         context.dataStore.edit {
             it.remove(VAULT_SALT)
             it.remove(VAULT_KEY_WRAP)
+            it.remove(VAULT_KDF_ITERATIONS)
         }
     }
 
@@ -253,11 +272,15 @@ class PreferencesManager @Inject constructor(
 
     val vaultBiometricEnabled: Flow<Boolean> = prefsFlow.map { it[VAULT_BIO_ENABLED] ?: false }
 
-    suspend fun setVaultBiometricEnabled(enabled: Boolean) {
-        context.dataStore.edit { it[VAULT_BIO_ENABLED] = enabled }
-    }
-
     fun getVaultBioKeyWrap(): String = prefsState.value[VAULT_BIO_KEY_WRAP] ?: ""
+
+    /** 原子写入生物识别包裹 + 启用标志（单次 DataStore edit，避免双数据源不一致窗口）。 */
+    suspend fun setVaultBioCredentials(wrap: String) {
+        context.dataStore.edit {
+            it[VAULT_BIO_KEY_WRAP] = wrap
+            it[VAULT_BIO_ENABLED] = true
+        }
+    }
 
     suspend fun setVaultBioKeyWrap(wrap: String) {
         context.dataStore.edit { it[VAULT_BIO_KEY_WRAP] = wrap }
@@ -286,6 +309,14 @@ class PreferencesManager @Inject constructor(
 
     suspend fun setAutoLockMode(mode: String) {
         context.dataStore.edit { it[AUTO_LOCK_MODE] = mode }
+    }
+
+    /** 自动锁定超时（分钟），timeout 模式下切后台超过该时长才回锁。 */
+    val autoLockTimeoutMinutes: Flow<Int> =
+        prefsFlow.map { it[AUTO_LOCK_TIMEOUT_MINUTES] ?: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES }
+
+    suspend fun setAutoLockTimeoutMinutes(minutes: Int) {
+        context.dataStore.edit { it[AUTO_LOCK_TIMEOUT_MINUTES] = minutes }
     }
 
     val vaultClipboardClearSeconds: Flow<Int> = prefsFlow.map { it[VAULT_CLIPBOARD_CLEAR_SECONDS] ?: 30 }

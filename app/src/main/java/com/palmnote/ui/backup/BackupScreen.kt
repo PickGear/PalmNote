@@ -76,7 +76,7 @@ fun BackupScreen(
                 if (isRestoring) {
                     isRestoring = false
                     // 用 AlarmManager 可靠重启，避免 startActivity+exit(0) 竞态
-                    restartApp(context)
+                    com.palmnote.util.AppRestarter.restartApp(context)
                 } else {
                     snackbarHostState.showSnackbar(context.getString(R.string.backup_operation_success))
                     viewModel.resetState()
@@ -278,17 +278,4 @@ fun BackupScreen(
             }
         )
     }
-}
-
-/** 用 AlarmManager 可靠重启进程（避免 startActivity + exit(0) 竞态） */
-private fun restartApp(context: android.content.Context) {
-    val intent = context.packageManager.getLaunchIntentForPackage(context.packageName) ?: return
-    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK)
-    val pendingIntent = android.app.PendingIntent.getActivity(
-        context, 1001, intent,
-        android.app.PendingIntent.FLAG_IMMUTABLE or android.app.PendingIntent.FLAG_CANCEL_CURRENT
-    )
-    val alarmManager = context.getSystemService(android.content.Context.ALARM_SERVICE) as android.app.AlarmManager
-    alarmManager.set(android.app.AlarmManager.RTC, System.currentTimeMillis() + 300, pendingIntent)
-    Runtime.getRuntime().exit(0)
 }

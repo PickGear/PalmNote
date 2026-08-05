@@ -30,12 +30,15 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,7 +48,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import android.widget.Toast
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.palmnote.R
@@ -53,6 +55,8 @@ import com.palmnote.feature.vault.VaultEntry
 import com.palmnote.feature.vault.VaultLockManager.LockState
 import com.palmnote.ui.components.AppDialog
 import com.palmnote.ui.components.SecondaryTopAppBar
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
 /**
  * 密码本详情页：密码默认遮罩，点击 👁 切换明文；各字段可复制。
@@ -65,20 +69,31 @@ fun VaultDetailScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var showPassword by remember { mutableStateOf(false) }
+    var showForgotPinConfirm by remember { mutableStateOf(false) }
 
     VaultLockOnBackground(viewModel::lock) { state.requireAuth }
 
     if (state.lockState != LockState.UNLOCKED) {
         VaultLockGate(
             lockState = state.lockState,
-            error = null,
-            lockoutRemainingMs = 0L,
+            error = state.gateError,
+            lockoutRemainingMs = state.lockoutRemainingMs,
             biometricEnabled = state.biometricEnabled,
-            createBioDecryptCipher = viewModel::createBioDecryptCipher,
-            onBiometricUnlock = viewModel::unlockWithBiometric,
+            onBiometricUnlock = viewModel::unlockBiometric,
             onSetup = viewModel::setupPin,
-            onUnlock = viewModel::unlock
+            onUnlock = viewModel::unlock,
+            onForgotPin = { showForgotPinConfirm = true },
+            onPinTyped = viewModel::clearGateError
         )
+        if (showForgotPinConfirm) {
+            VaultForgotPinDialog(
+                onConfirm = {
+                    showForgotPinConfirm = false
+                    viewModel.resetForVaultLockout()
+                },
+                onDismiss = { showForgotPinConfirm = false }
+            )
+        }
         return
     }
 
@@ -106,9 +121,16 @@ fun VaultDetailScreen(
     }
 
     val context = LocalContext.current
-    val copiedText = stringResource(R.string.vault_copied)
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
     val showCopied: () -> Unit = {
-        Toast.makeText(context, copiedText, Toast.LENGTH_SHORT).show()
+        scope.launch {
+            val seconds = com.palmnote.PalmNoteApp.instance.preferencesManager.vaultClipboardClearSeconds.first()
+            snackbarHostState.showSnackbar(
+                if (seconds > 0) context.getString(R.string.vault_copied_autoclear, seconds)
+                else context.getString(R.string.vault_copied)
+            )
+        }
     }
 
     var menuExpanded by remember { mutableStateOf(false) }
@@ -159,7 +181,8 @@ fun VaultDetailScreen(
                     }
                 }
             )
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
         Column(
             modifier = Modifier
@@ -195,7 +218,7 @@ fun VaultDetailScreen(
             }
             DetailRow(
                 label = stringResource(R.string.vault_field_password),
-                value = if (showPassword) displayPassword else MASKED_PASSWORD,
+                value = if (showPassword) displayPassword else maskedPassword(displayPassword),
                 isMasked = true,
                 onToggleVisibility = { showPassword = !showPassword },
                 onCopy = {
@@ -219,7 +242,12 @@ fun VaultDetailScreen(
                 DetailRow(
                     label = stringResource(R.string.vault_field_notes),
                     value = entry.notes,
-                    multiline = true
+                    multiline = true,
+                    onCopy = {
+                        if (viewModel.copyNotes(entry)) {
+                            showCopied()
+                        }
+                    }
                 )
             }
             Spacer(Modifier.height(16.dp))
@@ -337,3 +365,7 @@ private fun VaultDetailDeleted(onNavigateBack: () -> Unit) {
 }
 
 private const val MASKED_PASSWORD = "••••••••"
+
+/** 按真实密码长度生成遮罩，避免固定长度与内容不符。 */
+private fun maskedPassword(plain: String): String =
+    "•".repeat(plain.length.coerceAtLeast(MASKED_PASSWORD.length))

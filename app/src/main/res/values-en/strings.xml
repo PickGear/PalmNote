@@ -133,6 +133,7 @@
     <string name="settings_app_lock_subtitle">Protect privacy, verify on startup</string>
     <string name="settings_security">App Lock &amp; Password Vault</string>
     <string name="settings_security_subtitle">PIN lock, biometrics, vault settings</string>
+    <string name="settings_security_subtitle_on">Enabled, tap to manage</string>
     <string name="settings_reminder">Reminders</string>
     <string name="settings_reminder_daily_section">Daily Reminder</string>
     <string name="settings_reminder_advance_section">Advance Notice</string>
@@ -784,6 +785,7 @@
     
     <!-- Backup Error Messages -->
     <string name="backup_error_corrupted">Backup file is corrupted or empty</string>
+    <string name="backup_error_cross_device">This backup was created on another device and its database key cannot be decrypted. Please create a new backup on the original device.</string>
     <string name="backup_error_create_failed">Backup failed</string>
     <string name="backup_error_restore_failed">Restore failed</string>
     
@@ -898,6 +900,10 @@
     
     <!-- App Lock Settings -->
     <string name="app_lock_settings_title">App Lock Settings</string>
+    <string name="app_lock_settings_section_lock">Locking</string>
+    <string name="app_lock_settings_section_autolock">Auto-lock</string>
+    <string name="app_lock_settings_section_vault">Password Vault</string>
+    <string name="app_lock_security_hint">Tip: remember your PIN. Forgetting it requires resetting your data.</string>
     <string name="app_lock_auto_lock">Auto Lock</string>
     <string name="app_lock_auto_lock_value">%1$s</string>
     <string name="app_lock_auto_lock_system">Follow system lock screen</string>
@@ -906,6 +912,10 @@
     <string name="app_lock_auto_lock_immediate_hint">Lock as soon as app goes to background</string>
     <string name="app_lock_auto_lock_timeout">Lock on timeout</string>
     <string name="app_lock_auto_lock_timeout_hint">Lock after timeout or screen lock</string>
+    <string name="app_lock_auto_lock_changed">Auto-lock mode updated</string>
+    <string name="app_lock_auto_lock_timeout_duration">Timeout duration</string>
+    <string name="app_lock_auto_lock_minutes">%1$d minutes</string>
+    <string name="app_lock_auto_lock_timeout_value">Timeout lock (%1$d min)</string>
     <string name="app_lock_change_pin_title">Change PIN</string>
     <string name="app_lock_change_pin_subtitle">Change app lock password</string>
     <string name="app_lock_biometric_enable">Enable Biometric</string>
@@ -1617,6 +1627,8 @@
     <string name="countdown_clear_expired_title">Clear expired countdowns</string>
     <string name="countdown_clear_expired_confirm">Clear expired countdowns?</string>
     <string name="app_lock_biometric_verify_fail">Biometric verification failed</string>
+    <string name="app_lock_biometric_enable_verify_title">Verify PIN to enable biometrics</string>
+    <string name="app_lock_biometric_enabled_toast">Biometric unlock enabled</string>
     <string name="app_lock_disabled_toast">App lock disabled</string>
     <string name="app_lock_forgot_pin_confirm_lock">A forgotten PIN cannot be recovered. Your only option is to wipe local data to reset. This deletes all bills, life records, and settings locally, and cannot be undone. Continue?</string>
     <string name="app_lock_forgot_pin_action_lock">Wipe and reset</string>
@@ -1653,6 +1665,11 @@
     <string name="vault_biometric_subtitle">Use fingerprint for quick unlock</string>
     <string name="vault_biometric_cancel">Cancel</string>
     <string name="vault_skip_setup">Skip for now, use without password</string>
+    <string name="vault_no_lock_banner">Password protection is off; enable it anytime in Settings</string>
+    <string name="vault_forgot_pin">Forgot master password? Reset vault</string>
+    <string name="vault_forgot_pin_confirm_title">Reset vault?</string>
+    <string name="vault_forgot_pin_confirm_text">If you forgot your master password, the vault data cannot be recovered. Resetting will delete all entries and set a new master password. Continue?</string>
+    <string name="vault_forgot_pin_reset">Reset and re-set</string>
     <string name="vault_unlock_title">Enter vault password</string>
     <string name="vault_setup_title">Set vault password</string>
     <string name="vault_unlock_hint">Enter your 6-digit PIN to unlock</string>
@@ -1662,12 +1679,16 @@
     <string name="vault_locked_out">Locked. Retry in %1$d seconds.</string>
     <string name="vault_locked_out_short">Too many attempts. Please try again later.</string>
     <string name="vault_pin_wrong">Wrong password</string>
+    <string name="vault_bio_failed">Biometric key has expired. Re-enable it in vault settings.</string>
     <string name="vault_pin_mismatch">PINs do not match</string>
     <string name="vault_old_pin">Enter old PIN</string>
     <string name="vault_new_pin">Enter new PIN</string>
     <string name="vault_old_pin_hint">Enter your current PIN to verify</string>
     <string name="vault_new_pin_hint">Enter a new 6-digit PIN</string>
+    <string name="vault_new_pin_confirm_hint">Re-enter to confirm</string>
     <string name="vault_pin_changed">PIN changed successfully</string>
+    <string name="vault_pin_setup_success">Setup successful</string>
+    <string name="vault_lock_interrupted">Vault locked. Please restart.</string>
     <string name="vault_old_pin_wrong">Wrong old PIN</string>
     <string name="vault_search">Search</string>
     <string name="vault_search_hint">Search title, username or URL</string>
@@ -1675,6 +1696,7 @@
     <string name="vault_add">Add</string>
     <string name="vault_copy">Copy</string>
     <string name="vault_copied">Copied</string>
+    <string name="vault_copied_autoclear">Copied, clipboard auto-clears in %1$d s</string>
     <string name="vault_copy_password">Copy password</string>
     <string name="vault_updated_at">Updated %1$s</string>
     <string name="vault_empty">No entries yet</string>
@@ -1713,23 +1735,32 @@
     <string name="vault_strength_medium">Medium</string>
     <string name="vault_strength_strong">Strong</string>
     <string name="vault_strength_very_strong">Very strong</string>
+    <string name="vault_edit_password_strength">Password strength: %1$s</string>
     <string name="dashboard_card_vault">Password Vault</string>
     <string name="vault_card_count">%1$d entries</string>
+    <string name="vault_card_empty_subtitle">No entries yet</string>
     <string name="vault_card_empty">Tap to add your first entry</string>
     <string name="vault_card_privacy_hint">Entry titles hidden for privacy, tap to view</string>
     <string name="vault_card_more">View all →</string>
     <string name="vault_settings_clipboard">Clipboard auto-clear</string>
+    <string name="vault_settings_section_general">General</string>
+    <string name="vault_settings_section_security">Security</string>
+    <string name="vault_settings_hint">Tip: your master password encrypts vault data; keep it safe. If you forget it, you can reset the vault (all entries will be cleared).</string>
     <string name="vault_settings_clipboard_value">Current: %1$d s</string>
     <string name="vault_settings_clipboard_option">%1$d seconds</string>
     <string name="vault_settings_clipboard_selected">Current</string>
-    <string name="vault_settings_require_auth">Require unlock to enter</string>
-    <string name="vault_settings_require_auth_hint">When off, background switching no longer locks</string>
-    <string name="vault_settings_no_lock_title">Password protection off</string>
-    <string name="vault_settings_no_lock_hint">Opens without verification. Set a password to enable protection</string>
+    <string name="vault_settings_require_auth">Auto-lock on background</string>
+    <string name="vault_settings_require_auth_hint">Locks after switching to background; re-enter to verify master password</string>
     <string name="vault_settings_set_pin">Enable password protection</string>
     <string name="vault_settings_set_pin_hint">Set a vault unlock password</string>
     <string name="vault_settings_biometric">Biometric unlock</string>
     <string name="vault_settings_biometric_hint">Use fingerprint for quick vault unlock</string>
+    <string name="vault_settings_biometric_no_lock_hint">Set a master password first</string>
+    <string name="vault_bio_verify_title">Verify master password to enable biometrics</string>
+    <string name="vault_bio_setup_title">Verify fingerprint to enable biometrics</string>
+    <string name="vault_bio_setup_subtitle">Unlock the vault quickly with fingerprint once enabled</string>
+    <string name="vault_bio_enable_failed">Failed to enable biometrics, please retry</string>
+    <string name="vault_bio_upgrade_hint">Setting a master password is required to enable biometrics</string>
     <string name="vault_settings_count">Encrypted entries</string>
     <string name="vault_settings_count_value">%1$d</string>
     <string name="vault_settings_change_pin">Change master PIN</string>

@@ -12,7 +12,6 @@ import com.palmnote.data.db.entity.Goal
 import com.palmnote.data.datastore.PreferencesManager
 import com.palmnote.domain.repository.*
 import com.palmnote.domain.util.DateUtils
-import com.palmnote.feature.vault.VaultEntry
 import com.palmnote.feature.vault.VaultRepository
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -35,7 +34,6 @@ data class DashboardState(
     val upcomingAnniversaries: List<Anniversary> = emptyList(),
     val recentGoals: List<Goal> = emptyList(),
     val assetDistribution: List<CategoryCount> = emptyList(),
-    val vaultEntries: List<VaultEntry> = emptyList(),
     val vaultCount: Int = 0
 )
 
@@ -186,20 +184,13 @@ class DashboardViewModel @Inject constructor(
     }
     private fun loadVaultData() {
         viewModelScope.launch {
-            combine(
-                vaultRepository.observeRecent(VAULT_RECENT_LIMIT),
-                vaultRepository.observeCount()
-            ) { recent, count ->
-                recent to count
-            }.catch { e -> AppLogger.e("DashboardVM", "loadVaultData failed", e) }
-                .collect { (recent, count) ->
-                    _state.update { it.copy(vaultEntries = recent, vaultCount = count) }
+            // 仅统计条数，不预载条目明文元数据（title/username）到内存，保护隐私
+            vaultRepository.observeCount()
+                .catch { e -> AppLogger.e("DashboardVM", "loadVaultData failed", e) }
+                .collect { count ->
+                    _state.update { it.copy(vaultCount = count) }
                 }
         }
-    }
-
-    private companion object {
-        const val VAULT_RECENT_LIMIT = 3
     }
 }
 

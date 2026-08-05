@@ -6,6 +6,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.LockOpen
+import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,11 +26,13 @@ import com.palmnote.ui.components.CapsuleSwitch
 import com.palmnote.ui.components.AppDialog
 import com.palmnote.ui.components.CompactTopAppBar
 import com.palmnote.ui.lock.ChangePinDialog
+import com.palmnote.ui.lock.DEFAULT_PIN_LENGTH
 import com.palmnote.ui.lock.PinDotsDisplay
 import com.palmnote.ui.lock.PinKeyboard
+import com.palmnote.ui.lock.PinVerifyDialog
 import com.palmnote.ui.lock.isBiometricAvailable
-import com.palmnote.ui.lock.showBiometricPrompt
 import com.palmnote.ui.theme.*
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import android.widget.Toast
 
@@ -46,21 +51,19 @@ fun AppLockSettingsScreen(
     var showChangePin by remember { mutableStateOf(false) }
     var showSetupPin by remember { mutableStateOf(false) }
     var showVerifyPin by remember { mutableStateOf(false) }
+    var showVerifyPinForBio by remember { mutableStateOf(false) }
     var showAutoLockDialog by remember { mutableStateOf(false) }
+    var showAutoLockTimeoutDialog by remember { mutableStateOf(false) }
 
     val bioAvailable = remember { isBiometricAvailable(context) }
-    var isLockEnabled by remember { mutableStateOf(appLockManager.isLockEnabled()) }
-    var hasPin by remember { mutableStateOf(appLockManager.hasPin()) }
-
-    fun updateLockEnabled() {
-        isLockEnabled = appLockManager.isLockEnabled()
-        hasPin = appLockManager.hasPin()
-    }
+    // 响应式读取，避免 remember 缓存与 DataStore 实际状态不一致
+    val isLockEnabled by appLockManager.appLockEnabledFlow().collectAsStateWithLifecycle(initialValue = appLockManager.isLockEnabled())
+    val hasPin by appLockManager.hasPinFlow().collectAsStateWithLifecycle(initialValue = appLockManager.hasPin())
 
     Scaffold(
         topBar = {
             CompactTopAppBar(
-                title = { Text(stringResource(R.string.app_lock_settings_title), style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold, color = ModuleSettings) },
+                title = stringResource(R.string.app_lock_settings_title),
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.settings_navigate_back))
@@ -74,6 +77,7 @@ fun AppLockSettingsScreen(
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            item { SectionHeader(stringResource(R.string.app_lock_settings_section_lock), Icons.Outlined.Lock, ModuleSettings) }
             item {
                 ModuleCard(modifier = Modifier.fillMaxWidth()) {
                     SettingRow {
@@ -89,7 +93,6 @@ fun AppLockSettingsScreen(
                                         showSetupPin = true
                                     } else {
                                         appLockManager.setEnabled(true)
-                                        updateLockEnabled()
                                     }
                                 } else {
                                     showVerifyPin = true
@@ -98,12 +101,8 @@ fun AppLockSettingsScreen(
                             checkedTrackColor = LocalSwitchColor.current
                         )
                     }
-                }
-            }
-
-            if (isLockEnabled) {
-                item {
-                    ModuleCard(modifier = Modifier.fillMaxWidth()) {
+                    if (isLockEnabled) {
+                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                         SettingRow(clickable = { showChangePin = true }) {
                             SettingRowContent(
                                 title = stringResource(R.string.app_lock_change_pin_title),
@@ -122,10 +121,8 @@ fun AppLockSettingsScreen(
                                     checked = state.biometricEnabled,
                                     onCheckedChange = { enabled ->
                                         if (enabled) {
-                                            showBiometricPrompt(context) { success ->
-                                                if (success) viewModel.setBiometricEnabled(true)
-                                                else Toast.makeText(context, R.string.app_lock_biometric_verify_fail, Toast.LENGTH_SHORT).show()
-                                            }
+                                            // 开启生物识别前先验证 PIN，防止设备已解锁时被他人顺手开启
+                                            showVerifyPinForBio = true
                                         } else {
                                             viewModel.setBiometricEnabled(false)
                                         }
@@ -138,20 +135,37 @@ fun AppLockSettingsScreen(
                 }
             }
 
+            item { SectionHeader(stringResource(R.string.app_lock_settings_section_autolock), Icons.Outlined.Timer, AccentOrange) }
             item {
                 ModuleCard(modifier = Modifier.fillMaxWidth()) {
                     SettingRow(clickable = { showAutoLockDialog = true }) {
                         SettingRowContent(
                             title = stringResource(R.string.app_lock_auto_lock),
-                            subtitle = stringResource(R.string.app_lock_auto_lock_value, autoLockModeLabel(state.autoLockMode, context)),
+                            subtitle = stringResource(
+                                R.string.app_lock_auto_lock_value,
+                                if (state.autoLockMode == com.palmnote.data.datastore.PreferencesManager.AUTO_LOCK_MODE_TIMEOUT) {
+                                    context.getString(R.string.app_lock_auto_lock_timeout_value, state.autoLockTimeoutMinutes)
+                                } else {
+                                    autoLockModeLabel(state.autoLockMode, context)
+                                }
+                            ),
                             showChevron = true
                         )
+                    }
+                    if (state.autoLockMode == com.palmnote.data.datastore.PreferencesManager.AUTO_LOCK_MODE_TIMEOUT) {
+                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                        SettingRow(clickable = { showAutoLockTimeoutDialog = true }) {
+                            SettingRowContent(
+                                title = stringResource(R.string.app_lock_auto_lock_timeout_duration),
+                                subtitle = stringResource(R.string.app_lock_auto_lock_minutes, state.autoLockTimeoutMinutes),
+                                showChevron = true
+                            )
+                        }
                     }
                 }
             }
 
-            item { Spacer(Modifier.height(32.dp)) }
-
+            item { SectionHeader(stringResource(R.string.app_lock_settings_section_vault), Icons.Outlined.LockOpen, vaultTint()) }
             item {
                 ModuleCard(modifier = Modifier.fillMaxWidth()) {
                     SettingRow(clickable = onNavigateToVault) {
@@ -163,6 +177,17 @@ fun AppLockSettingsScreen(
                     }
                 }
             }
+
+            item {
+                Text(
+                    text = stringResource(R.string.app_lock_security_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                )
+            }
+
+            item { Spacer(Modifier.height(32.dp)) }
         }
     }
 
@@ -202,11 +227,45 @@ fun AppLockSettingsScreen(
                     modes.forEach { (mode, title, hint) ->
                         AutoLockModeOption(state.autoLockMode, mode, title, hint) {
                             viewModel.setAutoLockMode(it)
+                            showAutoLockDialog = false
+                            Toast.makeText(context, R.string.app_lock_auto_lock_changed, Toast.LENGTH_SHORT).show()
                         }
                     }
                 }
             },
             onDismissRequest = { showAutoLockDialog = false }
+        )
+    }
+
+    if (showAutoLockTimeoutDialog) {
+        AppDialog(
+            title = { Text(stringResource(R.string.app_lock_auto_lock_timeout_duration), fontWeight = FontWeight.Bold) },
+            text = {
+                Column(Modifier.padding(vertical = 8.dp)) {
+                    listOf(1, 5, 15, 30).forEach { minutes ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    showAutoLockTimeoutDialog = false
+                                    viewModel.setAutoLockTimeoutMinutes(minutes)
+                                    Toast.makeText(context, R.string.app_lock_auto_lock_changed, Toast.LENGTH_SHORT).show()
+                                }
+                                .padding(vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(Modifier.weight(1f)) {
+                                Text(
+                                    text = stringResource(R.string.app_lock_auto_lock_minutes, minutes),
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                            }
+                            RadioButton(selected = state.autoLockTimeoutMinutes == minutes, onClick = null)
+                        }
+                    }
+                }
+            },
+            onDismissRequest = { showAutoLockTimeoutDialog = false }
         )
     }
 
@@ -216,104 +275,44 @@ fun AppLockSettingsScreen(
             onDismiss = {
                 showSetupPin = false
                 if (!hasPin) appLockManager.setEnabled(false)
-                updateLockEnabled()
             },
             onSuccess = {
                 showSetupPin = false
-                updateLockEnabled()
                 android.widget.Toast.makeText(context, R.string.app_lock_pin_success, android.widget.Toast.LENGTH_SHORT).show()
             }
         )
     }
 
     if (showVerifyPin) {
-        VerifyPinDialog(
-            appLockManager = appLockManager,
+        PinVerifyDialog(
+            title = stringResource(R.string.app_lock_enter_old_pin),
+            onVerify = appLockManager::verifyPin,
+            onLockedOut = appLockManager::getLockoutRemainingMs,
             onDismiss = { showVerifyPin = false },
             onSuccess = {
                 showVerifyPin = false
                 scope.launch {
                     appLockManager.disableLock()
                     viewModel.setBiometricEnabled(false)
-                    updateLockEnabled()
                 }
                 Toast.makeText(context, R.string.app_lock_disabled_toast, Toast.LENGTH_SHORT).show()
             }
         )
     }
-}
 
-@Composable
-private fun VerifyPinDialog(
-    appLockManager: AppLockManager,
-    onDismiss: () -> Unit,
-    onSuccess: () -> Unit
-) {
-    var pin by remember { mutableStateOf("") }
-    var error by remember { mutableStateOf("") }
-    var verifying by remember { mutableStateOf(false) }
-    val scope = rememberCoroutineScope()
-
-    val pinWrongText = stringResource(R.string.app_lock_pin_wrong)
-    val lockedOutText = stringResource(R.string.app_lock_locked_out)
-
-    AppDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(
-                text = stringResource(R.string.app_lock_enter_old_pin),
-                fontWeight = FontWeight.Bold
-            )
-        },
-        text = {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                if (error.isNotEmpty()) {
-                    Text(text = error, color = MaterialTheme.colorScheme.error, fontSize = 14.sp)
-                }
-                PinDotsDisplay(pin.length)
-                Spacer(modifier = Modifier.height(8.dp))
-                PinKeyboard(
-                    onDigitClick = { digit ->
-                        if (!verifying && pin.length < 6) {
-                            pin += digit
-                            error = ""
-                            if (pin.length == 6) {
-                                verifying = true
-                                val input = pin
-                                pin = ""
-                                scope.launch {
-                                    if (appLockManager.verifyPin(input)) {
-                                        onSuccess()
-                                    } else {
-                                        verifying = false
-                                        error = if (appLockManager.getLockoutRemainingMs() > 0) lockedOutText else pinWrongText
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    onDeleteClick = {
-                        if (!verifying && pin.isNotEmpty()) {
-                            pin = pin.dropLast(1)
-                            error = ""
-                        }
-                    },
-                    onBiometricClick = {},
-                    showBiometric = false
-                )
+    if (showVerifyPinForBio) {
+        PinVerifyDialog(
+            title = stringResource(R.string.app_lock_biometric_enable_verify_title),
+            onVerify = appLockManager::verifyPin,
+            onLockedOut = appLockManager::getLockoutRemainingMs,
+            onDismiss = { showVerifyPinForBio = false },
+            onSuccess = {
+                showVerifyPinForBio = false
+                viewModel.setBiometricEnabled(true)
+                Toast.makeText(context, R.string.app_lock_biometric_enabled_toast, Toast.LENGTH_SHORT).show()
             }
-        },
-        confirmButton = {},
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.settings_cancel))
-            }
-        }
-    )
+        )
+    }
 }
 
 @Composable
@@ -359,15 +358,15 @@ private fun SetupPinDialog(
                 Spacer(modifier = Modifier.height(8.dp))
                 PinKeyboard(
                     onDigitClick = { digit ->
-                        if (!saving && currentPin.length < 6) {
+                        if (!saving && currentPin.length < DEFAULT_PIN_LENGTH) {
                             when (step) {
                                 1 -> pin += digit
                                 else -> confirmPin += digit
                             }
                             error = ""
-                            if (currentPin.length + 1 == 6) {
+                            if (currentPin.length + 1 == DEFAULT_PIN_LENGTH) {
                                 when (step) {
-                                    1 -> step = 2
+                                    1 -> scope.launch { delay(150); step = 2 }
                                     else -> {
                                         if (pin == confirmPin) {
                                             saving = true
@@ -377,9 +376,7 @@ private fun SetupPinDialog(
                                             }
                                         } else {
                                             error = pinMismatchText
-                                            confirmPin = ""
-                                            step = 2
-                                            pin = ""
+                                            scope.launch { delay(150); confirmPin = ""; step = 2; pin = "" }
                                         }
                                     }
                                 }

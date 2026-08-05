@@ -1,5 +1,6 @@
 package com.palmnote.feature.vault.vault
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,15 +9,23 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -24,13 +33,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.ui.unit.sp
 import com.palmnote.R
 import com.palmnote.feature.vault.PasswordStrength
 import com.palmnote.feature.vault.VaultPasswordGenerator
+import com.palmnote.ui.theme.BottomSheetShape
 
 /**
  * 密码生成器 BottomSheet：长度与字符集可配置，显示熵与强度。
@@ -58,11 +70,16 @@ fun VaultPasswordGeneratorSheet(
         }
     }
 
-    if (generated.isEmpty()) {
-        regenerate()
-    }
+    // 首次打开时生成一个初始密码（避免在组合阶段直接改 state）
+    LaunchedEffect(Unit) { regenerate() }
 
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        shape = BottomSheetShape,
+        containerColor = MaterialTheme.colorScheme.surface,
+        tonalElevation = 0.dp
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -76,13 +93,36 @@ fun VaultPasswordGeneratorSheet(
             )
             Spacer(Modifier.height(16.dp))
 
-            SelectionContainer {
-                Text(
-                    text = generated.ifEmpty { stringResource(R.string.vault_generator_empty) },
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = if (generated.isEmpty()) MaterialTheme.colorScheme.onSurfaceVariant
-                    else MaterialTheme.colorScheme.onSurface
-                )
+            // 密码展示区：点击刷新，长按可选中复制
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .clickable { regenerate() },
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    SelectionContainer(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = generated.ifEmpty { stringResource(R.string.vault_generator_empty) },
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = if (generated.isEmpty()) MaterialTheme.colorScheme.onSurfaceVariant
+                            else MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    IconButton(onClick = { regenerate() }) {
+                        Icon(
+                            imageVector = Icons.Outlined.Refresh,
+                            contentDescription = stringResource(R.string.vault_generator_regenerate),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
             }
             if (generated.isNotEmpty()) {
                 Spacer(Modifier.height(8.dp))
@@ -97,9 +137,16 @@ fun VaultPasswordGeneratorSheet(
                     style = MaterialTheme.typography.bodySmall,
                     color = strengthColor(strength)
                 )
+                Spacer(Modifier.height(4.dp))
+                LinearProgressIndicator(
+                    progress = { strengthFraction(strength) },
+                    modifier = Modifier.fillMaxWidth(),
+                    color = strengthColor(strength),
+                    trackColor = strengthColor(strength).copy(alpha = 0.15f)
+                )
             }
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(20.dp))
             Text(
                 text = stringResource(R.string.vault_generator_length),
                 style = MaterialTheme.typography.labelLarge
@@ -109,10 +156,12 @@ fun VaultPasswordGeneratorSheet(
                 generatedOptions.forEach { option ->
                     OutlinedButton(
                         onClick = { length = option; regenerate() },
-                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp)
+                        modifier = Modifier.weight(1f),
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp)
                     ) {
                         Text(
                             text = option.toString(),
+                            fontSize = 14.sp,
                             fontWeight = if (length == option) FontWeight.Bold else FontWeight.Normal
                         )
                     }
@@ -125,20 +174,20 @@ fun VaultPasswordGeneratorSheet(
             CharSetRow(stringResource(R.string.vault_generator_digits), useDigits) { useDigits = it; regenerate() }
             CharSetRow(stringResource(R.string.vault_generator_symbols), useSymbols) { useSymbols = it; regenerate() }
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(20.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 OutlinedButton(
                     onClick = { regenerate() },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f).height(48.dp)
                 ) {
                     Text(stringResource(R.string.vault_generator_regenerate))
                 }
-                TextButton(
+                Button(
                     onClick = { if (generated.isNotEmpty()) { onUse(generated); onDismiss() } },
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f).height(48.dp),
                     enabled = generated.isNotEmpty()
                 ) {
                     Text(
@@ -181,6 +230,14 @@ private fun strengthColor(strength: PasswordStrength): androidx.compose.ui.graph
     PasswordStrength.MEDIUM -> MaterialTheme.colorScheme.tertiary
     PasswordStrength.STRONG -> MaterialTheme.colorScheme.primary
     PasswordStrength.VERY_STRONG -> MaterialTheme.colorScheme.primary
+}
+
+/** 强度进度条分数。 */
+private fun strengthFraction(strength: PasswordStrength): Float = when (strength) {
+    PasswordStrength.WEAK -> 0.25f
+    PasswordStrength.MEDIUM -> 0.5f
+    PasswordStrength.STRONG -> 0.75f
+    PasswordStrength.VERY_STRONG -> 1f
 }
 
 private const val DEFAULT_LENGTH = 16

@@ -15,7 +15,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
@@ -26,6 +28,7 @@ data class VaultUiState(
     val lockState: LockState = LockState.LOCKED,
     val requireAuth: Boolean = true,
     val biometricEnabled: Boolean = false,
+    val isNoLockMode: Boolean = false,
     val entries: List<VaultEntry> = emptyList(),
     val categories: List<String> = emptyList(),
     val query: String = "",
@@ -62,6 +65,7 @@ class VaultViewModel @Inject constructor(
             lockState = lock,
             requireAuth = requireAuth,
             biometricEnabled = lockManager.biometricEnabled(),
+            isNoLockMode = lockManager.isNoLockMode(),
             query = query,
             category = category,
             pinError = pinError,
@@ -81,23 +85,44 @@ class VaultViewModel @Inject constructor(
     }.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
-        VaultUiState()
+        // 初始锁状态取单例实时值，避免已解锁进入时首帧闪现密码输入门
+        VaultUiState(lockState = lockManager.state.value)
     )
 
     init {
         lockManager.initialize()
+        // 冷启动若已处于锁定期：立即展示倒计时（L-5），而非等首次输入后才出现
+        if (lockManager.isLockedOut()) {
+            lockoutState.value = lockManager.getLockoutRemainingMs()
+            pinErrorState.value = "locked_out"
+            startLockoutCountdown()
+        }
+        // 锁定（含 MainActivity 全局自动锁）时清除残留 PIN 错误提示
+        viewModelScope.launch {
+            lockManager.state.filter { it == LockState.LOCKED }.collect { pinErrorState.value = null }
+        }
         // 无锁模式自动解锁（无需验证）
         viewModelScope.launch {
             if (lockManager.isNoLockMode() && lockManager.state.value == LockState.LOCKED) {
                 lockManager.unlockNoLock()
             }
         }
+        // 冷启动竞态修正：DataStore 未加载时可能误判为未初始化，等就绪后重校验
+        viewModelScope.launch { lockManager.reinitializeWhenReady() }
     }
 
     /** 无锁模式：跳过设置，直接进入。 */
     fun setupNoLock() {
         viewModelScope.launch {
             lockManager.setupNoLock()
+        }
+    }
+
+    /** 忘记主密码自救：清空全部条目与密钥，回到首次设置状态。 */
+    fun resetForVaultLockout() {
+        viewModelScope.launch {
+            repository.clearAll()
+            lockManager.reset()
         }
     }
 
@@ -131,22 +156,27 @@ class VaultViewModel @Inject constructor(
         }
     }
 
-    /** 生物识别认证通过后解密 DK 解锁。 */
-    fun unlockWithBiometric(cipher: javax.crypto.Cipher) {
+    /** 生物识别认证通过后解开 DK 并解锁；失败提示指纹已失效。 */
+    fun unlockBiometric() {
         viewModelScope.launch {
             pinErrorState.value = null
-            if (lockManager.unlockWithBiometric(cipher)) {
+            if (lockManager.unlockBiometric()) {
                 countdownJob?.cancel()
                 lockoutState.value = 0L
+            } else {
+                pinErrorState.value = "bio_failed"
             }
         }
     }
 
-    /** 在 BiometricPrompt 前初始化解密 Cipher。返回 null 表示无生物识别密钥。 */
-    fun createBioDecryptCipher(): javax.crypto.Cipher? = lockManager.createBioDecryptCipher()
+    /** 重新输入时清除 PIN 错误提示。 */
+    fun clearPinError() {
+        pinErrorState.value = null
+    }
 
     fun lock() {
         countdownJob?.cancel()
+        pinErrorState.value = null
         lockManager.lock()
     }
 
