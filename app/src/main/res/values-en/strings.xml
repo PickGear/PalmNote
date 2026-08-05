@@ -1718,6 +1718,10 @@
     <string name="vault_toggle_visibility">Show/hide password</string>
     <string name="vault_edit_title">Edit entry</string>
     <string name="vault_add_title">Add entry</string>
+    <string name="vault_section_login">Login</string>
+    <string name="vault_section_site">Website</string>
+    <string name="vault_section_notes">Notes</string>
+    <string name="vault_generate_password">Generate password</string>
     <string name="vault_error_title_required">Title is required</string>
     <string name="vault_error_password_required">Password is required</string>
     <string name="vault_error_save_failed">Save failed. Please try again.</string>
