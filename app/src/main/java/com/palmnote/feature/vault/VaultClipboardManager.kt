@@ -28,6 +28,9 @@ class VaultClipboardManager @Inject constructor(
     @ApplicationScope private val scope: CoroutineScope,
     private val preferencesManager: PreferencesManager
 ) {
+    // 记录最近一次写入内容的哈希。设计取舍：只追踪最后一次复制——
+    // 若连续复制 A、B，则仅 A 的"定时清空/锁定清空"不会触发（B 覆盖了 A 的追踪）。
+    // 这在语义上可接受（最新一次复制始终会被清空），且避免了多哈希追踪的复杂度。
     private var pendingHash: String? = null
     private var clearJob: Job? = null
 

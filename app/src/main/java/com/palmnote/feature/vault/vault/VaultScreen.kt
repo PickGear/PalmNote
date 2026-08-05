@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.AccountBalance
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Code
@@ -35,6 +36,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -44,6 +47,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -54,7 +58,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import android.widget.Toast
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -65,6 +68,8 @@ import com.palmnote.feature.vault.VaultEntry
 import com.palmnote.feature.vault.VaultLockManager.LockState
 import com.palmnote.ui.components.CompactTopAppBar
 import java.util.Locale
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
 /**
  * 密码本列表页：锁定门 → 搜索/分类筛选 → 条目列表。
@@ -78,6 +83,8 @@ fun VaultScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
+    var showForgotPinConfirm by remember { mutableStateOf(false) }
+
     VaultLockOnBackground(viewModel::lock) { state.requireAuth }
 
     if (state.lockState != LockState.UNLOCKED) {
@@ -86,12 +93,22 @@ fun VaultScreen(
             error = state.pinError,
             lockoutRemainingMs = state.lockoutRemainingMs,
             biometricEnabled = state.biometricEnabled,
-            createBioDecryptCipher = viewModel::createBioDecryptCipher,
-            onBiometricUnlock = viewModel::unlockWithBiometric,
+            onBiometricUnlock = viewModel::unlockBiometric,
             onSetup = viewModel::setupPin,
             onUnlock = viewModel::unlock,
-            onSkip = viewModel::setupNoLock
+            onSkip = viewModel::setupNoLock,
+            onForgotPin = { showForgotPinConfirm = true },
+            onPinTyped = viewModel::clearPinError
         )
+        if (showForgotPinConfirm) {
+            VaultForgotPinDialog(
+                onConfirm = {
+                    showForgotPinConfirm = false
+                    viewModel.resetForVaultLockout()
+                },
+                onDismiss = { showForgotPinConfirm = false }
+            )
+        }
         return
     }
 
@@ -122,8 +139,14 @@ fun VaultLockOnBackground(lock: () -> Unit, requireAuth: () -> Boolean) {
     var autoLockMode by remember {
         mutableStateOf(com.palmnote.data.datastore.PreferencesManager.AUTO_LOCK_MODE_SYSTEM)
     }
+    var autoLockTimeoutMinutes by remember {
+        mutableStateOf(com.palmnote.data.datastore.PreferencesManager.DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES)
+    }
     LaunchedEffect(Unit) {
         com.palmnote.PalmNoteApp.instance.preferencesManager.autoLockMode.collect { autoLockMode = it }
+    }
+    LaunchedEffect(Unit) {
+        com.palmnote.PalmNoteApp.instance.preferencesManager.autoLockTimeoutMinutes.collect { autoLockTimeoutMinutes = it }
     }
     DisposableEffect(Unit) {
         val observer = LifecycleEventObserver { _, event ->
@@ -136,7 +159,7 @@ fun VaultLockOnBackground(lock: () -> Unit, requireAuth: () -> Boolean) {
                 Lifecycle.Event.ON_START -> {
                     val ts = backgroundedAt
                     backgroundedAt = 0L
-                    if (latestRequireAuth() && com.palmnote.data.lock.AutoLockHelper.shouldLock(context, autoLockMode, ts)) {
+                    if (latestRequireAuth() && com.palmnote.data.lock.AutoLockHelper.shouldLock(context, autoLockMode, ts, autoLockTimeoutMinutes * 60_000L)) {
                         latestLock()
                     }
                 }
@@ -159,8 +182,10 @@ private fun VaultListContent(
     onBack: () -> Unit
 ) {
     var searchExpanded by remember { mutableStateOf(false) }
+    var hideNoLockBanner by remember { mutableStateOf(false) }
     val context = LocalContext.current
-    val copiedText = stringResource(R.string.vault_copied)
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
@@ -184,6 +209,7 @@ private fun VaultListContent(
                 }
             )
         },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             FloatingActionButton(onClick = onAdd) {
                 Icon(imageVector = Icons.Outlined.Add, contentDescription = stringResource(R.string.vault_add))
@@ -195,6 +221,9 @@ private fun VaultListContent(
                 .fillMaxSize()
                 .padding(padding)
         ) {
+            if (state.isNoLockMode && !hideNoLockBanner) {
+                NoLockBanner(onDismiss = { hideNoLockBanner = true })
+            }
             CategoryFilterRow(
                 categories = state.categories,
                 selected = state.category,
@@ -229,7 +258,13 @@ private fun VaultListContent(
                             onClick = { onEntryClick(entry.id) },
                             onCopy = {
                                 if (onCopy(entry)) {
-                                    Toast.makeText(context, copiedText, Toast.LENGTH_SHORT).show()
+                                    scope.launch {
+                                        val seconds = com.palmnote.PalmNoteApp.instance.preferencesManager.vaultClipboardClearSeconds.first()
+                                        snackbarHostState.showSnackbar(
+                                            if (seconds > 0) context.getString(R.string.vault_copied_autoclear, seconds)
+                                            else context.getString(R.string.vault_copied)
+                                        )
+                                    }
                                 }
                             }
                         )
@@ -255,7 +290,8 @@ private fun CategoryFilterRow(
     ) {
         Box {
             Surface(
-                onClick = { expanded = true },
+                // 无分类时无筛选可做，点击不弹窗
+                onClick = { if (categories.isNotEmpty()) expanded = true },
                 shape = CircleShape,
                 color = MaterialTheme.colorScheme.surfaceVariant
             ) {
@@ -269,7 +305,11 @@ private fun CategoryFilterRow(
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                 )
             }
-            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                containerColor = MaterialTheme.colorScheme.surface
+            ) {
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.vault_all_categories)) },
                     onClick = {
@@ -411,5 +451,44 @@ private fun entryIcon(url: String): ImageVector {
         normalized.contains("github") -> Icons.Outlined.Code
         normalized.contains("bank") || normalized.contains("alipay") || normalized.contains("pay") -> Icons.Outlined.AccountBalance
         else -> Icons.Outlined.Key
+    }
+}
+
+/** 无锁模式引导条：提示可随时在设置中开启密码保护。 */
+@Composable
+private fun NoLockBanner(onDismiss: () -> Unit) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp),
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+    ) {
+        Row(
+            modifier = Modifier.padding(start = 12.dp, end = 4.dp, top = 6.dp, bottom = 6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.LockOpen,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(
+                text = stringResource(R.string.vault_no_lock_banner),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f)
+            )
+            IconButton(onClick = onDismiss) {
+                Icon(
+                    imageVector = Icons.Filled.Close,
+                    contentDescription = stringResource(R.string.close),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
     }
 }

@@ -12,6 +12,7 @@ import com.palmnote.data.backup.BackupManager
 import com.palmnote.data.backup.BackupState
 import com.palmnote.R
 import com.palmnote.data.db.AppDatabase
+import com.palmnote.data.db.DbKeyStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -24,10 +25,11 @@ import java.io.File
 @HiltViewModel
 class BackupViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val db: AppDatabase
+    private val db: AppDatabase,
+    dbKeyStore: DbKeyStore
 ) : ViewModel() {
 
-    private val backupManager = BackupManager()
+    private val backupManager = BackupManager(dbKeyStore)
 
     private val _backupState = MutableStateFlow<BackupState>(BackupState.Idle)
     val backupState: StateFlow<BackupState> = _backupState

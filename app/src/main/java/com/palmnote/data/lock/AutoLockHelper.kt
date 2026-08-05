@@ -12,20 +12,19 @@ import android.content.Context
  */
 object AutoLockHelper {
 
-    private const val TIMEOUT_MS = 5 * 60 * 1000L // 5 分钟
-
-    /** 判断 ON_START 时是否需要回锁。 */
+    /** 判断 ON_START 时是否需要回锁。timeoutMs 为 timeout 模式的超时时长。 */
     fun shouldLock(
         context: Context,
         mode: String,
         backgroundedAt: Long,
+        timeoutMs: Long,
     ): Boolean {
         if (backgroundedAt <= 0L) return false
         return when (mode) {
             com.palmnote.data.datastore.PreferencesManager.AUTO_LOCK_MODE_IMMEDIATE ->
                 System.currentTimeMillis() - backgroundedAt >= MIN_IMMEDIATE_GAP_MS
             com.palmnote.data.datastore.PreferencesManager.AUTO_LOCK_MODE_TIMEOUT ->
-                isDeviceLocked(context) || System.currentTimeMillis() - backgroundedAt >= TIMEOUT_MS
+                isDeviceLocked(context) || System.currentTimeMillis() - backgroundedAt >= timeoutMs
             // system：仅当系统处于锁屏状态才锁
             else -> isDeviceLocked(context)
         }

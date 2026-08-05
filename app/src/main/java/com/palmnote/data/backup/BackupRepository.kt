@@ -3,6 +3,7 @@ package com.palmnote.data.backup
 import android.content.Context
 import com.palmnote.R
 import com.palmnote.data.db.AppDatabase
+import com.palmnote.data.db.DbKeyStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -12,9 +13,10 @@ import java.io.File
 
 class BackupRepository(
     private val context: Context,
-    private val db: AppDatabase
+    private val db: AppDatabase,
+    dbKeyStore: DbKeyStore
 ) {
-    private val backupManager = BackupManager()
+    private val backupManager = BackupManager(dbKeyStore)
 
     // 创建备份（支持可选密码）
     fun createBackup(password: String? = null): Flow<BackupState> = flow {

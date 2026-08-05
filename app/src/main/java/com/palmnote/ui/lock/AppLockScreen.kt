@@ -1,12 +1,7 @@
 package com.palmnote.ui.lock
 
-import android.app.AlarmManager
-import android.app.PendingIntent
-import android.content.Context
-import android.content.Intent
-import android.os.Build
-import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -17,6 +12,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -24,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import com.palmnote.R
 import com.palmnote.data.lock.AppLockManager
 import com.palmnote.ui.theme.*
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.ceil
@@ -41,8 +38,11 @@ fun AppLockScreen(
     var isConfirming by rememberSaveable { mutableStateOf(false) }
     var lockoutRemaining by rememberSaveable { mutableLongStateOf(appLockManager.getLockoutRemainingMs()) }
     var showForgotConfirm by rememberSaveable { mutableStateOf(false) }
+    var shakeTrigger by remember { mutableIntStateOf(0) }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+
+    fun triggerShake() { shakeTrigger++ }
 
     val pinSuccessText = stringResource(R.string.app_lock_pin_success)
     val pinMismatchText = stringResource(R.string.app_lock_pin_mismatch)
@@ -88,20 +88,37 @@ fun AppLockScreen(
         }
     }
 
+    // 锁屏图标入场动画：轻微缩放 + 淡入，更精致
+    val iconScale = remember { androidx.compose.animation.core.Animatable(0.7f) }
+    val iconAlpha = remember { androidx.compose.animation.core.Animatable(0f) }
+    LaunchedEffect(Unit) {
+        kotlinx.coroutines.coroutineScope {
+            launch { iconScale.animateTo(1f, androidx.compose.animation.core.spring(dampingRatio = 0.6f, stiffness = 220f)) }
+            launch { iconAlpha.animateTo(1f, androidx.compose.animation.core.tween(220)) }
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
+            .statusBarsPadding()
             .padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Icon(
-            imageVector = Icons.Outlined.Lock,
-            contentDescription = null,
-            modifier = Modifier.size(72.dp),
-            tint = MaterialTheme.colorScheme.primary
-        )
+        Box(modifier = Modifier.graphicsLayer {
+            scaleX = iconScale.value
+            scaleY = iconScale.value
+            alpha = iconAlpha.value
+        }) {
+            Icon(
+                imageVector = Icons.Outlined.Lock,
+                contentDescription = null,
+                modifier = Modifier.size(72.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+        }
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -135,16 +152,18 @@ fun AppLockScreen(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        PinDotsDisplay(pin.length)
+        PinShake(if (shakeTrigger > 0) shakeTrigger else null) {
+            PinDotsDisplay(pin.length)
+        }
 
         Spacer(modifier = Modifier.height(32.dp))
 
         PinKeyboard(
             onDigitClick = { digit ->
-                if (lockoutRemaining == 0L && pin.length < 6) {
+                if (lockoutRemaining == 0L && pin.length < DEFAULT_PIN_LENGTH) {
                     pin += digit
                     error = ""
-                if (pin.length == 6) {
+                if (pin.length == DEFAULT_PIN_LENGTH) {
                     if (actualIsSetupMode) {
                         if (isConfirming) {
                             if (pin == confirmPin) {
@@ -155,14 +174,12 @@ fun AppLockScreen(
                                 }
                             } else {
                                 error = pinMismatchText
-                                pin = ""
-                                isConfirming = false
-                                confirmPin = ""
+                                triggerShake()
+                                scope.launch { delay(150); pin = ""; isConfirming = false; confirmPin = "" }
                             }
                         } else {
-                            confirmPin = pin
-                            isConfirming = true
-                            pin = ""
+                            val input = pin
+                            scope.launch { delay(150); confirmPin = input; isConfirming = true; pin = "" }
                         }
                     } else {
                         scope.launch {
@@ -174,6 +191,7 @@ fun AppLockScreen(
                                     lockoutRemaining = remaining
                                 } else {
                                     error = pinWrongText
+                                    triggerShake()
                                 }
                                 pin = ""
                             }
@@ -209,6 +227,13 @@ fun AppLockScreen(
                 )
             }
         }
+
+        Spacer(modifier = Modifier.height(32.dp))
+        Text(
+            text = stringResource(R.string.app_version),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.outline
+        )
     }
 
     if (showForgotConfirm) {
@@ -221,7 +246,7 @@ fun AppLockScreen(
                     showForgotConfirm = false
                     scope.launch {
                         appLockManager.resetLockAndData(context)
-                        restartApp(context)
+                        com.palmnote.util.AppRestarter.restartApp(context)
                     }
                 }) { Text(stringResource(R.string.app_lock_forgot_pin_action_lock), fontWeight = FontWeight.Bold) }
             },
@@ -232,22 +257,4 @@ fun AppLockScreen(
             }
         )
     }
-}
-
-private fun restartApp(context: Context) {
-    val intent = context.packageManager.getLaunchIntentForPackage(context.packageName) ?: return
-    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK)
-    val pendingIntent = PendingIntent.getActivity(
-        context, 1001, intent,
-        PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_CANCEL_CURRENT
-    )
-    val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-    val triggerAt = System.currentTimeMillis() + 300
-    val exactAlarmAllowed = Build.VERSION.SDK_INT < Build.VERSION_CODES.S || alarmManager.canScheduleExactAlarms()
-    if (exactAlarmAllowed) {
-        alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC, triggerAt, pendingIntent)
-    } else {
-        alarmManager.set(AlarmManager.RTC, triggerAt, pendingIntent)
-    }
-    Runtime.getRuntime().exit(0)
 }

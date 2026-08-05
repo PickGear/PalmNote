@@ -81,8 +81,8 @@ app (single module)
 | **一键复制** | 工具 | ✅ | 复制用户名/密码/网址到剪贴板，30 秒后自动清空（哈希追踪不误清） | ❌ |
 | **Dashboard 快捷入口** | 导航 | ✅ | 首页卡片显示最近条目 + 条数统计，点击进入密码本 | ❌ |
 | **卡片显隐** | 个性化 | ✅ | 与其他 Dashboard 卡片统一管理，可关闭 | ❌ |
-| **独立主密码** | 安全 | ✅ | 独立 PIN（PBKDF2-SHA256 25k 迭代），密钥包裹模式，与应用锁独立 | ❌ |
-| **生物识别解锁** | 安全 | ✅ | Keystore 不可导出密钥（`setUserAuthenticationRequired=true`）额外包裹 DK，BiometricPrompt + CryptoObject 认证后解密 | ❌ |
+| **独立主密码** | 安全 | ✅ | 独立 PIN（PBKDF2-SHA256 100k 迭代；历史包裹按 600k/25k 参数回退并在解锁时自动重包裹升级），密钥包裹模式，与应用锁独立 | ❌ |
+| **生物识别解锁** | 安全 | ✅ | Keystore 不可导出密钥（`setUserAuthenticationRequired=true`）额外包裹 DK，带 30s 认证有效期 + 纯在场 BiometricPrompt（官方：有效期密钥与 CryptoObject 互斥），开启强制重建密钥、失败自愈 | ❌ |
 | **无锁模式** | 安全 | ✅ | 可跳过密码设置：DK 用非认证 Keystore 密钥包裹（数据仍加密落盘），打开即用，可随时升级为 PIN/生物识别 | ❌ |
 | **进入需验证** | 安全 | ✅ | 可配置：关闭后切后台不再锁定（安全降级） | ❌ |
 | **自动锁定规则** | 安全 | ✅ | 可配置：立即（immediate）/ 跟系统锁屏（system，默认）/ 超时 5 分钟（timeout） | ❌ |
@@ -157,7 +157,8 @@ interface VaultDao {
 
 ### 2.3 Room 迁移
 
-当前数据库版本为 **5**（`AppDatabase.kt`），密码本在 `Migration4To5` 中建表（动态分类为规划中，未实现）：
+> **v6 说明：** 密码本数据实际存放于**独立库** `palmnote_vault.db`（`VaultDatabase`，Room 版本 1），与主库物理隔离。
+> v4 → v5 曾在主库建 `vault_entries` 表，v5 → v6（`Migration5To6`）会先尽力把主库残留旧数据搬运到独立库再删除旧表（搬运为 best-effort，失败仅删表不阻塞升级）。
 
 ```kotlin
 val MIGRATION_4_5 = object : Migration(4, 5) {
@@ -166,22 +167,20 @@ val MIGRATION_4_5 = object : Migration(4, 5) {
             CREATE TABLE IF NOT EXISTS vault_entries (
                 id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                 title TEXT NOT NULL,
-                username TEXT NOT NULL DEFAULT '',
+                username TEXT NOT NULL,
                 passwordEncrypted BLOB NOT NULL,
-                url TEXT NOT NULL DEFAULT '',
-                notes TEXT NOT NULL DEFAULT '',
-                category TEXT NOT NULL DEFAULT '其他',
+                url TEXT NOT NULL,
+                notes TEXT NOT NULL,
+                category TEXT NOT NULL,
                 createdAt INTEGER NOT NULL,
                 updatedAt INTEGER NOT NULL
             )
         """)
-        db.execSQL("CREATE INDEX IF NOT EXISTS index_vault_entries_updatedAt ON vault_entries(updatedAt)")
-        db.execSQL("CREATE INDEX IF NOT EXISTS index_vault_entries_category ON vault_entries(category)")
     }
 }
 ```
 
-> 密码本表在 v4 → v5 迁移中独立建表。
+> 密码本表在 v4 → v5 迁移中建表（主库，历史遗留），v5 → v6 迁移后由独立库承载。
 
 ---
 
@@ -194,7 +193,7 @@ val MIGRATION_4_5 = object : Migration(4, 5) {
 ```
 用户输入 PIN
     ↓
-PBKDF2-SHA256（25,000 次迭代 + 随机盐 S₁）
+PBKDF2-SHA256（100,000 次迭代 + 随机盐 S₁）
     ↓
 临时密钥 K（256 位）
     ↓
@@ -209,7 +208,6 @@ PBKDF2-SHA256（25,000 次迭代 + 随机盐 S₁）
 |-----|------|------|
 | `vault_salt` | 随机 16 字节盐（S₁） | 首次生成，不变 |
 | `vault_key_wrap` | 加密后的数据密钥（DK 的密文 + IV + tag） | PIN 不变则不更新 |
-| `vault_nonce_counter` | GCM nonce 计数器 | 每次加密递增 |
 | `vault_bio_key_wrap` | 生物识别 Keystore 密钥包裹的 DK 密文 + IV | 开启生物识别后存在 |
 | `vault_require_auth` | 进入是否需验证 | 无锁模式下为 false |
 
@@ -534,6 +532,8 @@ object VaultPasswordGenerator {
 ```kotlin
 val VAULT_CARD_VISIBLE = booleanPreferencesKey("vault_card_visible")
 ```
+
+> **实现状态：** `vault_card_visible`（在 Dashboard 卡片设置中隐藏密码本入口）**尚未实现**（v1.3.0 暂不支持关闭入口），上述 Key 为设计预留。
 
 默认值 `true`（首次使用的用户可见）。
 
