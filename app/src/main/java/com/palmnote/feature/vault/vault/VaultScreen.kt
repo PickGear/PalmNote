@@ -68,7 +68,6 @@ import com.palmnote.feature.vault.VaultEntry
 import com.palmnote.feature.vault.VaultLockManager.LockState
 import com.palmnote.ui.components.CompactTopAppBar
 import java.util.Locale
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /**
@@ -82,10 +81,18 @@ fun VaultScreen(
     onNavigateToEdit: () -> Unit
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val autoLockMode by viewModel.autoLockMode.collectAsStateWithLifecycle()
+    val autoLockTimeoutMinutes by viewModel.autoLockTimeoutMinutes.collectAsStateWithLifecycle()
+    val clipboardClearSeconds by viewModel.clipboardClearSeconds.collectAsStateWithLifecycle()
 
     var showForgotPinConfirm by remember { mutableStateOf(false) }
 
-    VaultLockOnBackground(viewModel::lock) { state.requireAuth }
+    VaultLockOnBackground(
+        lock = viewModel::lock,
+        requireAuth = { state.requireAuth },
+        autoLockMode = autoLockMode,
+        autoLockTimeoutMinutes = autoLockTimeoutMinutes
+    )
 
     if (state.lockState != LockState.UNLOCKED) {
         VaultLockGate(
@@ -119,7 +126,8 @@ fun VaultScreen(
         onEntryClick = onNavigateToDetail,
         onCopy = viewModel::copyPassword,
         onAdd = onNavigateToEdit,
-        onBack = onNavigateBack
+        onBack = onNavigateBack,
+        clipboardClearSeconds = clipboardClearSeconds
     )
 }
 /**
@@ -131,23 +139,16 @@ fun VaultScreen(
  * requireAuth 关闭时跳过（安全降级）。
  */
 @Composable
-fun VaultLockOnBackground(lock: () -> Unit, requireAuth: () -> Boolean) {
+fun VaultLockOnBackground(
+    lock: () -> Unit,
+    requireAuth: () -> Boolean,
+    autoLockMode: String = com.palmnote.data.datastore.PreferencesManager.AUTO_LOCK_MODE_SYSTEM,
+    autoLockTimeoutMinutes: Int = com.palmnote.data.datastore.PreferencesManager.DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES
+) {
     val context = LocalContext.current
     val latestLock by rememberUpdatedState(lock)
     val latestRequireAuth by rememberUpdatedState(requireAuth)
     var backgroundedAt by remember { mutableLongStateOf(0L) }
-    var autoLockMode by remember {
-        mutableStateOf(com.palmnote.data.datastore.PreferencesManager.AUTO_LOCK_MODE_SYSTEM)
-    }
-    var autoLockTimeoutMinutes by remember {
-        mutableStateOf(com.palmnote.data.datastore.PreferencesManager.DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES)
-    }
-    LaunchedEffect(Unit) {
-        com.palmnote.PalmNoteApp.instance.preferencesManager.autoLockMode.collect { autoLockMode = it }
-    }
-    LaunchedEffect(Unit) {
-        com.palmnote.PalmNoteApp.instance.preferencesManager.autoLockTimeoutMinutes.collect { autoLockTimeoutMinutes = it }
-    }
     DisposableEffect(Unit) {
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
@@ -179,7 +180,8 @@ private fun VaultListContent(
     onEntryClick: (Long) -> Unit,
     onCopy: (VaultEntry) -> Boolean,
     onAdd: () -> Unit,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    clipboardClearSeconds: Int
 ) {
     var searchExpanded by remember { mutableStateOf(false) }
     var hideNoLockBanner by remember { mutableStateOf(false) }
@@ -259,9 +261,8 @@ private fun VaultListContent(
                             onCopy = {
                                 if (onCopy(entry)) {
                                     scope.launch {
-                                        val seconds = com.palmnote.PalmNoteApp.instance.preferencesManager.vaultClipboardClearSeconds.first()
                                         snackbarHostState.showSnackbar(
-                                            if (seconds > 0) context.getString(R.string.vault_copied_autoclear, seconds)
+                                            if (clipboardClearSeconds > 0) context.getString(R.string.vault_copied_autoclear, clipboardClearSeconds)
                                             else context.getString(R.string.vault_copied)
                                         )
                                     }

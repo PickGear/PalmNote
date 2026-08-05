@@ -40,6 +40,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -76,6 +77,8 @@ fun VaultEditScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val categories by viewModel.categories.collectAsStateWithLifecycle()
+    val autoLockMode by viewModel.autoLockMode.collectAsStateWithLifecycle()
+    val autoLockTimeoutMinutes by viewModel.autoLockTimeoutMinutes.collectAsStateWithLifecycle()
 
     var title by remember { mutableStateOf("") }
     var username by remember { mutableStateOf("") }
@@ -91,7 +94,12 @@ fun VaultEditScreen(
     var saving by remember { mutableStateOf(false) }
     var showForgotPinConfirm by remember { mutableStateOf(false) }
 
-    VaultLockOnBackground(viewModel::lock) { state.requireAuth }
+    VaultLockOnBackground(
+        lock = viewModel::lock,
+        requireAuth = { state.requireAuth },
+        autoLockMode = autoLockMode,
+        autoLockTimeoutMinutes = autoLockTimeoutMinutes
+    )
 
     if (state.lockState != LockState.UNLOCKED) {
         VaultLockGate(
@@ -144,6 +152,9 @@ fun VaultEditScreen(
             SecondaryTopAppBar(
                 title = stringResource(
                     if (state.isEdit) R.string.vault_edit_title else R.string.vault_add_title
+                ),
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background
                 ),
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {

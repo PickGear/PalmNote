@@ -20,4 +20,31 @@ data class VaultEntry(
     val category: String = "其他",
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()
-)
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is VaultEntry) return false
+        return id == other.id &&
+                title == other.title &&
+                username == other.username &&
+                passwordEncrypted.contentEquals(other.passwordEncrypted) &&
+                url == other.url &&
+                notes == other.notes &&
+                category == other.category &&
+                createdAt == other.createdAt &&
+                updatedAt == other.updatedAt
+    }
+
+    override fun hashCode(): Int {
+        var result = id.hashCode()
+        result = 31 * result + title.hashCode()
+        result = 31 * result + username.hashCode()
+        result = 31 * result + passwordEncrypted.contentHashCode()
+        result = 31 * result + url.hashCode()
+        result = 31 * result + notes.hashCode()
+        result = 31 * result + category.hashCode()
+        result = 31 * result + createdAt.hashCode()
+        result = 31 * result + updatedAt.hashCode()
+        return result
+    }
+}
