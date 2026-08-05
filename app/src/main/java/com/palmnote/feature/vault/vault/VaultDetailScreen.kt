@@ -1,5 +1,6 @@
 ﻿package com.palmnote.feature.vault.vault
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,29 +12,37 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.Notes
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Key
+import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.MoreVert
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -42,10 +51,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -54,8 +63,9 @@ import com.palmnote.R
 import com.palmnote.feature.vault.VaultEntry
 import com.palmnote.feature.vault.VaultLockManager.LockState
 import com.palmnote.ui.components.AppDialog
+import com.palmnote.ui.components.ModuleCard
 import com.palmnote.ui.components.SecondaryTopAppBar
-import kotlinx.coroutines.flow.first
+import com.palmnote.ui.theme.vaultTint
 import kotlinx.coroutines.launch
 
 /**
@@ -68,10 +78,17 @@ fun VaultDetailScreen(
     onNavigateToEdit: (Long) -> Unit
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val autoLockMode by viewModel.autoLockMode.collectAsStateWithLifecycle()
+    val autoLockTimeoutMinutes by viewModel.autoLockTimeoutMinutes.collectAsStateWithLifecycle()
     var showPassword by remember { mutableStateOf(false) }
     var showForgotPinConfirm by remember { mutableStateOf(false) }
 
-    VaultLockOnBackground(viewModel::lock) { state.requireAuth }
+    VaultLockOnBackground(
+        lock = viewModel::lock,
+        requireAuth = { state.requireAuth },
+        autoLockMode = autoLockMode,
+        autoLockTimeoutMinutes = autoLockTimeoutMinutes
+    )
 
     if (state.lockState != LockState.UNLOCKED) {
         VaultLockGate(
@@ -123,11 +140,11 @@ fun VaultDetailScreen(
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val clipboardClearSeconds by viewModel.clipboardClearSeconds.collectAsStateWithLifecycle()
     val showCopied: () -> Unit = {
         scope.launch {
-            val seconds = com.palmnote.PalmNoteApp.instance.preferencesManager.vaultClipboardClearSeconds.first()
             snackbarHostState.showSnackbar(
-                if (seconds > 0) context.getString(R.string.vault_copied_autoclear, seconds)
+                if (clipboardClearSeconds > 0) context.getString(R.string.vault_copied_autoclear, clipboardClearSeconds)
                 else context.getString(R.string.vault_copied)
             )
         }
@@ -140,6 +157,9 @@ fun VaultDetailScreen(
         topBar = {
             SecondaryTopAppBar(
                 title = entry.title,
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background
+                ),
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
@@ -155,7 +175,11 @@ fun VaultDetailScreen(
                             contentDescription = stringResource(R.string.settings_more)
                         )
                     }
-                    DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
+                    DropdownMenu(
+                        expanded = menuExpanded,
+                        onDismissRequest = { menuExpanded = false },
+                        containerColor = MaterialTheme.colorScheme.surface
+                    ) {
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.vault_edit)) },
                             leadingIcon = { Icon(Icons.Outlined.Edit, contentDescription = null) },
@@ -187,77 +211,124 @@ fun VaultDetailScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp, vertical = 16.dp)
+                .padding(horizontal = 16.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 24.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.Key,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(56.dp)
-                )
-            }
-            Spacer(Modifier.height(8.dp))
-            if (entry.username.isNotEmpty()) {
-                DetailRow(
-                    label = stringResource(R.string.vault_field_username),
-                    value = entry.username,
-                    onCopy = {
-                        if (viewModel.copyUsername(entry)) {
-                            showCopied()
-                        }
+            // ═══════════════════════════════════════
+            // 登录头部（图标 + 标题 + 分类徽章）
+            // ═══════════════════════════════════════
+            ModuleCard(tint = MaterialTheme.colorScheme.surface) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(64.dp)
+                            .background(vaultTint().copy(alpha = 0.15f), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Key,
+                            contentDescription = null,
+                            tint = vaultTint(),
+                            modifier = Modifier.size(30.dp)
+                        )
                     }
-                )
-            }
-            DetailRow(
-                label = stringResource(R.string.vault_field_password),
-                value = if (showPassword) displayPassword else maskedPassword(displayPassword),
-                isMasked = true,
-                onToggleVisibility = { showPassword = !showPassword },
-                onCopy = {
-                    if (viewModel.copyPassword(entry)) {
-                        showCopied()
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        text = entry.title,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    if (entry.category.isNotEmpty()) {
+                        Spacer(Modifier.height(10.dp))
+                        Surface(
+                            color = vaultTint().copy(alpha = 0.15f),
+                            contentColor = vaultTint(),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Text(
+                                text = entry.category,
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
+                            )
+                        }
                     }
                 }
-            )
+            }
+
+            // ═══════════════════════════════════════
+            // 登录信息
+            // ═══════════════════════════════════════
+            ModuleCard(tint = MaterialTheme.colorScheme.surface) {
+                SectionHeader(Icons.Outlined.Person, stringResource(R.string.vault_section_login))
+                Spacer(Modifier.height(4.dp))
+                if (entry.username.isNotEmpty()) {
+                    DetailRow(
+                        icon = Icons.Outlined.Person,
+                        label = stringResource(R.string.vault_field_username),
+                        value = entry.username,
+                        onCopy = {
+                            if (viewModel.copyUsername(entry)) showCopied()
+                        }
+                    )
+                }
+                DetailRow(
+                    icon = Icons.Outlined.Key,
+                    label = stringResource(R.string.vault_field_password),
+                    value = if (showPassword) displayPassword else maskedPassword(displayPassword),
+                    isMasked = true,
+                    onToggleVisibility = { showPassword = !showPassword },
+                    onCopy = {
+                        if (viewModel.copyPassword(entry)) showCopied()
+                    }
+                )
+            }
+
+            // ═══════════════════════════════════════
+            // 站点信息
+            // ═══════════════════════════════════════
             if (entry.url.isNotEmpty()) {
-                DetailRow(
-                    label = stringResource(R.string.vault_field_url),
-                    value = entry.url,
-                    onCopy = {
-                        if (viewModel.copyUrl(entry)) {
-                            showCopied()
+                ModuleCard(tint = MaterialTheme.colorScheme.surface) {
+                    SectionHeader(Icons.Outlined.Tune, stringResource(R.string.vault_section_site))
+                    Spacer(Modifier.height(4.dp))
+                    DetailRow(
+                        icon = Icons.Outlined.Link,
+                        label = stringResource(R.string.vault_field_url),
+                        value = entry.url,
+                        onCopy = {
+                            if (viewModel.copyUrl(entry)) showCopied()
                         }
-                    }
-                )
+                    )
+                }
             }
+
+            // ═══════════════════════════════════════
+            // 备注
+            // ═══════════════════════════════════════
             if (entry.notes.isNotEmpty()) {
-                DetailRow(
-                    label = stringResource(R.string.vault_field_notes),
-                    value = entry.notes,
-                    multiline = true,
-                    onCopy = {
-                        if (viewModel.copyNotes(entry)) {
-                            showCopied()
+                ModuleCard(tint = MaterialTheme.colorScheme.surface) {
+                    SectionHeader(Icons.AutoMirrored.Outlined.Notes, stringResource(R.string.vault_section_notes))
+                    Spacer(Modifier.height(4.dp))
+                    DetailRow(
+                        icon = Icons.AutoMirrored.Outlined.Notes,
+                        label = stringResource(R.string.vault_field_notes),
+                        value = entry.notes,
+                        multiline = true,
+                        onCopy = {
+                            if (viewModel.copyNotes(entry)) showCopied()
                         }
-                    }
-                )
+                    )
+                }
             }
-            Spacer(Modifier.height(16.dp))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-            Spacer(Modifier.height(12.dp))
-            Text(
-                text = stringResource(R.string.vault_field_category, entry.category),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
         }
     }
 
@@ -291,6 +362,7 @@ fun VaultDetailScreen(
 
 @Composable
 private fun DetailRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
     label: String,
     value: String,
     onCopy: (() -> Unit)? = null,
@@ -299,11 +371,24 @@ private fun DetailRow(
     multiline: Boolean = false
 ) {
     Column(Modifier.padding(vertical = 10.dp)) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.outline
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = vaultTint(),
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Spacer(Modifier.height(4.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
@@ -327,11 +412,31 @@ private fun DetailRow(
                 IconButton(onClick = onCopy) {
                     Icon(
                         imageVector = Icons.Outlined.ContentCopy,
-                        contentDescription = stringResource(R.string.vault_copy)
+                        contentDescription = stringResource(R.string.vault_copy),
+                        tint = vaultTint()
                     )
                 }
             }
         }
+    }
+}
+
+/** 分组标题：图标 + 标题。 */
+@Composable
+private fun SectionHeader(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(18.dp),
+            tint = vaultTint()
+        )
+        Spacer(Modifier.width(8.dp))
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.Bold
+        )
     }
 }
 

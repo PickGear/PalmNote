@@ -49,6 +49,15 @@ class VaultEditViewModel @Inject constructor(
     private val gateErrorState = MutableStateFlow(GateError())
     private var countdownJob: Job? = null
 
+    val autoLockMode: StateFlow<String> = preferencesManager.autoLockMode.stateIn(
+        viewModelScope, SharingStarted.WhileSubscribed(5000L),
+        PreferencesManager.AUTO_LOCK_MODE_SYSTEM
+    )
+    val autoLockTimeoutMinutes: StateFlow<Int> = preferencesManager.autoLockTimeoutMinutes.stateIn(
+        viewModelScope, SharingStarted.WhileSubscribed(5000L),
+        PreferencesManager.DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES
+    )
+
     /** 已有分类（供编辑页下拉复用，避免自由输入产生不一致分类）。 */
     val categories: StateFlow<List<String>> = categoriesState.asStateFlow()
 

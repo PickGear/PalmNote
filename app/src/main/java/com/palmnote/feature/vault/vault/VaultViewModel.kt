@@ -43,13 +43,26 @@ class VaultViewModel @Inject constructor(
     private val lockManager: VaultLockManager,
     private val repository: VaultRepository,
     private val clipboardManager: VaultClipboardManager,
-    preferencesManager: PreferencesManager
+    private val preferencesManager: PreferencesManager
 ) : ViewModel() {
 
     private val queryState = MutableStateFlow("")
     private val categoryState = MutableStateFlow<String?>(null)
     private val pinErrorState = MutableStateFlow<String?>(null)
     private val lockoutState = MutableStateFlow(0L)
+    /** 剪贴板自动清除秒数（复制成功 snackbar 提示用）。 */
+    val clipboardClearSeconds: StateFlow<Int> = preferencesManager.vaultClipboardClearSeconds.stateIn(
+        viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
+        DEFAULT_CLIPBOARD_CLEAR_SECONDS
+    )
+    val autoLockMode: StateFlow<String> = preferencesManager.autoLockMode.stateIn(
+        viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
+        PreferencesManager.AUTO_LOCK_MODE_SYSTEM
+    )
+    val autoLockTimeoutMinutes: StateFlow<Int> = preferencesManager.autoLockTimeoutMinutes.stateIn(
+        viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
+        PreferencesManager.DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES
+    )
     private var countdownJob: Job? = null
 
     private val filters = combine(queryState, categoryState) { q, c -> q to c }
@@ -79,6 +92,11 @@ class VaultViewModel @Inject constructor(
                 repository.observeEntries(base.query, base.category),
                 repository.observeCategories()
             ) { entries, categories ->
+                // 分类筛选器：若选中分类不再存在于数据库，自动重置为全部
+                val selectedCategory = base.category
+                if (selectedCategory != null && selectedCategory !in categories) {
+                    categoryState.value = null
+                }
                 base.copy(entries = entries, categories = categories, isLoading = false)
             }
         }
@@ -221,5 +239,6 @@ class VaultViewModel @Inject constructor(
     private companion object {
         const val STOP_TIMEOUT_MS = 5000L
         const val COUNTDOWN_INTERVAL_MS = 1000L
+        const val DEFAULT_CLIPBOARD_CLEAR_SECONDS = 30
     }
 }
