@@ -49,7 +49,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.stringResource
-import com.palmnote.PalmNoteApp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -135,14 +134,8 @@ fun AssetScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val focusManager = LocalFocusManager.current
     var showSearch by remember { mutableStateOf(false) }
-    val assetPresetOverrides by com.palmnote.PalmNoteApp.instance.preferencesManager.presetCategoryOverrides
-        .collectAsStateWithLifecycle(initialValue = emptyMap())
-    val assetCustomCfg by com.palmnote.PalmNoteApp.instance.cachedCategoryConfigs
-        .collectAsStateWithLifecycle(initialValue = emptyList())
-    val assetCustomItems = remember(assetCustomCfg) {
-        assetCustomCfg.filter { it.type == "ASSET" }
-            .map { CategoryItem(it.name, it.icon.imageVector, it.color.toComposeColor()) }
-    }
+    val assetPresetOverrides by viewModel.presetCategoryOverrides.collectAsStateWithLifecycle()
+    val assetCustomItems by viewModel.customCategories.collectAsStateWithLifecycle()
     BackHandler(enabled = showSearch) { showSearch = false; viewModel.setSearchQuery("") }
 
     Scaffold(

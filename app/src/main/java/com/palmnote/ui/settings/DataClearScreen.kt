@@ -16,7 +16,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.palmnote.PalmNoteApp
 import com.palmnote.R
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.palmnote.ui.components.*

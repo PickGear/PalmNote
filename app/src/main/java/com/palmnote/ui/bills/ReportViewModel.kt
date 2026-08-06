@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.palmnote.data.db.dao.CategoryTotal
 import com.palmnote.data.db.dao.DailySummary
 import com.palmnote.data.db.dao.MonthTotal
+import com.palmnote.data.db.entity.CategoryConfig
 import com.palmnote.domain.repository.BillRepository
 import com.palmnote.domain.repository.groupToDailySummaries
 import com.palmnote.domain.util.DateUtils
@@ -43,13 +44,17 @@ data class ReportState(
 )
 @HiltViewModel
 class ReportViewModel @Inject constructor(
-    private val billRepository: BillRepository
+    private val billRepository: BillRepository,
+    private val cachedCategoryConfigs: @JvmSuppressWildcards StateFlow<List<CategoryConfig>>
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(ReportState())
     val state: StateFlow<ReportState> = _state.asStateFlow()
 
+    val categoryConfigs: StateFlow<List<CategoryConfig>> = cachedCategoryConfigs
+
     private var dataJob: Job? = null
+    private var hasLoadedOnce = false
 
     init { loadData() }
 
@@ -118,7 +123,8 @@ class ReportViewModel @Inject constructor(
         dataJob?.cancel()
         dataJob = viewModelScope.launch {
             try {
-                _state.update { it.copy(isLoading = true, error = null) }
+                // 仅首次加载显示 loading，切换选项时直接刷新数据避免卡顿
+                _state.update { if (hasLoadedOnce) it.copy(error = null) else it.copy(isLoading = true, error = null) }
                 val s = _state.value
                 val isExpense = s.incomeExpenseTab == 0
                 when (s.periodTab) {
@@ -126,7 +132,8 @@ class ReportViewModel @Inject constructor(
                     1 -> loadMonthlyData(isExpense)
                     2 -> loadYearlyData(isExpense)
                 }
-                _state.update { it.copy(isLoading = false) }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _state.update { it.copy(isLoading = false, error = e.message) }
             }
@@ -153,8 +160,15 @@ class ReportViewModel @Inject constructor(
                 val days = daily.filter { if (isExpense) it.expense > 0 else it.income > 0 }
                 val avg = if (days.isNotEmpty()) (if (isExpense) expense ?: 0L else income ?: 0L).toDouble() / days.size else 0.0
                 ReportData(expense ?: 0L, income ?: 0L, billCount, avg, categories, daily)
-            }.collect { reportData -> _state.update { it.copy(data = reportData) } }
-        } catch (e: Exception) { /* Log but don't crash */ }
+            }.collect { reportData ->
+                hasLoadedOnce = true
+                _state.update { it.copy(data = reportData, isLoading = false) }
+            }
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            _state.update { it.copy(isLoading = false) }
+        }
     }
 
     private suspend fun loadMonthlyData(isExpense: Boolean) {
@@ -177,8 +191,15 @@ class ReportViewModel @Inject constructor(
                 val days = daily.filter { if (isExpense) it.expense > 0 else it.income > 0 }
                 val avg = if (days.isNotEmpty()) (if (isExpense) expense ?: 0L else income ?: 0L).toDouble() / days.size else 0.0
                 ReportData(expense ?: 0L, income ?: 0L, billCount, avg, categories, daily)
-            }.collect { reportData -> _state.update { it.copy(data = reportData) } }
-        } catch (e: Exception) { /* Log but don't crash */ }
+            }.collect { reportData ->
+                hasLoadedOnce = true
+                _state.update { it.copy(data = reportData, isLoading = false) }
+            }
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            _state.update { it.copy(isLoading = false) }
+        }
     }
 
     private suspend fun loadYearlyData(isExpense: Boolean) {
@@ -203,9 +224,14 @@ class ReportViewModel @Inject constructor(
                     emptyList(),
                     if (isExpense) expTrend else incTrend
                 )
-            }.collect { reportData -> _state.update { it.copy(data = reportData) } }
+            }.collect { reportData ->
+                hasLoadedOnce = true
+                _state.update { it.copy(data = reportData, isLoading = false) }
+            }
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
         } catch (e: Exception) {
-            // Log but don't crash
+            _state.update { it.copy(isLoading = false) }
         }
     }
 }

@@ -69,16 +69,3 @@ enum class AutoLockMode(val value: String) {
     }
 }
 
-/**
- * 一天中的时段
- */
-enum class TimeOfDay(val value: String) {
-    MORNING("MORNING"),
-    AFTERNOON("AFTERNOON"),
-    EVENING("EVENING"),
-    NIGHT("NIGHT");
-
-    companion object {
-        fun from(s: String): TimeOfDay = entries.firstOrNull { it.value == s } ?: MORNING
-    }
-}

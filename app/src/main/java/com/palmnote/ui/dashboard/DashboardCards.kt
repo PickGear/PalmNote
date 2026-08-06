@@ -28,8 +28,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.palmnote.PalmNoteApp
 import com.palmnote.R
 import com.palmnote.data.db.dao.CategoryCount
 import com.palmnote.domain.model.toMoney
@@ -47,7 +45,9 @@ internal fun DashboardCardContent(
     onNavigateToAsset: () -> Unit,
     onNavigateToBill: () -> Unit,
     onNavigateToLife: () -> Unit,
-    onNavigateToVault: () -> Unit = {}
+    onNavigateToVault: () -> Unit = {},
+    presetCategoryOverrides: Map<String, String>,
+    categoryConfigs: List<com.palmnote.data.db.entity.CategoryConfig>
 ) {
     when (type) {
         CardType.NET_WORTH -> NetWorthCard(state)
@@ -55,7 +55,7 @@ internal fun DashboardCardContent(
         CardType.BUDGET_ALERT -> BudgetAlertCard(state)
         CardType.GOALS -> GoalsCard(state, onNavigateToLife)
         CardType.ANNIVERSARIES -> AnniversariesCard(state, onNavigateToLife)
-        CardType.ASSET_DISTRIBUTION -> AssetDistributionCard(state, onNavigateToAsset)
+        CardType.ASSET_DISTRIBUTION -> AssetDistributionCard(state, onNavigateToAsset, presetCategoryOverrides, categoryConfigs)
         CardType.TODAY -> TodayCard(state)
         CardType.VAULT -> VaultCard(state, onNavigateToVault)
     }
@@ -410,10 +410,15 @@ internal fun AnniversariesCard(state: DashboardState, onNavigateToLife: () -> Un
 }
 
 @Composable
-internal fun AssetDistributionCard(state: DashboardState, onNavigateToAsset: () -> Unit) {
+@Suppress("LongMethod")
+internal fun AssetDistributionCard(
+    state: DashboardState,
+    onNavigateToAsset: () -> Unit,
+    presetCategoryOverrides: Map<String, String>,
+    categoryConfigs: List<com.palmnote.data.db.entity.CategoryConfig>
+) {
     if (state.assetDistribution.isEmpty()) return
-    val distPresetOverrides by com.palmnote.PalmNoteApp.instance.preferencesManager.presetCategoryOverrides
-        .collectAsStateWithLifecycle(initialValue = emptyMap())
+    val distPresetOverrides = presetCategoryOverrides
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -431,7 +436,7 @@ internal fun AssetDistributionCard(state: DashboardState, onNavigateToAsset: () 
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.Top
             ) {
-                AssetDistributionChart(state.assetDistribution, Modifier.size(100.dp))
+                AssetDistributionChart(state.assetDistribution, Modifier.size(100.dp), distPresetOverrides, categoryConfigs)
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     val longItems = mutableListOf<Pair<CategoryCount, Int>>()
                     val shortItems = mutableListOf<Pair<CategoryCount, Int>>()
@@ -457,9 +462,21 @@ internal fun AssetDistributionCard(state: DashboardState, onNavigateToAsset: () 
                         ) {
                             rowItems.forEach { (item, _) ->
                                 if (fullWidth) {
-                                    LegendItem(item, Modifier.fillMaxWidth(), maxLines = 2)
+                                    LegendItem(
+                                        item = item,
+                                        modifier = Modifier.fillMaxWidth(),
+                                        maxLines = 2,
+                                        presetCategoryOverrides = distPresetOverrides,
+                                        categoryConfigs = categoryConfigs
+                                    )
                                 } else {
-                                    LegendItem(item, Modifier.weight(1f), maxLines = 1)
+                                    LegendItem(
+                                        item = item,
+                                        modifier = Modifier.weight(1f),
+                                        maxLines = 1,
+                                        presetCategoryOverrides = distPresetOverrides,
+                                        categoryConfigs = categoryConfigs
+                                    )
                                 }
                             }
                             if (rowItems.size < 2) Spacer(Modifier.weight(1f))
@@ -472,17 +489,21 @@ internal fun AssetDistributionCard(state: DashboardState, onNavigateToAsset: () 
 }
 
 @Composable
-private fun LegendItem(item: CategoryCount, modifier: Modifier = Modifier, maxLines: Int = 1) {
+private fun LegendItem(
+    item: CategoryCount,
+    modifier: Modifier = Modifier,
+    maxLines: Int = 1,
+    presetCategoryOverrides: Map<String, String>,
+    categoryConfigs: List<com.palmnote.data.db.entity.CategoryConfig>
+) {
     val context = androidx.compose.ui.platform.LocalContext.current
-    val dashPresetVer by com.palmnote.PalmNoteApp.instance.preferencesManager.presetCategoryOverrides
-        .collectAsStateWithLifecycle(initialValue = emptyMap())
-    val dashCustomCfg by com.palmnote.PalmNoteApp.instance.cachedCategoryConfigs
-        .collectAsStateWithLifecycle(initialValue = emptyList())
-    val dashCustomItems = remember(dashCustomCfg) {
+    val dashPresetVer = presetCategoryOverrides
+    val dashCustomCfg = categoryConfigs
+    val dashCustomItems = remember(dashCustomCfg, dashPresetVer) {
         dashCustomCfg.filter { it.type == "ASSET" && it.isEnabled }
             .map { com.palmnote.ui.components.CategoryItem(it.name, it.icon.imageVector, it.color.toComposeColor()) }
     }
-    val color = remember(dashPresetVer, dashCustomItems) {
+    val color = remember(dashCustomItems, dashPresetVer, item.category) {
         getCategoryIcon(item.category, dashCustomItems).color
     }
     Row(
@@ -547,7 +568,12 @@ internal fun AlertCard(icon: ImageVector, title: String, message: String, color:
 }
 
 @Composable
-fun AssetDistributionChart(distribution: List<CategoryCount>, modifier: Modifier = Modifier) {
+fun AssetDistributionChart(
+    distribution: List<CategoryCount>,
+    modifier: Modifier = Modifier,
+    presetCategoryOverrides: Map<String, String>,
+    categoryConfigs: List<com.palmnote.data.db.entity.CategoryConfig>
+) {
     val total = distribution.sumOf { it.count }.toFloat()
     if (total == 0f) {
         Box(modifier.clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
@@ -555,15 +581,13 @@ fun AssetDistributionChart(distribution: List<CategoryCount>, modifier: Modifier
         }
         return
     }
-    val chartPresetVer by com.palmnote.PalmNoteApp.instance.preferencesManager.presetCategoryOverrides
-        .collectAsStateWithLifecycle(initialValue = emptyMap())
-    val chartCustomCfg by com.palmnote.PalmNoteApp.instance.cachedCategoryConfigs
-        .collectAsStateWithLifecycle(initialValue = emptyList())
-    val chartCustomItems = remember(chartCustomCfg) {
+    val chartPresetVer = presetCategoryOverrides
+    val chartCustomCfg = categoryConfigs
+    val chartCustomItems = remember(chartCustomCfg, chartPresetVer) {
         chartCustomCfg.filter { it.type == "ASSET" && it.isEnabled }
             .map { com.palmnote.ui.components.CategoryItem(it.name, it.icon.imageVector, it.color.toComposeColor()) }
     }
-    val chartColors = remember(chartPresetVer, chartCustomItems) {
+    val chartColors = remember(chartPresetVer, chartCustomItems, distribution) {
         distribution.map { item ->
             getCategoryIcon(item.category, chartCustomItems).color
         }

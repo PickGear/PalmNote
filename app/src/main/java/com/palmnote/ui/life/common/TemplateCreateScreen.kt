@@ -31,7 +31,6 @@ import com.palmnote.R
 import com.palmnote.ui.components.SecondaryTopAppBar
 import com.palmnote.ui.components.toComposeColor
 import com.palmnote.data.db.entity.LifeTemplate
-import com.palmnote.PalmNoteApp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.palmnote.ui.theme.*
 import kotlinx.serialization.json.*

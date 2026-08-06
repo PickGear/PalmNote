@@ -12,11 +12,9 @@ import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.automirrored.outlined.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
@@ -39,11 +37,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.res.stringResource
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.repeatOnLifecycle
-import com.palmnote.PalmNoteApp
 import com.palmnote.R
 import com.palmnote.data.db.entity.Bill
 import com.palmnote.data.db.entity.getDisplayName
@@ -71,22 +65,21 @@ fun BillScreen(
     val customIncomeCategories by viewModel.customIncomeCategories.collectAsStateWithLifecycle()
     val allCustomExpenseCategories by viewModel.allCustomExpenseCategories.collectAsStateWithLifecycle()
     val allCustomIncomeCategories by viewModel.allCustomIncomeCategories.collectAsStateWithLifecycle()
-    val billPresetOverrides by PalmNoteApp.instance.preferencesManager.presetCategoryOverrides
-        .collectAsStateWithLifecycle(initialValue = emptyMap())
-    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    val billPresetOverrides by viewModel.presetCategoryOverrides.collectAsStateWithLifecycle()
     
     DisposableEffect(Unit) {
         onDispose { viewModel.clearFilter() }
     }
     
     var calendarExpanded by remember { mutableStateOf(false) }
-    val selectedFilter = state.currentFilter.type ?: "ALL"
+    val selectedFilter = state.currentFilter.type?.value ?: "ALL"
     val filteredBills by remember(state.bills, state.filteredBills, state.currentFilter, selectedFilter, state.selectedDay) {
         derivedStateOf {
             val base = if (state.currentFilter.isActive || state.searchQuery.isNotBlank()) state.filteredBills else state.bills
             val byType = when (selectedFilter) {
                 "EXPENSE" -> base.filter { it.type == BillType.EXPENSE }
                 "INCOME" -> base.filter { it.type == BillType.INCOME }
+                "TRANSFER" -> base.filter { it.type == BillType.TRANSFER }
                 else -> base
             }
             val sd = state.selectedDay
@@ -242,7 +235,7 @@ fun BillScreen(
                 onClick = {
                     val sd = state.selectedDay
                     val date = if (sd != null) {
-                        DateUtils.toMillis(state.currentYearMonth, sd)
+                        DateUtils.preserveTimeOfDay(System.currentTimeMillis(), DateUtils.toMillis(state.currentYearMonth, sd))
                     } else {
                         System.currentTimeMillis()
                     }
@@ -302,28 +295,35 @@ fun BillScreen(
                         val interactionSource = remember { MutableInteractionSource() }
                         Surface(
                             shape = MaterialTheme.shapes.extraLarge,
-                            color = if (selectedFilter == "ALL") MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else Color.Transparent,
+                            color = if (selectedFilter == "ALL") ModuleBill.copy(alpha = 0.85f) else Color.Transparent,
                             modifier = Modifier.clickable(interactionSource = interactionSource, indication = null) { viewModel.setFilterType("ALL") }
                         ) {
                             Text(
                                 text = stringResource(R.string.bill_all),
                                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                                color = if (selectedFilter == "ALL") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                                color = if (selectedFilter == "ALL") Color.White else MaterialTheme.colorScheme.onSurface,
+                                fontWeight = if (selectedFilter == "ALL") FontWeight.Bold else FontWeight.Normal,
                                 style = MaterialTheme.typography.labelLarge
                             )
                         }
                         val interactionSource2 = remember { MutableInteractionSource() }
                         Surface(
                             shape = MaterialTheme.shapes.extraLarge,
-                            color = if (selectedFilter == "EXPENSE") ExpenseRed.copy(alpha = 0.15f) else Color.Transparent,
+                            color = if (selectedFilter == "EXPENSE") ExpenseRed.copy(alpha = 0.85f) else Color.Transparent,
                             modifier = Modifier.clickable(interactionSource = interactionSource2, indication = null) { viewModel.setFilterType("EXPENSE") }
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-                                Icon(Icons.AutoMirrored.Outlined.TrendingDown, null, Modifier.size(16.dp), tint = if (selectedFilter == "EXPENSE") ExpenseRed else MaterialTheme.colorScheme.onSurface)
+                                Icon(
+                                    Icons.AutoMirrored.Outlined.TrendingDown,
+                                    null,
+                                    Modifier.size(16.dp),
+                                    tint = if (selectedFilter == "EXPENSE") Color.White else MaterialTheme.colorScheme.onSurface
+                                )
                                 Spacer(Modifier.width(4.dp))
                                 Text(
                                     text = stringResource(R.string.bill_expense),
-                                    color = if (selectedFilter == "EXPENSE") ExpenseRed else MaterialTheme.colorScheme.onSurface,
+                                    color = if (selectedFilter == "EXPENSE") Color.White else MaterialTheme.colorScheme.onSurface,
+                                    fontWeight = if (selectedFilter == "EXPENSE") FontWeight.Bold else FontWeight.Normal,
                                     style = MaterialTheme.typography.labelLarge
                                 )
                             }
@@ -331,15 +331,46 @@ fun BillScreen(
                         val interactionSource3 = remember { MutableInteractionSource() }
                         Surface(
                             shape = MaterialTheme.shapes.extraLarge,
-                            color = if (selectedFilter == "INCOME") StatusActive.copy(alpha = 0.15f) else Color.Transparent,
+                            color = if (selectedFilter == "INCOME") StatusActive.copy(alpha = 0.85f) else Color.Transparent,
                             modifier = Modifier.clickable(interactionSource = interactionSource3, indication = null) { viewModel.setFilterType("INCOME") }
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-                                Icon(Icons.AutoMirrored.Outlined.TrendingUp, null, Modifier.size(16.dp), tint = if (selectedFilter == "INCOME") StatusActive else MaterialTheme.colorScheme.onSurface)
+                                Icon(
+                                    Icons.AutoMirrored.Outlined.TrendingUp,
+                                    null,
+                                    Modifier.size(16.dp),
+                                    tint = if (selectedFilter == "INCOME") Color.White else MaterialTheme.colorScheme.onSurface
+                                )
                                 Spacer(Modifier.width(4.dp))
                                 Text(
                                     text = stringResource(R.string.bill_income),
-                                    color = if (selectedFilter == "INCOME") StatusActive else MaterialTheme.colorScheme.onSurface,
+                                    color = if (selectedFilter == "INCOME") Color.White else MaterialTheme.colorScheme.onSurface,
+                                    fontWeight = if (selectedFilter == "INCOME") FontWeight.Bold else FontWeight.Normal,
+                                    style = MaterialTheme.typography.labelLarge
+                                )
+                            }
+                        }
+                        val interactionSource4 = remember { MutableInteractionSource() }
+                        Surface(
+                            shape = MaterialTheme.shapes.extraLarge,
+                            color = if (selectedFilter == "TRANSFER") InfoBlue.copy(alpha = 0.85f) else Color.Transparent,
+                            modifier = Modifier.clickable(
+                                interactionSource = interactionSource4,
+                                indication = null
+                            ) { viewModel.setFilterType("TRANSFER") }
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                                Icon(
+                                    Icons.Outlined.SwapVert,
+                                    null,
+                                    Modifier.size(16.dp),
+                                    tint = if (selectedFilter == "TRANSFER") Color.White else MaterialTheme.colorScheme.onSurface
+                                )
+                                Spacer(Modifier.width(4.dp))
+                                Text(
+                                    text = stringResource(R.string.bill_transfer),
+                                    color = if (selectedFilter == "TRANSFER") Color.White else MaterialTheme.colorScheme.onSurface,
+                                    fontWeight = if (selectedFilter == "TRANSFER") FontWeight.Bold else FontWeight.Normal,
                                     style = MaterialTheme.typography.labelLarge
                                 )
                             }
@@ -399,7 +430,8 @@ fun BillScreen(
                         val dayExpense = bills.filter { it.type == BillType.EXPENSE }.sumOf { it.amount }
                         AnimatedCard(instant = billListState.isScrollInProgress) {
                             Row(
-                                modifier = Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 4.dp, start = 12.dp, end = 12.dp),
+                                modifier = Modifier.fillMaxWidth()
+                                    .padding(top = 12.dp, bottom = 4.dp, start = 12.dp, end = 12.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
@@ -507,17 +539,8 @@ fun BillListItem(bill: Bill, wallets: Map<Long, String> = emptyMap(), onDetail: 
     }
     val catColor = categoryItem?.color ?: ErrorLight
     val displayName = remember(bill.category, bill.type, presetOverrides) {
-        val prefix = if (bill.type == BillType.EXPENSE) "EXPENSE_" else "INCOME_"
-        val overrideKey = "preset_$prefix${bill.category}"
-        val json = presetOverrides[overrideKey]
-        if (json != null) {
-            try {
-                val obj = org.json.JSONObject(json)
-                if (obj.has("name")) obj.getString("name")
-                else null
-            } catch (_: Exception) { null }
-        } else null
-    } ?: getLocalizedCategoryName(bill.category)?.let { context.getString(it) } ?: bill.category
+        resolvePresetCategoryName(presetOverrides, bill.category, bill.type.value, context)
+    }
 
     val density = LocalDensity.current
     var offsetX by remember { mutableFloatStateOf(0f) }
@@ -557,7 +580,13 @@ fun BillListItem(bill: Bill, wallets: Map<Long, String> = emptyMap(), onDetail: 
                         )
                     }
                     Column {
-                        Text(if (bill.type == BillType.TRANSFER) stringResource(R.string.bill_transfer) else displayName, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                        Text(
+                            if (bill.type == BillType.TRANSFER)
+                                stringResource(R.string.bill_transfer)
+                            else displayName,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium
+                        )
                         val merchantText = if (bill.type == BillType.TRANSFER) null else if (bill.merchant.isNotEmpty() && bill.location.isNotEmpty()) {
                             "${bill.merchant} · ${bill.location}"
                         } else if (bill.merchant.isNotEmpty()) {
@@ -571,15 +600,37 @@ fun BillListItem(bill: Bill, wallets: Map<Long, String> = emptyMap(), onDetail: 
                         if (bill.type == BillType.TRANSFER && bill.walletId != null && bill.toWalletId != null) {
                             val fromName = wallets[bill.walletId] ?: ""
                             val toName = wallets[bill.toWalletId] ?: ""
-                            Text("$fromName → $toName", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 2.dp))
+                            Text(
+                                "$fromName \u2192 $toName",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(top = 2.dp)
+                            )
                         }
                     }
                 }
                 Column(horizontalAlignment = Alignment.End, modifier = Modifier.width(100.dp)) {
-                    Text(text = "${if (bill.type == BillType.EXPENSE) "-" else if (bill.type == BillType.TRANSFER) "" else "+"}${CurrencyUtils.formatCompact(context, bill.amount.toMoney())}", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = if (bill.type == BillType.EXPENSE) ExpenseRed else if (bill.type == BillType.TRANSFER) InfoBlue else StatusActive, textAlign = TextAlign.End, modifier = Modifier.fillMaxWidth())
+                    val prefix = if (bill.type == BillType.EXPENSE) "-"
+                    else if (bill.type == BillType.TRANSFER) "" else "+"
+                    val amountText = "$prefix${CurrencyUtils.formatCompact(context, bill.amount.toMoney())}"
+                    val amountColor = if (bill.type == BillType.EXPENSE) ExpenseRed
+                    else if (bill.type == BillType.TRANSFER) InfoBlue else StatusActive
+                    Text(
+                        text = amountText,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = amountColor,
+                        textAlign = TextAlign.End,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                     bill.walletId?.let { walletId ->
                         wallets[walletId]?.let { walletName ->
-                            Text(walletName, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 2.dp))
+                            Text(
+                                walletName,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(top = 2.dp)
+                            )
                         }
                     }
                 }

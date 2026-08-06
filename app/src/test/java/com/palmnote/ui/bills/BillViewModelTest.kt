@@ -65,6 +65,7 @@ class BillViewModelTest {
         every { budgetRepository.getBudgetByMonthFlow(any()) } returns flowOf(null)
         every { accountBookRepository.getAllBooksIncludingHidden() } returns flowOf(emptyList())
         every { preferencesManager.defaultBillType } returns flowOf("EXPENSE")
+        every { preferencesManager.presetCategoryOverrides } returns flowOf(emptyMap())
 
         viewModel = BillViewModel(
             context, SavedStateHandle(), cachedWallets, cachedCategoryConfigs, cachedAccountBooks,

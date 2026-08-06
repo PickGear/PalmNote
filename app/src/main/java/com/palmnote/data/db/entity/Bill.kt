@@ -7,7 +7,6 @@ import androidx.room.PrimaryKey
 import com.palmnote.domain.model.BillType
 import com.palmnote.domain.model.PaymentMethod
 import com.palmnote.domain.model.RecurringFrequency
-import com.palmnote.domain.model.TimeOfDay
 
 @Entity(
     tableName = "bills",
@@ -32,7 +31,6 @@ data class Bill(
     val note: String = "",
     val date: Long, // timestamp
     val yearMonth: String, // "2024-01"
-    val timeOfDay: TimeOfDay = TimeOfDay.MORNING, // MORNING, AFTERNOON, EVENING, NIGHT
     val accountBookId: Long = 1, // 关联的账本ID，默认1（默认账本）
     val walletId: Long? = null, // 关联的钱包/账户ID
     val toWalletId: Long? = null, // 转账目标账户（仅TRANSFER类型）

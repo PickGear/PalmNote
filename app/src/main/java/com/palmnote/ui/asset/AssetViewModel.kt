@@ -6,16 +6,11 @@ import javax.inject.Inject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 
-import android.content.ContentValues
 import android.net.Uri
-import com.palmnote.domain.util.AppLogger
-import android.os.Environment
-import android.provider.MediaStore
 import androidx.compose.runtime.Stable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
-import android.app.Application
 import com.palmnote.R
 import com.palmnote.data.datastore.PreferencesManager
 import kotlinx.serialization.encodeToString
@@ -32,31 +27,18 @@ import com.palmnote.domain.repository.BillRepository
 import com.palmnote.domain.repository.UsageRecordRepository
 import com.palmnote.domain.util.DateUtils
 import com.palmnote.ui.components.toComposeColor
+import com.palmnote.ui.components.toImageJson
+import com.palmnote.ui.components.toImageList
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.File
-import java.io.FileOutputStream
 
 
 enum class AssetFilter { ALL, HELD, AWAY, REMOVED }
 enum class SortOption { NAME, PRICE, DAILY_COST, DATE, RECENT }
-
-private val imageJson = kotlinx.serialization.json.Json { ignoreUnknownKeys = true }
-
-fun List<String>.toImageJson(): String = imageJson.encodeToString(this)
-
-fun String.toImageList(): List<String> {
-    if (isEmpty()) return emptyList()
-    return try {
-        imageJson.decodeFromString<List<String>>(this)
-    } catch (_: Exception) {
-        listOf(this)
-    }
-}
 
 private data class AssetValues(
     val assets: List<Asset>,
@@ -175,6 +157,12 @@ class AssetViewModel @Inject constructor(
         .map { configs -> configs.filter { it.type == "ASSET" && it.isEnabled }
             .map { com.palmnote.ui.components.CategoryItem(it.name, it.icon.imageVector, it.color.toComposeColor()) } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val presetCategoryOverrides: StateFlow<Map<String, String>> =
+        preferencesManager.presetCategoryOverrides
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
+
+    val categoryConfigs: StateFlow<List<CategoryConfig>> = cachedCategoryConfigs
 
     enum class DialogType { AWAY, CLEAR, DELETE }
 
@@ -612,53 +600,10 @@ class AssetViewModel @Inject constructor(
         }
     }
 
-    private suspend fun saveImageToInternalStorage(uri: Uri): String? = withContext(Dispatchers.IO) {
-        try {
-            val dir = File(application.filesDir, "images")
-            if (!dir.exists()) dir.mkdirs()
-            val file = File(dir, "asset_${System.currentTimeMillis()}.jpg")
-            application.contentResolver.openInputStream(uri)?.use { input ->
-                FileOutputStream(file).use { output ->
-                    input.copyTo(output)
-                }
-            }
-            file.absolutePath
-        } catch (e: Exception) {
-            AppLogger.e("AssetViewModel", "Failed to save image", e)
-            null
-        }
-    }
-
-    fun downloadImageToGallery(imagePath: String) {
+    fun addImage(uri: Uri) {
         viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                try {
-                    val file = File(imagePath)
-                    if (!file.exists()) return@withContext
-                    val mime = when (file.extension.lowercase()) {
-                        "png" -> "image/png"
-                        "webp" -> "image/webp"
-                        else -> "image/jpeg"
-                    }
-                    val values = ContentValues().apply {
-                        put(MediaStore.Images.Media.DISPLAY_NAME, file.name)
-                        put(MediaStore.Images.Media.MIME_TYPE, mime)
-                        put(MediaStore.Images.Media.RELATIVE_PATH, "${Environment.DIRECTORY_PICTURES}/${application.getString(R.string.asset_gallery_folder)}")
-                        put(MediaStore.Images.Media.IS_PENDING, 1)
-                    }
-                    val uri = application.contentResolver.insert(
-                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values
-                    )
-                    uri?.let {
-                        application.contentResolver.openOutputStream(it)?.use { output ->
-                            file.inputStream().use { input -> input.copyTo(output) }
-                        }
-                        values.clear()
-                        values.put(MediaStore.Images.Media.IS_PENDING, 0)
-                        application.contentResolver.update(it, values, null, null)
-                    }
-                } catch (e: Exception) { AppLogger.e("AssetViewModel", "Download image failed", e) }
-            }
+            val path = com.palmnote.ui.components.saveImageToInternalStorage(application, uri, "asset_") ?: return@launch
+            updateImages { add(path) }
         }
     }
 
@@ -666,13 +611,6 @@ class AssetViewModel @Inject constructor(
         val list = _formState.value.images.toImageList().toMutableList()
         list.transform()
         _formState.value = _formState.value.copy(images = list.toImageJson())
-    }
-
-    fun addImage(uri: Uri) {
-        viewModelScope.launch {
-            val path = saveImageToInternalStorage(uri) ?: return@launch
-            updateImages { add(path) }
-        }
     }
 
     fun removeImage(index: Int) {

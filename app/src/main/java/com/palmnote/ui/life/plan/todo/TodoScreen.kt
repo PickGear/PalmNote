@@ -28,7 +28,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.palmnote.PalmNoteApp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.palmnote.R
 import com.palmnote.data.db.entity.LifeItem

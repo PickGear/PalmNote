@@ -145,6 +145,32 @@ private val categoryNameMap = mapOf(
 
 fun getLocalizedCategoryName(name: String): Int? = categoryNameMap[name]
 
+/**
+ * 解析预设分类的显示名：优先读 preset 覆盖 JSON 中的 "name"，
+ * 否则用本地化名称，最后 fallback 到原始 key。
+ */
+fun resolvePresetCategoryName(
+    presetOverrides: Map<String, String>,
+    key: String,
+    type: String?,
+    context: android.content.Context
+): String {
+    val prefix = when (type) {
+        "EXPENSE" -> "EXPENSE_"
+        "INCOME" -> "INCOME_"
+        else -> ""
+    }
+    val overrideKey = "preset_$prefix$key"
+    val json = presetOverrides[overrideKey]
+    if (json != null) {
+        try {
+            val obj = org.json.JSONObject(json)
+            if (obj.has("name")) return obj.getString("name")
+        } catch (_: Exception) {}
+    }
+    return getLocalizedCategoryName(key)?.let { context.getString(it) } ?: key
+}
+
 fun getLocalizedPaymentMethod(method: String): Int = when (method) {
     "CASH" -> R.string.payment_cash
     "WECHAT" -> R.string.payment_wechat

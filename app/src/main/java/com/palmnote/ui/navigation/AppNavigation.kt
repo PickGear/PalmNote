@@ -198,11 +198,8 @@ fun PalmNoteNavHost() {
 
         composable<BillDetail> { backStackEntry ->
             val billDetail = backStackEntry.toRoute<BillDetail>()
-            val allWallets by PalmNoteApp.instance.walletRepository.getAllWallets().collectAsStateWithLifecycle(initialValue = emptyList())
-            val walletNames = allWallets.associate { it.id to it.name }
             BillDetailScreen(
                 billId = billDetail.billId,
-                walletNames = walletNames,
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToEdit = { id -> navController.navigate(AddBill(billId = id)) }
             )

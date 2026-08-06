@@ -16,6 +16,26 @@ import com.palmnote.data.db.entity.toRecycleBin
 import com.palmnote.domain.model.BillType
 import kotlinx.coroutines.flow.Flow
 import com.palmnote.domain.repository.BillRepository
+import kotlinx.serialization.json.Json
+import java.io.File
+
+private val billImageJson = Json { ignoreUnknownKeys = true }
+
+private fun String.toImagePathList(): List<String> {
+    if (isEmpty()) return emptyList()
+    return try {
+        billImageJson.decodeFromString<List<String>>(this)
+    } catch (_: Exception) {
+        emptyList()
+    }
+}
+
+private fun deleteImageFiles(images: String) {
+    images.toImagePathList().forEach { path ->
+        runCatching { File(path).delete() }
+    }
+}
+
 class BillRepositoryImpl @Inject constructor(
     private val billDao: BillDao,
     private val walletDao: WalletDao,
@@ -119,7 +139,11 @@ class BillRepositoryImpl @Inject constructor(
         applyNewBalance(bill)
     }
 
-    override suspend fun hardDeleteBill(id: Long) = recycleBinDao.deleteById(id)
+    override suspend fun hardDeleteBill(id: Long) = appDatabase.withTransaction {
+        val item = recycleBinDao.getById(id) ?: return@withTransaction
+        deleteImageFiles(item.images)
+        recycleBinDao.deleteById(id)
+    }
 
     override suspend fun search(query: String): List<Bill> = billDao.search(query)
 

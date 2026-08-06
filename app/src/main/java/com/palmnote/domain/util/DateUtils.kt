@@ -144,6 +144,44 @@ object DateUtils {
         return context.getString(R.string.date_format_weekday_full, monthName, day, weekday)
     }
 
+    private val BILL_TIME_FMT = DateTimeFormatter.ofPattern("HH:mm")
+
+    fun formatTimeOnly(timestamp: Long): String =
+        millisToLocalDateTime(timestamp).format(BILL_TIME_FMT)
+
+    private val DISPLAY_DATE_TIME_FMT =
+        DateTimeFormatter.ofPattern("MM月dd日 HH:mm")
+
+    fun formatDisplayDateTime(timestamp: Long): String =
+        millisToLocalDateTime(timestamp).format(DISPLAY_DATE_TIME_FMT)
+
+    /**
+     * 格式化账单日期：若时间恰好为 00:00（CSV 导入/无时间），仅显示日期；
+     * 否则显示日期 + 时间，如 "3月4日 14:30"。
+     */
+    fun formatBillDate(context: Context, timestamp: Long): String {
+        val ldt = millisToLocalDateTime(timestamp)
+        val dateStr = ldt.toLocalDate()
+            .format(DateTimeFormatter.ofPattern(context.getString(R.string.date_format_display)))
+        return if (ldt.hour == 0 && ldt.minute == 0 && ldt.second == 0) {
+            dateStr
+        } else {
+            "$dateStr ${ldt.format(BILL_TIME_FMT)}"
+        }
+    }
+
+    /**
+     * 保留 [original] 的时分秒，应用到 [newDateMidnight] 所在日期。
+     * 用于日期选择器更换日期时保留原有时刻。
+     */
+    fun preserveTimeOfDay(original: Long, newDateMidnight: Long): Long {
+        val origLdt = millisToLocalDateTime(original)
+        val newLdt = Instant.ofEpochMilli(newDateMidnight)
+            .atZone(zone).toLocalDate()
+            .atTime(origLdt.toLocalTime())
+        return newLdt.atZone(zone).toInstant().toEpochMilli()
+    }
+
     fun getDayOfMonth(timestamp: Long): Int =
         millisToLocalDate(timestamp).dayOfMonth
 

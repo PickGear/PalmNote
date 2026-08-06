@@ -17,17 +17,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.zIndex
-import kotlin.math.abs
 import kotlin.math.roundToInt
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -37,12 +32,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.platform.LocalContext
-import coil3.compose.AsyncImage
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.palmnote.PalmNoteApp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.ui.res.stringResource
 import com.palmnote.R
@@ -133,14 +124,14 @@ fun AddAssetScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // ═══════════════════════════════════════════
+            // ══════════════════════════════════════════�?
             // Section 1: 图片
-            // ═══════════════════════════════════════════
+            // ══════════════════════════════════════════�?
             item { ImageSection(formState, viewModel) }
 
-            // ═══════════════════════════════════════════
-            // Section 2: 基本信息（名称 + 分类 + 数量）
-            // ═══════════════════════════════════════════
+            // ══════════════════════════════════════════�?
+            // Section 2: 基本信息（名�?+ 分类 + 数量�?
+            // ══════════════════════════════════════════�?
             item {
                 ModuleCard(tint = MaterialTheme.colorScheme.surface) {
                     SectionHeader(Icons.Outlined.Info, stringResource(R.string.asset_basic_info))
@@ -167,8 +158,8 @@ fun AddAssetScreen(
                         Text(formState.categoryError ?: "", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
                     }
                     Spacer(modifier = Modifier.height(8.dp))
-                    val presetOverrides by PalmNoteApp.instance.preferencesManager.presetCategoryOverrides
-                        .collectAsStateWithLifecycle(initialValue = emptyMap())
+                    val presetOverrides by viewModel.presetCategoryOverrides
+                        .collectAsStateWithLifecycle()
                     val enrichedPresets = remember(presetOverrides) {
                         assetCategoryItems.filter { item ->
                             val key = "preset_${item.name}"
@@ -196,7 +187,7 @@ fun AddAssetScreen(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // 数量（紧凑行）
+                    // 数量（紧凑行�?
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -216,9 +207,9 @@ fun AddAssetScreen(
                 }
             }
 
-            // ═══════════════════════════════════════════
+            // ══════════════════════════════════════════�?
             // Section 3: 获取方式 + 价格日期
-            // ═══════════════════════════════════════════
+            // ══════════════════════════════════════════�?
             item {
                 ModuleCard(tint = MaterialTheme.colorScheme.surface) {
                     SectionHeader(Icons.Outlined.ShoppingCart, stringResource(R.string.asset_acquisition))
@@ -307,9 +298,9 @@ fun AddAssetScreen(
                 }
             }
 
-            // ═══════════════════════════════════════════
+            // ══════════════════════════════════════════�?
             // Section 4: 位置 + 保修 + 折旧模式
-            // ═══════════════════════════════════════════
+            // ══════════════════════════════════════════�?
             item {
                 ModuleCard(tint = MaterialTheme.colorScheme.surface) {
                     SectionHeader(Icons.Outlined.LocationOn, stringResource(R.string.asset_location_warranty))
@@ -428,9 +419,9 @@ fun AddAssetScreen(
                 }
             }
 
-            // ═══════════════════════════════════════════
+            // ══════════════════════════════════════════�?
             // Section 5: 备注
-            // ═══════════════════════════════════════════
+            // ══════════════════════════════════════════�?
             item {
                 ModuleCard(tint = MaterialTheme.colorScheme.surface) {
                     SectionHeader(Icons.AutoMirrored.Outlined.Notes, stringResource(R.string.asset_description))
@@ -446,9 +437,9 @@ fun AddAssetScreen(
                 }
             }
 
-            // ═══════════════════════════════════════════
+            // ══════════════════════════════════════════�?
             // Section 6: 高级选项（折叠）
-            // ═══════════════════════════════════════════
+            // ══════════════════════════════════════════�?
             item {
                 var expanded by remember { mutableStateOf(false) }
                 LaunchedEffect(expanded) { if (expanded) listState.animateScrollToItem(5) }
@@ -508,7 +499,7 @@ fun AddAssetScreen(
 
                             Spacer(modifier = Modifier.height(12.dp))
 
-                            // 序列号
+                            // 序列�?
                             Text(stringResource(R.string.asset_serial_number), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
                             Spacer(modifier = Modifier.height(4.dp))
                             OutlinedTextField(
@@ -564,7 +555,7 @@ fun AddAssetScreen(
 
                             Spacer(modifier = Modifier.height(12.dp))
 
-                            // 折旧率 + 当前估值（同行）
+                            // 折旧�?+ 当前估值（同行�?
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(stringResource(R.string.asset_depreciation_rate), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
@@ -583,9 +574,9 @@ fun AddAssetScreen(
                 }
             }
 
-            // ═══════════════════════════════════════════
+            // ══════════════════════════════════════════�?
             // 保存按钮
-            // ═══════════════════════════════════════════
+            // ══════════════════════════════════════════�?
             item {
                 Button(
                     onClick = { viewModel.saveAsset() },
@@ -612,7 +603,6 @@ fun AddAssetScreen(
 
 @Composable
 private fun ImageSection(formState: AddAssetFormState, viewModel: AssetViewModel) {
-    val images = formState.images.toImageList()
     val customAssetCategories by viewModel.customCategories.collectAsStateWithLifecycle()
     val catInfo = if (formState.category.isNotEmpty()) {
         val fromPreset = assetCategoryItems.find { it.name == formState.category }
@@ -621,72 +611,18 @@ private fun ImageSection(formState: AddAssetFormState, viewModel: AssetViewModel
             if (resolved != fromPreset.color) fromPreset.copy(color = resolved) else fromPreset
         } else customAssetCategories.find { it.name == formState.category }
     } else null
-
-    val imagePickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri -> uri?.let { viewModel.addImage(it) } }
+    val accentColor = catInfo?.color ?: AccentOrange
 
     ModuleCard(tint = MaterialTheme.colorScheme.surface) {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text(stringResource(R.string.asset_image_section), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-            Text("${images.size}/4", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-
-        var draggedIndex by remember { mutableIntStateOf(-1) }
-        var dragTotal by remember { mutableFloatStateOf(0f) }
-        var slotWidthPx by remember { mutableFloatStateOf(80f) }
-        val spacingPx = with(LocalDensity.current) { 8.dp.toPx() }
-        val currentSlotWidth by rememberUpdatedState(slotWidthPx)
-        val currentDragIndex by rememberUpdatedState(draggedIndex)
-
-        Row(
-            modifier = Modifier.fillMaxWidth()
-                .onSizeChanged { slotWidthPx = (it.width - spacingPx * 3) / 4f }
-                .pointerInput(images.size) {
-                    detectDragGesturesAfterLongPress(
-                        onDragStart = { offset -> val idx = (offset.x / (currentSlotWidth + spacingPx)).toInt().coerceIn(0, images.size - 1); draggedIndex = idx; dragTotal = 0f },
-                        onDrag = { change, amount -> change.consume(); dragTotal += amount.x; val step = currentSlotWidth + spacingPx; if (abs(dragTotal) > step * 0.5f) { val target = (currentDragIndex + if (dragTotal > 0) 1 else -1).coerceIn(0, images.size - 1); if (target != currentDragIndex) { viewModel.reorderImages(currentDragIndex, target); draggedIndex = target; dragTotal -= step * if (dragTotal > 0) 1f else -1f } } },
-                        onDragEnd = { draggedIndex = -1; dragTotal = 0f },
-                        onDragCancel = { draggedIndex = -1; dragTotal = 0f }
-                    )
-                },
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            for (i in 0 until 4) {
-                Box(modifier = Modifier.weight(1f).aspectRatio(1f)) {
-                    if (i < images.size) {
-                        val isDragging = i == draggedIndex
-                        Box(
-                            modifier = Modifier.fillMaxSize().zIndex(if (isDragging) 2f else 0f)
-                                .then(if (isDragging) Modifier.graphicsLayer { translationX = dragTotal; scaleX = 1.05f; scaleY = 1.05f } else Modifier)
-                                .clip(MaterialTheme.shapes.medium),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            AsyncImage(model = images[i], contentDescription = null, modifier = Modifier.fillMaxSize().clip(MaterialTheme.shapes.medium), contentScale = ContentScale.Crop)
-                            IconButton(onClick = { viewModel.removeImage(i) }, modifier = Modifier.align(Alignment.TopEnd).size(20.dp).background(Color.Black.copy(alpha = 0.5f), MaterialTheme.shapes.medium)) {
-                                Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.asset_remove_image), tint = Color.White, modifier = Modifier.size(14.dp))
-                            }
-                            if (images.size > 1) {
-                                Icon(Icons.Filled.DragHandle, contentDescription = stringResource(R.string.asset_drag_to_reorder), tint = Color.White.copy(alpha = 0.7f), modifier = Modifier.align(Alignment.BottomEnd).padding(4.dp).size(16.dp))
-                            }
-                        }
-                    } else {
-                        Box(
-                            modifier = Modifier.fillMaxSize().clip(MaterialTheme.shapes.medium).background((catInfo?.color ?: AccentOrange).copy(alpha = 0.1f)).clickable { if (images.size < 4) imagePickerLauncher.launch("image/*") },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Icon(Icons.Outlined.AddPhotoAlternate, null, tint = (catInfo?.color ?: AccentOrange).copy(alpha = 0.5f), modifier = Modifier.size(28.dp))
-                                Text(stringResource(R.string.asset_upload), style = MaterialTheme.typography.labelSmall, color = (catInfo?.color ?: AccentOrange).copy(alpha = 0.5f))
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        if (images.isEmpty()) {
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(stringResource(R.string.asset_image_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
+        ImageGridPicker(
+            title = stringResource(R.string.asset_image_section),
+            images = formState.images.toImageList(),
+            accentColor = accentColor,
+            hint = stringResource(R.string.asset_image_hint),
+            onAddImage = { viewModel.addImage(it) },
+            onRemoveImage = { viewModel.removeImage(it) },
+            onReorderImages = { from, to -> viewModel.reorderImages(from, to) }
+        )
     }
 }
 

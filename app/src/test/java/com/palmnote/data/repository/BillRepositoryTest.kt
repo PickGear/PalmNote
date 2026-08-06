@@ -5,7 +5,6 @@ import com.palmnote.data.db.entity.Bill
 import com.palmnote.domain.model.BillType
 import com.palmnote.domain.model.PaymentMethod
 import com.palmnote.domain.model.RecurringFrequency
-import com.palmnote.domain.model.TimeOfDay
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -99,7 +98,6 @@ class BillRepositoryTest {
         note = "",
         date = System.currentTimeMillis(),
         yearMonth = "2026-07",
-        timeOfDay = TimeOfDay.MORNING,
         walletId = 1L,
         toWalletId = null,
         paymentMethod = PaymentMethod.OTHER,

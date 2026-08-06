@@ -2,13 +2,11 @@ package com.palmnote.data.db.converter
 
 import androidx.room.TypeConverter
 import com.palmnote.domain.model.AssetStatus
-import com.palmnote.domain.model.AutoLockMode
 import com.palmnote.domain.model.BillType
 import com.palmnote.domain.model.EntityType
 import com.palmnote.domain.model.LinkType
 import com.palmnote.domain.model.PaymentMethod
 import com.palmnote.domain.model.RecurringFrequency
-import com.palmnote.domain.model.TimeOfDay
 import com.palmnote.ui.theme.AppIcon
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -61,18 +59,6 @@ class Converters {
 
     @TypeConverter
     fun toRecurringFrequency(s: String): RecurringFrequency = RecurringFrequency.from(s)
-
-    @TypeConverter
-    fun fromAutoLockMode(v: AutoLockMode): String = v.value
-
-    @TypeConverter
-    fun toAutoLockMode(s: String): AutoLockMode = AutoLockMode.from(s)
-
-    @TypeConverter
-    fun fromTimeOfDay(v: TimeOfDay): String = v.value
-
-    @TypeConverter
-    fun toTimeOfDay(s: String): TimeOfDay = TimeOfDay.from(s)
 
     // ---- 集合 ----
 
