@@ -21,6 +21,9 @@ class WalletViewModel @Inject constructor(
     val totalBalance: StateFlow<Long?> = walletRepository.getTotalBalance()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
+    fun getWalletByIdFlow(walletId: Long): Flow<Wallet?> =
+        walletRepository.getWalletByIdFlow(walletId)
+
     fun addWallet(wallet: Wallet) {
         viewModelScope.launch {
             walletRepository.insert(wallet)

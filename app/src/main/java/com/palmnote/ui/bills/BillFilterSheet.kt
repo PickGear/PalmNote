@@ -10,6 +10,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -38,18 +39,8 @@ fun BillFilterSheet(
     var selectedType by remember { mutableStateOf(currentFilter.type) }
     val context = LocalContext.current
 
-    fun filterDisplayName(key: String, type: String?): String {
-        val prefix = if (type == "EXPENSE") "EXPENSE_" else if (type == "INCOME") "INCOME_" else ""
-        val overrideKey = "preset_$prefix$key"
-        val json = presetOverrides[overrideKey]
-        if (json != null) {
-            try {
-                val obj = org.json.JSONObject(json)
-                if (obj.has("name")) return obj.getString("name")
-            } catch (_: Exception) {}
-        }
-        return getLocalizedCategoryName(key)?.let { context.getString(it) } ?: key
-    }
+    // 切换类型时重置分类选择（避免跨类型残留导致空结果）
+    LaunchedEffect(selectedType) { selectedCategory = null }
 
     AppBottomSheet(onDismissRequest = onDismiss) {
         Column(modifier = Modifier.fillMaxWidth()) {
@@ -66,12 +57,38 @@ fun BillFilterSheet(
                 FilterChip(
                     selected = selectedType == BillType.EXPENSE,
                     onClick = { selectedType = if (selectedType == BillType.EXPENSE) null else BillType.EXPENSE },
-                    label = { Text(stringResource(R.string.bill_filter_type_expense)) }
+                    label = { Text(stringResource(R.string.bill_filter_type_expense)) },
+                    colors = FilterChipDefaults.filterChipColors(
+                        containerColor = Color.Transparent,
+                        labelColor = MaterialTheme.colorScheme.onSurface,
+                        selectedContainerColor = ExpenseRed.copy(alpha = 0.15f),
+                        selectedLabelColor = ExpenseRed,
+                        selectedLeadingIconColor = ExpenseRed
+                    )
                 )
                 FilterChip(
                     selected = selectedType == BillType.INCOME,
                     onClick = { selectedType = if (selectedType == BillType.INCOME) null else BillType.INCOME },
-                    label = { Text(stringResource(R.string.bill_filter_type_income)) }
+                    label = { Text(stringResource(R.string.bill_filter_type_income)) },
+                    colors = FilterChipDefaults.filterChipColors(
+                        containerColor = Color.Transparent,
+                        labelColor = MaterialTheme.colorScheme.onSurface,
+                        selectedContainerColor = StatusActive.copy(alpha = 0.15f),
+                        selectedLabelColor = StatusActive,
+                        selectedLeadingIconColor = StatusActive
+                    )
+                )
+                FilterChip(
+                    selected = selectedType == BillType.TRANSFER,
+                    onClick = { selectedType = if (selectedType == BillType.TRANSFER) null else BillType.TRANSFER },
+                    label = { Text(stringResource(R.string.bill_transfer)) },
+                    colors = FilterChipDefaults.filterChipColors(
+                        containerColor = Color.Transparent,
+                        labelColor = MaterialTheme.colorScheme.onSurface,
+                        selectedContainerColor = InfoBlue.copy(alpha = 0.15f),
+                        selectedLabelColor = InfoBlue,
+                        selectedLeadingIconColor = InfoBlue
+                    )
                 )
             }
             Spacer(modifier = Modifier.height(12.dp))
@@ -96,21 +113,27 @@ fun BillFilterSheet(
             }
             Spacer(modifier = Modifier.height(12.dp))
 
-            Text(stringResource(R.string.bill_filter_category), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium)
-            Spacer(modifier = Modifier.height(8.dp))
-            val categories = if (selectedType == BillType.INCOME) incomeCategories else expenseCategories
-            val categoryType = if (selectedType == BillType.INCOME) "BILL_INCOME" else "BILL_EXPENSE"
-            CategoryPicker(
-                selected = selectedCategory ?: "",
-                onSelected = { catName ->
-                    selectedCategory = if (catName == selectedCategory) null else catName
-                },
-                categories = categories,
-                rows = 3,
-                columns = 5,
-                onManageCategories = onManageCategories?.let { { it(categoryType) } },
-                getDisplayName = { filterDisplayName(it, (selectedType ?: BillType.EXPENSE).value) }
-            )
+            if (selectedType != BillType.TRANSFER) {
+                Text(
+                    stringResource(R.string.bill_filter_category),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Medium
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                val categories = if (selectedType == BillType.INCOME) incomeCategories else expenseCategories
+                val categoryType = if (selectedType == BillType.INCOME) "BILL_INCOME" else "BILL_EXPENSE"
+                CategoryPicker(
+                    selected = selectedCategory ?: "",
+                    onSelected = { catName ->
+                        selectedCategory = if (catName == selectedCategory) null else catName
+                    },
+                    categories = categories,
+                    rows = 3,
+                    columns = 5,
+                    onManageCategories = onManageCategories?.let { { it(categoryType) } },
+                    getDisplayName = { resolvePresetCategoryName(presetOverrides, it, (selectedType ?: BillType.EXPENSE).value, context) }
+                )
+            }
             Spacer(modifier = Modifier.height(16.dp))
 
             val hasActiveFilter = currentFilter.isActive

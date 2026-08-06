@@ -19,12 +19,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.palmnote.PalmNoteApp
 import com.palmnote.R
 import com.palmnote.domain.model.toMoney
 import com.palmnote.domain.util.CurrencyUtils
@@ -61,8 +60,8 @@ fun AddBillScreen(
     val customExpenseCategories by viewModel.customExpenseCategories.collectAsStateWithLifecycle()
     val customIncomeCategories by viewModel.customIncomeCategories.collectAsStateWithLifecycle()
     val categoryUsageCounts by viewModel.categoryUsageCounts.collectAsStateWithLifecycle()
-    val presetOverrides by com.palmnote.PalmNoteApp.instance.preferencesManager.presetCategoryOverrides
-        .collectAsStateWithLifecycle(initialValue = emptyMap())
+    val presetOverrides by viewModel.presetCategoryOverrides
+        .collectAsStateWithLifecycle()
     val categories = remember(formState.type, customExpenseCategories, customIncomeCategories, categoryUsageCounts, presetOverrides) {
         val isExpense = formState.type == BillType.EXPENSE
         val rawPresets = if (isExpense) expenseCategoryItems else incomeCategoryItems
@@ -210,7 +209,7 @@ fun AddBillScreen(
                         fontWeight = FontWeight.Bold
                     )
                     if (formState.categoryError != null) {
-                        Text(formState.categoryError ?: "", style = MaterialTheme.typography.bodySmall, color = ErrorLight)
+                        Text(formState.categoryError.orEmpty(), style = MaterialTheme.typography.bodySmall, color = ErrorLight)
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     CategoryPicker(
@@ -222,16 +221,7 @@ fun AddBillScreen(
                             onNavigateToCategory(categoryType)
                         },
                         getDisplayName = { key ->
-                            val prefix = if (formState.type == BillType.EXPENSE) "EXPENSE_" else "INCOME_"
-                            val overrideKey = "preset_$prefix$key"
-                            val json = presetOverrides[overrideKey]
-                            val customName = if (json != null) {
-                                try {
-                                    val obj = org.json.JSONObject(json)
-                                    if (obj.has("name")) obj.getString("name") else null
-                                } catch (_: Exception) { null }
-                            } else null
-                            customName ?: (getLocalizedCategoryName(key)?.let { id -> context.getString(id) } ?: key)
+                            resolvePresetCategoryName(presetOverrides, key, formState.type.value, context)
                         }
                     )
                 }
@@ -419,18 +409,39 @@ fun AddBillScreen(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     var showDatePicker by remember { mutableStateOf(false) }
-                    OutlinedCard(
-                        onClick = { showDatePicker = true },
+                    var showTimePicker by remember { mutableStateOf(false) }
+
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = MaterialTheme.shapes.medium
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(16.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                        OutlinedCard(
+                            onClick = { showDatePicker = true },
+                            modifier = Modifier.weight(1f),
+                            shape = MaterialTheme.shapes.medium
                         ) {
-                            Text(DateUtils.formatDisplayFullDate(context, formState.date))
-                            Icon(Icons.Outlined.CalendarMonth, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(DateUtils.formatDisplayDate(context, formState.date))
+                                Icon(Icons.Outlined.CalendarMonth, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                        OutlinedCard(
+                            onClick = { showTimePicker = true },
+                            modifier = Modifier.weight(1f),
+                            shape = MaterialTheme.shapes.medium
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(DateUtils.formatTimeOnly(formState.date))
+                                Icon(Icons.Outlined.Schedule, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
                         }
                     }
 
@@ -444,8 +455,9 @@ fun AddBillScreen(
                             confirmButton = {
                                 TextButton(onClick = {
                                     state.selectedDateMillis?.let { utcDate ->
-                                        val localDate = utcDate - java.util.TimeZone.getDefault().getOffset(utcDate)
-                                        viewModel.updateForm { copy(date = localDate) }
+                                        val newDateMidnight = utcDate - java.util.TimeZone.getDefault().getOffset(utcDate)
+                                        val preservedDate = DateUtils.preserveTimeOfDay(formState.date, newDateMidnight)
+                                        viewModel.updateForm { copy(date = preservedDate) }
                                     }
                                     showDatePicker = false
                                 }) { Text(stringResource(R.string.confirm), color = AccentOrange, fontWeight = FontWeight.Bold) }
@@ -455,10 +467,38 @@ fun AddBillScreen(
                             }
                         ) { DatePicker(state = state, colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.background)) }
                     }
+
+                    if (showTimePicker) {
+                        val ldt = java.time.Instant.ofEpochMilli(formState.date)
+                            .atZone(java.time.ZoneId.systemDefault()).toLocalDateTime()
+                        val timeState = rememberTimePickerState(
+                            initialHour = ldt.hour,
+                            initialMinute = ldt.minute,
+                            is24Hour = true
+                        )
+                        AlertDialog(
+                            onDismissRequest = { showTimePicker = false },
+                            containerColor = MaterialTheme.colorScheme.background,
+                            confirmButton = {
+                                TextButton(onClick = {
+                                    val newLdt = ldt.withHour(timeState.hour).withMinute(timeState.minute)
+                                    val newDate = newLdt.atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
+                                    viewModel.updateForm { copy(date = newDate) }
+                                    showTimePicker = false
+                                }) { Text(stringResource(R.string.confirm), color = AccentOrange, fontWeight = FontWeight.Bold) }
+                            },
+                            dismissButton = {
+                                TextButton(onClick = { showTimePicker = false }) {
+                                    Text(stringResource(R.string.cancel), fontWeight = FontWeight.Bold)
+                                }
+                            },
+                            text = { TimePicker(state = timeState) }
+                        )
+                    }
                 }
             }
 
-            // Merchant
+            // Merchant + Location
             items(if (formState.type != BillType.TRANSFER) 1 else 0) {
                 ModuleCard(tint = MaterialTheme.colorScheme.surface) {
                     Text(
@@ -475,12 +515,7 @@ fun AddBillScreen(
                         shape = MaterialTheme.shapes.medium,
                         singleLine = true
                     )
-                }
-            }
-            
-            // Location
-            items(if (formState.type != BillType.TRANSFER) 1 else 0) {
-                ModuleCard(tint = MaterialTheme.colorScheme.surface) {
+                    Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = stringResource(R.string.bill_location),
                         style = MaterialTheme.typography.titleSmall,
@@ -514,6 +549,23 @@ fun AddBillScreen(
                         placeholder = { Text(stringResource(R.string.note_hint)) },
                         shape = MaterialTheme.shapes.medium,
                         maxLines = 3
+                    )
+                }
+            }
+
+            // Image Upload
+            item {
+                val accentColor = if (formState.type == BillType.TRANSFER) InfoBlue
+                    else categories.find { it.name == formState.category }?.color ?: AccentOrange
+                ModuleCard(tint = MaterialTheme.colorScheme.surface) {
+                    ImageGridPicker(
+                        title = stringResource(R.string.bill_image_section),
+                        images = formState.images.toImageList(),
+                        accentColor = accentColor,
+                        hint = stringResource(R.string.bill_image_hint),
+                        onAddImage = { viewModel.addImage(it) },
+                        onRemoveImage = { viewModel.removeImage(it) },
+                        onReorderImages = { from, to -> viewModel.reorderImages(from, to) }
                     )
                 }
             }

@@ -24,7 +24,10 @@ import com.palmnote.domain.repository.BillRepository
 import com.palmnote.domain.repository.BudgetRepository
 import com.palmnote.domain.util.DateUtils
 import com.palmnote.ui.components.CategoryItem
+import com.palmnote.ui.components.saveImageToInternalStorage
 import com.palmnote.ui.components.toComposeColor
+import com.palmnote.ui.components.toImageJson
+import com.palmnote.ui.components.toImageList
 import androidx.compose.runtime.Stable
 import com.palmnote.ui.theme.AppIcon
 import android.content.Context
@@ -37,7 +40,8 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.decodeFromString
-
+import android.net.Uri
+import java.io.File
 
 @Stable
 data class BillState(
@@ -115,6 +119,9 @@ class BillViewModel @Inject constructor(
     private val _formState = MutableStateFlow(AddBillFormState())
     val formState: StateFlow<AddBillFormState> = _formState.asStateFlow()
 
+    // 本次会话新建的图片文件（保存成功后统一清理，避免取消编辑留下孤儿文件）
+    private val pendingNewFiles = mutableSetOf<String>()
+
     // ============ Ephemeral state (user actions) ============
 
     private val _selectedBookId = MutableStateFlow(AccountBook.ALL_BOOKS_ID)
@@ -130,6 +137,10 @@ class BillViewModel @Inject constructor(
 
     val wallets: StateFlow<List<Wallet>> = cachedWallets
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val presetCategoryOverrides: StateFlow<Map<String, String>> =
+        preferencesManager.presetCategoryOverrides
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
     val customExpenseCategories: StateFlow<List<CategoryItem>> = cachedCategoryConfigs
         .map { configs -> configs.filter { it.type == "BILL_EXPENSE" && it.isEnabled }
@@ -182,7 +193,7 @@ class BillViewModel @Inject constructor(
 
     private val dailySummary: StateFlow<Map<Int, Pair<Long, Long>>> = billData
         .map { data ->
-            (data?.bills ?: emptyList())
+            (data?.bills.orEmpty())
                 .groupBy { DateUtils.millisToLocalDate(it.date).dayOfMonth }
                 .mapValues { (_, bills) ->
                     Pair(
@@ -211,10 +222,11 @@ class BillViewModel @Inject constructor(
             (data.expense.toFloat() / data.budget.totalBudget).toFloat() else 0f
 
         val filterActive = filter.type != null || filter.category != null || filter.paymentMethod != null || filter.amountMin != null || filter.amountMax != null
+        @Suppress("InjectDispatcher")
         val filtered = withContext(kotlinx.coroutines.Dispatchers.Default) {
             if (searching) searchRes
             else if (!filterActive && query.isBlank()) emptyList()
-            else (data?.bills ?: emptyList()).filter { bill ->
+            else (data?.bills.orEmpty()).filter { bill ->
                 (filter.type == null || bill.type == filter.type) &&
                 (filter.category == null || bill.category == filter.category) &&
                 (filter.paymentMethod == null || bill.paymentMethod == filter.paymentMethod) &&
@@ -227,13 +239,13 @@ class BillViewModel @Inject constructor(
         }
 
         BillState(
-            bills = data?.bills ?: emptyList(),
+            bills = data?.bills.orEmpty(),
             filteredBills = filtered,
             currentYearMonth = ym,
             selectedDay = day,
             monthlyExpense = data?.expense ?: 0,
             monthlyIncome = data?.income ?: 0,
-            expenseByCategory = data?.categories ?: emptyList(),
+            expenseByCategory = data?.categories.orEmpty(),
             budget = data?.budget,
             budgetUsagePercent = budgetPercent,
             dailySummary = daily,
@@ -294,8 +306,8 @@ class BillViewModel @Inject constructor(
                 savedStateHandle["bill_selected_day"] = s.selectedDay ?: -1
                 savedStateHandle["bill_selected_book"] = s.selectedBookId
                 savedStateHandle["bill_search_query"] = s.searchQuery
-                savedStateHandle["bill_filter_type"] = s.currentFilter.type?.value ?: ""
-                savedStateHandle["bill_filter_category"] = s.currentFilter.category ?: ""
+                savedStateHandle["bill_filter_type"] = s.currentFilter.type?.value.orEmpty()
+                savedStateHandle["bill_filter_category"] = s.currentFilter.category.orEmpty()
                 savedStateHandle["bill_filter_payment_method"] = s.currentFilter.paymentMethod ?: ""
                 savedStateHandle["bill_filter_amount_min"] = s.currentFilter.amountMin ?: -1L
                 savedStateHandle["bill_filter_amount_max"] = s.currentFilter.amountMax ?: -1L
@@ -417,6 +429,7 @@ class BillViewModel @Inject constructor(
 
     fun initFormForEdit(billId: Long) {
         viewModelScope.launch {
+            pendingNewFiles.clear()
             val bill = billRepository.getBillById(billId) ?: return@launch
             _selectedBookId.value = bill.accountBookId
             _formState.value = AddBillFormState(
@@ -445,6 +458,7 @@ class BillViewModel @Inject constructor(
     }
 
     fun resetForm(selectedDate: Long? = null) {
+        pendingNewFiles.clear()
         val date = selectedDate ?: System.currentTimeMillis()
         val walletId = cachedWallets.value.find { it.isDefault }?.id ?: cachedWallets.value.firstOrNull()?.id
         _formState.value = AddBillFormState(date = date, type = BillType.from(defaultBillType), walletId = walletId)
@@ -513,6 +527,7 @@ class BillViewModel @Inject constructor(
                     billRepository.createBillWithWalletAdjustment(bill)
                 }
 
+                cleanupImagesAfterSave(form.images)
                 _formState.value = form.copy(isSaving = false, isSaved = true)
             } catch (e: Exception) {
                 _formState.value = _formState.value.copy(isSaving = false)
@@ -524,6 +539,53 @@ class BillViewModel @Inject constructor(
         viewModelScope.launch {
             if (budget.id > 0) budgetRepository.updateBudget(budget)
             else budgetRepository.insertBudget(budget)
+        }
+    }
+
+    /**
+     * 保存成功后清理本次会话新建但最终未保留的图片文件（避免取消编辑留下孤儿文件）。
+     * 历史图片的删除由账单删除（hardDelete）统一处理。
+     */
+    private fun cleanupImagesAfterSave(savedImagesJson: String) {
+        val savedPaths = savedImagesJson.toImageList().toSet()
+        val filesToDelete = pendingNewFiles - savedPaths
+        @Suppress("InjectDispatcher")
+        viewModelScope.launch {
+            withContext(kotlinx.coroutines.Dispatchers.IO) {
+                filesToDelete.forEach { path -> runCatching { File(path).delete() } }
+            }
+        }
+        pendingNewFiles.clear()
+    }
+
+    // ============ Image management ============
+
+    private fun updateImages(transform: MutableList<String>.() -> Unit) {
+        val list = _formState.value.images.toImageList().toMutableList()
+        list.transform()
+        _formState.value = _formState.value.copy(images = list.toImageJson())
+    }
+
+    fun addImage(uri: Uri) {
+        viewModelScope.launch {
+            val path = saveImageToInternalStorage(context, uri, "bill_") ?: return@launch
+            pendingNewFiles.add(path)
+            updateImages { add(path) }
+        }
+    }
+
+    fun removeImage(index: Int) {
+        val current = _formState.value.images.toImageList()
+        if (index !in current.indices) return
+        // 不立即删文件，保存成功后统一清理（避免编辑态取消时丢失图片）
+        updateImages { removeAt(index) }
+    }
+
+    fun reorderImages(from: Int, to: Int) {
+        updateImages {
+            if (from in indices && to in indices) {
+                add(to, removeAt(from))
+            }
         }
     }
 }

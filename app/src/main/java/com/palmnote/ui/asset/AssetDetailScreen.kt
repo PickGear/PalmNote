@@ -6,14 +6,10 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
-import androidx.compose.foundation.gestures.detectTransformGestures
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.*
@@ -39,11 +35,8 @@ import android.view.WindowManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
-import androidx.activity.compose.BackHandler
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.palmnote.PalmNoteApp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.palmnote.data.db.entity.UsageRecord
 import com.palmnote.data.db.entity.getWarrantyStatusText
@@ -57,7 +50,6 @@ import com.palmnote.R
 import com.palmnote.ui.components.*
 import com.palmnote.ui.theme.*
 import kotlin.math.roundToInt
-import kotlinx.coroutines.launch
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -105,10 +97,9 @@ fun AssetDetailScreen(
     val statusColor = getStatusColor(asset.status)
     val statusText = getStatusText(asset.status)
 
-    val presetVer by com.palmnote.PalmNoteApp.instance.preferencesManager.presetCategoryOverrides
-        .collectAsStateWithLifecycle(initialValue = emptyMap())
+    val presetVer by viewModel.presetCategoryOverrides.collectAsStateWithLifecycle()
     val customItems by viewModel.customCategories.collectAsStateWithLifecycle()
-    val catInfo = remember(asset.category, presetVer, customItems) { getCategoryIcon(asset.category, customItems) }
+    val catInfo = remember(asset.category, customItems) { getCategoryIcon(asset.category, customItems) }
 
     val imageList = remember(asset.images) { asset.images.toImageList() }
     val tags = remember(asset.tags) { parseTags(asset.tags) }
@@ -459,7 +450,13 @@ fun AssetDetailScreen(
         }
     }
 
-    ImagePreview(showPreview, imageList, previewIndex, { previewIndex = -1 }, viewModel)
+    AppImagePreview(
+        showPreview = showPreview,
+        imageList = imageList,
+        previewIndex = previewIndex,
+        onClose = { previewIndex = -1 },
+        onSaveImage = { com.palmnote.ui.components.saveImageToGallery(context, imageList[it]) }
+    )
 
     if (showAwayDialog) {
         var reason by remember { mutableStateOf("") }
@@ -647,63 +644,6 @@ private fun DarkSystemBarsForPreview(showPreview: Boolean) {
             }
         } else {
             onDispose { }
-        }
-    }
-}
-
-@Composable
-private fun ImagePreview(showPreview: Boolean, imageList: List<String>, previewIndex: Int, onClose: () -> Unit, viewModel: AssetViewModel) {
-    if (!showPreview) return
-    BackHandler { onClose() }
-    val pagerState = rememberPagerState(pageCount = { imageList.size }, initialPage = previewIndex)
-    val context = LocalContext.current
-    val snackbarPreviewHost = remember { SnackbarHostState() }
-    val previewScope = rememberCoroutineScope()
-    Box(
-        modifier = Modifier.fillMaxSize().background(Color.Black)
-            .pointerInput(Unit) { awaitPointerEventScope { while (true) { awaitPointerEvent().changes.forEach { it.consume() } } } }
-    ) {
-        SnackbarHost(snackbarPreviewHost, modifier = Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 48.dp))
-        Column(Modifier.fillMaxSize()) {
-            Row(
-                modifier = Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 4.dp, vertical = 4.dp),
-                horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = onClose) { Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.asset_close), tint = Color.White) }
-                if (imageList.size > 1) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        imageList.forEachIndexed { i, _ ->
-                            Box(Modifier.size(if (i == pagerState.currentPage) 8.dp else 6.dp).clip(MaterialTheme.shapes.extraSmall).background(if (i == pagerState.currentPage) Color.White else Color.White.copy(alpha = 0.4f)))
-                        }
-                    }
-                }
-                Spacer(Modifier.width(48.dp))
-            }
-            HorizontalPager(state = pagerState, modifier = Modifier.weight(1f).fillMaxWidth()) { page ->
-                var zoomScale by remember { mutableFloatStateOf(1f) }
-                Box(modifier = Modifier.fillMaxSize().pointerInput(Unit) {
-                    detectTransformGestures { _, _, zoom, _ ->
-                        zoomScale = (zoomScale * zoom).coerceIn(1f, 5f)
-                    }
-                }.graphicsLayer { scaleX = zoomScale; scaleY = zoomScale }, contentAlignment = Alignment.Center) {
-                    AsyncImage(model = File(imageList[page]), contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Fit)
-                }
-            }
-            Box(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp, vertical = 12.dp), contentAlignment = Alignment.Center) {
-                Button(
-                    onClick = {
-                        viewModel.downloadImageToGallery(imageList[pagerState.currentPage])
-                        previewScope.launch { snackbarPreviewHost.showSnackbar(context.getString(R.string.asset_saved_to_album)) }
-                    },
-                    modifier = Modifier.height(44.dp).wrapContentWidth(),
-                    shape = MaterialTheme.shapes.medium,
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surface)
-                ) {
-                    Icon(Icons.Outlined.FileDownload, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurface)
-                    Spacer(Modifier.width(6.dp))
-                    Text(stringResource(R.string.asset_save_to_phone), fontWeight = FontWeight.Medium, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
-                }
-            }
         }
     }
 }

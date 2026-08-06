@@ -777,7 +777,6 @@
     <string name="asset_error_name_required">Please enter an item name</string>
     <string name="asset_error_category_required">Please select a category</string>
     <string name="asset_error_date_required">Please select a purchase date</string>
-    <string name="asset_gallery_folder">PalmNote</string>
     
     <!-- Bill Form Errors -->
     <string name="bill_error_amount_required">Please enter a valid amount</string>
@@ -942,6 +941,8 @@
     <string name="bill_location">Location</string>
     <string name="bill_tags">Tags</string>
     <string name="bill_attachments">Attachments</string>
+    <string name="bill_image_section">Images</string>
+    <string name="bill_image_hint">Add receipt or invoice photos, up to 4</string>
     <string name="bill_reimbursement_status">Reimbursement Status</string>
     <string name="bill_reimbursed">Reimbursed</string>
     <string name="bill_pending_reimbursement">Pending</string>

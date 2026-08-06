@@ -1,12 +1,11 @@
 package com.palmnote.data.export
 
 import android.content.Context
+import android.net.Uri
 import com.palmnote.domain.model.AssetStatus
 import com.palmnote.domain.model.BillType
 import com.palmnote.domain.model.PaymentMethod
 import com.palmnote.domain.model.RecurringFrequency
-import com.palmnote.domain.model.TimeOfDay
-import android.net.Uri
 import com.palmnote.domain.util.AppLogger
 import com.palmnote.R
 import kotlinx.serialization.json.Json
@@ -83,8 +82,7 @@ class CsvDataExporter(
             Bill::class.java to mapOf(
                 "type" to mapOf(BillType.EXPENSE.value to "支出", BillType.INCOME.value to "收入", BillType.TRANSFER.value to "转账"),
                 "paymentMethod" to mapOf("CASH" to "现金", "WECHAT" to "微信", "ALIPAY" to "支付宝", "CARD" to "银行卡", "BANK_TRANSFER" to "银行转账", "OTHER" to "其他"),
-                "linkType" to mapOf("PURCHASE" to "购买", "MAINTENANCE" to "维护", "WARRANTY" to "质保", "INSURANCE" to "保险"),
-                "timeOfDay" to mapOf("MORNING" to "早上", "AFTERNOON" to "下午", "EVENING" to "晚上", "NIGHT" to "深夜")
+                "linkType" to mapOf("PURCHASE" to "购买", "MAINTENANCE" to "维护", "WARRANTY" to "质保", "INSURANCE" to "保险")
             ),
             Wallet::class.java to mapOf(
                 "type" to mapOf("CASH" to "现金", "E_WALLET" to "电子钱包", "BANK_CARD" to "银行卡", "CREDIT_CARD" to "信用卡", "INVESTMENT" to "投资账户", "OTHER" to "其他")
@@ -152,7 +150,7 @@ class CsvDataExporter(
             "soldPrice" to "售出价格", "soldChannel" to "售出渠道",
             "soldToWhom" to "售出对象",
             "amount" to "金额", "yearMonth" to "年月",
-            "timeOfDay" to "时段", "walletId" to "钱包",
+            "walletId" to "钱包",
             "toWalletId" to "目标钱包", "paymentMethod" to "支付方式",
             "merchant" to "商户名称", "linkedAssetId" to "关联物品",
             "linkType" to "关联类型",
@@ -434,7 +432,7 @@ class CsvDataExporter(
         }
     }
 
-    private val COMMON_PREFIX: Map<Class<*>, List<String>> = mapOf(
+    private val commonPrefix: Map<Class<*>, List<String>> = mapOf(
         Asset::class.java to listOf(
             "name", "category", "subCategory", "brand", "model",
             "quantity", "purchasePrice", "acquisitionType", "acquisitionDate",
@@ -443,7 +441,7 @@ class CsvDataExporter(
         ),
         Bill::class.java to listOf(
             "amount", "type", "date", "category", "subCategory",
-            "note", "paymentMethod", "merchant", "location", "timeOfDay", "tags"
+            "note", "paymentMethod", "merchant", "location", "tags"
         ),
         Wallet::class.java to listOf(
             "name", "type", "currentBalance", "initialBalance",
@@ -482,7 +480,7 @@ class CsvDataExporter(
     )
 
     private fun reorderFields(fields: Iterable<String>, clazz: Class<*>): List<String> {
-        val prefix = COMMON_PREFIX[clazz].orEmpty()
+        val prefix = commonPrefix[clazz].orEmpty()
         val set = fields.toSet()
         return prefix.filter { it in set } + (set - prefix.toSet()).toList()
     }
@@ -824,7 +822,6 @@ class CsvDataExporter(
                 note = row["note"] ?: "",
                 date = billDate,
                 yearMonth = row["yearMonth"] ?: yearMonthFormatter.format(java.time.Instant.ofEpochMilli(billDate).atZone(java.time.ZoneId.systemDefault())),
-                timeOfDay = TimeOfDay.from(row["timeOfDay"] ?: ""),
                 walletId = row["walletId"]?.toLongOrNull(),
                 toWalletId = row["toWalletId"]?.toLongOrNull(),
                 paymentMethod = PaymentMethod.from(row["paymentMethod"] ?: ""),

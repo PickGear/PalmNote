@@ -10,6 +10,7 @@ import com.palmnote.data.db.entity.Anniversary
 import com.palmnote.data.db.entity.Budget
 import com.palmnote.data.db.entity.Goal
 import com.palmnote.data.datastore.PreferencesManager
+import com.palmnote.data.db.entity.CategoryConfig
 import com.palmnote.domain.repository.*
 import com.palmnote.domain.util.DateUtils
 import com.palmnote.feature.vault.VaultRepository
@@ -45,7 +46,8 @@ class DashboardViewModel @Inject constructor(
     private val goalRepository: GoalRepository,
     private val anniversaryRepository: AnniversaryRepository,
     private val preferencesManager: PreferencesManager,
-    private val vaultRepository: VaultRepository
+    private val vaultRepository: VaultRepository,
+    private val cachedCategoryConfigs: @JvmSuppressWildcards StateFlow<List<CategoryConfig>>
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(DashboardState())
@@ -57,6 +59,12 @@ class DashboardViewModel @Inject constructor(
     val visibleConfigs: StateFlow<List<DashboardCardConfig>> = _cardConfigs
         .map { it.filter { c -> c.visible } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DashboardCardConfig.defaults.filter { it.visible })
+
+    val presetCategoryOverrides: StateFlow<Map<String, String>> =
+        preferencesManager.presetCategoryOverrides
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
+
+    val categoryConfigs: StateFlow<List<CategoryConfig>> = cachedCategoryConfigs
 
     init {
         loadDashboardData()
