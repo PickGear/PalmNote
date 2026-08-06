@@ -27,7 +27,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.palmnote.PalmNoteApp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.palmnote.R
 import com.palmnote.data.db.dao.CategoryTotal
@@ -56,8 +55,8 @@ fun ReportScreen(
         viewModel.setSelectedBookId(selectedBookId)
     }
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val reportCustomCfg by PalmNoteApp.instance.cachedCategoryConfigs
-        .collectAsStateWithLifecycle(initialValue = emptyList())
+    val reportCustomCfg by viewModel.categoryConfigs
+        .collectAsStateWithLifecycle()
     val reportCustomExpense = remember(reportCustomCfg) {
         reportCustomCfg.filter { it.type == "BILL_EXPENSE" && it.isEnabled }
             .map { com.palmnote.ui.components.CategoryItem(it.name, it.icon.imageVector, it.color.toComposeColor()) }
@@ -624,7 +623,7 @@ private fun WeeklyBarChart(dailySummary: List<DailySummary>, isExpense: Boolean)
         }
         val cal = java.util.Calendar.getInstance()
 
-        // 按星期槽位放置柱子（0=周一 … 6=周日），无记录的天留空
+        // 按星期槽位放置柱子（0=周一 �?6=周日），无记录的天留�?
         val slotValues = Array<Pair<Int, Long>?>(7) { null }
         dailySummary.takeLast(7).forEach { day ->
             cal.timeInMillis = day.date
@@ -702,7 +701,7 @@ private fun MonthlyLineChart(dailySummary: List<DailySummary>, isExpense: Boolea
             )
         }
 
-        // 按自然日铺满整月，无记录的天补 0，避免折线被压缩
+        // 按自然日铺满整月，无记录的天�?0，避免折线被压缩
         val points = (1..daysInMonth).map { day ->
             val value = if (isExpense) byDay[day]?.expense ?: 0 else byDay[day]?.income ?: 0
             val x = leftPad + chartW * (day - 1) / (daysInMonth - 1).coerceAtLeast(1)

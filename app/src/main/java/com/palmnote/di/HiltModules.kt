@@ -151,52 +151,19 @@ object DatabaseModule {
                 com.palmnote.data.db.migration.Migration5To6(
                     context.getDatabasePath(com.palmnote.feature.vault.VaultDatabase.DATABASE_NAME).absolutePath,
                     dbKeyStore.getOrCreateKey()
-                )
+                ),
+                com.palmnote.data.db.migration.MIGRATION_6_7
             )
             .addCallback(object : androidx.room.RoomDatabase.Callback() {
                 override fun onCreate(db: SupportSQLiteDatabase) {
                     super.onCreate(db)
-                    // yearMonth 自动生成触发器
-                    db.execSQL("""
-                        CREATE TRIGGER IF NOT EXISTS auto_yearmonth_insert AFTER INSERT ON bills
-                        BEGIN
-                            UPDATE bills SET yearMonth = strftime('%Y-%m', datetime(NEW.date / 1000, 'unixepoch', 'localtime'))
-                            WHERE id = NEW.id;
-                        END
-                    """)
-                    db.execSQL("""
-                        CREATE TRIGGER IF NOT EXISTS auto_yearmonth_update AFTER UPDATE OF date ON bills
-                        BEGIN
-                            UPDATE bills SET yearMonth = strftime('%Y-%m', datetime(NEW.date / 1000, 'unixepoch', 'localtime'))
-                            WHERE id = NEW.id;
-                        END
-                    """)
-                    // FTS 全文搜索
+                    // FTS 全文搜索虚拟表（触发器在 createBillTriggers 中创建）
                     db.execSQL("""
                         CREATE VIRTUAL TABLE IF NOT EXISTS bills_fts USING fts5(
                             note, merchant, tags, content='bills', content_rowid='id'
                         )
                     """)
-                    db.execSQL("""
-                        CREATE TRIGGER IF NOT EXISTS bills_fts_ai AFTER INSERT ON bills BEGIN
-                            INSERT INTO bills_fts(rowid, note, merchant, tags)
-                            VALUES (new.id, new.note, new.merchant, new.tags);
-                        END
-                    """)
-                    db.execSQL("""
-                        CREATE TRIGGER IF NOT EXISTS bills_fts_ad AFTER DELETE ON bills BEGIN
-                            INSERT INTO bills_fts(bills_fts, rowid, note, merchant, tags)
-                            VALUES ('delete', old.id, old.note, old.merchant, old.tags);
-                        END
-                    """)
-                    db.execSQL("""
-                        CREATE TRIGGER IF NOT EXISTS bills_fts_au AFTER UPDATE ON bills BEGIN
-                            INSERT INTO bills_fts(bills_fts, rowid, note, merchant, tags)
-                            VALUES ('delete', old.id, old.note, old.merchant, old.tags);
-                            INSERT INTO bills_fts(rowid, note, merchant, tags)
-                            VALUES (new.id, new.note, new.merchant, new.tags);
-                        END
-                    """)
+                    com.palmnote.data.db.createBillTriggers(db)
                 }
 
                 override fun onOpen(db: SupportSQLiteDatabase) {

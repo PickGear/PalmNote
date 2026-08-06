@@ -3,6 +3,8 @@ package com.palmnote.ui.bills
 import androidx.compose.foundation.background
 import com.palmnote.domain.model.BillType
 import com.palmnote.domain.model.PaymentMethod
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -19,16 +21,17 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.palmnote.PalmNoteApp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import coil3.compose.AsyncImage
 import com.palmnote.R
 import com.palmnote.data.db.entity.Bill
 import com.palmnote.domain.model.toMoney
@@ -36,21 +39,24 @@ import com.palmnote.domain.util.CurrencyUtils
 import com.palmnote.domain.util.DateUtils
 import com.palmnote.ui.components.*
 import com.palmnote.ui.theme.*
+import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
+@Suppress("LongMethod", "CyclomaticComplexMethod")
 @Composable
 fun BillDetailScreen(
     billId: Long,
     onNavigateBack: () -> Unit = {},
     onNavigateToEdit: (Long) -> Unit = {},
-    walletNames: Map<Long, String> = emptyMap(),
     viewModel: BillDetailViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
-    val billPresetOverrides by PalmNoteApp.instance.preferencesManager.presetCategoryOverrides
-        .collectAsStateWithLifecycle(initialValue = emptyMap())
-    val billCustomCfg by PalmNoteApp.instance.cachedCategoryConfigs
-        .collectAsStateWithLifecycle(initialValue = emptyList())
+    val billPresetOverrides by viewModel.presetCategoryOverrides
+        .collectAsStateWithLifecycle()
+    val billCustomCfg by viewModel.categoryConfigs
+        .collectAsStateWithLifecycle()
+    val walletNames by viewModel.walletNames
+        .collectAsStateWithLifecycle()
     val billCustomExpense = remember(billCustomCfg) {
         billCustomCfg.filter { it.type == "BILL_EXPENSE" }
             .map { com.palmnote.ui.components.CategoryItem(it.name, it.icon.imageVector, it.color.toComposeColor()) }
@@ -71,6 +77,9 @@ fun BillDetailScreen(
     }
     
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var previewIndex by remember { mutableIntStateOf(-1) }
+    val bill = state.bill
+    val imageList = remember(bill) { bill?.images?.toImageList().orEmpty() }
 
     Scaffold(
         topBar = {
@@ -89,7 +98,6 @@ fun BillDetailScreen(
             )
         }
     ) { padding ->
-        val bill = state.bill
         if (bill != null) {
             Column(
                 modifier = Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
@@ -98,31 +106,28 @@ fun BillDetailScreen(
                 ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = "${if (bill.type == BillType.EXPENSE) "-" else if (bill.type == BillType.TRANSFER) "" else "+"}${CurrencyUtils.formatCurrency(bill.amount.toMoney())}",
-                                style = MaterialTheme.typography.displaySmall,
-                                fontWeight = FontWeight.Bold,
-                                color = if (bill.type == BillType.EXPENSE) ExpenseRed else if (bill.type == BillType.TRANSFER) InfoBlue else IncomeGreen
-                            )
+                            Box(
+                                modifier = Modifier.clip(MaterialTheme.shapes.small).background(
+                                    if (bill.type == BillType.EXPENSE) ExpenseRed.copy(alpha = 0.1f)
+                                    else if (bill.type == BillType.TRANSFER) InfoBlue.copy(alpha = 0.1f)
+                                    else IncomeGreen.copy(alpha = 0.1f)
+                                ).padding(horizontal = 12.dp, vertical = 6.dp)
+                            ) {
+                                Text(
+                                    text = "${if (bill.type == BillType.EXPENSE) "-" else if (bill.type == BillType.TRANSFER) "" else "+"}${CurrencyUtils.formatCurrency(bill.amount.toMoney())}",
+                                    style = MaterialTheme.typography.displaySmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (bill.type == BillType.EXPENSE) ExpenseRed else if (bill.type == BillType.TRANSFER) InfoBlue else IncomeGreen
+                                )
+                            }
                     val catItem = remember(bill.category, bill.type, billCustomExpense, billCustomIncome) {
                         val item = (if (bill.type == BillType.EXPENSE) expenseCategoryItems else incomeCategoryItems).find { it.name == bill.category }
                         item?.let { it.copy(color = ColorResolver.resolve(it.name, it.color)) }
                             ?: (if (bill.type == BillType.EXPENSE) billCustomExpense else billCustomIncome).find { it.name == bill.category }
                             ?: com.palmnote.ui.components.CategoryItem(bill.category, Icons.Outlined.Cancel, ErrorLight)
                     }
-                    fun getBillDisplayName(cat: String): String {
-                        val prefix = if (bill.type == BillType.EXPENSE) "EXPENSE_" else "INCOME_"
-                        val overrideKey = "preset_$prefix$cat"
-                        val json = billPresetOverrides[overrideKey]
-                        if (json != null) {
-                            try {
-                                val obj = org.json.JSONObject(json)
-                                if (obj.has("name")) return obj.getString("name")
-                            } catch (_: Exception) {}
-                        }
-                        val resId = getLocalizedCategoryName(cat)
-                        return if (resId != null) context.getString(resId) else cat
-                    }
+                    fun getBillDisplayName(cat: String): String =
+                        resolvePresetCategoryName(billPresetOverrides, cat, bill.type.value, context)
                     if (bill.type == BillType.TRANSFER) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(InfoBlue.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) {
@@ -141,13 +146,12 @@ fun BillDetailScreen(
                     }
                         }
                         HorizontalDivider()
-                        DetailRow(stringResource(R.string.bill_type), if (bill.type == BillType.TRANSFER) stringResource(R.string.bill_transfer) else if (bill.type == BillType.EXPENSE) stringResource(R.string.bill_expense) else stringResource(R.string.bill_income))
-                        DetailRow(stringResource(R.string.bill_date), DateUtils.formatDisplayDate(context, bill.date))
+                        DetailRow(stringResource(R.string.bill_date), DateUtils.formatBillDate(context, bill.date))
                         if (bill.type == BillType.TRANSFER) {
-                            DetailRow(stringResource(R.string.bill_wallet), walletNames[bill.walletId] ?: "")
-                            DetailRow(stringResource(R.string.bill_transfer_to), walletNames[bill.toWalletId] ?: "")
+                            DetailRow(stringResource(R.string.bill_wallet), walletNames[bill.walletId].orEmpty())
+                            DetailRow(stringResource(R.string.bill_transfer_to), walletNames[bill.toWalletId].orEmpty())
                         } else {
-                            bill.walletId?.let { DetailRow(stringResource(R.string.bill_wallet), walletNames[it] ?: "") }
+                            bill.walletId?.let { DetailRow(stringResource(R.string.bill_wallet), walletNames[it].orEmpty()) }
                         }
                         if (bill.type != BillType.TRANSFER && bill.merchant.isNotEmpty()) DetailRow(stringResource(R.string.bill_merchant), bill.merchant)
                         if (bill.paymentMethod != PaymentMethod.OTHER) DetailRow(stringResource(R.string.bill_payment_method), stringResource(getLocalizedPaymentMethod(bill.paymentMethod.value)))
@@ -155,7 +159,68 @@ fun BillDetailScreen(
                         if (bill.subCategory.isNotEmpty()) DetailRow(stringResource(R.string.bill_sub_category), bill.subCategory)
                         if (bill.location.isNotEmpty()) DetailRow(stringResource(R.string.bill_location), bill.location)
                         if (bill.tags.isNotEmpty()) DetailRow(stringResource(R.string.bill_tags), bill.tags)
-                        if (bill.images.isNotEmpty()) DetailRow(stringResource(R.string.bill_attachments), bill.images)
+                        if (imageList.isNotEmpty()) {
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                            Text(
+                                stringResource(R.string.bill_image_section),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .horizontalScroll(rememberScrollState()),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                imageList.forEachIndexed { index, imagePath ->
+                                    Box(
+                                        modifier = Modifier
+                                            .size(80.dp)
+                                            .clip(MaterialTheme.shapes.medium)
+                                            .clickable { previewIndex = index }
+                                    ) {
+                                        AsyncImage(
+                                            model = File(imagePath),
+                                            contentDescription = null,
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = stringResource(R.string.bill_created_at),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = DateUtils.formatDisplayDateTime(bill.createdAt),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = stringResource(R.string.bill_updated_at),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = DateUtils.formatDisplayDateTime(bill.updatedAt),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
 
@@ -171,16 +236,6 @@ fun BillDetailScreen(
                         }
                     }
                 }
-
-                ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
-                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        DetailRow(stringResource(R.string.bill_record_id), "${bill.id}")
-                        DetailRow(stringResource(R.string.bill_created_at), DateUtils.formatDisplayDate(context, bill.createdAt))
-                        DetailRow(stringResource(R.string.bill_updated_at), DateUtils.formatDisplayDate(context, bill.updatedAt))
-                    }
-                }
-
-                Spacer(modifier = Modifier.weight(1f))
 
                 Button(
                     onClick = { onNavigateToEdit(billId) },
@@ -216,4 +271,12 @@ fun BillDetailScreen(
             }
         )
     }
+
+    AppImagePreview(
+        showPreview = previewIndex in imageList.indices,
+        imageList = imageList,
+        previewIndex = previewIndex,
+        onClose = { previewIndex = -1 },
+        onSaveImage = { com.palmnote.ui.components.saveImageToGallery(context, imageList[it]) }
+    )
 }

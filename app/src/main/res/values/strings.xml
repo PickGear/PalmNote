@@ -817,7 +817,6 @@
     <string name="asset_error_name_required">请输入物品名称</string>
     <string name="asset_error_category_required">请选择分类</string>
     <string name="asset_error_date_required">请选择购买日期</string>
-    <string name="asset_gallery_folder">掌记</string>
     
     <!-- Bill Form Errors -->
     <string name="bill_error_amount_required">请输入有效金额</string>
@@ -982,6 +981,8 @@
     <string name="bill_location">地点</string>
     <string name="bill_tags">标签</string>
     <string name="bill_attachments">附件</string>
+    <string name="bill_image_section">附件图片</string>
+    <string name="bill_image_hint">支持添加发票或小票照片，最多4张</string>
     <string name="bill_reimbursement_status">报销状态</string>
     <string name="bill_reimbursed">已报销</string>
     <string name="bill_pending_reimbursement">待报销</string>

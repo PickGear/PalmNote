@@ -5,7 +5,6 @@ import androidx.room.PrimaryKey
 import com.palmnote.domain.model.BillType
 import com.palmnote.domain.model.PaymentMethod
 import com.palmnote.domain.model.RecurringFrequency
-import com.palmnote.domain.model.TimeOfDay
 
 /**
  * 账单回收站：删除的账单暂存于此，可恢复。
@@ -22,7 +21,6 @@ data class BillRecycleBin(
     val note: String = "",
     val date: Long,
     val yearMonth: String,
-    val timeOfDay: TimeOfDay = TimeOfDay.MORNING,
     val accountBookId: Long = 1,
     val walletId: Long? = null,
     val toWalletId: Long? = null,
@@ -52,7 +50,7 @@ data class BillRecycleBin(
 fun Bill.toRecycleBin() = BillRecycleBin(
     originalId = id, amount = amount, type = type, category = category,
     subCategory = subCategory, note = note, date = date, yearMonth = yearMonth,
-    timeOfDay = timeOfDay, accountBookId = accountBookId, walletId = walletId,
+    accountBookId = accountBookId, walletId = walletId,
     toWalletId = toWalletId, paymentMethod = paymentMethod, merchant = merchant,
     transactionId = transactionId, location = location, tags = tags, images = images,
     linkedAssetId = linkedAssetId, linkType = linkType, recurringId = recurringId,
@@ -66,7 +64,7 @@ fun Bill.toRecycleBin() = BillRecycleBin(
 fun BillRecycleBin.toBill() = Bill(
     id = originalId, amount = amount, type = type, category = category,
     subCategory = subCategory, note = note, date = date, yearMonth = yearMonth,
-    timeOfDay = timeOfDay, accountBookId = accountBookId, walletId = walletId,
+    accountBookId = accountBookId, walletId = walletId,
     toWalletId = toWalletId, paymentMethod = paymentMethod, merchant = merchant,
     transactionId = transactionId, location = location, tags = tags, images = images,
     linkedAssetId = linkedAssetId, linkType = linkType, recurringId = recurringId,
