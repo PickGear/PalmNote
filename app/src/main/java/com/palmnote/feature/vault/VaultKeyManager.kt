@@ -113,7 +113,7 @@ class VaultKeyManager @Inject constructor(
         }
     }
 
-    /** 历史包裹（无参数记录）：按 当前→临时(600k)→遗留(25k) 依次尝试，返回解出的 DK；全失败返回 null。 */
+    /** 历史包裹（无参数记录）：按 当前→上版(100k)→临时(600k)→遗留(25k) 依次尝试，返回解出的 DK；全失败返回 null。 */
     private fun decryptWithFallback(pin: String, salt: ByteArray, wrapped: ByteArray): ByteArray? {
         val attempt = { iterations: Int ->
             try {
@@ -123,6 +123,7 @@ class VaultKeyManager @Inject constructor(
             }
         }
         return attempt(VaultCrypto.PBKDF2_ITERATIONS)
+            ?: attempt(VaultCrypto.PREVIOUS_PBKDF2_ITERATIONS)
             ?: attempt(VaultCrypto.INTERIM_PBKDF2_ITERATIONS)
             ?: attempt(VaultCrypto.LEGACY_PBKDF2_ITERATIONS)
     }

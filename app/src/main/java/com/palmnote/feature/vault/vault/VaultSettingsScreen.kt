@@ -15,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.outlined.Fingerprint
+import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -51,7 +52,6 @@ import com.palmnote.ui.settings.SectionHeader
 import com.palmnote.ui.settings.SettingRow
 import com.palmnote.ui.settings.SettingRowContent
 import com.palmnote.ui.theme.LocalSwitchColor
-import com.palmnote.ui.theme.ModuleSettings
 import com.palmnote.ui.theme.vaultTint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -69,6 +69,7 @@ fun VaultSettingsScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
     var showClipboardDialog by remember { mutableStateOf(false) }
+    var showCardIdentityDialog by remember { mutableStateOf(false) }
     var showSetupPin by remember { mutableStateOf(false) }
     var showChangePin by remember { mutableStateOf(false) }
     var showResetPinVerify by remember { mutableStateOf(false) }
@@ -217,21 +218,37 @@ fun VaultSettingsScreen(
                 }
             }
 
-            item { SectionHeader(stringResource(R.string.vault_settings_section_general), Icons.Outlined.Settings, ModuleSettings) }
+            item { SectionHeader(stringResource(R.string.vault_settings_section_general), Icons.Outlined.Settings, vaultTint()) }
             item {
                 ModuleCard(modifier = Modifier.fillMaxWidth()) {
                     SettingRow(clickable = { showClipboardDialog = true }) {
                         SettingRowContent(
                             title = stringResource(R.string.vault_settings_clipboard),
-                            subtitle = stringResource(R.string.vault_settings_clipboard_value, state.clipboardSeconds),
+                            subtitle = if (state.clipboardSeconds <= 0) {
+                                stringResource(R.string.vault_settings_clipboard_never)
+                            } else {
+                                stringResource(R.string.vault_settings_clipboard_value, state.clipboardSeconds)
+                            },
                             showChevron = true
                         )
                     }
-                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-                    SettingRow {
+                }
+            }
+
+            item { SectionHeader(stringResource(R.string.vault_settings_section_card_display), Icons.Outlined.GridView, vaultTint()) }
+            item {
+                ModuleCard(modifier = Modifier.fillMaxWidth()) {
+                    SettingRow(clickable = { showCardIdentityDialog = true }) {
                         SettingRowContent(
-                            title = stringResource(R.string.vault_settings_count),
-                            subtitle = stringResource(R.string.vault_settings_count_value, state.entryCount)
+                            title = stringResource(R.string.vault_settings_card_identity),
+                            subtitle = stringResource(
+                                if (state.cardIdentity == "email_first") {
+                                    R.string.vault_settings_card_identity_email
+                                } else {
+                                    R.string.vault_settings_card_identity_username
+                                }
+                            ),
+                            showChevron = true
                         )
                     }
                 }
@@ -408,6 +425,44 @@ fun VaultSettingsScreen(
             dismissButton = {}
         )
     }
+
+    if (showCardIdentityDialog) {
+        val identityOptions = listOf(
+            "email_first" to stringResource(R.string.vault_settings_card_identity_email),
+            "username_first" to stringResource(R.string.vault_settings_card_identity_username)
+        )
+        AppDialog(
+            onDismissRequest = { showCardIdentityDialog = false },
+            title = { Text(stringResource(R.string.vault_settings_card_identity), fontWeight = FontWeight.Bold) },
+            text = {
+                Column {
+                    identityOptions.forEach { (key, label) ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    viewModel.setCardIdentity(key)
+                                    showCardIdentityDialog = false
+                                }
+                                .padding(vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+                            if (state.cardIdentity == key) {
+                                Text(stringResource(R.string.vault_settings_clipboard_selected), color = vaultTint())
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showCardIdentityDialog = false }) {
+                    Text(stringResource(R.string.settings_cancel))
+                }
+            }
+        )
+    }
 }
 
 @Composable
@@ -430,7 +485,11 @@ private fun ClipboardSecondsDialog(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = stringResource(R.string.vault_settings_clipboard_option, seconds),
+                            text = if (seconds <= 0) {
+                                stringResource(R.string.vault_settings_clipboard_never)
+                            } else {
+                                stringResource(R.string.vault_settings_clipboard_option, seconds)
+                            },
                             style = MaterialTheme.typography.bodyLarge,
                             modifier = Modifier.weight(1f)
                         )

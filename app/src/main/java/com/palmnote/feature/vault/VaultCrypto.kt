@@ -12,21 +12,24 @@ import javax.crypto.spec.SecretKeySpec
  * 密码本加密原语（纯函数、无状态、无 Android 依赖，便于单元测试）。
  *
  * 密钥体系（密钥包裹）：
- *   PIN ──PBKDF2-SHA256(100000)──▶ K（派生密钥）
+ *   PIN ──PBKDF2-SHA256(25000)──▶ K（派生密钥）
  *   用 K（AES-GCM）加密/解包数据密钥 DK（256bit）→ vault_key_wrap
  *   用 DK（AES-GCM，随机 IV）加密每条密码字段 → passwordEncrypted
  *
  * 存储格式（encrypt 输出）：iv(12B) + 密文（含 16B GCM tag）。
  *
- * 迭代次数 100000：原 25k 曾无感知，600k（OWASP）在 Android BouncyCastle 下慢至 1~3s+ 被反馈卡顿。
+ * 迭代次数 25000：100k 在部分机型解锁时体感卡顿，改回 25k 保持输入流畅。
  * 6 位 PIN 密钥空间仅 100 万，迭代数对离线爆破的增益有限（真正防线是 Keystore 绑定的 SQLCipher
- * 库密钥 + 锁屏失败锁定）；100k 为 4x 原值且体感无感，兼顾两者。
- * 历史包裹按参数回退迁移：[INTERIM_PBKDF2_ITERATIONS]（600k 测试构建）→ [LEGACY_PBKDF2_ITERATIONS]（25k 首发），
+ * 库密钥 + 锁屏失败锁定）；25k 为安全性可接受且输入无感的最低体感档位。
+ * 历史包裹按参数回退迁移：[PREVIOUS_PBKDF2_ITERATIONS]（100k 上版）→
+ * [INTERIM_PBKDF2_ITERATIONS]（600k 测试构建）→ [LEGACY_PBKDF2_ITERATIONS]（25k 首发），
  * 解锁成功自动重包裹为现行参数并记录 [PreferencesManager.VAULT_KDF_ITERATIONS]。
  */
 object VaultCrypto {
     /** 现行派生参数。 */
-    const val PBKDF2_ITERATIONS = 100000
+    const val PBKDF2_ITERATIONS = 25000
+    /** 上版派生参数（100k 版本创建的历史包裹）。 */
+    const val PREVIOUS_PBKDF2_ITERATIONS = 100000
     /** 临时派生参数（600k 的测试构建创建的历史包裹）。 */
     const val INTERIM_PBKDF2_ITERATIONS = 600000
     /** 首发派生参数（升级前创建的历史包裹）。 */

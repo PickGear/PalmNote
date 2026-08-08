@@ -1,6 +1,9 @@
 package com.palmnote.feature.vault.vault
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,12 +24,11 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material.icons.automirrored.outlined.Notes
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.outlined.Key
+import androidx.compose.material.icons.outlined.Mail
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Shuffle
-import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.CircularProgressIndicator
@@ -40,16 +42,22 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -58,13 +66,17 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil3.compose.AsyncImage
 import com.palmnote.R
 import com.palmnote.feature.vault.PasswordStrength
 import com.palmnote.feature.vault.VaultLockManager.LockState
 import com.palmnote.feature.vault.VaultPasswordGenerator
 import com.palmnote.ui.components.ModuleCard
 import com.palmnote.ui.components.SecondaryTopAppBar
+import com.palmnote.ui.components.saveImageToVaultStorage
 import com.palmnote.ui.theme.vaultTint
+import java.io.File
+import kotlinx.coroutines.launch
 
 /**
  * 密码本新增/编辑页：登录图标头部 + 分组卡片表单 + 密码生成器入口。
@@ -82,17 +94,29 @@ fun VaultEditScreen(
 
     var title by remember { mutableStateOf("") }
     var username by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var url by remember { mutableStateOf("") }
     var notes by remember { mutableStateOf("") }
     var category by remember { mutableStateOf("") }
+    var avatarPath by remember { mutableStateOf("") }
+    // 进入编辑时的原头像路径：保存成功后才清理被替换/移除的旧文件
+    var originalAvatar by remember { mutableStateOf("") }
+    var avatarSaved by remember { mutableStateOf(false) }
     var showGenerator by remember { mutableStateOf(false) }
     var titleError by remember { mutableStateOf<String?>(null) }
     var passwordError by remember { mutableStateOf<String?>(null) }
     var saveError by remember { mutableStateOf<String?>(null) }
     var saving by remember { mutableStateOf(false) }
     var showForgotPinConfirm by remember { mutableStateOf(false) }
+
+    // 锁定/自动锁定后隐藏明文，避免重新解锁后残留显示
+    LaunchedEffect(state.lockState) {
+        if (state.lockState != com.palmnote.feature.vault.VaultLockManager.LockState.UNLOCKED) {
+            passwordVisible = false
+        }
+    }
 
     VaultLockOnBackground(
         lock = viewModel::lock,
@@ -130,10 +154,13 @@ fun VaultEditScreen(
         val entry = state.entry ?: return@LaunchedEffect
         title = entry.title
         username = entry.username
+        email = entry.email
         password = viewModel.passwordForDisplay(entry) ?: ""
         url = entry.url
         notes = entry.notes
         category = entry.category
+        avatarPath = entry.avatarPath
+        originalAvatar = entry.avatarPath
     }
 
     if (state.loading) {
@@ -146,6 +173,33 @@ fun VaultEditScreen(
     val titleRequired = stringResource(R.string.vault_error_title_required)
     val passwordRequired = stringResource(R.string.vault_error_password_required)
     val saveFailed = stringResource(R.string.vault_error_save_failed)
+
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val avatarPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) {
+            scope.launch {
+                saveImageToVaultStorage(context, uri)?.let { path ->
+                    avatarPath = path
+                }
+            }
+        }
+    }
+    fun removeAvatar() {
+        avatarPath = ""
+    }
+
+    // 离开编辑页且未保存时：清理本次新挑选但未入库的头像文件（防止孤儿文件）
+    DisposableEffect(Unit) {
+        onDispose {
+            if (!avatarSaved) {
+                val pending = avatarPath
+                if (pending.isNotBlank() && pending != originalAvatar) {
+                    runCatching { File(pending).delete() }
+                }
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -183,13 +237,20 @@ fun VaultEditScreen(
                             viewModel.save(
                                 title = title,
                                 username = username,
+                                email = email,
                                 password = password,
                                 url = url,
                                 notes = notes,
                                 category = category,
+                                avatarPath = avatarPath,
                                 onResult = { ok ->
                                     saving = false
                                     if (ok) {
+                                        avatarSaved = true
+                                        // 保存成功：若原头像被替换或移除，清理旧文件
+                                        if (originalAvatar.isNotBlank() && originalAvatar != avatarPath) {
+                                            runCatching { File(originalAvatar).delete() }
+                                        }
                                         onNavigateBack()
                                     } else {
                                         saveError = saveFailed
@@ -227,14 +288,42 @@ fun VaultEditScreen(
                     Box(
                         modifier = Modifier
                             .size(64.dp)
-                            .background(vaultTint().copy(alpha = 0.15f), CircleShape),
+                            .clip(CircleShape)
+                            .background(vaultTint().copy(alpha = 0.15f))
+                            .clickable { avatarPicker.launch("image/*") },
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Key,
-                            contentDescription = null,
-                            tint = vaultTint(),
-                            modifier = Modifier.size(30.dp)
+                        if (avatarPath.isNotBlank()) {
+                            AsyncImage(
+                                model = File(avatarPath),
+                                contentDescription = null,
+                                modifier = Modifier.size(64.dp).clip(CircleShape),
+                                contentScale = ContentScale.Crop
+                            )
+                        } else {
+                            Icon(
+                                imageVector = entryIcon(url),
+                                contentDescription = null,
+                                tint = vaultTint(),
+                                modifier = Modifier.size(30.dp)
+                            )
+                        }
+                    }
+                    if (avatarPath.isNotBlank()) {
+                        Spacer(Modifier.height(4.dp))
+                        TextButton(onClick = { removeAvatar() }) {
+                            Text(
+                                text = stringResource(R.string.vault_avatar_remove),
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.labelMedium
+                            )
+                        }
+                    } else {
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = stringResource(R.string.vault_avatar_hint),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                     Spacer(Modifier.height(12.dp))
@@ -256,7 +345,7 @@ fun VaultEditScreen(
             // 登录信息
             // ═══════════════════════════════════════
             ModuleCard(tint = MaterialTheme.colorScheme.surface) {
-                SectionHeader(Icons.Outlined.Person, stringResource(R.string.vault_section_login))
+                SectionHeader(null, stringResource(R.string.vault_section_login))
                 Spacer(Modifier.height(4.dp))
 
                 VaultTextField(
@@ -264,6 +353,14 @@ fun VaultEditScreen(
                     onValueChange = { username = it },
                     label = stringResource(R.string.vault_field_username),
                     leading = Icons.Outlined.Person
+                )
+                Spacer(Modifier.height(10.dp))
+
+                VaultTextField(
+                    value = email,
+                    onValueChange = { email = it },
+                    label = stringResource(R.string.vault_field_email),
+                    leading = Icons.Outlined.Mail
                 )
                 Spacer(Modifier.height(10.dp))
 
@@ -315,7 +412,7 @@ fun VaultEditScreen(
             // 站点信息
             // ═══════════════════════════════════════
             ModuleCard(tint = MaterialTheme.colorScheme.surface) {
-                SectionHeader(Icons.Outlined.Tune, stringResource(R.string.vault_section_site))
+                SectionHeader(null, stringResource(R.string.vault_section_site))
                 Spacer(Modifier.height(4.dp))
 
                 VaultTextField(
@@ -366,7 +463,7 @@ fun VaultEditScreen(
             // 备注
             // ═══════════════════════════════════════
             ModuleCard(tint = MaterialTheme.colorScheme.surface) {
-                SectionHeader(Icons.AutoMirrored.Outlined.Notes, stringResource(R.string.vault_section_notes))
+                SectionHeader(null, stringResource(R.string.vault_section_notes))
                 Spacer(Modifier.height(4.dp))
                 OutlinedTextField(
                     value = notes,
@@ -419,23 +516,25 @@ private fun VaultTextField(
 
 @Composable
 private fun vaultFieldDefaults() = OutlinedTextFieldDefaults.colors(
-    focusedBorderColor = MaterialTheme.colorScheme.primary,
+    focusedBorderColor = vaultTint(),
     unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
     focusedContainerColor = MaterialTheme.colorScheme.surface,
     unfocusedContainerColor = MaterialTheme.colorScheme.surface
 )
 
-/** 分组标题：图标 + 标题。 */
+/** 分组标题：可选图标 + 标题。 */
 @Composable
-private fun SectionHeader(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String) {
+private fun SectionHeader(icon: androidx.compose.ui.graphics.vector.ImageVector?, title: String) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            modifier = Modifier.size(18.dp),
-            tint = vaultTint()
-        )
-        Spacer(Modifier.width(8.dp))
+        if (icon != null) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+                tint = vaultTint()
+            )
+            Spacer(Modifier.width(8.dp))
+        }
         Text(
             text = title,
             style = MaterialTheme.typography.titleSmall,
@@ -494,13 +593,13 @@ private fun passwordStrength(text: String): Triple<String, Color, Float> {
         )
         PasswordStrength.STRONG -> Triple(
             stringResource(R.string.vault_strength_strong),
-            MaterialTheme.colorScheme.primary,
+            vaultTint(),
             0.75f
         )
         PasswordStrength.VERY_STRONG -> Triple(
             stringResource(R.string.vault_strength_very_strong),
-            MaterialTheme.colorScheme.primary,
+            vaultTint(),
             1f
         )
-    }
+}
 }

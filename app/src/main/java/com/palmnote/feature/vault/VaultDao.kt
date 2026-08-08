@@ -21,6 +21,7 @@ interface VaultDao {
         """SELECT * FROM vault_entries
            WHERE title LIKE '%' || :query || '%'
               OR username LIKE '%' || :query || '%'
+              OR email LIKE '%' || :query || '%'
               OR url LIKE '%' || :query || '%'
            ORDER BY updatedAt DESC"""
     )
@@ -34,6 +35,7 @@ interface VaultDao {
            WHERE category = :category
              AND (title LIKE '%' || :query || '%'
                   OR username LIKE '%' || :query || '%'
+                  OR email LIKE '%' || :query || '%'
                   OR url LIKE '%' || :query || '%')
            ORDER BY updatedAt DESC"""
     )
@@ -47,9 +49,6 @@ interface VaultDao {
 
     @Query("SELECT COUNT(*) FROM vault_entries")
     fun countEntriesFlow(): Flow<Int>
-
-    @Query("SELECT * FROM vault_entries ORDER BY updatedAt DESC LIMIT :limit")
-    fun getRecentEntries(limit: Int): Flow<List<VaultEntry>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertEntry(entry: VaultEntry): Long

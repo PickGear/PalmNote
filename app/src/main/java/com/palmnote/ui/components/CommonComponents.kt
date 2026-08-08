@@ -32,6 +32,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.graphics.Brush
@@ -1087,8 +1089,15 @@ fun ModuleSearchBar(
     onSearch: () -> Unit = {},
     onClear: () -> Unit,
     placeholder: String,
+    autoFocus: Boolean = false,
     modifier: Modifier = Modifier
 ) {
+    val focusRequester = remember { androidx.compose.ui.focus.FocusRequester() }
+    LaunchedEffect(Unit) {
+        if (autoFocus) {
+            focusRequester.requestFocus()
+        }
+    }
     OutlinedTextField(
         value = query,
         onValueChange = onQueryChange,
@@ -1109,7 +1118,7 @@ fun ModuleSearchBar(
             focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
             unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
         ),
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth().focusRequester(focusRequester)
     )
 }
 

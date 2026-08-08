@@ -124,14 +124,14 @@ fun AddAssetScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // ══════════════════════════════════════════�?
+            // ══════════════════════════════════════════
             // Section 1: 图片
-            // ══════════════════════════════════════════�?
+            // ══════════════════════════════════════════
             item { ImageSection(formState, viewModel) }
 
-            // ══════════════════════════════════════════�?
-            // Section 2: 基本信息（名�?+ 分类 + 数量�?
-            // ══════════════════════════════════════════�?
+            // ══════════════════════════════════════════
+            // Section 2: 基本信息（名称+ 分类 + 数量）
+            // ══════════════════════════════════════════
             item {
                 ModuleCard(tint = MaterialTheme.colorScheme.surface) {
                     SectionHeader(Icons.Outlined.Info, stringResource(R.string.asset_basic_info))
@@ -187,7 +187,7 @@ fun AddAssetScreen(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // 数量（紧凑行�?
+                    // 数量（紧凑行）
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -207,9 +207,9 @@ fun AddAssetScreen(
                 }
             }
 
-            // ══════════════════════════════════════════�?
+            // ══════════════════════════════════════════
             // Section 3: 获取方式 + 价格日期
-            // ══════════════════════════════════════════�?
+            // ══════════════════════════════════════════
             item {
                 ModuleCard(tint = MaterialTheme.colorScheme.surface) {
                     SectionHeader(Icons.Outlined.ShoppingCart, stringResource(R.string.asset_acquisition))
@@ -298,9 +298,9 @@ fun AddAssetScreen(
                 }
             }
 
-            // ══════════════════════════════════════════�?
+            // ══════════════════════════════════════════
             // Section 4: 位置 + 保修 + 折旧模式
-            // ══════════════════════════════════════════�?
+            // ══════════════════════════════════════════
             item {
                 ModuleCard(tint = MaterialTheme.colorScheme.surface) {
                     SectionHeader(Icons.Outlined.LocationOn, stringResource(R.string.asset_location_warranty))
@@ -419,9 +419,9 @@ fun AddAssetScreen(
                 }
             }
 
-            // ══════════════════════════════════════════�?
+            // ══════════════════════════════════════════
             // Section 5: 备注
-            // ══════════════════════════════════════════�?
+            // ══════════════════════════════════════════
             item {
                 ModuleCard(tint = MaterialTheme.colorScheme.surface) {
                     SectionHeader(Icons.AutoMirrored.Outlined.Notes, stringResource(R.string.asset_description))
@@ -437,9 +437,9 @@ fun AddAssetScreen(
                 }
             }
 
-            // ══════════════════════════════════════════�?
+            // ══════════════════════════════════════════
             // Section 6: 高级选项（折叠）
-            // ══════════════════════════════════════════�?
+            // ══════════════════════════════════════════
             item {
                 var expanded by remember { mutableStateOf(false) }
                 LaunchedEffect(expanded) { if (expanded) listState.animateScrollToItem(5) }
@@ -499,7 +499,7 @@ fun AddAssetScreen(
 
                             Spacer(modifier = Modifier.height(12.dp))
 
-                            // 序列�?
+                            // 序列号
                             Text(stringResource(R.string.asset_serial_number), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
                             Spacer(modifier = Modifier.height(4.dp))
                             OutlinedTextField(
@@ -555,7 +555,7 @@ fun AddAssetScreen(
 
                             Spacer(modifier = Modifier.height(12.dp))
 
-                            // 折旧�?+ 当前估值（同行�?
+                            // 折旧费+ 当前估值（同行排列）
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(stringResource(R.string.asset_depreciation_rate), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
@@ -574,9 +574,9 @@ fun AddAssetScreen(
                 }
             }
 
-            // ══════════════════════════════════════════�?
+            // ══════════════════════════════════════════
             // 保存按钮
-            // ══════════════════════════════════════════�?
+            // ══════════════════════════════════════════
             item {
                 Button(
                     onClick = { viewModel.saveAsset() },

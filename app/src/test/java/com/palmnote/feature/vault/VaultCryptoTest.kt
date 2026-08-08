@@ -98,9 +98,9 @@ class VaultCryptoTest {
     }
 
     @Test
-    fun deriveKey_legacyAndCurrent_iterations_differ() {
+    fun deriveKeyPreviousAndCurrent_iterations_differ() {
         val salt = VaultCrypto.generateSalt()
-        val legacy = VaultCrypto.deriveKey("123456", salt, VaultCrypto.LEGACY_PBKDF2_ITERATIONS)
+        val legacy = VaultCrypto.deriveKey("123456", salt, VaultCrypto.PREVIOUS_PBKDF2_ITERATIONS)
         val current = VaultCrypto.deriveKey("123456", salt)
         assertNotEquals(legacy.encoded.toList(), current.encoded.toList())
     }
@@ -108,11 +108,11 @@ class VaultCryptoTest {
     @Test
     fun threeKdfParams_areDistinct() {
         val salt = VaultCrypto.generateSalt()
-        val legacy = VaultCrypto.deriveKey("123456", salt, VaultCrypto.LEGACY_PBKDF2_ITERATIONS).encoded.toList()
+        val previous = VaultCrypto.deriveKey("123456", salt, VaultCrypto.PREVIOUS_PBKDF2_ITERATIONS).encoded.toList()
         val interim = VaultCrypto.deriveKey("123456", salt, VaultCrypto.INTERIM_PBKDF2_ITERATIONS).encoded.toList()
         val current = VaultCrypto.deriveKey("123456", salt).encoded.toList()
-        assertNotEquals(legacy, interim)
-        assertNotEquals(legacy, current)
+        assertNotEquals(previous, interim)
+        assertNotEquals(previous, current)
         assertNotEquals(interim, current)
     }
 

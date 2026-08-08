@@ -52,6 +52,33 @@ suspend fun saveImageToInternalStorage(context: Context, uri: Uri, prefix: Strin
     }
 
 /**
+ * 保存密码本头像到独立目录 `vault_avatars/`（不写入共享 images/ 目录，
+ * 避免「清理数据」删除 images/ 时误删尚未删除的密码本条目头像）。
+ */
+@Suppress("InjectDispatcher")
+suspend fun saveImageToVaultStorage(context: Context, uri: Uri): String? =
+    withContext(Dispatchers.IO) {
+        try {
+            val dir = File(context.filesDir, "vault_avatars")
+            if (!dir.exists()) dir.mkdirs()
+            val file = File(
+                dir,
+                "avatar_${System.currentTimeMillis()}_${UUID.randomUUID().toString().take(8)}.jpg"
+            )
+            val input = context.contentResolver.openInputStream(uri) ?: return@withContext null
+            input.use { ins ->
+                FileOutputStream(file).use { output ->
+                    ins.copyTo(output)
+                }
+            }
+            if (file.exists()) file.absolutePath else null
+        } catch (e: Exception) {
+            AppLogger.e("ImageUtils", "Failed to save vault avatar", e)
+            null
+        }
+    }
+
+/**
  * 将内部存储的图片复制到系统相册（Pictures 目录）。成功返回 true。
  */
 @Suppress("InjectDispatcher")

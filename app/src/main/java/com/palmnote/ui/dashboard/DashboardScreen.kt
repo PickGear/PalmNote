@@ -85,8 +85,8 @@ fun DashboardScreen(
     var overlayTopPx by remember { mutableFloatStateOf(0f) }
     var showCardDialog by remember { mutableStateOf(false) }
     var lastSwapTime by remember { mutableLongStateOf(0L) }
-    // 拖拽起点（卡片相对外�?Box �?y）与累计位移，拖动过程中保持不变�?
-    // 避免交换后卡片位�?节点坐标变化导致 overlay 跳动、反复横�?
+// 拖拽起点（卡片相对外层 Box 的 y）与累计位移，拖动过程中保持不变
+    // 避免交换后卡片位置/节点坐标变化导致 overlay 跳动、反复横跳
     var dragStartOffsetPx by remember { mutableFloatStateOf(0f) }
     var dragTotalY by remember { mutableFloatStateOf(0f) }
 
@@ -185,7 +185,7 @@ fun DashboardScreen(
                                     .fillMaxWidth()
                                     .zIndex(if (isDragged) 100f else 0f)
                                     .graphicsLayer {
-                                        // 拖拽时原卡片保留半透明占位，避免露�?透明�?�?.3f 仍可看出位置�?
+                                        // 拖拽时原卡片保留半透明占位，避免露出透明（0.3f 仍可看出位置）
                                         alpha = if (isDragged) 0.3f else animProgress.value
                                         translationY = if (isDragged) 0f else (1f - animProgress.value) * 12.dp.toPx()
                                     }
@@ -206,7 +206,7 @@ fun DashboardScreen(
                                             },
                                             onDrag = { change, dragAmount ->
                                                 change.consume()
-                                                // 累加增量位移（与布局无关），避免交换后节点坐标变化导致跳�?
+                                                // 累加增量位移（与布局无关），避免交换后节点坐标变化导致跳动
                                                 dragTotalY += dragAmount.y
                                                 overlayTopPx = dragStartOffsetPx + dragTotalY
 
@@ -267,7 +267,7 @@ fun DashboardScreen(
                     Spacer(modifier = Modifier.height(80.dp))
                 }
 
-                // 浮动拖拽�?
+                // 浮动拖拽层
                 draggedType?.let { type ->
                     val cardShape = MaterialTheme.shapes.large
                     Box(

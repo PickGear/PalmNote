@@ -1,7 +1,8 @@
-﻿package com.palmnote.feature.vault.vault
+package com.palmnote.feature.vault.vault
 
-import androidx.compose.foundation.combinedClickable
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,16 +18,24 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.Chat
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.AccountBalance
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Android
 import androidx.compose.material.icons.outlined.Code
 import androidx.compose.material.icons.outlined.ContentCopy
+import androidx.compose.material.icons.outlined.Forum
 import androidx.compose.material.icons.outlined.Key
 import androidx.compose.material.icons.outlined.LockOpen
+import androidx.compose.material.icons.outlined.Mail
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.ShoppingCart
+import androidx.compose.material.icons.outlined.SportsEsports
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -34,15 +43,14 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -52,6 +60,8 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -63,37 +73,43 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil3.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
+import java.io.File
 import com.palmnote.R
 import com.palmnote.feature.vault.VaultEntry
 import com.palmnote.feature.vault.VaultLockManager.LockState
 import com.palmnote.ui.components.CompactTopAppBar
+import com.palmnote.ui.components.ModuleSearchBar
+import com.palmnote.ui.theme.vaultTint
 import java.util.Locale
 import kotlinx.coroutines.launch
 
 /**
- * 密码本列表页：锁定门 → 搜索/分类筛选 → 条目列表。
+ * 密码本列表页：搜索/分类筛选 + 条目列表。
  */
 @Composable
 fun VaultScreen(
     viewModel: VaultViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit,
     onNavigateToDetail: (Long) -> Unit,
-    onNavigateToEdit: () -> Unit
+    onNavigateToEdit: () -> Unit,
+    onNavigateToSettings: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val autoLockMode by viewModel.autoLockMode.collectAsStateWithLifecycle()
     val autoLockTimeoutMinutes by viewModel.autoLockTimeoutMinutes.collectAsStateWithLifecycle()
     val clipboardClearSeconds by viewModel.clipboardClearSeconds.collectAsStateWithLifecycle()
-
+    val cardIdentity by viewModel.cardIdentity.collectAsStateWithLifecycle()
     var showForgotPinConfirm by remember { mutableStateOf(false) }
-
     VaultLockOnBackground(
         lock = viewModel::lock,
         requireAuth = { state.requireAuth },
         autoLockMode = autoLockMode,
         autoLockTimeoutMinutes = autoLockTimeoutMinutes
     )
-
+    // 冷启动 DataStore 未就绪时锁状态可能误判，先空白等确认，避免闪现错误页面
+    if (!state.lockSettled) { Box(modifier = Modifier.fillMaxSize()); return }
     if (state.lockState != LockState.UNLOCKED) {
         VaultLockGate(
             lockState = state.lockState,
@@ -120,23 +136,24 @@ fun VaultScreen(
     }
 
     VaultListContent(
+        viewModel = viewModel,
         state = state,
-        onQueryChange = viewModel::onQueryChange,
-        onCategorySelect = viewModel::onCategorySelect,
         onEntryClick = onNavigateToDetail,
-        onCopy = viewModel::copyPassword,
         onAdd = onNavigateToEdit,
         onBack = onNavigateBack,
-        clipboardClearSeconds = clipboardClearSeconds
+        onSettings = onNavigateToSettings,
+        noLockBannerDismissed = state.noLockBannerDismissed,
+        clipboardClearSeconds = clipboardClearSeconds,
+        cardConfig = VaultCardConfig(identity = cardIdentity)
     )
 }
 /**
- * 自动锁定（清除内存密钥与剪贴板），规则与 App 锁一致、选择权交给用户：
- *  - immediate：切后台立即锁
- *  - system（默认）：跟随系统锁屏——手机屏锁了才锁，仅切后台/快速切换不锁
- *  - timeout：锁屏或切后台超时才锁
- * 监听 App 级 ProcessLifecycleOwner 而非 NavBackStackEntry（Vault 内导航不误锁）。
- * requireAuth 关闭时跳过（安全降级）。
+ * 自动锁门挂载（进程级，与全 App 一致）。选择权交给用户：
+ *  - immediate：进入后台即锁定；
+ *  - system：默认，跟随系统（仅系统锁屏，离开后台/前台切换时不锁）；
+ *  - timeout：进入后台停留超时后锁定。
+ * 全 App 用 ProcessLifecycleOwner（而非 NavBackStackEntry），Vault 在锁节点内调用。
+ * requireAuth 关闭时不做好安全保护。
  */
 @Composable
 fun VaultLockOnBackground(
@@ -174,104 +191,202 @@ fun VaultLockOnBackground(
 
 @Composable
 private fun VaultListContent(
+    viewModel: VaultViewModel,
     state: VaultUiState,
-    onQueryChange: (String) -> Unit,
-    onCategorySelect: (String?) -> Unit,
     onEntryClick: (Long) -> Unit,
-    onCopy: (VaultEntry) -> Boolean,
     onAdd: () -> Unit,
     onBack: () -> Unit,
-    clipboardClearSeconds: Int
+    onSettings: () -> Unit,
+    clipboardClearSeconds: Int,
+    cardConfig: VaultCardConfig,
+    noLockBannerDismissed: Boolean
 ) {
     var searchExpanded by remember { mutableStateOf(false) }
-    var hideNoLockBanner by remember { mutableStateOf(false) }
-    val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
+
+    // 搜索展开时返回键收起搜索（与物品/账单等页面一致）
+    BackHandler(enabled = searchExpanded) {
+        searchExpanded = false
+        viewModel.onQueryChange("")
+    }
 
     Scaffold(
         topBar = {
-            CompactTopAppBar(
-                title = stringResource(R.string.vault_title),
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
-                            contentDescription = stringResource(R.string.settings_navigate_back)
-                        )
-                    }
+            VaultTopBar(
+                searchExpanded = searchExpanded,
+                query = state.query,
+                onQueryChange = viewModel::onQueryChange,
+                onSearchToggle = { searchExpanded = !searchExpanded },
+                onSearchCollapse = {
+                    searchExpanded = false
+                    viewModel.onQueryChange("")
                 },
-                actions = {
-                    IconButton(onClick = { searchExpanded = !searchExpanded }) {
-                        Icon(
-                            imageVector = Icons.Outlined.Search,
-                            contentDescription = stringResource(R.string.vault_search)
-                        )
-                    }
-                }
+                onBack = onBack,
+                onSettings = onSettings
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
-            FloatingActionButton(onClick = onAdd) {
-                Icon(imageVector = Icons.Outlined.Add, contentDescription = stringResource(R.string.vault_add))
+            FloatingActionButton(
+                onClick = onAdd,
+                containerColor = vaultTint(),
+                contentColor = Color.White
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Add,
+                    contentDescription = stringResource(R.string.vault_add)
+                )
             }
         }
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
-            if (state.isNoLockMode && !hideNoLockBanner) {
-                NoLockBanner(onDismiss = { hideNoLockBanner = true })
-            }
-            CategoryFilterRow(
-                categories = state.categories,
-                selected = state.category,
-                onSelect = onCategorySelect
-            )
-            if (searchExpanded) {
-                OutlinedTextField(
-                    value = state.query,
-                    onValueChange = onQueryChange,
-                    placeholder = { Text(stringResource(R.string.vault_search_hint)) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 4.dp),
-                    singleLine = true
-                )
-            }
+        VaultListBody(
+            viewModel = viewModel,
+            state = state,
+            onEntryClick = onEntryClick,
+            onSettings = onSettings,
+            noLockBannerDismissed = noLockBannerDismissed,
+            clipboardClearSeconds = clipboardClearSeconds,
+            cardConfig = cardConfig,
+            snackbarHostState = snackbarHostState,
+            modifier = Modifier.padding(padding)
+        )
+    }
+}
 
-            if (state.isLoading) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
-                }
-            } else if (state.entries.isEmpty()) {
-                VaultEmptyState(query = state.query)
+@Composable
+private fun VaultListBody(
+    viewModel: VaultViewModel,
+    state: VaultUiState,
+    onEntryClick: (Long) -> Unit,
+    onSettings: () -> Unit,
+    noLockBannerDismissed: Boolean,
+    clipboardClearSeconds: Int,
+    cardConfig: VaultCardConfig,
+    snackbarHostState: SnackbarHostState,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier.fillMaxSize()) {
+        if (state.isNoLockMode && !noLockBannerDismissed) {
+            NoLockBanner(
+                onClick = onSettings,
+                onDismiss = viewModel::dismissNoLockBanner
+            )
+        }
+        CategoryFilterRow(
+            categories = state.categories,
+            selected = state.category,
+            onSelect = viewModel::onCategorySelect
+        )
+        if (state.isLoading) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        } else if (state.entries.isEmpty()) {
+            VaultEmptyState(query = state.query)
+        } else {
+            VaultEntryList(
+                entries = state.entries,
+                cardConfig = cardConfig,
+                onEntryClick = onEntryClick,
+                onCopy = viewModel::copyPassword,
+                clipboardClearSeconds = clipboardClearSeconds,
+                snackbarHostState = snackbarHostState
+            )
+        }
+    }
+}
+
+@Composable
+private fun VaultTopBar(
+    searchExpanded: Boolean,
+    query: String,
+    onQueryChange: (String) -> Unit,
+    onSearchToggle: () -> Unit,
+    onSearchCollapse: () -> Unit,
+    onBack: () -> Unit,
+    onSettings: () -> Unit
+) {
+    CompactTopAppBar(
+        title = {
+            if (searchExpanded) {
+                ModuleSearchBar(
+                    query = query,
+                    onQueryChange = onQueryChange,
+                    onClear = { onQueryChange("") },
+                    placeholder = stringResource(R.string.vault_search_hint),
+                    autoFocus = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
             } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(vertical = 8.dp)
-                ) {
-                    items(state.entries, key = { it.id }) { entry ->
-                        VaultEntryCard(
-                            entry = entry,
-                            onClick = { onEntryClick(entry.id) },
-                            onCopy = {
-                                if (onCopy(entry)) {
-                                    scope.launch {
-                                        snackbarHostState.showSnackbar(
-                                            if (clipboardClearSeconds > 0) context.getString(R.string.vault_copied_autoclear, clipboardClearSeconds)
-                                            else context.getString(R.string.vault_copied)
-                                        )
-                                    }
-                                }
-                            }
-                        )
-                    }
+                Text(stringResource(R.string.vault_title))
+            }
+        },
+        navigationIcon = {
+            if (!searchExpanded) {
+                IconButton(onClick = onBack) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
+                        contentDescription = stringResource(R.string.settings_navigate_back)
+                    )
                 }
             }
+        },
+        actions = {
+            if (searchExpanded) {
+                TextButton(
+                    onClick = onSearchCollapse,
+                    modifier = Modifier.padding(end = 4.dp)
+                ) {
+                    Text(stringResource(R.string.cancel), style = MaterialTheme.typography.bodyMedium)
+                }
+            } else {
+                IconButton(onClick = onSearchToggle) {
+                    Icon(
+                        imageVector = Icons.Outlined.Search,
+                        contentDescription = stringResource(R.string.vault_search)
+                    )
+                }
+                IconButton(onClick = onSettings) {
+                    Icon(
+                        imageVector = Icons.Outlined.Settings,
+                        contentDescription = stringResource(R.string.vault_settings)
+                    )
+                }
+            }
+        }
+    )
+}
+
+@Composable
+private fun VaultEntryList(
+    entries: List<VaultEntry>,
+    cardConfig: VaultCardConfig,
+    onEntryClick: (Long) -> Unit,
+    onCopy: (VaultEntry) -> Boolean,
+    clipboardClearSeconds: Int,
+    snackbarHostState: SnackbarHostState
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val showCopied: () -> Unit = {
+        scope.launch {
+            val msg = if (clipboardClearSeconds > 0)
+                context.getString(R.string.vault_copied_autoclear, clipboardClearSeconds)
+            else context.getString(R.string.vault_copied)
+            snackbarHostState.showSnackbar(msg)
+        }
+    }
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(vertical = 8.dp)
+    ) {
+        items(entries, key = { it.id }) { entry ->
+            VaultEntryCard(
+                entry = entry,
+                cardConfig = cardConfig,
+                onClick = { onEntryClick(entry.id) },
+                onCopy = { if (onCopy(entry)) showCopied() }
+            )
         }
     }
 }
@@ -291,10 +406,10 @@ private fun CategoryFilterRow(
     ) {
         Box {
             Surface(
-                // 无分类时无筛选可做，点击不弹窗
+                // 无分类可选时，筛选器置灰不可点
                 onClick = { if (categories.isNotEmpty()) expanded = true },
                 shape = CircleShape,
-                color = MaterialTheme.colorScheme.surfaceVariant
+                color = if (selected != null) vaultTint().copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceVariant
             ) {
                 Text(
                     text = if (selected == null) {
@@ -303,6 +418,7 @@ private fun CategoryFilterRow(
                         selected
                     },
                     style = MaterialTheme.typography.labelLarge,
+                    color = if (selected != null) vaultTint() else MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                 )
             }
@@ -335,82 +451,149 @@ private fun CategoryFilterRow(
 @Composable
 private fun VaultEntryCard(
     entry: VaultEntry,
+    cardConfig: VaultCardConfig = VaultCardConfig(),
     onClick: () -> Unit,
     onCopy: () -> Unit
 ) {
+    val cardColor = categoryColor(entry.category)
+    val identityText = resolveIdentity(entry, cardConfig)
+
     Surface(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 4.dp),
-        shape = MaterialTheme.shapes.medium,
+        shape = RoundedCornerShape(12.dp),
         color = MaterialTheme.colorScheme.surface,
         shadowElevation = 1.dp
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .combinedClickable(
-                    onClick = onClick,
-                    onLongClick = onCopy
-                )
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .clickable(onClick = onClick)
+                .padding(12.dp)
         ) {
-            Box(
-                modifier = Modifier.size(40.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = entryIcon(entry.url),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
-            Spacer(Modifier.width(12.dp))
-            Column(Modifier.weight(1f)) {
+            CardHeader(entry, identityText, cardColor, onCopy)
+            CardFooter(entry)
+        }
+    }
+}
+
+@Composable
+private fun CardHeader(
+    entry: VaultEntry,
+    identityText: String,
+    cardColor: androidx.compose.ui.graphics.Color,
+    onCopyClick: () -> Unit
+) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        CardAvatar(entry, cardColor)
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            CardTitleRow(entry, cardColor)
+            if (identityText.isNotEmpty()) {
+                Spacer(Modifier.height(2.dp))
                 Text(
-                    text = entry.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
+                    text = identityText,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                if (entry.username.isNotEmpty()) {
-                    Text(
-                        text = entry.username,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (entry.category.isNotBlank() && entry.category != "其他") {
-                        Text(
-                            text = entry.category,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier
-                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), MaterialTheme.shapes.small)
-                                .padding(horizontal = 6.dp, vertical = 2.dp)
-                        )
-                        Spacer(Modifier.width(6.dp))
-                    }
-                    Text(
-                        text = stringResource(R.string.vault_updated_at, com.palmnote.domain.util.DateUtils.formatDate(entry.updatedAt)),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.outline
-                    )
-                }
             }
-            IconButton(onClick = onCopy) {
-                Icon(
-                    imageVector = Icons.Outlined.ContentCopy,
-                    contentDescription = stringResource(R.string.vault_copy_password),
-                    tint = MaterialTheme.colorScheme.primary
+        }
+        IconButton(onClick = onCopyClick, modifier = Modifier.size(32.dp)) {
+            Icon(
+                imageVector = Icons.Outlined.ContentCopy,
+                contentDescription = stringResource(R.string.vault_copy_password),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(18.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun CardAvatar(entry: VaultEntry, tintColor: androidx.compose.ui.graphics.Color) {
+    Box(
+        modifier = Modifier
+            .size(40.dp)
+            .clip(CircleShape)
+            .background(tintColor.copy(alpha = 0.12f)),
+        contentAlignment = Alignment.Center
+    ) {
+        if (entry.avatarPath.isNotBlank()) {
+            AsyncImage(
+                model = File(entry.avatarPath),
+                contentDescription = null,
+                modifier = Modifier.size(40.dp).clip(CircleShape),
+                contentScale = ContentScale.Crop
+            )
+        } else {
+            Icon(
+                imageVector = entryIcon(entry.url),
+                contentDescription = null,
+                tint = tintColor,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun CardTitleRow(entry: VaultEntry, tintColor: androidx.compose.ui.graphics.Color) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            text = entry.title,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f, fill = false)
+        )
+        if (entry.category.isNotBlank() && entry.category != "其他") {
+            Spacer(Modifier.width(6.dp))
+            Surface(
+                shape = MaterialTheme.shapes.small,
+                color = tintColor.copy(alpha = 0.1f)
+            ) {
+                Text(
+                    text = entry.category,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = tintColor,
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun CardFooter(entry: VaultEntry) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 52.dp, top = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (entry.url.isNotBlank()) {
+            Text(
+                text = try { java.net.URL(entry.url).host } catch (_: Exception) { entry.url },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.outline,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f)
+            )
+            Spacer(Modifier.width(12.dp))
+        }
+        Text(
+            text = stringResource(
+                R.string.vault_updated_at,
+                com.palmnote.domain.util.DateUtils.formatDate(entry.updatedAt)
+            ),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.outline
+        )
     }
 }
 
@@ -446,18 +629,64 @@ private fun VaultEmptyState(query: String) {
     }
 }
 
-private fun entryIcon(url: String): ImageVector {
+internal fun entryIcon(url: String): ImageVector {
     val normalized = url.lowercase(Locale.ROOT)
-    return when {
-        normalized.contains("github") -> Icons.Outlined.Code
-        normalized.contains("bank") || normalized.contains("alipay") || normalized.contains("pay") -> Icons.Outlined.AccountBalance
-        else -> Icons.Outlined.Key
-    }
+    return ENTRY_ICON_MAP.firstOrNull { (keywords) ->
+        keywords.any(normalized::contains)
+    }?.second ?: Icons.Outlined.Key
 }
 
-/** 无锁模式引导条：提示可随时在设置中开启密码保护。 */
+private val ENTRY_ICON_MAP: List<Pair<List<String>, ImageVector>> = listOf(
+    listOf(
+        "github", "gitlab", "bitbucket", "stackoverflow", "developer",
+        "aws", "azure"
+    ) to Icons.Outlined.Code,
+    listOf(
+        "google", "gmail", "youtube", "chrome", "android"
+    ) to Icons.Outlined.Android,
+    listOf(
+        "mail", "outlook", "office", "icloud", "ymail"
+    ) to Icons.Outlined.Mail,
+    listOf(
+        "steam", "epic", "uplay", "origin", "riot", "xbox",
+        "playstation", "nintendo"
+    ) to Icons.Outlined.SportsEsports,
+    listOf(
+        "facebook", "meta", "instagram", "twitter", "tiktok", "snapchat",
+        "telegram", "whatsapp", "reddit"
+    ) to Icons.AutoMirrored.Outlined.Chat,
+    listOf(
+        "amazon", "ebay", "aliexpress", "taobao", "jd.com", "pinduoduo"
+    ) to Icons.Outlined.ShoppingCart,
+    listOf(
+        "weixin", "wechat", "qq", "linkedin", "zoom", "slack", "teams", "discord"
+    ) to Icons.Outlined.Forum,
+    listOf(
+        "bank", "alipay", "pay", "applepay"
+    ) to Icons.Outlined.AccountBalance
+)
+
+data class VaultCardConfig(
+    val identity: String = "email_first"
+)
+
+private fun resolveIdentity(
+    entry: VaultEntry,
+    config: VaultCardConfig
+): String = when (config.identity) {
+    "username_first" -> entry.username.ifEmpty { entry.email }
+    else -> entry.email.ifEmpty { entry.username }
+}
+
+private fun categoryColor(name: String): Color {
+    val hash = name.hashCode()
+    val hue = (hash % 360).let { if (it < 0) it + 360 else it }.toFloat()
+    return androidx.compose.ui.graphics.Color.hsl(hue, 0.55f, 0.45f)
+}
+
+/** 无锁模式提示条：提示开启密码本锁定，保护私密数据。 */
 @Composable
-private fun NoLockBanner(onDismiss: () -> Unit) {
+private fun NoLockBanner(onClick: () -> Unit, onDismiss: () -> Unit) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -466,7 +695,9 @@ private fun NoLockBanner(onDismiss: () -> Unit) {
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
     ) {
         Row(
-            modifier = Modifier.padding(start = 12.dp, end = 4.dp, top = 6.dp, bottom = 6.dp),
+            modifier = Modifier
+                .clickable { onClick() }
+                .padding(start = 12.dp, end = 4.dp, top = 6.dp, bottom = 6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(

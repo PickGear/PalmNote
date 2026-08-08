@@ -8,11 +8,8 @@ import com.palmnote.feature.vault.VaultRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -20,12 +17,12 @@ import kotlinx.coroutines.launch
 data class VaultSettingsUiState(
     val clipboardSeconds: Int = 30,
     val requireAuth: Boolean = true,
-    val entryCount: Int = 0,
     val initialized: Boolean = false,
     val unlocked: Boolean = false,
     val biometricEnabled: Boolean = false,
     val biometricAvailable: Boolean = false,
-    val isNoLockMode: Boolean = false
+    val isNoLockMode: Boolean = false,
+    val cardIdentity: String = "email_first"
 )
 
 /** 密码本锁定状态派生值（避免 combine 超过 5 个 flow 的类型化重载限制）。 */
@@ -42,8 +39,6 @@ class VaultSettingsViewModel @Inject constructor(
     private val preferencesManager: PreferencesManager
 ) : ViewModel() {
 
-    private val entryCountState = MutableStateFlow(0)
-
     val uiState: StateFlow<VaultSettingsUiState> = combineState()
 
     init {
@@ -56,9 +51,6 @@ class VaultSettingsViewModel @Inject constructor(
                 lockManager.unlockNoLock()
             }
         }
-        viewModelScope.launch {
-            repository.observeCount().collect { entryCountState.value = it }
-        }
     }
 
     private fun combineState(): StateFlow<VaultSettingsUiState> {
@@ -68,6 +60,8 @@ class VaultSettingsViewModel @Inject constructor(
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), true)
         val bioEnabled = preferencesManager.vaultBiometricEnabled
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), false)
+        val cardIdentity = preferencesManager.vaultCardIdentity
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), "email_first")
         val lockStatus = lockManager.state
             .map {
                 VaultLockStatus(
@@ -76,24 +70,29 @@ class VaultSettingsViewModel @Inject constructor(
                 )
             }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), VaultLockStatus())
-        return kotlinx.coroutines.flow.combine(
+        val baseState = kotlinx.coroutines.flow.combine(
             clipboard,
             requireAuth,
-            entryCountState,
             lockStatus,
-            bioEnabled
-        ) { clip, auth, count, status, bio ->
+            bioEnabled,
+            cardIdentity
+        ) { clip, auth, status, bio, identity ->
             VaultSettingsUiState(
                 clipboardSeconds = clip,
                 requireAuth = auth,
-                entryCount = count,
                 initialized = status.initialized,
                 unlocked = status.unlocked,
                 biometricEnabled = bio,
+                cardIdentity = identity,
                 biometricAvailable = com.palmnote.ui.lock.isBiometricAvailable(context),
                 isNoLockMode = lockManager.isNoLockMode()
             )
-        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), VaultSettingsUiState())
+        }
+        return baseState.stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
+            VaultSettingsUiState()
+        )
     }
 
     fun setClipboardSeconds(seconds: Int) {
@@ -102,6 +101,10 @@ class VaultSettingsViewModel @Inject constructor(
 
     fun setRequireAuth(enabled: Boolean) {
         viewModelScope.launch { preferencesManager.setVaultRequireAuth(enabled) }
+    }
+
+    fun setCardIdentity(identity: String) {
+        viewModelScope.launch { preferencesManager.setVaultCardIdentity(identity) }
     }
 
     /** 关闭生物识别解锁。 */
@@ -153,7 +156,6 @@ class VaultSettingsViewModel @Inject constructor(
         viewModelScope.launch {
             repository.clearAll()
             lockManager.reset()
-            entryCountState.value = 0
             onDone()
         }
     }
