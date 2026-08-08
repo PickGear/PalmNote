@@ -131,8 +131,8 @@
     <string name="settings_calendar_sync_subtitle">Sync anniversaries to system calendar</string>
     <string name="settings_app_lock">App Lock</string>
     <string name="settings_app_lock_subtitle">Protect privacy, verify on startup</string>
-    <string name="settings_security">App Lock &amp; Password Vault</string>
-    <string name="settings_security_subtitle">PIN lock, biometrics, vault settings</string>
+    <string name="settings_security">App Lock</string>
+    <string name="settings_security_subtitle">PIN lock, pattern, biometrics</string>
     <string name="settings_security_subtitle_on">Enabled, tap to manage</string>
     <string name="settings_reminder">Reminders</string>
     <string name="settings_reminder_daily_section">Daily Reminder</string>
@@ -901,7 +901,6 @@
     <string name="app_lock_settings_title">App Lock Settings</string>
     <string name="app_lock_settings_section_lock">Locking</string>
     <string name="app_lock_settings_section_autolock">Auto-lock</string>
-    <string name="app_lock_settings_section_vault">Password Vault</string>
     <string name="app_lock_security_hint">Tip: remember your PIN. Forgetting it requires resetting your data.</string>
     <string name="app_lock_auto_lock">Auto Lock</string>
     <string name="app_lock_auto_lock_value">%1$s</string>
@@ -1658,7 +1657,6 @@
 
     <!-- Password Vault -->
     <string name="settings_vault">Password Vault</string>
-    <string name="settings_vault_subtitle">Manage saved passwords</string>
     <string name="settings_more">More</string>
     <string name="settings_confirm">OK</string>
     <string name="vault_title">Password Vault</string>
@@ -1752,6 +1750,7 @@
     <string name="vault_settings_section_security">Security</string>
     <string name="vault_settings_hint">Tip: your master password encrypts vault data; keep it safe. If you forget it, you can reset the vault (all entries will be cleared).</string>
     <string name="vault_settings_clipboard_value">Current: %1$d s</string>
+    <string name="vault_settings_clipboard_never">Never</string>
     <string name="vault_settings_clipboard_option">%1$d seconds</string>
     <string name="vault_settings_clipboard_selected">Current</string>
     <string name="vault_settings_require_auth">Auto-lock on background</string>
@@ -1766,8 +1765,6 @@
     <string name="vault_bio_setup_subtitle">Unlock the vault quickly with fingerprint once enabled</string>
     <string name="vault_bio_enable_failed">Failed to enable biometrics, please retry</string>
     <string name="vault_bio_upgrade_hint">Setting a master password is required to enable biometrics</string>
-    <string name="vault_settings_count">Encrypted entries</string>
-    <string name="vault_settings_count_value">%1$d</string>
     <string name="vault_settings_change_pin">Change master PIN</string>
     <string name="vault_settings_change_pin_hint">Update the vault unlock PIN</string>
     <string name="vault_settings_reset">Reset vault</string>
@@ -1777,4 +1774,12 @@
     <string name="vault_reset_action">Reset</string>
     <string name="vault_reset_done_title">Reset complete</string>
     <string name="vault_reset_done_hint">The vault has been reset. A new unlock PIN will be required on next entry.</string>
+    <string name="vault_field_email">Email</string>
+    <string name="vault_settings">Vault Settings</string>
+    <string name="vault_settings_section_card_display">Card Display</string>
+    <string name="vault_settings_card_identity">Account display priority</string>
+    <string name="vault_settings_card_identity_email">Email first</string>
+    <string name="vault_settings_card_identity_username">Username first</string>
+    <string name="vault_avatar_remove">Remove avatar</string>
+    <string name="vault_avatar_hint">Tap to upload avatar</string>
 </resources>

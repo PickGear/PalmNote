@@ -48,7 +48,8 @@ class VaultClipboardManager @Inject constructor(
         clearJob = scope.launch {
             val seconds = preferencesManager.vaultClipboardClearSeconds.first()
             if (seconds <= 0) {
-                pendingHash = null
+                // 未配置定时清除时仍保留 pendingHash，供锁定时 clearIfOwned() 清空，
+                // 避免用户关闭自动清除后复制的敏感内容残留在剪贴板。
                 return@launch
             }
             delay(seconds * 1000L)

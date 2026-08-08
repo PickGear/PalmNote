@@ -14,23 +14,32 @@ data class VaultEntry(
     val id: Long = 0,
     val title: String,
     val username: String = "",
+    val email: String = "",
     val passwordEncrypted: ByteArray,
     val url: String = "",
     val notes: String = "",
     val category: String = "其他",
+    val avatarPath: String = "",
+    val isFavorite: Boolean = false,
+    val lastViewAt: Long = 0L,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()
 ) {
+    @Suppress("CyclomaticComplexMethod")
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is VaultEntry) return false
         return id == other.id &&
                 title == other.title &&
                 username == other.username &&
+                email == other.email &&
                 passwordEncrypted.contentEquals(other.passwordEncrypted) &&
                 url == other.url &&
                 notes == other.notes &&
                 category == other.category &&
+                avatarPath == other.avatarPath &&
+                isFavorite == other.isFavorite &&
+                lastViewAt == other.lastViewAt &&
                 createdAt == other.createdAt &&
                 updatedAt == other.updatedAt
     }
@@ -39,10 +48,14 @@ data class VaultEntry(
         var result = id.hashCode()
         result = 31 * result + title.hashCode()
         result = 31 * result + username.hashCode()
+        result = 31 * result + email.hashCode()
         result = 31 * result + passwordEncrypted.contentHashCode()
         result = 31 * result + url.hashCode()
         result = 31 * result + notes.hashCode()
         result = 31 * result + category.hashCode()
+        result = 31 * result + avatarPath.hashCode()
+        result = 31 * result + isFavorite.hashCode()
+        result = 31 * result + lastViewAt.hashCode()
         result = 31 * result + createdAt.hashCode()
         result = 31 * result + updatedAt.hashCode()
         return result

@@ -47,10 +47,15 @@ class DataClearViewModel @Inject constructor(
         }
     }
 
-    fun clearAll() { viewModelScope.launch { try { db.clearAllTables(); clearImagesDir() } catch (e: Exception) { AppLogger.w("DataClear", "clearAll failed", e) } } }
+    fun clearAll() { viewModelScope.launch { try { db.clearAllTables(); clearImagesDir(); clearVaultAvatarsDir() } catch (e: Exception) { AppLogger.w("DataClear", "clearAll failed", e) } } }
 
     /** 清理文件存储中的图片孤儿文件（DB 已清，文件不再引用） */
     private suspend fun clearImagesDir() = withContext(Dispatchers.IO) {
         File(context.filesDir, "images").listFiles()?.forEach { it.delete() }
+    }
+
+    /** 清理密码本头像目录（仅「全部清空」时调用） */
+    private suspend fun clearVaultAvatarsDir() = withContext(Dispatchers.IO) {
+        File(context.filesDir, "vault_avatars").listFiles()?.forEach { it.delete() }
     }
 }

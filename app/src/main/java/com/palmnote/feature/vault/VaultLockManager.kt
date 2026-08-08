@@ -45,14 +45,16 @@ class VaultLockManager @Inject constructor(
     // 串行化解锁，避免并发触发失败计数非原子递增（防暴力窗口扩大）
     private val unlockMutex = Mutex()
 
-    fun initialize() {
+    /** 计算并返回当前锁状态（同步）。init 时调用一次以消除首帧展示错误锁门。 */
+    fun initialize(): LockState {
         hasKey = keyManager.isInitialized()
-        // 若已解锁（内存中 DK 仍在，如从列表页导航到详情页）则保持 UNLOCKED，避免每次导航重新输 PIN
-        if (keyManager.isUnlocked) {
-            _state.value = LockState.UNLOCKED
-        } else {
-            _state.value = if (hasKey) LockState.LOCKED else LockState.NEED_SETUP
+        // 若已处于解锁状态（内存中 DK 仍在，如从列表页导航到详情页）则保持 UNLOCKED，避免因导航重新输 PIN
+        _state.value = when {
+            keyManager.isUnlocked -> LockState.UNLOCKED
+            hasKey -> LockState.LOCKED
+            else -> LockState.NEED_SETUP
         }
+        return _state.value
     }
 
     /** 冷启动竞态修正：若因 DataStore 未加载被误判为 NEED_SETUP，等 vault_salt 首次发射后重新计算状态。

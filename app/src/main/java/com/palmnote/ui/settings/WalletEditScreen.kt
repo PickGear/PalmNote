@@ -137,9 +137,9 @@ fun WalletEditScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // ══════════════════════════════════════�?
+            // ══════════════════════════════════════
             // 基本信息
-            // ══════════════════════════════════════�?
+            // ══════════════════════════════════════
             ModuleCard(tint = MaterialTheme.colorScheme.surface) {
                 SectionHeader(Icons.Outlined.Info, stringResource(R.string.wallet_basic_info))
                 Spacer(modifier = Modifier.height(12.dp))
@@ -199,9 +199,9 @@ fun WalletEditScreen(
                 }
             }
 
-            // ══════════════════════════════════════�?
+            // ══════════════════════════════════════
             // 余额
-            // ══════════════════════════════════════�?
+            // ══════════════════════════════════════
             ModuleCard(tint = MaterialTheme.colorScheme.surface) {
                 SectionHeader(Icons.Outlined.AccountBalance, stringResource(R.string.wallet_balance))
                 Spacer(modifier = Modifier.height(8.dp))
@@ -227,14 +227,14 @@ fun WalletEditScreen(
                 }
             }
 
-            // ══════════════════════════════════════�?
-            // 外观（图�?+ 颜色�?
-            // ══════════════════════════════════════�?
+            // ══════════════════════════════════════
+            // 外观（图标）+ 颜色）
+            // ══════════════════════════════════════
             ModuleCard(tint = MaterialTheme.colorScheme.surface) {
                 SectionHeader(Icons.Outlined.Palette, stringResource(R.string.wallet_appearance))
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // 预览�?
+                // 预览
                 val walletColor = try { color.toComposeColor() } catch (_: Exception) { AccentOrange }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -264,9 +264,9 @@ fun WalletEditScreen(
                 ColorPicker(selectedColor = color, onColorSelected = { color = it })
             }
 
-            // ══════════════════════════════════════�?
+            // ══════════════════════════════════════
             // 保存按钮
-            // ══════════════════════════════════════�?
+            // ══════════════════════════════════════
             Button(
                 onClick = { save() },
                 modifier = Modifier.fillMaxWidth().height(52.dp),

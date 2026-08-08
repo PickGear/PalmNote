@@ -1,5 +1,7 @@
 ﻿package com.palmnote.feature.vault.vault
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -25,6 +27,7 @@ import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Key
 import androidx.compose.material.icons.outlined.Link
+import androidx.compose.material.icons.outlined.Mail
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Tune
@@ -44,6 +47,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -51,6 +55,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -59,6 +64,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil3.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
+import java.io.File
 import com.palmnote.R
 import com.palmnote.feature.vault.VaultEntry
 import com.palmnote.feature.vault.VaultLockManager.LockState
@@ -82,6 +90,13 @@ fun VaultDetailScreen(
     val autoLockTimeoutMinutes by viewModel.autoLockTimeoutMinutes.collectAsStateWithLifecycle()
     var showPassword by remember { mutableStateOf(false) }
     var showForgotPinConfirm by remember { mutableStateOf(false) }
+
+    // 锁定/自动锁定后隐藏明文，避免重新解锁后残留显示
+    LaunchedEffect(state.lockState) {
+        if (state.lockState != LockState.UNLOCKED) {
+            showPassword = false
+        }
+    }
 
     VaultLockOnBackground(
         lock = viewModel::lock,
@@ -214,7 +229,7 @@ fun VaultDetailScreen(
                 .background(MaterialTheme.colorScheme.background)
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp, vertical = 16.dp),
+                .padding(horizontal = 20.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             // ═══════════════════════════════════════
@@ -231,12 +246,21 @@ fun VaultDetailScreen(
                             .background(vaultTint().copy(alpha = 0.15f), CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Key,
-                            contentDescription = null,
-                            tint = vaultTint(),
-                            modifier = Modifier.size(30.dp)
-                        )
+                        if (entry.avatarPath.isNotBlank()) {
+                            AsyncImage(
+                                model = File(entry.avatarPath),
+                                contentDescription = null,
+                                modifier = Modifier.size(64.dp).clip(CircleShape),
+                                contentScale = ContentScale.Crop
+                            )
+                        } else {
+                            Icon(
+                                imageVector = entryIcon(entry.url),
+                                contentDescription = null,
+                                tint = vaultTint(),
+                                modifier = Modifier.size(30.dp)
+                            )
+                        }
                     }
                     Spacer(Modifier.height(12.dp))
                     Text(
@@ -269,7 +293,7 @@ fun VaultDetailScreen(
             // 登录信息
             // ═══════════════════════════════════════
             ModuleCard(tint = MaterialTheme.colorScheme.surface) {
-                SectionHeader(Icons.Outlined.Person, stringResource(R.string.vault_section_login))
+                SectionHeader(null, stringResource(R.string.vault_section_login))
                 Spacer(Modifier.height(4.dp))
                 if (entry.username.isNotEmpty()) {
                     DetailRow(
@@ -278,6 +302,16 @@ fun VaultDetailScreen(
                         value = entry.username,
                         onCopy = {
                             if (viewModel.copyUsername(entry)) showCopied()
+                        }
+                    )
+                }
+                if (entry.email.isNotEmpty()) {
+                    DetailRow(
+                        icon = Icons.Outlined.Mail,
+                        label = stringResource(R.string.vault_field_email),
+                        value = entry.email,
+                        onCopy = {
+                            if (viewModel.copyEmail(entry)) showCopied()
                         }
                     )
                 }
@@ -298,12 +332,20 @@ fun VaultDetailScreen(
             // ═══════════════════════════════════════
             if (entry.url.isNotEmpty()) {
                 ModuleCard(tint = MaterialTheme.colorScheme.surface) {
-                    SectionHeader(Icons.Outlined.Tune, stringResource(R.string.vault_section_site))
+                    SectionHeader(null, stringResource(R.string.vault_section_site))
                     Spacer(Modifier.height(4.dp))
                     DetailRow(
                         icon = Icons.Outlined.Link,
                         label = stringResource(R.string.vault_field_url),
                         value = entry.url,
+                        modifier = Modifier.clickable {
+                            try {
+                                val url = entry.url.let {
+                                    if (!it.startsWith("http://") && !it.startsWith("https://")) "https://$it" else it
+                                }
+                                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                            } catch (_: Exception) {}
+                        },
                         onCopy = {
                             if (viewModel.copyUrl(entry)) showCopied()
                         }
@@ -316,7 +358,7 @@ fun VaultDetailScreen(
             // ═══════════════════════════════════════
             if (entry.notes.isNotEmpty()) {
                 ModuleCard(tint = MaterialTheme.colorScheme.surface) {
-                    SectionHeader(Icons.AutoMirrored.Outlined.Notes, stringResource(R.string.vault_section_notes))
+                    SectionHeader(null, stringResource(R.string.vault_section_notes))
                     Spacer(Modifier.height(4.dp))
                     DetailRow(
                         icon = Icons.AutoMirrored.Outlined.Notes,
@@ -365,12 +407,13 @@ private fun DetailRow(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     label: String,
     value: String,
+    modifier: Modifier = Modifier,
     onCopy: (() -> Unit)? = null,
     onToggleVisibility: (() -> Unit)? = null,
     isMasked: Boolean = false,
     multiline: Boolean = false
 ) {
-    Column(Modifier.padding(vertical = 10.dp)) {
+    Column(modifier.padding(vertical = 10.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
@@ -396,14 +439,16 @@ private fun DetailRow(
             Text(
                 text = value,
                 style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = 26.dp),
                 maxLines = if (multiline) Int.MAX_VALUE else 1,
                 overflow = TextOverflow.Ellipsis
             )
             if (onToggleVisibility != null) {
                 IconButton(onClick = onToggleVisibility) {
                     Icon(
-                        imageVector = if (isMasked) Icons.Outlined.Visibility else Icons.Outlined.VisibilityOff,
+                        imageVector = if (isMasked) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
                         contentDescription = stringResource(R.string.vault_toggle_visibility)
                     )
                 }
@@ -423,15 +468,17 @@ private fun DetailRow(
 
 /** 分组标题：图标 + 标题。 */
 @Composable
-private fun SectionHeader(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String) {
+private fun SectionHeader(icon: androidx.compose.ui.graphics.vector.ImageVector?, title: String) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            modifier = Modifier.size(18.dp),
-            tint = vaultTint()
-        )
-        Spacer(Modifier.width(8.dp))
+        if (icon != null) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+                tint = vaultTint()
+            )
+            Spacer(Modifier.width(8.dp))
+        }
         Text(
             text = title,
             style = MaterialTheme.typography.titleSmall,

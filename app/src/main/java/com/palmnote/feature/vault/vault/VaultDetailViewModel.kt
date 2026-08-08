@@ -117,7 +117,8 @@ class VaultDetailViewModel @Inject constructor(
         }
         viewModelScope.launch {
             loadingState.value = true
-            entryState.value = repository.getEntry(entryId)
+            val loaded = repository.getEntry(entryId)
+            entryState.value = loaded
             loadingState.value = false
         }
     }
@@ -197,6 +198,12 @@ class VaultDetailViewModel @Inject constructor(
         return true
     }
 
+    fun copyEmail(entry: VaultEntry): Boolean {
+        if (entry.email.isEmpty()) return false
+        clipboardManager.copy(entry.title, entry.email)
+        return true
+    }
+
     fun copyNotes(entry: VaultEntry): Boolean {
         if (entry.notes.isEmpty()) return false
         clipboardManager.copy(entry.title, entry.notes)
@@ -205,7 +212,13 @@ class VaultDetailViewModel @Inject constructor(
 
     fun delete() {
         viewModelScope.launch {
-            entryState.value?.let { repository.delete(it) }
+            entryState.value?.let {
+                repository.delete(it)
+                // 清理条目关联的头像文件，避免孤儿文件残留
+                if (it.avatarPath.isNotBlank()) {
+                    runCatching { java.io.File(it.avatarPath).delete() }
+                }
+            }
             deletedState.value = true
         }
     }

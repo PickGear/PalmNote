@@ -178,17 +178,19 @@ class VaultEditViewModel @Inject constructor(
     fun save(
         title: String,
         username: String,
+        email: String,
         password: String,
         url: String,
         notes: String,
         category: String,
+        avatarPath: String,
         onResult: (Boolean) -> Unit
     ) {
         viewModelScope.launch {
             val ok = if (entryId == null) {
-                repository.create(title, username, password, url, notes, category) != null
+                repository.create(title, username, email, password, url, notes, category, avatarPath) != null
             } else {
-                repository.update(entryId, title, username, password, url, notes, category)
+                repository.update(entryId, title, username, email, password, url, notes, category, avatarPath)
             }
             onResult(ok)
         }

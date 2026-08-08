@@ -21,8 +21,6 @@ class VaultRepositoryImpl @Inject constructor(
 
     override fun observeCategories(): Flow<List<String>> = dao.getAllCategories()
 
-    override fun observeRecent(limit: Int): Flow<List<VaultEntry>> = dao.getRecentEntries(limit)
-
     override fun observeCount(): Flow<Int> = dao.countEntriesFlow()
 
     override suspend fun countEntries(): Int = dao.countEntries()
@@ -32,10 +30,12 @@ class VaultRepositoryImpl @Inject constructor(
     override suspend fun create(
         title: String,
         username: String,
+        email: String,
         password: String,
         url: String,
         notes: String,
-        category: String
+        category: String,
+        avatarPath: String
     ): Long? {
         val encrypted = keyManager.encryptPassword(password) ?: return null
         val now = System.currentTimeMillis()
@@ -43,10 +43,12 @@ class VaultRepositoryImpl @Inject constructor(
             VaultEntry(
                 title = title.trim(),
                 username = username.trim(),
+                email = email.trim(),
                 passwordEncrypted = encrypted,
                 url = url.trim(),
                 notes = notes.trim(),
                 category = category.trim().ifEmpty { DEFAULT_CATEGORY },
+                avatarPath = avatarPath,
                 createdAt = now,
                 updatedAt = now
             )
@@ -57,10 +59,12 @@ class VaultRepositoryImpl @Inject constructor(
         id: Long,
         title: String,
         username: String,
+        email: String,
         password: String,
         url: String,
         notes: String,
-        category: String
+        category: String,
+        avatarPath: String
     ): Boolean {
         val existing = dao.getEntryById(id) ?: return false
         val encrypted = keyManager.encryptPassword(password) ?: return false
@@ -69,10 +73,12 @@ class VaultRepositoryImpl @Inject constructor(
             existing.copy(
                 title = title.trim(),
                 username = username.trim(),
+                email = email.trim(),
                 passwordEncrypted = encrypted,
                 url = url.trim(),
                 notes = notes.trim(),
                 category = category.trim().ifEmpty { DEFAULT_CATEGORY },
+                avatarPath = avatarPath,
                 updatedAt = now
             )
         )
