@@ -71,8 +71,10 @@ class PreferencesManager @Inject constructor(
         val VAULT_BIO_ENABLED = booleanPreferencesKey("vault_bio_enabled")
         val VAULT_BIO_KEY_WRAP = stringPreferencesKey("vault_bio_key_wrap")
         val VAULT_NO_LOCK = booleanPreferencesKey("vault_no_lock")
+        val VAULT_NO_LOCK_BANNER_DISMISSED = booleanPreferencesKey("vault_no_lock_banner_dismissed")
         val AUTO_LOCK_MODE = stringPreferencesKey("auto_lock_mode")
         val AUTO_LOCK_TIMEOUT_MINUTES = intPreferencesKey("auto_lock_timeout_minutes")
+        val VAULT_CARD_IDENTITY = stringPreferencesKey("vault_card_identity")
 
         const val AUTO_LOCK_MODE_IMMEDIATE = "immediate"
         const val AUTO_LOCK_MODE_SYSTEM = "system"
@@ -300,6 +302,14 @@ class PreferencesManager @Inject constructor(
         context.dataStore.edit { it[VAULT_NO_LOCK] = enabled }
     }
 
+    /** 无锁模式引导横幅是否已被用户关闭（持久化，跨导航保持隐藏）。 */
+    val vaultNoLockBannerDismissed: Flow<Boolean> =
+        prefsFlow.map { it[VAULT_NO_LOCK_BANNER_DISMISSED] ?: false }
+
+    suspend fun setVaultNoLockBannerDismissed(dismissed: Boolean) {
+        context.dataStore.edit { it[VAULT_NO_LOCK_BANNER_DISMISSED] = dismissed }
+    }
+
     suspend fun clearVaultNoLock() {
         context.dataStore.edit { it.remove(VAULT_NO_LOCK) }
     }
@@ -323,5 +333,11 @@ class PreferencesManager @Inject constructor(
 
     suspend fun setVaultClipboardClearSeconds(seconds: Int) {
         context.dataStore.edit { it[VAULT_CLIPBOARD_CLEAR_SECONDS] = seconds }
+    }
+
+    val vaultCardIdentity: Flow<String> = prefsFlow.map { it[VAULT_CARD_IDENTITY] ?: "email_first" }
+
+    suspend fun setVaultCardIdentity(identity: String) {
+        context.dataStore.edit { it[VAULT_CARD_IDENTITY] = identity }
     }
 }

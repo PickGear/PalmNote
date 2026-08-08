@@ -17,6 +17,8 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
@@ -26,9 +28,12 @@ import kotlinx.coroutines.launch
 
 data class VaultUiState(
     val lockState: LockState = LockState.LOCKED,
+    /** 锁状态是否已从 DataStore 确认。冷启动时快照未就绪，先不渲染锁门/输入门，避免闪现错误页面。 */
+    val lockSettled: Boolean = false,
     val requireAuth: Boolean = true,
     val biometricEnabled: Boolean = false,
     val isNoLockMode: Boolean = false,
+    val noLockBannerDismissed: Boolean = false,
     val entries: List<VaultEntry> = emptyList(),
     val categories: List<String> = emptyList(),
     val query: String = "",
@@ -50,6 +55,8 @@ class VaultViewModel @Inject constructor(
     private val categoryState = MutableStateFlow<String?>(null)
     private val pinErrorState = MutableStateFlow<String?>(null)
     private val lockoutState = MutableStateFlow(0L)
+    /** 锁状态是否已从 DataStore 确认（冷启动快照就绪后置 true）。 */
+    private val lockSettledState = MutableStateFlow(false)
     /** 剪贴板自动清除秒数（复制成功 snackbar 提示用）。 */
     val clipboardClearSeconds: StateFlow<Int> = preferencesManager.vaultClipboardClearSeconds.stateIn(
         viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
@@ -63,22 +70,46 @@ class VaultViewModel @Inject constructor(
         viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
         PreferencesManager.DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES
     )
+    val cardIdentity: StateFlow<String> = preferencesManager.vaultCardIdentity.stateIn(
+        viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), "email_first"
+    )
+    /** 无锁模式引导横幅是否已被用户关闭（持久化，跨导航保持隐藏）。
+     *  该值已并入 [VaultUiState.noLockBannerDismissed]，此处仅提供关闭动作。 */
+    fun dismissNoLockBanner() {
+        viewModelScope.launch { preferencesManager.setVaultNoLockBannerDismissed(true) }
+    }
+
     private var countdownJob: Job? = null
 
-    private val filters = combine(queryState, categoryState) { q, c -> q to c }
+    private val filters = combine(queryState.debounce(SEARCH_DEBOUNCE_MS), categoryState) { q, c -> q to c }
+        .distinctUntilChanged()
+
+    /** 安全相关偏好打捆，避免 combine 参数过多破坏解构类型推断。 */
+    private val bundleSecurityPrefs = combine(
+        preferencesManager.vaultRequireAuth,
+        preferencesManager.vaultNoLockBannerDismissed
+    ) { requireAuth, dismissed -> requireAuth to dismissed }
+
+    /** 输入态 + 锁状态确认打捆（同样规避 combine 参数上限）。 */
+    private val bundleIndicators = combine(
+        pinErrorState,
+        lockoutState,
+        lockSettledState
+    ) { pinError, lockout, settled -> Triple(pinError, lockout, settled) }
 
     val uiState: StateFlow<VaultUiState> = combine(
         lockManager.state,
-        preferencesManager.vaultRequireAuth,
+        bundleSecurityPrefs,
         filters,
-        pinErrorState,
-        lockoutState
-    ) { lock, requireAuth, (query, category), pinError, lockout ->
+        bundleIndicators
+    ) { lock, (requireAuth, bannerDismissed), (query, category), (pinError, lockout, settled) ->
         VaultUiState(
             lockState = lock,
+            lockSettled = settled,
             requireAuth = requireAuth,
             biometricEnabled = lockManager.biometricEnabled(),
             isNoLockMode = lockManager.isNoLockMode(),
+            noLockBannerDismissed = bannerDismissed,
             query = query,
             category = category,
             pinError = pinError,
@@ -103,8 +134,8 @@ class VaultViewModel @Inject constructor(
     }.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
-        // 初始锁状态取单例实时值，避免已解锁进入时首帧闪现密码输入门
-        VaultUiState(lockState = lockManager.state.value)
+        // 初始锁状态由 initialize() 同步计算出正确值，避免冷启动首帧闪现错误的锁门/输入门
+        VaultUiState(lockState = lockManager.initialize())
     )
 
     init {
@@ -119,14 +150,15 @@ class VaultViewModel @Inject constructor(
         viewModelScope.launch {
             lockManager.state.filter { it == LockState.LOCKED }.collect { pinErrorState.value = null }
         }
-        // 无锁模式自动解锁（无需验证）
+        // 冷启动竞态修正 + 无锁模式自动解锁，全部完成后才确认锁状态：
+        // 否则 UI 会先按未确认的锁状态渲染（闪现错误页面/无锁模式下闪现 PIN 门）。
         viewModelScope.launch {
+            lockManager.reinitializeWhenReady()
             if (lockManager.isNoLockMode() && lockManager.state.value == LockState.LOCKED) {
                 lockManager.unlockNoLock()
             }
+            lockSettledState.value = true
         }
-        // 冷启动竞态修正：DataStore 未加载时可能误判为未初始化，等就绪后重校验
-        viewModelScope.launch { lockManager.reinitializeWhenReady() }
     }
 
     /** 无锁模式：跳过设置，直接进入。 */
@@ -217,6 +249,12 @@ class VaultViewModel @Inject constructor(
         return true
     }
 
+    fun copyEmail(entry: VaultEntry): Boolean {
+        if (entry.email.isEmpty()) return false
+        clipboardManager.copy(entry.title, entry.email)
+        return true
+    }
+
     fun deleteEntry(entry: VaultEntry) {
         viewModelScope.launch {
             repository.delete(entry)
@@ -240,5 +278,6 @@ class VaultViewModel @Inject constructor(
         const val STOP_TIMEOUT_MS = 5000L
         const val COUNTDOWN_INTERVAL_MS = 1000L
         const val DEFAULT_CLIPBOARD_CLEAR_SECONDS = 30
+        const val SEARCH_DEBOUNCE_MS = 250L
     }
 }

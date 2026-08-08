@@ -623,7 +623,7 @@ private fun WeeklyBarChart(dailySummary: List<DailySummary>, isExpense: Boolean)
         }
         val cal = java.util.Calendar.getInstance()
 
-        // 按星期槽位放置柱子（0=周一 �?6=周日），无记录的天留�?
+// 按星期槽位放置柱子（0=周一 ~6=周日），无记录的天留空
         val slotValues = Array<Pair<Int, Long>?>(7) { null }
         dailySummary.takeLast(7).forEach { day ->
             cal.timeInMillis = day.date
@@ -701,7 +701,7 @@ private fun MonthlyLineChart(dailySummary: List<DailySummary>, isExpense: Boolea
             )
         }
 
-        // 按自然日铺满整月，无记录的天�?0，避免折线被压缩
+        // 按自然日铺满整月，无记录的天补 0，避免折线被压缩
         val points = (1..daysInMonth).map { day ->
             val value = if (isExpense) byDay[day]?.expense ?: 0 else byDay[day]?.income ?: 0
             val x = leftPad + chartW * (day - 1) / (daysInMonth - 1).coerceAtLeast(1)

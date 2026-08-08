@@ -43,6 +43,7 @@ import com.palmnote.R
 import com.palmnote.feature.vault.PasswordStrength
 import com.palmnote.feature.vault.VaultPasswordGenerator
 import com.palmnote.ui.theme.BottomSheetShape
+import com.palmnote.ui.theme.vaultTint
 
 /**
  * 密码生成器 BottomSheet：长度与字符集可配置，显示熵与强度。
@@ -119,7 +120,7 @@ fun VaultPasswordGeneratorSheet(
                         Icon(
                             imageVector = Icons.Outlined.Refresh,
                             contentDescription = stringResource(R.string.vault_generator_regenerate),
-                            tint = MaterialTheme.colorScheme.primary
+                            tint = vaultTint()
                         )
                     }
                 }
@@ -228,8 +229,8 @@ private fun strengthLabel(strength: PasswordStrength): String = stringResource(
 private fun strengthColor(strength: PasswordStrength): androidx.compose.ui.graphics.Color = when (strength) {
     PasswordStrength.WEAK -> MaterialTheme.colorScheme.error
     PasswordStrength.MEDIUM -> MaterialTheme.colorScheme.tertiary
-    PasswordStrength.STRONG -> MaterialTheme.colorScheme.primary
-    PasswordStrength.VERY_STRONG -> MaterialTheme.colorScheme.primary
+    PasswordStrength.STRONG -> vaultTint()
+    PasswordStrength.VERY_STRONG -> vaultTint()
 }
 
 /** 强度进度条分数。 */

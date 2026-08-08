@@ -9,26 +9,29 @@ import kotlinx.coroutines.flow.Flow
 interface VaultRepository {
     fun observeEntries(query: String, category: String?): Flow<List<VaultEntry>>
     fun observeCategories(): Flow<List<String>>
-    fun observeRecent(limit: Int): Flow<List<VaultEntry>>
     fun observeCount(): Flow<Int>
     suspend fun countEntries(): Int
     suspend fun getEntry(id: Long): VaultEntry?
     suspend fun create(
         title: String,
         username: String,
+        email: String,
         password: String,
         url: String,
         notes: String,
-        category: String
+        category: String,
+        avatarPath: String
     ): Long?
     suspend fun update(
         id: Long,
         title: String,
         username: String,
+        email: String,
         password: String,
         url: String,
         notes: String,
-        category: String
+        category: String,
+        avatarPath: String
     ): Boolean
     suspend fun delete(entry: VaultEntry)
     suspend fun deleteById(id: Long)
