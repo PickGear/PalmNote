@@ -102,14 +102,6 @@ android {
         automaticGenerationDuringBuild = false
     }
 
-    // 输出文件名：PalmNote-<version>.apk（当前未开启 configuration cache，保持内部 API 用法）
-    android.applicationVariants.all {
-        outputs.all {
-            if (this is com.android.build.gradle.internal.api.BaseVariantOutputImpl) {
-                this.outputFileName = "PalmNote-${versionName}.apk"
-            }
-        }
-    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -159,6 +151,17 @@ detekt {
     baseline = file("$rootDir/config/detekt/baseline.xml")
     buildUponDefaultConfig = true
     allRules = false
+}
+
+// 输出文件名：PalmNote-<version>.apk
+androidComponents {
+    onVariants { variant ->
+        variant.outputs.forEach { output ->
+            if (output is com.android.build.api.variant.impl.VariantOutputImpl) {
+                output.outputFileName = "PalmNote-${output.versionName.get()}.apk"
+            }
+        }
+    }
 }
 
 dependencies {

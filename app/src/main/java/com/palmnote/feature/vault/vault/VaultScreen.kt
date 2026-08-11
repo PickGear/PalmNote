@@ -674,8 +674,8 @@ private fun resolveIdentity(
     entry: VaultEntry,
     config: VaultCardConfig
 ): String = when (config.identity) {
-    "username_first" -> entry.username.ifEmpty { entry.email }
-    else -> entry.email.ifEmpty { entry.username }
+    "username_first" -> entry.username.ifEmpty { entry.email }.ifEmpty { entry.phone }
+    else -> entry.email.ifEmpty { entry.username }.ifEmpty { entry.phone }
 }
 
 private fun categoryColor(name: String): Color {

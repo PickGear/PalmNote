@@ -22,6 +22,7 @@ interface VaultDao {
            WHERE title LIKE '%' || :query || '%'
               OR username LIKE '%' || :query || '%'
               OR email LIKE '%' || :query || '%'
+              OR phone LIKE '%' || :query || '%'
               OR url LIKE '%' || :query || '%'
            ORDER BY updatedAt DESC"""
     )
@@ -36,6 +37,7 @@ interface VaultDao {
              AND (title LIKE '%' || :query || '%'
                   OR username LIKE '%' || :query || '%'
                   OR email LIKE '%' || :query || '%'
+                  OR phone LIKE '%' || :query || '%'
                   OR url LIKE '%' || :query || '%')
            ORDER BY updatedAt DESC"""
     )

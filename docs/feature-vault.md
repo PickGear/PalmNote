@@ -2,7 +2,7 @@
 
 > v1.3 | 2026-08-02 | 与设计规范 [design-spec.md](design-spec.md) 配合阅读
 >
-> **状态：v1.3.0 已实现**（`feature/vault`，主库 DB v7；vault 数据存独立库 `palmnote_vault.db` v3）。本文档为设计蓝图 + 实现状态对照，实现细节以代码为准。
+> **状态：v1.3.0 已实现**（`feature/vault`，主库 DB v7；vault 数据存独立库 `palmnote_vault.db` v4）。本文档为设计蓝图 + 实现状态对照，实现细节以代码为准。
 >
 > **实现状态图例：** ✅ 已实现（v1.3.0）｜ 🔜 预留（v2.x 规划，未实现）
 >
@@ -71,15 +71,15 @@ app 侧导航
 
 | 能力 | 类型 | 状态 | 说明 | 网络依赖 |
 |------|------|------|------|---------|
-| **新增密码条目** | CRUD | ✅ | 录入标题/用户名/密码/网址/备注/分类 | ❌ |
+| **新增密码条目** | CRUD | ✅ | 录入标题/用户名/邮箱/手机号/密码/网址/备注/分类 | ❌ |
 | **密码生成器** | 工具 | ✅ | 内置随机生成器，可配置长度和字符类型（大小写/数字/符号），含熵强度提示 | ❌ |
 | **列表浏览** | 查看 | ✅ | 按更新时间倒序展示所有条目 | ❌ |
 | **查看密码详情** | 查看 | ✅ | 展示完整信息，密码默认遮罩，点击 👁 切换明文 | ❌ |
 | **编辑条目** | CRUD | ✅ | 修改已有密码条目所有字段 | ❌ |
 | **删除条目** | CRUD | ✅ | 单条删除 | ❌ |
-| **搜索** | 工具 | ✅ | 实时过滤标题/用户名/网址，支持分类内搜索 | ❌ |
+| **搜索** | 工具 | ✅ | 实时过滤标题/用户名/邮箱/手机号/网址，支持分类内搜索 | ❌ |
 | **分类筛选** | 工具 | ✅ | 下拉菜单按分类过滤，支持分类内搜索 | ❌ |
-| **一键复制** | 工具 | ✅ | 复制用户名/密码/网址到剪贴板，30 秒后自动清空（哈希追踪不误清） | ❌ |
+| **一键复制** | 工具 | ✅ | 详情页可复制用户名/邮箱/手机号/密码/网址/备注到剪贴板，30 秒后自动清空（哈希追踪不误清） | ❌ |
 | **Dashboard 快捷入口** | 导航 | ✅ | 首页卡片显示最近条目 + 条数统计，点击进入密码本 | ❌ |
 | **卡片显隐** | 个性化 | ✅ | 与其他 Dashboard 卡片统一管理，可关闭 | ❌ |
 | **独立主密码** | 安全 | ✅ | 独立 PIN（PBKDF2-SHA256 100k 迭代；历史包裹按 600k/25k 参数回退并在解锁时自动重包裹升级），密钥包裹模式，与应用锁独立 | ❌ |
@@ -111,16 +111,21 @@ data class VaultEntry(
     val id: Long = 0,
     val title: String,                     // 标题，明文存储
     val username: String,                  // 用户名，明文存储
+    val email: String,                     // 邮箱，明文存储
+    val phone: String,                     // 手机号，明文存储（v4 起）
     val passwordEncrypted: ByteArray,      // 密码，AES-256-GCM 加密
     val url: String,                       // 网站地址，明文存储
     val notes: String,                     // 备注，明文存储
     val category: String = "其他",         // 分类，明文存储
+    val avatarPath: String,                // 头像本地路径，明文存储
+    val isFavorite: Boolean,               // 收藏标记
+    val lastViewAt: Long,                  // 最近查看时间
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()
 )
 ```
 
-> **加密范围说明：** 只加密密码字段 `passwordEncrypted`。title / username / url 等元数据明文存储，支持通过 Room DAO 直接搜索和排序，无需解密后过滤。
+> **加密范围说明：** 只加密密码字段 `passwordEncrypted`。title / username / email / phone / url 等元数据明文存储，支持通过 Room DAO 直接搜索和排序，无需解密后过滤。
 
 ### 2.2 DAO
 
@@ -133,8 +138,31 @@ interface VaultDao {
     @Query("SELECT * FROM vault_entries WHERE id = :id")
     suspend fun getEntryById(id: Long): VaultEntry?
 
-    @Query("SELECT * FROM vault_entries WHERE title LIKE '%' || :query || '%' OR url LIKE '%' || :query || '%' OR username LIKE '%' || :query || '%' ORDER BY updatedAt DESC")
+    @Query(
+        """SELECT * FROM vault_entries
+           WHERE title LIKE '%' || :query || '%'
+              OR username LIKE '%' || :query || '%'
+              OR email LIKE '%' || :query || '%'
+              OR phone LIKE '%' || :query || '%'
+              OR url LIKE '%' || :query || '%'
+           ORDER BY updatedAt DESC"""
+    )
     fun searchEntries(query: String): Flow<List<VaultEntry>>
+
+    @Query("SELECT * FROM vault_entries WHERE category = :category ORDER BY updatedAt DESC")
+    fun getEntriesByCategory(category: String): Flow<List<VaultEntry>>
+
+    @Query(
+        """SELECT * FROM vault_entries
+           WHERE category = :category
+             AND (title LIKE '%' || :query || '%'
+                  OR username LIKE '%' || :query || '%'
+                  OR email LIKE '%' || :query || '%'
+                  OR phone LIKE '%' || :query || '%'
+                  OR url LIKE '%' || :query || '%')
+           ORDER BY updatedAt DESC"""
+    )
+    fun searchEntriesInCategory(query: String, category: String): Flow<List<VaultEntry>>
 
     @Query("SELECT DISTINCT category FROM vault_entries ORDER BY category ASC")
     fun getAllCategories(): Flow<List<String>>
@@ -142,8 +170,8 @@ interface VaultDao {
     @Query("SELECT COUNT(*) FROM vault_entries")
     suspend fun countEntries(): Int
 
-    @Query("SELECT * FROM vault_entries ORDER BY updatedAt DESC LIMIT :limit")
-    fun getRecentEntries(limit: Int): Flow<List<VaultEntry>>
+    @Query("SELECT COUNT(*) FROM vault_entries")
+    fun countEntriesFlow(): Flow<Int>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertEntry(entry: VaultEntry): Long
@@ -153,6 +181,9 @@ interface VaultDao {
 
     @Delete
     suspend fun deleteEntry(entry: VaultEntry)
+
+    @Query("DELETE FROM vault_entries")
+    suspend fun clearAll()
 }
 ```
 
@@ -619,7 +650,7 @@ fun toggleCloudService(enabled: Boolean) {
 ```
 app (namespace: com.palmnote.app)
 ├── feature.vault/          ← 数据/加密层
-│    ├── VaultEntry.kt              # Room Entity（vault_entries）
+│    ├── VaultEntry.kt              # Room Entity（vault_entries，含 email/phone）
 │    ├── VaultDao.kt                # Room DAO
 │    ├── VaultRepository.kt         # 仓库
 │    ├── VaultCrypto.kt             # AES-256-GCM 原语（仅依赖 JDK crypto）
@@ -634,7 +665,7 @@ app (namespace: com.palmnote.app)
 │        ├── VaultLockGate.kt       # PIN 解锁门
 │        ├── VaultPasswordGeneratorSheet.kt
 │        └── VaultSettingsScreen.kt / VaultSettingsViewModel.kt
-├── data/db/VaultDatabase.kt        # 独立 vault 库（palmnote_vault.db，v1-v3，v5 从主库迁出）
+├── data/db/VaultDatabase.kt        # 独立 vault 库（palmnote_vault.db，v1-v4，v5 从主库迁出）
 ├── di/HiltModules.kt               # 注册 vault DAO/密钥/锁定/剪贴板/仓库
 └── ui/navigation/Routes.kt         # Vault / VaultDetail / VaultEdit / VaultSettings 路由
 
@@ -953,6 +984,8 @@ feature/cloud/provider/
 
 ## 附录：数据库迁移版本历史
 
+**主库 `palmnote.db`（AppDatabase）：**
+
 | 版本 | 变更 |
 |------|------|
 | 1 | 初版 |
@@ -962,3 +995,12 @@ feature/cloud/provider/
 | 5 | 新增 `vault_entries` 密码本表于主库（Migration4To5，历史遗留） |
 | 6 | 密码本数据迁出至独立库 `palmnote_vault.db`（Migration5To6，best-effort 搬运后删旧表） |
 | **7** | **当前版本（v1.3.0）：删除 `bills` / `bills_recycle_bin` 未使用的 `timeOfDay` 死字段（Migration6To7）** |
+
+**密码本独立库 `palmnote_vault.db`（VaultDatabase）：**
+
+| 版本 | 变更 |
+|------|------|
+| 1 | 初版（8 列，Migration5To6 搬运建表形态） |
+| 2 | 新增 `avatarPath` / `email` 列（MigrationV1ToV2） |
+| 3 | 新增 `isFavorite` / `lastViewAt` 列（MigrationV2ToV3） |
+| **4** | **当前版本（v1.3.0）：新增 `phone` 手机号列（MigrationV3ToV4）** |

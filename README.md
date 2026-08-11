@@ -129,7 +129,7 @@ core/                      # 核心库模块（namespace: com.palmnote）
 │   │   └── util/          # 工具类（DateUtils/CurrencyUtils）
 │   ├── di/                # Hilt 注入（@Qualifier 等）
 │   └── ui/                # 通用 UI：components/theme/lock/notification/widget
-└── src/main/res/          # core 资源（字符串/主题）
+├── src/main/res/          # core 资源（字符串/主题）
 └── schemas/               # AppDatabase Room schema（v1-v7）
 
 app/                       # 应用模块（namespace: com.palmnote.app）
@@ -138,8 +138,8 @@ app/                       # 应用模块（namespace: com.palmnote.app）
 │   ├── feature/           # 密码本（字段级加密）+ usecase
 │   ├── ui/                # 业务 UI：asset/bills/dashboard/life/settings/search/navigation/backup
 │   └── PalmNoteApp.kt     # Application
-└── src/main/res/          # app 资源（含与 core 共用的字符串 key）
-└── schemas/               # VaultDatabase Room schema（v1-v3）
+├── src/main/res/          # app 资源（含与 core 共用的字符串 key）
+└── schemas/               # VaultDatabase Room schema（v1-v4）
 
 ppocr-sdk/                 # PaddleOCR 原生 SDK
 ```

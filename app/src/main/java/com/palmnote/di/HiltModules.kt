@@ -235,7 +235,8 @@ object VaultDatabaseModule {
             .openHelperFactory(factory)
             .addMigrations(
                 com.palmnote.feature.vault.MigrationV1ToV2,
-                com.palmnote.feature.vault.MigrationV2ToV3
+                com.palmnote.feature.vault.MigrationV2ToV3,
+                com.palmnote.feature.vault.MigrationV3ToV4
             )
             .build()
     }

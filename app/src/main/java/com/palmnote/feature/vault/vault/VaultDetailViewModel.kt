@@ -204,6 +204,12 @@ class VaultDetailViewModel @Inject constructor(
         return true
     }
 
+    fun copyPhone(entry: VaultEntry): Boolean {
+        if (entry.phone.isEmpty()) return false
+        clipboardManager.copy(entry.title, entry.phone)
+        return true
+    }
+
     fun copyNotes(entry: VaultEntry): Boolean {
         if (entry.notes.isEmpty()) return false
         clipboardManager.copy(entry.title, entry.notes)
