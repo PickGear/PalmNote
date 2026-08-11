@@ -22,6 +22,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 - 新增 `Money` 值类型（`domain/model/Money.kt`）与 `CurrencyUtils` 分单位格式化
 - 数据库 v3 → v4：迁移重建涉金额表并做 ×100 换算（含已有数据）
 - 数据库 v1 → v5 全链路迁移回归（`MIGRATION_1_2`/`2_3`/`3_4`/`4_5` 补注册）
+- 数据库 v5 → v6：密码本数据从主库迁出至独立库 `palmnote_vault.db`（`Migration5To6`，best-effort 搬运后删旧表）；v6 → v7：删除 `bills`/`bills_recycle_bin` 未使用的 `timeOfDay` 死字段（`Migration6To7`），主库当前 v7
 - CI：接入 `lintDebug`（abortOnError）、`testDebugUnitTest`（含 Room 迁移测试）、Room schema 变更校验
 - CI：迁移测试改用 **Robolectric** JVM 运行（免费 runner 无 KVM，模拟器易挂起）；并行拆分为 quality/build 两 job、每 job 单次 Gradle 调用，依赖 build cache 跨 job 复用
 - `lint.abortOnError` false → true
