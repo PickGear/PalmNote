@@ -66,4 +66,37 @@ class BackupManagerTest {
         tempFolder.newFile("empty.palmnote")
         // restoreBackup requires Context, tested in integration tests
     }
+
+    @Test
+    fun selectBackupsToPrune_keepsLatestThenPrunesTheRest() {
+        // 构造 10 个备份，lastModified 递增（最新为最大），Windows 文件时间精度低需较大间隔
+        val files = (1..10).map { i ->
+            val f = tempFolder.newFile("backup_$i.palmnote")
+            f.setLastModified(1_000_000_000_000L + i * 60_000L)
+            f
+        }
+        val prune = backupManager.selectBackupsToPrune(files, keep = 7)
+        // function 按 lastModified 降序返回待清理文件（最旧的在前）
+        assertEquals(3, prune.size)
+        assertEquals(setOf(files[0], files[1], files[2]), prune.toSet())
+    }
+
+    @Test
+    fun selectBackupsToPrune_fewerThanKeep_returnsEmpty() {
+        val files = (1..3).map { i ->
+            val f = tempFolder.newFile("backup_$i.palmnote")
+            f.setLastModified(1_000_000_000_000L + i * 60_000L)
+            f
+        }
+        assertEquals(emptyList<File>(), backupManager.selectBackupsToPrune(files, keep = 7))
+    }
+
+    @Test
+    fun selectBackupsToPrune_zeroKeep_prunesAll() {
+        val files = listOf(tempFolder.newFile("a.palmnote"), tempFolder.newFile("b.palmnote"))
+        files.forEachIndexed { i, f -> f.setLastModified(1_000_000_000_000L + i * 60_000L) }
+        val prune = backupManager.selectBackupsToPrune(files, keep = 0)
+        assertEquals(2, prune.size)
+        assertEquals(setOf(files[0], files[1]), prune.toSet())
+    }
 }

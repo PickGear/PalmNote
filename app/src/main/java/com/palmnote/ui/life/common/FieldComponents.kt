@@ -22,7 +22,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.palmnote.R
+import com.palmnote.app.R
 import com.palmnote.ui.components.AppDialog
 import com.palmnote.ui.components.toComposeColor
 import com.palmnote.ui.components.CapsuleSwitch

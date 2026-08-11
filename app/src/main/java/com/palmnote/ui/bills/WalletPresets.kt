@@ -2,7 +2,7 @@ package com.palmnote.ui.bills
 
 import androidx.annotation.StringRes
 import androidx.compose.ui.graphics.Color
-import com.palmnote.R
+import com.palmnote.app.R
 import com.palmnote.ui.theme.AppIcon
 
 data class WalletPreset(

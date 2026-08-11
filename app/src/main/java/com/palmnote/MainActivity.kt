@@ -55,7 +55,7 @@ import com.palmnote.ui.components.toComposeColor
 import com.palmnote.ui.theme.PalmNoteTheme
 import com.palmnote.ui.theme.PrimaryGreenLight
 import androidx.compose.ui.res.stringResource
-import com.palmnote.R
+import com.palmnote.app.R
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.combine

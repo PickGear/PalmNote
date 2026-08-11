@@ -55,7 +55,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import coil3.compose.AsyncImage
-import com.palmnote.R
+import com.palmnote.app.R
 import com.palmnote.data.db.entity.Asset
 import com.palmnote.data.db.entity.getWarrantyStatusText
 import com.palmnote.domain.model.toMoney
@@ -240,7 +240,7 @@ fun AssetScreen(
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = CurrencyUtils.formatCompact(state.heldValue.toMoney()),
+                                text = CurrencyUtils.formatCompact(LocalContext.current, state.heldValue.toMoney()),
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.primary
@@ -785,7 +785,7 @@ fun EnhancedAssetCard(
                     )
 
                     Text(
-                        text = CurrencyUtils.formatCurrency(asset.purchasePrice.toMoney()),
+                        text = CurrencyUtils.formatCurrency(LocalContext.current, asset.purchasePrice.toMoney()),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -1020,7 +1020,7 @@ fun GridAssetCard(
                 )
                 Spacer(modifier = Modifier.weight(1f))
                 Text(
-                    text = CurrencyUtils.formatCurrency(asset.purchasePrice.toMoney()),
+                    text = CurrencyUtils.formatCurrency(LocalContext.current, asset.purchasePrice.toMoney()),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,

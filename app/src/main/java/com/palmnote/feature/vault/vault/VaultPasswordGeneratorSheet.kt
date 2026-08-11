@@ -39,7 +39,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.ui.unit.sp
-import com.palmnote.R
+import com.palmnote.app.R
 import com.palmnote.feature.vault.PasswordStrength
 import com.palmnote.feature.vault.VaultPasswordGenerator
 import com.palmnote.ui.theme.BottomSheetShape

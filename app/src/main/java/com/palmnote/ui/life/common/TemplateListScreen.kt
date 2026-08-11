@@ -13,7 +13,7 @@ import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import com.palmnote.R
+import com.palmnote.app.R
 import com.palmnote.ui.components.SecondaryTopAppBar
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment

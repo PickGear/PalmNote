@@ -46,7 +46,7 @@ import com.palmnote.domain.model.toMoney
 import com.palmnote.domain.util.CurrencyUtils
 import com.palmnote.domain.util.DateUtils
 import androidx.compose.ui.res.stringResource
-import com.palmnote.R
+import com.palmnote.app.R
 import com.palmnote.ui.components.*
 import com.palmnote.ui.theme.*
 import kotlin.math.roundToInt
@@ -180,9 +180,17 @@ fun AssetDetailScreen(
                             asset.status == AssetStatus.REMOVED -> stringResource(R.string.asset_sold_price_label)
                             asset.acquisitionType == "PURCHASE" -> stringResource(R.string.asset_price)
                             else -> stringResource(R.string.asset_valuation_price)
-                        }, value = CurrencyUtils.formatCurrency(asset.displayPrice.toMoney()), color = AccentOrange)
+                        }, value = CurrencyUtils.formatCurrency(LocalContext.current, asset.displayPrice.toMoney()), color = AccentOrange)
                         StatItem(label = stringResource(R.string.asset_days_owned), value = "${detailState.daysOwned}", color = MaterialTheme.colorScheme.primary)
-                        StatItem(label = if (asset.costMode == "PER_USE") stringResource(R.string.asset_cost_single) else stringResource(R.string.asset_cost_daily_avg), value = CurrencyUtils.formatCurrency(Money.fromYuan(if (asset.costMode == "PER_USE") detailState.costPerUse else detailState.costPerDay)), color = MaterialTheme.colorScheme.onSurface)
+                        StatItem(
+                                    label = if (asset.costMode == "PER_USE") stringResource(R.string.asset_cost_single)
+                                    else stringResource(R.string.asset_cost_daily_avg),
+                                    value = CurrencyUtils.formatCurrency(
+                                        context,
+                                        Money.fromYuan(if (asset.costMode == "PER_USE") detailState.costPerUse else detailState.costPerDay)
+                                    ),
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
                     }
                 }
             }
@@ -235,8 +243,14 @@ fun AssetDetailScreen(
                 ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
                     Text(text = stringResource(R.string.asset_value_info), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(12.dp))
-                    if (asset.purchasePrice > 0) DetailRow(stringResource(R.string.asset_price), CurrencyUtils.formatCurrency(asset.purchasePrice.toMoney()))
-                    if (asset.currentValue > 0) DetailRow(stringResource(R.string.asset_current_value), CurrencyUtils.formatCurrency(asset.currentValue.toMoney()))
+if (asset.purchasePrice > 0) DetailRow(
+                                        stringResource(R.string.asset_price),
+                                        CurrencyUtils.formatCurrency(context, asset.purchasePrice.toMoney())
+                                    )
+                                if (asset.currentValue > 0) DetailRow(
+                                        stringResource(R.string.asset_current_value),
+                                        CurrencyUtils.formatCurrency(context, asset.currentValue.toMoney())
+                                    )
                     if (asset.depreciationRate > 0) DetailRow(stringResource(R.string.asset_depreciation_rate), "${"%.1f".format(asset.depreciationRate)}%")
                     DetailRow(stringResource(R.string.asset_cost_calculation), when (asset.costMode) { "DAILY" -> stringResource(R.string.asset_cost_daily); "PER_USE" -> stringResource(R.string.asset_cost_per_use); "DEPRECIATION" -> stringResource(R.string.asset_depreciation); else -> asset.costMode })
                 }
@@ -244,6 +258,7 @@ fun AssetDetailScreen(
 
             // Warranty Info
             if (asset.warrantyExpireDate != null) {
+                val warrantyExpireDate = asset.warrantyExpireDate!!
                 item {
                     ModuleCard(tint = if (asset.isWarrantyValid) goalTint() else anniversaryTint(), modifier = Modifier.fillMaxWidth()) {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -252,10 +267,17 @@ fun AssetDetailScreen(
                                 Spacer(Modifier.width(8.dp))
                                 Column {
                                     Text(text = stringResource(R.string.asset_warranty_info), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                                    Text(text = stringResource(R.string.asset_warranty_expiry_format, DateUtils.formatDisplayYearDate(context, asset.warrantyExpireDate)), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text(
+                                        text = stringResource(
+                                            R.string.asset_warranty_expiry_format,
+                                            DateUtils.formatDisplayYearDate(context, warrantyExpireDate)
+                                        ),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
                                 }
                             }
-                            val daysLeft = DateUtils.getDaysUntil(asset.warrantyExpireDate)
+                            val daysLeft = DateUtils.getDaysUntil(warrantyExpireDate)
                             if (daysLeft >= 0) StatusChip(text = stringResource(R.string.asset_warranty_remaining_days, daysLeft), color = StatusActive)
                             else StatusChip(text = stringResource(R.string.asset_warranty_expired_days, -daysLeft), color = StatusRetired)
                         }
@@ -273,13 +295,24 @@ fun AssetDetailScreen(
                                 Spacer(Modifier.width(8.dp))
                                 Column {
                                     Text(text = stringResource(R.string.asset_maintenance_info), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                                    if (asset.lastMaintenanceDate != null) Text(text = stringResource(R.string.asset_last_maintenance_format, DateUtils.formatDisplayYearDate(context, asset.lastMaintenanceDate)), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    if (asset.lastMaintenanceDate != null) {
+                                        val lastMaintenanceDate = asset.lastMaintenanceDate!!
+                                        Text(
+                                        text = stringResource(
+                                            R.string.asset_last_maintenance_format,
+                                            DateUtils.formatDisplayYearDate(context, lastMaintenanceDate)
+                                        ),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    }
                                     if (asset.maintenanceIntervalDays > 0) Text(text = stringResource(R.string.asset_maintenance_cycle_format, asset.maintenanceIntervalDays), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                             }
                             if (isDue) StatusChip(text = stringResource(R.string.asset_maintenance_needed), color = AccentOrange)
                             else if (asset.nextMaintenanceDate != null) {
-                                val daysUntil = DateUtils.getDaysUntil(asset.nextMaintenanceDate)
+                                val nextMaintenanceDate = asset.nextMaintenanceDate!!
+                                val daysUntil = DateUtils.getDaysUntil(nextMaintenanceDate)
                                 StatusChip(text = if (daysUntil >= 0) stringResource(R.string.asset_days_later_format, daysUntil) else stringResource(R.string.asset_maintenance_expired), color = if (daysUntil < 7) AccentOrange else StatusActive)
                             }
                         }
@@ -312,7 +345,13 @@ fun AssetDetailScreen(
                         Spacer(Modifier.height(8.dp))
                         if (asset.insuranceCompany.isNotEmpty()) DetailRow(stringResource(R.string.asset_insurance_company), asset.insuranceCompany)
                         if (asset.insurancePolicyNo.isNotEmpty()) DetailRow(stringResource(R.string.asset_insurance_policy), asset.insurancePolicyNo)
-                        if (asset.insuranceExpireDate != null) DetailRow(stringResource(R.string.asset_insurance_expiry), DateUtils.formatDisplayYearDate(context, asset.insuranceExpireDate))
+                        if (asset.insuranceExpireDate != null) {
+                            val insuranceExpireDate = asset.insuranceExpireDate!!
+                            DetailRow(
+                            stringResource(R.string.asset_insurance_expiry),
+                            DateUtils.formatDisplayYearDate(context, insuranceExpireDate)
+                        )
+                        }
                         if (asset.getInsuranceStatusText(context).isNotEmpty()) DetailRow(stringResource(R.string.asset_status), asset.getInsuranceStatusText(context))
                     }
                 }
@@ -343,11 +382,21 @@ fun AssetDetailScreen(
                                 asset.lostDate?.let { DetailRow(stringResource(R.string.asset_lost_date), DateUtils.formatDisplayFullDate(context, it)) }
                                 if (asset.lostReason.isNotEmpty()) DetailRow(stringResource(R.string.asset_lost_reason), asset.lostReason)
                                 asset.soldDate?.let { DetailRow(stringResource(R.string.asset_sold_date), DateUtils.formatDisplayFullDate(context, it)) }
-                                asset.soldPrice?.let { DetailRow(stringResource(R.string.asset_sold_price_label), CurrencyUtils.formatCurrency(it.toMoney())) }
+                                asset.soldPrice?.let { soldPrice ->
+                                        DetailRow(
+                                            stringResource(R.string.asset_sold_price_label),
+                                            CurrencyUtils.formatCurrency(context, soldPrice.toMoney())
+                                        )
+                                    }
                                 asset.soldChannel?.let { DetailRow(stringResource(R.string.asset_sold_channel), it) }
                                 asset.soldToWhom?.takeIf { it.isNotEmpty() }?.let { DetailRow(stringResource(R.string.asset_sold_to), it) }
                                 if (asset.purchasePrice > 0 && asset.soldPrice != null) {
-                                    DetailRow(stringResource(R.string.asset_profit_loss), (if (asset.soldPrice >= asset.purchasePrice) "+" else "") + CurrencyUtils.formatCurrency((asset.soldPrice - asset.purchasePrice).toMoney()))
+                                    val soldPrice = asset.soldPrice!!
+                                    DetailRow(
+                                    stringResource(R.string.asset_profit_loss),
+                                    (if (soldPrice >= asset.purchasePrice) "+" else "") +
+                                        CurrencyUtils.formatCurrency(LocalContext.current, (soldPrice - asset.purchasePrice).toMoney())
+                                )
                                 }
                             }
                             else -> {}

@@ -26,7 +26,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.palmnote.R
+import com.palmnote.app.R
 import com.palmnote.data.db.entity.Wallet
 import com.palmnote.domain.model.toMoney
 import com.palmnote.domain.util.CurrencyUtils
@@ -42,6 +42,7 @@ fun WalletScreen(
     onNavigateToEditWallet: (Long) -> Unit = {},
     viewModel: WalletViewModel = hiltViewModel()
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     val wallets by viewModel.wallets.collectAsStateWithLifecycle()
     val totalBalance by viewModel.totalBalance.collectAsStateWithLifecycle()
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -98,7 +99,7 @@ fun WalletScreen(
                             Text(stringResource(R.string.wallet_total_assets), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f))
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                CurrencyUtils.formatCurrency((totalBalance ?: 0L).toMoney()),
+                                CurrencyUtils.formatCurrency(context, (totalBalance ?: 0L).toMoney()),
                                 style = MaterialTheme.typography.headlineMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onPrimary
@@ -239,7 +240,7 @@ private fun WalletItem(
             }
 
             Text(
-                CurrencyUtils.formatCurrency(wallet.currentBalance.toMoney()),
+                CurrencyUtils.formatCurrency(context, wallet.currentBalance.toMoney()),
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
                 color = if (wallet.currentBalance >= 0) MaterialTheme.colorScheme.onSurface else ErrorLight
@@ -287,11 +288,14 @@ private fun WalletDetailDialog(
                     }
                 }
                 HorizontalDivider()
-                DetailRow(stringResource(R.string.wallet_balance), CurrencyUtils.formatCurrency(wallet.currentBalance.toMoney()))
+                DetailRow(stringResource(R.string.wallet_balance), CurrencyUtils.formatCurrency(context, wallet.currentBalance.toMoney()))
                 DetailRow(stringResource(R.string.wallet_type), stringResource(walletTypeResIds[wallet.type] ?: R.string.wallet_type_other))
                 if (wallet.bankName.isNotEmpty()) DetailRow(stringResource(R.string.wallet_bank), wallet.bankName)
                 if (wallet.cardNumber.isNotEmpty()) DetailRow(stringResource(R.string.wallet_card_number), "****${wallet.cardNumber}")
-                DetailRow(stringResource(R.string.wallet_initial_balance), CurrencyUtils.formatCurrency(wallet.initialBalance.toMoney()))
+                DetailRow(
+                    stringResource(R.string.wallet_initial_balance),
+                    CurrencyUtils.formatCurrency(context, wallet.initialBalance.toMoney())
+                )
             }
         },
         confirmButton = {

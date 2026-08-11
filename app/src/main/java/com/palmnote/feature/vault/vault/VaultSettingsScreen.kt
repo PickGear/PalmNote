@@ -1,4 +1,4 @@
-﻿package com.palmnote.feature.vault.vault
+package com.palmnote.feature.vault.vault
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -38,7 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.palmnote.R
+import com.palmnote.app.R
 import com.palmnote.ui.components.AppDialog
 import com.palmnote.ui.components.CapsuleSwitch
 import com.palmnote.ui.components.CompactTopAppBar

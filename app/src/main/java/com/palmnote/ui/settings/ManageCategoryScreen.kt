@@ -16,7 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.palmnote.ui.components.CompactTopAppBar
 import com.palmnote.ui.components.ModuleCard
-import com.palmnote.R
+import com.palmnote.app.R
 import com.palmnote.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)

@@ -35,7 +35,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.palmnote.R
+import com.palmnote.app.R
 import com.palmnote.feature.vault.VaultLockManager.LockState
 import com.palmnote.ui.components.AppDialog
 import com.palmnote.ui.lock.DEFAULT_PIN_LENGTH

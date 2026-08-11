@@ -29,7 +29,7 @@ import com.palmnote.ui.components.AppDialog
 import com.palmnote.ui.components.CompactTopAppBar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import com.palmnote.R
+import com.palmnote.app.R
 import com.palmnote.ui.theme.*
 import com.palmnote.ui.theme.AppIcon
 import java.io.File

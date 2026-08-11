@@ -1,7 +1,7 @@
 package com.palmnote.ui.life.common
 
 import android.content.Context
-import com.palmnote.R
+import com.palmnote.app.R
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 

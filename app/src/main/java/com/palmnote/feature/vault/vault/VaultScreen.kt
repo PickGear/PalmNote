@@ -76,7 +76,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
 import java.io.File
-import com.palmnote.R
+import com.palmnote.app.R
 import com.palmnote.feature.vault.VaultEntry
 import com.palmnote.feature.vault.VaultLockManager.LockState
 import com.palmnote.ui.components.CompactTopAppBar

@@ -28,7 +28,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.palmnote.R
+import com.palmnote.app.R
 import com.palmnote.data.db.dao.CategoryCount
 import com.palmnote.domain.model.toMoney
 import com.palmnote.domain.util.CurrencyUtils
@@ -115,6 +115,7 @@ internal fun VaultCard(state: DashboardState, onNavigateToVault: () -> Unit) {
 
 @Composable
 internal fun NetWorthCard(state: DashboardState) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
@@ -139,7 +140,7 @@ internal fun NetWorthCard(state: DashboardState) {
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = CurrencyUtils.formatCompact(state.totalAssetValue.toMoney()),
+                    text = CurrencyUtils.formatCompact(context, state.totalAssetValue.toMoney()),
                     style = MaterialTheme.typography.displaySmall,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onPrimary
@@ -152,7 +153,7 @@ internal fun NetWorthCard(state: DashboardState) {
                     Column {
                         Text(stringResource(R.string.dashboard_monthly_expense), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f))
                         Text(
-                            CurrencyUtils.formatCurrency(state.monthlyExpense.toMoney()),
+                            CurrencyUtils.formatCurrency(context, state.monthlyExpense.toMoney()),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onPrimary
@@ -161,7 +162,7 @@ internal fun NetWorthCard(state: DashboardState) {
                     Column(horizontalAlignment = Alignment.End) {
                         Text(stringResource(R.string.dashboard_monthly_income), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f))
                         Text(
-                            CurrencyUtils.formatCurrency(state.monthlyIncome.toMoney()),
+                            CurrencyUtils.formatCurrency(context, state.monthlyIncome.toMoney()),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onPrimary
@@ -179,8 +180,8 @@ internal fun NetWorthCard(state: DashboardState) {
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = if (netIncome >= 0) stringResource(R.string.dashboard_monthly_balance, CurrencyUtils.formatCurrency(netIncome.toMoney()))
-                               else stringResource(R.string.dashboard_monthly_over_budget, CurrencyUtils.formatCurrency((-netIncome).toMoney())),
+                        text = if (netIncome >= 0) stringResource(R.string.dashboard_monthly_balance, CurrencyUtils.formatCurrency(context, netIncome.toMoney()))
+                               else stringResource(R.string.dashboard_monthly_over_budget, CurrencyUtils.formatCurrency(context, (-netIncome).toMoney())),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f)
                     )

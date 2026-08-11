@@ -23,7 +23,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.palmnote.R
+import com.palmnote.app.R
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.palmnote.ui.components.AppDialog
 import com.palmnote.ui.components.SecondaryTopAppBar
@@ -76,9 +76,16 @@ fun AchievementScreen(onBack: () -> Unit, viewModel: AchievementViewModel = hilt
                     Icon(iconFromName(ach.icon), null, tint = if (ach.unlockedAt != null) Color(0xFF66D98D) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f), modifier = Modifier.size(48.dp))
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(ach.description, fontSize = 14.sp, textAlign = TextAlign.Center)
-                    if (ach.unlockedAt != null) {
+                    ach.unlockedAt?.let { unlockedAt ->
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text(stringResource(R.string.life_achievement_unlocked_on, dateFmt.format(Date(ach.unlockedAt))), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(
+                            stringResource(
+                                R.string.life_achievement_unlocked_on,
+                                dateFmt.format(Date(unlockedAt))
+                            ),
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
             },
@@ -110,7 +117,13 @@ fun AchievementScreen(onBack: () -> Unit, viewModel: AchievementViewModel = hilt
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(ach.name, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
                             if (ach.unlockedAt != null) {
-                                Text(dateFmt.format(Date(ach.unlockedAt)), fontSize = 9.sp, color = MaterialTheme.colorScheme.outline, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)
+                                val unlockedAt = ach.unlockedAt!!
+                                Text(
+                                    dateFmt.format(Date(unlockedAt)),
+                                    fontSize = 9.sp,
+                                    color = MaterialTheme.colorScheme.outline,
+                                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                                )
                             }
                         }
                     }

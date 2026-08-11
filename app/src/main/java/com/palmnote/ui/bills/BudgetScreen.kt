@@ -18,7 +18,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.palmnote.R
+import com.palmnote.app.R
 import com.palmnote.data.db.entity.Budget
 import com.palmnote.domain.model.toMoney
 import com.palmnote.domain.model.toYuanString
@@ -77,7 +77,7 @@ fun BudgetScreen(
                             Column {
                                 Text(stringResource(R.string.budget_total), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 Text(
-                                    CurrencyUtils.formatCurrency(budget.totalBudget.toMoney()),
+                                    CurrencyUtils.formatCurrency(context, budget.totalBudget.toMoney()),
                                     style = MaterialTheme.typography.headlineSmall,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -85,7 +85,7 @@ fun BudgetScreen(
                             Column(horizontalAlignment = Alignment.End) {
                                 Text(stringResource(R.string.budget_used), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 Text(
-                                    CurrencyUtils.formatCurrency(state.monthlyExpense.toMoney()),
+                                    CurrencyUtils.formatCurrency(context, state.monthlyExpense.toMoney()),
                                     style = MaterialTheme.typography.headlineSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = if (state.monthlyExpense > budget.totalBudget) ErrorLight else AccentOrange
@@ -117,8 +117,17 @@ fun BudgetScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
-                                if (remaining >= 0) "${stringResource(R.string.budget_remaining)} ${CurrencyUtils.formatCurrency(remaining.toMoney())}"
-                                else "${stringResource(R.string.budget_over)} ${CurrencyUtils.formatCurrency((-remaining).toMoney())}",
+                                if (remaining >= 0) {
+                                    stringResource(R.string.budget_remaining) + " " + CurrencyUtils.formatCurrency(
+                                        context,
+                                        remaining.toMoney()
+                                    )
+                                } else {
+                                    stringResource(R.string.budget_over) + " " + CurrencyUtils.formatCurrency(
+                                        context,
+                                        (-remaining).toMoney()
+                                    )
+                                },
                                 style = MaterialTheme.typography.bodySmall,
                                 fontWeight = FontWeight.Medium,
                                 color = if (remaining >= 0) StatusActive else ErrorLight

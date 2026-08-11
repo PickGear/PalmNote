@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.palmnote.app.R
 import com.palmnote.data.db.entity.LifeItem
 import com.palmnote.data.db.entity.LifeReport
 import com.palmnote.data.datastore.PreferencesManager
@@ -77,8 +78,8 @@ class LifeDailyCheckWorker @AssistedInject constructor(
         com.palmnote.ui.notification.NotificationHelper.show(
             applicationContext,
             com.palmnote.ui.notification.NotificationHelper.CHANNEL_CHECKIN,
-            applicationContext.getString(com.palmnote.R.string.notification_daily_title),
-            applicationContext.getString(com.palmnote.R.string.notification_daily_message)
+            applicationContext.getString(R.string.notification_daily_title),
+            applicationContext.getString(R.string.notification_daily_message)
         )
     }
 
@@ -94,8 +95,8 @@ class LifeDailyCheckWorker @AssistedInject constructor(
             com.palmnote.ui.notification.NotificationHelper.show(
                 applicationContext,
                 com.palmnote.ui.notification.NotificationHelper.CHANNEL_REMINDER,
-                applicationContext.getString(com.palmnote.R.string.notification_bill_title),
-                applicationContext.getString(com.palmnote.R.string.notification_bill_message)
+                applicationContext.getString(R.string.notification_bill_title),
+                applicationContext.getString(R.string.notification_bill_message)
             )
         }
     }
@@ -117,8 +118,8 @@ class LifeDailyCheckWorker @AssistedInject constructor(
                             com.palmnote.ui.notification.NotificationHelper.show(
                                 applicationContext,
                                 com.palmnote.ui.notification.NotificationHelper.CHANNEL_LIFE,
-                                applicationContext.getString(com.palmnote.R.string.notification_milestone_title),
-                                applicationContext.getString(com.palmnote.R.string.notification_milestone_message, item.title, days)
+                                applicationContext.getString(R.string.notification_milestone_title),
+                                applicationContext.getString(R.string.notification_milestone_message, item.title, days)
                             )
                         }
                     }
@@ -144,14 +145,14 @@ class LifeDailyCheckWorker @AssistedInject constructor(
                             daysLeft == 0L -> com.palmnote.ui.notification.NotificationHelper.show(
                                 applicationContext,
                                 com.palmnote.ui.notification.NotificationHelper.CHANNEL_REMINDER,
-                                applicationContext.getString(com.palmnote.R.string.notification_countdown_today_title),
-                                applicationContext.getString(com.palmnote.R.string.notification_countdown_today_message, item.title)
+                                applicationContext.getString(R.string.notification_countdown_today_title),
+                                applicationContext.getString(R.string.notification_countdown_today_message, item.title)
                             )
                             daysLeft in 1..advanceDays.toLong() -> com.palmnote.ui.notification.NotificationHelper.show(
                                 applicationContext,
                                 com.palmnote.ui.notification.NotificationHelper.CHANNEL_REMINDER,
-                                applicationContext.getString(com.palmnote.R.string.notification_countdown_soon_title),
-                                applicationContext.getString(com.palmnote.R.string.notification_countdown_soon_message, item.title, daysLeft)
+                                applicationContext.getString(R.string.notification_countdown_soon_title),
+                                applicationContext.getString(R.string.notification_countdown_soon_message, item.title, daysLeft)
                             )
                         }
                     }
@@ -178,8 +179,8 @@ class LifeDailyCheckWorker @AssistedInject constructor(
                             com.palmnote.ui.notification.NotificationHelper.show(
                                 applicationContext,
                                 com.palmnote.ui.notification.NotificationHelper.CHANNEL_REMINDER,
-                                applicationContext.getString(com.palmnote.R.string.notification_birthday_title),
-                                applicationContext.getString(com.palmnote.R.string.notification_birthday_message, item.title)
+                                applicationContext.getString(R.string.notification_birthday_title),
+                                applicationContext.getString(R.string.notification_birthday_message, item.title)
                             )
                         }
                     }
@@ -206,8 +207,8 @@ class LifeDailyCheckWorker @AssistedInject constructor(
                             com.palmnote.ui.notification.NotificationHelper.show(
                                 applicationContext,
                                 com.palmnote.ui.notification.NotificationHelper.CHANNEL_REMINDER,
-                                applicationContext.getString(com.palmnote.R.string.notification_anniversary_title),
-                                applicationContext.getString(com.palmnote.R.string.notification_anniversary_message, item.title, years)
+                                applicationContext.getString(R.string.notification_anniversary_title),
+                                applicationContext.getString(R.string.notification_anniversary_message, item.title, years)
                             )
                         }
                     }
@@ -247,8 +248,8 @@ class LifeDailyCheckWorker @AssistedInject constructor(
                         com.palmnote.ui.notification.NotificationHelper.show(
                             applicationContext,
                             com.palmnote.ui.notification.NotificationHelper.CHANNEL_REMINDER,
-                            applicationContext.getString(com.palmnote.R.string.notification_subscription_title),
-                            applicationContext.getString(com.palmnote.R.string.notification_subscription_message, item.title, price)
+                            applicationContext.getString(R.string.notification_subscription_title),
+                            applicationContext.getString(R.string.notification_subscription_message, item.title, price)
                         )
                         // 回写 lastBilledDate，防止同日/同周期重复提醒
                         val newFields = JsonObject(obj + ("lastBilledDate" to JsonPrimitive(today.atStartOfDay(zone).toInstant().toEpochMilli().toString())))

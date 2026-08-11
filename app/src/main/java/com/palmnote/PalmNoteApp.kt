@@ -47,6 +47,12 @@ class PalmNoteApp : Application(), Configuration.Provider {
             private set
         var cachedStartPage: String = "dashboard"
             private set
+        private const val MAX_CRASH_LOG_CHARS = 100_000
+        private const val REDACT_MARKER = "[REDACTED]"
+        private val SENSITIVE_KEYWORDS = listOf(
+            "password", "passwordEncrypted", "secret", "token", "credential",
+            "pin", "ciphertext", "wrappedkey", "db_key", "vaultkey"
+        )
     }
 
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -85,15 +91,24 @@ class PalmNoteApp : Application(), Configuration.Provider {
         }
     }
 
+    /** 对崩溃堆栈做脱敏：过滤敏感关键字匹配的行内容并限制长度，避免用户导出日志时泄露密钥/口令类信息 */
+    private fun sanitizeStackTrace(throwable: Throwable): String {
+        val raw = android.util.Log.getStackTraceString(throwable)
+        val lines = raw.lineSequence().map { line ->
+            if (SENSITIVE_KEYWORDS.any { line.contains(it, ignoreCase = true) }) REDACT_MARKER else line
+        }.toList()
+        return lines.joinToString("\n").take(MAX_CRASH_LOG_CHARS)
+    }
+
     private fun installCrashHandler() {
         Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
             try {
-                // 记录本地崩溃日志，便于用户导出反馈
+                // 记录本地崩溃日志，便于用户导出反馈（内容已脱敏）
                 val logFile = File(cacheDir, "crash_${System.currentTimeMillis()}.log")
                 logFile.writeText(
                     "${java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())}\n" +
                         "Thread: ${thread.name}\n" +
-                        android.util.Log.getStackTraceString(throwable)
+                        sanitizeStackTrace(throwable)
                 )
                 android.util.Log.e("PalmNote", "Uncaught exception", throwable)
             } catch (_: Exception) {

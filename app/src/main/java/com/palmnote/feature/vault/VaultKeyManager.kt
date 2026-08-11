@@ -35,10 +35,15 @@ class VaultKeyManager @Inject constructor(
     @Volatile
     private var dataKey: SecretKey? = null
 
-    // 缓存 salt/keyWrap/bioKeyWrap，避免每次解锁都 runBlocking 读 DataStore（显著降低解锁延迟）
+    // 缓存 salt/keyWrap/bioKeyWrap，避免每次解锁都 runBlocking 读 DataStore（显著降低解锁延迟）。
+    // isInitialized 可能在任何线程调用，而 setup/unlock/changePin 在 IO 线程写入，跨线程读写需 volatile。
+    @Volatile
     private var cachedSalt: String = ""
+    @Volatile
     private var cachedKeyWrap: String = ""
+    @Volatile
     private var cachedBioKeyWrap: String = ""
+    @Volatile
     private var cachedInitialized: Boolean = false
 
     val isUnlocked: Boolean get() = dataKey != null

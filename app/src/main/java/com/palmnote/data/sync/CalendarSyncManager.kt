@@ -4,7 +4,7 @@ import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.Context
 import android.provider.CalendarContract
-import com.palmnote.R
+import com.palmnote.app.R
 import com.palmnote.data.db.entity.Anniversary
 import com.palmnote.domain.repository.AnniversaryRepository
 import kotlinx.coroutines.Dispatchers

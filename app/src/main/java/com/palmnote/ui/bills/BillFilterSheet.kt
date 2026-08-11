@@ -15,7 +15,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.palmnote.R
+import com.palmnote.app.R
 import com.palmnote.domain.model.toYuanString
 import com.palmnote.ui.components.AppBottomSheet
 import com.palmnote.ui.components.CategoryItem

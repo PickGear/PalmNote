@@ -28,7 +28,7 @@ val localProps = run {
 val releaseStoreFile = file("../${localProps["RELEASE_STORE_FILE"] ?: "release.jks"}")
 
 android {
-    namespace = "com.palmnote"
+    namespace = "com.palmnote.app"
     compileSdk = 36
 
     defaultConfig {
@@ -141,10 +141,10 @@ android {
         // debug：Robolectric 单测读取的 merged assets 只包含 debug sourceSet，
         //   所以把 schemas 挂到 debug（而非 test），避免打进 release APK。
         getByName("androidTest") {
-            assets.srcDirs("$projectDir/schemas")
+            assets.srcDirs("$projectDir/schemas", "$rootDir/core/schemas")
         }
         getByName("debug") {
-            assets.srcDirs("$projectDir/schemas")
+            assets.srcDirs("$projectDir/schemas", "$rootDir/core/schemas")
         }
     }
     packaging {
@@ -197,9 +197,6 @@ dependencies {
 
     // PaddleOCR OCR - PP-OCRv6 via ONNX Runtime (ppocr-sdk)
     implementation(project(":core"))
-    implementation(project(":feature:bills"))
-    implementation(project(":feature:asset"))
-    implementation(project(":feature:life"))
     implementation(project(":ppocr-sdk"))
 
     // Paging3

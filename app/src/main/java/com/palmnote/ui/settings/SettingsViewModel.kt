@@ -10,7 +10,7 @@ import androidx.compose.runtime.Stable
 import coil3.imageLoader
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.palmnote.R
+import com.palmnote.app.R
 import com.palmnote.data.datastore.PreferencesManager
 import com.palmnote.data.export.CsvDataExporter
 import com.palmnote.data.lock.AppLockManager

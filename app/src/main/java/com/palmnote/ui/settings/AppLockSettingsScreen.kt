@@ -19,7 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.palmnote.R
+import com.palmnote.app.R
 import com.palmnote.data.datastore.PreferencesManager
 import com.palmnote.data.lock.AppLockManager
 import com.palmnote.ui.components.AppDialog

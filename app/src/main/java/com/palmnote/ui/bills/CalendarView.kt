@@ -22,7 +22,7 @@ import com.palmnote.domain.model.toMoney
 import com.palmnote.domain.util.CurrencyUtils
 import com.palmnote.ui.theme.*
 import java.time.DayOfWeek
-import com.palmnote.R
+import com.palmnote.app.R
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
@@ -228,7 +228,10 @@ fun CalendarView(
 
         // 汇总（选日期显示当天，否则显示当月）
         val showDay = selectedDay != null && selectedDay in 1..daysInMonth
-        val dayData = if (showDay) dailyData[selectedDay] else Pair(dailyData.values.sumOf { it.first }, dailyData.values.sumOf { it.second })
+        val dayData = if (showDay) dailyData[selectedDay] else Pair(
+                            dailyData.values.sumOf { it.first },
+                            dailyData.values.sumOf { it.second }
+                        )
         Spacer(modifier = Modifier.height(12.dp))
 
             Card(
@@ -251,7 +254,10 @@ fun CalendarView(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            text = CurrencyUtils.formatCurrency((dayData?.first ?: 0L).toMoney()),
+                            text = CurrencyUtils.formatCurrency(
+                                androidx.compose.ui.platform.LocalContext.current,
+                                (dayData?.first ?: 0L).toMoney()
+                            ),
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold,
                             color = if ((dayData?.first ?: 0L) > 0) ExpenseRed
@@ -265,7 +271,10 @@ fun CalendarView(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            text = CurrencyUtils.formatCurrency((dayData?.second ?: 0L).toMoney()),
+                            text = CurrencyUtils.formatCurrency(
+                                androidx.compose.ui.platform.LocalContext.current,
+                                (dayData?.second ?: 0L).toMoney()
+                            ),
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold,
                             color = if ((dayData?.second ?: 0L) > 0) StatusActive
@@ -280,7 +289,7 @@ fun CalendarView(
                         )
                         val balance = (dayData?.second ?: 0L) - (dayData?.first ?: 0L)
                         Text(
-                            text = CurrencyUtils.formatCurrency(balance.toMoney()),
+                            text = CurrencyUtils.formatCurrency(androidx.compose.ui.platform.LocalContext.current, balance.toMoney()),
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold,
                             color = if (balance >= 0) StatusActive else ErrorLight

@@ -32,7 +32,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import coil3.compose.AsyncImage
-import com.palmnote.R
+import com.palmnote.app.R
 import com.palmnote.data.db.entity.Bill
 import com.palmnote.domain.model.toMoney
 import com.palmnote.domain.util.CurrencyUtils
@@ -114,7 +114,9 @@ fun BillDetailScreen(
                                 ).padding(horizontal = 12.dp, vertical = 6.dp)
                             ) {
                                 Text(
-                                    text = "${if (bill.type == BillType.EXPENSE) "-" else if (bill.type == BillType.TRANSFER) "" else "+"}${CurrencyUtils.formatCurrency(bill.amount.toMoney())}",
+                                    text = "${if (bill.type == BillType.EXPENSE) "-" else if (bill.type == BillType.TRANSFER) "" else "+"}${
+                                        CurrencyUtils.formatCurrency(context, bill.amount.toMoney())
+                                    }",
                                     style = MaterialTheme.typography.displaySmall,
                                     fontWeight = FontWeight.Bold,
                                     color = if (bill.type == BillType.EXPENSE) ExpenseRed else if (bill.type == BillType.TRANSFER) InfoBlue else IncomeGreen

@@ -10,9 +10,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.palmnote.data.backup.BackupManager
 import com.palmnote.data.backup.BackupState
-import com.palmnote.R
+import com.palmnote.app.R
 import com.palmnote.data.db.AppDatabase
 import com.palmnote.data.db.DbKeyStore
+import com.palmnote.feature.vault.VaultDatabase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,7 +27,8 @@ import java.io.File
 class BackupViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val db: AppDatabase,
-    dbKeyStore: DbKeyStore
+    dbKeyStore: DbKeyStore,
+    private val vaultDb: VaultDatabase
 ) : ViewModel() {
 
     private val backupManager = BackupManager(dbKeyStore)
@@ -49,6 +51,8 @@ class BackupViewModel @Inject constructor(
             flow {
                 emit(BackupState.Progress(0))
                 try {
+                    // 打包前先对密码本库做 WAL checkpoint，保证快照一致
+                    checkpointVaultWal()
                     // 1. Create backup in app cache
                     val tempFile = backupManager.createBackup(context, db, _password.value)
                     emit(BackupState.Progress(80))
@@ -92,8 +96,11 @@ class BackupViewModel @Inject constructor(
                     }
                     emit(BackupState.Progress(30))
 
-                    // Close database before restore
-                    db.close()
+                    // 恢复前自动备份当前数据
+                    backupManager.createPreRestoreBackup(context, db)
+
+                    // 恢复前关闭主库与密码本库，避免已有连接占用文件导致覆盖失败
+                    closeDatabases()
 
                     // Restore
                     backupManager.restoreBackup(context, tempFile, password)
@@ -104,8 +111,8 @@ class BackupViewModel @Inject constructor(
                 } catch (e: Exception) {
                     emit(BackupState.Error(e.message ?: "Restore failed"))
                 } finally {
-                    // 无论恢复成功还是失败，确保数据库可重新打开，避免后续操作崩溃
-                    try { db.openHelper.writableDatabase } catch (_: Exception) {}
+                    // 无论恢复成功还是失败，确保双数据库可重新打开，避免后续操作崩溃
+                    reopenDatabases()
                 }
             }.flowOn(Dispatchers.IO).collect { state ->
                 _backupState.value = state
@@ -115,6 +122,24 @@ class BackupViewModel @Inject constructor(
 
     fun resetState() {
         _backupState.value = BackupState.Idle
+    }
+
+    private fun checkpointVaultWal() {
+        try {
+            vaultDb.openHelper.writableDatabase
+                .query("PRAGMA wal_checkpoint(TRUNCATE)")
+                .use { }
+        } catch (_: Exception) {}
+    }
+
+    private fun closeDatabases() {
+        try { db.close() } catch (_: Exception) {}
+        try { vaultDb.close() } catch (_: Exception) {}
+    }
+
+    private fun reopenDatabases() {
+        try { db.openHelper.writableDatabase } catch (_: Exception) {}
+        try { vaultDb.openHelper.writableDatabase } catch (_: Exception) {}
     }
 
     // ========== 备份目录持久化（SAF tree URI） ==========

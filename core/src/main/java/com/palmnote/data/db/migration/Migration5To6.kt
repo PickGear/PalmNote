@@ -376,31 +376,47 @@ END
                         vault.query("SELECT COUNT(*) FROM vault_entries").use { vc ->
                             if (vc.moveToFirst()) vaultHasRows = vc.getInt(0) > 0
                         }
-                        if (vaultHasRows) return@use
-                        val stmt = vault.compileStatement(
-                            "INSERT INTO vault_entries (title, username, passwordEncrypted, url, notes, category, createdAt, updatedAt) VALUES (?,?,?,?,?,?,?,?)"
-                        )
-                        db.query("SELECT title, username, passwordEncrypted, url, notes, category, createdAt, updatedAt FROM vault_entries").use { c ->
-                            while (c.moveToNext()) {
-                                stmt.clearBindings()
-                                stmt.bindString(1, c.getString(0))
-                                stmt.bindString(2, c.getString(1))
-                                stmt.bindBlob(3, c.getBlob(2))
-                                stmt.bindString(4, c.getString(3))
-                                stmt.bindString(5, c.getString(4))
-                                stmt.bindString(6, c.getString(5))
-                                stmt.bindLong(7, c.getLong(6))
-                                stmt.bindLong(8, c.getLong(7))
-                                stmt.execute()
+                        if (!vaultHasRows) {
+                            val stmt = vault.compileStatement(
+                                "INSERT INTO vault_entries (title, username, passwordEncrypted, url, notes, category, createdAt, updatedAt) VALUES (?,?,?,?,?,?,?,?)"
+                            )
+                            db.query("SELECT title, username, passwordEncrypted, url, notes, category, createdAt, updatedAt FROM vault_entries").use { c ->
+                                while (c.moveToNext()) {
+                                    stmt.clearBindings()
+                                    stmt.bindString(1, c.getString(0))
+                                    stmt.bindString(2, c.getString(1))
+                                    stmt.bindBlob(3, c.getBlob(2))
+                                    stmt.bindString(4, c.getString(3))
+                                    stmt.bindString(5, c.getString(4))
+                                    stmt.bindString(6, c.getString(5))
+                                    stmt.bindLong(7, c.getLong(6))
+                                    stmt.bindLong(8, c.getLong(7))
+                                    stmt.execute()
+                                }
                             }
+                            stmt.close()
                         }
-                        stmt.close()
+                        // 关键修复：此处建的是 v1 形态表（8 列），必须把 user_version 置为 1，
+                        // 否则 Room 打开 VaultDatabase(version=3) 时视作全新库走 onCreate（IF NOT EXISTS 不补列），
+                        // 而 V1ToV2/V2ToV3 迁移被跳过，导致 avatarPath/email/isFavorite/lastViewAt 缺失，
+                        // 升级后访问新列抛 "no such column"。置 1 后 Room 会正常走这两段迁移补列。
+                        // 仅当库是全新/仍为 v1 形态时设置；若已是 v2/v3（完整列+数据）则不降级，
+                        // 避免 Room 重跑 V1ToV2 的 ADD COLUMN 因列已存在抛错破坏既有库。
+                        val vaultVersion = vault.query("PRAGMA user_version").use { vc ->
+                            if (vc.moveToFirst()) vc.getInt(0) else 0
+                        }
+                        if (vaultVersion < 1) {
+                            vault.execSQL("PRAGMA user_version = 1")
+                        }
                     }
                 }
             }
         } catch (t: Throwable) {
             android.util.Log.w("Migration5To6", "legacy vault copy failed, legacy data dropped", t)
         }
+        // 无条件删除主库旧表（Room schema 校验要求；残留 vault_entries_bak 会导致校验失败）。
+        // 数据丢失风险已由上述 user_version 修复降到最低：生产路径（路径/密钥非空）下 native 库必然存在，
+        // 搬运成功；失败仅发生在极端异常，此时主库旧表也必须删除以满足 Room 迁移校验。
         db.execSQL("DROP TABLE IF EXISTS vault_entries")
     }
 }

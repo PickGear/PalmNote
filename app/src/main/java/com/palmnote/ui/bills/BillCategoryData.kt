@@ -5,7 +5,7 @@ import androidx.compose.material.icons.automirrored.outlined.ShowChart
 import androidx.compose.material.icons.automirrored.outlined.TrendingUp
 import androidx.compose.material.icons.automirrored.outlined.Undo
 import androidx.compose.material.icons.outlined.*
-import com.palmnote.R
+import com.palmnote.app.R
 import com.palmnote.ui.components.CategoryItem
 import com.palmnote.ui.theme.*
 

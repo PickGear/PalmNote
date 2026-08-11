@@ -67,7 +67,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
-import com.palmnote.R
+import com.palmnote.app.R
 import com.palmnote.feature.vault.PasswordStrength
 import com.palmnote.feature.vault.VaultLockManager.LockState
 import com.palmnote.feature.vault.VaultPasswordGenerator

@@ -23,7 +23,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.palmnote.R
+import com.palmnote.app.R
 import com.palmnote.data.db.entity.Anniversary
 import com.palmnote.data.db.entity.Asset
 import com.palmnote.data.db.entity.Bill
@@ -239,7 +239,7 @@ private fun BillSearchItem(bill: Bill, onClick: () -> Unit) {
                 )
             }
             Text(
-                CurrencyUtils.formatCurrency(bill.amount.toMoney()),
+                CurrencyUtils.formatCurrency(androidx.compose.ui.platform.LocalContext.current, bill.amount.toMoney()),
                 fontWeight = FontWeight.Bold,
                 color = if (bill.type == BillType.EXPENSE) AccentOrange else PrimaryGreenLight
             )

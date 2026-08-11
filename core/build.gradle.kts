@@ -1,13 +1,15 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.hilt)
+    alias(libs.plugins.detekt)
 }
 
 android {
-    namespace = "com.palmnote.core"
+    namespace = "com.palmnote"
     compileSdk = 36
 
     defaultConfig {
@@ -31,6 +33,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     ksp {
@@ -38,6 +41,13 @@ android {
         arg("room.incremental", "true")
         arg("room.generateKotlin", "true")
     }
+}
+
+detekt {
+    config.setFrom("$rootDir/config/detekt/detekt.yml")
+    baseline = file("$rootDir/config/detekt/baseline.xml")
+    buildUponDefaultConfig = true
+    allRules = false
 }
 
 dependencies {
@@ -84,4 +94,13 @@ dependencies {
     // Paging
     implementation("androidx.paging:paging-runtime-ktx:3.3.4")
     implementation("androidx.paging:paging-compose:3.3.4")
+
+    // Coil 3.x
+    implementation(libs.coil.compose)
+
+    // Serialization
+    implementation(libs.kotlinx.serialization.json)
+
+    // Coroutines
+    implementation(libs.coroutines.android)
 }

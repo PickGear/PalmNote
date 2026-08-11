@@ -36,7 +36,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.ui.res.stringResource
-import com.palmnote.R
+import com.palmnote.app.R
 import com.palmnote.ui.components.*
 import com.palmnote.ui.theme.*
 

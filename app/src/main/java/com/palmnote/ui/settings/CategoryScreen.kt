@@ -21,7 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
-import com.palmnote.R
+import com.palmnote.app.R
 import com.palmnote.data.db.entity.CategoryConfig
 import com.palmnote.ui.asset.assetCategoryItems
 import com.palmnote.ui.components.*

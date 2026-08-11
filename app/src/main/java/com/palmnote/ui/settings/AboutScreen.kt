@@ -17,7 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.palmnote.R
+import com.palmnote.app.R
 import com.palmnote.ui.components.*
 import com.palmnote.ui.theme.*
 

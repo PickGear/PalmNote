@@ -1,6 +1,8 @@
 package com.palmnote.ui.life.common
+import android.content.Context
 import javax.inject.Inject
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -19,7 +21,7 @@ import androidx.lifecycle.ViewModel
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewModelScope
 import com.palmnote.data.db.entity.CrossLink
-import com.palmnote.R
+import com.palmnote.app.R
 import com.palmnote.domain.model.EntityType
 import com.palmnote.domain.model.LinkType
 import com.palmnote.domain.model.toMoney
@@ -43,6 +45,7 @@ data class LinkSelectorState(
 
 @HiltViewModel
 class LinkSelectorViewModel @Inject constructor(
+    @ApplicationContext private val appContext: Context,
     private val billRepo: BillRepository,
     private val assetRepo: AssetRepository,
     private val crossLinkRepo: CrossLinkRepository
@@ -56,7 +59,7 @@ class LinkSelectorViewModel @Inject constructor(
                 val bills = billRepo.getAllBills().first().map {
                     LinkableBill(
                         id = it.id, note = it.note,
-                        amount = com.palmnote.domain.util.CurrencyUtils.formatCurrency(it.amount.toMoney())
+                        amount = com.palmnote.domain.util.CurrencyUtils.formatCurrency(appContext, it.amount.toMoney())
                     )
                 }
                 val assets = assetRepo.getAllAssets().first().map {

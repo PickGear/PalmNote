@@ -1,4 +1,4 @@
-﻿package com.palmnote.ui.life.common
+package com.palmnote.ui.life.common
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
@@ -17,7 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.palmnote.R
+import com.palmnote.app.R
 import com.palmnote.ui.components.AppDialog
 import com.palmnote.ui.components.SecondaryTopAppBar
 import com.palmnote.data.db.entity.LifeItem

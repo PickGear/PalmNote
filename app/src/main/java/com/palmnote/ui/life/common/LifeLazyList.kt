@@ -44,7 +44,7 @@ fun LifeLazyList(
                 containerColor = MaterialTheme.colorScheme.surfaceVariant,
                 contentColor = MaterialTheme.colorScheme.onSurfaceVariant
             ) {
-                Icon(Icons.Default.KeyboardArrowUp, stringResource(com.palmnote.R.string.back_to_top), modifier = Modifier.size(20.dp))
+                Icon(Icons.Default.KeyboardArrowUp, stringResource(com.palmnote.app.R.string.back_to_top), modifier = Modifier.size(20.dp))
             }
         }
     }
