@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ### Added
 - **密码本模块**（`feature/vault`）：纯离线密码管理器，字段级 AES-256-GCM 加密 + 独立主密码（密钥包裹模式，改 PIN 无需重加密条目）
 - 密码本：列表/搜索/分类筛选、详情遮罩查看（👁 切换）、CRUD、密码生成器（长度+字符集+熵强度）、一键复制 30 秒自动清剪贴板（哈希追踪不误清）
+- 密码本条目新增**手机号字段**（明文，与邮箱同规则，支持搜索），vault 独立库 v3 → v4（`MigrationV3ToV4`）
 - 密码本安全：**生物识别解锁**（Keystore 不可导出密钥包裹 DK + BiometricPrompt/CryptoObject）、**无锁模式**（可跳过密码设置，DK 用非认证 Keystore 密钥包裹，随时可升级为 PIN/生物识别）、自动锁定规则可配置（立即/跟系统锁屏/超时 5 分钟，默认跟系统）、失败 5 次锁定 30 秒（防暴力，`LockoutTracker` 复用）、进入需验证可配置、重置密码本
 - 密码本入口：Dashboard 卡片（仅显示条数统计，隐藏条目标题保护隐私，旧卡片配置自动合并）、设置页设置项（剪贴板清除/需验证/条目数/改主密码/重置）
 - 数据库 v4 → v5：新增 `vault_entries` 表（`Migration4To5`）
@@ -27,7 +28,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 - CI：迁移测试改用 **Robolectric** JVM 运行（免费 runner 无 KVM，模拟器易挂起）；并行拆分为 quality/build 两 job、每 job 单次 Gradle 调用，依赖 build cache 跨 job 复用
 - `lint.abortOnError` false → true
 - detekt baseline 重生成：冻结既有 UI 代码债务（LifeScreen/BillDao/ReportScreen）
-- **架构双模块化**：拆分 `core`（namespace `com.palmnote`，含 data/domain/通用 UI/资源/AppDatabase schema）与 `app`（namespace `com.palmnote.app`，业务 UI/备份/worker/vault）；移除空壳 `feature` 模块；AppDatabase schema 迁至 `core/schemas`（v1-v7），VaultDatabase 留 `app/schemas`（v1-v3）
+- **架构双模块化**：拆分 `core`（namespace `com.palmnote`，含 data/domain/通用 UI/资源/AppDatabase schema）与 `app`（namespace `com.palmnote.app`，业务 UI/备份/worker/vault）；移除空壳 `feature` 模块；AppDatabase schema 迁至 `core/schemas`（v1-v7），VaultDatabase 留 `app/schemas`（v1-v4）
 - **CurrencyUtils 去除全局 context 反模式**：删除无 context 重载与 `AppContextHolder`，所有调用点显式传 `context`（Composable 取 `LocalContext.current`，ViewModel 注入 `@ApplicationContext`）
 - 55 个 core+app 双引用 string key 按模块各放一份（AGP 各模块 R 类独立），并补迁 core 缺漏 key
 

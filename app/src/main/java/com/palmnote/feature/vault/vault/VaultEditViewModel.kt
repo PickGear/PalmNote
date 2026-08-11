@@ -179,6 +179,7 @@ class VaultEditViewModel @Inject constructor(
         title: String,
         username: String,
         email: String,
+        phone: String,
         password: String,
         url: String,
         notes: String,
@@ -188,9 +189,9 @@ class VaultEditViewModel @Inject constructor(
     ) {
         viewModelScope.launch {
             val ok = if (entryId == null) {
-                repository.create(title, username, email, password, url, notes, category, avatarPath) != null
+                repository.create(title, username, email, phone, password, url, notes, category, avatarPath) != null
             } else {
-                repository.update(entryId, title, username, email, password, url, notes, category, avatarPath)
+                repository.update(entryId, title, username, email, phone, password, url, notes, category, avatarPath)
             }
             onResult(ok)
         }

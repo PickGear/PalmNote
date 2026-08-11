@@ -30,6 +30,7 @@ import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.Mail
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.PhoneAndroid
 import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
@@ -312,6 +313,16 @@ fun VaultDetailScreen(
                         value = entry.email,
                         onCopy = {
                             if (viewModel.copyEmail(entry)) showCopied()
+                        }
+                    )
+                }
+                if (entry.phone.isNotEmpty()) {
+                    DetailRow(
+                        icon = Icons.Outlined.PhoneAndroid,
+                        label = stringResource(R.string.vault_field_phone),
+                        value = entry.phone,
+                        onCopy = {
+                            if (viewModel.copyPhone(entry)) showCopied()
                         }
                     )
                 }

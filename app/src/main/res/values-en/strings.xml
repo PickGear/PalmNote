@@ -1486,7 +1486,7 @@
     <string name="vault_lock_interrupted">Vault locked. Please restart.</string>
     <string name="vault_old_pin_wrong">Wrong old PIN</string>
     <string name="vault_search">Search</string>
-    <string name="vault_search_hint">Search title, username or URL</string>
+    <string name="vault_search_hint">Search title, username, email, phone or URL</string>
     <string name="vault_all_categories">All categories</string>
     <string name="vault_add">Add</string>
     <string name="vault_copy">Copy</string>
@@ -1571,6 +1571,7 @@
     <string name="vault_reset_done_title">Reset complete</string>
     <string name="vault_reset_done_hint">The vault has been reset. A new unlock PIN will be required on next entry.</string>
     <string name="vault_field_email">Email</string>
+    <string name="vault_field_phone">Phone</string>
     <string name="vault_settings">Vault Settings</string>
     <string name="vault_settings_section_card_display">Card Display</string>
     <string name="vault_settings_card_identity">Account display priority</string>

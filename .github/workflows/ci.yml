@@ -29,6 +29,10 @@ jobs:
           java-version: 17
 
       - uses: gradle/actions/setup-gradle@v4
+        # 默认缓存 Gradle 依赖 + build cache + configuration cache（org.gradle.caching/configuration-cache 已在 gradle.properties 开启）。
+        # fork 的 PR 只读不写缓存，避免缓存污染；主分支 push 正常读写。
+        with:
+          cache-read-only: ${{ github.event_name == 'pull_request' }}
 
       # 一次 Gradle 调用同时跑 lint + detekt + 单测（含 Robolectric 迁移测试）。
       # --continue 让某项失败时不中断其余任务，一次跑完所有结果。
@@ -63,13 +67,22 @@ jobs:
           java-version: 17
 
       - uses: gradle/actions/setup-gradle@v4
+        # 默认缓存 Gradle 依赖 + build cache + configuration cache（org.gradle.caching/configuration-cache 已在 gradle.properties 开启）。
+        # fork 的 PR 只读不写缓存，避免缓存污染；主分支 push 正常读写。
+        with:
+          cache-read-only: ${{ github.event_name == 'pull_request' }}
 
       - name: Build debug + release (unsigned smoke, no baseline profile)
         run: ./gradlew assembleDebug assembleRelease -x app:generateReleaseBaselineProfile -x app:generateBaselineProfile
 
+      # 上传策略（公开仓库，控制 Actions 存储）：
+      # - 日常 push 到 main 不上传：个人开发本地即可 assembleDebug，避免每次 push 积攒 82MB artifact。
+      # - PR 上传且保留 1 天：让外部贡献者能取到产物真机验证；单个 PR 仅 ~82MB，可控。
+      # - 手动触发 (workflow_dispatch) 上传且保留 3 天：需要留档时手动跑一次。
       - name: Upload APK
+        if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v4
         with:
           name: PalmNote-debug
           path: app/build/outputs/apk/debug/*.apk
-          retention-days: 7
+          retention-days: ${{ github.event_name == 'pull_request' && 1 || 3 }}

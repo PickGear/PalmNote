@@ -15,6 +15,7 @@ data class VaultEntry(
     val title: String,
     val username: String = "",
     val email: String = "",
+    val phone: String = "",
     val passwordEncrypted: ByteArray,
     val url: String = "",
     val notes: String = "",
@@ -33,6 +34,7 @@ data class VaultEntry(
                 title == other.title &&
                 username == other.username &&
                 email == other.email &&
+                phone == other.phone &&
                 passwordEncrypted.contentEquals(other.passwordEncrypted) &&
                 url == other.url &&
                 notes == other.notes &&
@@ -49,6 +51,7 @@ data class VaultEntry(
         result = 31 * result + title.hashCode()
         result = 31 * result + username.hashCode()
         result = 31 * result + email.hashCode()
+        result = 31 * result + phone.hashCode()
         result = 31 * result + passwordEncrypted.contentHashCode()
         result = 31 * result + url.hashCode()
         result = 31 * result + notes.hashCode()

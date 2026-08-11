@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.outlined.Key
 import androidx.compose.material.icons.outlined.Mail
 import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.PhoneAndroid
 import androidx.compose.material.icons.outlined.Shuffle
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
@@ -95,6 +96,7 @@ fun VaultEditScreen(
     var title by remember { mutableStateOf("") }
     var username by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
+    var phone by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var url by remember { mutableStateOf("") }
@@ -155,6 +157,7 @@ fun VaultEditScreen(
         title = entry.title
         username = entry.username
         email = entry.email
+        phone = entry.phone
         password = viewModel.passwordForDisplay(entry) ?: ""
         url = entry.url
         notes = entry.notes
@@ -238,6 +241,7 @@ fun VaultEditScreen(
                                 title = title,
                                 username = username,
                                 email = email,
+                                phone = phone,
                                 password = password,
                                 url = url,
                                 notes = notes,
@@ -361,6 +365,15 @@ fun VaultEditScreen(
                     onValueChange = { email = it },
                     label = stringResource(R.string.vault_field_email),
                     leading = Icons.Outlined.Mail
+                )
+                Spacer(Modifier.height(10.dp))
+
+                VaultTextField(
+                    value = phone,
+                    onValueChange = { phone = it },
+                    label = stringResource(R.string.vault_field_phone),
+                    leading = Icons.Outlined.PhoneAndroid,
+                    keyboardType = KeyboardType.Phone
                 )
                 Spacer(Modifier.height(10.dp))
 

@@ -214,6 +214,8 @@
     <ID>LongParameterList:LifeScreen.kt$( templates: List&lt;LifeTemplate&gt;, planTemplates: List&lt;LifeTemplate&gt;, timeTemplates: List&lt;LifeTemplate&gt;, recordTemplates: List&lt;LifeTemplate&gt;, onDismiss: () -&gt; Unit, onTemplateClick: (Long) -&gt; Unit, onNavigateToCreate: (Long) -&gt; Unit = {}, onNavigateToFocus: () -&gt; Unit = {}, onNavigateToHabit: () -&gt; Unit = {}, onNavigateToMood: () -&gt; Unit = {}, onNavigateToJournal: () -&gt; Unit = {}, onNavigateToReport: () -&gt; Unit = {} )</ID>
     <ID>LongParameterList:TemplateCreateScreen.kt$(name: String, onNameChange: (String) -&gt; Unit, description: String, onDescChange: (String) -&gt; Unit, selectedIcon: String, onIconSelect: (String) -&gt; Unit, selectedColor: String, onColorSelect: (String) -&gt; Unit, icons: List&lt;String&gt;, colors: List&lt;String&gt;)</ID>
     <ID>LongParameterList:VaultLockGate.kt$( lockState: LockState, error: String?, lockoutRemainingMs: Long, biometricEnabled: Boolean, onBiometricUnlock: () -&gt; Unit, onSetup: (String) -&gt; Unit, onUnlock: (String) -&gt; Unit, onSkip: (() -&gt; Unit)? = null, onForgotPin: (() -&gt; Unit)? = null, onPinTyped: () -&gt; Unit = {} )</ID>
+    <ID>LongParameterList:VaultEditViewModel.kt$VaultEditViewModel$( title: String, username: String, email: String, phone: String, password: String, url: String, notes: String, category: String, avatarPath: String, onResult: (Boolean) -&gt; Unit )</ID>
+    <ID>LongParameterList:VaultRepository.kt$VaultRepository$( id: Long, title: String, username: String, email: String, phone: String, password: String, url: String, notes: String, category: String, avatarPath: String )</ID>
     <ID>LoopWithTooManyJumpStatements:BillImportViewModel.kt$BillImportViewModel$for</ID>
     <ID>LoopWithTooManyJumpStatements:CsvDataExporter.kt$CsvDataExporter$for</ID>
     <ID>LoopWithTooManyJumpStatements:LifeDailyCheckWorker.kt$LifeDailyCheckWorker$for</ID>
@@ -1229,6 +1231,7 @@
     <ID>MaxLineLength:VaultScreen.kt$if</ID>
     <ID>MaxLineLength:VaultSettingsScreen.kt$subtitle = stringResource(if (state.isNoLockMode) R.string.vault_settings_set_pin_hint else R.string.vault_settings_change_pin_hint)</ID>
     <ID>MaxLineLength:VaultSettingsScreen.kt$title = stringResource(if (state.isNoLockMode) R.string.vault_settings_set_pin else R.string.vault_settings_change_pin)</ID>
+    <ID>MaxLineLength:MigrationV3ToV4Test.kt$MigrationV3ToV4Test$"(id, title, username, email, phone, passwordEncrypted, url, notes, category, avatarPath, isFavorite, lastViewAt, createdAt, updatedAt) "</ID>
     <ID>MaxLineLength:WalletEditScreen.kt$currentBalance = existingWallet?.let { it.currentBalance + (balance - it.initialBalance) } ?: balance</ID>
     <ID>MaxLineLength:WalletEditScreen.kt$stringResource(R.string.wallet_current_balance) + ": " + com.palmnote.domain.util.CurrencyUtils.formatCurrency(existingWallet!!.currentBalance.toMoney())</ID>
     <ID>MaxLineLength:WalletRepositoryImpl.kt$WalletRepositoryImpl$color = "#%02X%02X%02X".format((preset.color.red * 255).toInt(), (preset.color.green * 255).toInt(), (preset.color.blue * 255).toInt())</ID>

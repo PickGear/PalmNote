@@ -129,7 +129,7 @@ core/                      # Core library module (namespace: com.palmnote)
 │   │   └── util/          # Utilities (DateUtils/CurrencyUtils)
 │   ├── di/                # Hilt injection (@Qualifier, etc.)
 │   └── ui/                # Shared UI: components/theme/lock/notification/widget
-└── src/main/res/          # Core resources (strings/theme)
+├── src/main/res/          # Core resources (strings/theme)
 └── schemas/               # AppDatabase Room schema (v1-v7)
 
 app/                       # Application module (namespace: com.palmnote.app)
@@ -138,8 +138,8 @@ app/                       # Application module (namespace: com.palmnote.app)
 │   ├── feature/           # Password vault (field-level encryption) + usecases
 │   ├── ui/                # Business UI: asset/bills/dashboard/life/settings/search/navigation/backup
 │   └── PalmNoteApp.kt     # Application class
-└── src/main/res/          # App resources (incl. string keys shared with core)
-└── schemas/               # VaultDatabase Room schema (v1-v3)
+├── src/main/res/          # App resources (incl. string keys shared with core)
+└── schemas/               # VaultDatabase Room schema (v1-v4)
 
 ppocr-sdk/                 # PaddleOCR native SDK
 ```
