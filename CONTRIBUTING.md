@@ -50,11 +50,22 @@ fun AssetCard(
 
 ### 架构分层 / Architecture Layers
 
-- `data/` — Room DAO、Entity、Repository 实现 (implementations)
-- `domain/` — Repository 接口、领域模型 (interfaces, domain models)
-- `di/` — 依赖注入 Hilt 模块 (dependency injection with Hilt)
-- `ui/` — Compose 界面 (Compose UI, per-module)
-- `feature/` — 独立功能模块（如密码本 `feature/vault/`）
+项目为双模块结构（`:core` + `:app`）：
+
+**core（namespace `com.palmnote`）** — 可复用基础能力，不依赖 app：
+- `core/data/` — Room DAO、Entity、Repository 实现、DataStore、Lock、Event
+- `core/domain/` — Repository 接口、领域模型、Service、Util
+- `core/di/` — Hilt 注入注解（`@Qualifier` 等）
+- `core/ui/` — 通用 Compose 组件、主题、锁界面、通知、Widget
+
+**app（namespace `com.palmnote.app`）** — 应用入口与业务：
+- `app/data/` — 备份、导出、OCR、Repository 实现、Worker
+- `app/domain/` — 业务 usecase（`com.palmnote.feature.{asset,bills,life}.usecase`）
+- `app/di/` — Hilt 模块（`HiltModules.kt` 等）
+- `app/ui/` — 业务 Compose 界面（per-module packages）
+- `app/feature/vault/` — 密码本（字段级加密，独立 `palmnote_vault.db`）
+
+新增跨模块复用的类应放 core，业务专属类放 app；core 不得反向依赖 app。
 
 ### 依赖注入 / Dependency Injection
 

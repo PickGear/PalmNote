@@ -2,7 +2,7 @@
 
 > v1.3 | 2026-08-02 | 与设计规范 [design-spec.md](design-spec.md) 配合阅读
 >
-> **状态：v1.3.0 已实现**（`feature/vault`，DB v5）。本文档为设计蓝图 + 实现状态对照，实现细节以代码为准。
+> **状态：v1.3.0 已实现**（`feature/vault`，主库 DB v7；vault 数据存独立库 `palmnote_vault.db` v3）。本文档为设计蓝图 + 实现状态对照，实现细节以代码为准。
 >
 > **实现状态图例：** ✅ 已实现（v1.3.0）｜ 🔜 预留（v2.x 规划，未实现）
 >
@@ -32,10 +32,10 @@
 
 ### 1.3 与现有架构的关系
 
-密码本代码位于 `com.palmnote.feature.vault` 包内（单模块 `:app`，非独立 Gradle 模块），通过 Hilt 依赖注入接入：
+密码本代码位于 `com.palmnote.feature.vault` 包内（应用模块 `:app` 内部，非独立 Gradle 模块），通过 Hilt 依赖注入接入：
 
 ```
-app (single module)
+app (namespace: com.palmnote.app)
 └── src/main/java/com/palmnote/
     ├── feature/vault/              ← 数据/加密层
     │   ├── VaultEntry.kt           # Room Entity
@@ -53,15 +53,16 @@ app (single module)
     │       ├── VaultLockGate.kt    # PIN 解锁门
     │       ├── VaultPasswordGeneratorSheet.kt
     │       └── VaultSettingsScreen.kt / VaultSettingsViewModel.kt
-    ├── data/datastore/
-    │   └── PreferencesManager.kt   ← vault_salt / vault_key_wrap / 设置项 key
     ├── di/
     │   └── HiltModules.kt          ← 注册 vault DAO/密钥/锁定/剪贴板组件
-    └── ui/
-        ├── dashboard/
-        │   └── DashboardCardConfig.kt  ← VAULT 卡片类型
-        └── navigation/
-            └── Routes.kt           ← Vault / VaultDetail / VaultEdit / VaultSettings 路由
+
+core (namespace: com.palmnote，app 依赖)
+└── src/main/java/com/palmnote/
+    ├── data/datastore/PreferencesManager.kt  ← vault_salt / vault_key_wrap / 设置项 key（已迁 core）
+    └── ui/dashboard/DashboardCardConfig.kt   ← VAULT 卡片类型（已迁 core）
+
+app 侧导航
+└── ui/navigation/Routes.kt        ← Vault / VaultDetail / VaultEdit / VaultSettings 路由
 ```
 
 > 密码本通过 Hilt 提供依赖（`@Singleton`），所有密码本类不依赖任何网络相关代码，未声明 `INTERNET` 权限。
@@ -611,12 +612,12 @@ fun toggleCloudService(enabled: Boolean) {
 
 ## 八、模块依赖关系
 
-### 8.1 包结构依赖（单模块架构）
+### 8.1 包结构依赖（双模块架构）
 
-密码本全部代码位于 `:app` 模块内的 `com.palmnote.feature.vault` 包：
+密码本全部代码位于 `:app` 模块内的 `com.palmnote.feature.vault` 包（vault 依赖部分来自 `:core`）：
 
 ```
-com.palmnote/
+app (namespace: com.palmnote.app)
 ├── feature.vault/          ← 数据/加密层
 │    ├── VaultEntry.kt              # Room Entity（vault_entries）
 │    ├── VaultDao.kt                # Room DAO
@@ -633,15 +634,15 @@ com.palmnote/
 │        ├── VaultLockGate.kt       # PIN 解锁门
 │        ├── VaultPasswordGeneratorSheet.kt
 │        └── VaultSettingsScreen.kt / VaultSettingsViewModel.kt
-├── data/
-│    ├── db/AppDatabase.kt          # 新增 vault_entries 表（Migration4To5）
-│    └── datastore/PreferencesManager.kt  # vault_salt / vault_key_wrap / 设置项 key
+├── data/db/VaultDatabase.kt        # 独立 vault 库（palmnote_vault.db，v1-v3，v5 从主库迁出）
 ├── di/HiltModules.kt               # 注册 vault DAO/密钥/锁定/剪贴板/仓库
-├── ui/
-│    ├── dashboard/DashboardCardConfig.kt  # VAULT 卡片
-│    └── navigation/Routes.kt       # Vault / VaultDetail / VaultEdit / VaultSettings 路由
-└── domain/
-     └── repository/VaultRepository.kt    # 接口
+└── ui/navigation/Routes.kt         # Vault / VaultDetail / VaultEdit / VaultSettings 路由
+
+core (namespace: com.palmnote，app 依赖)
+├── data/datastore/PreferencesManager.kt    # vault_salt / vault_key_wrap / 设置项 key
+├── data/db/AppDatabase.kt                  # 主库本体 + migration（v4-v5 曾含 vault_entries，v6 迁出至独立库）
+├── domain/repository/VaultRepository.kt    # 接口
+└── ui/dashboard/DashboardCardConfig.kt     # VAULT 卡片
 ```
 
 ### 8.2 关键约束
@@ -958,4 +959,6 @@ feature/cloud/provider/
 | 2 | 新增若干表 + 账单索引 |
 | 3 | 账单索引补齐（`index_bills_*`） |
 | 4 | 金额单位迁移（元 → 分，Migration3To4，×100 换算含已有数据） |
-| **5** | **当前版本（v1.3.0）：新增 `vault_entries` 密码本表（Migration4To5）** |
+| 5 | 新增 `vault_entries` 密码本表于主库（Migration4To5，历史遗留） |
+| 6 | 密码本数据迁出至独立库 `palmnote_vault.db`（Migration5To6，best-effort 搬运后删旧表） |
+| **7** | **当前版本（v1.3.0）：删除 `bills` / `bills_recycle_bin` 未使用的 `timeOfDay` 死字段（Migration6To7）** |
