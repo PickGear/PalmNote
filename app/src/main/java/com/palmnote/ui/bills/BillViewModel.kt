@@ -7,7 +7,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
-import com.palmnote.R
+import com.palmnote.app.R
 import com.palmnote.data.db.dao.CategoryTotal
 import com.palmnote.data.db.entity.AccountBook
 import com.palmnote.data.db.entity.Bill

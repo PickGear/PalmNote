@@ -7,7 +7,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import android.app.Application
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.palmnote.R
+import com.palmnote.app.R
 import com.palmnote.data.db.entity.LifeItem
 import com.palmnote.data.db.entity.LifeTemplate
 import com.palmnote.domain.repository.LifeItemRepository

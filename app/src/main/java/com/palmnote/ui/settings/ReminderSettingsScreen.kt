@@ -28,7 +28,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.palmnote.ui.components.CompactTopAppBar
-import com.palmnote.R
+import com.palmnote.app.R
 import com.palmnote.ui.components.*
 import com.palmnote.ui.theme.*
 

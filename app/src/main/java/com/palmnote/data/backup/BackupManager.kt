@@ -3,7 +3,7 @@ package com.palmnote.data.backup
 import android.content.Context
 import android.os.Environment
 import android.util.Xml
-import com.palmnote.R
+import com.palmnote.app.R
 import com.palmnote.data.db.AppDatabase
 import com.palmnote.data.db.DbKeyStore
 import kotlinx.coroutines.Dispatchers
@@ -34,7 +34,17 @@ class BackupManager(
         private const val LOCK_PREFS_NAME = "app_lock_prefs"
         /** 备份所需最小可用空间（50MB） */
         private const val MIN_FREE_SPACE = 50L * 1024 * 1024
+        /** 自动备份保留份数 */
+        private const val DEFAULT_KEEP_BACKUPS = 7
+        private const val TAG = "BackupManager"
     }
+
+    /**
+     * 计算需要清理的旧备份（按最近修改时间排序，保留最新的 [keep] 份）。
+     * 纯函数便于单元测试；权限校验/IO 由调用方负责。
+     */
+    internal fun selectBackupsToPrune(files: List<File>, keep: Int = DEFAULT_KEEP_BACKUPS): List<File> =
+        files.sortedByDescending { it.lastModified() }.drop(keep.coerceAtLeast(0))
 
     // 获取备份存储目录（使用应用专属外部存储，无需权限；外部存储不可用时回退到内部存储）
     private fun getBackupDir(context: Context): File {
@@ -195,7 +205,7 @@ class BackupManager(
                 // 加密备份（旧 PNBK / 新 PNB2）
                 magic == MAGIC || magic == MAGIC_ENCRYPTED_V2 -> {
                     if (password.isNullOrBlank()) {
-                        throw IllegalArgumentException(context.getString(com.palmnote.R.string.backup_password_required))
+                        throw IllegalArgumentException(context.getString(com.palmnote.app.R.string.backup_password_required))
                     }
                     // 流式解密避免OOM；先用当前迭代，失败则用旧版本（100k）迭代重试以兼容旧备份
                     val currentOk = runCatching { decryptToTemp(backupFile, password, tempZip, CryptoUtils.CURRENT_PBKDF2_ITERATIONS) }
@@ -455,6 +465,18 @@ class BackupManager(
     // 删除备份文件
     fun deleteBackup(file: File) {
         if (file.exists()) file.delete()
+    }
+
+    // 清理旧备份：删除超过保留份数（默认 7）的最旧备份
+    suspend fun cleanupOldBackups(context: Context, keep: Int = DEFAULT_KEEP_BACKUPS) = withContext(Dispatchers.IO) {
+        val files: List<File> = getBackupDir(context).listFiles()
+            ?.filter { it.isFile && it.extension == "palmnote" }
+            ?: emptyList()
+        selectBackupsToPrune(files, keep).forEach { file ->
+            if (file.exists() && !file.delete()) {
+                android.util.Log.w(TAG, "cleanupOldBackups: failed to delete ${file.name}")
+            }
+        }
     }
 
     // 计算文件 MD5（IO）

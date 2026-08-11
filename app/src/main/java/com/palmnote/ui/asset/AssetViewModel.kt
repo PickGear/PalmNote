@@ -11,7 +11,7 @@ import androidx.compose.runtime.Stable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
-import com.palmnote.R
+import com.palmnote.app.R
 import com.palmnote.data.datastore.PreferencesManager
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.decodeFromString

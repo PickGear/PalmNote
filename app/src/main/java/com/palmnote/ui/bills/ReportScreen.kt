@@ -28,7 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.palmnote.R
+import com.palmnote.app.R
 import com.palmnote.data.db.dao.CategoryTotal
 import com.palmnote.data.db.dao.DailySummary
 import com.palmnote.data.db.dao.MonthTotal
@@ -247,6 +247,7 @@ private fun PeriodTabRow(state: ReportState, viewModel: ReportViewModel) {
 
 @Composable
 private fun SummarySection(state: ReportState) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     val isExpense = state.incomeExpenseTab == 0
     val total = if (isExpense) state.data.totalExpense else state.data.totalIncome
     val totalColor = if (isExpense) ExpenseRed else IncomeGreen
@@ -264,7 +265,7 @@ private fun SummarySection(state: ReportState) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
-                text = "${CurrencyUtils.formatCompact(total.toMoney())}",
+                text = "${CurrencyUtils.formatCompact(context, total.toMoney())}",
                 style = MaterialTheme.typography.headlineMedium.copy(
                     fontWeight = FontWeight.Bold,
                     fontSize = 28.sp
@@ -278,7 +279,7 @@ private fun SummarySection(state: ReportState) {
             horizontalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             Text(
-                text = stringResource(R.string.report_daily_avg, CurrencyUtils.formatCompact(Money(state.data.avgDaily.toLong()))),
+                text = stringResource(R.string.report_daily_avg, CurrencyUtils.formatCompact(context, Money(state.data.avgDaily.toLong()))),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -296,6 +297,7 @@ private fun SummarySection(state: ReportState) {
 @Composable
 private fun DonutChartSection(state: ReportState, onNavigateToAddBill: () -> Unit,
     customExpense: List<CategoryItem> = emptyList(), customIncome: List<CategoryItem> = emptyList()) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     val categories = state.data.categories
     val isExpense = state.incomeExpenseTab == 0
     val total = if (isExpense) state.data.totalExpense else state.data.totalIncome
@@ -361,7 +363,7 @@ private fun DonutChartSection(state: ReportState, onNavigateToAddBill: () -> Uni
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "${CurrencyUtils.formatCompact(total.toMoney())}",
+                    text = "${CurrencyUtils.formatCompact(context, total.toMoney())}",
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                 )
                 Text(
@@ -486,6 +488,7 @@ private fun CategoryRankingSection(state: ReportState,
 @Composable
 private fun CategoryRankingItem(cat: CategoryTotal, total: Long, isExpense: Boolean,
     customItems: List<CategoryItem> = emptyList()) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     val fraction = if (total > 0) (cat.total.toFloat() / total).toFloat() else 0f
     val color = getCatColor(cat.category, isExpense, customItems)
     val categoryItem = (if (isExpense) expenseCategoryItems else incomeCategoryItems).find { it.name == cat.category }
@@ -530,7 +533,7 @@ private fun CategoryRankingItem(cat: CategoryTotal, total: Long, isExpense: Bool
                     )
                 }
                 Text(
-                    text = "${CurrencyUtils.formatCompact(cat.total.toMoney())}",
+                    text = "${CurrencyUtils.formatCompact(context, cat.total.toMoney())}",
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Medium
                 )

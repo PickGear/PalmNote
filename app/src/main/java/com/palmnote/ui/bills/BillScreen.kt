@@ -38,7 +38,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.palmnote.R
+import com.palmnote.app.R
 import com.palmnote.data.db.entity.Bill
 import com.palmnote.data.db.entity.getDisplayName
 import com.palmnote.data.db.entity.getDisplayDescription
@@ -444,14 +444,20 @@ fun BillScreen(
                                     Spacer(modifier = Modifier.weight(1f))
                                     if (dayIncome > 0) {
                                         Text(
-                                            text = stringResource(R.string.bill_income_short, CurrencyUtils.formatCurrency(dayIncome.toMoney())),
+                                            text = stringResource(
+                                                R.string.bill_income_short,
+                                                CurrencyUtils.formatCurrency(context, dayIncome.toMoney())
+                                            ),
                                             style = MaterialTheme.typography.labelSmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
                                     if (dayExpense > 0) {
                                         Text(
-                                            text = stringResource(R.string.bill_expense_short, CurrencyUtils.formatCurrency(dayExpense.toMoney())),
+                                            text = stringResource(
+                                                R.string.bill_expense_short,
+                                                CurrencyUtils.formatCurrency(context, dayExpense.toMoney())
+                                            ),
                                             style = MaterialTheme.typography.labelSmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )

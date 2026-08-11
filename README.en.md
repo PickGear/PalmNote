@@ -112,41 +112,40 @@ See [CHANGELOG.md](CHANGELOG.md).
 
 ## Architecture
 
+Two-module layout (`:core` + `:app`):
+
 ```
-com.palmnote/
-├── data/           # Data layer
-│   ├── backup/     # Backup & restore
-│   ├── datastore/  # DataStore preferences
-│   ├── db/         # Room DAO/Entity/migrations
-│   ├── export/     # CSV/ZIP import/export
-│   ├── lock/       # App lock encryption
-│   ├── ocr/        # PaddleOCR recognition (ppocr-sdk)
-│   ├── repository/ # Repository implementations
-│   ├── sync/       # Calendar sync
-│   └── worker/     # WorkManager background tasks
-├── domain/         # Domain layer
-│   ├── model/      # Domain models
-│   ├── repository/ # Repository interfaces
-│   ├── service/    # Business services
-│   └── util/       # Utilities (DateUtils/CurrencyUtils)
-├── feature/        # Standalone feature modules
-│   └── vault/      # Password vault (field-level encryption)
-├── di/             # Hilt dependency injection
-├── ui/             # UI layer (per-module packages)
-│   ├── asset/      # Asset management
-│   ├── bills/      # Expense tracking
-│   ├── dashboard/  # Home dashboard
-│   ├── life/       # Life module (plan/time/record)
-│   ├── settings/   # Settings
-│   ├── search/     # Search
-│   ├── lock/       # App lock screen
-│   ├── widget/     # Home screen widget
-│   ├── navigation/ # Navigation
-│   ├── backup/     # Backup UI
-│   ├── components/ # Shared components
-│   └── theme/      # Theme (Color/Shape/Type/Icon)
-└── PalmNoteApp.kt  # Application class
+core/                      # Core library module (namespace: com.palmnote)
+├── src/main/java/com/palmnote/
+│   ├── data/              # Data layer
+│   │   ├── datastore/     # DataStore preferences
+│   │   ├── db/            # Room DAO/Entity/migrations/schema
+│   │   ├── event/         # Event bus
+│   │   ├── lock/          # App lock encryption
+│   ├── domain/            # Domain layer
+│   │   ├── model/         # Domain models
+│   │   ├── repository/    # Repository interfaces
+│   │   ├── service/       # Business services (TriggerEngine, etc.)
+│   │   └── util/          # Utilities (DateUtils/CurrencyUtils)
+│   ├── di/                # Hilt injection (@Qualifier, etc.)
+│   └── ui/                # Shared UI: components/theme/lock/notification/widget
+└── src/main/res/          # Core resources (strings/theme)
+└── schemas/               # AppDatabase Room schema (v1-v7)
+
+app/                       # Application module (namespace: com.palmnote.app)
+├── src/main/java/com/palmnote/
+│   ├── data/              # Backup/export/OCR/repository impls/worker
+│   ├── feature/           # Password vault (field-level encryption) + usecases
+│   ├── ui/                # Business UI: asset/bills/dashboard/life/settings/search/navigation/backup
+│   └── PalmNoteApp.kt     # Application class
+└── src/main/res/          # App resources (incl. string keys shared with core)
+└── schemas/               # VaultDatabase Room schema (v1-v3)
+
+ppocr-sdk/                 # PaddleOCR native SDK
 ```
+
+> core has no dependency on app; app depends on core (`implementation(project(":core"))`).
+> AppDatabase schema is exported to `core/schemas`; migration tests read it via assets.
 
 ## Build
 

@@ -24,7 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.palmnote.R
+import com.palmnote.app.R
 import com.palmnote.domain.model.toMoney
 import com.palmnote.domain.util.CurrencyUtils
 import com.palmnote.domain.util.DateUtils
@@ -311,7 +311,7 @@ fun AddBillScreen(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Text(
-                                    text = CurrencyUtils.formatCurrency(selectedWallet.currentBalance.toMoney()),
+                                    text = CurrencyUtils.formatCurrency(context, selectedWallet.currentBalance.toMoney()),
                                     style = MaterialTheme.typography.bodySmall,
                                     fontWeight = FontWeight.Medium,
                                     color = if (selectedWallet.currentBalance >= 0) StatusActive else ErrorLight
@@ -386,7 +386,7 @@ fun AddBillScreen(
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                     Text(
-                                        text = CurrencyUtils.formatCurrency(selectedWallet.currentBalance.toMoney()),
+                                        text = CurrencyUtils.formatCurrency(context, selectedWallet.currentBalance.toMoney()),
                                         style = MaterialTheme.typography.bodySmall,
                                         fontWeight = FontWeight.Medium,
                                         color = if (selectedWallet.currentBalance >= 0) StatusActive else ErrorLight

@@ -15,7 +15,7 @@ import android.net.Uri
 import androidx.compose.runtime.Stable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.palmnote.R
+import com.palmnote.app.R
 import com.palmnote.data.db.entity.Bill
 import com.palmnote.data.export.BillCsvImporter
 import com.palmnote.data.export.BillXlsxImporter

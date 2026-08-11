@@ -112,41 +112,40 @@
 
 ## 架构
 
+双模块结构（`:core` + `:app`）：
+
 ```
-com.palmnote/
-├── data/           # 数据层
-│   ├── backup/     # 备份恢复
-│   ├── datastore/  # DataStore 偏好
-│   ├── db/         # Room DAO/Entity/迁移
-│   ├── export/     # CSV/ZIP 导入导出
-│   ├── lock/       # 应用锁加密
-│   ├── ocr/        # PaddleOCR 识别（ppocr-sdk）
-│   ├── repository/ # Repository 实现
-│   ├── sync/       # 日历同步
-│   └── worker/     # WorkManager 后台任务
-├── domain/         # 领域层
-│   ├── model/      # 领域模型
-│   ├── repository/ # Repository 接口
-│   ├── service/    # 业务服务
-│   └── util/       # 工具类（DateUtils/CurrencyUtils）
-├── feature/        # 独立功能模块
-│   └── vault/      # 密码本（字段级加密）
-├── di/             # Hilt 依赖注入
-├── ui/             # 表现层：按模块分包
-│   ├── asset/      # 物品模块
-│   ├── bills/      # 记账模块
-│   ├── dashboard/  # 首页
-│   ├── life/       # 生活模块（plan/time/record）
-│   ├── settings/   # 设置
-│   ├── search/     # 搜索
-│   ├── lock/       # 应用锁
-│   ├── widget/     # 桌面小组件
-│   ├── navigation/ # 导航
-│   ├── backup/     # 备份页面
-│   ├── components/ # 通用组件
-│   └── theme/      # 主题（Color/Shape/Type/Icon）
-└── PalmNoteApp.kt  # Application
+core/                      # 核心库模块（namespace: com.palmnote）
+├── src/main/java/com/palmnote/
+│   ├── data/              # 数据层
+│   │   ├── datastore/     # DataStore 偏好
+│   │   ├── db/            # Room DAO/Entity/迁移/schema
+│   │   ├── event/         # 事件总线
+│   │   ├── lock/          # 应用锁加密
+│   ├── domain/            # 领域层
+│   │   ├── model/         # 领域模型
+│   │   ├── repository/    # Repository 接口
+│   │   ├── service/       # 业务服务（TriggerEngine 等）
+│   │   └── util/          # 工具类（DateUtils/CurrencyUtils）
+│   ├── di/                # Hilt 注入（@Qualifier 等）
+│   └── ui/                # 通用 UI：components/theme/lock/notification/widget
+└── src/main/res/          # core 资源（字符串/主题）
+└── schemas/               # AppDatabase Room schema（v1-v7）
+
+app/                       # 应用模块（namespace: com.palmnote.app）
+├── src/main/java/com/palmnote/
+│   ├── data/              # 备份/导出/OCR/repository 实现/worker
+│   ├── feature/           # 密码本（字段级加密）+ usecase
+│   ├── ui/                # 业务 UI：asset/bills/dashboard/life/settings/search/navigation/backup
+│   └── PalmNoteApp.kt     # Application
+└── src/main/res/          # app 资源（含与 core 共用的字符串 key）
+└── schemas/               # VaultDatabase Room schema（v1-v3）
+
+ppocr-sdk/                 # PaddleOCR 原生 SDK
 ```
+
+> core 不依赖 app；app 依赖 core（`implementation(project(":core"))`）。
+> AppDatabase 由 core 导出 schema 至 `core/schemas`，迁移测试经 assets 读取校验。
 
 ## 构建
 

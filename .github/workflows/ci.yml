@@ -35,17 +35,17 @@ jobs:
       - name: Lint, detekt & unit tests
         run: ./gradlew lintDebug detekt testDebugUnitTest --continue
 
-      # testDebugUnitTest 会触发 kspDebugKotlin（生成 app/schemas），
+      # testDebugUnitTest 会触发 kspDebugKotlin（生成 app/schemas 与 core/schemas），
       # 这里直接校验导出的 Room schema 是否已提交，无需再跑一次 Gradle。
       - name: Verify Room schema is up to date
         run: |
-          CHANGED=$(git status --porcelain app/schemas)
+          CHANGED=$(git status --porcelain app/schemas core/schemas)
           if [ -z "$CHANGED" ]; then
             echo "Room schemas are up to date."
           else
-            echo "::error::Room schema JSON changed. Commit the updated schema in app/schemas."
+            echo "::error::Room schema JSON changed. Commit the updated schema."
             echo "$CHANGED"
-            git diff app/schemas
+            git diff app/schemas core/schemas
             exit 1
           fi
 

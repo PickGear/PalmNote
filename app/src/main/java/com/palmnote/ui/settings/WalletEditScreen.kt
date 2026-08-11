@@ -23,7 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.palmnote.R
+import com.palmnote.app.R
 import com.palmnote.domain.model.Money
 import com.palmnote.domain.model.toMoney
 import com.palmnote.domain.model.toYuanString
@@ -220,7 +220,10 @@ fun WalletEditScreen(
                 if (isEditing && existingWallet != null) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        stringResource(R.string.wallet_current_balance) + ": " + com.palmnote.domain.util.CurrencyUtils.formatCurrency(existingWallet!!.currentBalance.toMoney()),
+                        stringResource(R.string.wallet_current_balance) + ": " + CurrencyUtils.formatCurrency(
+                            context,
+                            existingWallet!!.currentBalance.toMoney()
+                        ),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

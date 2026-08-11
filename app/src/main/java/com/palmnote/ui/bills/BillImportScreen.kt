@@ -32,7 +32,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
-import com.palmnote.R
+import com.palmnote.app.R
 import com.palmnote.data.export.BillCsvImporter
 import com.palmnote.data.export.ParsedBill
 import com.palmnote.data.ocr.OcrBillResult
@@ -270,7 +270,11 @@ private fun FileBillRow(bill: ParsedBill, selected: Boolean, onToggle: () -> Uni
             Column(modifier = Modifier.weight(1f)) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text(bill.merchant.ifEmpty { bill.category }, fontWeight = FontWeight.Medium, style = MaterialTheme.typography.bodyMedium)
-                    Text(CurrencyUtils.formatCurrency(bill.amount.toMoney()), fontWeight = FontWeight.Bold, color = if (bill.type == BillType.EXPENSE.value) ExpenseRed else IncomeGreen)
+                    Text(
+                                        CurrencyUtils.formatCurrency(context, bill.amount.toMoney()),
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (bill.type == BillType.EXPENSE.value) ExpenseRed else IncomeGreen
+                                    )
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(DateUtils.formatDisplayDate(context, bill.date), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -356,6 +360,7 @@ private fun OcrPreviewContent(state: BillImportState, viewModel: BillImportViewM
 
 @Composable
 private fun OcrItem(result: OcrBillResult, selected: Boolean, onClick: () -> Unit) {
+    val context = LocalContext.current
     Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).clip(MaterialTheme.shapes.medium).background(if (selected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)).clickable(onClick = onClick).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
         Checkbox(checked = selected, onCheckedChange = null)
         Spacer(modifier = Modifier.width(12.dp))
@@ -369,7 +374,12 @@ private fun OcrItem(result: OcrBillResult, selected: Boolean, onClick: () -> Uni
                 }
             }
         }
-        if (result.amount != null) Text("-${CurrencyUtils.formatCurrency(result.amount.toMoney())}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = ExpenseRed)
+        if (result.amount != null) Text(
+            "-${CurrencyUtils.formatCurrency(context, result.amount.toMoney())}",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = ExpenseRed
+        )
     }
 }
 

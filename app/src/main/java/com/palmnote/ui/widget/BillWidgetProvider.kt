@@ -7,7 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.widget.RemoteViews
 import com.palmnote.MainActivity
-import com.palmnote.R
+import com.palmnote.app.R
 import com.palmnote.data.db.AppDatabase
 import com.palmnote.data.db.dao.BillDao
 import com.palmnote.domain.util.AppLogger

@@ -39,7 +39,7 @@ import androidx.core.app.ActivityCompat
 import android.app.Activity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.palmnote.ui.components.CompactTopAppBar
-import com.palmnote.R
+import com.palmnote.app.R
 import com.palmnote.ui.theme.*
 import kotlinx.coroutines.delay
 

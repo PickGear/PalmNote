@@ -1,123 +1,50 @@
-# 模块拆分文件迁移指南
+# 模块拆分指南
 
-## 模块结构
+## 当前模块结构（迁移后最终形态）
 
 ```
 PalmNote/
-├── app/                    # 入口 + 导航 + 设置 + 搜索 + 备份 + Worker
-├── core/                   # 共享基础设施
-│   ├── database/           # Entity + DAO + Migration + DbKeyStore
+├── app/                    # 应用模块（namespace: com.palmnote.app）
+│   ├── 入口/导航/设置/搜索/备份/Worker
+│   ├── 业务 UI：asset / bills / dashboard / life / settings / search
+│   ├── feature/vault（密码本，字段级加密）+ 各业务 usecase
+│   ├── 实现层：backup / export / ocr / repository impl
+│   └── schemas/            # VaultDatabase Room schema（v1-v3）
+├── core/                   # 核心库模块（namespace: com.palmnote，app 依赖 core）
+│   ├── data/               # Entity + DAO + Migration + DbKeyStore + DataStore + Lock + Event
 │   ├── domain/             # Repository 接口 + EventBus + Service + Util
-│   └── ui/                 # 通用组件 + 主题 + Widget + Lock
-├── feature/
-│   ├── bills/              # 记账模块
-│   ├── asset/              # 物品模块
-│   └── life/               # 生活模块
-└── ppocr-sdk/              # OCR（已独立）
+│   ├── ui/                 # 通用组件 + 主题 + Lock 界面 + Notification + Widget
+│   ├── di/                 # Hilt @Qualifier 等
+│   ├── res/                # core 资源（字符串/主题）
+│   └── schemas/            # AppDatabase Room schema（v1-v7）
+└── ppocr-sdk/              # PaddleOCR 原生 SDK（已独立）
 ```
 
-## 迁移步骤（在 Android Studio 中执行）
+## 依赖方向
 
-### 第 1 步：core/database（Entity + DAO + Migration）
+- `core` **不依赖** `app`（保证可独立复用与编译）
+- `app` 通过 `implementation(project(":core"))` 依赖 core
+- `ppocr-sdk` 仅被 app 依赖
 
-**移动文件：**
-```
-app/src/main/java/com/palmnote/data/db/ → core/src/main/java/com/palmnote/core/database/
-```
+## 关键迁移决策
 
-**更新 import：**
-```
-com.palmnote.data.db.entity.Xxx → com.palmnote.core.database.entity.Xxx
-com.palmnote.data.db.dao.Xxx → com.palmnote.core.database.dao.Xxx
-com.palmnote.data.db.AppDatabase → com.palmnote.core.database.AppDatabase
-com.palmnote.data.db.DbKeyStore → com.palmnote.core.database.DbKeyStore
-com.palmnote.data.db.EncryptedOpenHelperFactory → com.palmnote.core.database.EncryptedOpenHelperFactory
-```
+1. **未拆独立 feature 模块**：bills/asset/life 的业务代码保留在 app 模块（以 `com.palmnote.feature.*` 包名组织 usecase），避免过度模块化。
+2. **namespace 双轨**：core 用 `com.palmnote`，app 用 `com.palmnote.app`。manifest 组件一律显式全限定类名（`com.palmnote.PalmNoteApp` / `com.palmnote.MainActivity` / `com.palmnote.ui.widget.BillWidgetProvider`）。
+3. **资源隔离**：AGP 每模块独立生成 R 类。app 的 `com.palmnote.app.R` 不含 core 资源；core 的 `com.palmnote.R` 在 app 编译 classpath 可用。55 个被 core+app 双引用的 string key 在两模块各放一份（core 引用走 core R，app 引用走 app R）。
+4. **Room Schema**：AppDatabase 的 schema 由 core 导出到 `core/schemas`（v1-v7）；VaultDatabase 留在 app（`app/schemas`，v1-v3）。app 的迁移测试 assets 同时挂载 `$projectDir/schemas` 与 `$rootDir/core/schemas`，保证 `MigrationTestHelper` 能读到两份 schema。
+5. **跨模块 nullable 属性**：core 暴露的 nullable public 属性（如 `asset.warrantyExpireDate`）在 app 内不能 smart cast，需 `val x = asset.foo!!` 局部解包。
+6. **CurrencyUtils / AppContextHolder**：已删除全局 context 反模式，`CurrencyUtils.formatCurrency/formatCompact` 一律显式传 `context`（Composable 内取 `LocalContext.current`，ViewModel 内注入 `@ApplicationContext`）。
 
-### 第 2 步：core/domain（Repository 接口 + EventBus + Service + Util）
+## 模块间引用检查
 
-**移动文件：**
-```
-app/src/main/java/com/palmnote/domain/ → core/src/main/java/com/palmnote/core/domain/
-```
-
-**更新 import：**
-```
-com.palmnote.domain.repository.Xxx → com.palmnote.core.domain.repository.Xxx
-com.palmnote.domain.event.Xxx → com.palmnote.core.domain.event.Xxx
-com.palmnote.domain.service.Xxx → com.palmnote.core.domain.service.Xxx
-com.palmnote.domain.model.Xxx → com.palmnote.core.domain.model.Xxx
-com.palmnote.domain.util.Xxx → com.palmnote.core.domain.util.Xxx
-```
-
-### 第 3 步：core/ui（通用组件 + 主题）
-
-**移动文件：**
-```
-app/src/main/java/com/palmnote/ui/components/ → core/src/main/java/com/palmnote/core/ui/components/
-app/src/main/java/com/palmnote/ui/theme/ → core/src/main/java/com/palmnote/core/ui/theme/
-app/src/main/java/com/palmnote/ui/lock/ → core/src/main/java/com/palmnote/core/ui/lock/
-app/src/main/java/com/palmnote/ui/widget/ → core/src/main/java/com/palmnote/core/ui/widget/
-```
-
-### 第 4 步：feature/bills
-
-**移动文件：**
-```
-app/src/main/java/com/palmnote/ui/bills/ → feature/bills/src/main/java/com/palmnote/feature/bills/ui/
-app/src/main/java/com/palmnote/feature/bills/usecase/ → feature/bills/src/main/java/com/palmnote/feature/bills/usecase/
-app/src/main/java/com/palmnote/data/repository/BillRepositoryImpl.kt → feature/bills/src/main/java/com/palmnote/feature/bills/repository/
-app/src/main/java/com/palmnote/data/export/ → feature/bills/src/main/java/com/palmnote/feature/bills/export/
-app/src/main/java/com/palmnote/data/ocr/BillOcrParser.kt → feature/bills/src/main/java/com/palmnote/feature/bills/ocr/
-```
-
-### 第 5 步：feature/asset
-
-**移动文件：**
-```
-app/src/main/java/com/palmnote/ui/asset/ → feature/asset/src/main/java/com/palmnote/feature/asset/ui/
-app/src/main/java/com/palmnote/feature/asset/usecase/ → feature/asset/src/main/java/com/palmnote/feature/asset/usecase/
-app/src/main/java/com/palmnote/data/repository/AssetRepositoryImpl.kt → feature/asset/src/main/java/com/palmnote/feature/asset/repository/
-```
-
-### 第 6 步：feature/life
-
-**移动文件：**
-```
-app/src/main/java/com/palmnote/ui/life/ → feature/life/src/main/java/com/palmnote/feature/life/ui/
-app/src/main/java/com/palmnote/feature/life/usecase/ → feature/life/src/main/java/com/palmnote/feature/life/usecase/
-app/src/main/java/com/palmnote/data/repository/*Life*.kt → feature/life/src/main/java/com/palmnote/feature/life/repository/
-app/src/main/java/com/palmnote/data/repository/*Achievement*.kt → feature/life/src/main/java/com/palmnote/feature/life/repository/
-app/src/main/java/com/palmnote/data/repository/*CrossLink*.kt → feature/life/src/main/java/com/palmnote/feature/life/repository/
-app/src/main/java/com/palmnote/data/repository/*FocusRecord*.kt → feature/life/src/main/java/com/palmnote/feature/life/repository/
-app/src/main/java/com/palmnote/data/repository/*Plan*.kt → feature/life/src/main/java/com/palmnote/feature/life/repository/
-app/src/main/java/com/palmnote/data/repository/*Mood*.kt → feature/life/src/main/java/com/palmnote/feature/life/repository/
-app/src/main/java/com/palmnote/data/repository/*Moment*.kt → feature/life/src/main/java/com/palmnote/feature/life/repository/
-```
-
-### 第 7 步：保留在 app 模块的文件
-
-```
-app/src/main/java/com/palmnote/MainActivity.kt
-app/src/main/java/com/palmnote/PalmNoteApp.kt
-app/src/main/java/com/palmnote/ui/navigation/
-app/src/main/java/com/palmnote/ui/dashboard/
-app/src/main/java/com/palmnote/ui/search/
-app/src/main/java/com/palmnote/ui/settings/
-app/src/main/java/com/palmnote/ui/backup/
-app/src/main/java/com/palmnote/ui/notification/
-app/src/main/java/com/palmnote/data/datastore/PreferencesManager.kt
-app/src/main/java/com/palmnote/data/lock/AppLockManager.kt
-app/src/main/java/com/palmnote/data/backup/
-app/src/main/java/com/palmnote/data/worker/
-app/src/main/java/com/palmnote/data/sync/
-app/src/main/java/com/palmnote/di/HiltModules.kt
+```bash
+# core 不应反向依赖 app（应输出空）
+grep -r "import com.palmnote.app" core/src/main/java
 ```
 
 ## 注意事项
 
-1. **逐模块迁移**：每迁移一个模块后验证编译通过再继续
-2. **import 路径**：使用 Android Studio 的 Refactor > Move 功能自动更新引用
-3. **Hilt Module**：每个 feature 模块需要自己的 Hilt Module 文件
-4. **Room Schema**：core 模块的 schemas 目录需要配置正确
-5. **feature 之间不依赖**：feature 模块之间不能互相 import
+1. **迁移测试**：`MigrationTestHelper` 从 assets 读取 schema，必须保证 `app/schemas` 与 `core/schemas` 中的 JSON 已提交（缺失会导致 `Migration6To7Test` 等失败）。
+2. **权限声明**：core 若使用需要权限的 API（如 `NotificationManagerCompat.notify` 需 `POST_NOTIFICATIONS`），需在 `core/src/main/AndroidManifest.xml` 声明，否则 `:core:lintDebug` 报 `MissingPermission`。
+3. **字符串 key**：新增 key 时若 core/app 都要用，需在两份 strings.xml 都加，并保持值一致。
+4. **detekt baseline**：`config/detekt/baseline.xml` 为迁移前生成，覆盖历史风格问题；新增代码不应制造 baseline 未覆盖的违规。

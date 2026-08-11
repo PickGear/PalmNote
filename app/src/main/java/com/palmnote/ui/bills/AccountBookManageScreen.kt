@@ -23,7 +23,7 @@ import com.palmnote.ui.theme.AppIcon
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.palmnote.R
+import com.palmnote.app.R
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.palmnote.data.db.entity.AccountBook
 import com.palmnote.data.db.entity.getDisplayName

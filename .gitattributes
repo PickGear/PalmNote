@@ -1,0 +1,24 @@
+# 统一行尾策略：文本文件一律 LF，二进制文件不做行尾转换
+* text=auto eol=lf
+
+# 已跟踪的二进制资源强制 binary（不触发 text 归一化）
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.gif binary
+*.ico binary
+*.ttf binary
+*.otf binary
+*.woff binary
+*.woff2 binary
+*.jar binary
+*.aar binary
+*.so binary
+*.jks binary
+*.keystore binary
+*.onnx binary
+*.bin binary
+*.apk binary
+*.aab binary
+*.zip binary

@@ -9,7 +9,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.palmnote.R
+import com.palmnote.app.R
 import com.palmnote.data.db.entity.CategoryConfig
 import com.palmnote.data.datastore.PreferencesManager
 import com.palmnote.domain.repository.CategoryConfigRepository

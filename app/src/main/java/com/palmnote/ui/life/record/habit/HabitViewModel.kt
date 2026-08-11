@@ -2,7 +2,7 @@ package com.palmnote.ui.life.record.habit
 import javax.inject.Inject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import com.palmnote.R
+import com.palmnote.app.R
 
 import android.content.Context
 import androidx.lifecycle.ViewModel

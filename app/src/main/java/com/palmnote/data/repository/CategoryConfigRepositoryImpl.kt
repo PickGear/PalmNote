@@ -4,7 +4,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 
 import android.content.Context
 import androidx.room.withTransaction
-import com.palmnote.R
+import com.palmnote.app.R
 import com.palmnote.data.db.AppDatabase
 import com.palmnote.data.db.dao.CategoryConfigDao
 import com.palmnote.data.db.dao.CustomTagDao

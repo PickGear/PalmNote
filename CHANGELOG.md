@@ -26,6 +26,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 - CI：迁移测试改用 **Robolectric** JVM 运行（免费 runner 无 KVM，模拟器易挂起）；并行拆分为 quality/build 两 job、每 job 单次 Gradle 调用，依赖 build cache 跨 job 复用
 - `lint.abortOnError` false → true
 - detekt baseline 重生成：冻结既有 UI 代码债务（LifeScreen/BillDao/ReportScreen）
+- **架构双模块化**：拆分 `core`（namespace `com.palmnote`，含 data/domain/通用 UI/资源/AppDatabase schema）与 `app`（namespace `com.palmnote.app`，业务 UI/备份/worker/vault）；移除空壳 `feature` 模块；AppDatabase schema 迁至 `core/schemas`（v1-v7），VaultDatabase 留 `app/schemas`（v1-v3）
+- **CurrencyUtils 去除全局 context 反模式**：删除无 context 重载与 `AppContextHolder`，所有调用点显式传 `context`（Composable 取 `LocalContext.current`，ViewModel 注入 `@ApplicationContext`）
+- 55 个 core+app 双引用 string key 按模块各放一份（AGP 各模块 R 类独立），并补迁 core 缺漏 key
 
 ### Fixed
 - **严重：v2→v3 迁移索引名与实体自动生成名不一致，老用户升级必崩**（`idx_bills_*` → `index_bills_*`）

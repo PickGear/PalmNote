@@ -17,6 +17,7 @@ import com.palmnote.data.ocr.OcrEngine
 import com.palmnote.data.ocr.PaddleOcrEngine
 import com.palmnote.data.repository.*
 import com.palmnote.data.sync.CalendarSyncManager
+import com.palmnote.di.ApplicationScope
 import com.palmnote.domain.repository.*
 import com.palmnote.domain.service.TriggerEngine
 import dagger.Module
@@ -34,10 +35,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Qualifier
 import javax.inject.Singleton
-
-@Qualifier
-@Retention(AnnotationRetention.BINARY)
-annotation class ApplicationScope
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -69,8 +66,9 @@ object AppModule {
     fun provideBackupRepository(
         @ApplicationContext context: Context,
         db: AppDatabase,
-        dbKeyStore: DbKeyStore
-    ): BackupRepository = BackupRepository(context, db, dbKeyStore)
+        dbKeyStore: DbKeyStore,
+        vaultDb: com.palmnote.feature.vault.VaultDatabase
+    ): BackupRepository = BackupRepository(context, db, dbKeyStore, vaultDb)
 
     @Provides
     @Singleton
@@ -126,6 +124,7 @@ object AppModule {
 object OcrModule {
 
     @Provides
+    @Singleton
     fun provideOcrEngine(@ApplicationContext context: Context): OcrEngine =
         PaddleOcrEngine(context)
 }

@@ -50,7 +50,7 @@ import androidx.compose.ui.res.stringResource
 import kotlin.math.roundToInt
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.palmnote.R
+import com.palmnote.app.R
 import com.palmnote.data.db.dao.CategoryCount
 import com.palmnote.domain.model.toMoney
 import com.palmnote.domain.util.CurrencyUtils

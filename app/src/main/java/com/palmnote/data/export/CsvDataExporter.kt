@@ -7,7 +7,7 @@ import com.palmnote.domain.model.BillType
 import com.palmnote.domain.model.PaymentMethod
 import com.palmnote.domain.model.RecurringFrequency
 import com.palmnote.domain.util.AppLogger
-import com.palmnote.R
+import com.palmnote.app.R
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -152,7 +152,7 @@ class CsvDataExporter(
             "amount" to "金额", "yearMonth" to "年月",
             "walletId" to "钱包",
             "toWalletId" to "目标钱包", "paymentMethod" to "支付方式",
-            "merchant" to "商户名称", "linkedAssetId" to "关联物品",
+            "merchant" to "商户名称", "transactionId" to "交易单号", "linkedAssetId" to "关联物品",
             "linkType" to "关联类型",
             "recurringId" to "模板ID", "recurringFrequency" to "周期频率",
             "splitGroupId" to "拆分组ID",
@@ -365,12 +365,25 @@ class CsvDataExporter(
                 // 用 withTransaction（suspend 事务）包裹 suspend DAO 调用；
                 // 旧写法 runInTransaction { runBlocking { ... } } 会与 Room 事务执行器争用单线程而可能死锁。
                 db.withTransaction {
+                    // 已有账单的交易单号集合，用于 transactionId 去重（同一文件内与历史导入均跳过）
+                    val existingBillTxIds = db.billDao().getAllBills().first()
+                        .mapNotNull { it.transactionId.takeIf { t -> t.isNotBlank() } }
+                        .toMutableSet()
+                    val seenTxIds = mutableSetOf<String>()
+
                     for ((filename, bytes) in zipEntries) {
                         if (filename.startsWith("images/") || !filename.endsWith(".csv")) continue
                         val rows = csvToRows(String(bytes, Charsets.UTF_8))
                         if (rows.isEmpty()) continue
                         for (row in rows) {
                             val clazz = CLASS_BY_TYPE_NAME[row["实体类型"]] ?: continue
+                            if (clazz == Bill::class.java) {
+                                val txId = row["transactionId"]?.trim().orEmpty()
+                                if (txId.isNotEmpty()) {
+                                    if (txId in existingBillTxIds || txId in seenTxIds) continue
+                                    seenTxIds.add(txId)
+                                }
+                            }
                             val result = insertRow(row, clazz, pathMapping)
                             if (result != null) {
                                 val (oldId, newId) = result
@@ -826,6 +839,7 @@ class CsvDataExporter(
                 toWalletId = row["toWalletId"]?.toLongOrNull(),
                 paymentMethod = PaymentMethod.from(row["paymentMethod"] ?: ""),
                 merchant = row["merchant"] ?: "",
+                transactionId = row["transactionId"] ?: "",
                 location = row["location"] ?: "",
                 tags = joinToJson(row["tags"]),
                 images = resolveImages(row["images"], pathMapping),

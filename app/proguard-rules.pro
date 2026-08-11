@@ -38,9 +38,7 @@
 -keep class dagger.hilt.** { *; }
 -keep class * extends dagger.hilt.android.internal.managers.ViewComponentManager$FragmentContextWrapper { *; }
 
-# Room DAO（KSP 生成代码）
--keep class * extends androidx.room.RoomDatabase
--keep class * { *; }  # Room DAO 接口
+# Room DAO 由 KSP 自动生成 keep 规则（上面的 RoomDatabase/Entity 规则足够），无需通配全保
 
 # OpenCV（PaddleOCR 依赖，R8 下需保留完整类）
 -keep class org.opencv.** { *; }

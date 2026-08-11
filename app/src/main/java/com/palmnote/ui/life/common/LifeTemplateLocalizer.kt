@@ -2,7 +2,7 @@ package com.palmnote.ui.life.common
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
-import com.palmnote.R
+import com.palmnote.app.R
 import com.palmnote.data.db.entity.LifeTemplate
 
 private fun nameRes(tpl: LifeTemplate): Int? = when (tpl.icon) {

@@ -22,7 +22,7 @@ import androidx.compose.ui.graphics.Color
 
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import com.palmnote.R
+import com.palmnote.app.R
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -115,7 +115,12 @@ fun LifeScreen(
                                 modifier = Modifier.fillMaxWidth()
                             )
                         } else {
-                            Text(stringResource(com.palmnote.R.string.life_title), style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold, color = ModuleLife)
+                            Text(
+                                stringResource(R.string.life_title),
+                                style = MaterialTheme.typography.displaySmall,
+                                fontWeight = FontWeight.Bold,
+                                color = ModuleLife
+                            )
                         }
                     },
                     actions = {
