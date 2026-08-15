@@ -4,6 +4,8 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -625,7 +627,12 @@ internal fun CardManagementDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.dashboard_card_manage), fontWeight = FontWeight.Bold) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                modifier = Modifier
+                    .verticalScroll(rememberScrollState())
+                    .heightIn(max = 420.dp)
+            ) {
                 allConfigs.forEach { config ->
                     Row(
                         modifier = Modifier
