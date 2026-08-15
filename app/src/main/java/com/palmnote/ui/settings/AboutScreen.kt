@@ -352,10 +352,10 @@ PalmNote（以下简称"本应用"）非常重视用户的隐私保护。本隐�
 2.2 存储加密
 - 数据库文件：存储在应用私有目录，受系统保护
 - 备份文件：支持AES-GCM加密，密钥由用户设定
-- 应用锁：PIN/图案密码经加盐哈希处理后存储
+- 应用锁：PIN 密码经加盐哈希处理后存储
 
 2.3 安全措施
-- 应用锁支持PIN码、图案、生物识别（指纹/面部）
+- 应用锁支持PIN码、生物识别（指纹/面部）
 - 备份文件支持端到端加密
 - 无网络通信，不存在数据传输风险
 
@@ -450,10 +450,10 @@ All data is stored in the app's private directory (/data/data/com.palmnote/), pr
 2.2 Storage Encryption
 - Database files: Stored in the app's private directory, protected by the system
 - Backup files: Support AES-GCM encryption with user-defined keys
-- App lock: PIN/pattern passwords are stored as salted hashes
+- App lock: PIN passwords are stored as salted hashes
 
 2.3 Security Measures
-- App lock supports PIN, pattern, and biometric (fingerprint/face) authentication
+- App lock supports PIN and biometric (fingerprint/face) authentication
 - Backup files support end-to-end encryption
 - No network communication means no data transmission risks
 
