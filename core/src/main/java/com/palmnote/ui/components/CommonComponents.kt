@@ -904,7 +904,13 @@ fun DatePickerField(
             onValueChange = {},
             readOnly = true,
             modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 56.dp),
-            placeholder = { Text(placeholder) },
+            placeholder = {
+                Text(
+                    text = placeholder,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            },
             trailingIcon = {
                 IconButton(onClick = { showDatePicker = true }) {
                     Icon(Icons.Outlined.CalendarMonth, contentDescription = null)
@@ -1101,7 +1107,13 @@ fun ModuleSearchBar(
     OutlinedTextField(
         value = query,
         onValueChange = onQueryChange,
-        placeholder = { Text(placeholder) },
+        placeholder = {
+            Text(
+                text = placeholder,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        },
         leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
         trailingIcon = {
             if (query.isNotEmpty()) {
