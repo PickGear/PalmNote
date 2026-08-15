@@ -30,7 +30,7 @@ Please do not disclose security vulnerabilities in public issues.
 ## 安全设计 / Security Design
 
 - **数据库加密 / Database**: SQLCipher 全库加密（AES-256）/ SQLCipher full-database encryption (AES-256)
-- **应用锁 / App Lock**: PIN 使用 PBKDF2-SHA256（120,000 次迭代）哈希 / PBKDF2-SHA256 (120k iterations)
+- **应用锁 / App Lock**: PIN 使用 PBKDF2-SHA256（25,000 次迭代）哈希 / PBKDF2-SHA256 (25k iterations)
 - **密码本 / Password Vault**: 字段级 AES-256-GCM 加密 + 独立主密码（密钥包裹模式）/ field-level AES-256-GCM with a separate master password (key wrapping)
 - **备份加密 / Backup Encryption**: AES-GCM + PBKDF2
 - **数据存储 / Data Storage**: 纯本地 Room 数据库 + DataStore / Local-only Room + DataStore
