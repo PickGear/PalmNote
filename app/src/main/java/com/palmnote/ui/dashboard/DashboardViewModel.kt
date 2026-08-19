@@ -11,9 +11,11 @@ import com.palmnote.data.db.entity.Budget
 import com.palmnote.data.db.entity.Goal
 import com.palmnote.data.datastore.PreferencesManager
 import com.palmnote.data.db.entity.CategoryConfig
+import com.palmnote.domain.model.SubscriptionDueItem
 import com.palmnote.domain.repository.*
 import com.palmnote.domain.util.DateUtils
 import com.palmnote.feature.vault.VaultRepository
+import com.palmnote.ui.theme.AppIcon
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
@@ -35,10 +37,24 @@ data class DashboardState(
     val upcomingAnniversaries: List<Anniversary> = emptyList(),
     val recentGoals: List<Goal> = emptyList(),
     val assetDistribution: List<CategoryCount> = emptyList(),
-    val vaultCount: Int = 0
+    val vaultCount: Int = 0,
+    val habitTotal: Int = 0,
+    val habitChecked: Int = 0,
+    val habitRows: List<HabitTodayRow> = emptyList(),
+    val upcomingSubscriptions: List<SubscriptionDueItem> = emptyList()
+)
+
+@Stable
+data class HabitTodayRow(
+    val goalId: Long,
+    val title: String,
+    val icon: AppIcon,
+    val frequency: String,
+    val isCheckedToday: Boolean
 )
 
 @HiltViewModel
+@Suppress("LongParameterList")
 class DashboardViewModel @Inject constructor(
     private val assetRepository: AssetRepository,
     private val billRepository: BillRepository,
@@ -47,6 +63,8 @@ class DashboardViewModel @Inject constructor(
     private val anniversaryRepository: AnniversaryRepository,
     private val preferencesManager: PreferencesManager,
     private val vaultRepository: VaultRepository,
+    private val walletRepository: WalletRepository,
+    private val lifeItemRepository: LifeItemRepository,
     private val cachedCategoryConfigs: @JvmSuppressWildcards StateFlow<List<CategoryConfig>>
 ) : ViewModel() {
 
@@ -124,6 +142,18 @@ class DashboardViewModel @Inject constructor(
         saveConfigs()
     }
 
+    fun checkInHabit(goalId: Long) {
+        viewModelScope.launch {
+            try {
+                val today = DateUtils.getTodayStart()
+                goalRepository.insertCheckIn(com.palmnote.data.db.entity.GoalCheckIn(goalId = goalId, date = today))
+                goalRepository.incrementGoalProgress(goalId)
+            } catch (e: Exception) {
+                AppLogger.e("DashboardVM", "checkInHabit failed", e)
+            }
+        }
+    }
+
     private fun loadBudgetReminder() {
         viewModelScope.launch {
             preferencesManager.budgetReminderEnabled.collect { enabled ->
@@ -134,61 +164,76 @@ class DashboardViewModel @Inject constructor(
 
     private fun loadDashboardData() {
         viewModelScope.launch {
-            val currentYearMonth = DateUtils.getCurrentYearMonth()
-            val assetFlow = combine(
-                assetRepository.getTotalAssetValue(),
-                assetRepository.getTotalAssetCount(),
-                assetRepository.getCategoryDistribution()
-            ) { total, count, distribution ->
-                Triple(total ?: 0L, count, distribution)
-            }
-            val billFlow = combine(
-                billRepository.getMonthlyExpense(currentYearMonth),
-                billRepository.getMonthlyIncome(currentYearMonth)
-            ) { expense, income ->
-                Pair(expense ?: 0L, income ?: 0L)
-            }
-            val gaFlow = combine(
-                goalRepository.getGoalCount(),
-                goalRepository.getCompletedGoalCount(),
-                anniversaryRepository.getAnniversaryCount(),
-                anniversaryRepository.getAllAnniversaries(),
-                goalRepository.getRecentGoals()
-            ) { goalCount, completedCount, annivCount, anniversaries, goals ->
-                GoalAnnivData(goalCount, completedCount, annivCount, anniversaries, goals)
-            }
-            val budgetFlow = budgetRepository.getBudgetByMonthFlow(currentYearMonth)
-            combine(assetFlow, billFlow, gaFlow, budgetFlow) { assetData, billData, gaData, budget ->
-                val s = _state.value
-                DashboardState(
-                    totalAssetValue = assetData.first,
-                    activeAssetCount = assetData.second,
-                    monthlyExpense = billData.first,
-                    monthlyIncome = billData.second,
-                    budget = budget,
-                    budgetReminderEnabled = s.budgetReminderEnabled,
-                    goalCount = gaData.goalCount,
-                    completedGoalCount = gaData.completedGoalCount,
-                    anniversaryCount = gaData.anniversaryCount,
-                    upcomingAnniversaries = gaData.anniversaries.sortedBy { it.daysUntil }.take(3),
-                    recentGoals = gaData.goals.take(3),
-                    assetDistribution = assetData.third
-                )
-            }.catch { e -> AppLogger.e("DashboardVM", "loadDashboardData failed", e) }.collect { s -> _state.update { it.copy(
-                totalAssetValue = s.totalAssetValue,
-                activeAssetCount = s.activeAssetCount,
-                monthlyExpense = s.monthlyExpense,
-                monthlyIncome = s.monthlyIncome,
-                budget = s.budget,
-                goalCount = s.goalCount,
-                completedGoalCount = s.completedGoalCount,
-                anniversaryCount = s.anniversaryCount,
-                upcomingAnniversaries = s.upcomingAnniversaries,
-                recentGoals = s.recentGoals,
-                assetDistribution = s.assetDistribution
-            )}
-            }
+            buildDashboardFlow()
+                .catch { e -> AppLogger.e("DashboardVM", "loadDashboardData failed", e) }
+                .collect { (c, subs) ->
+                    _state.update { s -> s.copy(
+                        totalAssetValue = c.assetData.first,
+                        activeAssetCount = c.assetData.second,
+                        monthlyExpense = c.billData.first,
+                        monthlyIncome = c.billData.second,
+                        budget = c.budget,
+                        goalCount = c.gaData.goalCount,
+                        completedGoalCount = c.gaData.completedGoalCount,
+                        anniversaryCount = c.gaData.anniversaryCount,
+                        upcomingAnniversaries = c.gaData.anniversaries.sortedBy { it.daysUntil }.take(3),
+                        recentGoals = c.gaData.goals.take(3),
+                        assetDistribution = c.assetData.third,
+                        habitTotal = c.habitData.total,
+                        habitChecked = c.habitData.checked,
+                        habitRows = c.habitData.rows,
+                        upcomingSubscriptions = subs
+                    )}
+                }
         }
+    }
+
+    private fun buildDashboardFlow(): Flow<Pair<CoreData, List<SubscriptionDueItem>>> {
+        val currentYearMonth = DateUtils.getCurrentYearMonth()
+        val todayStart = DateUtils.getTodayStart()
+        val tomorrowStart = todayStart + DateUtils.MILLIS_PER_DAY
+        // NET_WORTH 主数值 = Wallet 账户余额(启用非信用卡钱包),不再用物品购买总价
+        val assetFlow = combine(
+            walletRepository.getTotalBalance(),
+            assetRepository.getTotalAssetCount(),
+            assetRepository.getCategoryDistribution()
+        ) { balance, count, distribution ->
+            Triple(balance ?: 0L, count, distribution)
+        }
+        val billFlow = combine(
+            billRepository.getMonthlyExpense(currentYearMonth),
+            billRepository.getMonthlyIncome(currentYearMonth)
+        ) { expense, income ->
+            Pair(expense ?: 0L, income ?: 0L)
+        }
+        val gaFlow = combine(
+            goalRepository.getNonHabitGoalCount(),
+            goalRepository.getCompletedNonHabitGoalCount(),
+            anniversaryRepository.getAnniversaryCount(),
+            anniversaryRepository.getAllAnniversaries(),
+            goalRepository.getRecentGoals()
+        ) { goalCount, completedCount, annivCount, anniversaries, goals ->
+            GoalAnnivData(goalCount, completedCount, annivCount, anniversaries, goals)
+        }
+        val habitFlow = combine(
+            goalRepository.getHabitGoals(),
+            goalRepository.getTodayCheckedGoalIds(todayStart, tomorrowStart)
+        ) { habits, checkedIds ->
+            val checked = checkedIds.toSet()
+            HabitData(
+                total = habits.size,
+                checked = habits.count { it.id in checked },
+                rows = habits.map {
+                    HabitTodayRow(it.id, it.title, it.icon, it.frequency, it.id in checked)
+                }
+            )
+        }
+        val budgetFlow = budgetRepository.getBudgetByMonthFlow(currentYearMonth)
+        val subFlow = lifeItemRepository.getSubscriptionsDueWithin(7)
+        val core = combine(assetFlow, billFlow, gaFlow, budgetFlow, habitFlow) { assetData, billData, gaData, budget, habitData ->
+            CoreData(assetData, billData, gaData, budget, habitData)
+        }
+        return combine(core, subFlow) { c, subs -> c to subs }
     }
     private fun loadVaultData() {
         viewModelScope.launch {
@@ -208,4 +253,18 @@ private data class GoalAnnivData(
     val anniversaryCount: Int,
     val anniversaries: List<Anniversary>,
     val goals: List<Goal>
+)
+
+private data class HabitData(
+    val total: Int,
+    val checked: Int,
+    val rows: List<HabitTodayRow>
+)
+
+private data class CoreData(
+    val assetData: Triple<Long, Int, List<CategoryCount>>,
+    val billData: Pair<Long, Long>,
+    val gaData: GoalAnnivData,
+    val budget: Budget?,
+    val habitData: HabitData
 )

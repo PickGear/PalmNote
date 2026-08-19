@@ -27,6 +27,9 @@ interface GoalCheckInDao {
     @Query("SELECT * FROM goal_check_ins WHERE goalId = :goalId AND date >= :dayStart AND date < :dayEnd LIMIT 1")
     suspend fun getTodayCheckIn(goalId: Long, dayStart: Long, dayEnd: Long): GoalCheckIn?
 
+    @Query("SELECT DISTINCT goalId FROM goal_check_ins WHERE date >= :dayStart AND date < :dayEnd")
+    fun getTodayCheckedGoalIds(dayStart: Long, dayEnd: Long): Flow<List<Long>>
+
     @Query("SELECT SUM(count) FROM goal_check_ins WHERE goalId = :goalId")
     fun getTotalCount(goalId: Long): Flow<Int?>
 

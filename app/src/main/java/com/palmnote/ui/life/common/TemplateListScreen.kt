@@ -2,9 +2,6 @@ package com.palmnote.ui.life.common
 import javax.inject.Inject
 import dagger.hilt.android.lifecycle.HiltViewModel
 
-import androidx.compose.foundation.background
-import androidx.compose.ui.draw.alpha
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
@@ -21,10 +18,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewModelScope
@@ -34,7 +29,6 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import com.palmnote.data.db.entity.LifeItem
 import com.palmnote.data.db.entity.LifeTemplate
 import com.palmnote.domain.repository.LifeItemRepository
-import com.palmnote.ui.theme.iconFromName
 import com.palmnote.ui.life.common.displayName
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.Flow
@@ -115,28 +109,17 @@ fun GenericTemplateListScreen(
                 }
             }
         } else {
-            LazyColumn(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+            LazyColumn(modifier = Modifier.fillMaxSize().padding(innerPadding).padding(horizontal = 16.dp)) {
                 items(pagingItems.itemCount, key = { pagingItems[it]?.id ?: it }) { idx ->
                     val item = pagingItems[idx] ?: return@items
-                    val isDone = item.status == "COMPLETED" || item.status == "ARCHIVED"
-                    SwipeableItem(onDelete = { viewModel.deleteItem(item.id) }) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().height(56.dp).clickable { onItemClick(item.id) }.padding(horizontal = 16.dp).alpha(if (isDone) 0.6f else 1f),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(iconFromName(template.icon), null, tint = tplColor, modifier = Modifier.size(24.dp))
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(item.title, fontWeight = FontWeight.Medium, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            if (item.note.isNotBlank()) {
-                                Text(item.note, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            }
-                        }
-                        Icon(Icons.Default.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
-                    }
-                    }
-                    if (idx < pagingItems.itemCount - 1) {
-                        HorizontalDivider(modifier = Modifier.padding(start = 52.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                    SwipeableItem(onDelete = { viewModel.deleteItem(item.id) }, modifier = Modifier.padding(vertical = 2.dp)) {
+                        RichCard(
+                            tpl = template,
+                            item = item,
+                            iconColor = tplColor,
+                            variant = "AUTO",
+                            onClick = { onItemClick(item.id) }
+                        )
                     }
                 }
             }

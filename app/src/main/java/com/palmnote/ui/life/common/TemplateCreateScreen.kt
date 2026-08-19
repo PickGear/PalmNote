@@ -1,39 +1,39 @@
 package com.palmnote.ui.life.common
 
-import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.palmnote.app.R
 import com.palmnote.ui.components.SecondaryTopAppBar
 import com.palmnote.ui.components.toComposeColor
-import com.palmnote.data.db.entity.LifeTemplate
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.palmnote.domain.model.FieldType
 import com.palmnote.ui.theme.*
-import kotlinx.serialization.json.*
 import java.util.UUID
 
 data class TemplateField(
@@ -41,174 +41,411 @@ data class TemplateField(
     var label: String = "",
     var type: String = "TEXT",
     var required: Boolean = false,
-    var options: List<String> = emptyList()
+    var options: List<String> = emptyList(),
+    var showInCard: Boolean = false,
+    var showAsProgress: Boolean = false
 )
 
-@OptIn(ExperimentalMaterial3Api::class)
+private val templateFieldsSaver: Saver<List<TemplateField>, List<String>> = Saver(
+    save = { fields ->
+        fields.map { f ->
+            listOf(
+                f.key, f.label, f.type, f.required.toString(),
+                f.options.joinToString(","), f.showInCard.toString(), f.showAsProgress.toString()
+            ).joinToString("\u0001")
+        }
+    },
+    restore = { raw ->
+        raw.map { chunk ->
+            val parts = chunk.split("\u0001")
+            TemplateField(
+                key = parts.getOrElse(0) { "" },
+                label = parts.getOrElse(1) { "" },
+                type = parts.getOrElse(2) { "TEXT" },
+                required = parts.getOrElse(3) { "false" }.toBoolean(),
+                options = parts.getOrElse(4) { "" }.split(",").filter { it.isNotBlank() },
+                showInCard = parts.getOrElse(5) { "false" }.toBoolean(),
+                showAsProgress = parts.getOrElse(6) { "false" }.toBoolean()
+            )
+        }
+    }
+)
+
+@Suppress("LongMethod", "CyclomaticComplexMethod")
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun TemplateCreateScreen(
     onBack: () -> Unit,
     onCreated: (Long) -> Unit,
     viewModel: TemplateCreateViewModel = hiltViewModel()
 ) {
-    var step by remember { mutableIntStateOf(0) }
-    var templateType by remember { mutableStateOf("PLAN") }
-    var name by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
-    var selectedIcon by remember { mutableStateOf("EditNote") }
-    var selectedColor by remember { mutableStateOf("#7C8CF0") }
-    var fields by remember { mutableStateOf(listOf(TemplateField())) }
-    var selectedLayout by remember { mutableStateOf("LIST") }
+    var name by rememberSaveable { mutableStateOf("") }
+    var description by rememberSaveable { mutableStateOf("") }
+    var category by rememberSaveable { mutableStateOf("") }
+    var customCategoryInput by rememberSaveable { mutableStateOf("") }
+    var selectedIcon by rememberSaveable { mutableStateOf("savings") }
+    var selectedColor by rememberSaveable { mutableStateOf("#7C8CF0") }
+    var fields by rememberSaveable(stateSaver = templateFieldsSaver) { mutableStateOf(listOf(TemplateField())) }
 
-    val icons = listOf("EditNote", "CheckCircle", "Savings", "ShoppingCart", "Flight", "MenuBook", "School", "Timer", "CalendarMonth", "Favorite", "Cake", "Notifications", "AutoStories", "Mood", "BarChart", "Settings")
+    val icons = listOf(
+        "savings", "shopping_cart", "checklist", "calendar_month", "mood", "book",
+        "timer", "cake", "assessment", "barchart", "favorite", "star", "home", "settings", "school", "flight"
+    )
     val colors = listOf("#EC407A", "#F07070", "#FF7043", "#FFCA28", "#66BB6A", "#50C890", "#26A69A", "#00ACC1", "#42A5F5", "#5C6BC0", "#AB47BC", "#7C8CF0", "#78909C", "#8D6E63", "#E53935", "#1E88E5")
+
+    val suggestedCategories = listOf(
+        stringResource(R.string.life_category_plan),
+        stringResource(R.string.life_category_time),
+        stringResource(R.string.life_category_record),
+        stringResource(R.string.life_category_work),
+        stringResource(R.string.life_category_study),
+        stringResource(R.string.life_category_health),
+        stringResource(R.string.life_category_family)
+    )
 
     val createdId: Long? by viewModel.createdTemplateId.collectAsStateWithLifecycle()
     LaunchedEffect(createdId) {
         createdId?.let { onCreated(it) }
     }
 
+    val canSave = name.isNotBlank() && category.isNotBlank() && fields.any { it.label.isNotBlank() }
+
     Scaffold(
         topBar = {
             SecondaryTopAppBar(
-                title = { Text(if (step == 0) stringResource(R.string.life_template_step_type) else if (step == 1) stringResource(R.string.life_template_step_basic) else if (step == 2) stringResource(R.string.life_template_step_fields) else stringResource(R.string.life_template_step_layout), fontWeight = FontWeight.Bold) },
-                navigationIcon = { IconButton(onClick = { if (step > 0) step-- else onBack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.life_back)) } },
+                title = { Text(stringResource(R.string.life_template_new), fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.life_back))
+                    }
+                },
+                actions = {
+                    TextButton(
+                        onClick = {
+                            viewModel.createTemplate(
+                                name = name.trim(),
+                                category = category.trim(),
+                                description = description.trim(),
+                                icon = selectedIcon,
+                                color = selectedColor,
+                                fields = fields.filter { it.label.isNotBlank() }
+                            )
+                        },
+                        enabled = canSave,
+                        modifier = Modifier.padding(end = 4.dp)
+                    ) {
+                        Text(stringResource(R.string.save), fontWeight = FontWeight.Medium)
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
-        Column(modifier = Modifier.fillMaxSize().padding(innerPadding).padding(horizontal = 16.dp)) {
-            LinearProgressIndicator(progress = { (step + 1) / 4f }, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), color = ModuleLife)
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(stringResource(R.string.life_template_step_format, step + 1), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            Spacer(modifier = Modifier.height(16.dp))
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp)
+        ) {
+            Spacer(modifier = Modifier.height(12.dp))
+            SectionHeader(stringResource(R.string.life_template_step_basic))
 
-            AnimatedContent(targetState = step, transitionSpec = { fadeIn() + slideInHorizontally() togetherWith fadeOut() + slideOutHorizontally() }) { currentStep ->
-                when (currentStep) {
-                    0 -> TypeStep(selectedType = templateType, onSelect = { templateType = it })
-                    1 -> BasicInfoStep(name = name, onNameChange = { name = it }, description = description, onDescChange = { description = it }, selectedIcon = selectedIcon, onIconSelect = { selectedIcon = it }, selectedColor = selectedColor, onColorSelect = { selectedColor = it }, icons = icons, colors = colors)
-                    2 -> FieldStep(fields = fields, onFieldsChange = { fields = it })
-                    3 -> LayoutStep(selectedLayout = selectedLayout, onSelect = { selectedLayout = it })
+            OutlinedTextField(
+                value = name,
+                onValueChange = { name = it },
+                label = { Text(stringResource(R.string.life_template_name)) },
+                placeholder = { Text(stringResource(R.string.life_template_name_hint), fontSize = 13.sp) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            OutlinedTextField(
+                value = description,
+                onValueChange = { description = it },
+                label = { Text(stringResource(R.string.life_template_desc)) },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(stringResource(R.string.life_template_category), fontWeight = FontWeight.Medium, fontSize = 14.sp)
+            Spacer(modifier = Modifier.height(8.dp))
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                suggestedCategories.forEach { cat ->
+                    FilterChip(
+                        selected = category == cat,
+                        onClick = { category = cat },
+                        label = { Text(cat, fontSize = 12.sp) }
+                    )
                 }
             }
+            Spacer(modifier = Modifier.height(8.dp))
+            OutlinedTextField(
+                value = customCategoryInput,
+                onValueChange = { customCategoryInput = it },
+                label = { Text(stringResource(R.string.life_template_category_custom)) },
+                placeholder = { Text(stringResource(R.string.life_template_category_custom_hint)) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(
+                    onDone = {
+                        val text = customCategoryInput.trim()
+                        if (text.isNotEmpty()) category = text
+                        customCategoryInput = ""
+                    }
+                )
+            )
+            if (category.isNotBlank()) {
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    stringResource(R.string.life_template_category_selected, category),
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
 
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.height(20.dp))
+            SectionHeader(stringResource(R.string.life_template_section_fields))
 
-            Button(
-                onClick = {
-                    if (step < 3) step++
-                    else {
-                        viewModel.createTemplate(
-                            name = name,
-                            category = templateType,
-                            description = description,
-                            icon = selectedIcon,
-                            color = selectedColor,
-                            fields = fields,
-                            layout = selectedLayout
+            fields.forEachIndexed { index, field ->
+                FieldEditorCard(
+                    index = index,
+                    field = field,
+                    canDelete = fields.size > 1,
+                    onFieldChange = { updated -> fields = fields.toMutableList().also { list -> list[index] = updated } },
+                    onDelete = { fields = fields.filterIndexed { i, _ -> i != index } }
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+            }
+            OutlinedButton(
+                onClick = { fields = fields + TemplateField() },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(Icons.Default.Add, null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(stringResource(R.string.life_template_add_field))
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+            SectionHeader(stringResource(R.string.life_template_select_icon))
+            Spacer(modifier = Modifier.height(8.dp))
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                icons.forEach { icon ->
+                    val interactionSource = remember { MutableInteractionSource() }
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(
+                                if (selectedIcon == icon) ModuleLife.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant
+                            )
+                            .then(
+                                if (selectedIcon == icon) Modifier.border(1.5.dp, ModuleLife, RoundedCornerShape(10.dp)) else Modifier
+                            )
+                            .clickable(interactionSource = interactionSource, indication = null) { selectedIcon = icon },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            iconFromName(icon),
+                            null,
+                            tint = if (selectedIcon == icon) ModuleLife else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(22.dp)
                         )
                     }
-                },
-                modifier = Modifier.fillMaxWidth().height(48.dp).padding(bottom = 16.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = ModuleLife),
-                enabled = if (step == 0) true else if (step == 1) name.isNotBlank() else true
+                }
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+            SectionHeader(stringResource(R.string.life_template_select_color))
+            Spacer(modifier = Modifier.height(8.dp))
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text(if (step < 3) stringResource(R.string.life_template_next) else stringResource(R.string.life_template_create), fontWeight = FontWeight.Medium)
-            }
-        }
-    }
-}
-
-@Composable
-private fun TypeStep(selectedType: String, onSelect: (String) -> Unit) {
-    val types = listOf(
-        Triple("PLAN", stringResource(R.string.life_template_type_plan), stringResource(R.string.life_template_type_plan_desc)),
-        Triple("TIME", stringResource(R.string.life_template_type_time), stringResource(R.string.life_template_type_time_desc)),
-        Triple("RECORD", stringResource(R.string.life_template_type_record), stringResource(R.string.life_template_type_record_desc))
-    )
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        types.forEach { (key, title, subtitle) ->
-            Card(
-                modifier = Modifier.fillMaxWidth().clickable { onSelect(key) },
-                shape = MaterialTheme.shapes.large,
-                colors = CardDefaults.cardColors(containerColor = if (selectedType == key) ModuleLife.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surface),
-                border = if (selectedType == key) ButtonDefaults.outlinedButtonBorder(enabled = true).copy(1.dp, brush = androidx.compose.ui.graphics.SolidColor(ModuleLife)) else null
-            ) {
-                Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Box(modifier = Modifier.size(48.dp).background(if (selectedType == key) ModuleLife.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
-                        Icon(if (key == "PLAN") Icons.Default.Star else if (key == "TIME") Icons.Default.CalendarMonth else Icons.Default.AutoStories, null, tint = if (selectedType == key) ModuleLife else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(24.dp))
-                    }
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Column {
-                        Text(title, fontWeight = FontWeight.Medium, fontSize = 16.sp)
-                        Text(subtitle, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                colors.forEach { color ->
+                    val interactionSource = remember { MutableInteractionSource() }
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(color.toComposeColor(ModuleLife))
+                            .then(
+                                if (selectedColor == color) {
+                                    Modifier.border(2.dp, MaterialTheme.colorScheme.onSurface, CircleShape)
+                                } else {
+                                    Modifier
+                                }
+                            )
+                            .clickable(interactionSource = interactionSource, indication = null) { selectedColor = color },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (selectedColor == color) {
+                            Icon(Icons.Default.Check, null, tint = Color.White, modifier = Modifier.size(16.dp))
+                        }
                     }
                 }
             }
+            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }
 
 @Composable
-private fun BasicInfoStep(name: String, onNameChange: (String) -> Unit, description: String, onDescChange: (String) -> Unit, selectedIcon: String, onIconSelect: (String) -> Unit, selectedColor: String, onColorSelect: (String) -> Unit, icons: List<String>, colors: List<String>) {
-    LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        item { OutlinedTextField(value = name, onValueChange = onNameChange, label = { Text(stringResource(R.string.life_template_name)) }, singleLine = true, modifier = Modifier.fillMaxWidth()) }
-        item { OutlinedTextField(value = description, onValueChange = onDescChange, label = { Text(stringResource(R.string.life_template_desc)) }, modifier = Modifier.fillMaxWidth()) }
-        item { Text(stringResource(R.string.life_template_select_icon), fontWeight = FontWeight.Medium, fontSize = 14.sp) }
-        item { LazyVerticalGrid(columns = GridCells.Fixed(8), modifier = Modifier.height(120.dp)) { items(icons) { icon -> Box(modifier = Modifier.size(40.dp).clip(RoundedCornerShape(8.dp)).background(if (selectedIcon == icon) ModuleLife.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onIconSelect(icon) }, contentAlignment = Alignment.Center) { Icon(iconFromName(icon), null, tint = if (selectedIcon == icon) ModuleLife else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp)) } } } }
-        item { Text(stringResource(R.string.life_template_select_color), fontWeight = FontWeight.Medium, fontSize = 14.sp) }
-        item { LazyVerticalGrid(columns = GridCells.Fixed(6), modifier = Modifier.height(80.dp)) { items(colors) { color -> Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(color.toComposeColor(ModuleLife)).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onColorSelect(color) }.then(if (selectedColor == color) Modifier.border(2.dp, MaterialTheme.colorScheme.onSurface, CircleShape) else Modifier), contentAlignment = Alignment.Center) { if (selectedColor == color) Icon(Icons.Default.Check, null, tint = Color.White, modifier = Modifier.size(16.dp)) } } } }
-    }
+private fun SectionHeader(title: String) {
+    Text(title, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = ModuleLife, modifier = Modifier.padding(bottom = 8.dp))
 }
 
+@Suppress("LongMethod")
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun FieldStep(fields: List<TemplateField>, onFieldsChange: (List<TemplateField>) -> Unit) {
-    val fieldTypes = listOf("TEXT" to stringResource(R.string.life_template_field_text), "NUMBER" to stringResource(R.string.life_template_field_number), "DATE" to stringResource(R.string.life_template_field_date), "SELECT" to stringResource(R.string.life_template_field_select), "DECIMAL" to stringResource(R.string.life_template_field_decimal))
-    LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        items(fields.size, key = { it }) { index ->
-            Card(shape = MaterialTheme.shapes.large, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
-                Column(modifier = Modifier.padding(12.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(stringResource(R.string.life_template_field_index, index + 1), fontWeight = FontWeight.Medium, fontSize = 13.sp, modifier = Modifier.weight(1f))
-                        if (fields.size > 1) IconButton(onClick = { onFieldsChange(fields.toMutableList().apply { removeAt(index) }) }, modifier = Modifier.size(24.dp)) { Icon(Icons.Default.Close, null, modifier = Modifier.size(16.dp)) }
-                    }
-                    OutlinedTextField(value = fields[index].label, onValueChange = { onFieldsChange(fields.toMutableList().apply { this[index] = this[index].copy(label = it) }) }, label = { Text(stringResource(R.string.life_template_field_name)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        fieldTypes.forEach { (key, label) -> FilterChip(selected = fields[index].type == key, onClick = { onFieldsChange(fields.toMutableList().apply { this[index] = this[index].copy(type = key) }) }, label = { Text(label, fontSize = 11.sp) }) }
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Checkbox(checked = fields[index].required, onCheckedChange = { onFieldsChange(fields.toMutableList().apply { this[index] = this[index].copy(required = it) }) })
-                        Text(stringResource(R.string.life_template_field_required), fontSize = 13.sp)
+private fun FieldEditorCard(
+    index: Int,
+    field: TemplateField,
+    canDelete: Boolean,
+    onFieldChange: (TemplateField) -> Unit,
+    onDelete: () -> Unit
+) {
+    Card(
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    stringResource(R.string.life_template_field_index, index + 1),
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 13.sp,
+                    modifier = Modifier.weight(1f)
+                )
+                if (canDelete) {
+                    IconButton(onClick = onDelete, modifier = Modifier.size(24.dp)) {
+                        Icon(Icons.Default.Close, stringResource(R.string.delete), modifier = Modifier.size(16.dp))
                     }
                 }
             }
-        }
-        item { OutlinedButton(onClick = { onFieldsChange(fields + TemplateField()) }, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Default.Add, null); Spacer(modifier = Modifier.width(8.dp)); Text(stringResource(R.string.life_template_add_field)) } }
-    }
-}
+            OutlinedTextField(
+                value = field.label,
+                onValueChange = { onFieldChange(field.copy(label = it)) },
+                label = { Text(stringResource(R.string.life_template_field_name)) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(8.dp))
 
-@Composable
-private fun LayoutStep(selectedLayout: String, onSelect: (String) -> Unit) {
-    val layouts = listOf(
-        Triple("LIST", stringResource(R.string.life_template_layout_list), Icons.Default.Menu),
-        Triple("TIMELINE", stringResource(R.string.life_template_layout_timeline), Icons.Default.Timeline),
-        Triple("CALENDAR", stringResource(R.string.life_template_layout_calendar), Icons.Default.CalendarMonth),
-        Triple("STATS", stringResource(R.string.life_template_layout_stats), Icons.Default.BarChart)
-    )
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        layouts.forEach { (key, label, icon) ->
-            Card(modifier = Modifier.fillMaxWidth().clickable { onSelect(key) }, shape = MaterialTheme.shapes.large, colors = CardDefaults.cardColors(containerColor = if (selectedLayout == key) ModuleLife.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surface)) {
-                Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(icon, null, tint = if (selectedLayout == key) ModuleLife else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(24.dp))
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Text(label, fontWeight = FontWeight.Medium, fontSize = 16.sp)
+            var expanded by remember { mutableStateOf(false) }
+            val typeOptions = fieldTypeOptions()
+            ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
+                OutlinedTextField(
+                    value = typeOptions[field.type] ?: field.type,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text(stringResource(R.string.life_template_field_type)) },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                    modifier = Modifier.fillMaxWidth().menuAnchor(type = MenuAnchorType.PrimaryNotEditable)
+                )
+                ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                    typeOptions.entries.forEach { (type, label) ->
+                        DropdownMenuItem(
+                            text = { Text(label) },
+                            enabled = type != "IMAGE",
+                            onClick = {
+                                onFieldChange(field.copy(type = type))
+                                expanded = false
+                            }
+                        )
+                    }
                 }
+            }
+
+            if (field.type == "SELECT" || field.type == "MULTI_SELECT") {
+                Spacer(modifier = Modifier.height(8.dp))
+                var optionsText by rememberSaveable(field.key) { mutableStateOf(field.options.joinToString(",")) }
+                OutlinedTextField(
+                    value = optionsText,
+                    onValueChange = {
+                        optionsText = it
+                        onFieldChange(field.copy(options = it.split(",").map(String::trim).filter(String::isNotEmpty)))
+                    },
+                    label = { Text(stringResource(R.string.life_template_field_options_hint)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Checkbox(checked = field.required, onCheckedChange = { onFieldChange(field.copy(required = it)) })
+                Text(stringResource(R.string.life_template_field_required), fontSize = 13.sp)
+                Spacer(modifier = Modifier.width(8.dp))
+                Checkbox(checked = field.showInCard, onCheckedChange = { onFieldChange(field.copy(showInCard = it)) })
+                Text(stringResource(R.string.life_template_field_show_in_card), fontSize = 13.sp)
+                Spacer(modifier = Modifier.width(8.dp))
+                Checkbox(checked = field.showAsProgress, onCheckedChange = { onFieldChange(field.copy(showAsProgress = it)) })
+                Text(stringResource(R.string.life_template_field_show_as_progress), fontSize = 13.sp)
             }
         }
     }
+}
+
+@Suppress("CyclomaticComplexMethod")
+@Composable
+private fun fieldTypeOptions(): Map<String, String> {
+    val text = stringResource(R.string.life_template_field_text)
+    val number = stringResource(R.string.life_template_field_number)
+    val date = stringResource(R.string.life_template_field_date)
+    val select = stringResource(R.string.life_template_field_select)
+    val shortText = stringResource(R.string.life_template_field_short_text)
+    val currency = stringResource(R.string.life_template_field_currency)
+    val datetime = stringResource(R.string.life_template_field_datetime)
+    val richText = stringResource(R.string.life_template_field_rich_text)
+    val file = stringResource(R.string.life_template_field_file)
+    val time = stringResource(R.string.life_template_field_time)
+    val boolean = stringResource(R.string.life_template_field_boolean)
+    val multiSelect = stringResource(R.string.life_template_field_multi_select)
+    val rating = stringResource(R.string.life_template_field_rating)
+    val slider = stringResource(R.string.life_template_field_slider)
+    val percentage = stringResource(R.string.life_template_field_percentage)
+    val url = stringResource(R.string.life_template_field_url)
+    val email = stringResource(R.string.life_template_field_email)
+    val phone = stringResource(R.string.life_template_field_phone)
+    val color = stringResource(R.string.life_template_field_color)
+    val location = stringResource(R.string.life_template_field_location)
+    val duration = stringResource(R.string.life_template_field_duration)
+    val image = stringResource(R.string.life_template_field_image)
+    val options = mutableMapOf<String, String>()
+    FieldType.entries.forEach { type ->
+        options[type.name] = when (type) {
+            FieldType.TEXT -> text
+            FieldType.NUMBER -> number
+            FieldType.DATE -> date
+            FieldType.SELECT -> select
+            FieldType.SHORT_TEXT -> shortText
+            FieldType.CURRENCY -> currency
+            FieldType.DATETIME -> datetime
+            FieldType.RICH_TEXT -> richText
+            FieldType.FILE -> file
+            FieldType.TIME -> time
+            FieldType.BOOLEAN -> boolean
+            FieldType.MULTI_SELECT -> multiSelect
+            FieldType.RATING -> rating
+            FieldType.SLIDER -> slider
+            FieldType.PERCENTAGE, FieldType.PERCENT -> percentage
+            FieldType.URL -> url
+            FieldType.EMAIL -> email
+            FieldType.PHONE -> phone
+            FieldType.COLOR -> color
+            FieldType.LOCATION -> location
+            FieldType.DURATION -> duration
+            FieldType.IMAGE -> image
+        }
+    }
+    return options
 }

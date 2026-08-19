@@ -15,6 +15,22 @@ class LifeDataSeeder(
             appDatabase.withTransaction {
                 seedTemplates()
             }
+        } else {
+            refreshBuiltinFieldsConfigs()
+        }
+    }
+
+    /** 存量安装:把内置模板的 fieldsConfig 同步为种子值(仅修复内置模板,不触碰用户自定义模板)。 */
+    private suspend fun refreshBuiltinFieldsConfigs() {
+        val existing = templateRepo.getAllTemplates().first()
+        val seedByIdentity = lifeTemplateSeeds.associateBy { it.icon }
+        existing.filter { it.isBuiltin && !it.isSpecial }.forEach { stored ->
+            val seed = seedByIdentity[stored.icon] ?: return@forEach
+            if (stored.fieldsConfig != seed.fieldsConfig) {
+                templateRepo.updateTemplate(
+                    stored.copy(fieldsConfig = seed.fieldsConfig, updatedAt = System.currentTimeMillis())
+                )
+            }
         }
     }
 
@@ -32,7 +48,7 @@ class LifeDataSeeder(
         buildTemplate("\u6253\u5361", "\u8BB0\u5F55", "calendar_month", "#9C27B0", "\u8BB0\u5F55\u6BCF\u65E5\u6253\u5361\u4E60\u60EF", 4, """[{"key":"targetDays","label":"\u76EE\u6807\u5929\u6570","type":"NUMBER","required":false,"unit":"\u5929","showInCard":false,"sortOrder":1},{"key":"currentStreak","label":"\u8FDE\u7EED\u5929\u6570","type":"NUMBER","required":false,"unit":"\u5929","showInCard":true,"sortOrder":2}]""", "[\"card\",\"list\"]", """{"defaultStatus":"ACTIVE","statuses":["ACTIVE","PAUSED","COMPLETED","ARCHIVED"]}""", """{"allowCrossLink":false,"targetTypes":[]}"""),
         buildTemplate("\u5FC3\u60C5", "\u8BB0\u5F55", "mood", "#FFCA28", "\u8BB0\u5F55\u6BCF\u65E5\u5FC3\u60C5", 5, "[]", "[\"card\",\"list\"]", """{"defaultStatus":"ACTIVE","statuses":["ACTIVE","ARCHIVED"]}""", """{"allowCrossLink":false,"targetTypes":[]}"""),
         buildTemplate("\u65E5\u8BB0", "\u8BB0\u5F55", "book", "#AB47BC", "\u8BB0\u5F55\u6BCF\u65E5\u5FC3\u60C5\u548C\u60F3\u6CD5", 6, "[]", "[\"card\",\"list\"]", """{"defaultStatus":"ACTIVE","statuses":["ACTIVE","ARCHIVED"]}""", """{"allowCrossLink":true,"targetTypes":["MOMENT","TODO","NOTE"]}"""),
-        buildTemplate("\u8BA2\u9605\u8BB0\u5F55", "\u8BB0\u5F55", "subscriptions", "#66BB6A", "\u7BA1\u7406\u4F60\u7684\u8BA2\u9605\u670D\u52A1", 8, """[{"key":"price","label":"\u6263\u8D39\u91D1\u989D","type":"NUMBER","required":true,"unit":"\u5143","showInCard":true,"sortOrder":1},{"key":"billingCycle","label":"\u6263\u8D39\u5468\u671F","type":"SELECT","required":true,"options":"[\\"monthly\\",\\"quarterly\\",\\"yearly\\"]","showInCard":true,"sortOrder":2},{"key":"billingDay","label":"\u6263\u8D39\u65E5","type":"NUMBER","required":true,"unit":"\u53F7","showInCard":false,"sortOrder":3},{"key":"nextBilling","label":"\u4E0B\u6B21\u6263\u8D39","type":"DATE","required":false,"showInCard":true,"sortOrder":4}]""", "[\"card\",\"list\"]", """{"defaultStatus":"ACTIVE","statuses":["ACTIVE","PAUSED","ARCHIVED"]}""", """{"allowCrossLink":true,"targetTypes":["BILL"]}"""),
+        buildTemplate("\u8BA2\u9605\u8BB0\u5F55", "\u8BB0\u5F55", "subscriptions", "#66BB6A", "\u7BA1\u7406\u4F60\u7684\u8BA2\u9605\u670D\u52A1", 8, """[{"key":"price","label":"\u6263\u8D39\u91D1\u989D","type":"NUMBER","required":true,"unit":"\u5143","showInCard":true,"sortOrder":1},{"key":"billingCycle","label":"\u6263\u8D39\u5468\u671F","type":"SELECT","required":true,"options":["monthly","quarterly","yearly"],"showInCard":true,"sortOrder":2},{"key":"billingDay","label":"\u6263\u8D39\u65E5","type":"NUMBER","required":true,"unit":"\u53F7","showInCard":false,"sortOrder":3},{"key":"nextBilling","label":"\u4E0B\u6B21\u6263\u8D39","type":"DATE","required":false,"showInCard":true,"sortOrder":4}]""", "[\"card\",\"list\"]", """{"defaultStatus":"ACTIVE","statuses":["ACTIVE","PAUSED","ARCHIVED"]}""", """{"allowCrossLink":true,"targetTypes":["BILL"]}"""),
         buildTemplate("\u5468\u62A5\u6708\u62A5", "\u8BB0\u5F55", "BarChart", "#42A5F5", "\u81EA\u52A8\u805A\u5408\u751F\u6D3B\u6570\u636E\u751F\u6210\u62A5\u544A", 15, "[]", "[\"STATS\"]", "{}", "{}"),
     )
 

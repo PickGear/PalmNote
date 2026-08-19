@@ -28,13 +28,17 @@ import java.time.ZoneId
 fun MoodCalendarView(diaries: List<MoodDiary>, month: LocalDate = LocalDate.now()) {
     var currentMonth by remember { mutableStateOf(month) }
     val ym = YearMonth.from(currentMonth)
-    val fow = (ym.atDay(1).dayOfWeek.value % 7)
+    val fow = (ym.atDay(1).dayOfWeek.value + 6) % 7
     val dim = ym.lengthOfMonth()
     val map = diaries.groupBy { Instant.ofEpochMilli(it.date).atZone(ZoneId.systemDefault()).toLocalDate() }
+    val monthFormat = stringResource(R.string.date_format_display_month)
+    val monthTitle = remember(currentMonth, monthFormat) {
+        YearMonth.from(currentMonth).format(java.time.format.DateTimeFormatter.ofPattern(monthFormat))
+    }
 
     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text(stringResource(R.string.date_format_display_month).format(currentMonth.year, currentMonth.monthValue), fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
+            Text(monthTitle, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
             Row {
                 Text("\u276E", fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(40.dp).clickable { currentMonth = currentMonth.minusMonths(1) })
                 Spacer(modifier = Modifier.width(4.dp))

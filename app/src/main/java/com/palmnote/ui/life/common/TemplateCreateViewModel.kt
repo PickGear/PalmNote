@@ -19,14 +19,14 @@ class TemplateCreateViewModel @Inject constructor(
     private val _createdTemplateId = MutableStateFlow<Long?>(null)
     val createdTemplateId: StateFlow<Long?> = _createdTemplateId.asStateFlow()
 
+    @Suppress("LongMethod")
     fun createTemplate(
         name: String,
         category: String,
         description: String,
         icon: String,
         color: String,
-        fields: List<TemplateField>,
-        layout: String
+        fields: List<TemplateField>
     ) {
         viewModelScope.launch {
             try {
@@ -39,6 +39,8 @@ class TemplateCreateViewModel @Inject constructor(
                         if (field.options.isNotEmpty()) {
                             put("options", JsonArray(field.options.map { JsonPrimitive(it) }))
                         }
+                        put("showInCard", field.showInCard)
+                        put("showAsProgress", field.showAsProgress)
                     }
                 })
 
@@ -88,8 +90,8 @@ class TemplateCreateViewModel @Inject constructor(
                     color = color,
                     description = description,
                     fieldsConfig = fieldsConfig.toString(),
-                    layoutType = layout,
-                    availableLayouts = JsonArray(listOf(JsonPrimitive(layout))).toString(),
+                    layoutType = "card",
+                    availableLayouts = JsonArray(listOf(JsonPrimitive("card"), JsonPrimitive("list"))).toString(),
                     statusFlowConfig = statusFlowConfig.toString(),
                     linkConfig = linkConfig.toString(),
                     isBuiltin = false

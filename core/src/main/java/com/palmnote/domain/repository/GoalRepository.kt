@@ -10,6 +10,9 @@ interface GoalRepository {
     fun getGoalsByCategory(category: String): Flow<List<Goal>>
     fun getGoalCount(): Flow<Int>
     fun getCompletedGoalCount(): Flow<Int>
+    fun getNonHabitGoalCount(): Flow<Int>
+    fun getCompletedNonHabitGoalCount(): Flow<Int>
+    fun getTodayCheckedGoalIds(dayStart: Long, dayEnd: Long): Flow<List<Long>>
     fun getOverdueGoals(now: Long): Flow<List<Goal>>
     fun getHabitGoals(): Flow<List<Goal>>
     fun getTotalStreak(): Flow<Int?>

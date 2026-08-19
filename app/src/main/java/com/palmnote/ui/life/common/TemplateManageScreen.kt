@@ -1,6 +1,7 @@
 package com.palmnote.ui.life.common
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -9,8 +10,10 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -61,6 +64,18 @@ fun TemplateManageScreen(
             return@Scaffold
         }
 
+        val planCategory = stringResource(R.string.life_category_plan)
+        val timeCategory = stringResource(R.string.life_category_time)
+        val recordCategory = stringResource(R.string.life_category_record)
+        val grouped = state.templates.groupBy { it.category }
+        val orderedCategories = buildList {
+            add(planCategory)
+            add(timeCategory)
+            add(recordCategory)
+            addAll(grouped.keys.filter { it != planCategory && it != timeCategory && it != recordCategory })
+        }
+        var collapsedGroups by rememberSaveable { mutableStateOf(listOf<String>()) }
+
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -69,40 +84,60 @@ fun TemplateManageScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             contentPadding = PaddingValues(vertical = 16.dp)
         ) {
-            item {
-                Text(stringResource(R.string.life_preset_templates), fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-            items(state.templates.filter { it.isBuiltin }, key = { it.id }) { tpl ->
-                TemplateItem(tpl)
-            }
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(stringResource(R.string.life_custom_templates), fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-            val customTemplates = state.templates.filter { !it.isBuiltin }
-            if (customTemplates.isEmpty()) {
-                item {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = MaterialTheme.shapes.large,
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                    ) {
-                        Box(
-                            modifier = Modifier.fillMaxWidth().padding(24.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(stringResource(R.string.life_no_custom_templates), fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
+            orderedCategories.forEach { category ->
+                val group = grouped[category] ?: return@forEach
+                val collapsed = collapsedGroups.contains(category)
+                item(key = "header_$category") {
+                    val label = when (category) {
+                        planCategory -> stringResource(R.string.life_category_goal)
+                        timeCategory -> stringResource(R.string.life_category_memorial)
+                        recordCategory -> stringResource(R.string.life_category_record_display)
+                        else -> category
                     }
+                    CategoryGroupHeader(
+                        label = label,
+                        count = group.size,
+                        collapsed = collapsed,
+                        onToggle = {
+                            collapsedGroups = if (collapsed) collapsedGroups.filter { it != category } else collapsedGroups + category
+                        }
+                    )
                 }
-            } else {
-                items(customTemplates, key = { it.id }) { tpl ->
-                    TemplateItem(tpl)
+                if (!collapsed) {
+                    items(group, key = { it.id }) { tpl ->
+                        TemplateItem(tpl)
+                    }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun CategoryGroupHeader(label: String, count: Int, collapsed: Boolean, onToggle: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.medium)
+            .clickable(onClick = onToggle)
+            .padding(horizontal = 4.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            label,
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 14.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f)
+        )
+        Text(stringResource(R.string.life_category_detail_count, count), fontSize = 12.sp, color = MaterialTheme.colorScheme.outline)
+        Spacer(modifier = Modifier.width(4.dp))
+        Icon(
+            if (collapsed) Icons.Default.ExpandMore else Icons.Default.ExpandLess,
+            null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(20.dp)
+        )
     }
 }
 

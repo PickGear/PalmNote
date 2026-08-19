@@ -21,6 +21,13 @@ class GoalRepositoryImpl @Inject constructor(
 
     override fun getCompletedGoalCount(): Flow<Int> = goalDao.getCompletedGoalCount()
 
+    override fun getNonHabitGoalCount(): Flow<Int> = goalDao.getNonHabitGoalCount()
+
+    override fun getCompletedNonHabitGoalCount(): Flow<Int> = goalDao.getCompletedNonHabitGoalCount()
+
+    override fun getTodayCheckedGoalIds(dayStart: Long, dayEnd: Long): Flow<List<Long>> =
+        checkInDao.getTodayCheckedGoalIds(dayStart, dayEnd)
+
     override fun getOverdueGoals(now: Long): Flow<List<Goal>> = goalDao.getOverdueGoals(now)
 
     override fun getHabitGoals(): Flow<List<Goal>> = goalDao.getHabitGoals()
@@ -37,7 +44,8 @@ class GoalRepositoryImpl @Inject constructor(
 
     override suspend fun incrementGoalProgress(id: Long) = goalDao.incrementGoalProgress(id)
 
-    override suspend fun updateStreak(id: Long, streak: Int, checkInDate: Long, now: Long) = goalDao.updateStreak(id, streak, checkInDate, now)
+    override suspend fun updateStreak(id: Long, streak: Int, checkInDate: Long, now: Long) =
+        goalDao.updateStreak(id, streak, checkInDate, now)
 
     override suspend fun search(query: String): List<Goal> = goalDao.search(query)
 
@@ -45,9 +53,11 @@ class GoalRepositoryImpl @Inject constructor(
 
     override suspend fun getHabitGoalsNeedingReset(): List<Goal> = goalDao.getHabitGoalsNeedingReset()
 
-    override suspend fun batchResetPeriod(ids: List<Long>, periodStart: Long, periodEnd: Long) = goalDao.batchResetPeriod(ids, periodStart, periodEnd)
+    override suspend fun batchResetPeriod(ids: List<Long>, periodStart: Long, periodEnd: Long) =
+        goalDao.batchResetPeriod(ids, periodStart, periodEnd)
 
-    override fun getCheckInsByGoal(goalId: Long): Flow<List<com.palmnote.data.db.entity.GoalCheckIn>> = checkInDao.getCheckInsByGoal(goalId)
+    override fun getCheckInsByGoal(goalId: Long): Flow<List<com.palmnote.data.db.entity.GoalCheckIn>> =
+        checkInDao.getCheckInsByGoal(goalId)
 
     override suspend fun insertCheckIn(checkIn: com.palmnote.data.db.entity.GoalCheckIn): Long = checkInDao.insertCheckIn(checkIn)
 }

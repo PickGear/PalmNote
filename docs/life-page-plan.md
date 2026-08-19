@@ -25,8 +25,8 @@
 | 里程碑 | **简化**=带 dueDate 的子任务,复用 LifeItem,无 meta.JSON 引擎 |
 | 动态分类 | **保留**:Chips+自由输入 → 已有 `category` 列,零迁移,无管理 UI |
 | IMAGE 字段 | **延后**:仅保留现有占位,真图片跳3随迁移接入 |
-| 分组根修 | 只信 `category` 列(`LifeViewModel.kt:112-114`),删英文+name 兜底;三分类平移「计划→目标 / 时间→纪念 / 记录→记录」 |
-| 分类卡交互 | 照搬 app 主页 Dashboard 拖拽方案(长按拖 + 300ms 防抖持久化) |
+| 分组根修 | 只信 `category` 列(`LifeViewModel.kt:109-114`,含名称集合与过滤),删英文+name 兜底;三分类仅渲染层映射「计划→目标 / 时间→纪念 / 记录→记录」,不改存储数据 |
+| 分类卡交互 | 照搬 app 主页 Dashboard 拖拽方案(长按拖 + 300ms 防抖持久化);**大卡形态舍弃**,仅保留三小卡(2026-08-18 确认) |
 | 完成态 | 零新增 UI:全勾→降透明归档/过期末→归档;无庆祝横幅/摘记框/复制计划 |
 | 快速添加 | 不设输入条,新建一律走右下角 FAB |
 
@@ -67,7 +67,7 @@
 
 ### 2.4 分组逻辑现状
 
-`LifeViewModel.kt:112-114` 三层兜底:
+`LifeViewModel.kt:109-114` 三层兜底(名称集合 109-111 + 过滤 112-114):
 
 ```kotlin
 val plans   = templates.filter { it.category == "计划" || it.category == "PLAN" || it.name in planNames }
@@ -76,7 +76,7 @@ val records = templates.filter { it.category == "记录" || it.category == "RECO
 ```
 
 - `category` 列已存在(`LifeTemplate.kt` + 索引 `idx_template_category`),兜底中的 name 分支是死代码。
-- 修正:唯一信源 = `category` 字段。文案**三分类平移**:「计划」→「目标」、「时间」→「纪念」、「记录」→「记录」(与分类三小卡 目标/纪念/记录 对齐);`LifeViewModel.kt:109-113` 的兜底分支(`planNames/timeNames/recordNames` 集合)一并删除。
+- 修正:唯一信源 = `category` 字段;分组判断仍用 `category=="计划"/"时间"/"记录"`(中文原文)。**三分类平移只做渲染层映射,不改存储数据**:展示文案将内置三类映射为「目标/纪念/记录」(与分类三小卡 目标/纪念/记录 对齐),用户自定义分类不受影响;兜底分支(`LifeViewModel.kt:109-111` 的 `planNames/timeNames/recordNames` 集合)确认为死代码删除,其中 `recordNames`(:111) 的 `life_type_subscription` 重复出现,清理时一并去重。
 
 ### 2.5 迁移测试现状
 
@@ -135,6 +135,7 @@ val records = templates.filter { it.category == "记录" || it.category == "RECO
 - 今日记录:该分类当天新增条目,按时间倒序。
 - 卡片列表:卡①分类 ⇄ 卡②今日看板 ⇄ 卡③待办,**三卡同池长按上下换位**(复用 Dashboard 方案,排序持久化)。
 - FAB:右下,沿用 FunctionSheet 新建。
+- **主页重建**:本节为 LifeScreen 新主页形态,**替换现有 StatsRow(三数字卡 :371-393)+ 模板平铺布局**,旧 StatsRow 迁入统计页(§3.10),原专页入口迁入分类详情页/FAB。
 
 **今日待办在主页**(补集双归属)
 - **今天到期的待办**:进今日看板时段槽(`LifeItemDao.getScheduledBetween`,代替旧 `countTodayTodos` 硬读 JSON),来源标签「待办」点击回专页。
@@ -168,9 +169,9 @@ val records = templates.filter { it.category == "记录" || it.category == "RECO
 **交互标注**
 - 折叠态:当周 7 日横条,左右滑动切周(无逐日箭头),点按展开。
 - 展开态:完整月历,滑动切月,点日选中。
-- 标记规则:有任务日打点(·)/ 今日实心(◎)/ 选中描边(✦ 外框)/ 今日在新月历中的位置由「今天」定位。
-- 状态持久化:折叠/展开、当前选中年月日 → DataStore。
-- 历史日 = 只读回放;未来日 = 预览;勾选 undo 支持。
+- 标记规则:有任务日打点(·)/ 今日实心(◎)/ 选中描边(✦ 外框)/ 今日在新月历中的位置由「今天」定位。(已实现:标记数据源 = `getDistinctDueDatesBetween(选中月-2, 选中月+4)` 独立查询,不再受限于今日条目。)
+- 状态持久化:折叠/展开、当前选中年月日 → DataStore(`PreferencesManager.lifeCalendarExpanded/lifeCalendarSelectedDate`,已实现)。
+- 历史日 = 只读回放;未来日 = 预览;勾选 undo 支持。(已实现:看板内容数据源 = 选中日 `getScheduledBetween(选中日0点, +1天)`,独立于今日 `scheduledItems`。)
 
 ---
 
@@ -209,7 +210,7 @@ val records = templates.filter { it.category == "记录" || it.category == "RECO
 - 最多平铺 4 条,超出显示「查看全部 → 专页」。
 - 角标「逾期 2 · 全部 5」:`逾期 N`=逾期条目数;`全部 N`=**堆积待办总数**(非全待办,不含今天的;今天已在看板)。
 - 点击行:勾选 = 复用待办 toggle;长按拖 = 整卡与其他卡换位。
-- **限定范围(重要)**:只收 **待办模板**(icon=checklist)且 `parentId == null`、`status != COMPLETED`、`dueDate` 不在今天(逾期/未来/无日期)的条目。
+- **限定范围(重要)**:只收 **待办模板**且 `parentId == null`、`status != COMPLETED`、`dueDate` 不在今天(逾期/未来/无日期)的条目。**待办模板识别收敛到 `BuiltinTemplates` 常量**(与 dashboard-plan §2.4 同源),不靠 icon 硬编码。
 - **不做聚合杂事堆**:计划的堆积条目(未来子任务/里程碑)归**计划页/分类详情页**,不进待办卡 —— 计划有自己的闭环,避免两处重复。
 - 数据:DAO 新查询 `getTodoComplement(todayStart, todoTemplateId)`。旧 `getTodoPriority` 读取优先级显示彩点。
 
@@ -250,6 +251,8 @@ val records = templates.filter { it.category == "记录" || it.category == "RECO
 ---
 
 ### 3.5 分类大卡形态(整区 [⇄] 切换后)
+
+> ⚠️ **已废弃(2026-08-18)**:本形态确认舍弃,不再实现。分类区固定为「三小卡」形态(§3.4),无大卡/整区切换。下方原设计存档。
 
 ```
 ┌──────────────────────────────────────────────────────────┐
@@ -501,7 +504,7 @@ val records = templates.filter { it.category == "记录" || it.category == "RECO
 └────────────────────────────────────────────────────────────┘
 ```
 
-- 选「分类 → 模板」二级;确认后进现有 `DynamicFormScreen` 填字段值。
+- 选「分类 → 模板」二级(已实现:`LifeScreen.FunctionSheet` 顶部分类 FilterChip —— 全部/目标/纪念/记录/自定义分类,选中后下方只展示该分类模板);确认后进现有 `DynamicFormScreen` 填字段值。
 - 若字段含 `dueDate`/`dueTime`,填值后直接聚合进今日看板(闭环入口)。
 - 沿用现有 FunctionSheet 组件,仅加分类/模板二级选择。
 
@@ -522,6 +525,10 @@ val records = templates.filter { it.category == "记录" || it.category == "RECO
 | `parentId` | `Long?` | 是 | null | 父条目(计划)id,子任务关联 |
 | `remindAt` | `Int?` | 是 | null | 提醒 minuteOfDay(0-1439) |
 | `meta` | `String?` | 是 | null | 预留 JSON(本轮不承载里程碑逻辑) |
+
+> **写入路径(最优方案)**:新建/编辑保存时,取条目 `fieldsData` 中**第一个 DATE 字段值镜像写入 `dueDate`、第一个 TIME 字段值镜像写入 `dueTime`**(通用规则,不做模板特判,天然覆盖将来新模板);`fieldsData` 仍是详情/卡片展示的唯一信源,`dueDate/dueTime` 列仅作查询索引,两者互不冲突。
+>
+> **已知迁移限制**:存量条目的日期均在 `fieldsData` JSON 内且 key 各异(现有 16 页各有一套),本轮**不回填**(见 §4.2「无数据回填」)——升级后老条目不进入今日看板,需重新编辑/保存一次才落列。此限制显式声明,不作缺陷处理。
 
 ### 4.2 Migration 7 → 8
 
@@ -554,7 +561,8 @@ val records = templates.filter { it.category == "记录" || it.category == "RECO
 | **RICH_TEXT** | 新增(富文本) | 跳2 |
 | **FILE** | 新增(文件选择) | 跳2 |
 
-- 移除蓝图中的 `AUDIO` / `SIGNATURE`(低频,延后)。
+- `AUDIO` / `SIGNATURE` 蓝图曾设想,本轮明确不加(不在 enum 中,无需移除)。
+- **DECIMAL 清理**:`TemplateCreateScreen`(:169)向导提供 `DECIMAL`,但 enum / 组件均无此型 → 落实时**从向导移除(DECIMAL 与 NUMBER 合并)**,使三套口径(enum 11 / 组件 18 / 向导 5)对齐为单一来源。
 - `design-spec.md §15.3` 蓝图缺 CURRENCY,补记。
 - **枚举兼容要点**:`FieldType.kt` 是 `@Serializable` enum,模板字段定义以 JSON 存于 `life_templates.fields_config`。新增 enum 值必须先于旧库数据升级,否则旧库 `fields_config` 中引用已存在类型的反序列化安全(新增类型只影响**将来**新建模板);但已存 JSON 中的类型字符串需保证不会被删改名(本轮只增不删)。迁移期建议新增类型在 `FieldType` 内补 `RICH_TEXT/CURRENCY/DATETIME/FILE` 四个 enum 常量即可,不影响存量 JSON。
 
@@ -570,7 +578,7 @@ val records = templates.filter { it.category == "记录" || it.category == "RECO
 - 模型:`LifeHomeCardConfig(type, order, visible)`,`LifeHomeCardType = CATEGORY | TODAY_BOARD | TODO`。
 - 持久化:`PreferencesManager.lifeHomeCardConfigs`(仿 `dashboardCardConfigs`);三卡同池排序,任意换位。
 - 手势/排序/动画:复用 Dashboard(见 3.3)。
-- 三小卡 = 1 项(卡①);大卡形态下每分类拆成独立项,项内 `layoutMode = THIRD | FULL` 属于 CATEGORY 行为。
+- 三小卡 = 1 项(卡①);~~大卡形态下每分类拆成独立项,项内 `layoutMode = THIRD | FULL` 属于 CATEGORY 行为~~(大卡形态已舍弃)。
 - 待办卡(卡③)= 单独卡,内容为今日看板补集(见 3.3.1)。
 - 数据源:卡面分类预览 `templatePreviewItems`(已有 Map<Long, List<LifeItem>>);待办卡 `getTodoComplement`。
 

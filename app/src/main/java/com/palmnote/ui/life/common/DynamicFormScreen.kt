@@ -62,6 +62,7 @@ fun DynamicFormScreen(
     LaunchedEffect(vmState.saveError) {
         if (vmState.saveError != null) {
             saving = false
+            saveSuccess = false
             saveError = true
             saveErrorMessage = vmState.saveError!!
         }

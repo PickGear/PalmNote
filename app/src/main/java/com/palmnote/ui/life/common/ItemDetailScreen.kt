@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.palmnote.domain.util.DateUtils
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -38,6 +39,8 @@ import com.palmnote.data.db.entity.LifeItem
 import com.palmnote.ui.components.AppDialog
 import com.palmnote.ui.components.SecondaryTopAppBar
 import com.palmnote.ui.components.toComposeColor
+import com.palmnote.ui.life.plan.AddSubtaskDialog
+import com.palmnote.ui.life.plan.PlanDetailScreen
 import com.palmnote.data.db.entity.LifeTemplate
 import com.palmnote.ui.theme.*
 import com.palmnote.ui.utils.formatTimeAgo
@@ -67,10 +70,27 @@ fun ItemDetailScreen(
     var showDepositDialog by remember { mutableStateOf(false) }
     var depositAmount by remember { mutableStateOf("") }
     var showMoreMenu by remember { mutableStateOf(false) }
+    var showAddSubtaskDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var linksExpanded by remember { mutableStateOf(false) }
     var showLinkSelector by remember { mutableStateOf(false) }
     val state by viewModel?.uiState?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(ItemDetailUiState()) }
+
+    val planItem = state.item
+    val planReady = planItem != null && template != null && viewModel != null
+    if (planReady && state.subtasks.isNotEmpty()) {
+        PlanDetailScreen(
+            item = planItem,
+            template = template,
+            subtasks = state.subtasks,
+            onBack = onBack,
+            onEdit = onEdit,
+            onDelete = onDelete,
+            viewModel = viewModel
+        )
+        return
+    }
+
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -105,6 +125,10 @@ fun ItemDetailScreen(
                         IconButton(onClick = { showMoreMenu = true }) { Icon(Icons.Default.MoreVert, stringResource(R.string.life_item_more)) }
                         DropdownMenu(expanded = showMoreMenu, onDismissRequest = { showMoreMenu = false }) {
                             DropdownMenuItem(text = { Text(stringResource(R.string.life_item_delete)) }, onClick = { showMoreMenu = false; showDeleteDialog = true })
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.life_plan_add_subtask)) },
+                                onClick = { showMoreMenu = false; showAddSubtaskDialog = true }
+                            )
                         }
                     }
                 },
@@ -205,7 +229,7 @@ fun ItemDetailScreen(
                 if (detailFields.isEmpty() && data != null) {
                     data.entries.forEach { (key, value) ->
                         if (value is JsonPrimitive && value.content.isNotEmpty()) {
-                            val displayValue = value.content.toLongOrNull()?.let { millis ->
+                            val displayValue = value.content.toLongOrNull()?.filterMillisRange()?.let { millis ->
                                 try { java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date(millis)) } catch (_: Exception) { value.content }
                             } ?: value.content
                             Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
@@ -310,4 +334,15 @@ fun ItemDetailScreen(
     if (showLinkSelector && item != null) {
         LinkSelectorSheet(sourceItemId = item.id, onDismiss = { showLinkSelector = false })
     }
+
+    if (showAddSubtaskDialog && item != null) {
+        AddSubtaskDialog(
+            zone = java.time.ZoneId.systemDefault(),
+            onDismiss = { showAddSubtaskDialog = false },
+            onAdd = { title, kind, due -> viewModel?.addSubtask(title, kind, due); showAddSubtaskDialog = false }
+        )
+    }
 }
+
+private fun Long.filterMillisRange(): Long? =
+    if (DateUtils.isPlausibleMillis(this)) this else null

@@ -20,14 +20,14 @@
 2. **新增 2 卡**:HABIT_TODAY(今日打卡)· SUBSCRIPTION(订阅提醒),把「今天要做什么/要知道的」抬上首页。
 3. **三层显隐**:默认组 + 用户手动开关(CardManagementDialog)+ 空态自动隐藏,三者叠加,不冲突。
 4. **排序**:沿用现有长按拖拽 + 300ms 防抖持久化,新卡直接并入同一排序池。
-5. **兼容**:新 CardType **只增不移位**,老用户已存 JSON 经 `PreferencesManager` merge 自动补新卡到末尾;现有 8 卡默认可见性一律不动 → **老用户体验零回退**。
+5. **兼容**:新 CardType **只增不移位**,老用户已存 JSON 经 `PreferencesManager` merge 自动补新卡到末尾;现有 8 卡的布局/排序/开关可见性一律不动 → **布局·排序·开关零回退**;唯一行为差异 = NET_WORTH 主数值由物品购买总价**修正为 Wallet 账户余额**(数据源 bug 修复,见 §2.2/§5.5)。
 
 ### 1.3 决策锁定表
 
 | 维度 | 决定 |
 |---|---|
 | 默认显示组 | **9 卡默认显示**(现有 8 卡 + 今日打卡);**订阅提醒默认隐藏**(近 7 天有到期才出现,用户按需开启) |
-| GOALS | 砍明细分列表,仅保留「完成 x/y + 总进度环」,点击→生活页 |
+| GOALS | 砍明细分列表,仅保留「完成 x/y + 总进度环」,点击→生活页;**进度环仅统计非习惯目标**(排除 `goalType=HABIT`,与 HABIT_TODAY 卡互斥,VM 层过滤) |
 | ANNIVERSARIES | 砍明细分列表,仅保留「最近 1 条 + 倒计时标签」,点击→生活页 |
 | HABIT_TODAY | 新增,**默认显示**;读取 Goal 习惯引擎,展示「今日完成 x/n」+ 逐习惯勾选 |
 | SUBSCRIPTION | 新增,**默认隐藏**;复用订阅扣费算法,展示「近 7 天到期 1-3 条」+ 倒计时 |
@@ -36,7 +36,7 @@
 | 排序 | 沿用 `DashboardScreen` 长按拖拽 + `DashboardViewModel.moveCardUp/Down` + 300ms 防抖持久化 |
 | 点击跳转 | 每卡必有合理点击目标;**局部 `clickable`(右上跳转胶囊/标题/条目),忌整卡 clickable**(避免与长按拖拽手势冲突) |
 | 术语(三词不混用) | **物品** = 资产条目实体(`nav_asset`=物品·Tab)、分布、快捷按钮;**账单** = 收支流水(`nav_bill`=账单·Tab、记一笔);**资产/金额** = 汇总数值(净资产/总资产/月收支),仅 NET_WORTH 等数值卡使用 |
-| 兼容 | `CardType` enum 只增不删;新卡由 `PreferencesManager.dashboardCardConfigs` merge 追加,老 JSON 无需重写 |
+| 兼容 | `CardType` enum 只增不删;新卡由 `PreferencesManager.dashboardCardConfigs` merge 追加,老 JSON 无需重写;NET_WORTH 主数值源修正为 Wallet 余额(bug fix,布局/排序/开关零回退) |
 
 ### 1.4 范围
 
@@ -89,6 +89,7 @@
 - 模板 `LifeDataSeeder.kt:35`:name「订阅记录」,category「记录」,字段:`price`(NUMBER)· `billingCycle`(SELECT monthly/quarterly/yearly)· `billingDay`(NUMBER 号)· `nextBilling`(DATE,可为空);status 含 ACTIVE/PAUSED/ARCHIVED。
 - 到期计算现成:`LifeDailyCheckWorker.kt:220-261`(billingDay + lastBilledDate + cycle → 下个到期日,短月自动钳制)。
 - 提醒卡「近 7 天到期」即取 **status=ACTIVE** 的订阅记录,按同一算法求下一个到期日 → 筛剩余天数 0..7。
+- **模板识别统一**:订阅/待办等内置模板名收敛到新增 `BuiltinTemplates` 常量对象,`LifeDataSeeder` 建模板、`LifeDailyCheckWorker`(:222,现 `name.contains("订阅")`)、订阅/待办新查询**共用同一常量**,避免 name/icon 硬编码改名失效。
 
 ### 2.5 习惯引擎(`core/.../entity/Goal.kt` + `GoalCheckInDao`)
 
@@ -235,7 +236,7 @@
 - 删除:`upcomingAnniversaries.forEach` 多条明细。
 - 无纪念 → 卡整体不显示(空态)。
 - 点击:右上**跳转胶囊(生活)** → 生活 Tab(现有 `:359` 箭头升级);空态文案亦可点(`:407`)。
-- 数据流:`anniversaryCount / upcomingAnniversaries.firstOrNull()`(已有)。
+- 数据流:`anniversaryCount / upcomingAnniversaries.firstOrNull()`(已有);**空态口径**:显示条件 = `anniversaryCount > 0`;主体取 `upcomingAnniversaries.firstOrNull() ?: 最近一条(按日期降序)`,避免 count>0 但 upcoming 为空(全部已过)时卡体与隐藏逻辑不一致。
 
 ```
 ┌────────────────────────────────────────────┐
@@ -350,10 +351,11 @@
 |---|---|
 | `core/.../ui/dashboard/DashboardCardConfig.kt` | `CardType` `+HABIT_TODAY, +SUBSCRIPTION`(追加末尾);`defaults` 需分别设 `visible`(与其它 `DashboardCardConfig(it)` 同为 true,故仅 SUBSCRIPTION 需 `copy(visible=false)`) |
 | `app/.../ui/dashboard/DashboardViewModel.kt` | **修正 NET_WORTH 数据源**:注入 `WalletRepository`,用 `getTotalBalance()`(启用非信用卡钱包余额合计)替代 `assetRepository.getTotalAssetValue()`,净资产=账户金钱、**不含物品价值**;注入 `GoalRepository`/`LifeItemRepository`(订阅);`DashboardState` `+habitTotal/habitChecked/habitRows/upcomingSubscriptions/dueSubCount`;在 `loadDashboardData` combine 中并入各流;新增 `getTodayStat()`/`getSubscriptionsDueWithin()` 数据装配 |
-| `app/.../ui/dashboard/DashboardCards.kt` | **新增 `JumpCapsule`(跳转胶囊)组件**(Capsule 形状 + 1dp 主题色边框 + 同色 0.10 底色 + 模块名 + `›` + ripple);when 分支 `+HABIT_TODAY/+SUBSCRIPTION`;`GoalsCard` 剪明细、加总进度环;`AnniversariesCard` 剪明细、只留 1 条;新增 `HabitTodayCard`、`SubscriptionCard`(均带空态 return);**NET_WORTH/TODAY/BUDGET_ALERT 补右上跳转胶囊、GOALS/ANNIVERSARIES/VAULT 现有 `>` 升级为胶囊(对齐 4.4/4.5 矩阵)**;**NetWorthCard 现签名 `NetWorthCard(state)` 未接导航回调(:53),需加参数(指向记账 Tab)**;`CardManagementDialog` when `+2` 标签 |
+| `app/.../ui/dashboard/DashboardCards.kt` | **新增 `JumpCapsule`(跳转胶囊)组件**(Capsule 形状 + 1dp 主题色边框 + 同色 0.10 底色 + 模块名 + `›` + ripple);when 分支 `+HABIT_TODAY/+SUBSCRIPTION`;`GoalsCard` 剪明细、加总进度环;`AnniversariesCard` 剪明细、只留 1 条;新增 `HabitTodayCard`、`SubscriptionCard`(均带空态 return);**NET_WORTH/TODAY/BUDGET_ALERT 补右上跳转胶囊、GOALS/ANNIVERSARIES/VAULT 现有 `>` 升级为胶囊(对齐 4.4/4.5 矩阵)**;**(签名变更 ×3)** `NetWorthCard(state)`(:53)、`TodayCard(state)`(:62)、`BudgetAlertCard`(其 `AlertCard`(:553) 无 onClick 参数)均需补跳转回调:分别指向记账 Tab / 生活 Tab / 记账 Tab;`CardManagementDialog` when `+2` 标签 |
 | `core/.../data/db/dao/GoalDao.kt` / `GoalCheckInDao.kt` | 新增今日统计(今日已打卡数 / 启用习惯数 / 逐习惯今日勾选) |
 | `core/.../data/db/dao/LifeItemDao.kt` | 新增「订阅近 7 天到期」查询(按模板 + status=ACTIVE + fieldsData 过滤后的内存计算即可,量小无需 SQL),或 `LifeItemRepository` 复用 Worker 算法 |
-| `core/.../domain/repository/GoalRepository.kt` / `LifeItemRepository.kt` | 暴露以上查询 |
+| `core/.../domain/repository/GoalRepository.kt` / `LifeItemRepository.kt` | 暴露 `getTodayStat()`(底层 `GoalCheckInDao.getTodayCheckIn`(:27-28) 已存在,仅补接口)与 `getSubscriptionsDueWithin(days)` |
+| `core/.../data/BuiltinTemplates.kt`(新增) | 收敛订阅/待办等内置模板名常量,seeder/worker/新查询共用(见 §2.4) |
 | `app/src/main/res/values*/strings.xml` | `dashboard_card_habit_today`、`dashboard_card_subscription`、习惯/订阅卡文案 |
 | `app/.../ui/dashboard/DashboardPreview*` / 组合预览 | 为 2 新卡补 @Preview(可选) |
 
@@ -371,4 +373,5 @@
 | 点击跳转 | 每卡点击区(跳转胶囊/标题/条目)→ 对应模块专页;长按拖拽换位仍可触发、互不冲突 |
 | 跳转胶囊 | 胶囊边框+淡底+文字同色;明/暗主题下 1dp 边框与 0.10 底色对比度清晰;点击 ripple 生效、无整卡误触 |
 | 订阅计算 | 与 `LifeDailyCheckWorker.kt:220-261` 算法一致(短月 31→28/30 钳制) |
+| NET_WORTH 数据源 | 主数值 = Wallet `SUM(currentBalance)`(启用非信用卡钱包),与 items 购买总价解耦;物品价值仅物品模块内部展示 |
 | 双主题 | 明/暗两主题下新卡、进度环、标签对比度正常 |

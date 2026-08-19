@@ -1,13 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Palm Note</string>
-    
     <!-- Bottom Navigation -->
     <string name="nav_dashboard">Home</string>
     <string name="nav_asset">Assets</string>
     <string name="nav_bill">Bills</string>
     <string name="nav_life">Life</string>
-    
     <!-- Asset -->
     <string name="asset_add">Add Asset</string>
     <string name="asset_edit">Edit Asset</string>
@@ -22,7 +20,6 @@
     <string name="asset_cost_mode">Cost Calculation Method</string>
     <string name="asset_cost_daily">Daily</string>
     <string name="asset_cost_per_use">Per Use</string>
-    
     <!-- Asset Status -->
     <string name="asset_held">Held</string>
     <string name="asset_away">Away</string>
@@ -53,7 +50,6 @@
     <string name="asset_cost_per_use_price">Per Use ¥%s</string>
     <string name="asset_cost_per_use_none">Per Use -</string>
     <string name="asset_cost_daily_price">Daily ¥%s</string>
-    
     <!-- Acquisition Types -->
     <string name="acquisition_purchase">Purchase</string>
     <string name="acquisition_gift">Gift</string>
@@ -61,7 +57,6 @@
     <string name="acquisition_prize">Prize</string>
     <string name="acquisition_inheritance">Inheritance</string>
     <string name="acquisition_other">Other</string>
-    
     <!-- Bill -->
     <string name="bill_title">Bills</string>
     <string name="bill_add">Add Entry</string>
@@ -94,7 +89,6 @@
     <string name="bill_reimbursable_hint">Track for reimbursement management</string>
     <string name="bill_edit_bill">Edit Bill</string>
     <string name="bill_wallet">Account</string>
-    
     <!-- Settings -->
     <string name="settings_title">Mine</string>
     <string name="settings_appearance">Appearance</string>
@@ -150,7 +144,6 @@
     <string name="settings_bill_manage_subtitle">Manage bill book categories</string>
     <string name="settings_category_manage">Category Management</string>
     <string name="settings_category_manage_subtitle">Manage item and bill categories</string>
-
     <string name="settings_recycle_bin">Recycle Bin</string>
     <string name="settings_recycle_bin_subtitle">View deleted records</string>
     <string name="settings_export_data">Export Data</string>
@@ -190,7 +183,6 @@
     <string name="settings_home">Home</string>
     <string name="settings_bill_expense">Expense</string>
     <string name="settings_bill_income">Income</string>
-    
     <!-- Common -->
     <string name="save_changes">Save Changes</string>
     <string name="delete_confirm">Confirm deletion? This action cannot be undone.</string>
@@ -211,7 +203,6 @@
     <string name="merchant_hint">Merchant name (optional)</string>
     <string name="location_hint">Location (optional)</string>
     <string name="note_hint">Add note (optional)</string>
-    
     <!-- Bill Filter -->
     <string name="bill_filter">Filter</string>
     <string name="bill_filter_title">Advanced Filter</string>
@@ -224,7 +215,6 @@
     <string name="bill_filter_category">Category</string>
     <string name="bill_filter_apply">Apply Filter</string>
     <string name="bill_filter_clear">Clear Filter</string>
-    
     <!-- Dashboard Module -->
     <string name="dashboard_card_manage">Card Management</string>
     <string name="dashboard_net_worth">Net Worth</string>
@@ -253,6 +243,22 @@
     </plurals>
     <string name="dashboard_recorded">Recorded</string>
     <string name="dashboard_items_recorded">%d items</string>
+    <string name="dashboard_card_habit_today">Today\'s Check-in</string>
+    <string name="dashboard_card_subscription">Subscription Alerts</string>
+    <string name="dashboard_habit_today_title">Today\'s Check-in</string>
+    <string name="dashboard_habit_today_progress">Today %1$d/%2$d</string>
+    <string name="dashboard_habit_check">Check in</string>
+    <string name="dashboard_habit_checked">Done</string>
+    <string name="dashboard_habit_period_daily">Daily</string>
+    <string name="dashboard_habit_period_weekly">Weekly</string>
+    <string name="dashboard_habit_period_monthly">Monthly</string>
+    <string name="dashboard_habit_go_all">Check in all</string>
+    <string name="dashboard_habit_no_data">No habits to check in</string>
+    <string name="dashboard_subscription_due_count">%1$d due</string>
+    <string name="dashboard_subscription_price">¥%1$s</string>
+    <string name="dashboard_subscription_hint">%1$d billings within 7 days</string>
+    <string name="dashboard_goals_view_all">View all goals</string>
+    <string name="dashboard_anniversaries_more">%1$d more · View all</string>
     <string name="dashboard_card_net_worth">Net Worth</string>
     <string name="dashboard_card_quick_actions">Quick Actions</string>
     <string name="dashboard_card_budget_alert">Budget Alert</string>
@@ -273,49 +279,59 @@
     <string name="weekday_thursday">Thursday</string>
     <string name="weekday_friday">Friday</string>
     <string name="weekday_saturday">Saturday</string>
-    
     <!-- Life Module -->
     <string name="life_title">Life</string>
-    <string name="life_saving">Savings Plan</string>
-    <string name="life_shopping">Shopping Plan</string>
-    <string name="life_todo">To-Do</string>
-    <string name="life_reading">Reading</string>
-    <string name="life_habit">Habit Tracker</string>
     <string name="life_mood">Mood</string>
-    <string name="life_journal">Journal</string>
-    <string name="life_focus">Focus</string>
-    <string name="life_countdown">Countdown</string>
-    <string name="life_birthday">Birthday</string>
-    <string name="life_ongoing">Ongoing</string>
-    <string name="life_delete_confirm">Confirm delete?</string>
-    <string name="life_continue">Continue Focus</string>
-    <string name="life_deposit">Deposit</string>
-    
     <!-- Life Module - Additional -->
     <string name="life_error_load_failed">Load failed</string>
     <string name="life_error_save_failed">Save failed</string>
     <string name="life_error_delete_failed">Delete failed</string>
     <string name="life_error_create_failed">Create failed</string>
     <string name="life_error_checkin_failed">Check-in failed</string>
-    <string name="life_error_operation_failed">Operation failed</string>
     <string name="life_data_load_error">Data loading error, please try again later</string>
     <string name="life_data_temp_unavailable">Focus data temporarily unavailable, pull to refresh</string>
-    
     <!-- Life Screen -->
     <string name="life_screen_retry">Retry</string>
     <string name="life_empty_here">Nothing here yet</string>
     <string name="life_empty_hint">Tap + to start recording your life</string>
-    <string name="life_screen_search_template_not_found">No template matching "%s"</string>
-    <string name="life_screen_overview_today_todos">Today\'s Todos</string>
-    <string name="life_screen_overview_habit_rate">Habit Rate</string>
-    <string name="life_screen_overview_today_focus">Today\'s Focus</string>
+    <string name="life_search_recent">Recent searches</string>
+    <string name="life_search_no_result">No results found</string>
+    <string name="life_search_items">Items</string>
+    <string name="life_search_templates">Templates</string>
+    <string name="life_search_empty_hint">Enter keywords to search items and templates</string>
+    <string name="life_plan_no_subtasks">No subtasks yet. Tap "Add subtask" to begin.</string>
+    <string name="life_plan_archived">Archived</string>
+    <string name="life_plan_overdue_banner">Past end %1$s · %2$d%% done (incomplete)</string>
+    <string name="life_plan_remaining">Remaining:</string>
+    <string name="life_plan_times">%1$s \u00D7%2$d</string>
+    <string name="life_plan_archive">Archive</string>
+    <string name="life_plan_mark_done">Mark done</string>
+    <string name="life_plan_all_done">All subtasks done · %1$d%% completion</string>
+    <string name="life_plan_streak">%1$d-day streak</string>
+    <string name="life_plan_today_progress">Today %1$d/%2$d</string>
+    <string name="life_plan_done_overall">%1$d%% done</string>
+    <string name="life_plan_ended">Ended</string>
+    <string name="life_plan_in_progress">In progress</string>
+    <string name="life_plan_group_daily">Daily</string>
+    <string name="life_plan_group_weekly">Weekly</string>
+    <string name="life_plan_group_monthly">Monthly</string>
+    <string name="life_plan_group_milestone">Milestones</string>
+    <string name="life_plan_every_week">Weekly \u00B7 %1$s</string>
+    <string name="life_plan_every_month">Monthly \u00B7 day %1$d</string>
+    <string name="life_plan_due">Due %1$s</string>
+    <string name="life_plan_done">Done</string>
+    <string name="life_plan_day_view">Day view</string>
+    <string name="life_plan_today">today</string>
+    <string name="life_plan_add_subtask">Add subtask</string>
+    <string name="life_plan_edit">Edit</string>
+    <string name="life_plan_subtask_label">Subtask title</string>
+    <string name="life_plan_milestone_on">Due %1$d/%2$d</string>
+    <string name="life_plan_pick_date">Pick a date</string>
+    <string name="life_plan_add">Add</string>
     <string name="life_section_title_plan">Plans</string>
     <string name="life_section_title_time">Time</string>
     <string name="life_section_title_record">Records</string>
-    <string name="life_section_count">%d items</string>
-    <string name="life_section_count_time">%d time events</string>
-    <string name="life_section_count_record">%d records</string>
-    
+    <string name="life_section_title_custom">Custom</string>
     <!-- Life Screen - Create Type Selector -->
     <string name="life_select_type_to_create">Select type to create</string>
     <string name="life_type_saving">Savings Plan</string>
@@ -331,18 +347,14 @@
     <string name="life_type_habit">Habit</string>
     <string name="life_type_mood">Mood</string>
     <string name="life_type_journal">Journal</string>
-    <string name="life_type_focus">Focus</string>
     <string name="life_type_subscription">Subscription</string>
     <string name="life_type_report">Report</string>
     <string name="life_template_manage">Template Management</string>
-    
     <!-- Life - Common Actions -->
-    <string name="life_confirm">Confirm</string>
     <string name="life_cancel">Cancel</string>
     <string name="life_back">Back</string>
     <string name="life_new_create">New</string>
     <string name="life_discard">Discard</string>
-    
     <!-- Life - Detail Screens -->
     <string name="life_confirm_delete_record">Confirm delete this record?</string>
     <string name="life_confirm_discard">Discard changes?</string>
@@ -351,17 +363,11 @@
     <string name="life_edit_title">Edit %s</string>
     <string name="life_create_title">New %s</string>
     <string name="life_input_title">Enter title</string>
-    
     <string name="life_item_detail_delete_confirm">Delete?</string>
     <string name="life_item_detail_delete_hint">You can find it in the recycle bin after deletion</string>
     <string name="life_item_detail_title">Detail</string>
     <string name="life_confirm_delete_countup">Delete this count up?</string>
     <string name="life_confirm_delete_habit">Delete this habit?</string>
-    <string name="life_confirm_delete_todo">Delete this to-do?</string>
-    <string name="life_confirm_delete_subscription">Delete this subscription?</string>
-    <string name="life_confirm_delete_travel">Delete this travel plan?</string>
-    <string name="life_confirm_delete_shopping">Delete this shopping plan?</string>
-    
     <string name="life_countdown_title">Countdown</string>
     <string name="life_confirm_delete_countdown">Delete this countdown?</string>
     <string name="life_empty_countdown">No countdowns yet</string>
@@ -371,14 +377,12 @@
     <string name="life_countdown_day">days</string>
     <string name="life_countdown_expired_text">Expired · %s</string>
     <string name="life_countdown_active_text">%s · Tap to view</string>
-    
     <string name="life_anniversary_title">Anniversary</string>
     <string name="life_confirm_delete_anniversary">Delete this anniversary?</string>
     <string name="life_empty_anniversary">No anniversaries yet</string>
     <string name="life_empty_anniversary_subtitle">Tap + in the top right to record your important anniversaries</string>
     <string name="life_empty_anniversary_action">New Anniversary</string>
     <string name="life_anniversary_days_ago">%d days ago</string>
-    
     <string name="life_birthday_title">Birthday</string>
     <string name="life_confirm_delete_birthday">Delete this birthday?</string>
     <string name="life_empty_birthday">No birthdays yet</string>
@@ -386,84 +390,24 @@
     <string name="life_empty_birthday_action">Add Birthday</string>
     <string name="life_birthday_days_after">days left</string>
     <string name="life_birthday_last_gift">Last gift: %s</string>
-    
-    <string name="life_empty_todo">No to-dos yet</string>
     <string name="life_empty_todo_subtitle">Tap + in the top right to add a to-do</string>
-    <string name="life_empty_todo_action">New To-Do</string>
-    
-    <string name="life_empty_subscription">No subscriptions yet</string>
     <string name="life_empty_subscription_subtitle">Tap + in the top right to add a subscription</string>
-    <string name="life_empty_subscription_action">New Subscription</string>
-    
-    <string name="life_empty_travel">No travel plans yet</string>
     <string name="life_empty_travel_subtitle">Tap + in the top right to plan your trip</string>
-    <string name="life_empty_travel_action">New Travel Plan</string>
-    
-    <string name="life_empty_shopping">No shopping plans yet</string>
     <string name="life_empty_shopping_subtitle">Tap + in the top right to add a shopping plan</string>
-    <string name="life_empty_shopping_action">New Shopping Plan</string>
-    
-    <string name="life_confirm_delete_reading">Delete this reading plan?</string>
-    <string name="life_empty_reading">No reading plans yet</string>
     <string name="life_empty_reading_subtitle">Tap + in the top right to start your reading journey</string>
-    <string name="life_empty_reading_action">New Reading Plan</string>
-    
-    <string name="life_reading_title">Reading</string>
-    <string name="life_reading_done">Done</string>
-    <string name="life_reading_reading">Reading</string>
-    <string name="life_reading_page_format">%1$s / %2$s pages</string>
-    
-    <string name="life_subscription_title">Subscriptions</string>
-    <string name="life_subscription_active">Active</string>
-    <string name="life_subscription_cancelled">Cancelled</string>
-    <string name="life_subscription_archived">Archived</string>
-
-    
-    <string name="life_study_title">Study Plan</string>
-    <string name="life_confirm_delete_study">Delete this study plan?</string>
-    <string name="life_empty_study">No study plans yet</string>
     <string name="life_empty_study_subtitle">Tap + in the top right to create your first study plan</string>
-    <string name="life_empty_study_action">New Study Plan</string>
-    <string name="life_study_done">Completed</string>
-    <string name="life_study_learning">Learning</string>
-    
-    <string name="life_travel_title">Travel Plan</string>
-    
-    <string name="life_shopping_title">Shopping Plan</string>
-    
-    <string name="life_todo_title">To-Do</string>
-    <string name="life_todo_filter_list">List</string>
-    <string name="life_todo_filter_quad">Quadrant</string>
-    <string name="life_todo_filter_calendar">Calendar</string>
-    <string name="life_todo_quad_important_urgent">Important &amp; Urgent</string>
-    <string name="life_todo_quad_important">Important</string>
-    <string name="life_todo_quad_urgent">Urgent</string>
-    <string name="life_todo_quad_normal">Neither</string>
-    <string name="life_todo_empty">None</string>
-    
     <string name="life_journal_title">Journal</string>
     <string name="life_journal_write">Write Journal</string>
     <string name="life_journal_empty_first">Record your first journal entry</string>
     <string name="life_journal_empty_hint">Everyday moments are worth recording</string>
     <string name="life_journal_write_one">Write one</string>
-    
     <string name="life_achievement_title">Achievements</string>
     <string name="life_achievement_unlocked">Unlocked</string>
     <string name="life_achievement_locked">Locked</string>
     <string name="life_achievement_close">Close</string>
     <string name="life_achievement_unlocked_on">Unlocked on %s</string>
-    
     <string name="life_factor_analysis">Triggers</string>
     <string name="life_factor_analysis_count">%d times</string>
-    
-    <string name="life_saving_filter_all">All %d</string>
-    <string name="life_saving_filter_active">Active</string>
-    <string name="life_saving_filter_done">Achieved</string>
-    <string name="life_saving_no_match">No matching records</string>
-    <string name="life_saving_deleted">Deleted</string>
-    <string name="life_saving_undo">Undo</string>
-    
-    
     <!-- Life - Habit -->
     <string name="life_habit_checkin">Check in</string>
     <string name="life_habit_checked">Checked</string>
@@ -473,7 +417,6 @@
     <string name="life_habit_total_checkins">%d times</string>
     <string name="life_habit_total_label">Total Check-ins</string>
     <string name="life_habit_heatmap">Check-in Heatmap</string>
-    <string name="life_habit_create">New Habit</string>
     <string name="life_habit_name">Habit Name</string>
     <string name="life_habit_category">Category</string>
     <string name="life_habit_category_daily">Daily Habit</string>
@@ -491,25 +434,17 @@
     <string name="life_habit_achievement">Achievements</string>
     <string name="life_habit_new">New Habit</string>
     <string name="life_habit_create_btn">Create</string>
-    
     <!-- Life - CountUp -->
     <string name="life_countup_title">Count Up</string>
     <string name="life_countup_days">%d days</string>
     <string name="life_countup_milestone">%d days to reach</string>
-
-    
     <!-- Life - Shopping Kanban -->
-    
     <!-- Life - Subscription -->
-    
     <!-- Life - Travel -->
-    
     <!-- Life - Todo -->
-    
     <!-- Life - Report -->
     <string name="life_report_tab_weekly">Weekly</string>
     <string name="life_report_tab_monthly">Monthly</string>
-    
     <!-- Life - Focus -->
     <string name="life_focus_giveup">Give Up</string>
     <string name="life_focus_giveup_confirm">Confirm give up?</string>
@@ -523,7 +458,6 @@
     <string name="life_focus_pause">Pause</string>
     <string name="life_focus_start">Start</string>
     <string name="life_focus_complete">Complete</string>
-    
     <!-- Life - Mood -->
     <string name="life_mood_save">Save</string>
     <string name="life_mood_happy">Happy</string>
@@ -541,30 +475,21 @@
     <string name="life_mood_factor_weather">Weather</string>
     <string name="life_mood_factor_social">Social</string>
     <string name="life_mood_content_hint">Write something... (optional)</string>
-    
     <!-- Life - Journal -->
-    
     <!-- Life - Deposit Sheet -->
     <string name="life_deposit_title">Deposit</string>
     <string name="life_deposit_save">Save</string>
-    
     <!-- Life - Delete Confirm -->
     <string name="life_delete_confirm_default">Confirm delete this record?</string>
-    
     <!-- Life - Dynamic Form -->
-    
     <!-- Life - Item Detail -->
-    
     <!-- Life - Template Create -->
     <string name="life_template_save_error">Save failed, content saved to draft</string>
-    
     <!-- Life - Create Item Warning -->
     <string name="life_item_limit_reached">Limit reached (10,000 records), please archive or delete old items</string>
     <string name="life_item_limit_warning">Approaching limit (%d/10,000), consider archiving</string>
     <string name="life_item_limit_info">This template has %d records, consider archiving old items</string>
-    
     <!-- Life - Accu Days related -->
-    
     <!-- Bill Import Errors -->
     <string name="bill_import_error_read_file">Unable to read file</string>
     <string name="bill_import_error_parse_invalid">No valid bill records found</string>
@@ -574,12 +499,10 @@
     <string name="bill_import_error_ocr_invalid">No valid transactions recognized</string>
     <string name="bill_import_error_ocr_failed">Recognition failed: %s</string>
     <string name="bill_import_error_invalid_amount">Please enter a valid amount</string>
-    
     <!-- Widget -->
     <string name="widget_app_name">Palm Note</string>
     <string name="widget_monthly_expense">Monthly Expense</string>
     <string name="widget_monthly_income">Monthly Income</string>
-    
     <!-- Bill Import Diagnostics -->
     <string name="bill_import_diag_file_size">File size: %d bytes</string>
     <string name="bill_import_diag_format">Format: %s</string>
@@ -588,7 +511,6 @@
     <string name="bill_import_diag_first_line">First line: %s</string>
     <string name="bill_import_diag_detected_format">Detected format: %s</string>
     <string name="bill_import_diag_encoding">Encoding: %s</string>
-    
     <!-- Asset Detail Screen -->
     <string name="asset_detail_page_title">Item Details</string>
     <string name="asset_sold_price_label">Sold Price</string>
@@ -711,9 +633,7 @@
     <string name="asset_dialog_delete_confirm">Delete \"%s\"? It can be restored from the recycle bin.</string>
     <string name="asset_edit_usage_record">Edit Usage Record</string>
     <string name="asset_close">Close</string>
-
     <!-- Asset Categories -->
-
     <!-- Add Asset Screen -->
     <string name="asset_add_title">Add Item</string>
     <string name="asset_edit_title">Edit Item</string>
@@ -736,27 +656,22 @@
     <string name="location_desk">Desk</string>
     <string name="location_in_car">In Car</string>
     <string name="acquisition_custom">Custom</string>
-
     <!-- Report -->
     <string name="report_year_format">%d</string>
     <string name="report_total_expense_label">Total Expense</string>
     <string name="report_total_income_label">Total Income</string>
-
     <!-- Asset Form Errors -->
     <string name="asset_error_name_required">Please enter an item name</string>
     <string name="asset_error_category_required">Please select a category</string>
     <string name="asset_error_date_required">Please select a purchase date</string>
-    
     <!-- Bill Form Errors -->
     <string name="bill_error_amount_required">Please enter a valid amount</string>
     <string name="bill_error_category_required">Please select a category</string>
-    
     <!-- Backup Error Messages -->
     <string name="backup_error_corrupted">Backup file is corrupted or empty</string>
     <string name="backup_error_cross_device">This backup was created on another device and its database key cannot be decrypted. Please create a new backup on the original device.</string>
     <string name="backup_error_create_failed">Backup failed</string>
     <string name="backup_error_restore_failed">Restore failed</string>
-    
     <!-- Calendar Sync -->
     <string name="calendar_sync_name">Palm Note</string>
     <string name="calendar_sync_display_name">Palm Note Sync</string>
@@ -764,19 +679,14 @@
     <string name="calendar_sync_error_permission_missing">Missing calendar permission</string>
     <string name="calendar_event_anniversary">Anniversary</string>
     <string name="calendar_event_person_format">Person: %s</string>
-    
     <!-- Field Validation -->
-    
     <!-- Date Format -->
-    
     <!-- Currency Format -->
-    
     <!-- App Lock -->
     <string name="app_lock_change_pin">Change PIN</string>
     <string name="app_lock_forgot_pin_confirm">Clear PIN code? This will remove app lock protection.</string>
     <string name="app_lock_forgot_pin_action">Clear</string>
     <string name="app_lock_pin_changed">PIN changed successfully</string>
-    
     <!-- Notifications -->
     <string name="notification_daily_title">Daily Reminder</string>
     <string name="notification_daily_message">No life records today yet. Come and record!</string>
@@ -794,9 +704,7 @@
     <string name="notification_milestone_message">You\'ve kept "%1$s" going for %2$d days!</string>
     <string name="notification_subscription_title">Subscription Billing Reminder</string>
     <string name="notification_subscription_message">"%1$s" billing today: %2$s</string>
-    
     <!-- Notification Channels -->
-    
     <!-- About Screen -->
     <string name="about_title">About</string>
     <string name="about_subtitle">Palm Note</string>
@@ -812,11 +720,9 @@
     <string name="about_legal">Legal Information</string>
     <string name="about_privacy_policy">Privacy Policy</string>
     <string name="about_terms_of_service">Terms of Service</string>
-
     <string name="about_made_with">Made with Love</string>
     <string name="about_privacy_title">Privacy Policy</string>
     <string name="about_terms_title">Terms of Service</string>
-    
     <!-- App Lock Settings -->
     <string name="app_lock_settings_title">App Lock Settings</string>
     <string name="app_lock_settings_section_lock">Locking</string>
@@ -838,16 +744,13 @@
     <string name="app_lock_change_pin_subtitle">Change app lock password</string>
     <string name="app_lock_biometric_enable">Enable Biometric</string>
     <string name="app_lock_biometric_enable_subtitle">Use fingerprint or face to unlock quickly</string>
-    
     <!-- Reminder Time -->
     <string name="settings_reminder_time">Reminder Time</string>
     <string name="settings_reminder_time_subtitle">Set specific time for daily reminder</string>
     <string name="settings_reminder_time_bill_subtitle">Set specific time for bookkeeping reminder</string>
     <string name="settings_select_reminder_time">Select Reminder Time</string>
-    
     <!-- Default Book -->
     <string name="report_all_books">All Books</string>
-    
     <!-- Bill Detail -->
     <string name="bill_detail_title">Bill Detail</string>
     <string name="bill_type">Type</string>
@@ -868,7 +771,6 @@
     <string name="bill_record_id">Record ID</string>
     <string name="bill_created_at">Created At</string>
     <string name="bill_updated_at">Updated At</string>
-    
     <!-- Bill Import -->
     <string name="bill_import_title">Import Bills</string>
     <string name="bill_import_file">File Import</string>
@@ -903,7 +805,6 @@
     <string name="bill_import_screenshot">Screenshot</string>
     <string name="bill_import_total_records">Total %d records</string>
     <string name="bill_import_selected_records">%d selected</string>
-    
     <!-- Budget -->
     <string name="budget_title">Budget Management</string>
     <string name="budget_month_format">%s Budget</string>
@@ -916,7 +817,6 @@
     <string name="budget_set">Set Budget</string>
     <string name="budget_tips">Budget Tips</string>
     <string name="budget_tips_content">① Suggest using 50%% of income as living expenses budget\n② Reserve 10%% as emergency fund\n③ You\'ll be reminded when 80%% is used</string>
-    
     <!-- Report -->
     <string name="report_title">Statistics</string>
     <string name="report_previous">Previous</string>
@@ -936,7 +836,6 @@
     <string name="report_weekly_trend">Weekly Trend</string>
     <string name="report_monthly_trend">Monthly Trend</string>
     <string name="report_yearly_trend">Yearly Trend</string>
-    
     <!-- Account Book Manage -->
     <string name="account_book_manage_title">Book Management</string>
     <string name="account_book_add">Add Book</string>
@@ -957,15 +856,10 @@
     <string name="account_book_color">Color</string>
     <string name="account_book_back_to_template">← Back to Templates</string>
     <string name="account_book_name_required">Please enter a book name</string>
-    
     <!-- Default Book Names -->
-    
     <!-- Asset Status -->
-    
     <!-- Life Templates -->
-    
     <!-- Wallet Type Names -->
-    
     <!-- Bill Categories - Expense -->
     <string name="category_food">Food</string>
     <string name="category_snacks">Snacks</string>
@@ -1005,7 +899,6 @@
     <string name="category_fine">Fine</string>
     <string name="category_fee">Fee</string>
     <string name="category_other">Other</string>
-    
     <!-- Bill Categories - Income -->
     <string name="category_salary">Salary</string>
     <string name="category_bonus">Bonus</string>
@@ -1018,7 +911,6 @@
     <string name="category_lottery">Lottery</string>
     <string name="category_claim">Insurance Claim</string>
     <string name="category_inheritance">Inheritance</string>
-    
     <!-- Payment Methods -->
     <string name="payment_cash">Cash</string>
     <string name="payment_wechat">WeChat</string>
@@ -1026,7 +918,6 @@
     <string name="payment_card">Bank Card</string>
     <string name="payment_bank_transfer">Bank Transfer</string>
     <string name="payment_other">Other</string>
-    
     <!-- Wallet Screen -->
     <string name="wallet_title">Account Management</string>
     <string name="wallet_add">Add Account</string>
@@ -1052,7 +943,6 @@
     <string name="wallet_card_number">Card Number</string>
     <string name="wallet_balance_invalid">Enter a valid number</string>
     <string name="wallet_balance_negative">Amount cannot be negative</string>
-    
     <!-- Category Screen -->
     <string name="category_manage_title">Category Management</string>
     <string name="category_manage_add">Add Category</string>
@@ -1060,7 +950,6 @@
     <string name="category_manage_delete_confirm">Are you sure you want to delete \"%s\"? Records under this category will not be deleted.</string>
     <string name="category_manage_empty_title">No categories yet</string>
     <string name="category_manage_empty_hint">Tap + to add your first category</string>
-    
     <!-- Data Clear -->
     <string name="data_clear_title">Clear Data</string>
     <string name="data_clear_select">Select data to clear</string>
@@ -1076,7 +965,6 @@
     <string name="data_clear_confirm_title">Confirm Clear</string>
     <string name="data_clear_confirm_message">Clear %s? This action is irreversible!</string>
     <string name="data_clear_action">Clear</string>
-    
     <!-- Recycle Bin -->
     <string name="recycle_bin_title">Recycle Bin</string>
     <string name="recycle_bin_clear_title">Clear Recycle Bin</string>
@@ -1090,7 +978,6 @@
     <string name="recycle_tab_goals">Goals</string>
     <string name="recycle_tab_anniversaries">Anniversaries</string>
     <string name="recycle_tab_moments">Moments</string>
-    
     <!-- Search -->
     <string name="search_placeholder">Search assets, bills, goals, anniversaries, moments…</string>
     <string name="search_clear">Clear</string>
@@ -1101,7 +988,6 @@
     <string name="search_section_goals">Goals</string>
     <string name="search_section_anniversaries">Anniversaries</string>
     <string name="search_section_moments">Moments</string>
-    
     <!-- Backup -->
     <string name="backup_title">Data Backup</string>
     <string name="backup_operation_success">Operation successful</string>
@@ -1118,18 +1004,12 @@
     <string name="backup_restoring">Restoring data…</string>
     <string name="backup_restore_confirm">Restore will overwrite all current data. This action cannot be undone. Continue?</string>
     <string name="backup_restore">Restore</string>
-
-    
     <!-- Common Components -->
     <string name="common_today">Today</string>
     <string name="common_save">Save</string>
-    
     <!-- Icon Picker Categories -->
-    
     <!-- Field Components -->
-    
     <!-- Asset Tags -->
-    
     <!-- Settings Messages -->
     <string name="settings_sync_success">Synced %d anniversaries to system calendar</string>
     <string name="settings_sync_failed">Sync failed: %s</string>
@@ -1143,36 +1023,24 @@
     <string name="settings_appearance_subtitle">Theme, language, accent color</string>
     <string name="settings_reminder_subtitle">Daily, bill, birthday reminders</string>
     <string name="settings_data_subtitle">Export, import, recycle bin</string>
-    <string name="life_saving_title">Saving Plans</string>
     <string name="life_empty_habit_start">Start checking in</string>
     <string name="life_empty_habit_hint">Build good habits</string>
     <string name="life_empty_countup">No count-up yet</string>
     <string name="life_empty_countup_subtitle">Record memorable days</string>
     <string name="life_empty_countup_action">Create count-up</string>
-    
     <!-- Life - Template Empty States -->
     <string name="life_empty_saving_title">No saving plans yet</string>
     <string name="life_empty_saving_subtitle">Set a goal and start saving</string>
     <string name="life_empty_shopping_title">Wishlist is empty</string>
-
     <string name="life_empty_travel_title">No travel plans yet</string>
-
     <string name="life_empty_reading_title">Bookshelf is empty</string>
-
     <string name="life_empty_study_title">No study plans yet</string>
-
     <string name="life_empty_todo_title">No to-do items</string>
-
     <string name="life_empty_countup_title">No count up yet</string>
-
     <string name="life_empty_countdown_title">No countdowns yet</string>
-
     <string name="life_empty_birthday_title">No birthdays yet</string>
-
     <string name="life_empty_anniversary_title">No anniversaries yet</string>
-
     <string name="life_empty_subscription_title">No subscriptions yet</string>
-
     <string name="life_empty_habit_title">Start your first habit</string>
     <string name="life_empty_habit_subtitle">Choose a habit and check in daily</string>
     <string name="life_empty_mood_title">No mood recorded today</string>
@@ -1195,7 +1063,6 @@
     <string name="privacy_dialog_agree">Agree</string>
     <string name="privacy_dialog_disagree">Disagree</string>
     <string name="privacy_dialog_view_links">Full User Agreement and Privacy Policy can be viewed in the About page.</string>
-
     <string name="field_select_time">Select Time</string>
     <string name="field_enabled">Enabled</string>
     <string name="field_disabled">Disabled</string>
@@ -1208,16 +1075,9 @@
     <string name="field_image_helper">Supports local paths and web URLs</string>
     <string name="field_location_placeholder">Enter location name or address</string>
     <string name="field_duration_format">HH:mm</string>
-
-    <string name="life_preset_templates">Preset Templates</string>
-    <string name="life_custom_templates">Custom Templates</string>
-    <string name="life_no_custom_templates">No custom templates</string>
     <string name="life_preset">Preset</string>
-
     <string name="life_create_template">Create Template</string>
-
     <!-- Trigger Engine Notifications -->
-    
     <!-- Default Goal Categories -->
     <string name="goal_category_fitness">Fitness</string>
     <string name="goal_category_reading">Reading &amp; Study</string>
@@ -1226,7 +1086,6 @@
     <string name="goal_category_project">Project Plan</string>
     <string name="goal_category_savings">Savings &amp; Finance</string>
     <string name="goal_category_custom">Custom</string>
-    
     <!-- Default Anniversary Types -->
     <string name="anniversary_type_birthday">Birthday</string>
     <string name="anniversary_type_wedding">Wedding Anniversary</string>
@@ -1237,7 +1096,6 @@
     <string name="anniversary_type_baby">Baby Anniversary</string>
     <string name="anniversary_type_pet">Pet Anniversary</string>
     <string name="anniversary_type_custom">Custom</string>
-    
     <!-- Default Moment Categories -->
     <string name="moment_category_travel">Travel</string>
     <string name="moment_category_food">Food</string>
@@ -1248,7 +1106,6 @@
     <string name="moment_category_nature">Nature</string>
     <string name="moment_category_pet">Pets</string>
     <string name="moment_category_custom">Custom</string>
-    
     <!-- Default Tags -->
     <string name="tag_default_important">Important</string>
     <string name="tag_default_daily">Daily</string>
@@ -1264,14 +1121,12 @@
     <string name="tag_default_finance">Finance</string>
     <string name="tag_default_shopping">Shopping</string>
     <string name="tag_default_gift">Gift</string>
-    
     <!-- TimeAgo & Relative Time -->
     <string name="time_hours_ago">%d hr ago</string>
     <string name="time_days_ago">%d days ago</string>
     <string name="time_weeks_ago">%d weeks ago</string>
     <string name="time_months_ago">%d months ago</string>
     <string name="time_years_ago">%d years ago</string>
-    
     <!-- Life Cards -->
     <string name="life_card_status_completed">Completed</string>
     <string name="life_card_status_archived">Archived</string>
@@ -1282,14 +1137,6 @@
     <string name="life_card_tap_to_view">Tap to view</string>
     <string name="life_card_more_events">(and %d more)</string>
     <string name="life_card_days_unit">days</string>
-    <string name="life_card_goal">Goal</string>
-    <string name="life_card_pages">pages</string>
-    <string name="life_card_budget">Budget</string>
-    <string name="life_card_streak_days">%d days streak</string>
-    <string name="life_card_target_days">Target %d days</string>
-    <string name="life_card_completed_lessons">%d lessons done</string>
-    <string name="life_card_total_lessons">%d lessons</string>
-    
     <!-- Life Item Detail -->
     <string name="life_item_more">More</string>
     <string name="life_item_delete">Delete</string>
@@ -1307,14 +1154,12 @@
     <string name="life_item_deposit">Deposit</string>
     <string name="life_item_archived_hint">Item archived, find it in Recycle Bin</string>
     <string name="life_item_archive">Archive</string>
-    
     <!-- Life Dynamic Form -->
     <string name="life_form_save_failed">Save failed, please try again</string>
     <string name="life_form_save_success">Saved</string>
     <string name="life_form_saved">Saved</string>
     <string name="life_form_save_changes">Save Changes</string>
     <string name="life_form_save">Save</string>
-    
     <!-- Life Link Selector -->
     <string name="life_link_title">Linked Data</string>
     <string name="life_link_bills">Bills</string>
@@ -1322,19 +1167,13 @@
     <string name="life_link_bill_format">Bill #%d</string>
     <string name="life_link_assets">Assets</string>
     <string name="life_link_no_assets">No assets</string>
-    
     <!-- Mood Trend Chart -->
     <string name="life_mood_monthly_distribution">Monthly Mood Distribution</string>
-    
     <!-- Life Focus Preview -->
     <string name="life_focus_preview_today">Today %d min</string>
-    
     <!-- Life Template Field Labels -->
-    
     <!-- Life Template Field Units -->
-    
     <!-- Life Template Status Labels -->
-    
     <!-- CSV Export/Import -->
     <string name="export_error_create_file">Unable to create file</string>
     <string name="export_success">Export successful, %d records total</string>
@@ -1346,57 +1185,44 @@
     <string name="import_error_io">Import failed: %s</string>
     <string name="import_error_parse">Import data parse failed: %s</string>
     <string name="import_error_unknown">Unknown import error: %s</string>
-    
     <!-- Shopping Plan -->
-    <string name="life_shopping_tab_wishlist">Wishlist</string>
-    <string name="life_shopping_tab_ordered">Ordered</string>
-    <string name="life_shopping_list">List</string>
-    <string name="life_shopping_kanban">Kanban</string>
-    <string name="life_shopping_budget">Budget ¥%s</string>
-    
     <!-- Report -->
     <string name="life_report_title">Weekly &amp; Monthly Report</string>
     <string name="life_report_empty">No reports yet</string>
     <string name="life_report_empty_subtitle">Reports are auto-generated after using the app for a while</string>
-    
     <!-- Mood Record -->
     <string name="life_mood_record">Mood Record</string>
     <string name="life_mood_record_action">Record Mood</string>
     <string name="life_mood_empty">No mood records yet</string>
     <string name="life_mood_empty_subtitle">Tap + in the top right to record your first mood</string>
-    
     <!-- Template Creation -->
-    <string name="life_template_step_type">Select Type</string>
+    <string name="life_template_new">New Template</string>
     <string name="life_template_step_basic">Basic Info</string>
-    <string name="life_template_step_fields">Field Config</string>
-    <string name="life_template_step_layout">Layout Selection</string>
-    <string name="life_template_step_format">Step %d / 4</string>
-    <string name="life_template_next">Next</string>
-    <string name="life_template_create">Create Template</string>
-    <string name="life_template_type_plan">Plan</string>
-    <string name="life_template_type_plan_desc">Things I plan to do</string>
-    <string name="life_template_type_time">Time</string>
-    <string name="life_template_type_time_desc">Important dates to remember</string>
-    <string name="life_template_type_record">Record</string>
-    <string name="life_template_type_record_desc">Things I have done / am doing</string>
+    <string name="life_template_section_fields">Field Definitions</string>
     <string name="life_template_name">Template Name</string>
+    <string name="life_template_name_hint">e.g. Skincare Routine</string>
     <string name="life_template_desc">Description (optional)</string>
     <string name="life_template_select_icon">Select Icon</string>
     <string name="life_template_select_color">Select Color</string>
+    <string name="life_template_category_selected">Selected: %1$s</string>
     <string name="life_template_field_text">Text</string>
     <string name="life_template_field_number">Number</string>
     <string name="life_template_field_date">Date</string>
     <string name="life_template_field_select">Single Select</string>
-    <string name="life_template_field_decimal">Decimal</string>
+    <string name="life_template_field_short_text">Short Text</string>
+    <string name="life_template_field_currency">Amount</string>
+    <string name="life_template_field_datetime">Date &amp; Time</string>
+    <string name="life_template_field_rich_text">Rich Text</string>
+    <string name="life_template_field_file">Attachment</string>
     <string name="life_template_field_index">Field %d</string>
     <string name="life_template_field_name">Field Name</string>
+    <string name="life_template_field_type">Field Type</string>
     <string name="life_template_field_required">Required</string>
+    <string name="life_template_field_show_in_card">Show in card</string>
+    <string name="life_template_field_show_as_progress">Progress ring</string>
+    <string name="life_template_field_options_hint">Options (comma-separated)</string>
+    <string name="life_template_field_image">Image (coming later)</string>
     <string name="life_template_add_field">Add Field</string>
-    <string name="life_template_layout_list">List</string>
-    <string name="life_template_layout_timeline">Timeline</string>
-    <string name="life_template_layout_calendar">Calendar</string>
-    <string name="life_template_layout_stats">Statistics</string>
-
     <!-- Category Settings -->
     <string name="cat_preset_section">Preset Categories</string>
     <string name="cat_custom_section">Custom Categories</string>
@@ -1450,7 +1276,6 @@
     <string name="category_match_title_create">Create match rules for %1$s</string>
     <string name="category_match_title_edit">Edit match rules for %1$s</string>
     <string name="category_match_title_preset">Set preset match rules for %1$s</string>
-
     <!-- Password Vault -->
     <string name="settings_vault">Password Vault</string>
     <string name="settings_more">More</string>
@@ -1579,7 +1404,6 @@
     <string name="vault_settings_card_identity_username">Username first</string>
     <string name="vault_avatar_remove">Remove avatar</string>
     <string name="vault_avatar_hint">Tap to upload avatar</string>
-
     <string name="account_book_all_desc">Summary of all book data</string>
     <string name="account_book_all_name">All Books</string>
     <string name="account_book_daily_desc">Record daily expenses</string>
@@ -1634,4 +1458,77 @@
     <string name="wallet_type_investment">Investment</string>
     <string name="wallet_type_other">Other</string>
     <string name="wallet_type_top_up">Top-up</string>
-    <string name="wallet_type_wechat">WeChat</string></resources>
+    <string name="wallet_type_wechat">WeChat</string>
+    <string name="field_select_datetime">Select date &amp; time</string>
+    <string name="field_file_placeholder">Choose a file</string>
+    <string name="field_file_helper">Pick a document from the device</string>
+    <string name="field_clear">Clear</string>
+    <string name="life_category_plan">Plans</string>
+    <string name="life_category_time">Time</string>
+    <string name="life_category_record">Records</string>
+    <string name="life_category_work">Work</string>
+    <string name="life_category_study">Study</string>
+    <string name="life_category_health">Health</string>
+    <string name="life_category_family">Family</string>
+    <string name="life_category_goal">Goals</string>
+    <string name="life_category_memorial">Memorial</string>
+    <string name="life_category_record_display">Records</string>
+    <string name="life_home_stats">Statistics</string>
+    <string name="life_home_card_manage">Home cards</string>
+    <string name="life_home_card_category">Category overview</string>
+    <string name="life_stats_today_todo">Today\'s To-dos</string>
+    <string name="life_stats_habit_rate">Habit Rate</string>
+    <string name="life_stats_focus_minutes">Focus Minutes</string>
+    <string name="life_stats_max_streak">Best Streak</string>
+    <string name="life_stats_week_chart_title">Last 7 days board</string>
+    <string name="life_stats_days">%1$d days</string>
+    <string name="life_stats_percent">%1$d%%</string>
+    <string name="life_stats_empty">No data yet</string>
+    <string name="life_category_detail_count">%1$d items</string>
+    <string name="life_category_detail_week_new">+%1$d this week</string>
+    <string name="life_category_detail_empty">No templates in this category yet, create one in template management</string>
+    <string name="life_category_filter_daily">Daily</string>
+    <string name="life_category_filter_weekly">Weekly</string>
+    <string name="life_category_filter_monthly">Monthly</string>
+    <string name="life_category_filter_all">All</string>
+    <string name="life_category_pick_template">Pick a template</string>
+    <string name="life_category_new_item">New Item</string>
+    <string name="life_template_category">Category</string>
+    <string name="life_template_category_custom">Custom</string>
+    <string name="life_template_category_custom_hint">Enter a custom category</string>
+    <string name="life_template_field_time">Time</string>
+    <string name="life_template_field_boolean">Switch</string>
+    <string name="life_template_field_multi_select">Multi-select</string>
+    <string name="life_template_field_rating">Rating</string>
+    <string name="life_template_field_slider">Progress</string>
+    <string name="life_template_field_percentage">Percentage</string>
+    <string name="life_template_field_url">URL</string>
+    <string name="life_template_field_email">Email</string>
+    <string name="life_template_field_phone">Phone</string>
+    <string name="life_template_field_color">Color</string>
+    <string name="life_template_field_location">Location</string>
+    <string name="life_template_field_duration">Duration</string>
+    <string name="life_card_days_left">%1$d days left</string>
+    <string name="life_card_expired_days">%1$d days overdue</string>
+    <string name="life_weekly_calendar_expand">Expand month view</string>
+    <string name="life_weekly_calendar_expand_hint">Tap to expand</string>
+    <string name="life_weekly_calendar_collapse">Collapse to week</string>
+    <string name="life_weekly_calendar_today">Today</string>
+    <string name="life_weekly_calendar_month_header">%1$d/%2$d</string>
+    <string name="life_home_today_board">Today board</string>
+    <string name="life_home_board_selected">Board · %1$d/%2$d</string>
+    <string name="life_board_empty">No items for this day</string>
+    <string name="life_home_today_added">+%1$d today</string>
+    <string name="life_home_slot_morning">Morning</string>
+    <string name="life_home_slot_forenoon">Forenoon</string>
+    <string name="life_home_slot_afternoon">Afternoon</string>
+    <string name="life_home_slot_evening">Evening</string>
+    <string name="life_home_slot_allday">All day</string>
+    <string name="life_home_todo">Todo</string>
+    <string name="life_home_todo_overdue">%1$d overdue</string>
+    <string name="life_home_todo_total">%1$d total</string>
+    <string name="life_home_todo_empty">No backlog yet</string>
+    <string name="life_home_todo_no_date">No date</string>
+    <string name="life_home_todo_overdue_days">Overdue by %1$d days</string>
+    <string name="life_home_todo_future">Upcoming</string>
+    <string name="life_home_todo_view_all">View all todos</string></resources>

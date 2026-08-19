@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
 import com.palmnote.domain.model.AutoLockMode
 import com.palmnote.ui.dashboard.DashboardCardConfig
+import com.palmnote.ui.life.LifeHomeCardConfig
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
@@ -38,6 +39,9 @@ class PreferencesManager @Inject constructor(
         val BUDGET_REMINDER_ENABLED = booleanPreferencesKey("budget_reminder_enabled")
         val ASSET_VIEW_MODE = booleanPreferencesKey("asset_view_mode")
         val DASHBOARD_CARD_CONFIGS = stringPreferencesKey("dashboard_card_configs")
+        val LIFE_HOME_CARD_CONFIGS = stringPreferencesKey("life_home_card_configs")
+        val LIFE_CALENDAR_EXPANDED = booleanPreferencesKey("life_calendar_expanded")
+        val LIFE_CALENDAR_SELECTED_DATE = longPreferencesKey("life_calendar_selected_date")
         val CALENDAR_SYNC_ENABLED = booleanPreferencesKey("calendar_sync_enabled")
         val SWITCH_COLOR = stringPreferencesKey("switch_color")
         val DEFAULT_START_PAGE = stringPreferencesKey("default_start_page")
@@ -75,6 +79,7 @@ class PreferencesManager @Inject constructor(
         val AUTO_LOCK_MODE = stringPreferencesKey("auto_lock_mode")
         val AUTO_LOCK_TIMEOUT_MINUTES = intPreferencesKey("auto_lock_timeout_minutes")
         val VAULT_CARD_IDENTITY = stringPreferencesKey("vault_card_identity")
+        val RECENT_SEARCHES = stringPreferencesKey("life_recent_searches")
 
         const val AUTO_LOCK_MODE_IMMEDIATE = "immediate"
         const val AUTO_LOCK_MODE_SYSTEM = "system"
@@ -123,6 +128,33 @@ class PreferencesManager @Inject constructor(
 
     suspend fun saveDashboardCardConfigs(configs: List<DashboardCardConfig>) {
         context.dataStore.edit { it[DASHBOARD_CARD_CONFIGS] = DashboardCardConfig.toJson(configs) }
+    }
+
+    val lifeHomeCardConfigs: Flow<List<LifeHomeCardConfig>> = prefsFlow.map { prefs ->
+        val json = prefs[LIFE_HOME_CARD_CONFIGS]
+        if (json == null) {
+            LifeHomeCardConfig.defaults
+        } else {
+            val stored = LifeHomeCardConfig.fromJson(json)
+            val storedTypes = stored.map { it.type }.toSet()
+            stored + LifeHomeCardConfig.defaults.filter { it.type !in storedTypes }
+        }
+    }
+
+    suspend fun saveLifeHomeCardConfigs(configs: List<LifeHomeCardConfig>) {
+        context.dataStore.edit { it[LIFE_HOME_CARD_CONFIGS] = LifeHomeCardConfig.toJson(configs) }
+    }
+
+    val lifeCalendarExpanded: Flow<Boolean> = prefsFlow.map { it[LIFE_CALENDAR_EXPANDED] ?: false }
+
+    suspend fun setLifeCalendarExpanded(expanded: Boolean) {
+        context.dataStore.edit { it[LIFE_CALENDAR_EXPANDED] = expanded }
+    }
+
+    val lifeCalendarSelectedDate: Flow<Long> = prefsFlow.map { it[LIFE_CALENDAR_SELECTED_DATE] ?: java.time.LocalDate.now().toEpochDay() }
+
+    suspend fun setLifeCalendarSelectedDate(epochDay: Long) {
+        context.dataStore.edit { it[LIFE_CALENDAR_SELECTED_DATE] = epochDay }
     }
 
     fun isAppLockEnabled(): Boolean = prefsState.value[APP_LOCK_ENABLED] ?: false
@@ -339,5 +371,30 @@ class PreferencesManager @Inject constructor(
 
     suspend fun setVaultCardIdentity(identity: String) {
         context.dataStore.edit { it[VAULT_CARD_IDENTITY] = identity }
+    }
+
+    /** 生活页搜索页最近搜索词（最多 8 条，最新在前）。 */
+    val recentSearches: Flow<List<String>> = prefsFlow.map { prefs ->
+        val raw = prefs[RECENT_SEARCHES]
+        if (raw.isNullOrBlank()) emptyList()
+        else try {
+            kotlinx.serialization.json.Json.decodeFromString<List<String>>(raw)
+        } catch (_: Exception) { emptyList() }
+    }
+
+    suspend fun addRecentSearch(query: String) {
+        val text = query.trim()
+        if (text.isEmpty()) return
+        val current = recentSearchesMap()
+        val updated = (listOf(text) + current.filter { !it.equals(text, ignoreCase = true) }).take(8)
+        context.dataStore.edit { it[RECENT_SEARCHES] = kotlinx.serialization.json.Json.encodeToString(updated) }
+    }
+
+    private fun recentSearchesMap(): List<String> {
+        val raw = prefsState.value[RECENT_SEARCHES]
+        if (raw.isNullOrBlank()) return emptyList()
+        return try {
+            kotlinx.serialization.json.Json.decodeFromString<List<String>>(raw)
+        } catch (_: Exception) { emptyList() }
     }
 }

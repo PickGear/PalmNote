@@ -14,6 +14,7 @@ class LifeTemplateRepositoryImpl @Inject constructor(
     override suspend fun getTemplateById(id: Long): LifeTemplate? = dao.getTemplateById(id)
     override fun getTemplateByIdFlow(id: Long): Flow<LifeTemplate?> = dao.getTemplateByIdFlow(id)
     override fun getBuiltinTemplates(): Flow<List<LifeTemplate>> = dao.getBuiltinTemplates()
+    override fun searchTemplates(query: String): Flow<List<LifeTemplate>> = dao.searchTemplates(query)
     override suspend fun insertTemplate(template: LifeTemplate): Long = dao.insertTemplate(template)
     override suspend fun updateTemplate(template: LifeTemplate) = dao.updateTemplate(template)
     override suspend fun setTemplateHidden(id: Long, hidden: Boolean) = dao.setTemplateHidden(id, hidden)

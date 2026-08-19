@@ -46,6 +46,13 @@ object DateUtils {
     fun millisToLocalDate(millis: Long): LocalDate =
         Instant.ofEpochMilli(millis).atZone(zone).toLocalDate()
 
+    // 合理毫秒时间戳窗口:1971-01-01 ~ 2100-01-01,过滤掉 NUMBER 字段的普通数值
+    private const val MIN_PLAUSIBLE_MILLIS = 31_536_000_000L
+    private const val MAX_PLAUSIBLE_MILLIS = 4_102_444_800_000L
+
+    fun isPlausibleMillis(millis: Long): Boolean =
+        millis in MIN_PLAUSIBLE_MILLIS..MAX_PLAUSIBLE_MILLIS
+
     private fun millisToLocalDateTime(millis: Long): LocalDateTime =
         Instant.ofEpochMilli(millis).atZone(zone).toLocalDateTime()
 

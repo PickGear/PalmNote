@@ -98,6 +98,10 @@ fun DashboardScreen(
                     state.monthlyExpense > 0 && state.monthlyExpense > budget.totalBudget * 0.8
             }
             CardType.ASSET_DISTRIBUTION -> state.assetDistribution.isNotEmpty()
+            CardType.GOALS -> state.goalCount > 0
+            CardType.ANNIVERSARIES -> state.anniversaryCount > 0
+            CardType.HABIT_TODAY -> state.habitTotal > 0
+            CardType.SUBSCRIPTION -> state.upcomingSubscriptions.isNotEmpty()
             else -> true
         }
     }
@@ -258,6 +262,7 @@ fun DashboardScreen(
                                     onNavigateToBill = onNavigateToBill,
                                     onNavigateToLife = onNavigateToLife,
                                     onNavigateToVault = onNavigateToVault,
+                                    onHabitCheckIn = { viewModel.checkInHabit(it) },
                                     presetCategoryOverrides = presetCategoryOverrides,
                                     categoryConfigs = categoryConfigs
                                 )
@@ -292,6 +297,7 @@ fun DashboardScreen(
                             onNavigateToBill = onNavigateToBill,
                             onNavigateToLife = onNavigateToLife,
                             onNavigateToVault = onNavigateToVault,
+                            onHabitCheckIn = { viewModel.checkInHabit(it) },
                             presetCategoryOverrides = presetCategoryOverrides,
                             categoryConfigs = categoryConfigs
                         )

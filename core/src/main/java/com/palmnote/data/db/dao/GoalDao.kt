@@ -45,6 +45,12 @@ interface GoalDao {
     @Query("SELECT COUNT(*) FROM goals WHERE currentCount >= totalCount")
     fun getCompletedGoalCount(): Flow<Int>
 
+    @Query("SELECT COUNT(*) FROM goals WHERE goalType != 'HABIT'")
+    fun getNonHabitGoalCount(): Flow<Int>
+
+    @Query("SELECT COUNT(*) FROM goals WHERE currentCount >= totalCount AND goalType != 'HABIT'")
+    fun getCompletedNonHabitGoalCount(): Flow<Int>
+
     @Query("SELECT COUNT(*) FROM goals WHERE goalType = 'HABIT'")
     fun getHabitCount(): Flow<Int>
 

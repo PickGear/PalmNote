@@ -17,15 +17,26 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import coil3.compose.AsyncImage
 import com.palmnote.app.R
+import com.palmnote.domain.util.DateUtils
 import com.palmnote.ui.components.AppDialog
+import com.palmnote.ui.components.ImageGridPicker
+import com.palmnote.ui.components.saveImageToInternalStorage
 import com.palmnote.ui.components.toComposeColor
+import com.palmnote.ui.components.toImageJson
+import com.palmnote.ui.components.toImageList
 import com.palmnote.ui.components.CapsuleSwitch
+import kotlinx.coroutines.launch
 
 // ============================================================
 // 17 Field Types
@@ -65,6 +76,10 @@ fun FieldInput(field: FieldDef, value: String, onValueChange: (String) -> Unit) 
         "IMAGE" -> ImageInput(value, onValueChange)
         "LOCATION" -> LocationInput(value, onValueChange)
         "DURATION" -> DurationInput(value, onValueChange)
+        "CURRENCY" -> CurrencyInput(field, value, onValueChange)
+        "DATETIME" -> DateTimeInput(value, onValueChange)
+        "RICH_TEXT" -> RichTextInput(field, value, onValueChange)
+        "FILE" -> FileInput(value, onValueChange)
         else -> TextInput(field, value, onValueChange, multiline = true)
     }
 }
@@ -234,7 +249,7 @@ private fun SliderInput(field: FieldDef, value: String, onValueChange: (String) 
             value = v.coerceIn(field.min.toFloat(), field.max.toFloat()),
             onValueChange = { onValueChange(it.toInt().toString()) },
             valueRange = field.min.toFloat()..field.max.toFloat(),
-            steps = ((field.max - field.min) / field.step).toInt() - 1
+            steps = safeSliderSteps(field.min, field.max, field.step)
         )
         Text("${v.toInt()}${field.unit}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
@@ -325,18 +340,37 @@ private fun ColorInput(value: String, onValueChange: (String) -> Unit) {
     }
 }
 
-// ---- IMAGE (placeholder) ----
+// ---- IMAGE ----
 @Composable
 private fun ImageInput(value: String, onValueChange: (String) -> Unit) {
-    OutlinedTextField(
-        value = value, onValueChange = onValueChange,
-        placeholder = { Text(stringResource(R.string.field_image_placeholder)) },
-        leadingIcon = { Icon(Icons.Default.Image, null) },
-        modifier = Modifier.fillMaxWidth(),
-        singleLine = true, shape = MaterialTheme.shapes.medium
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val images = value.toImageList()
+    ImageGridPicker(
+        title = stringResource(R.string.field_image_placeholder),
+        images = images,
+        accentColor = MaterialTheme.colorScheme.primary,
+        hint = stringResource(R.string.field_image_helper),
+        maxCount = 9,
+        onAddImage = { uri ->
+            scope.launch {
+                val path = saveImageToInternalStorage(context, uri, "life_") ?: return@launch
+                onValueChange((images + path).toImageJson())
+            }
+        },
+        onRemoveImage = { index ->
+            if (index in images.indices) {
+                onValueChange(images.toMutableList().apply { removeAt(index) }.toImageJson())
+            }
+        },
+        onReorderImages = { from, to ->
+            if (from in images.indices && to in images.indices) {
+                val list = images.toMutableList()
+                list.add(to, list.removeAt(from))
+                onValueChange(list.toImageJson())
+            }
+        }
     )
-    Spacer(modifier = Modifier.height(4.dp))
-    Text(stringResource(R.string.field_image_helper), fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
 }
 
 // ---- LOCATION ----
@@ -363,10 +397,131 @@ private fun DurationInput(value: String, onValueChange: (String) -> Unit) {
     )
 }
 
+// ---- CURRENCY ----
+@Composable
+private fun CurrencyInput(field: FieldDef, value: String, onValueChange: (String) -> Unit) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = { input -> if (input.isEmpty() || input.all { c -> c.isDigit() || c == '.' }) onValueChange(input) },
+        placeholder = { Text(field.label) },
+        leadingIcon = {
+            Text("\u00A5", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        },
+        modifier = Modifier.fillMaxWidth(),
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+        suffix = if (field.unit.isNotEmpty()) {{ Text(field.unit, fontSize = 12.sp) }} else null,
+        shape = MaterialTheme.shapes.medium,
+        colors = OutlinedTextFieldDefaults.colors(unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f), focusedBorderColor = MaterialTheme.colorScheme.outline)
+    )
+}
+
+// ---- DATETIME ----
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DateTimeInput(value: String, onValueChange: (String) -> Unit) {
+    var picker by remember { mutableStateOf(false) }
+    val displayText = value.toLongOrNull()?.let { millis ->
+        java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.getDefault()).format(java.util.Date(millis))
+    } ?: value
+    Box(modifier = Modifier.fillMaxWidth()) {
+        OutlinedTextField(
+            value = displayText, onValueChange = { }, readOnly = true,
+            placeholder = { Text(stringResource(R.string.field_select_datetime)) },
+            trailingIcon = {
+                IconButton(onClick = { picker = true }) { Icon(Icons.Default.DateRange, stringResource(R.string.field_select_datetime)) }
+            },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true, shape = MaterialTheme.shapes.medium
+        )
+        Box(modifier = Modifier.matchParentSize().clickable { picker = true })
+    }
+    if (picker) {
+        val initialMillis = value.toLongOrNull()
+        val zone = java.time.ZoneId.systemDefault()
+        val initialDate = initialMillis?.let { java.time.Instant.ofEpochMilli(it).atZone(zone).toLocalDate() }
+            ?: java.time.LocalDate.now()
+        val initialHour = initialMillis?.let { java.time.Instant.ofEpochMilli(it).atZone(zone).hour } ?: 9
+        val initialMinute = initialMillis?.let { java.time.Instant.ofEpochMilli(it).atZone(zone).minute } ?: 0
+        var step by remember { mutableStateOf(0) }
+        val dateState = rememberDatePickerState(initialSelectedDateMillis = initialDate.atStartOfDay(zone).toInstant().toEpochMilli())
+        val timeState = rememberTimePickerState(initialHour = initialHour, initialMinute = initialMinute)
+        if (step == 0) {
+            DatePickerDialog(
+                onDismissRequest = { picker = false },
+                tonalElevation = 0.dp,
+                colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.background),
+                confirmButton = {
+                    TextButton(onClick = { step = 1 }) { Text(stringResource(R.string.confirm), fontWeight = FontWeight.Bold) }
+                },
+                dismissButton = { TextButton(onClick = { picker = false }) { Text(stringResource(R.string.cancel), fontWeight = FontWeight.Bold) } }
+            ) { DatePicker(state = dateState, colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.background)) }
+        } else {
+            AppDialog(
+                onDismissRequest = { picker = false },
+                title = { Text(stringResource(R.string.field_select_time), fontWeight = FontWeight.Bold) },
+                text = { TimePicker(state = timeState) },
+                confirmButton = {
+                    TextButton(onClick = {
+                        val date = dateState.selectedDateMillis?.let { java.time.Instant.ofEpochMilli(it).atZone(zone).toLocalDate() }
+                            ?: initialDate
+                        val millis = date.atTime(timeState.hour, timeState.minute).atZone(zone).toInstant().toEpochMilli()
+                        onValueChange(millis.toString())
+                        picker = false
+                    }) { Text(stringResource(R.string.confirm), fontWeight = FontWeight.Bold) }
+                },
+                dismissButton = { TextButton(onClick = { picker = false }) { Text(stringResource(R.string.cancel), fontWeight = FontWeight.Bold) } }
+            )
+        }
+    }
+}
+
+// ---- RICH_TEXT ----
+@Composable
+private fun RichTextInput(field: FieldDef, value: String, onValueChange: (String) -> Unit) {
+    OutlinedTextField(
+        value = value, onValueChange = onValueChange,
+        placeholder = { Text(field.label) },
+        modifier = Modifier.fillMaxWidth(),
+        minLines = 4,
+        shape = MaterialTheme.shapes.medium,
+        colors = OutlinedTextFieldDefaults.colors(unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f), focusedBorderColor = MaterialTheme.colorScheme.outline)
+    )
+}
+
+// ---- FILE ----
+@Composable
+private fun FileInput(value: String, onValueChange: (String) -> Unit) {
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) onValueChange(uri.toString())
+    }
+    val displayName = value.substringAfterLast('/').ifEmpty { value }
+    OutlinedTextField(
+        value = if (value.isNotEmpty()) displayName else "",
+        onValueChange = { },
+        readOnly = true,
+        placeholder = { Text(stringResource(R.string.field_file_placeholder)) },
+        leadingIcon = { Icon(Icons.Default.AttachFile, null) },
+        trailingIcon = if (value.isNotEmpty()) {{
+            IconButton(onClick = { onValueChange("") }) { Icon(Icons.Default.Close, stringResource(R.string.field_clear)) }
+        }} else null,
+        modifier = Modifier.fillMaxWidth().clickable { launcher.launch(arrayOf("*/*")) },
+        singleLine = true, shape = MaterialTheme.shapes.medium
+    )
+    Spacer(modifier = Modifier.height(4.dp))
+    Text(
+        stringResource(R.string.field_file_helper),
+        fontSize = 10.sp,
+        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+    )
+}
+
 // ============================================================
 // Display-only components (used in ItemDetailScreen)
 // ============================================================
 
+@OptIn(ExperimentalLayoutApi::class)
+@Suppress("LongMethod", "CyclomaticComplexMethod")
 @Composable
 fun FieldDisplay(field: FieldDef, value: String) {
     Column(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
@@ -420,14 +575,70 @@ fun FieldDisplay(field: FieldDef, value: String) {
                 Text("${value}${field.unit}", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface, lineHeight = 22.sp)
             }
             "DATE" -> {
-                val dateStr = value.toLongOrNull()?.let { millis ->
+                val dateStr = value.toLongOrNull()?.filterMillisRange()?.let { millis ->
                     java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date(millis))
                 } ?: value.ifEmpty { "-" }
                 Text(dateStr, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface, lineHeight = 22.sp)
+            }
+            "CURRENCY" -> {
+                Text("\u00A5$value${field.unit}",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface)
+            }
+            "DATETIME" -> {
+                val dateStr = value.toLongOrNull()?.filterMillisRange()?.let { millis ->
+                    java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.getDefault()).format(java.util.Date(millis))
+                } ?: value.ifEmpty { "-" }
+                Text(dateStr, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface, lineHeight = 22.sp)
+            }
+            "RICH_TEXT" -> {
+                Text(
+                    value.ifEmpty { "-" },
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    lineHeight = 22.sp
+                )
+            }
+            "FILE" -> {
+                Text(value.ifEmpty { "-" }, fontSize = 13.sp, color = MaterialTheme.colorScheme.primary)
+            }
+            "IMAGE" -> {
+                val images = value.toImageList()
+                if (images.isEmpty()) {
+                    Text("-", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                } else {
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        images.forEach { path ->
+                            Box(
+                                modifier = Modifier.size(96.dp).clip(RoundedCornerShape(10.dp)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                AsyncImage(
+                                    model = path,
+                                    contentDescription = null,
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
+                        }
+                    }
+                }
             }
             else -> {
                 Text(value.ifEmpty { "-" }, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface, maxLines = 5, overflow = TextOverflow.Ellipsis, lineHeight = 22.sp)
             }
         }
     }
+}
+
+private fun Long.filterMillisRange(): Long? =
+    if (DateUtils.isPlausibleMillis(this)) this else null
+
+private fun safeSliderSteps(min: Double, max: Double, step: Double): Int {
+    val span = max - min
+    val s = step
+    if (span <= 0 || s <= 0) return 0
+    return ((span / s).toInt() - 1).coerceAtLeast(0)
 }

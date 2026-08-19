@@ -151,7 +151,8 @@ object DatabaseModule {
                     context.getDatabasePath(com.palmnote.feature.vault.VaultDatabase.DATABASE_NAME).absolutePath,
                     dbKeyStore.getOrCreateKey()
                 ),
-                com.palmnote.data.db.migration.MIGRATION_6_7
+                com.palmnote.data.db.migration.MIGRATION_6_7,
+                com.palmnote.data.db.migration.MIGRATION_7_8
             )
             .addCallback(object : androidx.room.RoomDatabase.Callback() {
                 override fun onCreate(db: SupportSQLiteDatabase) {
@@ -342,8 +343,8 @@ object RepositoryModule {
         LifeTemplateRepositoryImpl(dao)
 
     @Provides @Singleton
-    fun provideLifeItemRepository(dao: LifeItemDao): LifeItemRepository =
-        LifeItemRepositoryImpl(dao)
+    fun provideLifeItemRepository(dao: LifeItemDao, templateRepo: LifeTemplateRepository): LifeItemRepository =
+        LifeItemRepositoryImpl(dao, templateRepo)
 
     @Provides @Singleton
     fun provideCrossLinkRepository(dao: CrossLinkDao): CrossLinkRepository =
