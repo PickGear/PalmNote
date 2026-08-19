@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal"
+    android:gravity="center"
+    android:paddingHorizontal="14dp"
+    android:background="@drawable/widget_banner_accent">
+
+    <TextView
+        android:layout_width="26dp"
+        android:layout_height="26dp"
+        android:text="+"
+        android:textSize="17sp"
+        android:textStyle="bold"
+        android:textColor="@color/widget_v2_accent"
+        android:gravity="center"
+        android:background="@drawable/widget_circle_white" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
+        android:text="@string/widget_quick_bill_title"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:textColor="#FFFFFF" />
+
+    <ImageView
+        android:layout_width="16dp"
+        android:layout_height="16dp"
+        android:layout_marginStart="6dp"
+        android:src="@drawable/widget_ic_chevron_white"
+        android:contentDescription="@null" />
+
+</LinearLayout>

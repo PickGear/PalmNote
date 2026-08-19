@@ -24,6 +24,14 @@ interface LifeTemplateDao {
     @Query("SELECT * FROM life_templates WHERE isBuiltin = 1 ORDER BY category, sortOrder")
     fun getBuiltinTemplates(): Flow<List<LifeTemplate>>
 
+    @Query("""
+        SELECT * FROM life_templates
+        WHERE isHidden = 0
+          AND (name LIKE '%' || :query || '%' OR description LIKE '%' || :query || '%')
+        ORDER BY category, sortOrder
+    """)
+    fun searchTemplates(query: String): Flow<List<LifeTemplate>>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTemplate(template: LifeTemplate): Long
 

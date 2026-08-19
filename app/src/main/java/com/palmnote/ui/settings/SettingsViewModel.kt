@@ -12,6 +12,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.palmnote.app.R
 import com.palmnote.data.datastore.PreferencesManager
+import com.palmnote.data.AppIconManager
 import com.palmnote.data.export.CsvDataExporter
 import com.palmnote.data.lock.AppLockManager
 import com.palmnote.domain.repository.*
@@ -59,7 +60,13 @@ data class SettingsState(
     val profileNickname: String = "",
     val profileSignature: String = "",
     val profileAvatar: String = "Spa",
-    val profileAvatarPath: String = ""
+    val profileAvatarPath: String = "",
+    val appIconStyle: String = PreferencesManager.DEFAULT_APP_ICON_STYLE,
+    val themeColor: String = PreferencesManager.DEFAULT_THEME_COLOR,
+    val wallpaperStyle: String = PreferencesManager.DEFAULT_WALLPAPER_STYLE,
+    val wallpaperBlur: Float = PreferencesManager.DEFAULT_WALLPAPER_BLUR,
+    val wallpaperOpacity: Float = PreferencesManager.DEFAULT_WALLPAPER_OPACITY,
+    val wallpaperCustomUri: String = ""
 )
 
 @HiltViewModel
@@ -108,6 +115,12 @@ class SettingsViewModel @Inject constructor(
                 preferencesManager.profileSignature,
                 preferencesManager.profileAvatar,
                 preferencesManager.profileAvatarPath,
+                preferencesManager.appIconStyle,
+                preferencesManager.themeColor,
+                preferencesManager.wallpaperStyle,
+                preferencesManager.wallpaperBlur,
+                preferencesManager.wallpaperOpacity,
+                preferencesManager.wallpaperCustomUri,
                 assetRepository.getTotalAssetCount(),
                 goalRepository.getGoalCount(),
                 momentRepository.getMomentCount(),
@@ -139,11 +152,17 @@ class SettingsViewModel @Inject constructor(
                         profileSignature = (i(19) as? String) ?: "",
                         profileAvatar = (i(20) as? String) ?: "Spa",
                         profileAvatarPath = (i(21) as? String) ?: "",
-                        assetCount = (i(22) as? Int) ?: 0,
-                        goalCount = (i(23) as? Int) ?: 0,
-                        momentCount = (i(24) as? Int) ?: 0,
-                        anniversaryCount = (i(25) as? Int) ?: 0,
-                        autoLockTimeoutMinutes = (i(26) as? Int) ?: 5
+                        appIconStyle = (i(22) as? String) ?: PreferencesManager.DEFAULT_APP_ICON_STYLE,
+                        themeColor = (i(23) as? String) ?: PreferencesManager.DEFAULT_THEME_COLOR,
+                        wallpaperStyle = (i(24) as? String) ?: PreferencesManager.DEFAULT_WALLPAPER_STYLE,
+                        wallpaperBlur = (i(25) as? Float) ?: PreferencesManager.DEFAULT_WALLPAPER_BLUR,
+                        wallpaperOpacity = (i(26) as? Float) ?: PreferencesManager.DEFAULT_WALLPAPER_OPACITY,
+                        wallpaperCustomUri = (i(27) as? String) ?: "",
+                        assetCount = (i(28) as? Int) ?: 0,
+                        goalCount = (i(29) as? Int) ?: 0,
+                        momentCount = (i(30) as? Int) ?: 0,
+                        anniversaryCount = (i(31) as? Int) ?: 0,
+                        autoLockTimeoutMinutes = (i(32) as? Int) ?: 5
                     )
                 }
             }.catch { AppLogger.w("SettingsVM", "Settings flow failed", it) }.collect()
@@ -180,6 +199,38 @@ class SettingsViewModel @Inject constructor(
 
     fun setSwitchColor(color: String) {
         viewModelScope.launch { preferencesManager.setSwitchColor(color) }
+    }
+
+    fun setAppIconStyle(style: String, activityContext: Context? = null) {
+        viewModelScope.launch {
+            // Use Activity context if provided, otherwise fall back to Application context
+            // MIUI launcher requires Activity context for setComponentEnabledSetting to trigger icon refresh
+            val ctx = activityContext ?: context
+            // Apply first, save only on success (same pattern as ZhishengWeather)
+            if (AppIconManager.apply(ctx, style)) {
+                preferencesManager.setAppIconStyle(style)
+            }
+        }
+    }
+
+    fun setThemeColor(color: String) {
+        viewModelScope.launch { preferencesManager.setThemeColor(color) }
+    }
+
+    fun setWallpaperStyle(style: String) {
+        viewModelScope.launch { preferencesManager.setWallpaperStyle(style) }
+    }
+
+    fun setWallpaperBlur(blur: Float) {
+        viewModelScope.launch { preferencesManager.setWallpaperBlur(blur) }
+    }
+
+    fun setWallpaperOpacity(opacity: Float) {
+        viewModelScope.launch { preferencesManager.setWallpaperOpacity(opacity) }
+    }
+
+    fun setWallpaperCustomUri(uri: String) {
+        viewModelScope.launch { preferencesManager.setWallpaperCustomUri(uri) }
     }
 
     fun setDefaultStartPage(route: String) {

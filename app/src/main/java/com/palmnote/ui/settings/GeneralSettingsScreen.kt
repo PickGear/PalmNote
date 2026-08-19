@@ -1,7 +1,10 @@
 package com.palmnote.ui.settings
 
 import android.Manifest
+import android.widget.Toast
 import com.palmnote.domain.model.BillType
+import com.palmnote.data.datastore.PreferencesManager
+import com.palmnote.data.wallpaper.WallpaperPresets
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -13,6 +16,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.Image
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.*
@@ -24,10 +28,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.shape.RoundedCornerShape
 import com.palmnote.ui.components.ModuleCard
 import com.palmnote.ui.components.CapsuleSwitch
 import com.palmnote.ui.components.AppDialog
@@ -41,7 +48,63 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.palmnote.ui.components.CompactTopAppBar
 import com.palmnote.app.R
 import com.palmnote.ui.theme.*
-import kotlinx.coroutines.delay
+
+private val iconVisuals = linkedMapOf(
+    PreferencesManager.APP_ICON_GREEN_WHITE to Pair(Color(0xFF2D4A3E), Color.White),
+    PreferencesManager.APP_ICON_BLACK_WHITE to Pair(Color.Black, Color.White),
+    PreferencesManager.APP_ICON_CYAN_WHITE to Pair(Color(0xFF0891B2), Color.White),
+    PreferencesManager.APP_ICON_WHITE_BLACK to Pair(Color.White, Color.Black),
+)
+
+private val themeNameResMap = mapOf(
+    "cyan" to R.string.theme_cyan,
+    "green" to R.string.theme_green,
+    "blue" to R.string.theme_blue,
+    "purple" to R.string.theme_purple,
+    "orange" to R.string.theme_orange
+)
+
+private fun wallpaperLabelRes(id: String): Int = when (id) {
+    "ocean" -> R.string.wallpaper_ocean
+    "sunset" -> R.string.wallpaper_sunset
+    "forest" -> R.string.wallpaper_forest
+    "lavender" -> R.string.wallpaper_lavender
+    "midnight" -> R.string.wallpaper_midnight
+    "peach" -> R.string.wallpaper_peach
+    "custom" -> R.string.wallpaper_custom
+    else -> R.string.wallpaper_none
+}
+
+// 主题色/壁纸选择对话框共用的「色块 + 名称 + 单选」行
+@Composable
+private fun PickerOptionRow(
+    label: String,
+    previewColor: Color,
+    selected: Boolean,
+    onSelect: () -> Unit,
+    showDivider: Boolean = true
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.medium)
+            .clickable(onClick = onSelect)
+            .padding(vertical = 8.dp, horizontal = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(previewColor.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) {
+            Box(modifier = Modifier.size(20.dp).clip(CircleShape).background(previewColor))
+        }
+        Spacer(Modifier.width(12.dp))
+        Text(label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+        RadioButton(
+            selected = selected,
+            onClick = onSelect,
+            colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary)
+        )
+    }
+    if (showDivider) HorizontalDivider(modifier = Modifier.padding(horizontal = 52.dp))
+}
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -51,11 +114,16 @@ fun GeneralSettingsScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val isDarkTheme = LocalIsDarkTheme.current
     var showThemePicker by remember { mutableStateOf(false) }
     var showLanguagePicker by remember { mutableStateOf(false) }
+    var showThemeColorPicker by remember { mutableStateOf(false) }
+    var showWallpaperPicker by remember { mutableStateOf(false) }
     var showColorPicker by remember { mutableStateOf(false) }
     var showStartPagePicker by remember { mutableStateOf(false) }
     var showBillTypePicker by remember { mutableStateOf(false) }
+    var showIconPicker by remember { mutableStateOf(false) }
+    var pendingIconStyle by remember { mutableStateOf<String?>(null) }
     var showCalendarPermissionDialog by remember { mutableStateOf(false) }
     var permissionPermanentlyDenied by remember { mutableStateOf(false) }
     var customColor by remember(showColorPicker) { mutableStateOf(state.switchColor.removePrefix("#")) }
@@ -118,11 +186,61 @@ fun GeneralSettingsScreen(
                         SettingRowContent(title = stringResource(R.string.settings_language), subtitle = stringResource(R.string.settings_language_subtitle), value = languageLabels[state.language], showChevron = true)
                     }
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-                    val switchColor = state.switchColor.toComposeColor(PrimaryGreen)
+                    val currentThemeColor = ThemePackages.getById(state.themeColor)
+                    val themeColorPreview = if (isDarkTheme) currentThemeColor.darkPrimary else currentThemeColor.lightPrimary
+                    SettingRow(clickable = { showThemeColorPicker = true }) {
+                        SettingRowContent(
+                            title = stringResource(R.string.settings_theme_color),
+                            subtitle = stringResource(R.string.settings_theme_color_subtitle)
+                        )
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Box(
+                                modifier = Modifier.size(28.dp).clip(CircleShape).background(themeColorPreview)
+                                    .border(2.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape)
+                            )
+                            Icon(Icons.Filled.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                    val switchColor = state.switchColor.toComposeColor(MaterialTheme.colorScheme.primary)
                     SettingRow(clickable = { showColorPicker = true }) {
                         SettingRowContent(title = stringResource(R.string.settings_switch_color), subtitle = stringResource(R.string.settings_switch_color_subtitle))
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             Box(modifier = Modifier.size(28.dp).clip(CircleShape).background(switchColor).border(2.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape))
+                            Icon(Icons.Filled.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                    SettingRow(clickable = { showWallpaperPicker = true }) {
+                        SettingRowContent(
+                            title = stringResource(R.string.settings_wallpaper),
+                            subtitle = stringResource(R.string.settings_wallpaper_subtitle)
+                        )
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(
+                                stringResource(wallpaperLabelRes(state.wallpaperStyle)),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Icon(Icons.Filled.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                    SettingRow(clickable = { showIconPicker = true }) {
+                        SettingRowContent(title = stringResource(R.string.settings_app_icon), subtitle = stringResource(R.string.settings_app_icon_subtitle))
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            val (bgColor, fgColor) = iconVisuals[state.appIconStyle] ?: iconVisuals[PreferencesManager.DEFAULT_APP_ICON_STYLE]!!
+                            Box(
+                                modifier = Modifier.size(32.dp).clip(RoundedCornerShape(8.dp)).background(bgColor).border(0.5.dp, Color.Black.copy(alpha = 0.15f), RoundedCornerShape(8.dp)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Image(
+                                    painter = painterResource(id = R.drawable.ic_launcher_foreground_bw),
+                                    contentDescription = null,
+                                    colorFilter = ColorFilter.tint(fgColor),
+                                    modifier = Modifier.size(32.dp)
+                                )
+                            }
                             Icon(Icons.Filled.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
@@ -195,6 +313,142 @@ fun GeneralSettingsScreen(
         )
     }
 
+    if (showThemeColorPicker) {
+        var customThemeColor by remember(showThemeColorPicker) {
+            mutableStateOf(if (state.themeColor.startsWith("#")) state.themeColor.removePrefix("#") else "")
+        }
+        var customThemeColorError by remember(showThemeColorPicker) { mutableStateOf(false) }
+        AppDialog(
+            onDismissRequest = { showThemeColorPicker = false },
+            title = { Text(stringResource(R.string.settings_select_theme_color), fontWeight = FontWeight.Bold) },
+            text = { Column { ThemePackages.packages.forEachIndexed { index, pkg ->
+                PickerOptionRow(
+                    label = stringResource(themeNameResMap[pkg.id] ?: R.string.theme_cyan),
+                    previewColor = if (isDarkTheme) pkg.darkPrimary else pkg.lightPrimary,
+                    selected = state.themeColor == pkg.id,
+                    onSelect = { viewModel.setThemeColor(pkg.id); showThemeColorPicker = false },
+                    showDivider = index != ThemePackages.packages.lastIndex
+                )
+            }
+            HorizontalDivider()
+            Text(stringResource(R.string.settings_custom_color), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = customThemeColor,
+                    onValueChange = { v -> customThemeColor = v.filter { it.isLetterOrDigit() }.take(6); customThemeColorError = false },
+                    label = { Text(stringResource(R.string.settings_hex_color), fontWeight = FontWeight.Bold) },
+                    prefix = { Text("#") },
+                    isError = customThemeColorError,
+                    singleLine = true,
+                    modifier = Modifier.weight(1f),
+                    shape = MaterialTheme.shapes.small
+                )
+                val previewColor = "#$customThemeColor".toComposeColor(Color.Gray)
+                val isCustomSelected = state.themeColor == "#$customThemeColor" && customThemeColor.length == 6
+                Box(modifier = Modifier.size(44.dp).clip(CircleShape).background(previewColor).then(if (isCustomSelected) Modifier.border(3.dp, Color.White, CircleShape) else Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape)).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { if (customThemeColor.length == 6) viewModel.setThemeColor("#$customThemeColor"); else customThemeColorError = true }, contentAlignment = Alignment.Center) {
+                    if (isCustomSelected) Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(20.dp))
+                }
+            }
+            } },
+            confirmButton = {
+                TextButton(onClick = { showThemeColorPicker = false }) {
+                    Text(stringResource(R.string.settings_cancel), fontWeight = FontWeight.Bold)
+                }
+            }
+        )
+    }
+
+    if (showWallpaperPicker) {
+        val wallpaperOptions = buildList {
+            add(Triple("none", stringResource(R.string.wallpaper_none), MaterialTheme.colorScheme.surface))
+            WallpaperPresets.presets.forEach { preset ->
+                add(Triple(preset.id, stringResource(wallpaperLabelRes(preset.id)), preset.lightColors.last()))
+            }
+            add(Triple("custom", stringResource(R.string.wallpaper_custom), MaterialTheme.colorScheme.primary))
+        }
+        val context = LocalContext.current
+        val imagePickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+            uri?.let {
+                try {
+                    val file = java.io.File(context.filesDir, "wallpaper_custom.jpg")
+                    context.contentResolver.openInputStream(it)?.use { input ->
+                        file.outputStream().use { output -> input.copyTo(output) }
+                    }
+                    viewModel.setWallpaperCustomUri(file.absolutePath)
+                    viewModel.setWallpaperStyle("custom")
+                } catch (_: Exception) {
+                    // 不再回退到临时 content:// URI（权限重启后失效），失败直接提示重选
+                    Toast.makeText(context, R.string.wallpaper_load_failed, Toast.LENGTH_SHORT).show()
+                }
+                showWallpaperPicker = false
+            }
+        }
+        AppDialog(
+            onDismissRequest = { showWallpaperPicker = false },
+            title = { Text(stringResource(R.string.settings_select_wallpaper), fontWeight = FontWeight.Bold) },
+            text = { Column { wallpaperOptions.forEachIndexed { index, (id, label, color) ->
+                PickerOptionRow(
+                    label = label,
+                    previewColor = color,
+                    selected = state.wallpaperStyle == id,
+                    onSelect = {
+                        if (id == "custom") {
+                            imagePickerLauncher.launch("image/*")
+                        } else {
+                            viewModel.setWallpaperStyle(id)
+                            showWallpaperPicker = false
+                        }
+                    },
+                    showDivider = index != wallpaperOptions.lastIndex
+                )
+            }
+            if (state.wallpaperStyle != "none") {
+                HorizontalDivider()
+                // 拖动期间只更新本地状态，松手才写 DataStore，避免每个 tick 触发全局重组
+                var blurValue by remember(state.wallpaperBlur) { mutableFloatStateOf(state.wallpaperBlur) }
+                var opacityValue by remember(state.wallpaperOpacity) { mutableFloatStateOf(state.wallpaperOpacity) }
+                Text(
+                    stringResource(R.string.wallpaper_blur),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("0", style = MaterialTheme.typography.bodySmall)
+                    Slider(
+                        value = blurValue,
+                        onValueChange = { blurValue = it },
+                        onValueChangeFinished = { viewModel.setWallpaperBlur(blurValue) },
+                        valueRange = 0f..30f,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text("30", style = MaterialTheme.typography.bodySmall)
+                }
+                Text(
+                    stringResource(R.string.wallpaper_opacity),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("0%", style = MaterialTheme.typography.bodySmall)
+                    Slider(
+                        value = opacityValue,
+                        onValueChange = { opacityValue = it },
+                        onValueChangeFinished = { viewModel.setWallpaperOpacity(opacityValue) },
+                        valueRange = 0f..1f,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text("100%", style = MaterialTheme.typography.bodySmall)
+                }
+            }
+            } },
+            confirmButton = {
+                TextButton(onClick = { showWallpaperPicker = false }) {
+                    Text(stringResource(R.string.settings_cancel), fontWeight = FontWeight.Bold)
+                }
+            }
+        )
+    }
+
     if (showColorPicker) {
         val presetColors = listOf("#2D4A3E", "#34A853", "#4285F4", "#EA4335", "#FBBC04", "#FF6D01", "#AB47BC", "#1E88E5", "#00BCD4", "#66BB6A")
         AppDialog(
@@ -262,6 +516,90 @@ fun GeneralSettingsScreen(
                 if (type != billTypeOptions.last().first) HorizontalDivider(modifier = Modifier.padding(horizontal = 52.dp))
             } } },
             confirmButton = { TextButton(onClick = { showBillTypePicker = false }) { Text(stringResource(R.string.settings_cancel), fontWeight = FontWeight.Bold) } }
+        )
+    }
+
+    if (showIconPicker) {
+        val iconLabels = linkedMapOf(
+            PreferencesManager.APP_ICON_GREEN_WHITE to stringResource(R.string.settings_icon_green_white),
+            PreferencesManager.APP_ICON_BLACK_WHITE to stringResource(R.string.settings_icon_black_white),
+            PreferencesManager.APP_ICON_CYAN_WHITE to stringResource(R.string.settings_icon_cyan_white),
+            PreferencesManager.APP_ICON_WHITE_BLACK to stringResource(R.string.settings_icon_white_black),
+        )
+        AppDialog(
+            onDismissRequest = { showIconPicker = false },
+            title = { Text(stringResource(R.string.settings_select_app_icon), fontWeight = FontWeight.Bold) },
+            text = {
+                Column {
+                    Text(stringResource(R.string.settings_app_icon_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Spacer(Modifier.height(16.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        iconVisuals.forEach { (key, visual) ->
+                            val isSelected = state.appIconStyle == key
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(60.dp)
+                                        .clip(RoundedCornerShape(14.dp))
+                                        .background(visual.first)
+                                        .clickable {
+                                            if (key != state.appIconStyle) {
+                                                showIconPicker = false
+                                                pendingIconStyle = key
+                                            }
+                                        }
+                                        .then(if (isSelected) Modifier.border(3.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(14.dp)) else Modifier.border(1.5.dp, Color.Gray.copy(alpha = 0.4f), RoundedCornerShape(14.dp))),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Image(
+                                        painter = painterResource(id = R.drawable.ic_launcher_foreground_bw),
+                                        contentDescription = null,
+                                        colorFilter = ColorFilter.tint(visual.second),
+                                        modifier = Modifier.size(60.dp)
+                                    )
+                                    if (isSelected) {
+                                        Box(
+                                            modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.3f), RoundedCornerShape(14.dp)),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(20.dp))
+                                        }
+                                    }
+                                }
+                                Spacer(Modifier.height(4.dp))
+                                Text(iconLabels[key] ?: "", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showIconPicker = false }) {
+                    Text(stringResource(R.string.settings_cancel), fontWeight = FontWeight.Bold)
+                }
+            }
+        )
+    }
+
+    pendingIconStyle?.let { style ->
+        AppDialog(
+            onDismissRequest = { pendingIconStyle = null },
+            title = { Text(stringResource(R.string.settings_icon_confirm_title), fontWeight = FontWeight.Bold) },
+            text = { Text(stringResource(R.string.settings_icon_confirm_text)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    val activityContext = context as? Activity
+                    viewModel.setAppIconStyle(style, activityContext)
+                    showIconPicker = false
+                    pendingIconStyle = null
+                }) { Text(stringResource(R.string.settings_confirm), fontWeight = FontWeight.Bold) }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingIconStyle = null }) { Text(stringResource(R.string.settings_cancel), fontWeight = FontWeight.Bold) }
+            }
         )
     }
 

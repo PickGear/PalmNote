@@ -445,7 +445,7 @@ class BackupManager(
         return createBackup(context, db, null)
     }
 
-    // 列出所有备份文件（IO：文件扫描 + MD5 计算）
+    // 列出所有备份文件（IO：文件扫描 + SHA-256 校验和计算）
     suspend fun listBackups(context: Context): List<BackupInfo> = withContext(Dispatchers.IO) {
         val dir = getBackupDir(context)
         dir.listFiles { file -> file.extension == "palmnote" }
@@ -455,7 +455,7 @@ class BackupManager(
                     filePath = file.absolutePath,
                     date = file.lastModified(),
                     size = file.length(),
-                    md5 = calculateMd5(file)
+                    checksum = calculateChecksum(file)
                 )
             }
             ?.sortedByDescending { it.date }
@@ -479,9 +479,9 @@ class BackupManager(
         }
     }
 
-    // 计算文件 MD5（IO）
-    suspend fun calculateMd5(file: File): String = withContext(Dispatchers.IO) {
-        val digest = MessageDigest.getInstance("MD5")
+    // 计算文件 SHA-256 校验和（IO；仅用于完整性展示，非加密用途）
+    suspend fun calculateChecksum(file: File): String = withContext(Dispatchers.IO) {
+        val digest = MessageDigest.getInstance("SHA-256")
         FileInputStream(file).use { fis ->
             val buffer = ByteArray(8192)
             var bytesRead: Int
