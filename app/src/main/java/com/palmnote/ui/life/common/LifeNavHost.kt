@@ -19,18 +19,13 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.palmnote.data.db.entity.LifeTemplate
 import com.palmnote.domain.repository.LifeTemplateRepository
+import com.palmnote.domain.util.LifeTemplateRouteType
+import com.palmnote.domain.util.getRouteType
 import com.palmnote.ui.life.*
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
-import com.palmnote.ui.life.plan.saving.SavingListScreen
-import com.palmnote.ui.life.plan.shopping.ShoppingKanbanScreen
-import com.palmnote.ui.life.plan.study.StudyListScreen
-import com.palmnote.ui.life.plan.subscription.SubscriptionListScreen
-import com.palmnote.ui.life.plan.todo.TodoScreen
-import com.palmnote.ui.life.plan.travel.TravelListScreen
-import com.palmnote.ui.life.plan.reading.ReadingListScreen
 import com.palmnote.ui.life.record.focus.FocusTimerScreen
 import com.palmnote.ui.life.record.habit.HabitListScreen
 import com.palmnote.ui.life.record.journal.JournalListScreen
@@ -89,24 +84,18 @@ private fun DispatchScreen(tpl: LifeTemplate, tid: Long, navController: NavHostC
     val back: () -> Unit = { navController.popBackStack(); Unit }
     val onClick: (Long) -> Unit = { id -> navController.navigate(LifeItemRoute(id)); Unit }
     val onCreate: () -> Unit = { navController.navigate(LifeCreateRoute(tid)); Unit }
-    when (tpl.icon) {
-        "savings" -> SavingListScreen(templateId = tid, onBack = back, onItemClick = onClick, onCreateClick = onCreate)
-        "shopping_cart" -> ShoppingKanbanScreen(templateId = tid, onBack = back, onItemClick = onClick, onCreateClick = onCreate)
-        "checklist" -> TodoScreen(templateId = tid, onBack = back, onItemClick = onClick, onCreateClick = onCreate)
-        "flight", "flight_takeoff" -> TravelListScreen(templateId = tid, onBack = back, onItemClick = onClick, onCreateClick = onCreate)
-        "book_2" -> ReadingListScreen(templateId = tid, onBack = back, onItemClick = onClick, onCreateClick = onCreate)
-        "school" -> StudyListScreen(templateId = tid, onBack = back, onItemClick = onClick, onCreateClick = onCreate)
-        "subscriptions", "repeat" -> SubscriptionListScreen(templateId = tid, onBack = back, onItemClick = onClick, onCreateClick = onCreate)
-        "trending_up", "today" -> CountUpListScreen(templateId = tid, onBack = back, onItemClick = onClick, onCreateClick = onCreate)
-        "timer_off" -> CountdownListScreen(templateId = tid, onBack = back, onItemClick = onClick, onCreateClick = onCreate)
-        "cake" -> BirthdayListScreen(templateId = tid, onBack = back, onItemClick = onClick, onCreateClick = onCreate)
-        "celebration", "favorite" -> AnniversaryListScreen(templateId = tid, onBack = back, onItemClick = onClick, onCreateClick = onCreate)
-        "calendar_month" -> HabitListScreen(onBack = back, onItemClick = onClick)
-        "mood" -> MoodListScreen(onBack = back)
-        "book" -> JournalListScreen(onBack = back, onItemClick = onClick)
-        "timer" -> FocusTimerScreen(onBack = back)
-        "assessment", "BarChart" -> ReportListScreen(onBack = back, onItemClick = { })
-        else -> GenericTemplateListScreen(template = tpl, templateId = tid, onBack = back, onItemClick = onClick, onCreateClick = onCreate)
+    
+    when (tpl.getRouteType()) {
+        LifeTemplateRouteType.HABIT -> HabitListScreen(onBack = back, onItemClick = onClick)
+        LifeTemplateRouteType.MOOD -> MoodListScreen(onBack = back)
+        LifeTemplateRouteType.JOURNAL -> JournalListScreen(onBack = back, onItemClick = onClick)
+        LifeTemplateRouteType.FOCUS -> FocusTimerScreen(onBack = back)
+        LifeTemplateRouteType.COUNTUP -> CountUpListScreen(templateId = tid, onBack = back, onItemClick = onClick, onCreateClick = onCreate)
+        LifeTemplateRouteType.COUNTDOWN -> CountdownListScreen(templateId = tid, onBack = back, onItemClick = onClick, onCreateClick = onCreate)
+        LifeTemplateRouteType.BIRTHDAY -> BirthdayListScreen(templateId = tid, onBack = back, onItemClick = onClick, onCreateClick = onCreate)
+        LifeTemplateRouteType.ANNIVERSARY -> AnniversaryListScreen(templateId = tid, onBack = back, onItemClick = onClick, onCreateClick = onCreate)
+        LifeTemplateRouteType.TODO -> GenericTemplateListScreen(template = tpl, templateId = tid, onBack = back, onItemClick = onClick, onCreateClick = onCreate)
+        LifeTemplateRouteType.GENERIC -> GenericTemplateListScreen(template = tpl, templateId = tid, onBack = back, onItemClick = onClick, onCreateClick = onCreate)
     }
 }
 
@@ -129,7 +118,6 @@ fun LifeNavHost(modifier: Modifier = Modifier, onChildNavigated: (Boolean) -> Un
     ) {
         composable<LifeHomeRoute> {
             LifeScreen(
-                onNavigateToTemplate = { tplId -> navController.navigate(LifeTemplateRoute(tplId)) },
                 onNavigateToItem = { itemId -> navController.navigate(LifeItemRoute(itemId)) },
                 onNavigateToCreate = { tplId -> navController.navigate(LifeCreateRoute(tplId)) },
                 onNavigateToFocus = { navController.navigate(LifeFocusRoute) },
@@ -139,6 +127,8 @@ fun LifeNavHost(modifier: Modifier = Modifier, onChildNavigated: (Boolean) -> Un
                 onNavigateToReport = { navController.navigate(LifeReportRoute) },
                 onNavigateToManage = { navController.navigate(LifeTemplateManageRoute) },
                 onNavigateToTodo = { navController.navigate(LifeTodoRoute) },
+                onNavigateToStats = { navController.navigate(LifeStatsRoute) },
+                onNavigateToCategory = { category -> navController.navigate(LifeCategoryDetailRoute(category)) },
             )
         }
         composable<LifeTemplateRoute> { entry ->
@@ -156,6 +146,12 @@ fun LifeNavHost(modifier: Modifier = Modifier, onChildNavigated: (Boolean) -> Un
         composable<LifeItemRoute> { entry ->
             val iid = entry.toRoute<LifeItemRoute>().itemId
             val vm: ItemDetailViewModel = hiltViewModel(); val s by vm.uiState.collectAsStateWithLifecycle(); LaunchedEffect(iid) { vm.load(iid) }
+            val currentBackStackEntry by navController.currentBackStackEntryAsState()
+            LaunchedEffect(currentBackStackEntry?.destination?.route) {
+                if (currentBackStackEntry?.destination?.route?.contains("LifeItemRoute") == true && iid > 0) {
+                    vm.load(iid)
+                }
+            }
             ItemDetailScreen(item = s.item, template = s.template, viewModel = vm, onBack = { navController.popBackStack() }, onEdit = { s.item?.let { item -> navController.navigate(LifeEditRoute(item.id)) } }, onDelete = { vm.deleteItem(); navController.popBackStack() })
         }
         composable<LifeCreateRoute> { entry ->
@@ -202,5 +198,15 @@ fun LifeNavHost(modifier: Modifier = Modifier, onChildNavigated: (Boolean) -> Un
         composable<LifeAchievementRoute> { AchievementScreen(onBack = { navController.popBackStack() }) }
         composable<LifeTemplateManageRoute> { TemplateManageScreen(onBack = { navController.popBackStack() }, onCreateClick = { navController.navigate(LifeTemplateCreateRoute) }) }
         composable<LifeTemplateCreateRoute> { TemplateCreateScreen(onBack = { navController.popBackStack() }, onCreated = { navController.popBackStack() }) }
+        composable<LifeStatsRoute> { LifeStatsScreen(onBack = { navController.popBackStack() }) }
+        composable<LifeCategoryDetailRoute> { entry ->
+            val category = entry.toRoute<LifeCategoryDetailRoute>().category
+            CategoryDetailScreen(
+                category = category,
+                onBack = { navController.popBackStack() },
+                onTemplateClick = { itemId -> navController.navigate(LifeItemRoute(itemId)) },
+                onCreateClick = { tplId -> navController.navigate(LifeCreateRoute(tplId)) }
+            )
+        }
     }
 }

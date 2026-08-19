@@ -12,6 +12,7 @@
     <uses-permission android:name="android.permission.WRITE_CALENDAR" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application
         android:name="com.palmnote.PalmNoteApp"
@@ -45,12 +46,65 @@
         <activity
             android:name="com.palmnote.MainActivity"
             android:exported="true"
+            android:launchMode="singleTop"
             android:theme="@style/Theme.PalmNote">
+        </activity>
+
+        <!-- 绿白 -->
+        <activity-alias
+            android:name=".IconGreenWhite"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_gw"
+            android:roundIcon="@mipmap/ic_launcher_gw_round"
+            android:targetActivity="com.palmnote.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
+        </activity-alias>
+
+        <!-- 黑白 -->
+        <activity-alias
+            android:name=".IconBlackWhite"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_bw"
+            android:roundIcon="@mipmap/ic_launcher_bw_round"
+            android:targetActivity="com.palmnote.MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <!-- 白黑 -->
+        <activity-alias
+            android:name=".IconWhiteBlack"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_wb"
+            android:roundIcon="@mipmap/ic_launcher_wb_round"
+            android:targetActivity="com.palmnote.MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <!-- 青白（默认） -->
+        <activity-alias
+            android:name=".IconCyanWhite"
+            android:enabled="true"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_cyan"
+            android:roundIcon="@mipmap/ic_launcher_cyan_round"
+            android:targetActivity="com.palmnote.MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
         <receiver
             android:name="com.palmnote.ui.widget.BillWidgetProvider"
             android:exported="true">
@@ -59,7 +113,103 @@
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
-                android:resource="@xml/app_widget_info" />
+                android:resource="@xml/bill_widget_medium_info" />
+        </receiver>
+        <receiver
+            android:name="com.palmnote.ui.widget.TodoWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/todo_widget_medium_info" />
+        </receiver>
+        <receiver
+            android:name="com.palmnote.ui.widget.LifeCounterWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/counter_widget_medium_info" />
+        </receiver>
+        <receiver
+            android:name="com.palmnote.ui.widget.QuickBillWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/quick_bill_widget_info" />
+        </receiver>
+        <receiver
+            android:name="com.palmnote.ui.widget.AssetWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/asset_widget_medium_info" />
+        </receiver>
+        <receiver
+            android:name="com.palmnote.ui.widget.VaultWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/vault_widget_info" />
+        </receiver>
+        <receiver
+            android:name="com.palmnote.ui.widget.DashboardWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/dashboard_widget_medium_info" />
+        </receiver>
+        <receiver
+            android:name="com.palmnote.ui.widget.HabitWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/habit_widget_info" />
+        </receiver>
+        <receiver
+            android:name="com.palmnote.ui.widget.HabitCheckInReceiver"
+            android:exported="false" />
+        <receiver
+            android:name="com.palmnote.ui.widget.TodoToggleReceiver"
+            android:exported="false" />
+        <receiver
+            android:name="com.palmnote.ui.widget.WidgetMidnightReceiver"
+            android:exported="false" />
+        <receiver
+            android:name="com.palmnote.ui.widget.WidgetBootReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+        <receiver
+            android:name="com.palmnote.ui.widget.ShortcutsWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/shortcuts_widget_info" />
         </receiver>
     </application>
 </manifest>

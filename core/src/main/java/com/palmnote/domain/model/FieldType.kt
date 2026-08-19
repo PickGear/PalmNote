@@ -4,7 +4,9 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 enum class FieldType {
-    TEXT, NUMBER, DATE, BOOLEAN, SELECT, MULTI_SELECT, IMAGE, LOCATION, TIME, PERCENT, RATING
+    TEXT, NUMBER, DATE, BOOLEAN, SELECT, MULTI_SELECT, IMAGE, LOCATION, TIME, PERCENT, RATING,
+    SHORT_TEXT, SLIDER, PERCENTAGE, URL, EMAIL, PHONE, COLOR, DURATION,
+    CURRENCY, DATETIME, RICH_TEXT, FILE
 }
 
 @Serializable
@@ -22,5 +24,6 @@ data class FieldConfig(
     val max: Double? = null,
     val showInCard: Boolean = false,
     val showInList: Boolean = false,
+    val showAsProgress: Boolean = false,
     val sortOrder: Int = 0
 )

@@ -10,6 +10,7 @@ interface LifeTemplateRepository {
     suspend fun getTemplateById(id: Long): LifeTemplate?
     fun getTemplateByIdFlow(id: Long): Flow<LifeTemplate?>
     fun getBuiltinTemplates(): Flow<List<LifeTemplate>>
+    fun searchTemplates(query: String): Flow<List<LifeTemplate>>
     suspend fun insertTemplate(template: LifeTemplate): Long
     suspend fun updateTemplate(template: LifeTemplate)
     suspend fun setTemplateHidden(id: Long, hidden: Boolean)

@@ -44,3 +44,9 @@ data object LifeTemplateManageRoute
 
 @Serializable
 data object LifeTemplateCreateRoute
+
+@Serializable
+data object LifeStatsRoute
+
+@Serializable
+data class LifeCategoryDetailRoute(val category: String)

@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
 import com.palmnote.domain.model.AutoLockMode
 import com.palmnote.ui.dashboard.DashboardCardConfig
+import com.palmnote.ui.life.LifeHomeCardConfig
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
@@ -38,6 +39,9 @@ class PreferencesManager @Inject constructor(
         val BUDGET_REMINDER_ENABLED = booleanPreferencesKey("budget_reminder_enabled")
         val ASSET_VIEW_MODE = booleanPreferencesKey("asset_view_mode")
         val DASHBOARD_CARD_CONFIGS = stringPreferencesKey("dashboard_card_configs")
+        val LIFE_HOME_CARD_CONFIGS = stringPreferencesKey("life_home_card_configs")
+        val LIFE_CALENDAR_EXPANDED = booleanPreferencesKey("life_calendar_expanded")
+        val LIFE_CALENDAR_SELECTED_DATE = longPreferencesKey("life_calendar_selected_date")
         val CALENDAR_SYNC_ENABLED = booleanPreferencesKey("calendar_sync_enabled")
         val SWITCH_COLOR = stringPreferencesKey("switch_color")
         val DEFAULT_START_PAGE = stringPreferencesKey("default_start_page")
@@ -75,11 +79,30 @@ class PreferencesManager @Inject constructor(
         val AUTO_LOCK_MODE = stringPreferencesKey("auto_lock_mode")
         val AUTO_LOCK_TIMEOUT_MINUTES = intPreferencesKey("auto_lock_timeout_minutes")
         val VAULT_CARD_IDENTITY = stringPreferencesKey("vault_card_identity")
+        val RECENT_SEARCHES = stringPreferencesKey("life_recent_searches")
+        val APP_ICON_STYLE = stringPreferencesKey("app_icon_style")
+        val THEME_COLOR = stringPreferencesKey("theme_color")
+        val WALLPAPER_STYLE = stringPreferencesKey("wallpaper_style")
+        val WALLPAPER_BLUR = floatPreferencesKey("wallpaper_blur")
+        val WALLPAPER_OPACITY = floatPreferencesKey("wallpaper_opacity")
+        val WALLPAPER_CUSTOM_URI = stringPreferencesKey("wallpaper_custom_uri")
 
         const val AUTO_LOCK_MODE_IMMEDIATE = "immediate"
         const val AUTO_LOCK_MODE_SYSTEM = "system"
         const val AUTO_LOCK_MODE_TIMEOUT = "timeout"
         const val DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES = 5
+
+        const val APP_ICON_GREEN_WHITE = "green_white"
+        const val APP_ICON_BLACK_WHITE = "black_white"
+        const val APP_ICON_WHITE_BLACK = "white_black"
+        const val APP_ICON_CYAN_WHITE = "cyan_white"
+        // 旧版图标别名（对应 alias 已从 Manifest 移除），仅为老用户升级后归一化保留
+        const val APP_ICON_WHITE_GREEN_LEGACY = "white_green"
+        const val DEFAULT_APP_ICON_STYLE = APP_ICON_CYAN_WHITE
+        const val DEFAULT_THEME_COLOR = "cyan"
+        const val DEFAULT_WALLPAPER_STYLE = "none"
+        const val DEFAULT_WALLPAPER_BLUR = 0f
+        const val DEFAULT_WALLPAPER_OPACITY = 1f
     }
 
     val themeMode: Flow<String> = prefsFlow.map { it[THEME_MODE] ?: "SYSTEM" }
@@ -99,6 +122,31 @@ class PreferencesManager @Inject constructor(
     val switchColor: Flow<String> = prefsFlow.map { it[SWITCH_COLOR] ?: "#2D4A3E" }
 
     suspend fun setSwitchColor(color: String) { context.dataStore.edit { it[SWITCH_COLOR] = color } }
+
+    val themeColor: Flow<String> = prefsFlow.map { it[THEME_COLOR] ?: DEFAULT_THEME_COLOR }
+
+    suspend fun setThemeColor(color: String) { context.dataStore.edit { it[THEME_COLOR] = color } }
+
+    val appIconStyle: Flow<String> = prefsFlow.map {
+        when (val style = it[APP_ICON_STYLE]) {
+            // 升级前选过已下线的 white_green 图标：归一化到新的默认青白，避免设置页选中态异常
+            APP_ICON_WHITE_GREEN_LEGACY -> DEFAULT_APP_ICON_STYLE
+            null -> DEFAULT_APP_ICON_STYLE
+            else -> style
+        }
+    }
+
+    suspend fun setAppIconStyle(style: String) { context.dataStore.edit { it[APP_ICON_STYLE] = style } }
+
+    val wallpaperStyle: Flow<String> = prefsFlow.map { it[WALLPAPER_STYLE] ?: DEFAULT_WALLPAPER_STYLE }
+    val wallpaperBlur: Flow<Float> = prefsFlow.map { it[WALLPAPER_BLUR] ?: DEFAULT_WALLPAPER_BLUR }
+    val wallpaperOpacity: Flow<Float> = prefsFlow.map { it[WALLPAPER_OPACITY] ?: DEFAULT_WALLPAPER_OPACITY }
+    val wallpaperCustomUri: Flow<String> = prefsFlow.map { it[WALLPAPER_CUSTOM_URI] ?: "" }
+
+    suspend fun setWallpaperStyle(style: String) { context.dataStore.edit { it[WALLPAPER_STYLE] = style } }
+    suspend fun setWallpaperBlur(blur: Float) { context.dataStore.edit { it[WALLPAPER_BLUR] = blur } }
+    suspend fun setWallpaperOpacity(opacity: Float) { context.dataStore.edit { it[WALLPAPER_OPACITY] = opacity } }
+    suspend fun setWallpaperCustomUri(uri: String) { context.dataStore.edit { it[WALLPAPER_CUSTOM_URI] = uri } }
 
     val defaultStartPage: Flow<String> = prefsFlow.map { it[DEFAULT_START_PAGE] ?: "dashboard" }
 
@@ -123,6 +171,33 @@ class PreferencesManager @Inject constructor(
 
     suspend fun saveDashboardCardConfigs(configs: List<DashboardCardConfig>) {
         context.dataStore.edit { it[DASHBOARD_CARD_CONFIGS] = DashboardCardConfig.toJson(configs) }
+    }
+
+    val lifeHomeCardConfigs: Flow<List<LifeHomeCardConfig>> = prefsFlow.map { prefs ->
+        val json = prefs[LIFE_HOME_CARD_CONFIGS]
+        if (json == null) {
+            LifeHomeCardConfig.defaults
+        } else {
+            val stored = LifeHomeCardConfig.fromJson(json)
+            val storedTypes = stored.map { it.type }.toSet()
+            stored + LifeHomeCardConfig.defaults.filter { it.type !in storedTypes }
+        }
+    }
+
+    suspend fun saveLifeHomeCardConfigs(configs: List<LifeHomeCardConfig>) {
+        context.dataStore.edit { it[LIFE_HOME_CARD_CONFIGS] = LifeHomeCardConfig.toJson(configs) }
+    }
+
+    val lifeCalendarExpanded: Flow<Boolean> = prefsFlow.map { it[LIFE_CALENDAR_EXPANDED] ?: false }
+
+    suspend fun setLifeCalendarExpanded(expanded: Boolean) {
+        context.dataStore.edit { it[LIFE_CALENDAR_EXPANDED] = expanded }
+    }
+
+    val lifeCalendarSelectedDate: Flow<Long> = prefsFlow.map { it[LIFE_CALENDAR_SELECTED_DATE] ?: java.time.LocalDate.now().toEpochDay() }
+
+    suspend fun setLifeCalendarSelectedDate(epochDay: Long) {
+        context.dataStore.edit { it[LIFE_CALENDAR_SELECTED_DATE] = epochDay }
     }
 
     fun isAppLockEnabled(): Boolean = prefsState.value[APP_LOCK_ENABLED] ?: false
@@ -339,5 +414,30 @@ class PreferencesManager @Inject constructor(
 
     suspend fun setVaultCardIdentity(identity: String) {
         context.dataStore.edit { it[VAULT_CARD_IDENTITY] = identity }
+    }
+
+    /** 生活页搜索页最近搜索词（最多 8 条，最新在前）。 */
+    val recentSearches: Flow<List<String>> = prefsFlow.map { prefs ->
+        val raw = prefs[RECENT_SEARCHES]
+        if (raw.isNullOrBlank()) emptyList()
+        else try {
+            kotlinx.serialization.json.Json.decodeFromString<List<String>>(raw)
+        } catch (_: Exception) { emptyList() }
+    }
+
+    suspend fun addRecentSearch(query: String) {
+        val text = query.trim()
+        if (text.isEmpty()) return
+        val current = recentSearchesMap()
+        val updated = (listOf(text) + current.filter { !it.equals(text, ignoreCase = true) }).take(8)
+        context.dataStore.edit { it[RECENT_SEARCHES] = kotlinx.serialization.json.Json.encodeToString(updated) }
+    }
+
+    private fun recentSearchesMap(): List<String> {
+        val raw = prefsState.value[RECENT_SEARCHES]
+        if (raw.isNullOrBlank()) return emptyList()
+        return try {
+            kotlinx.serialization.json.Json.decodeFromString<List<String>>(raw)
+        } catch (_: Exception) { emptyList() }
     }
 }

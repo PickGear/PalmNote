@@ -14,5 +14,5 @@ data class BackupInfo(
     val filePath: String,
     val date: Long,
     val size: Long,
-    val md5: String
+    val checksum: String
 )

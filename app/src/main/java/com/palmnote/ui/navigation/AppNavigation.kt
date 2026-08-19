@@ -103,6 +103,15 @@ fun PalmNoteNavHost() {
         else -> TabDashboard
     }
 
+    // 处理小组件跳转
+    val pendingNav = PalmNoteApp.pendingNavigation
+    if (pendingNav == "add_bill") {
+        PalmNoteApp.pendingNavigation = null
+        LaunchedEffect(Unit) {
+            navController.navigate(AddBill())
+        }
+    }
+
     NavHost(
         navController = navController,
         startDestination = MainTabs,

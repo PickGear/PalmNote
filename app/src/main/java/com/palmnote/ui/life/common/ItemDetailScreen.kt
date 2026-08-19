@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.palmnote.domain.util.DateUtils
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -38,6 +39,8 @@ import com.palmnote.data.db.entity.LifeItem
 import com.palmnote.ui.components.AppDialog
 import com.palmnote.ui.components.SecondaryTopAppBar
 import com.palmnote.ui.components.toComposeColor
+import com.palmnote.ui.life.plan.AddSubtaskDialog
+import com.palmnote.ui.life.plan.PlanDetailScreen
 import com.palmnote.data.db.entity.LifeTemplate
 import com.palmnote.ui.theme.*
 import com.palmnote.ui.utils.formatTimeAgo
@@ -67,10 +70,27 @@ fun ItemDetailScreen(
     var showDepositDialog by remember { mutableStateOf(false) }
     var depositAmount by remember { mutableStateOf("") }
     var showMoreMenu by remember { mutableStateOf(false) }
+    var showAddSubtaskDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var linksExpanded by remember { mutableStateOf(false) }
     var showLinkSelector by remember { mutableStateOf(false) }
     val state by viewModel?.uiState?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(ItemDetailUiState()) }
+
+    val planItem = state.item
+    val planReady = planItem != null && template != null && viewModel != null
+    if (planReady && state.subtasks.isNotEmpty()) {
+        PlanDetailScreen(
+            item = planItem,
+            template = template,
+            subtasks = state.subtasks,
+            onBack = onBack,
+            onEdit = onEdit,
+            onDelete = onDelete,
+            viewModel = viewModel
+        )
+        return
+    }
+
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -105,6 +125,10 @@ fun ItemDetailScreen(
                         IconButton(onClick = { showMoreMenu = true }) { Icon(Icons.Default.MoreVert, stringResource(R.string.life_item_more)) }
                         DropdownMenu(expanded = showMoreMenu, onDismissRequest = { showMoreMenu = false }) {
                             DropdownMenuItem(text = { Text(stringResource(R.string.life_item_delete)) }, onClick = { showMoreMenu = false; showDeleteDialog = true })
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.life_plan_add_subtask)) },
+                                onClick = { showMoreMenu = false; showAddSubtaskDialog = true }
+                            )
                         }
                     }
                 },
@@ -149,14 +173,33 @@ fun ItemDetailScreen(
             Spacer(modifier = Modifier.height(8.dp))
 
             val data = try { json.decodeFromString<JsonObject>(item.fieldsData) } catch (_: Exception) { null }
-            val cur = data?.let {
-                (it["current_page"] as? JsonPrimitive)?.content?.toIntOrNull()
-                    ?: (it["currentPage"] as? JsonPrimitive)?.content?.toIntOrNull()
-                    ?: (it["currentAmount"] as? JsonPrimitive)?.content?.toDoubleOrNull()?.toInt()
-                    ?: (it["saved_amount"] as? JsonPrimitive)?.content?.toDoubleOrNull()?.toInt()
-                    ?: (it["current"] as? JsonPrimitive)?.content?.toIntOrNull()
-                    ?: 0
-            } ?: 0
+            val detailFields: List<FieldDef> = try {
+                val arr = json.decodeFromString<JsonArray>(template.fieldsConfig)
+                arr.map { el ->
+                    val obj = el.jsonObject
+                    FieldDef(
+                        key = obj["key"]?.jsonPrimitive?.content ?: "",
+                        label = obj["label"]?.jsonPrimitive?.content ?: "",
+                        type = obj["type"]?.jsonPrimitive?.content ?: "TEXT",
+                        unit = obj["unit"]?.jsonPrimitive?.content ?: "",
+                        showAsProgress = try { obj["showAsProgress"]?.jsonPrimitive?.content?.toBooleanStrictOrNull() } catch (_: Exception) { null } ?: false
+                    )
+                }
+            } catch (_: Exception) { emptyList() }
+            
+            val progressField = detailFields.firstOrNull { it.showAsProgress }
+            val cur = if (progressField != null && data != null) {
+                (data[progressField.key] as? JsonPrimitive)?.content?.toDoubleOrNull()?.toInt() ?: 0
+            } else {
+                data?.let {
+                    (it["current_page"] as? JsonPrimitive)?.content?.toIntOrNull()
+                        ?: (it["currentPage"] as? JsonPrimitive)?.content?.toIntOrNull()
+                        ?: (it["currentAmount"] as? JsonPrimitive)?.content?.toDoubleOrNull()?.toInt()
+                        ?: (it["saved_amount"] as? JsonPrimitive)?.content?.toDoubleOrNull()?.toInt()
+                        ?: (it["current"] as? JsonPrimitive)?.content?.toIntOrNull()
+                        ?: 0
+                } ?: 0
+            }
             val tot = data?.let {
                 (it["total_pages"] as? JsonPrimitive)?.content?.toIntOrNull()
                     ?: (it["totalPages"] as? JsonPrimitive)?.content?.toIntOrNull()
@@ -188,24 +231,11 @@ fun ItemDetailScreen(
             Spacer(modifier = Modifier.height(12.dp))
 
             Column(modifier = Modifier.padding(horizontal = 20.dp)) {
-                val detailFields: List<FieldDef> = try {
-                    val arr = json.decodeFromString<JsonArray>(template.fieldsConfig)
-                    arr.map { el ->
-                        val obj = el.jsonObject
-                        FieldDef(
-                            key = obj["key"]?.jsonPrimitive?.content ?: "",
-                            label = obj["label"]?.jsonPrimitive?.content ?: "",
-                            type = obj["type"]?.jsonPrimitive?.content ?: "TEXT",
-                            unit = obj["unit"]?.jsonPrimitive?.content ?: "",
-                            options = try { (obj["options"] as? JsonArray)?.map { it.jsonPrimitive.content } ?: emptyList() } catch (_: Exception) { emptyList() }
-                        )
-                    }
-                } catch (_: Exception) { emptyList() }
                 val detailFieldMap: Map<String, JsonElement> = data?.entries?.associate { it.key to it.value } ?: emptyMap()
                 if (detailFields.isEmpty() && data != null) {
                     data.entries.forEach { (key, value) ->
                         if (value is JsonPrimitive && value.content.isNotEmpty()) {
-                            val displayValue = value.content.toLongOrNull()?.let { millis ->
+                            val displayValue = value.content.toLongOrNull()?.filterMillisRange()?.let { millis ->
                                 try { java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date(millis)) } catch (_: Exception) { value.content }
                             } ?: value.content
                             Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
@@ -257,7 +287,22 @@ fun ItemDetailScreen(
                                 Row(modifier = Modifier.padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                                     Icon(Icons.Default.Link, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
                                     Spacer(modifier = Modifier.width(6.dp))
-                                    Text(link.targetType.name, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
+                                    val typeName = when (link.targetType) {
+                                        com.palmnote.domain.model.EntityType.ITEM -> stringResource(R.string.life_entity_item)
+                                        com.palmnote.domain.model.EntityType.NOTE -> stringResource(R.string.life_entity_note)
+                                        com.palmnote.domain.model.EntityType.TODO -> stringResource(R.string.life_entity_todo)
+                                        com.palmnote.domain.model.EntityType.MOMENT -> stringResource(R.string.life_entity_moment)
+                                        com.palmnote.domain.model.EntityType.MOOD -> stringResource(R.string.life_entity_mood)
+                                        com.palmnote.domain.model.EntityType.FOCUS -> stringResource(R.string.life_entity_focus)
+                                        com.palmnote.domain.model.EntityType.REPORT -> stringResource(R.string.life_entity_report)
+                                        com.palmnote.domain.model.EntityType.PLAN -> stringResource(R.string.life_entity_plan)
+                                        com.palmnote.domain.model.EntityType.READING -> stringResource(R.string.life_entity_reading)
+                                        com.palmnote.domain.model.EntityType.ANNIVERSARY -> stringResource(R.string.life_entity_anniversary)
+                                        com.palmnote.domain.model.EntityType.GOAL -> stringResource(R.string.life_entity_goal)
+                                        com.palmnote.domain.model.EntityType.BILL -> stringResource(R.string.life_entity_bill)
+                                        com.palmnote.domain.model.EntityType.ASSET -> stringResource(R.string.life_entity_asset)
+                                    }
+                                    Text(typeName, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
                                 }
                             }
                         }
@@ -310,4 +355,15 @@ fun ItemDetailScreen(
     if (showLinkSelector && item != null) {
         LinkSelectorSheet(sourceItemId = item.id, onDismiss = { showLinkSelector = false })
     }
+
+    if (showAddSubtaskDialog && item != null) {
+        AddSubtaskDialog(
+            zone = java.time.ZoneId.systemDefault(),
+            onDismiss = { showAddSubtaskDialog = false },
+            onAdd = { title, kind, due -> viewModel?.addSubtask(title, kind, due); showAddSubtaskDialog = false }
+        )
+    }
 }
+
+private fun Long.filterMillisRange(): Long? =
+    if (DateUtils.isPlausibleMillis(this)) this else null

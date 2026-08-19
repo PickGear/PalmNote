@@ -78,7 +78,7 @@ class CreateItemViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val id = if (existing != null) {
-                    itemRepo.updateItem(existing.copy(title = title, fieldsData = fieldsData))
+                    itemRepo.updateItem(existing.copy(title = title, fieldsData = fieldsData, dueDate = null, dueTime = null))
                     existing.id
                 } else {
                     itemRepo.insertItem(LifeItem(templateId = tpl.id, title = title, fieldsData = fieldsData))

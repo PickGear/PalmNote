@@ -13,7 +13,9 @@ enum class CardType {
     ANNIVERSARIES,
     ASSET_DISTRIBUTION,
     TODAY,
-    VAULT
+    VAULT,
+    HABIT_TODAY,
+    SUBSCRIPTION
 }
 
 @Stable
@@ -23,7 +25,9 @@ data class DashboardCardConfig(
     val visible: Boolean = true
 ) {
     companion object {
-        val defaults: List<DashboardCardConfig> = CardType.entries.map { DashboardCardConfig(it) }
+        val defaults: List<DashboardCardConfig> = CardType.entries.map {
+            if (it == CardType.SUBSCRIPTION) DashboardCardConfig(it, visible = false) else DashboardCardConfig(it)
+        }
 
         private val json = Json {
             ignoreUnknownKeys = true

@@ -53,6 +53,9 @@ interface BillDao {
     @Query("SELECT SUM(amount) FROM bills WHERE yearMonth = :yearMonth AND type = 'EXPENSE'")
     fun getMonthlyExpense(yearMonth: String): Flow<Long?>
 
+    @Query("SELECT category AS category, SUM(amount) AS total FROM bills WHERE yearMonth = :yearMonth AND type = 'EXPENSE' GROUP BY category ORDER BY total DESC LIMIT 1")
+    suspend fun getTopExpenseCategory(yearMonth: String): CategoryTotal?
+
     @Query("SELECT SUM(amount) FROM bills WHERE accountBookId = :bookId AND yearMonth = :yearMonth AND type = 'EXPENSE'")
     fun getMonthlyExpenseByBook(bookId: Long, yearMonth: String): Flow<Long?>
 

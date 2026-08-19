@@ -13,6 +13,7 @@ import com.palmnote.domain.repository.FocusRecordRepository
 import com.palmnote.domain.repository.LifeItemRepository
 import com.palmnote.domain.repository.LifeReportRepository
 import com.palmnote.domain.repository.LifeTemplateRepository
+import com.palmnote.domain.util.BuiltinTemplates
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.flow.first
@@ -219,7 +220,7 @@ class LifeDailyCheckWorker @AssistedInject constructor(
 
     private suspend fun checkSubscriptionBilling() {
         val today = LocalDate.now()
-        val tpls = templateRepo.getAllTemplates().first().filter { it.name.contains("\u8BA2\u9605") }
+        val tpls = templateRepo.getAllTemplates().first().filter { it.name.contains(BuiltinTemplates.SUBSCRIPTION_KEYWORD) }
         for (tpl in tpls) {
             for (item in itemRepo.getActiveItemsByTemplate(tpl.id, 200).first()) {
                 try {

@@ -32,9 +32,11 @@ class FocusViewModel @Inject constructor(
     )
 
     private var loadJob: Job? = null
+    private var totalJob: Job? = null
 
     fun load() {
         loadJob?.cancel()
+        totalJob?.cancel()
         loadJob = viewModelScope.launch {
             try {
                 val todayStart = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
@@ -45,9 +47,10 @@ class FocusViewModel @Inject constructor(
                 _uiState.update { it.copy(error = e.message ?: context.getString(R.string.life_error_load_failed), isLoading = false) }
             }
         }
-        viewModelScope.launch {
-            repo.getTotalMinutes().onEach { total -> _uiState.update { it.copy(totalMinutes = total) } }.launchIn(viewModelScope)
-        }
+        totalJob = repo.getTotalMinutes()
+            .onEach { total -> _uiState.update { it.copy(totalMinutes = total) } }
+            .catch { e -> _uiState.update { it.copy(error = e.message ?: context.getString(R.string.life_error_load_failed)) } }
+            .launchIn(viewModelScope)
     }
 
     fun saveRecord(durationMinutes: Int, completed: Boolean, startTime: Long) {

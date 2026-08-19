@@ -30,15 +30,14 @@ class MoodViewModel @Inject constructor(
 
     fun load() {
         loadJob?.cancel()
-        loadJob = viewModelScope.launch {
-            try {
-                moodDiaryRepository.getAllMoodDiaries().onEach { diaries ->
-                    _uiState.update { state -> state.copy(diaries = diaries, isLoading = false) }
-                }.launchIn(viewModelScope)
-            } catch (e: Exception) {
+        loadJob = moodDiaryRepository.getAllMoodDiaries()
+            .catch { e ->
                 _uiState.update { it.copy(error = e.message ?: context.getString(R.string.life_error_load_failed), isLoading = false) }
             }
-        }
+            .onEach { diaries ->
+                _uiState.update { state -> state.copy(diaries = diaries, isLoading = false) }
+            }
+            .launchIn(viewModelScope)
     }
 
     fun deleteMood(id: Long) {

@@ -151,7 +151,8 @@ fun FocusTimerScreen(onBack: () -> Unit, viewModel: FocusViewModel = hiltViewMod
                     }
                     Button(
                         onClick = {
-                            if (!isRunning && remainingSeconds == selectedMinutes * 60) {
+                            if (!isRunning && (remainingSeconds == selectedMinutes * 60 || remainingSeconds == 0)) {
+                                if (remainingSeconds == 0) remainingSeconds = selectedMinutes * 60
                                 startTimeMillis = System.currentTimeMillis()
                             }
                             isRunning = !isRunning

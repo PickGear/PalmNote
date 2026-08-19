@@ -30,15 +30,14 @@ class JournalViewModel @Inject constructor(
 
     fun load() {
         loadJob?.cancel()
-        loadJob = viewModelScope.launch {
-            try {
-                lifeMomentRepository.getAllMoments().onEach { moments ->
-                    _uiState.update { state -> state.copy(moments = moments, isLoading = false) }
-                }.launchIn(viewModelScope)
-            } catch (e: Exception) {
+        loadJob = lifeMomentRepository.getAllMoments()
+            .catch { e ->
                 _uiState.update { it.copy(error = e.message ?: context.getString(R.string.life_error_load_failed), isLoading = false) }
             }
-        }
+            .onEach { moments ->
+                _uiState.update { state -> state.copy(moments = moments, isLoading = false) }
+            }
+            .launchIn(viewModelScope)
     }
 
     fun deleteMoment(id: Long) {

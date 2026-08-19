@@ -3,6 +3,7 @@ package com.palmnote.ui.dashboard
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -48,18 +49,21 @@ internal fun DashboardCardContent(
     onNavigateToBill: () -> Unit,
     onNavigateToLife: () -> Unit,
     onNavigateToVault: () -> Unit = {},
+    onHabitCheckIn: (Long) -> Unit = {},
     presetCategoryOverrides: Map<String, String>,
     categoryConfigs: List<com.palmnote.data.db.entity.CategoryConfig>
 ) {
     when (type) {
-        CardType.NET_WORTH -> NetWorthCard(state)
+        CardType.NET_WORTH -> NetWorthCard(state, onNavigateToBill)
         CardType.QUICK_ACTIONS -> QuickActionsCard(onNavigateToBill, onNavigateToAsset, onNavigateToLife)
-        CardType.BUDGET_ALERT -> BudgetAlertCard(state)
+        CardType.BUDGET_ALERT -> BudgetAlertCard(state, onNavigateToBill)
         CardType.GOALS -> GoalsCard(state, onNavigateToLife)
         CardType.ANNIVERSARIES -> AnniversariesCard(state, onNavigateToLife)
         CardType.ASSET_DISTRIBUTION -> AssetDistributionCard(state, onNavigateToAsset, presetCategoryOverrides, categoryConfigs)
-        CardType.TODAY -> TodayCard(state)
+        CardType.TODAY -> TodayCard(state, onNavigateToLife)
         CardType.VAULT -> VaultCard(state, onNavigateToVault)
+        CardType.HABIT_TODAY -> HabitTodayCard(state, onNavigateToLife, onHabitCheckIn)
+        CardType.SUBSCRIPTION -> SubscriptionCard(state, onNavigateToLife)
     }
 }
 
@@ -100,9 +104,11 @@ internal fun VaultCard(state: DashboardState, onNavigateToVault: () -> Unit) {
                         )
                     }
                 }
-                Box(modifier = Modifier.size(48.dp).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onNavigateToVault() }, contentAlignment = Alignment.Center) {
-                    Icon(Icons.Filled.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
+                JumpCapsule(
+                    label = stringResource(R.string.dashboard_card_vault),
+                    color = com.palmnote.ui.theme.vaultTint(),
+                    onClick = onNavigateToVault
+                )
             }
             // 隐私保护：不展示条目标题（明文敏感），仅用计数 + 引导
             Spacer(modifier = Modifier.height(12.dp))
@@ -114,9 +120,9 @@ internal fun VaultCard(state: DashboardState, onNavigateToVault: () -> Unit) {
         }
     }
 }
-
 @Composable
-internal fun NetWorthCard(state: DashboardState) {
+@Suppress("LongMethod")
+internal fun NetWorthCard(state: DashboardState, onNavigateToBill: () -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -189,19 +195,29 @@ internal fun NetWorthCard(state: DashboardState) {
                     )
                 }
             }
-            Surface(
+            Column(
                 modifier = Modifier.align(Alignment.TopEnd),
-                shape = MaterialTheme.shapes.medium,
-                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f)
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                Surface(
+                    shape = MaterialTheme.shapes.medium,
+                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f)
                 ) {
-                    Icon(Icons.Outlined.Inventory2, null, Modifier.size(14.dp), MaterialTheme.colorScheme.onPrimary)
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(pluralStringResource(R.plurals.dashboard_items_count, state.activeAssetCount, state.activeAssetCount), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimary)
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Outlined.Inventory2, null, Modifier.size(14.dp), MaterialTheme.colorScheme.onPrimary)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(pluralStringResource(R.plurals.dashboard_items_count, state.activeAssetCount, state.activeAssetCount), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimary)
+                    }
                 }
+                JumpCapsule(
+                    label = stringResource(R.string.nav_bill),
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    onClick = onNavigateToBill
+                )
             }
         }
     }
@@ -254,7 +270,7 @@ private fun QuickActionButton(icon: ImageVector, label: String, color: Color, on
 }
 
 @Composable
-internal fun BudgetAlertCard(state: DashboardState) {
+internal fun BudgetAlertCard(state: DashboardState, onNavigateToBill: () -> Unit) {
     val budget = state.budget
     if (state.budgetReminderEnabled && budget != null && budget.totalBudget > 0 &&
         state.monthlyExpense > 0 && state.monthlyExpense > budget.totalBudget * 0.8
@@ -263,13 +279,17 @@ internal fun BudgetAlertCard(state: DashboardState) {
             icon = Icons.Outlined.Warning,
             title = stringResource(R.string.dashboard_budget_alert),
             message = stringResource(R.string.dashboard_budget_alert_message, state.monthlyExpense / 100.0),
-            color = if (state.monthlyExpense > budget.totalBudget) ErrorLight else AccentOrange
+            color = if (state.monthlyExpense > budget.totalBudget) ErrorLight else AccentOrange,
+            onClick = onNavigateToBill
         )
     }
 }
 
 @Composable
+@Suppress("LongMethod")
 internal fun GoalsCard(state: DashboardState, onNavigateToLife: () -> Unit) {
+    if (state.goalCount <= 0) return
+    val progress = if (state.goalCount > 0) state.completedGoalCount.toFloat() / state.goalCount else 0f
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
@@ -302,27 +322,33 @@ internal fun GoalsCard(state: DashboardState, onNavigateToLife: () -> Unit) {
                         )
                     }
                 }
-                Box(modifier = Modifier.size(48.dp).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onNavigateToLife() }, contentAlignment = Alignment.Center) {
-                    Icon(Icons.Filled.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
+                JumpCapsule(
+                    label = stringResource(R.string.nav_life),
+                    color = com.palmnote.ui.theme.ModuleLife,
+                    onClick = onNavigateToLife
+                )
             }
-            if (state.recentGoals.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(12.dp))
-                state.recentGoals.forEach { goal ->
-                    val progress = if (goal.totalCount > 0) goal.currentCount.toFloat() / goal.totalCount else 0f
-                    Column(modifier = Modifier.padding(vertical = 4.dp)) {
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text(goal.title, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-                            Text("${goal.currentCount}/${goal.totalCount}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                        Spacer(modifier = Modifier.height(4.dp))
-                        ProgressBar(progress = progress, color = MaterialTheme.colorScheme.primary, height = 6.dp)
-                    }
+            Spacer(modifier = Modifier.height(16.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(contentAlignment = Alignment.Center, modifier = Modifier.size(76.dp)) {
+                    GoalProgressRing(progress = progress, modifier = Modifier.fillMaxSize())
+                    Text(
+                        "${(progress * 100).toInt()}%",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
                 }
-            } else {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(stringResource(R.string.dashboard_no_goals), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.clickable(onClick = onNavigateToLife))
+                Text(
+                    text = stringResource(R.string.dashboard_goals_view_all),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 16.dp).clickable(onClick = onNavigateToLife)
+                )
             }
         }
     }
@@ -331,6 +357,7 @@ internal fun GoalsCard(state: DashboardState, onNavigateToLife: () -> Unit) {
 @Composable
 internal fun AnniversariesCard(state: DashboardState, onNavigateToLife: () -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
+    if (state.anniversaryCount <= 0) return
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
@@ -358,50 +385,80 @@ internal fun AnniversariesCard(state: DashboardState, onNavigateToLife: () -> Un
                         Text(                            stringResource(R.string.dashboard_anniversaries_count, state.anniversaryCount), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
-                Box(modifier = Modifier.size(48.dp).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onNavigateToLife() }, contentAlignment = Alignment.Center) {
-                    Icon(Icons.Filled.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
+                JumpCapsule(
+                    label = stringResource(R.string.nav_life),
+                    color = AccentOrange,
+                    onClick = onNavigateToLife
+                )
             }
-            if (state.upcomingAnniversaries.isNotEmpty()) {
+            val first = state.upcomingAnniversaries.firstOrNull()
+            if (first != null) {
                 Spacer(modifier = Modifier.height(12.dp))
-                state.upcomingAnniversaries.forEach { anniversary ->
-                    val daysUntil = anniversary.daysUntil
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Box(
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .clip(MaterialTheme.shapes.small)
-                                    .background(anniversary.typeIcon.tint.copy(alpha = 0.15f)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = anniversary.typeIcon.imageVector,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(20.dp),
-                                    tint = anniversary.typeIcon.tint
-                                )
-                            }
-                            Column {
-                                Text(anniversary.displayTitle, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                Text(DateUtils.formatDisplayDate(context, anniversary.solarDate), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
+                val daysUntil = first.daysUntil
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(MaterialTheme.shapes.small)
+                                .background(first.typeIcon.tint.copy(alpha = 0.15f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = first.typeIcon.imageVector,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp),
+                                tint = first.typeIcon.tint
+                            )
                         }
-                        StatusChip(
-                            text = when (anniversary.displayMode) {
-                                "COUNT_DOWN" -> if (daysUntil == 0) stringResource(R.string.dashboard_today) else if (daysUntil > 0) stringResource(R.string.dashboard_days_until, daysUntil) else stringResource(R.string.dashboard_days_passed, -daysUntil)
-                                else -> if (anniversary.daysSince == 0) stringResource(R.string.dashboard_today) else stringResource(R.string.dashboard_days_passed, anniversary.daysSince)
-                            },
-                            color = when {
-                                daysUntil == 0 -> AccentOrange; daysUntil in 1..7 -> ModuleLife; daysUntil in 8..30 -> Amber
-                                else -> MaterialTheme.colorScheme.onSurfaceVariant
-                            }
-                        )
+                        Column {
+                            Text(
+                                first.displayTitle,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Text(
+                                DateUtils.formatDisplayDate(context, first.solarDate),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
+                    StatusChip(
+                        text = when (first.displayMode) {
+                            "COUNT_DOWN" -> if (daysUntil == 0) {
+                                stringResource(R.string.dashboard_today)
+                            } else if (daysUntil > 0) {
+                                stringResource(R.string.dashboard_days_until, daysUntil)
+                            } else {
+                                stringResource(R.string.dashboard_days_passed, -daysUntil)
+                            }
+                            else -> if (first.daysSince == 0) {
+                                stringResource(R.string.dashboard_today)
+                            } else {
+                                stringResource(R.string.dashboard_days_passed, first.daysSince)
+                            }
+                        },
+                        color = when {
+                            daysUntil == 0 -> AccentOrange; daysUntil in 1..7 -> ModuleLife; daysUntil in 8..30 -> Amber
+                            else -> MaterialTheme.colorScheme.onSurfaceVariant
+                        }
+                    )
+                }
+                if (state.anniversaryCount > 1) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = stringResource(R.string.dashboard_anniversaries_more, state.anniversaryCount - 1),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.clickable(onClick = onNavigateToLife)
+                    )
                 }
             } else {
                 Spacer(modifier = Modifier.height(8.dp))
@@ -523,7 +580,254 @@ private fun LegendItem(
 }
 
 @Composable
-internal fun TodayCard(state: DashboardState) {
+private fun JumpCapsule(label: String, color: Color, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier
+            .clip(MaterialTheme.shapes.small)
+            .border(1.dp, color.copy(alpha = 0.5f), MaterialTheme.shapes.small)
+            .background(color.copy(alpha = 0.08f))
+            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onClick)
+            .padding(horizontal = 8.dp, vertical = 3.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(2.dp)
+    ) {
+        Text(label, style = MaterialTheme.typography.labelSmall, color = color, maxLines = 1)
+        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = color, modifier = Modifier.size(14.dp))
+    }
+}
+
+@Composable
+private fun GoalProgressRing(progress: Float, modifier: Modifier = Modifier, strokeWidth: androidx.compose.ui.unit.Dp = 8.dp) {
+    val trackColor = MaterialTheme.colorScheme.surfaceVariant
+    val progressColor = MaterialTheme.colorScheme.primary
+    Canvas(modifier = modifier) {
+        val strokePx = strokeWidth.toPx()
+        val radius = (size.minDimension - strokePx) / 2
+        val center = Offset(size.width / 2, size.height / 2)
+        val arcSize = Size(radius * 2, radius * 2)
+        val topLeft = Offset(center.x - radius, center.y - radius)
+        drawArc(
+            color = trackColor,
+            startAngle = -90f,
+            sweepAngle = 360f,
+            useCenter = false,
+            topLeft = topLeft,
+            size = arcSize,
+            style = Stroke(width = strokePx, cap = StrokeCap.Round)
+        )
+        val sweep = progress.coerceIn(0f, 1f) * 360f
+        if (sweep > 0f) {
+            drawArc(
+                color = progressColor,
+                startAngle = -90f,
+                sweepAngle = sweep,
+                useCenter = false,
+                topLeft = topLeft,
+                size = arcSize,
+                style = Stroke(width = strokePx, cap = StrokeCap.Round)
+            )
+        }
+    }
+}
+
+@Composable
+internal fun HabitTodayCard(
+    state: DashboardState,
+    onNavigateToLife: () -> Unit,
+    onHabitCheckIn: (Long) -> Unit
+) {
+    if (state.habitTotal == 0) return
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(com.palmnote.ui.theme.ModuleLife.copy(alpha = 0.15f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Filled.CheckCircle, null, tint = com.palmnote.ui.theme.ModuleLife, modifier = Modifier.size(20.dp))
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column {
+                        Text(
+                            stringResource(R.string.dashboard_habit_today_title),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            stringResource(R.string.dashboard_habit_today_progress, state.habitChecked, state.habitTotal),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                JumpCapsule(
+                    label = stringResource(R.string.dashboard_habit_go_all),
+                    color = com.palmnote.ui.theme.ModuleLife,
+                    onClick = onNavigateToLife
+                )
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            state.habitRows.take(4).forEach { row ->
+                HabitCheckRow(row = row, onCheckIn = onHabitCheckIn)
+            }
+        }
+    }
+}
+
+@Composable
+private fun HabitCheckRow(row: HabitTodayRow, onCheckIn: (Long) -> Unit) {
+    val periodLabel = when (row.frequency) {
+        "WEEKLY" -> stringResource(R.string.dashboard_habit_period_weekly)
+        "MONTHLY" -> stringResource(R.string.dashboard_habit_period_monthly)
+        else -> stringResource(R.string.dashboard_habit_period_daily)
+    }
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .clip(MaterialTheme.shapes.small)
+                    .background(row.icon.tint.copy(alpha = 0.15f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(row.icon.imageVector, null, tint = row.icon.tint, modifier = Modifier.size(18.dp))
+            }
+            Column(modifier = Modifier.widthIn(max = 180.dp)) {
+                Text(row.title, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(periodLabel, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+        if (row.isCheckedToday) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Icon(Icons.Filled.Check, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                Text(
+                    stringResource(R.string.dashboard_habit_checked),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+        } else {
+            Box(
+                modifier = Modifier
+                    .clip(MaterialTheme.shapes.small)
+                    .background(com.palmnote.ui.theme.ModuleLife)
+                    .clickable { onCheckIn(row.goalId) }
+                    .padding(horizontal = 12.dp, vertical = 6.dp)
+            ) {
+                Text(
+                    stringResource(R.string.dashboard_habit_check),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
+            }
+        }
+    }
+}
+
+@Composable
+internal fun SubscriptionCard(state: DashboardState, onNavigateToLife: () -> Unit) {
+    val subs = state.upcomingSubscriptions
+    if (subs.isEmpty()) return
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        stringResource(R.string.dashboard_card_subscription),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        stringResource(R.string.dashboard_subscription_due_count, subs.size),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            subs.forEach { sub ->
+                SubscriptionRow(sub = sub, onNavigateToLife = onNavigateToLife)
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = stringResource(R.string.dashboard_subscription_hint, subs.size),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun SubscriptionRow(sub: com.palmnote.domain.model.SubscriptionDueItem, onNavigateToLife: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .clip(MaterialTheme.shapes.small)
+                    .background(com.palmnote.ui.theme.ModuleLife.copy(alpha = 0.15f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Outlined.Refresh, null, tint = com.palmnote.ui.theme.ModuleLife, modifier = Modifier.size(18.dp))
+            }
+            Column(modifier = Modifier.widthIn(max = 160.dp)) {
+                Text(sub.title, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(
+                    stringResource(R.string.dashboard_subscription_price, sub.priceText),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(
+                text = if (sub.daysLeft <= 0) stringResource(R.string.dashboard_today)
+                       else stringResource(R.string.dashboard_days_until, sub.daysLeft),
+                style = MaterialTheme.typography.labelSmall,
+                color = if (sub.daysLeft <= 0) com.palmnote.ui.theme.AccentOrange else com.palmnote.ui.theme.ModuleLife
+            )
+            JumpCapsule(
+                label = stringResource(R.string.dashboard_card_subscription),
+                color = com.palmnote.ui.theme.ModuleLife,
+                onClick = onNavigateToLife
+            )
+        }
+    }
+}
+
+@Composable
+internal fun TodayCard(state: DashboardState, onNavigateToLife: () -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val weekDay = remember { getWeekDay(context) }
     Card(
@@ -538,19 +842,29 @@ internal fun TodayCard(state: DashboardState) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column {
-                Text(DateUtils.formatDisplayFullDate(context, System.currentTimeMillis()), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    DateUtils.formatDisplayFullDate(context, System.currentTimeMillis()),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
                 Text(weekDay, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             }
             Column(horizontalAlignment = Alignment.End) {
                 Text(stringResource(R.string.dashboard_recorded), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(stringResource(R.string.dashboard_items_recorded, state.activeAssetCount + state.goalCount + state.anniversaryCount), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                Spacer(modifier = Modifier.height(4.dp))
+                JumpCapsule(
+                    label = stringResource(R.string.nav_life),
+                    color = MaterialTheme.colorScheme.primary,
+                    onClick = onNavigateToLife
+                )
             }
         }
     }
 }
 
 @Composable
-internal fun AlertCard(icon: ImageVector, title: String, message: String, color: Color) {
+internal fun AlertCard(icon: ImageVector, title: String, message: String, color: Color, onClick: (() -> Unit)? = null) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
@@ -562,9 +876,12 @@ internal fun AlertCard(icon: ImageVector, title: String, message: String, color:
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(icon, null, tint = color, modifier = Modifier.size(24.dp))
-            Column {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = color)
                 Text(message, style = MaterialTheme.typography.bodySmall, color = color.copy(alpha = 0.8f))
+            }
+            if (onClick != null) {
+                JumpCapsule(label = stringResource(R.string.nav_bill), color = color, onClick = onClick)
             }
         }
     }
@@ -652,6 +969,8 @@ internal fun CardManagementDialog(
                                 CardType.ASSET_DISTRIBUTION -> stringResource(R.string.dashboard_card_asset_distribution)
                                 CardType.TODAY -> stringResource(R.string.dashboard_card_today)
                                 CardType.VAULT -> stringResource(R.string.dashboard_card_vault)
+                                CardType.HABIT_TODAY -> stringResource(R.string.dashboard_card_habit_today)
+                                CardType.SUBSCRIPTION -> stringResource(R.string.dashboard_card_subscription)
                             },
                             style = MaterialTheme.typography.bodyLarge
                         )
