@@ -1,9 +1,78 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="widget_bg_color">#FFFBF8F2</color>
-    <color name="widget_border_color">#20AAAAAA</color>
-    <color name="widget_title_color">#FF2D4A3E</color>
-    <color name="widget_label_color">#FF8A8580</color>
-    <color name="widget_expense_color">#FFE8843C</color>
-    <color name="widget_income_color">#FF34A853</color>
+    <!-- ═══════════════════════════════════════════════════════════════
+         Widget Color System - Premium Light Theme
+         灵感来自 iOS/OneUI 设计语言，追求极致精致
+         ═══════════════════════════════════════════════════════════════ -->
+    
+    <!-- 背景层级 -->
+    <color name="widget_bg_color">#FFFAF9F7</color>
+    <color name="widget_card_bg">#FFFFFFFF</color>
+    <color name="widget_stat_card_bg">#F8F7F5</color>
+    <color name="widget_chip_bg">#F0EFED</color>
+    <color name="widget_separator_color">#E8E6E3</color>
+    <color name="widget_border_color">#E0DDD9</color>
+    
+    <!-- 文字层级 - 柔和但清晰 -->
+    <color name="widget_title_color">#FF1A1A1A</color>
+    <color name="widget_label_color">#FF8A8A8E</color>
+    <color name="widget_sub_text_color">#FFB0B0B4</color>
+    <color name="widget_section_title_color">#FFC7C7CC</color>
+    
+    <!-- 功能色 - 柔和高级 -->
+    <color name="widget_expense_color">#FFD4845C</color>
+    <color name="widget_income_color">#FF34C759</color>
+    <color name="widget_accent_blue">#FF007AFF</color>
+    <color name="widget_accent_purple">#FFAF52DE</color>
+    <color name="widget_accent_green">#FF34C759</color>
+    <color name="widget_accent_orange">#FFFF9500</color>
+    <color name="widget_warning_color">#FFFF9500</color>
+    <color name="widget_overdue_color">#FFFF3B30</color>
+    <color name="widget_completed_color">#FF34C759</color>
+    
+    <!-- 装饰色 -->
+    <color name="widget_dot_expense">#FFD4845C</color>
+    <color name="widget_dot_income">#FF34C759</color>
+    <color name="widget_dot_blue">#FF007AFF</color>
+    <color name="widget_dot_purple">#FFAF52DE</color>
+    <color name="widget_dot_green">#FF34C759</color>
+    
+    <!-- 按钮背景 -->
+    <color name="widget_quick_action_bg">#F0EFED</color>
+    <color name="widget_pressed_color">#1A000000</color>
+    <color name="widget_divider_color">#E0DDD9</color>
+    
+    <!-- ═══════════════════════════════════════════════════════════════
+         Widget Color System - Premium Dark Theme
+         ═══════════════════════════════════════════════════════════════ -->
+    
+    <color name="widget_bg_dark">#FF1C1C1E</color>
+    <color name="widget_card_dark">#FF2C2C2E</color>
+    <color name="widget_stat_card_dark">#FF3A3A3C</color>
+    <color name="widget_chip_dark">#FF48484A</color>
+    <color name="widget_separator_dark">#FF48484A</color>
+    <color name="widget_border_dark">#FF3A3A3C</color>
+    
+    <color name="widget_title_dark">#FFFFFFFF</color>
+    <color name="widget_label_dark">#FF8E8E93</color>
+    <color name="widget_sub_text_dark">#FF636366</color>
+    <color name="widget_section_title_dark">#FF48484A</color>
+    
+    <color name="widget_expense_dark">#FFFF9F0A</color>
+    <color name="widget_income_dark">#FF30D158</color>
+    <color name="widget_accent_blue_dark">#FF0A84FF</color>
+    <color name="widget_accent_purple_dark">#FFBF5AF2</color>
+    <color name="widget_accent_green_dark">#FF30D158</color>
+    <color name="widget_accent_orange_dark">#FFFF9F0A</color>
+    <color name="widget_warning_dark">#FFFF9F0A</color>
+    <color name="widget_overdue_dark">#FFFF453A</color>
+    <color name="widget_completed_dark">#FF30D158</color>
+    
+    <!-- Legacy aliases -->
+    <color name="widget_quick_fab_bg">#FF2D4A3E</color>
+    <color name="widget_quick_fab_icon">#FFFFFFFF</color>
+    <color name="widget_category_dot_bg">#FF2D4A3E</color>
+    <color name="widget_quick_fab_bg_dark">#FFCDD6F4</color>
+    <color name="widget_quick_fab_icon_dark">#FF1E1E2E</color>
+    <color name="widget_category_dot_dark">#FFCDD6F4</color>
 </resources>

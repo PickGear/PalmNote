@@ -1,6 +1,7 @@
 package com.palmnote
 
 import android.os.Bundle
+import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.compose.setContent
 import android.Manifest
@@ -132,6 +133,9 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             preferencesManager.vaultRequireAuth.collect { vaultRequireAuth = it }
         }
+
+        // 处理小组件跳转：设置目标 Tab
+        handleWidgetIntent(intent)
 
         // 冷启动/进程被杀恢复（非配置变更）时锁定；旋转（配置变更）不锁。
         // 用 isChangingConfigurations() 而非 savedInstanceState==null：进程被杀后从最近任务恢复
@@ -378,6 +382,26 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             }
+        }
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleWidgetIntent(intent)
+    }
+
+    private fun handleWidgetIntent(intent: Intent?) {
+        val tab = intent?.getStringExtra("WIDGET_TAB") ?: return
+        PalmNoteApp.cachedStartPage = when (tab) {
+            "bill", "add_bill" -> "bill"
+            "asset" -> "asset"
+            "life" -> "life"
+            "vault" -> "vault"
+            else -> "dashboard"
+        }
+        if (tab == "add_bill") {
+            PalmNoteApp.pendingNavigation = "add_bill"
         }
     }
 

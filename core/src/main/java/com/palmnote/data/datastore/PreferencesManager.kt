@@ -80,11 +80,18 @@ class PreferencesManager @Inject constructor(
         val AUTO_LOCK_TIMEOUT_MINUTES = intPreferencesKey("auto_lock_timeout_minutes")
         val VAULT_CARD_IDENTITY = stringPreferencesKey("vault_card_identity")
         val RECENT_SEARCHES = stringPreferencesKey("life_recent_searches")
+        val APP_ICON_STYLE = stringPreferencesKey("app_icon_style")
 
         const val AUTO_LOCK_MODE_IMMEDIATE = "immediate"
         const val AUTO_LOCK_MODE_SYSTEM = "system"
         const val AUTO_LOCK_MODE_TIMEOUT = "timeout"
         const val DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES = 5
+
+        const val APP_ICON_GREEN_WHITE = "green_white"
+        const val APP_ICON_BLACK_WHITE = "black_white"
+        const val APP_ICON_WHITE_BLACK = "white_black"
+        const val APP_ICON_WHITE_GREEN = "white_green"
+        const val DEFAULT_APP_ICON_STYLE = APP_ICON_GREEN_WHITE
     }
 
     val themeMode: Flow<String> = prefsFlow.map { it[THEME_MODE] ?: "SYSTEM" }
@@ -104,6 +111,10 @@ class PreferencesManager @Inject constructor(
     val switchColor: Flow<String> = prefsFlow.map { it[SWITCH_COLOR] ?: "#2D4A3E" }
 
     suspend fun setSwitchColor(color: String) { context.dataStore.edit { it[SWITCH_COLOR] = color } }
+
+    val appIconStyle: Flow<String> = prefsFlow.map { it[APP_ICON_STYLE] ?: DEFAULT_APP_ICON_STYLE }
+
+    suspend fun setAppIconStyle(style: String) { context.dataStore.edit { it[APP_ICON_STYLE] = style } }
 
     val defaultStartPage: Flow<String> = prefsFlow.map { it[DEFAULT_START_PAGE] ?: "dashboard" }
 

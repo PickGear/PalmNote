@@ -173,14 +173,33 @@ fun ItemDetailScreen(
             Spacer(modifier = Modifier.height(8.dp))
 
             val data = try { json.decodeFromString<JsonObject>(item.fieldsData) } catch (_: Exception) { null }
-            val cur = data?.let {
-                (it["current_page"] as? JsonPrimitive)?.content?.toIntOrNull()
-                    ?: (it["currentPage"] as? JsonPrimitive)?.content?.toIntOrNull()
-                    ?: (it["currentAmount"] as? JsonPrimitive)?.content?.toDoubleOrNull()?.toInt()
-                    ?: (it["saved_amount"] as? JsonPrimitive)?.content?.toDoubleOrNull()?.toInt()
-                    ?: (it["current"] as? JsonPrimitive)?.content?.toIntOrNull()
-                    ?: 0
-            } ?: 0
+            val detailFields: List<FieldDef> = try {
+                val arr = json.decodeFromString<JsonArray>(template.fieldsConfig)
+                arr.map { el ->
+                    val obj = el.jsonObject
+                    FieldDef(
+                        key = obj["key"]?.jsonPrimitive?.content ?: "",
+                        label = obj["label"]?.jsonPrimitive?.content ?: "",
+                        type = obj["type"]?.jsonPrimitive?.content ?: "TEXT",
+                        unit = obj["unit"]?.jsonPrimitive?.content ?: "",
+                        showAsProgress = try { obj["showAsProgress"]?.jsonPrimitive?.content?.toBooleanStrictOrNull() } catch (_: Exception) { null } ?: false
+                    )
+                }
+            } catch (_: Exception) { emptyList() }
+            
+            val progressField = detailFields.firstOrNull { it.showAsProgress }
+            val cur = if (progressField != null && data != null) {
+                (data[progressField.key] as? JsonPrimitive)?.content?.toDoubleOrNull()?.toInt() ?: 0
+            } else {
+                data?.let {
+                    (it["current_page"] as? JsonPrimitive)?.content?.toIntOrNull()
+                        ?: (it["currentPage"] as? JsonPrimitive)?.content?.toIntOrNull()
+                        ?: (it["currentAmount"] as? JsonPrimitive)?.content?.toDoubleOrNull()?.toInt()
+                        ?: (it["saved_amount"] as? JsonPrimitive)?.content?.toDoubleOrNull()?.toInt()
+                        ?: (it["current"] as? JsonPrimitive)?.content?.toIntOrNull()
+                        ?: 0
+                } ?: 0
+            }
             val tot = data?.let {
                 (it["total_pages"] as? JsonPrimitive)?.content?.toIntOrNull()
                     ?: (it["totalPages"] as? JsonPrimitive)?.content?.toIntOrNull()
@@ -212,19 +231,6 @@ fun ItemDetailScreen(
             Spacer(modifier = Modifier.height(12.dp))
 
             Column(modifier = Modifier.padding(horizontal = 20.dp)) {
-                val detailFields: List<FieldDef> = try {
-                    val arr = json.decodeFromString<JsonArray>(template.fieldsConfig)
-                    arr.map { el ->
-                        val obj = el.jsonObject
-                        FieldDef(
-                            key = obj["key"]?.jsonPrimitive?.content ?: "",
-                            label = obj["label"]?.jsonPrimitive?.content ?: "",
-                            type = obj["type"]?.jsonPrimitive?.content ?: "TEXT",
-                            unit = obj["unit"]?.jsonPrimitive?.content ?: "",
-                            options = try { (obj["options"] as? JsonArray)?.map { it.jsonPrimitive.content } ?: emptyList() } catch (_: Exception) { emptyList() }
-                        )
-                    }
-                } catch (_: Exception) { emptyList() }
                 val detailFieldMap: Map<String, JsonElement> = data?.entries?.associate { it.key to it.value } ?: emptyMap()
                 if (detailFields.isEmpty() && data != null) {
                     data.entries.forEach { (key, value) ->
@@ -281,7 +287,22 @@ fun ItemDetailScreen(
                                 Row(modifier = Modifier.padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                                     Icon(Icons.Default.Link, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
                                     Spacer(modifier = Modifier.width(6.dp))
-                                    Text(link.targetType.name, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
+                                    val typeName = when (link.targetType) {
+                                        com.palmnote.domain.model.EntityType.ITEM -> stringResource(R.string.life_entity_item)
+                                        com.palmnote.domain.model.EntityType.NOTE -> stringResource(R.string.life_entity_note)
+                                        com.palmnote.domain.model.EntityType.TODO -> stringResource(R.string.life_entity_todo)
+                                        com.palmnote.domain.model.EntityType.MOMENT -> stringResource(R.string.life_entity_moment)
+                                        com.palmnote.domain.model.EntityType.MOOD -> stringResource(R.string.life_entity_mood)
+                                        com.palmnote.domain.model.EntityType.FOCUS -> stringResource(R.string.life_entity_focus)
+                                        com.palmnote.domain.model.EntityType.REPORT -> stringResource(R.string.life_entity_report)
+                                        com.palmnote.domain.model.EntityType.PLAN -> stringResource(R.string.life_entity_plan)
+                                        com.palmnote.domain.model.EntityType.READING -> stringResource(R.string.life_entity_reading)
+                                        com.palmnote.domain.model.EntityType.ANNIVERSARY -> stringResource(R.string.life_entity_anniversary)
+                                        com.palmnote.domain.model.EntityType.GOAL -> stringResource(R.string.life_entity_goal)
+                                        com.palmnote.domain.model.EntityType.BILL -> stringResource(R.string.life_entity_bill)
+                                        com.palmnote.domain.model.EntityType.ASSET -> stringResource(R.string.life_entity_asset)
+                                    }
+                                    Text(typeName, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
                                 }
                             }
                         }

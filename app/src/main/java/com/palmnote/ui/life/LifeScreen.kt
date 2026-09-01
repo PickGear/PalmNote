@@ -3,12 +3,12 @@ package com.palmnote.ui.life
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
-import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.*
+import androidx.compose.material.icons.automirrored.outlined.EventNote
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
@@ -19,12 +19,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.positionInWindow
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import com.palmnote.app.R
@@ -32,39 +26,30 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.zIndex
 import androidx.activity.compose.BackHandler
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.palmnote.data.db.entity.LifeItem
 import com.palmnote.data.db.entity.LifeTemplate
 import com.palmnote.data.db.entity.getDisplayDescription
 import com.palmnote.ui.components.CompactTopAppBar
 import com.palmnote.ui.components.LifeScreenSkeleton
 import com.palmnote.ui.components.ModuleSearchBar
 import com.palmnote.ui.components.AppBottomSheet
-import com.palmnote.ui.components.AppDialog
-import com.palmnote.ui.components.CapsuleSwitch
 import com.palmnote.ui.components.toComposeColor
 import com.palmnote.ui.life.common.LifeSearchContent
-import com.palmnote.ui.life.common.PlanCard
 import com.palmnote.ui.life.common.SearchViewModel
-import com.palmnote.ui.life.common.TimeCard
 import com.palmnote.ui.life.common.WeeklyCalendar
 import com.palmnote.ui.life.common.displayName
-import com.palmnote.ui.life.common.formatRelativeTime
 import com.palmnote.ui.life.common.getTodoPriority
 import com.palmnote.ui.theme.*
 import com.palmnote.ui.theme.PalmNoteTheme
 
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import androidx.datastore.preferences.core.booleanPreferencesKey
-
-import androidx.datastore.preferences.core.edit
 import com.palmnote.data.datastore.dataStore
 import androidx.compose.ui.platform.LocalContext
+import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 
@@ -96,9 +81,7 @@ fun LifeScreen(
         searchViewModel.onQueryChange("")
     }
     var showFuncPage by remember { mutableStateOf(false) }
-    var showCardDialog by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
@@ -150,13 +133,6 @@ fun LifeScreen(
                                     tint = MaterialTheme.colorScheme.primary
                                 )
                             }
-                            IconButton(onClick = { showCardDialog = true }) {
-                                Icon(
-                                    Icons.Outlined.GridView,
-                                    stringResource(R.string.life_home_card_manage),
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                            }
                             IconButton(onClick = onNavigateToManage) {
                                 Icon(
                                     Icons.Outlined.Dashboard,
@@ -195,11 +171,12 @@ fun LifeScreen(
                 LifeContent(
                     innerPadding = innerPadding, state = state,
                     onTodayTodosClick = onNavigateToTodo, onRetry = { viewModel.retry() },
-                    onMoveCardUp = viewModel::moveCardUp, onMoveCardDown = viewModel::moveCardDown,
-                    snackbarHostState = snackbarHostState, scope = scope, onCategoryClick = onNavigateToCategory,
+                    snackbarHostState = snackbarHostState, onCategoryClick = onNavigateToCategory,
                     calendarExpanded = calendarExpanded, selectedDate = selectedDate,
                     onSelectDate = viewModel::setSelectedDate, onCalendarExpandedChange = viewModel::setCalendarExpanded,
-                    onItemClick = onNavigateToItem
+                    onItemClick = onNavigateToItem,
+                    onToggleItem = viewModel::toggleItemCompleted,
+                    onCreateClick = { showFuncPage = true }
                 )
             }
         }
@@ -234,14 +211,6 @@ fun LifeScreen(
                 onNavigateToMood = onNavigateToMood,
                 onNavigateToJournal = onNavigateToJournal,
                 onNavigateToReport = onNavigateToReport
-            )
-        }
-
-        if (showCardDialog) {
-            LifeCardManagementDialog(
-                cardConfigs = state.cardConfigs,
-                onToggle = viewModel::toggleCardVisible,
-                onDismiss = { showCardDialog = false }
             )
         }
     }
@@ -387,11 +356,12 @@ private fun TemplateCard(tpl: LifeTemplate, onTemplateClick: (Long) -> Unit) {
 private fun LifeContent(
     innerPadding: PaddingValues, state: LifeUiState,
     onTodayTodosClick: () -> Unit, onRetry: () -> Unit,
-    onMoveCardUp: (LifeHomeCardType) -> Unit, onMoveCardDown: (LifeHomeCardType) -> Unit,
-    snackbarHostState: SnackbarHostState, scope: kotlinx.coroutines.CoroutineScope, onCategoryClick: (String) -> Unit,
+    snackbarHostState: SnackbarHostState, onCategoryClick: (String) -> Unit,
     calendarExpanded: Boolean, selectedDate: LocalDate,
     onSelectDate: (LocalDate) -> Unit, onCalendarExpandedChange: (Boolean) -> Unit,
-    onItemClick: (Long) -> Unit
+    onItemClick: (Long) -> Unit,
+    onToggleItem: (LifeItem) -> Unit = {},
+    onCreateClick: () -> Unit = {}
 ) {
     val visibleConfigs = state.cardConfigs.filter { it.visible }
     Box(modifier = Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.TopCenter) {
@@ -413,75 +383,13 @@ private fun LifeContent(
                 Spacer(modifier = Modifier.height(8.dp))
             }
             Spacer(modifier = Modifier.height(4.dp))
-            val cardGlobalYs = remember { mutableStateMapOf<LifeHomeCardType, Float>() }
-            val itemHeights = remember { mutableStateMapOf<LifeHomeCardType, Int>() }
-            val boxGlobalY = remember { mutableFloatStateOf(0f) }
-            val draggedType = remember { mutableStateOf<LifeHomeCardType?>(null) }
-            val haptic = LocalHapticFeedback.current
             visibleConfigs.forEachIndexed { index, config ->
                 key(config.type) {
-                    val isDragged = draggedType.value == config.type
-                    val dragStartOffsetPx = remember { mutableFloatStateOf(0f) }
-                    val overlayTopPx = remember { mutableFloatStateOf(0f) }
-                    val lastSwapTime = remember { mutableLongStateOf(0L) }
-                    var dragTotalY by remember { mutableFloatStateOf(0f) }
                     val cardModifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp)
                         .padding(bottom = 12.dp)
-                        .zIndex(if (isDragged) 100f else 0f)
-                        .graphicsLayer {
-                            alpha = if (isDragged) 0.3f else 1f
-                            translationY = if (isDragged) overlayTopPx.floatValue - dragStartOffsetPx.floatValue else 0f
-                        }
-                        .onGloballyPositioned {
-                            cardGlobalYs[config.type] = it.positionInWindow().y
-                            itemHeights[config.type] = it.size.height
-                        }
-                        .pointerInput(config.type) {
-                            detectDragGesturesAfterLongPress(
-                                onDragStart = {
-                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                    draggedType.value = config.type
-                                    dragStartOffsetPx.floatValue = (cardGlobalYs[config.type] ?: 0f) - boxGlobalY.floatValue
-                                    dragTotalY = 0f
-                                    overlayTopPx.floatValue = dragStartOffsetPx.floatValue
-                                    lastSwapTime.longValue = System.currentTimeMillis()
-                                },
-                                onDrag = { change, dragAmount ->
-                                    change.consume()
-                                    dragTotalY += dragAmount.y
-                                    overlayTopPx.floatValue = dragStartOffsetPx.floatValue + dragTotalY
-                                    val fresh = state.cardConfigs.filter { it.visible }
-                                    val i = fresh.indexOfFirst { it.type == config.type }
-                                    val now = System.currentTimeMillis()
-                                    if (i >= 0 && now - lastSwapTime.longValue > 50) {
-                                        val belowType = fresh.getOrNull(i + 1)?.type
-                                        val aboveType = fresh.getOrNull(i - 1)?.type
-                                        val selfH = itemHeights[config.type] ?: 0
-                                        val overlayCenter = overlayTopPx.floatValue + selfH * 0.5f
-                                        val belowCenterY = belowType?.let { t ->
-                                            (cardGlobalYs[t] ?: 0f) - boxGlobalY.floatValue + (itemHeights[t]?.toFloat() ?: 0f) * 0.5f
-                                        }
-                                        val aboveCenterY = aboveType?.let { t ->
-                                            (cardGlobalYs[t] ?: 0f) - boxGlobalY.floatValue + (itemHeights[t]?.toFloat() ?: 0f) * 0.5f
-                                        }
-                                        if (belowCenterY != null && overlayCenter > belowCenterY) {
-                                            onMoveCardDown(config.type)
-                                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                            lastSwapTime.longValue = now
-                                        } else if (aboveCenterY != null && overlayCenter < aboveCenterY) {
-                                            onMoveCardUp(config.type)
-                                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                            lastSwapTime.longValue = now
-                                        }
-                                    }
-                                },
-                                onDragEnd = { draggedType.value = null; dragTotalY = 0f; lastSwapTime.longValue = 0L },
-                                onDragCancel = { draggedType.value = null; dragTotalY = 0f; lastSwapTime.longValue = 0L }
-                            )
-                        }
-                    Box(modifier = Modifier.fillMaxWidth().onGloballyPositioned { boxGlobalY.floatValue = it.positionInWindow().y }) {
+                    Box(modifier = Modifier.fillMaxWidth()) {
                         FadeUp(delay = index * 50, modifier = Modifier.fillMaxWidth()) {
                             when (config.type) {
                                 LifeHomeCardType.CATEGORY -> CategoryHomeCard(
@@ -496,13 +404,16 @@ private fun LifeContent(
                                     expanded = calendarExpanded,
                                     onSelectDate = onSelectDate,
                                     onExpandedChange = onCalendarExpandedChange,
-                                    onItemClick = onItemClick
+                                    onItemClick = onItemClick,
+                                    onToggleItem = onToggleItem
                                 )
                                 LifeHomeCardType.TODO -> TodoHomeCard(
                                     state = state,
                                     modifier = cardModifier,
                                     onViewAll = onTodayTodosClick,
-                                    onItemClick = onItemClick
+                                    onItemClick = onItemClick,
+                                    onToggleItem = onToggleItem,
+                                    snackbarHostState = snackbarHostState
                                 )
                             }
                         }
@@ -517,6 +428,16 @@ private fun LifeContent(
                         Text(stringResource(R.string.life_empty_here), fontSize = 16.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(stringResource(R.string.life_empty_hint), fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f))
+                        Spacer(modifier = Modifier.height(20.dp))
+                        Button(
+                            onClick = { onCreateClick() },
+                            colors = ButtonDefaults.buttonColors(containerColor = ModuleLife),
+                            shape = MaterialTheme.shapes.medium
+                        ) {
+                            Icon(Icons.Default.Add, null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(stringResource(R.string.life_new_create), fontWeight = FontWeight.Medium)
+                        }
                     }
                 }
             }
@@ -532,6 +453,17 @@ private fun FadeUp(delay: Int = 0, modifier: Modifier = Modifier, content: @Comp
     val alpha by animateFloatAsState(targetValue = if (visible) 1f else 0f, animationSpec = tween(250, easing = FastOutSlowInEasing))
     val offset by animateDpAsState(targetValue = if (visible) 0.dp else 12.dp, animationSpec = tween(250, easing = FastOutSlowInEasing))
     Box(modifier = modifier.alpha(alpha).offset(y = offset)) { content() }
+}
+
+@Composable
+private fun HomeCardTitle(text: String, modifier: Modifier = Modifier) {
+    Text(
+        text,
+        style = MaterialTheme.typography.titleMedium,
+        fontWeight = FontWeight.SemiBold,
+        color = MaterialTheme.colorScheme.onSurface,
+        modifier = modifier
+    )
 }
 
 @Composable
@@ -599,7 +531,7 @@ private fun CategoryMiniCard(title: String, icon: androidx.compose.ui.graphics.v
                     Icon(icon, null, tint = color, modifier = Modifier.size(15.dp))
                 }
                 Spacer(modifier = Modifier.width(6.dp))
-                Text(title, fontSize = 12.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(title, fontSize = 13.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
             Spacer(modifier = Modifier.height(8.dp))
             Text("$total", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = color)
@@ -613,7 +545,7 @@ private fun CategoryMiniCard(title: String, icon: androidx.compose.ui.graphics.v
 }
 
 @Composable
-private fun TodayBoardHomeCard(state: LifeUiState, modifier: Modifier = Modifier, selectedDate: LocalDate = LocalDate.now(), expanded: Boolean = false, onSelectDate: (LocalDate) -> Unit = {}, onExpandedChange: (Boolean) -> Unit = {}, onItemClick: (Long) -> Unit = {}) {
+private fun TodayBoardHomeCard(state: LifeUiState, modifier: Modifier = Modifier, selectedDate: LocalDate = LocalDate.now(), expanded: Boolean = false, onSelectDate: (LocalDate) -> Unit = {}, onExpandedChange: (Boolean) -> Unit = {}, onItemClick: (Long) -> Unit = {}, onToggleItem: (LifeItem) -> Unit = {}) {
     Card(
         modifier = modifier.clip(MaterialTheme.shapes.large),
         shape = MaterialTheme.shapes.large,
@@ -622,12 +554,9 @@ private fun TodayBoardHomeCard(state: LifeUiState, modifier: Modifier = Modifier
     ) {
         Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
             val isToday = selectedDate == LocalDate.now()
-            Text(
+            HomeCardTitle(
                 if (isToday) stringResource(R.string.life_home_today_board)
-                else stringResource(R.string.life_home_board_selected, selectedDate.monthValue, selectedDate.dayOfMonth),
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 16.sp,
-                color = ModuleLife
+                else stringResource(R.string.life_home_board_selected, selectedDate.monthValue, selectedDate.dayOfMonth)
             )
             Spacer(modifier = Modifier.height(8.dp))
             WeeklyCalendar(
@@ -638,13 +567,14 @@ private fun TodayBoardHomeCard(state: LifeUiState, modifier: Modifier = Modifier
                 onExpandedChange = onExpandedChange
             )
             Spacer(modifier = Modifier.height(10.dp))
-            TimeSlots(state = state, onItemClick = onItemClick)
+            TimeSlots(state = state, onItemClick = onItemClick, onToggleItem = onToggleItem)
         }
     }
 }
 
+@Suppress("LongMethod")
 @Composable
-private fun TimeSlots(state: LifeUiState, onItemClick: (Long) -> Unit = {}) {
+private fun TimeSlots(state: LifeUiState, onItemClick: (Long) -> Unit = {}, onToggleItem: (LifeItem) -> Unit = {}) {
     val slots = listOf(
         stringResource(R.string.life_home_slot_morning),
         stringResource(R.string.life_home_slot_forenoon),
@@ -660,12 +590,30 @@ private fun TimeSlots(state: LifeUiState, onItemClick: (Long) -> Unit = {}) {
     val allDay = items.filter { it.dueTime == null }
     val buckets = listOf(morning, forenoon, afternoon, evening, allDay)
     if (items.isEmpty()) {
-        Text(
-            stringResource(R.string.life_board_empty),
-            fontSize = 13.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 6.dp)
-        )
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(vertical = 14.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(
+                Icons.Outlined.EventBusy,
+                null,
+                tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f),
+                modifier = Modifier.size(28.dp)
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                stringResource(R.string.life_board_empty),
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                stringResource(R.string.life_board_empty_hint),
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+            )
+        }
         return
     }
     buckets.forEachIndexed { i, bucket ->
@@ -683,9 +631,13 @@ private fun TimeSlots(state: LifeUiState, onItemClick: (Long) -> Unit = {}) {
                 ) {
                     Icon(
                         if (item.status == "COMPLETED") Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
-                        null,
+                        stringResource(R.string.life_item_toggle_complete),
                         tint = if (item.status == "COMPLETED") MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.outline,
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier
+                            .size(22.dp)
+                            .clip(MaterialTheme.shapes.small)
+                            .clickable { onToggleItem(item) }
+                            .padding(2.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(item.title, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
@@ -705,10 +657,12 @@ private fun TimeSlots(state: LifeUiState, onItemClick: (Long) -> Unit = {}) {
 
 @Suppress("LongMethod")
 @Composable
-private fun TodoHomeCard(state: LifeUiState, modifier: Modifier = Modifier, onViewAll: () -> Unit, onItemClick: (Long) -> Unit = {}) {
+private fun TodoHomeCard(state: LifeUiState, modifier: Modifier = Modifier, onViewAll: () -> Unit, onItemClick: (Long) -> Unit = {}, onToggleItem: (LifeItem) -> Unit = {}, snackbarHostState: SnackbarHostState? = null) {
     val todayStart = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
     val overdueCount = state.todoItems.count { val d = it.dueDate; d != null && d < todayStart }
     val shown = state.todoItems.take(4)
+    val coroutineScope = rememberCoroutineScope()
+    val context = androidx.compose.ui.platform.LocalContext.current
     Card(
         modifier = modifier.clip(MaterialTheme.shapes.large),
         shape = MaterialTheme.shapes.large,
@@ -717,10 +671,8 @@ private fun TodoHomeCard(state: LifeUiState, modifier: Modifier = Modifier, onVi
     ) {
         Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
+                HomeCardTitle(
                     stringResource(R.string.life_home_todo),
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 16.sp,
                     modifier = Modifier.weight(1f)
                 )
                 if (overdueCount > 0) {
@@ -737,8 +689,30 @@ private fun TodoHomeCard(state: LifeUiState, modifier: Modifier = Modifier, onVi
                 )
             }
             if (shown.isEmpty()) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(stringResource(R.string.life_home_todo_empty), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 14.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(
+                        Icons.AutoMirrored.Outlined.EventNote,
+                        null,
+                        tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f),
+                        modifier = Modifier.size(28.dp)
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        stringResource(R.string.life_home_todo_empty),
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        stringResource(R.string.life_home_todo_empty_hint),
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                    )
+                }
             } else {
                 shown.forEach { item ->
                     val priority = getTodoPriority(item)
@@ -753,14 +727,31 @@ private fun TodoHomeCard(state: LifeUiState, modifier: Modifier = Modifier, onVi
                             val days = ((todayStart - item.dueDate!!) / 86400000L).toInt()
                             stringResource(R.string.life_home_todo_overdue_days, days)
                         }
-                        else -> stringResource(R.string.life_home_todo_future)
+                        else -> {
+                            val due = Instant.ofEpochMilli(item.dueDate!!).atZone(ZoneId.systemDefault()).toLocalDate()
+                            stringResource(R.string.life_home_todo_due, due.monthValue, due.dayOfMonth)
+                        }
                     }
                     Row(modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp).clip(MaterialTheme.shapes.small).clickable { onItemClick(item.id) }.padding(horizontal = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             Icons.Default.RadioButtonUnchecked,
-                            null,
+                            stringResource(R.string.life_item_toggle_complete),
                             tint = MaterialTheme.colorScheme.outline,
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier
+                                .size(22.dp)
+                                .clip(MaterialTheme.shapes.small)
+                                .clickable {
+                                    onToggleItem(item)
+                                    coroutineScope.launch {
+                                        val message = if (item.status == "COMPLETED") {
+                                            context.getString(R.string.life_item_uncompleted)
+                                        } else {
+                                            context.getString(R.string.life_item_completed)
+                                        }
+                                        snackbarHostState?.showSnackbar(message, duration = SnackbarDuration.Short)
+                                    }
+                                }
+                                .padding(2.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Box(modifier = Modifier.size(8.dp).clip(RoundedCornerShape(4.dp)).background(dotColor))
@@ -777,51 +768,6 @@ private fun TodoHomeCard(state: LifeUiState, modifier: Modifier = Modifier, onVi
             }
         }
     }
-}
-
-@Composable
-private fun LifeCardManagementDialog(
-    cardConfigs: List<LifeHomeCardConfig>,
-    onToggle: (LifeHomeCardType) -> Unit,
-    onDismiss: () -> Unit
-) {
-    AppDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.life_home_card_manage), fontWeight = FontWeight.Bold) },
-        text = {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-                modifier = Modifier
-                    .verticalScroll(rememberScrollState())
-                    .heightIn(max = 420.dp)
-            ) {
-                cardConfigs.forEach { config ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onToggle(config.type) }
-                            .padding(vertical = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = when (config.type) {
-                                LifeHomeCardType.CATEGORY -> stringResource(R.string.life_home_card_category)
-                                LifeHomeCardType.TODAY_BOARD -> stringResource(R.string.life_home_today_board)
-                                LifeHomeCardType.TODO -> stringResource(R.string.life_home_todo)
-                            },
-                            style = MaterialTheme.typography.bodyLarge
-                        )
-                        CapsuleSwitch(
-                            checked = config.visible,
-                            onCheckedChange = { onToggle(config.type) }
-                        )
-                    }
-                }
-            }
-        },
-        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.done)) } }
-    )
 }
 
 @Preview(showBackground = true, showSystemUi = true)

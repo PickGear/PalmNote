@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="40dp"
+    android:height="40dp"
+    android:viewportWidth="40"
+    android:viewportHeight="40">
+    <!-- Box outline -->
+    <path
+        android:pathData="M12,12 L28,12 L30,32 L10,32Z"
+        android:strokeWidth="1.5"
+        android:strokeColor="#E0E0E0"
+        android:fillColor="#00000000"
+        android:strokeLineJoin="round" />
+    <!-- Lid -->
+    <path
+        android:pathData="M16,12 L16,9 C16,8.4 16.4,8 17,8 L23,8 C23.6,8 24,8.4 24,9 L24,12"
+        android:strokeWidth="1.5"
+        android:strokeColor="#E0E0E0"
+        android:fillColor="#00000000"
+        android:strokeLineCap="round" />
+    <!-- Lines -->
+    <path
+        android:pathData="M14,19 L26,19 M14,25 L22,25"
+        android:strokeWidth="1"
+        android:strokeColor="#D0D0D0"
+        android:fillColor="#00000000"
+        android:strokeLineCap="round" />
+</vector>

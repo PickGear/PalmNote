@@ -52,7 +52,9 @@ data class FieldDef(
     val options: List<String> = emptyList(),
     val min: Double = 0.0,
     val max: Double = 100.0,
-    val step: Double = 1.0
+    val step: Double = 1.0,
+    val showInCard: Boolean = false,
+    val showAsProgress: Boolean = false
 )
 
 @Composable

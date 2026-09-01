@@ -84,7 +84,9 @@ class LifeViewModel @Inject constructor(
             }
             .launchIn(viewModelScope)
 
-        itemRepo.getDistinctDueDatesBetween(0L, Long.MAX_VALUE)
+        val sixMonthsAgo = LocalDate.now().minusMonths(6).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        val sixMonthsLater = LocalDate.now().plusMonths(6).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        itemRepo.getDistinctDueDatesBetween(sixMonthsAgo, sixMonthsLater)
             .onEach { marks ->
                 val zone = ZoneId.systemDefault()
                 val markDates = marks.map { ts ->
@@ -117,6 +119,7 @@ class LifeViewModel @Inject constructor(
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun observeTemplates() {
         templateRepo.getAllVisibleTemplates()
+            .debounce(300)
             .flatMapLatest { templates ->
                 val planCategory = application.getString(R.string.life_category_plan)
                 val timeCategory = application.getString(R.string.life_category_time)
@@ -171,27 +174,15 @@ class LifeViewModel @Inject constructor(
             .launchIn(viewModelScope)
     }
 
-    fun moveCardUp(type: LifeHomeCardType) { reorderCard(type, moveUp = true) }
-
-    fun moveCardDown(type: LifeHomeCardType) { reorderCard(type, moveUp = false) }
-
-    private fun reorderCard(type: LifeHomeCardType, moveUp: Boolean) {
-        val current = _uiState.value.cardConfigs
-        val idx = current.indexOfFirst { it.type == type }
-        val swapWith = if (moveUp) idx - 1 else idx + 1
-        if (idx < 0 || swapWith < 0 || swapWith >= current.size) return
-        val swapped = current.toMutableList().apply {
-            val a = this[idx]
-            this[idx] = this[swapWith]
-            this[swapWith] = a
+    fun toggleItemCompleted(item: LifeItem) {
+        val target = if (item.status == "COMPLETED") "ACTIVE" else "COMPLETED"
+        viewModelScope.launch {
+            try {
+                itemRepo.updateStatus(item.id, target)
+            } catch (_: Exception) {
+                _uiState.update { it.copy(error = application.getString(R.string.life_data_load_error)) }
+            }
         }
-        _uiState.update { it.copy(cardConfigs = swapped) }
-        viewModelScope.launch { prefs.saveLifeHomeCardConfigs(swapped) }
     }
 
-    fun toggleCardVisible(type: LifeHomeCardType) {
-        val current = _uiState.value.cardConfigs.map { if (it.type == type) it.copy(visible = !it.visible) else it }
-        _uiState.update { it.copy(cardConfigs = current) }
-        viewModelScope.launch { prefs.saveLifeHomeCardConfigs(current) }
-    }
 }

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="180dp"
+    android:minHeight="110dp"
+    android:targetCellWidth="3"
+    android:targetCellHeight="2"
+    android:maxResizeWidth="400dp"
+    android:maxResizeHeight="250dp"
+    android:updatePeriodMillis="1800000"
+    android:initialLayout="@layout/widget_bill_unified"
+    android:widgetCategory="home_screen"
+    android:previewImage="@drawable/widget_preview_bill"
+    android:previewLayout="@layout/widget_bill_preview"
+    android:resizeMode="horizontal|vertical" />

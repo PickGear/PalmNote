@@ -115,7 +115,11 @@ fun streakCount(subtasks: List<LifeItem>, planStart: LocalDate, planEnd: LocalDa
     var streak = 0
     while (!day.isBefore(planStart) && streak < 10000) {
         val scheduled = subtasks.filter { occursOn(it, day, planStart, planEnd) }
-        if (scheduled.isNotEmpty() && scheduled.any { !isCheckedOn(it, day) }) break
+        if (scheduled.isEmpty()) {
+            day = day.minusDays(1)
+            continue
+        }
+        if (scheduled.any { !isCheckedOn(it, day) }) break
         streak++
         day = day.minusDays(1)
     }

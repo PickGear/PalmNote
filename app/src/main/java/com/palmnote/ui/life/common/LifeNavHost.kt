@@ -19,6 +19,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.palmnote.data.db.entity.LifeTemplate
 import com.palmnote.domain.repository.LifeTemplateRepository
+import com.palmnote.domain.util.LifeTemplateRouteType
+import com.palmnote.domain.util.getRouteType
 import com.palmnote.ui.life.*
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -82,20 +84,18 @@ private fun DispatchScreen(tpl: LifeTemplate, tid: Long, navController: NavHostC
     val back: () -> Unit = { navController.popBackStack(); Unit }
     val onClick: (Long) -> Unit = { id -> navController.navigate(LifeItemRoute(id)); Unit }
     val onCreate: () -> Unit = { navController.navigate(LifeCreateRoute(tid)); Unit }
-    if (!tpl.isBuiltin && !tpl.isSpecial) {
-        GenericTemplateListScreen(template = tpl, templateId = tid, onBack = back, onItemClick = onClick, onCreateClick = onCreate)
-        return
-    }
-    when (tpl.icon) {
-        "calendar_month" -> HabitListScreen(onBack = back, onItemClick = onClick)
-        "mood" -> MoodListScreen(onBack = back)
-        "book" -> JournalListScreen(onBack = back, onItemClick = onClick)
-        "timer" -> FocusTimerScreen(onBack = back)
-        "trending_up", "today" -> CountUpListScreen(templateId = tid, onBack = back, onItemClick = onClick, onCreateClick = onCreate)
-        "timer_off" -> CountdownListScreen(templateId = tid, onBack = back, onItemClick = onClick, onCreateClick = onCreate)
-        "cake" -> BirthdayListScreen(templateId = tid, onBack = back, onItemClick = onClick, onCreateClick = onCreate)
-        "celebration", "favorite" -> AnniversaryListScreen(templateId = tid, onBack = back, onItemClick = onClick, onCreateClick = onCreate)
-        else -> GenericTemplateListScreen(template = tpl, templateId = tid, onBack = back, onItemClick = onClick, onCreateClick = onCreate)
+    
+    when (tpl.getRouteType()) {
+        LifeTemplateRouteType.HABIT -> HabitListScreen(onBack = back, onItemClick = onClick)
+        LifeTemplateRouteType.MOOD -> MoodListScreen(onBack = back)
+        LifeTemplateRouteType.JOURNAL -> JournalListScreen(onBack = back, onItemClick = onClick)
+        LifeTemplateRouteType.FOCUS -> FocusTimerScreen(onBack = back)
+        LifeTemplateRouteType.COUNTUP -> CountUpListScreen(templateId = tid, onBack = back, onItemClick = onClick, onCreateClick = onCreate)
+        LifeTemplateRouteType.COUNTDOWN -> CountdownListScreen(templateId = tid, onBack = back, onItemClick = onClick, onCreateClick = onCreate)
+        LifeTemplateRouteType.BIRTHDAY -> BirthdayListScreen(templateId = tid, onBack = back, onItemClick = onClick, onCreateClick = onCreate)
+        LifeTemplateRouteType.ANNIVERSARY -> AnniversaryListScreen(templateId = tid, onBack = back, onItemClick = onClick, onCreateClick = onCreate)
+        LifeTemplateRouteType.TODO -> GenericTemplateListScreen(template = tpl, templateId = tid, onBack = back, onItemClick = onClick, onCreateClick = onCreate)
+        LifeTemplateRouteType.GENERIC -> GenericTemplateListScreen(template = tpl, templateId = tid, onBack = back, onItemClick = onClick, onCreateClick = onCreate)
     }
 }
 
@@ -146,6 +146,12 @@ fun LifeNavHost(modifier: Modifier = Modifier, onChildNavigated: (Boolean) -> Un
         composable<LifeItemRoute> { entry ->
             val iid = entry.toRoute<LifeItemRoute>().itemId
             val vm: ItemDetailViewModel = hiltViewModel(); val s by vm.uiState.collectAsStateWithLifecycle(); LaunchedEffect(iid) { vm.load(iid) }
+            val currentBackStackEntry by navController.currentBackStackEntryAsState()
+            LaunchedEffect(currentBackStackEntry?.destination?.route) {
+                if (currentBackStackEntry?.destination?.route?.contains("LifeItemRoute") == true && iid > 0) {
+                    vm.load(iid)
+                }
+            }
             ItemDetailScreen(item = s.item, template = s.template, viewModel = vm, onBack = { navController.popBackStack() }, onEdit = { s.item?.let { item -> navController.navigate(LifeEditRoute(item.id)) } }, onDelete = { vm.deleteItem(); navController.popBackStack() })
         }
         composable<LifeCreateRoute> { entry ->

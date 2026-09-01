@@ -1,6 +1,9 @@
 package com.palmnote.ui.life.plan
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -13,11 +16,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
@@ -53,6 +58,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -545,12 +551,19 @@ private fun PlanDayView(
     planEnd: LocalDate?,
     today: LocalDate
 ) {
-    val first = if (planStart.isAfter(today)) today else if (today.minusDays(13).isAfter(planStart)) today.minusDays(13) else planStart
+    val maxDays = 14
+    val first = if (planStart.isAfter(today)) today else if (today.minusDays((maxDays - 1).toLong()).isAfter(planStart)) today.minusDays((maxDays - 1).toLong()) else planStart
     val days = buildList {
         var d = first
         while (!d.isAfter(today)) {
             add(d)
             d = d.plusDays(1)
+        }
+    }
+    val lazyListState = rememberLazyListState()
+    LaunchedEffect(days.size) {
+        if (days.isNotEmpty()) {
+            lazyListState.animateScrollToItem(days.size - 1)
         }
     }
     Column(modifier = Modifier.padding(horizontal = 16.dp)) {
@@ -561,8 +574,12 @@ private fun PlanDayView(
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
         ) {
-            Column(modifier = Modifier.padding(vertical = 6.dp)) {
-                days.forEach { day ->
+            LazyColumn(
+                state = lazyListState,
+                modifier = Modifier.heightIn(max = 400.dp).padding(vertical = 6.dp)
+            ) {
+                items(days.size) { index ->
+                    val day = days[index]
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically
@@ -642,7 +659,21 @@ fun AddSubtaskDialog(zone: ZoneId, onDismiss: () -> Unit, onAdd: (String, Subtas
                     onValueChange = { title = it },
                     label = { Text(stringResource(R.string.life_plan_subtask_label)) },
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(
+                        onDone = {
+                            val trimmed = title.trim()
+                            if (trimmed.isNotEmpty()) {
+                                val dueMillis = if (kind == SubtaskKind.MILESTONE) {
+                                    dueDate?.atStartOfDay(zone)?.toInstant()?.toEpochMilli()
+                                } else {
+                                    null
+                                }
+                                onAdd(trimmed, kind, dueMillis)
+                            }
+                        }
+                    )
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {

@@ -12,6 +12,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.palmnote.app.R
 import com.palmnote.data.datastore.PreferencesManager
+import com.palmnote.data.AppIconManager
 import com.palmnote.data.export.CsvDataExporter
 import com.palmnote.data.lock.AppLockManager
 import com.palmnote.domain.repository.*
@@ -59,7 +60,8 @@ data class SettingsState(
     val profileNickname: String = "",
     val profileSignature: String = "",
     val profileAvatar: String = "Spa",
-    val profileAvatarPath: String = ""
+    val profileAvatarPath: String = "",
+    val appIconStyle: String = PreferencesManager.DEFAULT_APP_ICON_STYLE
 )
 
 @HiltViewModel
@@ -108,6 +110,7 @@ class SettingsViewModel @Inject constructor(
                 preferencesManager.profileSignature,
                 preferencesManager.profileAvatar,
                 preferencesManager.profileAvatarPath,
+                preferencesManager.appIconStyle,
                 assetRepository.getTotalAssetCount(),
                 goalRepository.getGoalCount(),
                 momentRepository.getMomentCount(),
@@ -139,11 +142,12 @@ class SettingsViewModel @Inject constructor(
                         profileSignature = (i(19) as? String) ?: "",
                         profileAvatar = (i(20) as? String) ?: "Spa",
                         profileAvatarPath = (i(21) as? String) ?: "",
-                        assetCount = (i(22) as? Int) ?: 0,
-                        goalCount = (i(23) as? Int) ?: 0,
-                        momentCount = (i(24) as? Int) ?: 0,
-                        anniversaryCount = (i(25) as? Int) ?: 0,
-                        autoLockTimeoutMinutes = (i(26) as? Int) ?: 5
+                        appIconStyle = (i(22) as? String) ?: PreferencesManager.DEFAULT_APP_ICON_STYLE,
+                        assetCount = (i(23) as? Int) ?: 0,
+                        goalCount = (i(24) as? Int) ?: 0,
+                        momentCount = (i(25) as? Int) ?: 0,
+                        anniversaryCount = (i(26) as? Int) ?: 0,
+                        autoLockTimeoutMinutes = (i(27) as? Int) ?: 5
                     )
                 }
             }.catch { AppLogger.w("SettingsVM", "Settings flow failed", it) }.collect()
@@ -180,6 +184,18 @@ class SettingsViewModel @Inject constructor(
 
     fun setSwitchColor(color: String) {
         viewModelScope.launch { preferencesManager.setSwitchColor(color) }
+    }
+
+    fun setAppIconStyle(style: String, activityContext: Context? = null) {
+        viewModelScope.launch {
+            // Use Activity context if provided, otherwise fall back to Application context
+            // MIUI launcher requires Activity context for setComponentEnabledSetting to trigger icon refresh
+            val ctx = activityContext ?: context
+            // Apply first, save only on success (same pattern as ZhishengWeather)
+            if (AppIconManager.apply(ctx, style)) {
+                preferencesManager.setAppIconStyle(style)
+            }
+        }
     }
 
     fun setDefaultStartPage(route: String) {

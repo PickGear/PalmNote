@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal"
+    android:paddingHorizontal="14dp"
+    android:paddingVertical="12dp"
+    android:background="@drawable/widget_bg_glass">
+
+    <!-- Accent bar -->
+    <TextView
+        android:layout_width="2dp"
+        android:layout_height="match_parent"
+        android:background="@drawable/widget_accent_bill"
+        android:text="" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:layout_marginStart="10dp">
+
+        <!-- Header -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:layout_width="5dp"
+                android:layout_height="5dp"
+                android:background="@drawable/widget_live_dot_bill"
+                android:text="" />
+
+            <TextView
+                android:id="@+id/widget_title"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/widget_dashboard_title"
+                android:textSize="10sp"
+                android:textColor="#666666"
+                android:fontFamily="sans-serif-medium"
+                android:layout_marginStart="5dp"
+                android:letterSpacing="0.08" />
+
+            <TextView
+                android:id="@+id/widget_dashboard_date"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="10sp"
+                android:textColor="#888888"
+                android:fontFamily="monospace" />
+        </LinearLayout>
+
+        <!-- Two cards -->
+        <LinearLayout
+            android:id="@+id/widget_stats_row1"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="6dp">
+
+            <!-- Expense -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/widget_monthly_expense"
+                    android:textSize="8sp"
+                    android:textColor="#888888"
+                    android:fontFamily="monospace" />
+
+                <TextView
+                    android:id="@+id/widget_dashboard_expense"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="¥0"
+                    android:textSize="18sp"
+                    android:textColor="#1A1A1A"
+                    android:fontFamily="monospace"
+                    android:layout_marginTop="1dp" />
+            </LinearLayout>
+
+            <!-- Income -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/widget_monthly_income"
+                    android:textSize="8sp"
+                    android:textColor="#888888"
+                    android:fontFamily="monospace" />
+
+                <TextView
+                    android:id="@+id/widget_dashboard_income"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="¥0"
+                    android:textSize="18sp"
+                    android:textColor="#1A1A1A"
+                    android:fontFamily="monospace"
+                    android:layout_marginTop="1dp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Stats row (large) -->
+        <LinearLayout
+            android:id="@+id/widget_stats_row2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="3dp"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/widget_asset_label"
+                    android:textSize="7sp"
+                    android:textColor="#888888"
+                    android:fontFamily="monospace" />
+
+                <TextView
+                    android:id="@+id/widget_dashboard_assets"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0"
+                    android:textSize="13sp"
+                    android:textColor="#1A1A1A"
+                    android:fontFamily="monospace"
+                    android:layout_marginTop="1dp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/widget_goals_label"
+                    android:textSize="7sp"
+                    android:textColor="#888888"
+                    android:fontFamily="monospace" />
+
+                <TextView
+                    android:id="@+id/widget_dashboard_goals"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0"
+                    android:textSize="13sp"
+                    android:textColor="#1A1A1A"
+                    android:fontFamily="monospace"
+                    android:layout_marginTop="1dp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/widget_vault_label"
+                    android:textSize="7sp"
+                    android:textColor="#888888"
+                    android:fontFamily="monospace" />
+
+                <TextView
+                    android:id="@+id/widget_dashboard_vault"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0"
+                    android:textSize="13sp"
+                    android:textColor="#1A1A1A"
+                    android:fontFamily="monospace"
+                    android:layout_marginTop="1dp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Actions (large) -->
+        <LinearLayout
+            android:id="@+id/widget_quick_actions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="3dp"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/widget_action_bill"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/widget_action_bill"
+                android:textSize="9sp"
+                android:textColor="#007AFF"
+                android:fontFamily="monospace"
+                android:paddingVertical="5dp"
+                android:gravity="center" />
+
+            <TextView
+                android:id="@+id/widget_action_asset"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/widget_action_asset"
+                android:textSize="9sp"
+                android:textColor="#007AFF"
+                android:fontFamily="monospace"
+                android:paddingVertical="5dp"
+                android:gravity="center" />
+
+            <TextView
+                android:id="@+id/widget_action_todo"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/widget_action_todo"
+                android:textSize="9sp"
+                android:textColor="#007AFF"
+                android:fontFamily="monospace"
+                android:paddingVertical="5dp"
+                android:gravity="center" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+</LinearLayout>

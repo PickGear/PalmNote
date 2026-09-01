@@ -9,6 +9,7 @@ import androidx.work.WorkManager
 import com.palmnote.data.LifeDataSeeder
 import com.palmnote.data.db.AppDatabase
 import com.palmnote.data.datastore.PreferencesManager
+import com.palmnote.data.AppIconManager
 import com.palmnote.data.db.entity.AccountBook
 import com.palmnote.data.db.entity.CategoryConfig
 import com.palmnote.data.db.entity.Wallet
@@ -46,7 +47,7 @@ class PalmNoteApp : Application(), Configuration.Provider {
         lateinit var instance: PalmNoteApp
             private set
         var cachedStartPage: String = "dashboard"
-            private set
+        var pendingNavigation: String? = null
         private const val MAX_CRASH_LOG_CHARS = 100_000
         private const val REDACT_MARKER = "[REDACTED]"
         private val SENSITIVE_KEYWORDS = listOf(
@@ -65,6 +66,7 @@ class PalmNoteApp : Application(), Configuration.Provider {
     override fun onCreate() {
         super.onCreate()
         instance = this
+        com.palmnote.ui.widget.WidgetUpdateHelper.init(this)
         installCrashHandler()
         try {
             com.palmnote.data.db.EncryptedOpenHelperFactory.ensureLibraryLoaded()
@@ -72,6 +74,7 @@ class PalmNoteApp : Application(), Configuration.Provider {
             android.util.Log.e("PalmNote", "sqlcipher native library load failed")
         }
         applySavedLanguage()
+        restoreAppIconStyle()
         NotificationHelper.createChannels(this)
         applicationScope.launch {
             // 异步读取启动页配置，避免在 Application.onCreate 主线程同步阻塞 DataStore
@@ -152,5 +155,14 @@ class PalmNoteApp : Application(), Configuration.Provider {
     private fun applySavedLanguage() {
         val savedLanguage = preferencesManager.getLanguage()
         com.palmnote.ui.settings.LanguageHelper.applyLanguage(savedLanguage)
+    }
+
+    private fun restoreAppIconStyle() {
+        applicationScope.launch {
+            val style = preferencesManager.appIconStyle.first()
+            if (!AppIconManager.apply(this@PalmNoteApp, style)) {
+                android.util.Log.w("PalmNote", "Failed to restore icon style: $style")
+            }
+        }
     }
 }

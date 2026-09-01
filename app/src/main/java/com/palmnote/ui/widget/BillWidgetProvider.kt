@@ -1,15 +1,11 @@
 package com.palmnote.ui.widget
 
-import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
-import android.content.Intent
+import android.view.View
 import android.widget.RemoteViews
-import com.palmnote.MainActivity
 import com.palmnote.app.R
-import com.palmnote.data.db.AppDatabase
-import com.palmnote.data.db.dao.BillDao
 import com.palmnote.domain.util.AppLogger
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
@@ -17,60 +13,77 @@ import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-import java.util.Locale
+import java.time.temporal.ChronoUnit
 
-/**
- * 记账桌面小组件：显示当月收支概览。
- * 通过 Hilt EntryPoint 访问数据库，不再自行创建 Room 实例。
- */
 class BillWidgetProvider : AppWidgetProvider() {
 
     @EntryPoint
     @InstallIn(SingletonComponent::class)
     interface WidgetEntryPoint {
-        fun billDao(): BillDao
+        fun billDao(): com.palmnote.data.db.dao.BillDao
     }
 
-    override fun onUpdate(
-        context: Context,
-        appWidgetManager: AppWidgetManager,
-        appWidgetIds: IntArray
-    ) {
-        val pendingResult = goAsync()
-        val scope = CoroutineScope(Dispatchers.IO)
+    private var scope: CoroutineScope? = null
 
-        scope.launch {
+    override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
+        updateWidgets(context, appWidgetManager, appWidgetIds)
+    }
+
+    override fun onAppWidgetOptionsChanged(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int, newOptions: android.os.Bundle) {
+        updateWidgets(context, appWidgetManager, intArrayOf(appWidgetId))
+    }
+
+    override fun onEnabled(context: Context) {
+        super.onEnabled(context)
+        scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    }
+
+    override fun onDisabled(context: Context) {
+        super.onDisabled(context)
+        scope?.cancel()
+        scope = null
+    }
+
+    private fun updateWidgets(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
+        val pendingResult = goAsync()
+        val coroutineScope = scope ?: CoroutineScope(Dispatchers.IO + SupervisorJob())
+
+        coroutineScope.launch {
             try {
                 val entryPoint = EntryPointAccessors.fromApplication(
                     context.applicationContext, WidgetEntryPoint::class.java
                 )
                 val billDao = entryPoint.billDao()
-                val yearMonth = DateTimeFormatter.ofPattern("yyyy-MM").format(LocalDate.now())
 
-                val expense = billDao.getMonthlyExpense(yearMonth).first()
-                val income = billDao.getMonthlyIncome(yearMonth).first()
-                val fmt = java.text.NumberFormat.getCurrencyInstance(Locale.getDefault())
+                val now = LocalDate.now()
+                val yearMonth = DateTimeFormatter.ofPattern("yyyy-MM").format(now)
+                val monthlyExpense = billDao.getMonthlyExpense(yearMonth).first() ?: 0L
+                val monthlyIncome = billDao.getMonthlyIncome(yearMonth).first() ?: 0L
+                val dayOfMonth = now.dayOfMonth
+                val daysInMonth = now.lengthOfMonth()
 
                 for (appWidgetId in appWidgetIds) {
-                    val views = RemoteViews(context.packageName, R.layout.widget_layout)
-                    views.setTextViewText(
-                        R.id.widget_expense,
-                        fmt.format((expense ?: 0L) / 100.0)
+                    val views = RemoteViews(context.packageName, R.layout.widget_bill_unified)
+
+                    views.setTextViewText(R.id.widget_bill_month, context.getString(R.string.widget_month_format, now.monthValue))
+                    views.setTextViewText(R.id.widget_expense_amount, WidgetHelper.formatMoney(monthlyExpense))
+                    views.setTextViewText(R.id.widget_income_amount, WidgetHelper.formatMoney(monthlyIncome))
+                    views.setTextViewText(R.id.widget_days_in_month, context.getString(R.string.widget_days_elapsed, dayOfMonth, daysInMonth))
+
+                    val hasData = monthlyExpense > 0 || monthlyIncome > 0
+                    views.setViewVisibility(R.id.widget_content_with_data, if (hasData) View.VISIBLE else View.GONE)
+                    views.setViewVisibility(R.id.widget_empty_state, if (hasData) View.GONE else View.VISIBLE)
+
+                    views.setOnClickPendingIntent(
+                        R.id.widget_layout,
+                        WidgetHelper.createPendingIntent(context, appWidgetId, "bill")
                     )
-                    views.setTextViewText(
-                        R.id.widget_income,
-                        fmt.format((income ?: 0L) / 100.0)
-                    )
-                    val intent = Intent(context, MainActivity::class.java)
-                    val pendingIntent = PendingIntent.getActivity(
-                        context, 0, intent,
-                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                    )
-                    views.setOnClickPendingIntent(R.id.widget_layout, pendingIntent)
                     appWidgetManager.updateAppWidget(appWidgetId, views)
                 }
             } catch (e: Exception) {

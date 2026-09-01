@@ -371,4 +371,7 @@ abstract class EventModule {
 
     @Binds @IntoSet @Singleton
     abstract fun bindTriggerConsumer(impl: com.palmnote.data.event.TriggerEventConsumer): com.palmnote.domain.event.EventConsumer
+
+    @Binds @IntoSet @Singleton
+    abstract fun bindWidgetRefreshConsumer(impl: com.palmnote.data.event.WidgetRefreshConsumer): com.palmnote.domain.event.EventConsumer
 }

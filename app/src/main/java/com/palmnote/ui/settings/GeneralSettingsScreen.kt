@@ -2,6 +2,7 @@ package com.palmnote.ui.settings
 
 import android.Manifest
 import com.palmnote.domain.model.BillType
+import com.palmnote.data.datastore.PreferencesManager
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -13,6 +14,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.Image
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.*
@@ -24,10 +26,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.shape.RoundedCornerShape
 import com.palmnote.ui.components.ModuleCard
 import com.palmnote.ui.components.CapsuleSwitch
 import com.palmnote.ui.components.AppDialog
@@ -41,7 +46,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.palmnote.ui.components.CompactTopAppBar
 import com.palmnote.app.R
 import com.palmnote.ui.theme.*
-import kotlinx.coroutines.delay
+
+private val iconVisuals = mapOf(
+    PreferencesManager.APP_ICON_GREEN_WHITE to Pair(Color(0xFF2D4A3E), Color.White),
+    PreferencesManager.APP_ICON_BLACK_WHITE to Pair(Color(0xFF1A1A1A), Color.White),
+    PreferencesManager.APP_ICON_WHITE_BLACK to Pair(Color.White, Color(0xFF1A1A1A)),
+    PreferencesManager.APP_ICON_WHITE_GREEN to Pair(Color.White, Color(0xFF2D4A3E)),
+)
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -56,6 +67,8 @@ fun GeneralSettingsScreen(
     var showColorPicker by remember { mutableStateOf(false) }
     var showStartPagePicker by remember { mutableStateOf(false) }
     var showBillTypePicker by remember { mutableStateOf(false) }
+    var showIconPicker by remember { mutableStateOf(false) }
+    var pendingIconStyle by remember { mutableStateOf<String?>(null) }
     var showCalendarPermissionDialog by remember { mutableStateOf(false) }
     var permissionPermanentlyDenied by remember { mutableStateOf(false) }
     var customColor by remember(showColorPicker) { mutableStateOf(state.switchColor.removePrefix("#")) }
@@ -123,6 +136,25 @@ fun GeneralSettingsScreen(
                         SettingRowContent(title = stringResource(R.string.settings_switch_color), subtitle = stringResource(R.string.settings_switch_color_subtitle))
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             Box(modifier = Modifier.size(28.dp).clip(CircleShape).background(switchColor).border(2.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape))
+                            Icon(Icons.Filled.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                    SettingRow(clickable = { showIconPicker = true }) {
+                        SettingRowContent(title = stringResource(R.string.settings_app_icon), subtitle = stringResource(R.string.settings_app_icon_subtitle))
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            val (bgColor, fgColor) = iconVisuals[state.appIconStyle] ?: iconVisuals[PreferencesManager.DEFAULT_APP_ICON_STYLE]!!
+                            Box(
+                                modifier = Modifier.size(32.dp).clip(RoundedCornerShape(8.dp)).background(bgColor).border(0.5.dp, Color.Black.copy(alpha = 0.15f), RoundedCornerShape(8.dp)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Image(
+                                    painter = painterResource(id = R.drawable.ic_launcher_foreground_bw),
+                                    contentDescription = null,
+                                    colorFilter = ColorFilter.tint(fgColor),
+                                    modifier = Modifier.size(32.dp)
+                                )
+                            }
                             Icon(Icons.Filled.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
@@ -262,6 +294,90 @@ fun GeneralSettingsScreen(
                 if (type != billTypeOptions.last().first) HorizontalDivider(modifier = Modifier.padding(horizontal = 52.dp))
             } } },
             confirmButton = { TextButton(onClick = { showBillTypePicker = false }) { Text(stringResource(R.string.settings_cancel), fontWeight = FontWeight.Bold) } }
+        )
+    }
+
+    if (showIconPicker) {
+        val iconLabels = mapOf(
+            PreferencesManager.APP_ICON_GREEN_WHITE to stringResource(R.string.settings_icon_green_white),
+            PreferencesManager.APP_ICON_BLACK_WHITE to stringResource(R.string.settings_icon_black_white),
+            PreferencesManager.APP_ICON_WHITE_BLACK to stringResource(R.string.settings_icon_white_black),
+            PreferencesManager.APP_ICON_WHITE_GREEN to stringResource(R.string.settings_icon_white_green),
+        )
+        AppDialog(
+            onDismissRequest = { showIconPicker = false },
+            title = { Text(stringResource(R.string.settings_select_app_icon), fontWeight = FontWeight.Bold) },
+            text = {
+                Column {
+                    Text(stringResource(R.string.settings_app_icon_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Spacer(Modifier.height(16.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        iconVisuals.forEach { (key, visual) ->
+                            val isSelected = state.appIconStyle == key
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(60.dp)
+                                        .clip(RoundedCornerShape(14.dp))
+                                        .background(visual.first)
+                                        .clickable {
+                                            if (key != state.appIconStyle) {
+                                                showIconPicker = false
+                                                pendingIconStyle = key
+                                            }
+                                        }
+                                        .then(if (isSelected) Modifier.border(3.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(14.dp)) else Modifier.border(1.5.dp, Color.Gray.copy(alpha = 0.4f), RoundedCornerShape(14.dp))),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Image(
+                                        painter = painterResource(id = R.drawable.ic_launcher_foreground_bw),
+                                        contentDescription = null,
+                                        colorFilter = ColorFilter.tint(visual.second),
+                                        modifier = Modifier.size(60.dp)
+                                    )
+                                    if (isSelected) {
+                                        Box(
+                                            modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.3f), RoundedCornerShape(14.dp)),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(20.dp))
+                                        }
+                                    }
+                                }
+                                Spacer(Modifier.height(4.dp))
+                                Text(iconLabels[key] ?: "", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showIconPicker = false }) {
+                    Text(stringResource(R.string.settings_cancel), fontWeight = FontWeight.Bold)
+                }
+            }
+        )
+    }
+
+    pendingIconStyle?.let { style ->
+        AppDialog(
+            onDismissRequest = { pendingIconStyle = null },
+            title = { Text(stringResource(R.string.settings_icon_confirm_title), fontWeight = FontWeight.Bold) },
+            text = { Text(stringResource(R.string.settings_icon_confirm_text)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    val activityContext = context as? Activity
+                    viewModel.setAppIconStyle(style, activityContext)
+                    showIconPicker = false
+                    pendingIconStyle = null
+                }) { Text(stringResource(R.string.settings_confirm), fontWeight = FontWeight.Bold) }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingIconStyle = null }) { Text(stringResource(R.string.settings_cancel), fontWeight = FontWeight.Bold) }
+            }
         )
     }
 

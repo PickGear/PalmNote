@@ -11,6 +11,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.mapSaver
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
+import kotlinx.coroutines.launch
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -42,7 +45,7 @@ private val stringMapSaver = mapSaver<MutableMap<String, String>>(
 fun DynamicFormScreen(
     template: LifeTemplate,
     existingItem: LifeItem? = null,
-    onSave: (title: String, fieldsData: String) -> Unit = { _, _ -> },
+    onSave: suspend (title: String, fieldsData: String) -> Unit = { _, _ -> },
     onBack: () -> Unit = {},
     viewModel: CreateItemViewModel? = null
 ) {
@@ -137,6 +140,7 @@ fun DynamicFormScreen(
         )
     }
 
+    val coroutineScope = rememberCoroutineScope()
     val handleBack = {
         if (hasUnsavedChanges && !saving) showDiscardDialog = true else onBack()
     }
@@ -158,7 +162,8 @@ fun DynamicFormScreen(
                 placeholder = { Text(stringResource(R.string.life_input_title)) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                colors = OutlinedTextFieldDefaults.colors(unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f), focusedBorderColor = MaterialTheme.colorScheme.outline)
+                colors = OutlinedTextFieldDefaults.colors(unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f), focusedBorderColor = MaterialTheme.colorScheme.outline),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
             )
             Spacer(modifier = Modifier.height(Spacing.md))
             fields.forEach { field ->
@@ -173,15 +178,17 @@ fun DynamicFormScreen(
                         saving = true
                         saveError = false
                         saveErrorMessage = ""
-                        try {
-                            val jsonObj = JsonObject(fieldValues.entries.associate { it.key to JsonPrimitive(it.value) })
-                            onSave(title, jsonObj.toString())
-                            saving = false
-                            saveSuccess = true
-                        } catch (e: Exception) {
-                            saveError = true
-                            saveErrorMessage = e.message ?: context.getString(R.string.life_form_save_failed)
-                            saving = false
+                        coroutineScope.launch {
+                            try {
+                                val jsonObj = JsonObject(fieldValues.entries.associate { it.key to JsonPrimitive(it.value) })
+                                onSave(title, jsonObj.toString())
+                                saving = false
+                                saveSuccess = true
+                            } catch (e: Exception) {
+                                saveError = true
+                                saveErrorMessage = e.message ?: context.getString(R.string.life_form_save_failed)
+                                saving = false
+                            }
                         }
                     }
                 },

@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -353,9 +354,22 @@ private fun FieldEditorCard(
                 )
                 ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                     typeOptions.entries.forEach { (type, label) ->
+                        val isImageDisabled = type == "IMAGE"
                         DropdownMenuItem(
-                            text = { Text(label) },
-                            enabled = type != "IMAGE",
+                            text = {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(label)
+                                    if (isImageDisabled) {
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            stringResource(R.string.life_template_field_image_coming_soon),
+                                            fontSize = 11.sp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                        )
+                                    }
+                                }
+                            },
+                            enabled = !isImageDisabled,
                             onClick = {
                                 onFieldChange(field.copy(type = type))
                                 expanded = false
@@ -381,15 +395,22 @@ private fun FieldEditorCard(
             }
 
             Spacer(modifier = Modifier.height(4.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Checkbox(checked = field.required, onCheckedChange = { onFieldChange(field.copy(required = it)) })
-                Text(stringResource(R.string.life_template_field_required), fontSize = 13.sp)
-                Spacer(modifier = Modifier.width(8.dp))
-                Checkbox(checked = field.showInCard, onCheckedChange = { onFieldChange(field.copy(showInCard = it)) })
-                Text(stringResource(R.string.life_template_field_show_in_card), fontSize = 13.sp)
-                Spacer(modifier = Modifier.width(8.dp))
-                Checkbox(checked = field.showAsProgress, onCheckedChange = { onFieldChange(field.copy(showAsProgress = it)) })
-                Text(stringResource(R.string.life_template_field_show_as_progress), fontSize = 13.sp)
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(checked = field.required, onCheckedChange = { onFieldChange(field.copy(required = it)) })
+                    Text(stringResource(R.string.life_template_field_required), fontSize = 13.sp)
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(checked = field.showInCard, onCheckedChange = { onFieldChange(field.copy(showInCard = it)) })
+                    Text(stringResource(R.string.life_template_field_show_in_card), fontSize = 13.sp)
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(checked = field.showAsProgress, onCheckedChange = { onFieldChange(field.copy(showAsProgress = it)) })
+                    Text(stringResource(R.string.life_template_field_show_as_progress), fontSize = 13.sp)
+                }
             }
         }
     }
