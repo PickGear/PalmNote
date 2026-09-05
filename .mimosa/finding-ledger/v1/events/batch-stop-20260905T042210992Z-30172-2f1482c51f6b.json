@@ -1,0 +1,139 @@
+{
+  "schemaVersion": "mimosa-finding-ledger-batch/v1",
+  "batchId": "stop-20260905T042210992Z-30172-2f1482c51f6b",
+  "runId": "20260905T042210992Z-30172-2f1482c51f6b",
+  "runStatus": "inconclusive",
+  "coverage": {
+    "status": "partial",
+    "reasons": [
+      {
+        "code": "candidate_limit_exceeded",
+        "stage": "candidate-select",
+        "target": "app/src/main/java/com/palmnote/ui/settings/SettingsViewModel.kt",
+        "detail": "5 changed reviewable file(s) were not scanned because the limit is 20",
+        "affectsCompletion": true
+      },
+      {
+        "code": "project_check_failed",
+        "stage": "candidate-select",
+        "target": "app/src/main/java/com/palmnote/ui/settings/SettingsViewModel.kt",
+        "detail": "candidate_limit_exceeded: 5 changed reviewable file(s) were not scanned because the limit is 20",
+        "affectsCompletion": true
+      }
+    ]
+  },
+  "source": {
+    "component": "zcode-hook",
+    "operationId": "Stop"
+  },
+  "revision": "c6805539cf135ee1ad0fbaf73f1a053d165c2a60",
+  "diffHash": "05e5a157be48392b10492156c2548f68794431b11b0a86b8492d35e721194a6b",
+  "rulesVersion": "unavailable",
+  "sessionHash": "46f7f8fb82e5db94ca3cb8abd9f9d35b54a24b817362ef4541f1a305fa161bca",
+  "reportRef": ".mimosa/reports/task-review-sess_c85b6e3e-e1df-4e49-be3e-24c88331e11d-20260905T042210992Z-30172-2f1482c51f6b.json",
+  "events": [],
+  "observedFindingIds": [],
+  "verifiedFiles": [
+    {
+      "file": "core/src/main/java/com/palmnote/data/datastore/PreferencesManager.kt",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "app/src/main/java/com/palmnote/ui/widget/WidgetHelper.kt",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "app/src/main/java/com/palmnote/ui/widget/WidgetData.kt",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "app/src/main/java/com/palmnote/ui/widget/HabitCheckInReceiver.kt",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "app/src/main/java/com/palmnote/ui/widget/TodoToggleReceiver.kt",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "app/src/main/java/com/palmnote/ui/widget/WidgetMidnightReceiver.kt",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "app/src/main/java/com/palmnote/ui/widget/WidgetBootReceiver.kt",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "app/src/main/java/com/palmnote/ui/widget/ShortcutsWidgetProvider.kt",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "app/src/main/java/com/palmnote/ui/widget/HabitWidgetProvider.kt",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "core/src/main/java/com/palmnote/ui/theme/ThemePackages.kt",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "core/src/main/java/com/palmnote/ui/theme/WallpaperBackground.kt",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "core/src/main/java/com/palmnote/data/wallpaper/WallpaperManager.kt",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "app/src/main/java/com/palmnote/ui/widget/WidgetUpdateHelper.kt",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "app/src/main/java/com/palmnote/ui/widget/TodoWidgetProvider.kt",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "app/src/main/java/com/palmnote/ui/widget/DashboardWidgetProvider.kt",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "app/src/main/java/com/palmnote/ui/widget/AssetWidgetProvider.kt",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "app/src/main/java/com/palmnote/ui/widget/VaultWidgetProvider.kt",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "app/src/main/java/com/palmnote/ui/widget/LifeCounterWidgetProvider.kt",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "app/src/main/java/com/palmnote/ui/widget/QuickBillWidgetProvider.kt",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "app/src/main/java/com/palmnote/data/AppIconManager.kt",
+      "direct": "complete",
+      "projectContext": "partial"
+    }
+  ],
+  "recordedAt": "2026-09-05T04:22:11.353Z"
+}

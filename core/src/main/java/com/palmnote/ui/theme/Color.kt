@@ -9,7 +9,6 @@ import androidx.compose.ui.graphics.Color
 
 // ----- Brand Colors -----
 val PrimaryGreen = Color(0xFF2D4A3E)
-val PrimaryGreenLight = Color(0xFF4A7A5E)
 val AccentOrange = Color(0xFFFF8C42)
 
 // ----- Status Colors -----
@@ -52,7 +51,6 @@ val TextSecondaryDark = Color(0xFFABABAB)
 val TextTertiaryDark = Color(0xFF8A8580)
 
 // ----- Dark Theme Brand Colors -----
-val DarkPrimary = Color(0xFF7BC4A0)
 val DarkSecondary = Color(0xFFF0A060)
 val DarkSuccess = Color(0xFF66D98D)
 val ErrorDark = Color(0xFFFF6B6B)
@@ -92,7 +90,7 @@ val Amber = Color(0xFFFBBC04)
 val Brown = Color(0xFF795548)
 
 // ----- Module Theme Colors -----
-val ModuleHome = Color(0xFF3D6B4A)
+val ModuleHome = Color(0xFF0891B2)
 val ModuleBill = Color(0xFFA67A00)
 val ModuleLife = Color(0xFFC2185B)
 val ModuleSettings = Color(0xFF607D8B)

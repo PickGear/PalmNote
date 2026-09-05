@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "mimosa-finding-history/v1",
+  "runId": "20260905T042210992Z-30172-2f1482c51f6b",
+  "runStatus": "inconclusive",
+  "errors": [
+    "candidate-select:app/src/main/java/com/palmnote/ui/settings/SettingsViewModel.kt: candidate_limit_exceeded: 5 changed reviewable file(s) were not scanned because the limit is 20"
+  ],
+  "target": ".",
+  "revision": "c6805539cf135ee1ad0fbaf73f1a053d165c2a60",
+  "diffHash": "05e5a157be48392b10492156c2548f68794431b11b0a86b8492d35e721194a6b",
+  "rulesVersion": "unavailable",
+  "recordedAt": "2026-09-05T04:22:10.992Z",
+  "timing": {
+    "startedAt": "2026-09-05T04:22:09.181Z",
+    "completedAt": "2026-09-05T04:22:10.992Z",
+    "durationMs": 1811
+  },
+  "tokens": {
+    "input": 0,
+    "output": 0,
+    "total": 0,
+    "modelCalls": 0,
+    "measurement": "known-zero"
+  },
+  "findings": {
+    "total": 0,
+    "bySeverity": {},
+    "byStatus": {}
+  },
+  "coverage": {
+    "status": "partial",
+    "reasonCounts": {
+      "candidate_limit_exceeded": 1,
+      "project_check_failed": 1
+    }
+  },
+  "evidenceBoundary": "static_only",
+  "immutableReport": ".mimosa/reports/task-review-sess_c85b6e3e-e1df-4e49-be3e-24c88331e11d-20260905T042210992Z-30172-2f1482c51f6b.json"
+}
