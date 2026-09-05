@@ -19,6 +19,7 @@ object ColorResolver {
         }
     }
 
+    @Suppress("NestedBlockDepth")
     fun loadPresetColorOverrides(presetOverrides: Map<String, String>) {
         presetOverrides.forEach { (key, json) ->
             try {

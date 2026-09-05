@@ -43,9 +43,9 @@ value class Money(val cents: Long) {
             return try {
                 val bd = BigDecimal(cleaned).setScale(2, RoundingMode.HALF_UP)
                 Money(bd.movePointRight(2).longValueExact())
-            } catch (e: NumberFormatException) {
+            } catch (_: NumberFormatException) {
                 null
-            } catch (e: ArithmeticException) {
+            } catch (_: ArithmeticException) {
                 null
             }
         }

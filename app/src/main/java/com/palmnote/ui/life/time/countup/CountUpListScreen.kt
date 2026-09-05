@@ -30,6 +30,7 @@ import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
 @Composable
+@Suppress("LongMethod")
 fun CountUpListScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Long) -> Unit, onCreateClick: () -> Unit = {}, viewModel: CountUpViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(templateId) { viewModel.load(templateId) }

@@ -4,6 +4,33 @@ All notable changes to PalmNote will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- **小组件 v2 全套重设计**：9 个组件统一圆角卡片设计语言（薄荷青点缀、大数字、胶囊按钮），新增「今日打卡」「快捷入口」2 个组件
+- 桌面直接打卡与待办勾选（广播 Receiver，无需打开应用）；午夜自动刷新日期敏感数据 + 开机重排
+- 小组件深色模式自适应（颜色令牌 + values-night）、强调色跟随应用主题色包（5 色 circle/pill 变体）
+- **应用内主题系统 v2**：5 个主题色包 + 自定义 HEX 主题色；6 款渐变壁纸 + 自定义图片（模糊/透明度可调），全应用即时生效
+- 应用图标新增青白配色并设为默认
+- 记账组件：预算用量进度条 + 本月最高消费分类横幅；无预算时自动显示本月结余
+- 概览组件 2×2 布局：预算/目标（渐变卡）+ 待办/纪念日倒数
+- 开发规范手册 `docs/DEVELOPMENT.md`（26 章：分支/提交/版本/发布/迁移/安全/日志/无障碍/工作成果保护）
+
+### Changed
+- 组件金额紧凑显示：超过 6 位整数自动折叠（¥12.3万 / ¥123.4k）
+- 待办/打卡组件条目整行可点（原 18dp 圆圈热区过小）
+
+### Fixed
+- 组件点击互相覆盖：PendingIntent requestCode 冲突导致所有组件跳转同一页面（按组件分段隔离）
+- 4 个组件最小尺寸装不下新布局导致内容裁剪（提升至 250×180dp）
+- 自定义壁纸在主线程同步解码大图（改为 IO 线程 + 按屏幕降采样缓存）
+- 渐变壁纸实际只渲染单色的 bug（改为 Brush 渐变绘制，零位图分配）
+- 备份完整性校验 MD5 → SHA-256
+- 升级前选择已下线图标别名的用户偏好归一化（white_green → cyan_white）
+
+### Security
+- 桌面小组件不再展示密码本条目标题/分类（仅显示条数与解锁提示）
+
 ## [1.3.0] - Unreleased
 
 ### Added

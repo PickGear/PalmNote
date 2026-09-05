@@ -42,6 +42,7 @@ private val stringMapSaver = mapSaver<MutableMap<String, String>>(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+@Suppress("LongMethod", "CyclomaticComplexMethod")
 fun DynamicFormScreen(
     template: LifeTemplate,
     existingItem: LifeItem? = null,
