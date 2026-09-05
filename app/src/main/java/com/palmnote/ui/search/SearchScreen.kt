@@ -126,7 +126,7 @@ fun SearchScreen(
             if (state.bills.isNotEmpty())
                 sections.add(SearchSection("BILLS", stringResource(R.string.search_section_bills), Icons.Outlined.AccountBalanceWallet, AccentOrange))
             if (state.goals.isNotEmpty())
-                sections.add(SearchSection("GOALS", stringResource(R.string.search_section_goals), Icons.Outlined.Flag, PrimaryGreenLight))
+                sections.add(SearchSection("GOALS", stringResource(R.string.search_section_goals), Icons.Outlined.Flag, MaterialTheme.colorScheme.primary))
             if (state.anniversaries.isNotEmpty())
                 sections.add(SearchSection("ANNIVERSARIES", stringResource(R.string.search_section_anniversaries), Icons.Outlined.FavoriteBorder, ModuleLife))
             if (state.moments.isNotEmpty())
@@ -241,7 +241,7 @@ private fun BillSearchItem(bill: Bill, onClick: () -> Unit) {
             Text(
                 CurrencyUtils.formatCurrency(androidx.compose.ui.platform.LocalContext.current, bill.amount.toMoney()),
                 fontWeight = FontWeight.Bold,
-                color = if (bill.type == BillType.EXPENSE) AccentOrange else PrimaryGreenLight
+                color = if (bill.type == BillType.EXPENSE) AccentOrange else MaterialTheme.colorScheme.primary
             )
         }
     }

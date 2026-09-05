@@ -5,6 +5,7 @@ import androidx.compose.material.icons.automirrored.outlined.ShowChart
 import androidx.compose.material.icons.automirrored.outlined.TrendingUp
 import androidx.compose.material.icons.automirrored.outlined.Undo
 import androidx.compose.material.icons.outlined.*
+import androidx.compose.ui.graphics.Color
 import com.palmnote.app.R
 import com.palmnote.ui.components.CategoryItem
 import com.palmnote.ui.theme.*
@@ -26,7 +27,7 @@ val expenseCategoryItems = listOf(
     // 居住生活
     CategoryItem("居住", Icons.Outlined.Home, CatLightGreen),
     CategoryItem("家居", Icons.Outlined.Chair, DarkWarning),
-    CategoryItem("租金", Icons.Outlined.HouseSiding, PrimaryGreenLight),
+    CategoryItem("租金", Icons.Outlined.HouseSiding, Color(0xFF0891B2)),
     // 娱乐休闲
     CategoryItem("娱乐", Icons.Outlined.SportsEsports, CatBrightPurple),
     CategoryItem("旅游", Icons.Outlined.Flight, LifeTravel),
@@ -77,7 +78,7 @@ val incomeCategoryItems = listOf(
     CategoryItem("分红", Icons.Outlined.MonetizationOn, CatGold),
     CategoryItem("利息", Icons.Outlined.Percent, CatPeach),
     // 资产收入
-    CategoryItem("租金", Icons.Outlined.HouseSiding, PrimaryGreenLight),
+    CategoryItem("租金", Icons.Outlined.HouseSiding, Color(0xFF0891B2)),
     CategoryItem("二手", Icons.Outlined.SwapHoriz, StatusRetired),
     // 人情往来
     CategoryItem("红包", Icons.Outlined.CardGiftcard, LifeBirthday),

@@ -128,14 +128,14 @@ internal fun NetWorthCard(state: DashboardState, onNavigateToBill: () -> Unit) {
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-        border = BorderStroke(1.dp, PrimaryGreenLight.copy(alpha = 0.3f))
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(
                     Brush.linearGradient(
-                        colors = listOf(PrimaryGreenLight, PrimaryGreenLight.copy(alpha = 0.85f))
+                        colors = listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.primary.copy(alpha = 0.85f))
                     )
                 )
                 .padding(16.dp)

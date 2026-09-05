@@ -52,7 +52,7 @@ fun ManageCategoryScreen(
                 ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
                     SettingsMenuItem(icon = Icons.Outlined.AccountBalanceWallet, title = stringResource(R.string.settings_wallet_manage), subtitle = stringResource(R.string.settings_wallet_manage_subtitle), tint = AccentOrange, onClick = onNavigateToWallet)
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 12.dp))
-                    SettingsMenuItem(icon = Icons.Outlined.Book, title = stringResource(R.string.settings_bill_manage), subtitle = stringResource(R.string.settings_bill_manage_subtitle), tint = PrimaryGreenLight, onClick = onNavigateToAccountBook)
+                    SettingsMenuItem(icon = Icons.Outlined.Book, title = stringResource(R.string.settings_bill_manage), subtitle = stringResource(R.string.settings_bill_manage_subtitle), tint = MaterialTheme.colorScheme.primary, onClick = onNavigateToAccountBook)
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 12.dp))
                     SettingsMenuItem(icon = Icons.Outlined.Category, title = stringResource(R.string.settings_category_manage), subtitle = stringResource(R.string.settings_category_manage_subtitle), tint = InfoBlue, onClick = onNavigateToCategory)
                 }

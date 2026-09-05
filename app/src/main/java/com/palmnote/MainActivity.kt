@@ -54,13 +54,20 @@ import com.palmnote.ui.navigation.PalmNoteNavHost
 import com.palmnote.ui.theme.LocalSwitchColor
 import com.palmnote.ui.components.toComposeColor
 import com.palmnote.ui.theme.PalmNoteTheme
-import com.palmnote.ui.theme.PrimaryGreenLight
+import com.palmnote.ui.theme.WallpaperBackground
 import androidx.compose.ui.res.stringResource
 import com.palmnote.app.R
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+
+private data class WallpaperPrefs(
+    val style: String,
+    val opacity: Float,
+    val blur: Float,
+    val customUri: String
+)
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
@@ -155,19 +162,40 @@ class MainActivity : AppCompatActivity() {
 
         setContent {
             val preferences by remember {
-                combine(
+                val theme = combine(
                     preferencesManager.themeMode,
-                    preferencesManager.switchColor
-                ) { theme, color -> Pair(theme, color) }
-            }.collectAsStateWithLifecycle(initialValue = Pair("SYSTEM", "#2D4A3E"))
-            val isDarkTheme = when (preferences.first) {
+                    preferencesManager.switchColor,
+                    preferencesManager.themeColor
+                ) { mode, switch, color -> Triple(mode, switch, color) }
+                val wallpaper = combine(
+                    preferencesManager.wallpaperStyle,
+                    preferencesManager.wallpaperOpacity,
+                    preferencesManager.wallpaperBlur,
+                    preferencesManager.wallpaperCustomUri
+                ) { style, opacity, blur, uri -> WallpaperPrefs(style, opacity, blur, uri) }
+                combine(theme, wallpaper) { t, w -> t to w }
+            }.collectAsStateWithLifecycle(
+                initialValue = Triple("SYSTEM", "#2D4A3E", PreferencesManager.DEFAULT_THEME_COLOR) to
+                    WallpaperPrefs(
+                        PreferencesManager.DEFAULT_WALLPAPER_STYLE,
+                        PreferencesManager.DEFAULT_WALLPAPER_OPACITY,
+                        PreferencesManager.DEFAULT_WALLPAPER_BLUR,
+                        ""
+                    )
+            )
+            val (themePrefs, wallpaper) = preferences
+            val (mode, switchColorRaw, themeColorId) = themePrefs
+            val isDarkTheme = when (mode) {
                 "DARK" -> true
                 "LIGHT" -> false
                 else -> isSystemInDarkTheme()
             }
-            val switchColor = preferences.second.toComposeColor(
+            val switchColor = switchColorRaw.toComposeColor(
                 if (isDarkTheme) Color(0xFF7BC4A0) else Color(0xFF2D4A3E)
             )
+            val themeColor = com.palmnote.ui.theme.ThemePackages.getById(themeColorId).let {
+                if (isDarkTheme) it.darkPrimary else it.lightPrimary
+            }
             val lockState by appLockManager.lockState.collectAsStateWithLifecycle()
             val privacyAgreed by preferencesManager.privacyAgreed.collectAsStateWithLifecycle(initialValue = null)
             val showPrivacyDialog = privacyAgreed == false
@@ -184,8 +212,16 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-            PalmNoteTheme(darkTheme = isDarkTheme) {
-                CompositionLocalProvider(LocalSwitchColor provides switchColor) {
+            PalmNoteTheme(
+                darkTheme = isDarkTheme,
+                themeColor = themeColor,
+                wallpaperStyle = wallpaper.style,
+                wallpaperOpacity = wallpaper.opacity,
+                wallpaperBlur = wallpaper.blur,
+                wallpaperCustomUri = wallpaper.customUri
+            ) {
+                WallpaperBackground(modifier = Modifier.fillMaxSize()) {
+                    CompositionLocalProvider(LocalSwitchColor provides switchColor) {
                     if (privacyAgreed == null) {
                         // Still loading privacy state - show nothing
                     } else if (privacyAgreed == false) {
@@ -207,14 +243,14 @@ class MainActivity : AppCompatActivity() {
                                     modifier = Modifier
                                         .size(72.dp)
                                         .clip(CircleShape)
-                                        .background(PrimaryGreenLight.copy(alpha = 0.12f)),
+                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
                                         Icons.Filled.Spa,
                                         contentDescription = null,
                                         modifier = Modifier.size(36.dp),
-                                        tint = PrimaryGreenLight
+                                        tint = MaterialTheme.colorScheme.primary
                                     )
                                 }
 
@@ -382,6 +418,7 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             }
+        }
         }
     }
 
