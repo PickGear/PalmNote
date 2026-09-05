@@ -22,11 +22,11 @@ class QuickBillWidgetProvider : AppWidgetProvider() {
 
             views.setOnClickPendingIntent(
                 R.id.widget_add_bill,
-                WidgetHelper.createPendingIntent(context, appWidgetId, "add_bill")
+                WidgetHelper.createPendingIntent(context, 700_000 + appWidgetId, "add_bill")
             )
             views.setOnClickPendingIntent(
                 R.id.widget_layout,
-                WidgetHelper.createPendingIntent(context, appWidgetId, "add_bill")
+                WidgetHelper.createPendingIntent(context, 700_000 + appWidgetId, "add_bill")
             )
 
             appWidgetManager.updateAppWidget(appWidgetId, views)

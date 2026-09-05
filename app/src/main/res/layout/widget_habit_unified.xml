@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="12dp"
+    android:background="@drawable/widget_card_round">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <ImageView
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/widget_ic_check_square"
+            android:contentDescription="@null" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/widget_habit_title"
+            android:textSize="15sp"
+            android:textColor="@color/widget_v2_text_primary"
+            android:textStyle="bold"
+            android:layout_marginStart="6dp" />
+
+        <TextView
+            android:id="@+id/widget_habit_count"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="@color/widget_v2_accent" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:background="@drawable/widget_soft_card_gray"
+        android:layout_marginTop="10dp"
+        android:paddingHorizontal="12dp"
+        android:paddingVertical="4dp"
+        android:gravity="center_vertical">
+
+        <LinearLayout
+            android:id="@+id/widget_habit_list"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+
+        <TextView
+            android:id="@+id/widget_habit_empty"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/widget_habit_empty"
+            android:textSize="12sp"
+            android:textColor="@color/widget_v2_text_tertiary"
+            android:gravity="center"
+            android:paddingVertical="12dp"
+            android:visibility="gone" />
+    </LinearLayout>
+
+</LinearLayout>

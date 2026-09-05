@@ -61,7 +61,12 @@ data class SettingsState(
     val profileSignature: String = "",
     val profileAvatar: String = "Spa",
     val profileAvatarPath: String = "",
-    val appIconStyle: String = PreferencesManager.DEFAULT_APP_ICON_STYLE
+    val appIconStyle: String = PreferencesManager.DEFAULT_APP_ICON_STYLE,
+    val themeColor: String = PreferencesManager.DEFAULT_THEME_COLOR,
+    val wallpaperStyle: String = PreferencesManager.DEFAULT_WALLPAPER_STYLE,
+    val wallpaperBlur: Float = PreferencesManager.DEFAULT_WALLPAPER_BLUR,
+    val wallpaperOpacity: Float = PreferencesManager.DEFAULT_WALLPAPER_OPACITY,
+    val wallpaperCustomUri: String = ""
 )
 
 @HiltViewModel
@@ -111,6 +116,11 @@ class SettingsViewModel @Inject constructor(
                 preferencesManager.profileAvatar,
                 preferencesManager.profileAvatarPath,
                 preferencesManager.appIconStyle,
+                preferencesManager.themeColor,
+                preferencesManager.wallpaperStyle,
+                preferencesManager.wallpaperBlur,
+                preferencesManager.wallpaperOpacity,
+                preferencesManager.wallpaperCustomUri,
                 assetRepository.getTotalAssetCount(),
                 goalRepository.getGoalCount(),
                 momentRepository.getMomentCount(),
@@ -143,11 +153,16 @@ class SettingsViewModel @Inject constructor(
                         profileAvatar = (i(20) as? String) ?: "Spa",
                         profileAvatarPath = (i(21) as? String) ?: "",
                         appIconStyle = (i(22) as? String) ?: PreferencesManager.DEFAULT_APP_ICON_STYLE,
-                        assetCount = (i(23) as? Int) ?: 0,
-                        goalCount = (i(24) as? Int) ?: 0,
-                        momentCount = (i(25) as? Int) ?: 0,
-                        anniversaryCount = (i(26) as? Int) ?: 0,
-                        autoLockTimeoutMinutes = (i(27) as? Int) ?: 5
+                        themeColor = (i(23) as? String) ?: PreferencesManager.DEFAULT_THEME_COLOR,
+                        wallpaperStyle = (i(24) as? String) ?: PreferencesManager.DEFAULT_WALLPAPER_STYLE,
+                        wallpaperBlur = (i(25) as? Float) ?: PreferencesManager.DEFAULT_WALLPAPER_BLUR,
+                        wallpaperOpacity = (i(26) as? Float) ?: PreferencesManager.DEFAULT_WALLPAPER_OPACITY,
+                        wallpaperCustomUri = (i(27) as? String) ?: "",
+                        assetCount = (i(28) as? Int) ?: 0,
+                        goalCount = (i(29) as? Int) ?: 0,
+                        momentCount = (i(30) as? Int) ?: 0,
+                        anniversaryCount = (i(31) as? Int) ?: 0,
+                        autoLockTimeoutMinutes = (i(32) as? Int) ?: 5
                     )
                 }
             }.catch { AppLogger.w("SettingsVM", "Settings flow failed", it) }.collect()
@@ -196,6 +211,26 @@ class SettingsViewModel @Inject constructor(
                 preferencesManager.setAppIconStyle(style)
             }
         }
+    }
+
+    fun setThemeColor(color: String) {
+        viewModelScope.launch { preferencesManager.setThemeColor(color) }
+    }
+
+    fun setWallpaperStyle(style: String) {
+        viewModelScope.launch { preferencesManager.setWallpaperStyle(style) }
+    }
+
+    fun setWallpaperBlur(blur: Float) {
+        viewModelScope.launch { preferencesManager.setWallpaperBlur(blur) }
+    }
+
+    fun setWallpaperOpacity(opacity: Float) {
+        viewModelScope.launch { preferencesManager.setWallpaperOpacity(opacity) }
+    }
+
+    fun setWallpaperCustomUri(uri: String) {
+        viewModelScope.launch { preferencesManager.setWallpaperCustomUri(uri) }
     }
 
     fun setDefaultStartPage(route: String) {

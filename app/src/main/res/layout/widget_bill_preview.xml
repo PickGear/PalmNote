@@ -2,87 +2,163 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="horizontal"
-    android:paddingHorizontal="14dp"
-    android:paddingVertical="12dp"
-    android:background="@drawable/widget_bg_glass">
-
-    <TextView
-        android:layout_width="2dp"
-        android:layout_height="match_parent"
-        android:background="@drawable/widget_accent_bill"
-        android:text="" />
+    android:orientation="vertical"
+    android:padding="12dp"
+    android:background="@drawable/widget_card_round">
 
     <LinearLayout
-        android:layout_width="0dp"
-        android:layout_height="match_parent"
-        android:layout_weight="1"
-        android:orientation="vertical"
-        android:layout_marginStart="10dp">
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
 
-        <LinearLayout
-            android:layout_width="match_parent"
+        <ImageView
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/widget_ic_receipt"
+            android:contentDescription="@null" />
+
+        <TextView
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
-
-            <TextView
-                android:layout_width="5dp"
-                android:layout_height="5dp"
-                android:background="@drawable/widget_live_dot_bill"
-                android:text="" />
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="@string/widget_bill_overview"
-                android:textSize="10sp"
-                android:textColor="#666666"
-                android:fontFamily="sans-serif-medium"
-                android:layout_marginStart="5dp" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
             android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="center_vertical">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/widget_monthly_expense"
-                    android:textSize="9sp"
-                    android:textColor="#888888"
-                    android:fontFamily="monospace" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="¥1,280"
-                    android:textSize="20sp"
-                    android:textColor="#1A1A1A"
-                    android:fontFamily="monospace"
-                    android:layout_marginTop="1dp" />
-            </LinearLayout>
-        </LinearLayout>
+            android:text="@string/widget_bill_title"
+            android:textSize="15sp"
+            android:textColor="@color/widget_v2_text_primary"
+            android:textStyle="bold"
+            android:layout_marginStart="6dp" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/widget_days_elapsed"
-            android:textSize="8sp"
-            android:textColor="#AAAAAA"
-            android:fontFamily="monospace"
-            android:layout_gravity="center_horizontal" />
+            android:text="@string/widget_add"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="@color/widget_v2_accent"
+            android:background="@drawable/widget_pill_soft"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="4dp" />
+    </LinearLayout>
 
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="10dp">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:background="@drawable/widget_soft_card"
+            android:padding="10dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/widget_income_label"
+                android:textSize="10sp"
+                android:textColor="@color/widget_v2_text_secondary" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="+¥3200"
+                android:textSize="15sp"
+                android:textColor="@color/widget_v2_text_primary"
+                android:textStyle="bold"
+                android:layout_marginTop="6dp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:background="@drawable/widget_soft_card"
+            android:layout_marginStart="6dp"
+            android:padding="10dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/widget_expense_label"
+                android:textSize="10sp"
+                android:textColor="@color/widget_v2_text_secondary" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="-¥1860"
+                android:textSize="15sp"
+                android:textColor="@color/widget_v2_text_primary"
+                android:textStyle="bold"
+                android:layout_marginTop="6dp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:background="@drawable/widget_soft_card_gray"
+            android:layout_marginStart="6dp"
+            android:padding="10dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/widget_budget_remaining"
+                android:textSize="10sp"
+                android:textColor="@color/widget_v2_text_secondary" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="¥1340"
+                android:textSize="15sp"
+                android:textColor="@color/widget_v2_text_primary"
+                android:textStyle="bold"
+                android:layout_marginTop="6dp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/widget_banner_accent"
+        android:layout_marginTop="8dp"
+        android:paddingHorizontal="10dp"
+        android:paddingVertical="8dp">
+
+        <TextView
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:text="✓"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:textColor="@color/widget_v2_accent"
+            android:gravity="center"
+            android:background="@drawable/widget_circle_white" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/widget_budget_used_format_preview"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:layout_marginStart="8dp" />
+
+        <ImageView
+            android:layout_width="14dp"
+            android:layout_height="14dp"
+            android:src="@drawable/widget_ic_chevron_white"
+            android:contentDescription="@null" />
     </LinearLayout>
 
 </LinearLayout>

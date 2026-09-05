@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Palm Note</string>
+    <string name="app_name">PalmNote</string>
     <!-- Bottom Navigation -->
     <string name="nav_dashboard">Home</string>
     <string name="nav_asset">Assets</string>
@@ -96,7 +96,7 @@
     <string name="settings_theme_dark">Dark Mode</string>
     <string name="settings_general">General</string>
     <string name="settings_data">Data Management</string>
-    <string name="settings_about">About Palm Note</string>
+    <string name="settings_about">About PalmNote</string>
     <string name="settings_export">Export Data</string>
     <string name="settings_recycle">Recycle Bin</string>
     <string name="settings_category">Category Management</string>
@@ -157,7 +157,7 @@
     <string name="settings_clear_data_subtitle">Delete personal data, not recoverable</string>
     <string name="settings_clear_cache">Clear Cache</string>
     <string name="settings_clear_cache_subtitle">Clean temporary cache files, safe operation</string>
-    <string name="settings_about_app">About Palm Note</string>
+    <string name="settings_about_app">About PalmNote</string>
     <string name="settings_about_version">Version 1.3.0</string>
     <string name="settings_days">%d days</string>
     <string name="settings_color_pick_title">Select Switch Color</string>
@@ -174,7 +174,7 @@
     <string name="settings_clear_cache_confirm">Clear image cache and temporary files? Your personal data will not be affected.</string>
     <string name="settings_clear_cache_action">Clear</string>
     <string name="settings_calendar_permission_title">Calendar Permission Required</string>
-    <string name="settings_calendar_permission_text">Syncing anniversaries to the system calendar requires calendar access. Palm Note will not read or modify your other calendar events.</string>
+    <string name="settings_calendar_permission_text">Syncing anniversaries to the system calendar requires calendar access. PalmNote will not read or modify your other calendar events.</string>
     <string name="settings_calendar_permission_action">Grant Permission</string>
     <string name="settings_calendar_permission_denied">Calendar permission was permanently denied. Please go to system settings to grant it manually.</string>
     <string name="settings_birthday_advance_title">Birthday Advance Days</string>
@@ -500,7 +500,7 @@
     <string name="bill_import_error_ocr_failed">Recognition failed: %s</string>
     <string name="bill_import_error_invalid_amount">Please enter a valid amount</string>
     <!-- Widget -->
-    <string name="widget_app_name">Palm Note</string>
+    <string name="widget_app_name">PalmNote</string>
     <string name="widget_monthly_expense">Monthly Expense</string>
     <string name="widget_monthly_income">Monthly Income</string>
     <string name="widget_today_expense">Today Expense</string>
@@ -508,7 +508,7 @@
     <string name="widget_bill_count">Bills</string>
     <string name="widget_recent_bills">Recent Bills</string>
     <string name="widget_bill_desc">Bill Overview Widget - Monthly income and expense overview</string>
-    <string name="widget_todo_title">Life Todo</string>
+    <string name="widget_todo_title">Todo List</string>
     <string name="widget_today_todo">Today\'s Todo</string>
     <string name="widget_overdue">Overdue</string>
     <string name="widget_completed">Completed</string>
@@ -535,7 +535,7 @@
     <string name="widget_vault_entries">entries</string>
     <string name="widget_vault_hint">Tap to open vault</string>
     <string name="widget_vault_desc">Vault Widget - Password entry count</string>
-    <string name="widget_dashboard_title">Dashboard</string>
+    <string name="widget_dashboard_title">Overview</string>
     <string name="widget_dashboard_goals">Goals</string>
     <string name="widget_dashboard_todos">Todos</string>
     <string name="widget_dashboard_habits">Habits</string>
@@ -589,6 +589,43 @@
     <string name="widget_date_format_cn">MMM d, yyyy</string>
     <string name="widget_days_ago">days ago</string>
     <string name="widget_today">today</string>
+    <string name="widget_bill_title">This Month</string>
+    <string name="widget_add">Add</string>
+    <string name="widget_income_label">Income</string>
+    <string name="widget_expense_label">Expense</string>
+    <string name="widget_budget_label">Budget</string>
+    <string name="widget_budget_used_format">Budget %1$d%% used</string>
+    <string name="widget_budget_top_format">%1$s budget %2$d%% used</string>
+    <string name="widget_month_balance_format">Balance %1$s</string>
+    <string name="widget_todo_remaining_format">%1$d pending</string>
+    <string name="widget_todo_footer_format">%1$d today · %2$d to go</string>
+    <string name="widget_goal_all_done">All done</string>
+    <string name="widget_no_goals">No goals</string>
+    <string name="widget_no_anniversary">No anniversaries</string>
+    <string name="widget_days_remaining_format">%1$d days left</string>
+    <string name="widget_budget_used_format_preview">Dining budget 82% used</string>
+    <string name="widget_preview_todo_1">Buy accessories</string>
+    <string name="widget_preview_todo_2">Inventory check</string>
+    <string name="widget_preview_todo_3">Monthly report</string>
+    <string name="widget_todo_footer_preview">3 today · 2 to go</string>
+    <string name="widget_preview_date">Sep 3</string>
+    <string name="widget_preview_goal">New tablet 64%</string>
+    <string name="widget_preview_todo_pending">2 pending</string>
+    <string name="widget_preview_anniversary">Birthday</string>
+    <string name="widget_days_remaining_format_preview">24 days left</string>
+    <string name="widget_habit_title">Check-in</string>
+    <string name="widget_habit_empty">No habits</string>
+    <string name="widget_streak_format">%1$dd</string>
+    <string name="widget_preview_streak_1">12d</string>
+    <string name="widget_preview_streak_2">5d</string>
+    <string name="widget_preview_habit_2">Read 30 min</string>
+    <string name="widget_preview_habit_3">Drink 8 cups</string>
+    <string name="widget_preview_asset_name">MacBook Pro</string>
+    <string name="widget_preview_vault_name">Email Account</string>
+    <string name="widget_preview_vault_category">Work</string>
+    <string name="widget_shortcut_bills">Bills</string>
+    <string name="widget_habit_desc">Check-in Widget - Check in from home screen and track streaks</string>
+    <string name="widget_shortcuts_desc">Shortcuts Widget - One-tap access to key features</string>
     <string name="widget_days_unit">days</string>
     <string name="widget_tomorrow">tomorrow</string>
     <string name="widget_days_later">%d days</string>
@@ -762,8 +799,8 @@
     <string name="backup_error_create_failed">Backup failed</string>
     <string name="backup_error_restore_failed">Restore failed</string>
     <!-- Calendar Sync -->
-    <string name="calendar_sync_name">Palm Note</string>
-    <string name="calendar_sync_display_name">Palm Note Sync</string>
+    <string name="calendar_sync_name">PalmNote</string>
+    <string name="calendar_sync_display_name">PalmNote Sync</string>
     <string name="calendar_sync_error_create_failed">Cannot create calendar</string>
     <string name="calendar_sync_error_permission_missing">Missing calendar permission</string>
     <string name="calendar_event_anniversary">Anniversary</string>
@@ -796,9 +833,9 @@
     <!-- Notification Channels -->
     <!-- About Screen -->
     <string name="about_title">About</string>
-    <string name="about_subtitle">Palm Note</string>
+    <string name="about_subtitle">PalmNote</string>
     <string name="about_description">Personal Life Management Tool</string>
-    <string name="about_description_detail">Palm Note is an elegant personal life management app that helps you track assets, manage bills, set goals, record anniversaries and life moments.</string>
+    <string name="about_description_detail">PalmNote is an elegant personal life management app that helps you track assets, manage bills, set goals, record anniversaries and life moments.</string>
     <string name="about_features">Features</string>
     <string name="about_feature_asset">Asset Management - Track items and costs</string>
     <string name="about_feature_bill">Smart Ledger - Expense analysis and budget management</string>
@@ -1644,9 +1681,34 @@
     <string name="settings_app_icon_subtitle">Switch launcher icon style</string>
     <string name="settings_select_app_icon">Select App Icon</string>
     <string name="settings_app_icon_hint">Choose the icon style displayed on your home screen</string>
-    <string name="settings_icon_white_green">White-Green</string>
+    <string name="settings_icon_cyan_white">Cyan-White</string>
     <string name="settings_icon_white_black">White-Black</string>
     <string name="settings_icon_black_white">Black-White</string>
     <string name="settings_icon_green_white">Green-White</string>
     <string name="settings_icon_confirm_title">Switch App Icon</string>
-    <string name="settings_icon_confirm_text">The app will exit and the home screen icon will update.</string></resources>
+    <string name="settings_icon_confirm_text">The app will exit and the home screen icon will update.</string>
+    <!-- Theme Colors -->
+    <string name="theme_cyan">Cyan</string>
+    <string name="theme_green">Green</string>
+    <string name="theme_blue">Blue</string>
+    <string name="theme_purple">Purple</string>
+    <string name="theme_orange">Orange</string>
+    <string name="settings_theme_color">Theme Color</string>
+    <string name="settings_theme_color_subtitle">Switch app primary color</string>
+    <string name="settings_select_theme_color">Select Theme Color</string>
+    <!-- Wallpaper -->
+    <string name="settings_wallpaper">Wallpaper</string>
+    <string name="settings_wallpaper_subtitle">Customize app background</string>
+    <string name="settings_select_wallpaper">Select Wallpaper</string>
+    <string name="wallpaper_none">None</string>
+    <string name="wallpaper_ocean">Ocean</string>
+    <string name="wallpaper_sunset">Sunset</string>
+    <string name="wallpaper_forest">Forest</string>
+    <string name="wallpaper_lavender">Lavender</string>
+    <string name="wallpaper_midnight">Midnight</string>
+    <string name="wallpaper_peach">Peach</string>
+    <string name="wallpaper_custom">Custom Image</string>
+    <string name="wallpaper_blur">Blur</string>
+    <string name="wallpaper_opacity">Opacity</string>
+    <string name="wallpaper_load_failed">Failed to load wallpaper, please try again</string>
+</resources>

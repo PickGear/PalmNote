@@ -52,21 +52,45 @@ object WidgetHelper {
         return date.format(DateTimeFormatter.ofPattern(pattern))
     }
 
-    fun createPendingIntent(context: Context, appWidgetId: Int, tab: String): PendingIntent {
+    // requestCode 必须由调用方保证全局唯一：Intent 仅 extras 不同（不参与 filterEquals 匹配），
+    // 若复用同一 requestCode，FLAG_UPDATE_CURRENT 会互相覆盖，导致点击所有组件跳到同一个页面
+    fun createPendingIntent(context: Context, requestCode: Int, tab: String): PendingIntent {
         val intent = Intent(context, com.palmnote.MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+            putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, requestCode)
             putExtra("WIDGET_TAB", tab)
         }
         return PendingIntent.getActivity(
-            context, appWidgetId, intent,
+            context, requestCode, intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
     }
 
-    fun addTodoItemView(context: Context, views: RemoteViews, containerId: Int, item: com.palmnote.data.db.entity.LifeItem) {
+    fun addTodoItemView(
+        context: Context,
+        views: RemoteViews,
+        containerId: Int,
+        item: com.palmnote.data.db.entity.LifeItem,
+        accentCircleRes: Int = R.drawable.widget_circle_accent,
+        togglePendingIntent: android.app.PendingIntent? = null
+    ) {
         val itemView = RemoteViews(context.packageName, R.layout.widget_todo_item)
+        val completed = item.status == "COMPLETED"
+        itemView.setInt(
+            R.id.widget_item_check, "setBackgroundResource",
+            if (completed) accentCircleRes else R.drawable.widget_ring_gray
+        )
+        // 整行可点：桌面直接勾选/取消（传入 PendingIntent 时）
+        togglePendingIntent?.let { itemView.setOnClickPendingIntent(R.id.widget_todo_row, it) }
+        // 无障碍：行内容描述（API 30+ RemoteViews 支持，低版本自动忽略）
+        if (android.os.Build.VERSION.SDK_INT >= 30) {
+            itemView.setContentDescription(R.id.widget_todo_row, item.title)
+        }
         itemView.setTextViewText(R.id.widget_item_text, item.title)
+        itemView.setTextColor(
+            R.id.widget_item_text,
+            if (completed) context.getColor(R.color.widget_v2_text_tertiary) else context.getColor(R.color.widget_v2_text_primary)
+        )
         val dueText = item.dueDate?.let { due ->
             val days = daysUntil(due)
             when {

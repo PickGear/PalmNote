@@ -75,4 +75,19 @@
     <color name="widget_quick_fab_bg_dark">#FFCDD6F4</color>
     <color name="widget_quick_fab_icon_dark">#FF1E1E2E</color>
     <color name="widget_category_dot_dark">#FFCDD6F4</color>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         V2 圆角卡片设计语言令牌（values-night 中有对应深色覆盖，
+         小组件布局在桌面进程内以桌面 uiMode 解析，跟随系统深色模式）
+         ═══════════════════════════════════════════════════════════════ -->
+    <color name="widget_v2_card_bg">#FFFFFFFF</color>
+    <color name="widget_v2_soft_mint">#FFEEF5F3</color>
+    <color name="widget_v2_soft_gray">#FFF5F7F7</color>
+    <color name="widget_v2_pill_soft">#FFE3F1EF</color>
+    <color name="widget_v2_text_primary">#FF1A1A1A</color>
+    <color name="widget_v2_text_secondary">#FF7C8A86</color>
+    <color name="widget_v2_text_tertiary">#FF9AABA6</color>
+    <color name="widget_v2_text_footer">#FF8A9693</color>
+    <color name="widget_v2_accent">#FF0891B2</color>
+    <color name="widget_v2_ring">#FFC4CFCC</color>
 </resources>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- V2 小组件令牌的深色覆盖：桌面在系统深色模式下解析这些值 -->
+    <color name="widget_v2_card_bg">#FF1C211F</color>
+    <color name="widget_v2_soft_mint">#FF22322D</color>
+    <color name="widget_v2_soft_gray">#FF262C2A</color>
+    <color name="widget_v2_pill_soft">#FF1E3A3C</color>
+    <color name="widget_v2_text_primary">#FFECEFF0</color>
+    <color name="widget_v2_text_secondary">#FF9DB0AB</color>
+    <color name="widget_v2_text_tertiary">#FF74857F</color>
+    <color name="widget_v2_text_footer">#FF8A9994</color>
+    <color name="widget_v2_accent">#FF2EC0D6</color>
+    <color name="widget_v2_ring">#FF47524F</color>
+</resources>

@@ -11,7 +11,7 @@ object AppIconManager {
         PreferencesManager.APP_ICON_GREEN_WHITE to "com.palmnote.app.IconGreenWhite",
         PreferencesManager.APP_ICON_BLACK_WHITE to "com.palmnote.app.IconBlackWhite",
         PreferencesManager.APP_ICON_WHITE_BLACK to "com.palmnote.app.IconWhiteBlack",
-        PreferencesManager.APP_ICON_WHITE_GREEN to "com.palmnote.app.IconWhiteGreen",
+        PreferencesManager.APP_ICON_CYAN_WHITE to "com.palmnote.app.IconCyanWhite",
     )
 
     fun apply(context: Context, style: String): Boolean = runCatching {

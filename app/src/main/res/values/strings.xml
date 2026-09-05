@@ -563,7 +563,7 @@
     <string name="widget_bill_count">笔数</string>
     <string name="widget_recent_bills">最近账单</string>
     <string name="widget_bill_desc">记账概览小组件 - 显示当月收支概览</string>
-    <string name="widget_todo_title">生活待办</string>
+    <string name="widget_todo_title">待办清单</string>
     <string name="widget_today_todo">今日待办</string>
     <string name="widget_overdue">已逾期</string>
     <string name="widget_completed">已完成</string>
@@ -590,7 +590,7 @@
     <string name="widget_vault_entries">条记录</string>
     <string name="widget_vault_hint">点击打开密码本</string>
     <string name="widget_vault_desc">密码本小组件 - 显示密码记录数量</string>
-    <string name="widget_dashboard_title">总览面板</string>
+    <string name="widget_dashboard_title">概览</string>
     <string name="widget_dashboard_goals">目标</string>
     <string name="widget_dashboard_todos">待办</string>
     <string name="widget_dashboard_habits">习惯</string>
@@ -644,6 +644,43 @@
     <string name="widget_date_format_cn">yyyy年M月d日</string>
     <string name="widget_days_ago">天前</string>
     <string name="widget_today">今天</string>
+    <string name="widget_bill_title">本月记账</string>
+    <string name="widget_add">新增</string>
+    <string name="widget_income_label">收入</string>
+    <string name="widget_expense_label">支出</string>
+    <string name="widget_budget_label">预算</string>
+    <string name="widget_budget_used_format">本月预算已使用 %1$d%%</string>
+    <string name="widget_budget_top_format">%1$s预算已使用 %2$d%%</string>
+    <string name="widget_month_balance_format">本月结余 %1$s</string>
+    <string name="widget_todo_remaining_format">%1$d 项未完成</string>
+    <string name="widget_todo_footer_format">今日 %1$d 项 · 待完成 %2$d</string>
+    <string name="widget_goal_all_done">全部完成</string>
+    <string name="widget_no_goals">暂无目标</string>
+    <string name="widget_no_anniversary">暂无纪念日</string>
+    <string name="widget_days_remaining_format">剩余 %1$d 天</string>
+    <string name="widget_budget_used_format_preview">餐饮预算已使用 82%</string>
+    <string name="widget_preview_todo_1">采购配件</string>
+    <string name="widget_preview_todo_2">整理物品库存</string>
+    <string name="widget_preview_todo_3">完成月度周报</string>
+    <string name="widget_todo_footer_preview">今日 3 项 · 待完成 2</string>
+    <string name="widget_preview_date">9月3日</string>
+    <string name="widget_preview_goal">买平板 64%</string>
+    <string name="widget_preview_todo_pending">2 项未完成</string>
+    <string name="widget_preview_anniversary">生日</string>
+    <string name="widget_days_remaining_format_preview">剩余 24 天</string>
+    <string name="widget_habit_title">今日打卡</string>
+    <string name="widget_habit_empty">暂无习惯</string>
+    <string name="widget_streak_format">%1$d天</string>
+    <string name="widget_preview_streak_1">12天</string>
+    <string name="widget_preview_streak_2">5天</string>
+    <string name="widget_preview_habit_2">阅读 30 分钟</string>
+    <string name="widget_preview_habit_3">喝够 8 杯水</string>
+    <string name="widget_preview_asset_name">MacBook Pro</string>
+    <string name="widget_preview_vault_name">邮箱账号</string>
+    <string name="widget_preview_vault_category">工作</string>
+    <string name="widget_shortcut_bills">账单</string>
+    <string name="widget_habit_desc">今日打卡小组件 - 桌面直接打卡，查看连续天数</string>
+    <string name="widget_shortcuts_desc">快捷入口小组件 - 常用功能一键直达</string>
     <string name="widget_days_unit">天</string>
     <string name="widget_tomorrow">明天</string>
     <string name="widget_days_later">%d天后</string>
@@ -851,7 +888,7 @@
     <!-- Notification Channels -->
     <!-- About Screen -->
     <string name="about_title">关于</string>
-    <string name="about_subtitle">Palm Note</string>
+    <string name="about_subtitle">PalmNote</string>
     <string name="about_description">个人生活管理工具</string>
     <string name="about_description_detail">掌记是一款简洁优雅的个人生活管理应用，帮助您记录资产、管理账单、追踪目标、记录纪念日和生活瞬间。</string>
     <string name="about_features">功能特色</string>
@@ -1641,9 +1678,34 @@
     <string name="settings_app_icon_subtitle">切换桌面图标样式</string>
     <string name="settings_select_app_icon">选择应用图标</string>
     <string name="settings_app_icon_hint">选择桌面显示的图标样式</string>
-    <string name="settings_icon_white_green">白绿</string>
+    <string name="settings_icon_cyan_white">青白</string>
     <string name="settings_icon_white_black">白黑</string>
     <string name="settings_icon_black_white">黑白</string>
     <string name="settings_icon_green_white">绿白</string>
     <string name="settings_icon_confirm_title">切换应用图标</string>
-    <string name="settings_icon_confirm_text">切换后应用将退出，桌面图标将更新。</string></resources>
+    <string name="settings_icon_confirm_text">切换后应用将退出，桌面图标将更新。</string>
+    <!-- Theme Colors -->
+    <string name="theme_cyan">青</string>
+    <string name="theme_green">绿</string>
+    <string name="theme_blue">蓝</string>
+    <string name="theme_purple">紫</string>
+    <string name="theme_orange">橙</string>
+    <string name="settings_theme_color">主题色</string>
+    <string name="settings_theme_color_subtitle">切换应用主色调</string>
+    <string name="settings_select_theme_color">选择主题色</string>
+    <!-- Wallpaper -->
+    <string name="settings_wallpaper">背景壁纸</string>
+    <string name="settings_wallpaper_subtitle">自定义应用背景</string>
+    <string name="settings_select_wallpaper">选择壁纸</string>
+    <string name="wallpaper_none">无</string>
+    <string name="wallpaper_ocean">海洋</string>
+    <string name="wallpaper_sunset">日落</string>
+    <string name="wallpaper_forest">森林</string>
+    <string name="wallpaper_lavender">薰衣草</string>
+    <string name="wallpaper_midnight">午夜</string>
+    <string name="wallpaper_peach">蜜桃</string>
+    <string name="wallpaper_custom">自定义图片</string>
+    <string name="wallpaper_blur">模糊度</string>
+    <string name="wallpaper_opacity">透明度</string>
+    <string name="wallpaper_load_failed">壁纸加载失败，请重试</string>
+</resources>

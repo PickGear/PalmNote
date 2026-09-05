@@ -9,6 +9,7 @@
     android:updatePeriodMillis="1800000"
     android:initialLayout="@layout/widget_quick_bill"
     android:widgetCategory="home_screen"
+    android:description="@string/widget_quick_bill_desc"
     android:previewImage="@drawable/widget_preview_quick_bill"
     android:previewLayout="@layout/widget_quick_bill_preview"
     android:resizeMode="horizontal|vertical" />

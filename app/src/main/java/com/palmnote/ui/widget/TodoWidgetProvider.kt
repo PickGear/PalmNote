@@ -15,10 +15,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import java.time.LocalDate
-import java.time.ZoneId
 
 class TodoWidgetProvider : AppWidgetProvider() {
 
@@ -27,6 +24,7 @@ class TodoWidgetProvider : AppWidgetProvider() {
     interface WidgetEntryPoint {
         fun lifeItemDao(): com.palmnote.data.db.dao.LifeItemDao
         fun lifeTemplateDao(): com.palmnote.data.db.dao.LifeTemplateDao
+        fun preferencesManager(): com.palmnote.data.datastore.PreferencesManager
     }
 
     private var scope: CoroutineScope? = null
@@ -35,7 +33,12 @@ class TodoWidgetProvider : AppWidgetProvider() {
         updateWidgets(context, appWidgetManager, appWidgetIds)
     }
 
-    override fun onAppWidgetOptionsChanged(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int, newOptions: android.os.Bundle) {
+    override fun onAppWidgetOptionsChanged(
+        context: Context,
+        appWidgetManager: AppWidgetManager,
+        appWidgetId: Int,
+        newOptions: android.os.Bundle
+    ) {
         updateWidgets(context, appWidgetManager, intArrayOf(appWidgetId))
     }
 
@@ -59,45 +62,38 @@ class TodoWidgetProvider : AppWidgetProvider() {
                 val entryPoint = EntryPointAccessors.fromApplication(
                     context.applicationContext, WidgetEntryPoint::class.java
                 )
-                val lifeItemDao = entryPoint.lifeItemDao()
-                val lifeTemplateDao = entryPoint.lifeTemplateDao()
-
-                val templates = lifeTemplateDao.getAllVisibleTemplates().first()
-                val todoTemplate = templates.firstOrNull { it.icon == "checklist" }
-
-                val today = LocalDate.now()
-                val todayStart = today.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-                val todayEnd = today.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-
-                var totalCount = 0
-                var completedCount = 0
-                var remainingCount = 0
-
-                if (todoTemplate != null) {
-                    val allTodos = lifeItemDao.getItemsByTemplate(todoTemplate.id).first()
-                    val todayTodos = allTodos.filter { item ->
-                        val due = item.dueDate
-                        item.parentId == null && item.status != "ARCHIVED"
-                            && due != null && due >= todayStart && due < todayEnd
-                    }
-                    totalCount = todayTodos.size
-                    completedCount = todayTodos.count { it.status == "COMPLETED" }
-                    remainingCount = totalCount - completedCount
-                }
+                val todos = WidgetData.fetchTodayTodos(entryPoint.lifeItemDao(), entryPoint.lifeTemplateDao())
+                val totalCount = todos.size
+                val remainingCount = todos.count { it.status != "COMPLETED" }
+                val accent = WidgetData.readAccentTheme(context, entryPoint.preferencesManager())
 
                 for (appWidgetId in appWidgetIds) {
                     val views = RemoteViews(context.packageName, R.layout.widget_todo_unified)
+                    views.setInt(R.id.widget_todo_add, "setBackgroundResource", accent.pillFillRes)
 
-                    views.setTextViewText(R.id.widget_todo_count, "$totalCount")
-                    views.setTextViewText(R.id.widget_remaining_count, "$remainingCount")
-
-                    val hasData = totalCount > 0
-                    views.setViewVisibility(R.id.widget_content_with_data, if (hasData) View.VISIBLE else View.GONE)
-                    views.setViewVisibility(R.id.widget_empty_state, if (hasData) View.GONE else View.VISIBLE)
+                    views.removeAllViews(R.id.widget_todo_list)
+                    todos.take(3).forEach { item ->
+                        WidgetHelper.addTodoItemView(
+                            context, views, R.id.widget_todo_list, item,
+                            accent.circleFillRes, TodoToggleReceiver.togglePendingIntent(context, item.id)
+                        )
+                    }
+                    views.setViewVisibility(R.id.widget_todo_empty, if (todos.isEmpty()) View.VISIBLE else View.GONE)
+                    views.setViewVisibility(R.id.widget_todo_footer, if (todos.isEmpty()) View.GONE else View.VISIBLE)
+                    if (todos.isNotEmpty()) {
+                        views.setTextViewText(
+                            R.id.widget_todo_footer,
+                            context.getString(R.string.widget_todo_footer_format, totalCount, remainingCount)
+                        )
+                    }
 
                     views.setOnClickPendingIntent(
                         R.id.widget_layout,
-                        WidgetHelper.createPendingIntent(context, appWidgetId, "life")
+                        WidgetHelper.createPendingIntent(context, 200_000 + appWidgetId, "life")
+                    )
+                    views.setOnClickPendingIntent(
+                        R.id.widget_todo_add,
+                        WidgetHelper.createPendingIntent(context, 2_000_000 + appWidgetId, "life")
                     )
                     appWidgetManager.updateAppWidget(appWidgetId, views)
                 }

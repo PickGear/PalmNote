@@ -1,22 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_todo_row"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
     android:gravity="center_vertical"
-    android:paddingVertical="6dp"
-    android:paddingHorizontal="4dp"
-    android:background="@drawable/widget_item_bg"
-    android:layout_marginBottom="2dp">
+    android:paddingVertical="6dp">
+
+    <TextView
+        android:id="@+id/widget_item_check"
+        android:layout_width="18dp"
+        android:layout_height="18dp"
+        android:textSize="11sp"
+        android:textStyle="bold"
+        android:textColor="#FFFFFF"
+        android:gravity="center"
+        android:background="@drawable/widget_ring_gray" />
 
     <TextView
         android:id="@+id/widget_item_text"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:textSize="14sp"
-        android:textColor="@color/widget_title_color"
-        android:fontFamily="sans-serif-medium"
+        android:textSize="13sp"
+        android:textColor="@color/widget_v2_text_primary"
+        android:layout_marginStart="8dp"
         android:maxLines="1"
         android:ellipsize="end" />
 
@@ -24,12 +32,8 @@
         android:id="@+id/widget_item_due"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textSize="12sp"
-        android:textColor="@color/widget_label_color"
-        android:fontFamily="sans-serif"
-        android:background="@drawable/widget_chip_bg"
-        android:paddingHorizontal="10dp"
-        android:paddingVertical="3dp"
-        android:layout_marginStart="12dp" />
+        android:textSize="10sp"
+        android:textColor="@color/widget_v2_text_footer"
+        android:layout_marginStart="6dp" />
 
 </LinearLayout>

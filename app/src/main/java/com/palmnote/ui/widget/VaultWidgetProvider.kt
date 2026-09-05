@@ -58,18 +58,18 @@ class VaultWidgetProvider : AppWidgetProvider() {
                 )
                 val vaultDao = entryPoint.vaultDao()
 
-                val entries = vaultDao.getAllEntries().first().take(1)
-                val firstEntry = entries.firstOrNull()
+                val totalCount = vaultDao.countEntriesFlow().first() ?: 0
+                val hasEntries = totalCount > 0
 
                 for (appWidgetId in appWidgetIds) {
                     val views = RemoteViews(context.packageName, R.layout.widget_vault)
 
-                    val totalCount = vaultDao.countEntriesFlow().first() ?: 0
                     views.setTextViewText(R.id.widget_vault_count, "$totalCount")
 
-                    if (firstEntry != null) {
-                        views.setTextViewText(R.id.widget_entry_title, firstEntry.title)
-                        views.setTextViewText(R.id.widget_entry_category, firstEntry.category)
+                    // 隐私：桌面组件不展示任何条目标题/分类，仅显示已加密状态提示
+                    if (hasEntries) {
+                        views.setTextViewText(R.id.widget_entry_title, "••••••")
+                        views.setTextViewText(R.id.widget_entry_category, context.getString(R.string.widget_vault_hint))
                         views.setViewVisibility(R.id.widget_first_entry, View.VISIBLE)
                         views.setViewVisibility(R.id.widget_empty_state, View.GONE)
                     } else {
@@ -79,7 +79,7 @@ class VaultWidgetProvider : AppWidgetProvider() {
 
                     views.setOnClickPendingIntent(
                         R.id.widget_layout,
-                        WidgetHelper.createPendingIntent(context, appWidgetId, "vault")
+                        WidgetHelper.createPendingIntent(context, 500_000 + appWidgetId, "vault")
                     )
                     appWidgetManager.updateAppWidget(appWidgetId, views)
                 }

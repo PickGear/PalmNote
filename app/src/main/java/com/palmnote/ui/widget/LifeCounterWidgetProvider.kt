@@ -109,7 +109,7 @@ class LifeCounterWidgetProvider : AppWidgetProvider() {
 
                     views.setOnClickPendingIntent(
                         R.id.widget_layout,
-                        WidgetHelper.createPendingIntent(context, appWidgetId, "life")
+                        WidgetHelper.createPendingIntent(context, 300_000 + appWidgetId, "life")
                     )
                     appWidgetManager.updateAppWidget(appWidgetId, views)
                 }

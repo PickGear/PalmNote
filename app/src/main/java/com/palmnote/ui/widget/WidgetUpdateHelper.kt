@@ -1,10 +1,13 @@
 package com.palmnote.ui.widget
 
+import android.app.AlarmManager
+import android.app.PendingIntent
+import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import android.appwidget.AppWidgetManager
+import com.palmnote.domain.util.AppLogger
 
 /**
  * Widget 刷新工具：在数据变更时主动触发 Widget 更新，
@@ -16,6 +19,33 @@ object WidgetUpdateHelper {
 
     fun init(context: Context) {
         appContext = context.applicationContext
+        scheduleMidnightRefresh(appContext)
+    }
+
+    // 每日午夜刷新日期敏感的组件（今日待办/打卡/倒数），由 WidgetMidnightReceiver 滚动重排
+    fun scheduleMidnightRefresh(context: Context) {
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
+        val now = java.util.Calendar.getInstance()
+        val next = (now.clone() as java.util.Calendar).apply {
+            add(java.util.Calendar.DAY_OF_YEAR, 1)
+            set(java.util.Calendar.HOUR_OF_DAY, 0)
+            set(java.util.Calendar.MINUTE, 0)
+            set(java.util.Calendar.SECOND, 0)
+            set(java.util.Calendar.MILLISECOND, 0)
+        }
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            MIDNIGHT_REQUEST_CODE,
+            Intent(context, WidgetMidnightReceiver::class.java)
+                .setAction(WidgetMidnightReceiver.ACTION_MIDNIGHT_REFRESH),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        try {
+            // 非精确闹钟：不需要用户授权，允许系统在维护窗口内合并触发
+            alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, next.timeInMillis, pendingIntent)
+        } catch (e: Exception) {
+            AppLogger.e("WidgetUpdateHelper", "Schedule midnight refresh failed", e)
+        }
     }
 
     fun refreshBillWidgets() {
@@ -60,14 +90,21 @@ object WidgetUpdateHelper {
         sendUpdate(DashboardWidgetProvider::class.java, dashIds)
     }
 
+    fun refreshHabitWidgets() {
+        HabitWidgetProvider.requestUpdateAll(appContext)
+    }
+
     fun refreshAllWidgets() {
         refreshBillWidgets()
         refreshTodoWidgets()
         refreshCounterWidgets()
         refreshAssetWidgets()
         refreshVaultWidgets()
+        refreshHabitWidgets()
     }
 
+    // Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND 是隐藏 API（0x01000000），只能以字面量使用
+    @Suppress("WrongConstant")
     private fun sendUpdate(providerClass: Class<*>, ids: IntArray) {
         if (ids.isEmpty()) return
         val intent = Intent(appContext, providerClass).apply {
@@ -79,4 +116,6 @@ object WidgetUpdateHelper {
         }
         appContext.sendBroadcast(intent)
     }
+
+    private const val MIDNIGHT_REQUEST_CODE = 424_242
 }

@@ -9,6 +9,7 @@
     android:updatePeriodMillis="1800000"
     android:initialLayout="@layout/widget_vault"
     android:widgetCategory="home_screen"
+    android:description="@string/widget_vault_desc"
     android:previewImage="@drawable/widget_preview_vault"
     android:previewLayout="@layout/widget_vault_preview"
     android:resizeMode="horizontal|vertical" />

@@ -6,7 +6,6 @@ import android.content.Context
 import android.view.View
 import android.widget.RemoteViews
 import com.palmnote.app.R
-import com.palmnote.domain.model.AssetStatus
 import com.palmnote.domain.util.AppLogger
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
@@ -27,9 +26,11 @@ class DashboardWidgetProvider : AppWidgetProvider() {
     @InstallIn(SingletonComponent::class)
     interface WidgetEntryPoint {
         fun billDao(): com.palmnote.data.db.dao.BillDao
-        fun assetDao(): com.palmnote.data.db.dao.AssetDao
+        fun budgetDao(): com.palmnote.data.db.dao.BudgetDao
         fun goalDao(): com.palmnote.data.db.dao.GoalDao
-        fun vaultDao(): com.palmnote.feature.vault.VaultDao
+        fun lifeItemDao(): com.palmnote.data.db.dao.LifeItemDao
+        fun lifeTemplateDao(): com.palmnote.data.db.dao.LifeTemplateDao
+        fun anniversaryDao(): com.palmnote.data.db.dao.AnniversaryDao
     }
 
     private var scope: CoroutineScope? = null
@@ -38,7 +39,12 @@ class DashboardWidgetProvider : AppWidgetProvider() {
         updateWidgets(context, appWidgetManager, appWidgetIds)
     }
 
-    override fun onAppWidgetOptionsChanged(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int, newOptions: android.os.Bundle) {
+    override fun onAppWidgetOptionsChanged(
+        context: Context,
+        appWidgetManager: AppWidgetManager,
+        appWidgetId: Int,
+        newOptions: android.os.Bundle
+    ) {
         updateWidgets(context, appWidgetManager, intArrayOf(appWidgetId))
     }
 
@@ -62,59 +68,20 @@ class DashboardWidgetProvider : AppWidgetProvider() {
                 val entryPoint = EntryPointAccessors.fromApplication(
                     context.applicationContext, WidgetEntryPoint::class.java
                 )
-                val billDao = entryPoint.billDao()
-                val assetDao = entryPoint.assetDao()
-                val goalDao = entryPoint.goalDao()
-                val vaultDao = entryPoint.vaultDao()
-
-                val yearMonth = DateTimeFormatter.ofPattern("yyyy-MM").format(LocalDate.now())
-                val monthlyExpense = billDao.getMonthlyExpense(yearMonth).first() ?: 0L
-                val monthlyIncome = billDao.getMonthlyIncome(yearMonth).first() ?: 0L
-                val activeAssetCount = assetDao.getAssetCountByStatus(AssetStatus.HELD).first() ?: 0
-                val vaultCount = vaultDao.countEntriesFlow().first() ?: 0
-
-                val goals = goalDao.getAllGoals().first()
-                val goalCount = goals.size
-                val completedGoalCount = goals.count { it.currentCount >= it.totalCount }
+                val snapshot = fetchSnapshot(context, entryPoint)
 
                 for (appWidgetId in appWidgetIds) {
                     val options = appWidgetManager.getAppWidgetOptions(appWidgetId)
                     val width = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 250)
                     val height = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 110)
+                    val isLarge = width >= 250 && height >= 180
 
                     val views = RemoteViews(context.packageName, R.layout.widget_dashboard_unified)
-
-                    val datePattern = context.getString(R.string.widget_date_format_cn)
-                    views.setTextViewText(R.id.widget_dashboard_date, LocalDate.now().format(DateTimeFormatter.ofPattern(datePattern)))
-                    views.setTextViewText(R.id.widget_dashboard_expense, WidgetHelper.formatMoney(monthlyExpense))
-                    views.setTextViewText(R.id.widget_dashboard_income, WidgetHelper.formatMoney(monthlyIncome))
-                    views.setTextViewText(R.id.widget_dashboard_assets, "$activeAssetCount")
-                    views.setTextViewText(R.id.widget_dashboard_goals, "$completedGoalCount/$goalCount")
-                    views.setTextViewText(R.id.widget_dashboard_vault, "$vaultCount")
-
-                    val isLarge = width >= 380 && height >= 180
-
+                    bindSnapshot(context, views, snapshot)
                     views.setViewVisibility(R.id.widget_stats_row2, if (isLarge) View.VISIBLE else View.GONE)
-                    views.setViewVisibility(R.id.widget_quick_actions, if (isLarge) View.VISIBLE else View.GONE)
-
-                    if (isLarge) {
-                        views.setOnClickPendingIntent(
-                            R.id.widget_action_bill,
-                            WidgetHelper.createPendingIntent(context, 2001 + appWidgetId, "bill")
-                        )
-                        views.setOnClickPendingIntent(
-                            R.id.widget_action_asset,
-                            WidgetHelper.createPendingIntent(context, 3001 + appWidgetId, "asset")
-                        )
-                        views.setOnClickPendingIntent(
-                            R.id.widget_action_todo,
-                            WidgetHelper.createPendingIntent(context, 4001 + appWidgetId, "life")
-                        )
-                    }
-
                     views.setOnClickPendingIntent(
                         R.id.widget_layout,
-                        WidgetHelper.createPendingIntent(context, appWidgetId, "dashboard")
+                        WidgetHelper.createPendingIntent(context, 600_000 + appWidgetId, "dashboard")
                     )
                     appWidgetManager.updateAppWidget(appWidgetId, views)
                 }
@@ -123,6 +90,104 @@ class DashboardWidgetProvider : AppWidgetProvider() {
             } finally {
                 pendingResult.finish()
             }
+        }
+    }
+
+    private data class DashboardSnapshot(
+        val dateText: String,
+        val budgetCardAmount: String,
+        val budgetCardSub: String,
+        val goalPct: String,
+        val goalName: String,
+        val todoRemaining: Int,
+        val anniversaryTitle: String?,
+        val anniversaryDays: Long
+    )
+
+    private suspend fun fetchSnapshot(context: Context, entryPoint: WidgetEntryPoint): DashboardSnapshot {
+        val yearMonth = DateTimeFormatter.ofPattern("yyyy-MM").format(LocalDate.now())
+        val monthlyExpense = entryPoint.billDao().getMonthlyExpense(yearMonth).first() ?: 0L
+        val monthlyIncome = entryPoint.billDao().getMonthlyIncome(yearMonth).first() ?: 0L
+        val budget = entryPoint.budgetDao().getBudgetByMonth(yearMonth)
+            ?: entryPoint.budgetDao().getLatestBudget().first()
+
+        // 预算卡：有预算显示剩余，无预算显示结余
+        val budgetCard = if (budget != null && budget.totalBudget > 0) {
+            WidgetData.formatMoneyCompact(context, budget.totalBudget - monthlyExpense) to R.string.widget_budget_remaining
+        } else {
+            WidgetData.formatMoneyCompact(context, monthlyIncome - monthlyExpense) to R.string.widget_net_income
+        }
+
+        val goals = entryPoint.goalDao().getAllGoals().first()
+        val activeGoal = goals.firstOrNull { it.currentCount < it.totalCount }
+        val goalPct: String
+        val goalName: String
+        when {
+            activeGoal != null -> {
+                val pct = if (activeGoal.totalCount > 0) activeGoal.currentCount * 100 / activeGoal.totalCount else 0
+                goalPct = "$pct%"
+                goalName = activeGoal.title
+            }
+            goals.isNotEmpty() -> {
+                goalPct = "100%"
+                goalName = context.getString(R.string.widget_goal_all_done)
+            }
+            else -> {
+                goalPct = "--"
+                goalName = context.getString(R.string.widget_no_goals)
+            }
+        }
+
+        val todos = WidgetData.fetchTodayTodos(entryPoint.lifeItemDao(), entryPoint.lifeTemplateDao())
+
+        val nextAnniversary = entryPoint.anniversaryDao().getAllAnniversaries().first()
+            .mapNotNull { ann ->
+                WidgetData.nextOccurrenceDaysIn(ann.solarDate, ann.isYearly)?.let { days -> ann.title to days }
+            }
+            .minByOrNull { it.second }
+
+        return DashboardSnapshot(
+            dateText = LocalDate.now().format(DateTimeFormatter.ofPattern(context.getString(R.string.widget_date_format_cn))),
+            budgetCardAmount = budgetCard.first,
+            budgetCardSub = context.getString(budgetCard.second),
+            goalPct = goalPct,
+            goalName = goalName,
+            todoRemaining = todos.count { it.status != "COMPLETED" },
+            anniversaryTitle = nextAnniversary?.first,
+            anniversaryDays = nextAnniversary?.second ?: -1L
+        )
+    }
+
+    private fun bindSnapshot(context: Context, views: RemoteViews, snapshot: DashboardSnapshot) {
+        views.setTextViewText(R.id.widget_dashboard_date, snapshot.dateText)
+        views.setTextViewText(R.id.widget_dashboard_budget, snapshot.budgetCardAmount)
+        views.setTextViewText(R.id.widget_dashboard_budget_sub, snapshot.budgetCardSub)
+        views.setTextViewText(R.id.widget_dashboard_goal_pct, snapshot.goalPct)
+        views.setTextViewText(R.id.widget_dashboard_goal_name, snapshot.goalName)
+
+        views.setTextViewText(R.id.widget_dashboard_todo, "${snapshot.todoRemaining}")
+        views.setTextViewText(
+            R.id.widget_dashboard_todo_sub,
+            context.getString(R.string.widget_todo_remaining_format, snapshot.todoRemaining)
+        )
+
+        if (snapshot.anniversaryTitle != null) {
+            views.setViewVisibility(R.id.widget_dashboard_days_title, View.VISIBLE)
+            views.setTextViewText(R.id.widget_dashboard_days_title, snapshot.anniversaryTitle)
+            views.setTextViewText(R.id.widget_dashboard_days, "${snapshot.anniversaryDays}")
+            views.setTextViewText(R.id.widget_dashboard_days_sub, formatAnniversarySub(context, snapshot.anniversaryDays))
+        } else {
+            views.setViewVisibility(R.id.widget_dashboard_days_title, View.GONE)
+            views.setTextViewText(R.id.widget_dashboard_days, "--")
+            views.setTextViewText(R.id.widget_dashboard_days_sub, context.getString(R.string.widget_no_anniversary))
+        }
+    }
+
+    private fun formatAnniversarySub(context: Context, days: Long): String {
+        return if (days == 0L) {
+            context.getString(R.string.widget_today)
+        } else {
+            context.getString(R.string.widget_days_remaining_format, days)
         }
     }
 }

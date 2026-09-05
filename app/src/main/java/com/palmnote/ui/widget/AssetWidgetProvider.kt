@@ -84,7 +84,7 @@ class AssetWidgetProvider : AppWidgetProvider() {
 
                     views.setOnClickPendingIntent(
                         R.id.widget_layout,
-                        WidgetHelper.createPendingIntent(context, appWidgetId, "asset")
+                        WidgetHelper.createPendingIntent(context, 400_000 + appWidgetId, "asset")
                     )
                     appWidgetManager.updateAppWidget(appWidgetId, views)
                 }
