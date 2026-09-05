@@ -24,18 +24,18 @@ class BackupManagerTest {
     }
 
     @Test
-    fun calculateMd5_returnsCorrectHash() {
+    fun calculateChecksum_returnsCorrectHash() {
         val file = tempFolder.newFile("test.txt")
         file.writeText("Hello World")
-        val md5 = runBlocking { backupManager.calculateMd5(file) }
-        assertEquals("b10a8db164e0754105b7a99be72e3fe5", md5)
+        val checksum = runBlocking { backupManager.calculateChecksum(file) }
+        assertEquals("a591a6d40bf420404a011733cfb7b190d62c65bf0bcda32b57b277d9ad9f146e", checksum)
     }
 
     @Test
-    fun calculateMd5_emptyFile_returnsEmptyHash() {
+    fun calculateChecksum_emptyFile_returnsEmptyHash() {
         val file = tempFolder.newFile("empty.txt")
-        val md5 = runBlocking { backupManager.calculateMd5(file) }
-        assertEquals("d41d8cd98f00b204e9800998ecf8427e", md5)
+        val checksum = runBlocking { backupManager.calculateChecksum(file) }
+        assertEquals("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", checksum)
     }
 
     @Test
