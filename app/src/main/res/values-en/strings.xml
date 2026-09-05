@@ -113,8 +113,6 @@
     <string name="settings_dark_mode_subtitle">Choose dark mode display</string>
     <string name="settings_language">Language</string>
     <string name="settings_language_subtitle">Switch app display language</string>
-    <string name="settings_switch_color">Switch Color</string>
-    <string name="settings_switch_color_subtitle">Customize global switch button color</string>
     <string name="settings_follow_system">Follow System</string>
     <string name="settings_default_start_page">Default Start Page</string>
     <string name="settings_default_bill_type">Default Bill Type</string>
@@ -160,11 +158,8 @@
     <string name="settings_about_app">About PalmNote</string>
     <string name="settings_about_version">Version 1.3.0</string>
     <string name="settings_days">%d days</string>
-    <string name="settings_color_pick_title">Select Switch Color</string>
-    <string name="settings_preset_color">Preset Colors</string>
     <string name="settings_custom_color">Custom Color</string>
     <string name="settings_hex_color">HEX Color</string>
-    <string name="settings_color_done">Done</string>
     <string name="settings_select_start_page">Default Start Page</string>
     <string name="settings_select_bill_type">Default Bill Type</string>
     <string name="settings_select_dark_mode">Dark Mode</string>

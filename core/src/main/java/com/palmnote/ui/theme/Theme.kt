@@ -19,9 +19,6 @@ import com.palmnote.data.wallpaper.decodeWallpaperBitmap
 val LocalIsDarkTheme = staticCompositionLocalOf { false }
 val LocalThemeColor = staticCompositionLocalOf { Color(0xFF0891B2) }
 
-@Deprecated("Use LocalThemeColor instead", ReplaceWith("LocalThemeColor"))
-val LocalSwitchColor = staticCompositionLocalOf { PrimaryGreen }
-
 // 自定义壁纸异步解码：IO 线程 + 按屏幕尺寸降采样，结果按来源缓存，
 // 避免在组合中同步解码大图（主线程卡顿 + 数十 MB 内存峰值）
 @Composable

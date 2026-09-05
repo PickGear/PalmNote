@@ -113,8 +113,6 @@
     <string name="settings_dark_mode_subtitle">选择深色模式显示方式</string>
     <string name="settings_language">语言设置</string>
     <string name="settings_language_subtitle">切换应用显示语言</string>
-    <string name="settings_switch_color">开关按钮颜色</string>
-    <string name="settings_switch_color_subtitle">自定义全局开关按钮的颜色</string>
     <string name="settings_follow_system">跟随系统</string>
     <string name="settings_default_start_page">默认启动页</string>
     <string name="settings_default_bill_type">默认记账类型</string>
@@ -160,11 +158,8 @@
     <string name="settings_about_app">关于掌记</string>
     <string name="settings_about_version">版本 1.3.0</string>
     <string name="settings_days">%d 天</string>
-    <string name="settings_color_pick_title">选择开关颜色</string>
-    <string name="settings_preset_color">预设颜色</string>
     <string name="settings_custom_color">自定义颜色</string>
     <string name="settings_hex_color">HEX色值</string>
-    <string name="settings_color_done">完成</string>
     <string name="settings_select_start_page">默认启动页</string>
     <string name="settings_select_bill_type">默认记账类型</string>
     <string name="settings_select_dark_mode">深色模式</string>

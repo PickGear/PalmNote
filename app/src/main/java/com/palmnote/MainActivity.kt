@@ -51,8 +51,6 @@ import com.palmnote.data.lock.AppLockManager
 import com.palmnote.ui.lock.AppLockScreen
 import com.palmnote.ui.lock.AppLockState
 import com.palmnote.ui.navigation.PalmNoteNavHost
-import com.palmnote.ui.theme.LocalSwitchColor
-import com.palmnote.ui.components.toComposeColor
 import com.palmnote.ui.theme.PalmNoteTheme
 import com.palmnote.ui.theme.WallpaperBackground
 import androidx.compose.ui.res.stringResource
@@ -164,9 +162,8 @@ class MainActivity : AppCompatActivity() {
             val preferences by remember {
                 val theme = combine(
                     preferencesManager.themeMode,
-                    preferencesManager.switchColor,
                     preferencesManager.themeColor
-                ) { mode, switch, color -> Triple(mode, switch, color) }
+                ) { mode, color -> mode to color }
                 val wallpaper = combine(
                     preferencesManager.wallpaperStyle,
                     preferencesManager.wallpaperOpacity,
@@ -175,7 +172,7 @@ class MainActivity : AppCompatActivity() {
                 ) { style, opacity, blur, uri -> WallpaperPrefs(style, opacity, blur, uri) }
                 combine(theme, wallpaper) { t, w -> t to w }
             }.collectAsStateWithLifecycle(
-                initialValue = Triple("SYSTEM", "#2D4A3E", PreferencesManager.DEFAULT_THEME_COLOR) to
+                initialValue = ("SYSTEM" to PreferencesManager.DEFAULT_THEME_COLOR) to
                     WallpaperPrefs(
                         PreferencesManager.DEFAULT_WALLPAPER_STYLE,
                         PreferencesManager.DEFAULT_WALLPAPER_OPACITY,
@@ -184,15 +181,12 @@ class MainActivity : AppCompatActivity() {
                     )
             )
             val (themePrefs, wallpaper) = preferences
-            val (mode, switchColorRaw, themeColorId) = themePrefs
+            val (mode, themeColorId) = themePrefs
             val isDarkTheme = when (mode) {
                 "DARK" -> true
                 "LIGHT" -> false
                 else -> isSystemInDarkTheme()
             }
-            val switchColor = switchColorRaw.toComposeColor(
-                if (isDarkTheme) Color(0xFF7BC4A0) else Color(0xFF2D4A3E)
-            )
             val themeColor = com.palmnote.ui.theme.ThemePackages.getById(themeColorId).let {
                 if (isDarkTheme) it.darkPrimary else it.lightPrimary
             }
@@ -221,7 +215,6 @@ class MainActivity : AppCompatActivity() {
                 wallpaperCustomUri = wallpaper.customUri
             ) {
                 WallpaperBackground(modifier = Modifier.fillMaxSize()) {
-                    CompositionLocalProvider(LocalSwitchColor provides switchColor) {
                     if (privacyAgreed == null) {
                         // Still loading privacy state - show nothing
                     } else if (privacyAgreed == false) {
@@ -418,7 +411,6 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             }
-        }
         }
     }
 

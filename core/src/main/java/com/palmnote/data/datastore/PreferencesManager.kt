@@ -43,7 +43,6 @@ class PreferencesManager @Inject constructor(
         val LIFE_CALENDAR_EXPANDED = booleanPreferencesKey("life_calendar_expanded")
         val LIFE_CALENDAR_SELECTED_DATE = longPreferencesKey("life_calendar_selected_date")
         val CALENDAR_SYNC_ENABLED = booleanPreferencesKey("calendar_sync_enabled")
-        val SWITCH_COLOR = stringPreferencesKey("switch_color")
         val DEFAULT_START_PAGE = stringPreferencesKey("default_start_page")
         val LANGUAGE = stringPreferencesKey("language")
         val APP_LOCK_ENABLED = booleanPreferencesKey("app_lock_enabled")
@@ -118,10 +117,6 @@ class PreferencesManager @Inject constructor(
     val calendarSyncEnabled: Flow<Boolean> = prefsFlow.map { it[CALENDAR_SYNC_ENABLED] ?: false }
 
     suspend fun setCalendarSyncEnabled(enabled: Boolean) { context.dataStore.edit { it[CALENDAR_SYNC_ENABLED] = enabled } }
-
-    val switchColor: Flow<String> = prefsFlow.map { it[SWITCH_COLOR] ?: "#2D4A3E" }
-
-    suspend fun setSwitchColor(color: String) { context.dataStore.edit { it[SWITCH_COLOR] = color } }
 
     val themeColor: Flow<String> = prefsFlow.map { it[THEME_COLOR] ?: DEFAULT_THEME_COLOR }
 

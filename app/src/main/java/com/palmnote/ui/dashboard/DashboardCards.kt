@@ -977,7 +977,7 @@ internal fun CardManagementDialog(
                         CapsuleSwitch(
                             checked = config.visible,
                             onCheckedChange = { onToggle(config.type) },
-                            checkedTrackColor = LocalSwitchColor.current,
+                            checkedTrackColor = MaterialTheme.colorScheme.primary,
                         )
                     }
                 }

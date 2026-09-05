@@ -51,7 +51,6 @@ import com.palmnote.ui.lock.DEFAULT_PIN_LENGTH
 import com.palmnote.ui.settings.SectionHeader
 import com.palmnote.ui.settings.SettingRow
 import com.palmnote.ui.settings.SettingRowContent
-import com.palmnote.ui.theme.LocalSwitchColor
 import com.palmnote.ui.theme.vaultTint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -171,7 +170,7 @@ fun VaultSettingsScreen(
                                     viewModel.disableBiometric()
                                 }
                             },
-                            checkedTrackColor = LocalSwitchColor.current
+                            checkedTrackColor = MaterialTheme.colorScheme.primary
                         )
                     }
                     if (!state.isNoLockMode && state.initialized) {
@@ -184,7 +183,7 @@ fun VaultSettingsScreen(
                             CapsuleSwitch(
                                 checked = state.requireAuth,
                                 onCheckedChange = viewModel::setRequireAuth,
-                                checkedTrackColor = LocalSwitchColor.current
+                                checkedTrackColor = MaterialTheme.colorScheme.primary
                             )
                         }
                     }

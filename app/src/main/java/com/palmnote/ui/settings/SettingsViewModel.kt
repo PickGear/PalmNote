@@ -36,7 +36,6 @@ data class SettingsState(
     val defaultBillType: BillType = BillType.EXPENSE,
     val budgetReminderEnabled: Boolean = true,
     val calendarSyncEnabled: Boolean = false,
-    val switchColor: String = "#2D4A3E",
     val defaultStartPage: String = "dashboard",
     val language: String = "SYSTEM",
     val assetCount: Int = 0,
@@ -97,7 +96,6 @@ class SettingsViewModel @Inject constructor(
                 preferencesManager.defaultBillType,
                 preferencesManager.budgetReminderEnabled,
                 preferencesManager.calendarSyncEnabled,
-                preferencesManager.switchColor,
                 preferencesManager.defaultStartPage,
                 preferencesManager.language,
                 preferencesManager.birthdayReminderAdvanceDays,
@@ -134,35 +132,34 @@ class SettingsViewModel @Inject constructor(
                         defaultBillType = BillType.from((i(1) as? String) ?: "EXPENSE"),
                         budgetReminderEnabled = (i(2) as? Boolean) ?: true,
                         calendarSyncEnabled = (i(3) as? Boolean) ?: false,
-                        switchColor = (i(4) as? String) ?: "#2D4A3E",
-                        defaultStartPage = (i(5) as? String) ?: "dashboard",
-                        language = (i(6) as? String) ?: "SYSTEM",
-                        birthdayReminderAdvanceDays = (i(7) as? Int) ?: 3,
-                        anniversaryReminderAdvanceDays = (i(8) as? Int) ?: 3,
-                        dailyReminderEnabled = (i(9) as? Boolean) ?: true,
-                        billReminderEnabled = (i(10) as? Boolean) ?: true,
-                        dailyReminderHour = (i(11) as? Int) ?: 9,
-                        dailyReminderMinute = (i(12) as? Int) ?: 0,
-                        billReminderHour = (i(13) as? Int) ?: 21,
-                        billReminderMinute = (i(14) as? Int) ?: 0,
-                        biometricEnabled = (i(15) as? Boolean) ?: false,
-                        autoLockMode = (i(16) as? String) ?: com.palmnote.data.datastore.PreferencesManager.AUTO_LOCK_MODE_SYSTEM,
-                        appLockEnabled = (i(17) as? Boolean) ?: false,
-                        profileNickname = (i(18) as? String) ?: "",
-                        profileSignature = (i(19) as? String) ?: "",
-                        profileAvatar = (i(20) as? String) ?: "Spa",
-                        profileAvatarPath = (i(21) as? String) ?: "",
-                        appIconStyle = (i(22) as? String) ?: PreferencesManager.DEFAULT_APP_ICON_STYLE,
-                        themeColor = (i(23) as? String) ?: PreferencesManager.DEFAULT_THEME_COLOR,
-                        wallpaperStyle = (i(24) as? String) ?: PreferencesManager.DEFAULT_WALLPAPER_STYLE,
-                        wallpaperBlur = (i(25) as? Float) ?: PreferencesManager.DEFAULT_WALLPAPER_BLUR,
-                        wallpaperOpacity = (i(26) as? Float) ?: PreferencesManager.DEFAULT_WALLPAPER_OPACITY,
-                        wallpaperCustomUri = (i(27) as? String) ?: "",
-                        assetCount = (i(28) as? Int) ?: 0,
-                        goalCount = (i(29) as? Int) ?: 0,
-                        momentCount = (i(30) as? Int) ?: 0,
-                        anniversaryCount = (i(31) as? Int) ?: 0,
-                        autoLockTimeoutMinutes = (i(32) as? Int) ?: 5
+                        defaultStartPage = (i(4) as? String) ?: "dashboard",
+                        language = (i(5) as? String) ?: "SYSTEM",
+                        birthdayReminderAdvanceDays = (i(6) as? Int) ?: 3,
+                        anniversaryReminderAdvanceDays = (i(7) as? Int) ?: 3,
+                        dailyReminderEnabled = (i(8) as? Boolean) ?: true,
+                        billReminderEnabled = (i(9) as? Boolean) ?: true,
+                        dailyReminderHour = (i(10) as? Int) ?: 9,
+                        dailyReminderMinute = (i(11) as? Int) ?: 0,
+                        billReminderHour = (i(12) as? Int) ?: 21,
+                        billReminderMinute = (i(13) as? Int) ?: 0,
+                        biometricEnabled = (i(14) as? Boolean) ?: false,
+                        autoLockMode = (i(15) as? String) ?: com.palmnote.data.datastore.PreferencesManager.AUTO_LOCK_MODE_SYSTEM,
+                        appLockEnabled = (i(16) as? Boolean) ?: false,
+                        profileNickname = (i(17) as? String) ?: "",
+                        profileSignature = (i(18) as? String) ?: "",
+                        profileAvatar = (i(19) as? String) ?: "Spa",
+                        profileAvatarPath = (i(20) as? String) ?: "",
+                        appIconStyle = (i(21) as? String) ?: PreferencesManager.DEFAULT_APP_ICON_STYLE,
+                        themeColor = (i(22) as? String) ?: PreferencesManager.DEFAULT_THEME_COLOR,
+                        wallpaperStyle = (i(23) as? String) ?: PreferencesManager.DEFAULT_WALLPAPER_STYLE,
+                        wallpaperBlur = (i(24) as? Float) ?: PreferencesManager.DEFAULT_WALLPAPER_BLUR,
+                        wallpaperOpacity = (i(25) as? Float) ?: PreferencesManager.DEFAULT_WALLPAPER_OPACITY,
+                        wallpaperCustomUri = (i(26) as? String) ?: "",
+                        assetCount = (i(27) as? Int) ?: 0,
+                        goalCount = (i(28) as? Int) ?: 0,
+                        momentCount = (i(29) as? Int) ?: 0,
+                        anniversaryCount = (i(30) as? Int) ?: 0,
+                        autoLockTimeoutMinutes = (i(31) as? Int) ?: 5
                     )
                 }
             }.catch { AppLogger.w("SettingsVM", "Settings flow failed", it) }.collect()
@@ -195,10 +192,6 @@ class SettingsViewModel @Inject constructor(
                 _state.value = _state.value.copy(resultMessage = context.getString(R.string.settings_sync_cleared))
             }
         }
-    }
-
-    fun setSwitchColor(color: String) {
-        viewModelScope.launch { preferencesManager.setSwitchColor(color) }
     }
 
     fun setAppIconStyle(style: String, activityContext: Context? = null) {

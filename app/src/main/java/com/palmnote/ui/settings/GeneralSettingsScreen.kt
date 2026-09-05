@@ -119,15 +119,12 @@ fun GeneralSettingsScreen(
     var showLanguagePicker by remember { mutableStateOf(false) }
     var showThemeColorPicker by remember { mutableStateOf(false) }
     var showWallpaperPicker by remember { mutableStateOf(false) }
-    var showColorPicker by remember { mutableStateOf(false) }
     var showStartPagePicker by remember { mutableStateOf(false) }
     var showBillTypePicker by remember { mutableStateOf(false) }
     var showIconPicker by remember { mutableStateOf(false) }
     var pendingIconStyle by remember { mutableStateOf<String?>(null) }
     var showCalendarPermissionDialog by remember { mutableStateOf(false) }
     var permissionPermanentlyDenied by remember { mutableStateOf(false) }
-    var customColor by remember(showColorPicker) { mutableStateOf(state.switchColor.removePrefix("#")) }
-    var customColorError by remember { mutableStateOf(false) }
 
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -202,15 +199,6 @@ fun GeneralSettingsScreen(
                         }
                     }
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-                    val switchColor = state.switchColor.toComposeColor(MaterialTheme.colorScheme.primary)
-                    SettingRow(clickable = { showColorPicker = true }) {
-                        SettingRowContent(title = stringResource(R.string.settings_switch_color), subtitle = stringResource(R.string.settings_switch_color_subtitle))
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Box(modifier = Modifier.size(28.dp).clip(CircleShape).background(switchColor).border(2.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape))
-                            Icon(Icons.Filled.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                    }
-                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                     SettingRow(clickable = { showWallpaperPicker = true }) {
                         SettingRowContent(
                             title = stringResource(R.string.settings_wallpaper),
@@ -265,7 +253,7 @@ fun GeneralSettingsScreen(
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                     SettingRow {
                         SettingRowContent(title = stringResource(R.string.settings_budget_reminder))
-                        CapsuleSwitch(checked = state.budgetReminderEnabled, onCheckedChange = { viewModel.setBudgetReminderEnabled(it) }, checkedTrackColor = LocalSwitchColor.current)
+                        CapsuleSwitch(checked = state.budgetReminderEnabled, onCheckedChange = { viewModel.setBudgetReminderEnabled(it) }, checkedTrackColor = MaterialTheme.colorScheme.primary)
                     }
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                     SettingRow {
@@ -274,7 +262,7 @@ fun GeneralSettingsScreen(
                             if (enabled && ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_CALENDAR) != PackageManager.PERMISSION_GRANTED) {
                                 showCalendarPermissionDialog = true
                             } else { viewModel.setCalendarSyncEnabled(enabled) }
-                        }, checkedTrackColor = LocalSwitchColor.current)
+                        }, checkedTrackColor = MaterialTheme.colorScheme.primary)
                     }
                 }
             }
@@ -292,7 +280,7 @@ fun GeneralSettingsScreen(
                     val tint = themeColors[mode] ?: MaterialTheme.colorScheme.primary
                     Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(tint.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) { Icon(icon, null, tint = tint, modifier = Modifier.size(20.dp)) }
                     Spacer(Modifier.width(12.dp)); Text(label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-                    RadioButton(selected = state.themeMode == mode, onClick = { viewModel.setThemeMode(mode); showThemePicker = false }, colors = RadioButtonDefaults.colors(selectedColor = LocalSwitchColor.current))
+                    RadioButton(selected = state.themeMode == mode, onClick = { viewModel.setThemeMode(mode); showThemePicker = false }, colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary))
                 }
                 if (mode != themeOptions.last().first) HorizontalDivider(modifier = Modifier.padding(horizontal = 52.dp))
             } } },
@@ -310,7 +298,7 @@ fun GeneralSettingsScreen(
                     val tint = langColors[lang] ?: MaterialTheme.colorScheme.primary
                     Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(tint.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) { Icon(icon, null, tint = tint, modifier = Modifier.size(20.dp)) }
                     Spacer(Modifier.width(12.dp)); Text(label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-                    RadioButton(selected = state.language == lang, onClick = { viewModel.setLanguage(lang); showLanguagePicker = false }, colors = RadioButtonDefaults.colors(selectedColor = LocalSwitchColor.current))
+                    RadioButton(selected = state.language == lang, onClick = { viewModel.setLanguage(lang); showLanguagePicker = false }, colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary))
                 }
                 if (lang != langOptions.last().first) HorizontalDivider(modifier = Modifier.padding(horizontal = 52.dp))
             } } },
@@ -454,38 +442,6 @@ fun GeneralSettingsScreen(
         )
     }
 
-    if (showColorPicker) {
-        val presetColors = listOf("#2D4A3E", "#34A853", "#4285F4", "#EA4335", "#FBBC04", "#FF6D01", "#AB47BC", "#1E88E5", "#00BCD4", "#66BB6A")
-        AppDialog(
-            onDismissRequest = { showColorPicker = false }, title = { Text(stringResource(R.string.settings_color_pick_title), fontWeight = FontWeight.Bold) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(stringResource(R.string.settings_preset_color), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        presetColors.forEach { color ->
-                            val c = color.toComposeColor(Color.Gray)
-                            val isSelected = state.switchColor == color
-                            Box(modifier = Modifier.size(44.dp).clip(CircleShape).background(c).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { viewModel.setSwitchColor(color) }.then(if (isSelected) Modifier.border(3.dp, Color.White, CircleShape) else Modifier), contentAlignment = Alignment.Center) {
-                                if (isSelected) Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(20.dp))
-                            }
-                        }
-                    }
-                    HorizontalDivider()
-                    Text(stringResource(R.string.settings_custom_color), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedTextField(value = customColor, onValueChange = { v -> customColor = v.filter { it.isLetterOrDigit() }.take(6); customColorError = false }, label = { Text(stringResource(R.string.settings_hex_color), fontWeight = FontWeight.Bold) }, prefix = { Text("#") }, isError = customColorError, singleLine = true, modifier = Modifier.weight(1f), shape = MaterialTheme.shapes.small)
-                        val previewColor = "#$customColor".toComposeColor(Color.Gray)
-                        val isCustomSelected = state.switchColor == "#$customColor" && customColor.length == 6
-                        Box(modifier = Modifier.size(44.dp).clip(CircleShape).background(previewColor).then(if (isCustomSelected) Modifier.border(3.dp, Color.White, CircleShape) else Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape)).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { if (customColor.length == 6) viewModel.setSwitchColor("#$customColor"); else customColorError = true }, contentAlignment = Alignment.Center) {
-                            if (isCustomSelected) Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(20.dp))
-                        }
-                    }
-                }
-            },
-            confirmButton = { TextButton(onClick = { showColorPicker = false }) { Text(stringResource(R.string.settings_color_done), fontWeight = FontWeight.Bold) } }
-        )
-    }
-
     if (showStartPagePicker) {
         val startPageColors = mapOf("dashboard" to ModuleHome, "asset" to ModuleItem, "bill" to ModuleBill, "life" to ModuleLife)
         val startPageOptions = listOf(Triple("dashboard", stringResource(R.string.settings_home), Icons.Outlined.Home), Triple("asset", stringResource(R.string.settings_items), Icons.Outlined.Inventory2), Triple("bill", stringResource(R.string.bill_title), Icons.Outlined.AccountBalanceWallet), Triple("life", stringResource(R.string.life_title), Icons.Outlined.FavoriteBorder))
@@ -496,7 +452,7 @@ fun GeneralSettingsScreen(
                 Row(modifier = Modifier.fillMaxWidth().clip(MaterialTheme.shapes.medium).clickable { viewModel.setDefaultStartPage(route); showStartPagePicker = false }.padding(vertical = 8.dp, horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(tint.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) { Icon(icon, null, tint = tint, modifier = Modifier.size(20.dp)) }
                     Spacer(Modifier.width(12.dp)); Text(label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-                    RadioButton(selected = state.defaultStartPage == route, onClick = { viewModel.setDefaultStartPage(route); showStartPagePicker = false }, colors = RadioButtonDefaults.colors(selectedColor = LocalSwitchColor.current))
+                    RadioButton(selected = state.defaultStartPage == route, onClick = { viewModel.setDefaultStartPage(route); showStartPagePicker = false }, colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary))
                 }
                 if (route != startPageOptions.last().first) HorizontalDivider(modifier = Modifier.padding(horizontal = 52.dp))
             } } },
@@ -516,7 +472,7 @@ fun GeneralSettingsScreen(
                 Row(modifier = Modifier.fillMaxWidth().clip(MaterialTheme.shapes.medium).clickable { viewModel.setDefaultBillType(type); showBillTypePicker = false }.padding(vertical = 8.dp, horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(tint.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) { Icon(icon, null, tint = tint, modifier = Modifier.size(20.dp)) }
                     Spacer(Modifier.width(12.dp)); Text(label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-                    RadioButton(selected = state.defaultBillType.value == type, onClick = { viewModel.setDefaultBillType(type); showBillTypePicker = false }, colors = RadioButtonDefaults.colors(selectedColor = LocalSwitchColor.current))
+                    RadioButton(selected = state.defaultBillType.value == type, onClick = { viewModel.setDefaultBillType(type); showBillTypePicker = false }, colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary))
                 }
                 if (type != billTypeOptions.last().first) HorizontalDivider(modifier = Modifier.padding(horizontal = 52.dp))
             } } },
