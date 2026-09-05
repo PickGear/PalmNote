@@ -189,7 +189,7 @@ private fun LoadingContent(text: String) {
 private fun DoneContent(count: Int, onBack: () -> Unit, onContinue: () -> Unit) {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(Icons.Filled.CheckCircle, null, modifier = Modifier.size(64.dp), tint = PrimaryGreenLight)
+            Icon(Icons.Filled.CheckCircle, null, modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.primary)
             Spacer(modifier = Modifier.height(16.dp))
             Text(stringResource(R.string.bill_import_complete), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(8.dp))

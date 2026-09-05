@@ -131,7 +131,7 @@ fun SettingsScreen(
                         ) {
                             val avatarIcon = try { AppIcon.valueOf(state.profileAvatar).imageVector } catch (_: Exception) { Icons.Filled.Spa }
                             Box(
-                                modifier = Modifier.size(52.dp).clip(CircleShape).background(PrimaryGreenLight.copy(alpha = 0.15f)),
+                                modifier = Modifier.size(52.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
                                 contentAlignment = Alignment.Center
                             ) {
                                 if (state.profileAvatarPath.isNotBlank()) {
@@ -142,7 +142,7 @@ fun SettingsScreen(
                                         contentScale = ContentScale.Crop
                                     )
                                 } else {
-                                    Icon(avatarIcon, null, tint = PrimaryGreenLight, modifier = Modifier.size(28.dp))
+                                    Icon(avatarIcon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
                                 }
                             }
                             Spacer(Modifier.width(14.dp))
@@ -188,7 +188,7 @@ fun SettingsScreen(
                         HorizontalDivider(modifier = Modifier.padding(horizontal = 56.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                         SettingsRowItem(icon = Icons.Outlined.Lock, title = stringResource(R.string.settings_security), subtitle = if (state.appLockEnabled) stringResource(R.string.settings_security_subtitle_on) else stringResource(R.string.settings_security_subtitle), tint = ModuleSettings, onClick = onNavigateToAppLock)
                         HorizontalDivider(modifier = Modifier.padding(horizontal = 56.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-                        SettingsRowItem(icon = Icons.Outlined.Info, title = stringResource(R.string.settings_about_app), subtitle = stringResource(R.string.settings_about_version), tint = PrimaryGreenLight, onClick = onNavigateToAbout)
+                        SettingsRowItem(icon = Icons.Outlined.Info, title = stringResource(R.string.settings_about_app), subtitle = stringResource(R.string.settings_about_version), tint = MaterialTheme.colorScheme.primary, onClick = onNavigateToAbout)
                     }
                 }
             }
@@ -233,7 +233,7 @@ fun SettingsScreen(
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                         Box(
-                            modifier = Modifier.size(64.dp).clip(CircleShape).background(PrimaryGreenLight.copy(alpha = 0.15f)),
+                            modifier = Modifier.size(64.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
                             contentAlignment = Alignment.Center
                         ) {
                             if (editAvatarPath.isNotBlank()) {
@@ -245,7 +245,7 @@ fun SettingsScreen(
                                 )
                             } else {
                                 val icon = try { AppIcon.valueOf(editAvatar).imageVector } catch (_: Exception) { Icons.Filled.Spa }
-                                Icon(icon, null, tint = PrimaryGreenLight, modifier = Modifier.size(32.dp))
+                                Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(32.dp))
                             }
                         }
                         Spacer(Modifier.width(16.dp))
