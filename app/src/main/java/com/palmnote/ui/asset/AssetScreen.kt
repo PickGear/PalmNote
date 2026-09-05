@@ -177,7 +177,8 @@ fun AssetScreen(
                         }
                     } else {
                         IconButton(onClick = { showSearch = true }) {
-                            Icon(Icons.Outlined.Search, contentDescription = stringResource(R.string.search), tint = MaterialTheme.colorScheme.primary)
+                Icon(Icons.Outlined.Search, contentDescription = stringResource(R.string.search),
+                    tint = Color(0xFF616161))
                         }
                     }
                 }
@@ -243,7 +244,7 @@ fun AssetScreen(
                                 text = CurrencyUtils.formatCompact(LocalContext.current, state.heldValue.toMoney()),
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
+                                color = ModuleItem
                             )
                             Text(
                                 text = stringResource(R.string.asset_count, state.heldCount),
@@ -908,14 +909,14 @@ fun GridAssetCard(
                         if (asset.warrantyExpireDate != null) {
                             Surface(
                                 shape = MaterialTheme.shapes.medium,
-                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                                color = ModuleItem.copy(alpha = 0.12f)
                             ) {
                                 Text(
                                 text = if (asset.isWarrantyValid) stringResource(R.string.asset_warranty_valid) else stringResource(R.string.asset_warranty_expired),
                                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Medium,
-                                    color = MaterialTheme.colorScheme.primary,
+                                    color = ModuleItem,
                                     maxLines = 1
                                 )
                             }

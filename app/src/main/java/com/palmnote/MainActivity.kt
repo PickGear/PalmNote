@@ -36,6 +36,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -51,10 +52,9 @@ import com.palmnote.data.lock.AppLockManager
 import com.palmnote.ui.lock.AppLockScreen
 import com.palmnote.ui.lock.AppLockState
 import com.palmnote.ui.navigation.PalmNoteNavHost
-import com.palmnote.ui.theme.LocalSwitchColor
-import com.palmnote.ui.components.toComposeColor
 import com.palmnote.ui.theme.PalmNoteTheme
 import com.palmnote.ui.theme.WallpaperBackground
+import com.palmnote.ui.theme.ModuleHome
 import androidx.compose.ui.res.stringResource
 import com.palmnote.app.R
 import dagger.hilt.android.AndroidEntryPoint
@@ -66,7 +66,8 @@ private data class WallpaperPrefs(
     val style: String,
     val opacity: Float,
     val blur: Float,
-    val customUri: String
+    val customUri: String,
+    val customColor: String
 )
 
 @AndroidEntryPoint
@@ -164,35 +165,33 @@ class MainActivity : AppCompatActivity() {
             val preferences by remember {
                 val theme = combine(
                     preferencesManager.themeMode,
-                    preferencesManager.switchColor,
                     preferencesManager.themeColor
-                ) { mode, switch, color -> Triple(mode, switch, color) }
+                ) { mode, color -> mode to color }
                 val wallpaper = combine(
                     preferencesManager.wallpaperStyle,
                     preferencesManager.wallpaperOpacity,
                     preferencesManager.wallpaperBlur,
-                    preferencesManager.wallpaperCustomUri
-                ) { style, opacity, blur, uri -> WallpaperPrefs(style, opacity, blur, uri) }
+                    preferencesManager.wallpaperCustomUri,
+                    preferencesManager.wallpaperCustomColor
+                ) { style, opacity, blur, uri, color -> WallpaperPrefs(style, opacity, blur, uri, color) }
                 combine(theme, wallpaper) { t, w -> t to w }
             }.collectAsStateWithLifecycle(
-                initialValue = Triple("SYSTEM", "#2D4A3E", PreferencesManager.DEFAULT_THEME_COLOR) to
+                initialValue = ("SYSTEM" to PreferencesManager.DEFAULT_THEME_COLOR) to
                     WallpaperPrefs(
                         PreferencesManager.DEFAULT_WALLPAPER_STYLE,
                         PreferencesManager.DEFAULT_WALLPAPER_OPACITY,
                         PreferencesManager.DEFAULT_WALLPAPER_BLUR,
-                        ""
+                        "",
+                        PreferencesManager.DEFAULT_WALLPAPER_CUSTOM_COLOR
                     )
             )
             val (themePrefs, wallpaper) = preferences
-            val (mode, switchColorRaw, themeColorId) = themePrefs
+            val (mode, themeColorId) = themePrefs
             val isDarkTheme = when (mode) {
                 "DARK" -> true
                 "LIGHT" -> false
                 else -> isSystemInDarkTheme()
             }
-            val switchColor = switchColorRaw.toComposeColor(
-                if (isDarkTheme) Color(0xFF7BC4A0) else Color(0xFF2D4A3E)
-            )
             val themeColor = com.palmnote.ui.theme.ThemePackages.getById(themeColorId).let {
                 if (isDarkTheme) it.darkPrimary else it.lightPrimary
             }
@@ -218,10 +217,10 @@ class MainActivity : AppCompatActivity() {
                 wallpaperStyle = wallpaper.style,
                 wallpaperOpacity = wallpaper.opacity,
                 wallpaperBlur = wallpaper.blur,
-                wallpaperCustomUri = wallpaper.customUri
+                wallpaperCustomUri = wallpaper.customUri,
+                wallpaperCustomColor = wallpaper.customColor
             ) {
                 WallpaperBackground(modifier = Modifier.fillMaxSize()) {
-                    CompositionLocalProvider(LocalSwitchColor provides switchColor) {
                     if (privacyAgreed == null) {
                         // Still loading privacy state - show nothing
                     } else if (privacyAgreed == false) {
@@ -243,14 +242,14 @@ class MainActivity : AppCompatActivity() {
                                     modifier = Modifier
                                         .size(72.dp)
                                         .clip(CircleShape)
-                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
+                                        .background(ModuleHome),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
-                                        Icons.Filled.Spa,
+                                        painter = painterResource(id = R.drawable.ic_launcher_foreground_bw),
                                         contentDescription = null,
-                                        modifier = Modifier.size(36.dp),
-                                        tint = MaterialTheme.colorScheme.primary
+                                        modifier = Modifier.size(56.dp),
+                                        tint = Color.White
                                     )
                                 }
 
@@ -418,7 +417,6 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             }
-        }
         }
     }
 

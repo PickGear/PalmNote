@@ -43,7 +43,6 @@ class PreferencesManager @Inject constructor(
         val LIFE_CALENDAR_EXPANDED = booleanPreferencesKey("life_calendar_expanded")
         val LIFE_CALENDAR_SELECTED_DATE = longPreferencesKey("life_calendar_selected_date")
         val CALENDAR_SYNC_ENABLED = booleanPreferencesKey("calendar_sync_enabled")
-        val SWITCH_COLOR = stringPreferencesKey("switch_color")
         val DEFAULT_START_PAGE = stringPreferencesKey("default_start_page")
         val LANGUAGE = stringPreferencesKey("language")
         val APP_LOCK_ENABLED = booleanPreferencesKey("app_lock_enabled")
@@ -86,6 +85,9 @@ class PreferencesManager @Inject constructor(
         val WALLPAPER_BLUR = floatPreferencesKey("wallpaper_blur")
         val WALLPAPER_OPACITY = floatPreferencesKey("wallpaper_opacity")
         val WALLPAPER_CUSTOM_URI = stringPreferencesKey("wallpaper_custom_uri")
+        val WALLPAPER_CUSTOM_COLOR = stringPreferencesKey("wallpaper_custom_color")
+        val DASHBOARD_MESSAGE_MODE = booleanPreferencesKey("dashboard_message_mode")
+        val DASHBOARD_MESSAGE_LAST_DATE = stringPreferencesKey("dashboard_message_last_date")
 
         const val AUTO_LOCK_MODE_IMMEDIATE = "immediate"
         const val AUTO_LOCK_MODE_SYSTEM = "system"
@@ -103,6 +105,7 @@ class PreferencesManager @Inject constructor(
         const val DEFAULT_WALLPAPER_STYLE = "none"
         const val DEFAULT_WALLPAPER_BLUR = 0f
         const val DEFAULT_WALLPAPER_OPACITY = 1f
+        const val DEFAULT_WALLPAPER_CUSTOM_COLOR = "#FFFFFF"
     }
 
     val themeMode: Flow<String> = prefsFlow.map { it[THEME_MODE] ?: "SYSTEM" }
@@ -118,10 +121,6 @@ class PreferencesManager @Inject constructor(
     val calendarSyncEnabled: Flow<Boolean> = prefsFlow.map { it[CALENDAR_SYNC_ENABLED] ?: false }
 
     suspend fun setCalendarSyncEnabled(enabled: Boolean) { context.dataStore.edit { it[CALENDAR_SYNC_ENABLED] = enabled } }
-
-    val switchColor: Flow<String> = prefsFlow.map { it[SWITCH_COLOR] ?: "#2D4A3E" }
-
-    suspend fun setSwitchColor(color: String) { context.dataStore.edit { it[SWITCH_COLOR] = color } }
 
     val themeColor: Flow<String> = prefsFlow.map { it[THEME_COLOR] ?: DEFAULT_THEME_COLOR }
 
@@ -142,11 +141,20 @@ class PreferencesManager @Inject constructor(
     val wallpaperBlur: Flow<Float> = prefsFlow.map { it[WALLPAPER_BLUR] ?: DEFAULT_WALLPAPER_BLUR }
     val wallpaperOpacity: Flow<Float> = prefsFlow.map { it[WALLPAPER_OPACITY] ?: DEFAULT_WALLPAPER_OPACITY }
     val wallpaperCustomUri: Flow<String> = prefsFlow.map { it[WALLPAPER_CUSTOM_URI] ?: "" }
+    val wallpaperCustomColor: Flow<String> = prefsFlow.map { it[WALLPAPER_CUSTOM_COLOR] ?: DEFAULT_WALLPAPER_CUSTOM_COLOR }
 
     suspend fun setWallpaperStyle(style: String) { context.dataStore.edit { it[WALLPAPER_STYLE] = style } }
     suspend fun setWallpaperBlur(blur: Float) { context.dataStore.edit { it[WALLPAPER_BLUR] = blur } }
     suspend fun setWallpaperOpacity(opacity: Float) { context.dataStore.edit { it[WALLPAPER_OPACITY] = opacity } }
     suspend fun setWallpaperCustomUri(uri: String) { context.dataStore.edit { it[WALLPAPER_CUSTOM_URI] = uri } }
+    suspend fun setWallpaperCustomColor(color: String) { context.dataStore.edit { it[WALLPAPER_CUSTOM_COLOR] = color } }
+
+    val dashboardMessageMode: Flow<Boolean> = prefsFlow.map { it[DASHBOARD_MESSAGE_MODE] ?: false }
+    val dashboardMessageLastDate: Flow<String> = prefsFlow.map { it[DASHBOARD_MESSAGE_LAST_DATE] ?: "" }
+
+    suspend fun setDashboardMessageMode(enabled: Boolean) { context.dataStore.edit { it[DASHBOARD_MESSAGE_MODE] = enabled } }
+    suspend fun setDashboardMessageLastDate(date: String) { context.dataStore.edit { it[DASHBOARD_MESSAGE_LAST_DATE] = date } }
+    fun getDashboardMessageModeSync(): Boolean = prefsState.value[DASHBOARD_MESSAGE_MODE] ?: false
 
     val defaultStartPage: Flow<String> = prefsFlow.map { it[DEFAULT_START_PAGE] ?: "dashboard" }
 

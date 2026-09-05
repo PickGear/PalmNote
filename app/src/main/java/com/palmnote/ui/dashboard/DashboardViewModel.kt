@@ -84,16 +84,40 @@ class DashboardViewModel @Inject constructor(
 
     val categoryConfigs: StateFlow<List<CategoryConfig>> = cachedCategoryConfigs
 
+    private val _dashboardMessageMode = MutableStateFlow(preferencesManager.getDashboardMessageModeSync())
+    val dashboardMessageMode: StateFlow<Boolean> = _dashboardMessageMode.asStateFlow()
+
+    val dashboardMessageLastDate: StateFlow<String> = preferencesManager.dashboardMessageLastDate
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
+
+    val profileNickname: StateFlow<String> = preferencesManager.profileNickname
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
+
+    val profileAvatar: StateFlow<String> = preferencesManager.profileAvatar
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "Spa")
+
+    val profileAvatarPath: StateFlow<String> = preferencesManager.profileAvatarPath
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
+
     init {
         loadDashboardData()
         loadBudgetReminder()
         loadCardConfigs()
         loadVaultData()
+        loadDashboardMessageMode()
+    }
+
+    private fun loadDashboardMessageMode() {
+        viewModelScope.launch {
+            preferencesManager.dashboardMessageMode.collect { mode ->
+                _dashboardMessageMode.value = mode
+            }
+        }
     }
 
     private fun loadCardConfigs() {
         viewModelScope.launch {
-            preferencesManager.dashboardCardConfigs.collect { configs ->
+            preferencesManager.dashboardCardConfigs.first().let { configs ->
                 _cardConfigs.value = configs
             }
         }
@@ -106,6 +130,15 @@ class DashboardViewModel @Inject constructor(
         saveConfigsJob = viewModelScope.launch {
             delay(300)
             _cardConfigs.value.let { preferencesManager.saveDashboardCardConfigs(it) }
+        }
+    }
+
+    fun setCardCustomColor(type: CardType, color: String?) {
+        _cardConfigs.update { configs ->
+            configs.map { if (it.type == type) it.copy(customColor = color) else it }
+        }
+        viewModelScope.launch {
+            preferencesManager.saveDashboardCardConfigs(_cardConfigs.value)
         }
     }
 
@@ -140,6 +173,19 @@ class DashboardViewModel @Inject constructor(
             configs.map { if (it.type == type) it.copy(visible = !it.visible) else it }
         }
         saveConfigs()
+    }
+
+    fun toggleDashboardMessageMode() {
+        viewModelScope.launch {
+            val current = dashboardMessageMode.value
+            preferencesManager.setDashboardMessageMode(!current)
+        }
+    }
+
+    fun setDashboardMessageLastDate(date: String) {
+        viewModelScope.launch {
+            preferencesManager.setDashboardMessageLastDate(date)
+        }
     }
 
     fun checkInHabit(goalId: Long) {

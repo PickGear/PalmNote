@@ -6,17 +6,12 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Arrangement
-
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -34,7 +29,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -50,7 +44,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import org.json.JSONArray
 import com.palmnote.R
 import com.palmnote.ui.theme.*
 import kotlinx.coroutines.delay
@@ -1141,6 +1134,97 @@ val PRESET_COLOR_HEXES = listOf(
     "#7986CB", "#BA68C8", "#CE93D8", "#F06292", "#F48FB1",
     "#FF80AB", "#34A853", "#00ACC1", "#4285F4"
 )
+
+@Composable
+fun InlineColorPicker(
+    presetColors: List<Pair<String, Color>>,
+    selectedColor: String?,
+    onColorSelected: (String?) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var customHex by remember { mutableStateOf("") }
+
+    Column(modifier = modifier) {
+        Text(
+            stringResource(R.string.wallpaper_preset),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(Modifier.height(8.dp))
+        Column(
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            presetColors.chunked(4).forEach { row ->
+                Row(
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    row.forEach { (name, color) ->
+                        val isSelected = selectedColor == name
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(color)
+                                .then(
+                                    if (isSelected) Modifier.border(3.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                                    else Modifier.border(1.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f), CircleShape)
+                                )
+                                .clickable { onColorSelected(name) },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (isSelected) {
+                                Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(18.dp))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        Spacer(Modifier.height(12.dp))
+        HorizontalDivider()
+        Spacer(Modifier.height(12.dp))
+        Text(
+            stringResource(R.string.wallpaper_custom_color),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(Modifier.height(8.dp))
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            OutlinedTextField(
+                value = customHex,
+                onValueChange = { v -> customHex = v.filter { it.isLetterOrDigit() }.take(6) },
+                label = { Text("HEX") },
+                prefix = { Text("#", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold) },
+                singleLine = true,
+                modifier = Modifier.weight(1f),
+                shape = MaterialTheme.shapes.small
+            )
+            val previewColor = "#$customHex".toComposeColor(Color.Gray)
+            val isValid = customHex.length == 6
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(previewColor)
+                    .then(
+                        if (isValid) Modifier.border(2.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                        else Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape)
+                    )
+                    .clickable(enabled = isValid) { onColorSelected("#$customHex") },
+                contentAlignment = Alignment.Center
+            ) {
+                if (isValid) {
+                    Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(18.dp))
+                }
+            }
+        }
+    }
+}
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable

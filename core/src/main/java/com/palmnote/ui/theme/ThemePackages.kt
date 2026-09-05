@@ -17,7 +17,10 @@ object ThemePackages {
         ThemePackage("green", Color(0xFF2D4A3E), Color(0xFF7BC4A0)),
         ThemePackage("blue", Color(0xFF1565C0), Color(0xFF64B5F6)),
         ThemePackage("purple", Color(0xFF6A1B9A), Color(0xFFBA68C8)),
-        ThemePackage("orange", Color(0xFFE65100), Color(0xFFFF8A65))
+        ThemePackage("orange", Color(0xFFE65100), Color(0xFFFF8A65)),
+        ThemePackage("red", Color(0xFFC62828), Color(0xFFEF5350)),
+        ThemePackage("teal", Color(0xFF00695C), Color(0xFF4DB6AC)),
+        ThemePackage("pink", Color(0xFFAD1457), Color(0xFFF06292))
     )
 
     fun getById(id: String): ThemePackage {

@@ -15,12 +15,10 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import com.palmnote.data.wallpaper.WallpaperPresets
 import com.palmnote.data.wallpaper.decodeWallpaperBitmap
+import com.palmnote.ui.components.toComposeColor
 
 val LocalIsDarkTheme = staticCompositionLocalOf { false }
 val LocalThemeColor = staticCompositionLocalOf { Color(0xFF0891B2) }
-
-@Deprecated("Use LocalThemeColor instead", ReplaceWith("LocalThemeColor"))
-val LocalSwitchColor = staticCompositionLocalOf { PrimaryGreen }
 
 // 自定义壁纸异步解码：IO 线程 + 按屏幕尺寸降采样，结果按来源缓存，
 // 避免在组合中同步解码大图（主线程卡顿 + 数十 MB 内存峰值）
@@ -42,6 +40,7 @@ private fun rememberWallpaperData(
     opacity: Float,
     blur: Float,
     customUri: String,
+    customColor: String,
     darkTheme: Boolean
 ): WallpaperData {
     val customBitmap = if (style == "custom") rememberCustomWallpaperBitmap(customUri) else null
@@ -50,11 +49,15 @@ private fun rememberWallpaperData(
         "custom" -> customBitmap?.let {
             WallpaperData(bitmap = it, style = "custom", opacity = opacity, blur = blur)
         } ?: WallpaperData(style = "none")
+        "color" -> {
+            val color = customColor.toComposeColor(androidx.compose.ui.graphics.Color.White)
+            WallpaperData(solidColor = color, style = "color", opacity = opacity, blur = blur)
+        }
         else -> {
             val preset = WallpaperPresets.getById(style)
             if (preset != null) {
                 WallpaperData(
-                    gradientColors = if (darkTheme) preset.darkColors else preset.lightColors,
+                    solidColor = if (darkTheme) preset.darkColor else preset.lightColor,
                     style = style,
                     opacity = opacity,
                     blur = blur
@@ -72,6 +75,7 @@ fun PalmNoteTheme(
     wallpaperOpacity: Float = 1f,
     wallpaperBlur: Float = 0f,
     wallpaperCustomUri: String = "",
+    wallpaperCustomColor: String = "#FFFFFF",
     content: @Composable () -> Unit
 ) {
     val wallpaperData = rememberWallpaperData(
@@ -79,6 +83,7 @@ fun PalmNoteTheme(
         opacity = wallpaperOpacity,
         blur = wallpaperBlur,
         customUri = wallpaperCustomUri,
+        customColor = wallpaperCustomColor,
         darkTheme = darkTheme
     )
 

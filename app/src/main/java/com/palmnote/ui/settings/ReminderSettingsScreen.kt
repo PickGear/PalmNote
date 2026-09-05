@@ -85,7 +85,7 @@ fun ReminderSettingsScreen(
                             title = stringResource(R.string.settings_daily_reminder),
                             subtitle = stringResource(R.string.settings_daily_reminder_subtitle)
                         )
-                        CapsuleSwitch(checked = state.dailyReminderEnabled, onCheckedChange = { enabled -> if (enabled && Build.VERSION.SDK_INT >= 33) { showNotificationPermissionDialog = true } else { viewModel.setDailyReminderEnabled(enabled) } }, checkedTrackColor = LocalSwitchColor.current)
+                        CapsuleSwitch(checked = state.dailyReminderEnabled, onCheckedChange = { enabled -> if (enabled && Build.VERSION.SDK_INT >= 33) { showNotificationPermissionDialog = true } else { viewModel.setDailyReminderEnabled(enabled) } }, checkedTrackColor = MaterialTheme.colorScheme.primary)
                     }
                     if (state.dailyReminderEnabled) {
                         HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
@@ -104,7 +104,7 @@ fun ReminderSettingsScreen(
                             title = stringResource(R.string.settings_bill_reminder),
                             subtitle = stringResource(R.string.settings_bill_reminder_subtitle)
                         )
-                        CapsuleSwitch(checked = state.billReminderEnabled, onCheckedChange = { viewModel.setBillReminderEnabled(it) }, checkedTrackColor = LocalSwitchColor.current)
+                        CapsuleSwitch(checked = state.billReminderEnabled, onCheckedChange = { viewModel.setBillReminderEnabled(it) }, checkedTrackColor = MaterialTheme.colorScheme.primary)
                     }
                     if (state.billReminderEnabled) {
                         HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
@@ -231,7 +231,7 @@ fun ReminderSettingsScreen(
                             }
                             Spacer(modifier = Modifier.width(12.dp))
                             Text(stringResource(R.string.settings_days, days), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-                            RadioButton(selected = state.birthdayReminderAdvanceDays == days, onClick = { viewModel.setBirthdayReminderAdvanceDays(days); showBirthdayAdvancePicker = false }, colors = RadioButtonDefaults.colors(selectedColor = LocalSwitchColor.current))
+                            RadioButton(selected = state.birthdayReminderAdvanceDays == days, onClick = { viewModel.setBirthdayReminderAdvanceDays(days); showBirthdayAdvancePicker = false }, colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary))
                         }
                         if (days != options.last()) HorizontalDivider(modifier = Modifier.padding(horizontal = 52.dp))
                     }
@@ -258,7 +258,7 @@ fun ReminderSettingsScreen(
                             }
                             Spacer(modifier = Modifier.width(12.dp))
                             Text(stringResource(R.string.settings_days, days), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-                            RadioButton(selected = state.anniversaryReminderAdvanceDays == days, onClick = { viewModel.setAnniversaryReminderAdvanceDays(days); showAnniversaryAdvancePicker = false }, colors = RadioButtonDefaults.colors(selectedColor = LocalSwitchColor.current))
+                            RadioButton(selected = state.anniversaryReminderAdvanceDays == days, onClick = { viewModel.setAnniversaryReminderAdvanceDays(days); showAnniversaryAdvancePicker = false }, colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary))
                         }
                         if (days != options.last()) HorizontalDivider(modifier = Modifier.padding(horizontal = 52.dp))
                     }

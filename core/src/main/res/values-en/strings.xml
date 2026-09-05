@@ -204,4 +204,6 @@
     <string name="notification_channel_reminder_desc">Birthday, anniversary, subscription billing reminders</string>
     <string name="app_lock_setup_pin">Set PIN Code</string>
     <string name="asset_warranty_active">Under warranty</string>
+    <string name="wallpaper_preset">Preset</string>
+    <string name="wallpaper_custom_color">Custom Color</string>
 </resources>

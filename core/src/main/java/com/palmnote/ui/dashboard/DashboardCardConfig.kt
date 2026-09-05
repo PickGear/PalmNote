@@ -22,7 +22,8 @@ enum class CardType {
 @Serializable
 data class DashboardCardConfig(
     val type: CardType,
-    val visible: Boolean = true
+    val visible: Boolean = true,
+    val customColor: String? = null
 ) {
     companion object {
         val defaults: List<DashboardCardConfig> = CardType.entries.map {

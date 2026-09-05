@@ -162,7 +162,26 @@ class BillImportViewModel @Inject constructor(
         val encoding = detectEncoding(rawBytes)
         diag.append(context.getString(R.string.bill_import_diag_encoding, encoding) + "\n")
         val content = try { String(rawBytes, Charset.forName(encoding)) } catch (_: Exception) { String(rawBytes, Charset.forName("UTF-8")) }
-        return content.replace("\u0000", "").lines().map { it.trimStart('\uFEFF').trim() }.filter { it.isNotBlank() }
+        return reflowQuotedLines(
+            content.replace("\u0000", "").lines().map { it.trimStart('\uFEFF').trim() }.filter { it.isNotBlank() }
+        )
+    }
+
+    // CSV 字段内含引号包裹的换行时，lines() 会把一条记录撕成多行（丢行/错位）——
+    // 按引号配对把被撕开的行重新拼回
+    private fun reflowQuotedLines(lines: List<String>): List<String> {
+        val out = mutableListOf<String>()
+        val buf = StringBuilder()
+        for (line in lines) {
+            if (buf.isNotEmpty()) buf.append('\n')
+            buf.append(line)
+            if (buf.count { it == '"' } % 2 == 0) {
+                out.add(buf.toString())
+                buf.clear()
+            }
+        }
+        if (buf.isNotEmpty()) out.add(buf.toString())
+        return out
     }
 
     fun processOcrImage(@ApplicationContext context: Context, uri: Uri) {
