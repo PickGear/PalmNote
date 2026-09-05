@@ -51,10 +51,12 @@ internal fun DashboardCardContent(
     onNavigateToVault: () -> Unit = {},
     onHabitCheckIn: (Long) -> Unit = {},
     presetCategoryOverrides: Map<String, String>,
-    categoryConfigs: List<com.palmnote.data.db.entity.CategoryConfig>
+    categoryConfigs: List<com.palmnote.data.db.entity.CategoryConfig>,
+    cardConfigs: List<DashboardCardConfig> = emptyList()
 ) {
+    val netWorthColor = cardConfigs.find { it.type == CardType.NET_WORTH }?.customColor?.toComposeColor() ?: ModuleHome
     when (type) {
-        CardType.NET_WORTH -> NetWorthCard(state, onNavigateToBill)
+        CardType.NET_WORTH -> NetWorthCard(state, cardColor = netWorthColor, onNavigateToBill)
         CardType.QUICK_ACTIONS -> QuickActionsCard(onNavigateToBill, onNavigateToAsset, onNavigateToLife)
         CardType.BUDGET_ALERT -> BudgetAlertCard(state, onNavigateToBill)
         CardType.GOALS -> GoalsCard(state, onNavigateToLife)
@@ -122,20 +124,20 @@ internal fun VaultCard(state: DashboardState, onNavigateToVault: () -> Unit) {
 }
 @Composable
 @Suppress("LongMethod")
-internal fun NetWorthCard(state: DashboardState, onNavigateToBill: () -> Unit) {
+internal fun NetWorthCard(state: DashboardState, cardColor: Color = ModuleHome, onNavigateToBill: () -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
+        border = BorderStroke(1.dp, cardColor.copy(alpha = 0.3f))
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(
                     Brush.linearGradient(
-                        colors = listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.primary.copy(alpha = 0.85f))
+                        colors = listOf(cardColor, cardColor.copy(alpha = 0.85f))
                     )
                 )
                 .padding(16.dp)
@@ -242,8 +244,8 @@ internal fun QuickActionsCard(
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             QuickActionButton(Icons.Outlined.AddCircle, stringResource(R.string.dashboard_quick_bill), AccentOrange, onNavigateToBill)
-            QuickActionButton(Icons.Outlined.Inventory2, stringResource(R.string.dashboard_quick_asset), MaterialTheme.colorScheme.primary, onNavigateToAsset)
-            QuickActionButton(Icons.Outlined.Flag, stringResource(R.string.dashboard_quick_goal), InfoBlue, onNavigateToLife)
+QuickActionButton(Icons.Outlined.Inventory2,      stringResource(R.string.dashboard_quick_asset),     ModuleItem, onNavigateToAsset)
+QuickActionButton(Icons.Outlined.Flag,            stringResource(R.string.dashboard_quick_goal),      StatusHeld,      onNavigateToLife)
             QuickActionButton(Icons.Outlined.Celebration, stringResource(R.string.dashboard_quick_anniversary), ModuleLife, onNavigateToLife)
         }
     }
@@ -851,11 +853,16 @@ internal fun TodayCard(state: DashboardState, onNavigateToLife: () -> Unit) {
             }
             Column(horizontalAlignment = Alignment.End) {
                 Text(stringResource(R.string.dashboard_recorded), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(stringResource(R.string.dashboard_items_recorded, state.activeAssetCount + state.goalCount + state.anniversaryCount), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                Text(
+                    stringResource(R.string.dashboard_items_recorded, state.activeAssetCount + state.goalCount + state.anniversaryCount),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = StatusHeld
+                )
                 Spacer(modifier = Modifier.height(4.dp))
                 JumpCapsule(
                     label = stringResource(R.string.nav_life),
-                    color = MaterialTheme.colorScheme.primary,
+                    color = ModuleLife,
                     onClick = onNavigateToLife
                 )
             }
@@ -935,11 +942,25 @@ fun AssetDistributionChart(
 }
 
 @Composable
+@Suppress("LongMethod", "CyclomaticComplexMethod", "LongParameterList")
 internal fun CardManagementDialog(
     allConfigs: List<DashboardCardConfig>,
     onToggle: (CardType) -> Unit,
+    onColorChange: (CardType, String?) -> Unit,
     onDismiss: () -> Unit
 ) {
+    var showColorPicker by remember { mutableStateOf(false) }
+    val presetColors = listOf(
+        "#0891B2" to ModuleHome,
+        "#2A6BAB" to ModuleItem,
+        "#34A853" to StatusHeld,
+        "#FF8C42" to AccentOrange,
+        "#C2185B" to ModuleLife,
+        "#FFCA28" to Color(0xFFFFCA28),
+        "#EF5350" to Color(0xFFEF5350),
+        "#29B6F6" to Color(0xFF29B6F6)
+    )
+
     AppDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.dashboard_card_manage), fontWeight = FontWeight.Bold) },
@@ -948,7 +969,7 @@ internal fun CardManagementDialog(
                 verticalArrangement = Arrangement.spacedBy(4.dp),
                 modifier = Modifier
                     .verticalScroll(rememberScrollState())
-                    .heightIn(max = 420.dp)
+                    .heightIn(max = 520.dp)
             ) {
                 allConfigs.forEach { config ->
                     Row(
@@ -974,10 +995,37 @@ internal fun CardManagementDialog(
                             },
                             style = MaterialTheme.typography.bodyLarge
                         )
-                        CapsuleSwitch(
-                            checked = config.visible,
-                            onCheckedChange = { onToggle(config.type) },
-                            checkedTrackColor = LocalSwitchColor.current,
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            if (config.type == CardType.NET_WORTH) {
+                                val cardColor = config.customColor?.toComposeColor() ?: ModuleHome
+                                Box(
+                                    modifier = Modifier
+                                        .size(28.dp)
+                                        .clip(CircleShape)
+                                        .background(cardColor)
+                                        .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f), CircleShape)
+                                        .clickable { showColorPicker = !showColorPicker }
+                                )
+                            }
+                            CapsuleSwitch(
+                                checked = config.visible,
+                                onCheckedChange = { onToggle(config.type) },
+                                checkedTrackColor = MaterialTheme.colorScheme.primary,
+                            )
+                        }
+                    }
+
+                    if (showColorPicker && config.type == CardType.NET_WORTH) {
+                        InlineColorPicker(
+                            presetColors = presetColors,
+                            selectedColor = config.customColor,
+                            onColorSelected = { color ->
+                                onColorChange(CardType.NET_WORTH, color)
+                            },
+                            modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
                         )
                     }
                 }

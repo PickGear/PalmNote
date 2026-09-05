@@ -123,21 +123,21 @@ fun LifeScreen(
                                 Icon(
                                     Icons.Outlined.BarChart,
                                     stringResource(R.string.life_home_stats),
-                                    tint = MaterialTheme.colorScheme.primary
+                                    tint = Color(0xFF616161)
                                 )
                             }
                             IconButton(onClick = { showSearch = true }) {
                                 Icon(
                                     Icons.Outlined.Search,
                                     stringResource(R.string.search),
-                                    tint = MaterialTheme.colorScheme.primary
+                                    tint = Color(0xFF616161)
                                 )
                             }
                             IconButton(onClick = onNavigateToManage) {
                                 Icon(
                                     Icons.Outlined.Dashboard,
                                     stringResource(R.string.life_template_manage),
-                                    tint = MaterialTheme.colorScheme.primary
+                                    tint = Color(0xFF616161)
                                 )
                             }
                         }

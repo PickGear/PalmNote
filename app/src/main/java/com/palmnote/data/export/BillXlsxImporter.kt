@@ -75,14 +75,13 @@ class BillXlsxImporter {
         diag.append("匹配列: ${headerIdx.keys.joinToString(", ")}\n")
         if (headerRowIdx < 0) return emptyList()
 
-        val dateIdx = findCol(headerIdx, "交易时间") ?: 0
+        val dateIdx = findCol(headerIdx, "交易时间") ?: findCol(headerIdx, "时间") ?: findCol(headerIdx, "日期") ?: 0
         val typeIdx = findCol(headerIdx, "交易类型")
         val merchantIdx = findCol(headerIdx, "交易对方")
         val goodsIdx = findCol(headerIdx, "商品")
         val ieIdx = findCol(headerIdx, "收/支")
         val amountIdx = findCol(headerIdx, "金额")
         val methodIdx = findCol(headerIdx, "支付方式")
-        val statusIdx = findCol(headerIdx, "状态")
         val noteIdx = findCol(headerIdx, "备注")
 
         return rows.drop(headerRowIdx + 1).mapNotNull { cols ->
@@ -92,8 +91,8 @@ class BillXlsxImporter {
                 val amountStr = amountIdx?.let { cols.getOrNull(it)?.trim() } ?: return@mapNotNull null
                 val cleanAmount = amountStr.replace(",", "").replace("¥", "").replace("￥", "").replace(" ", "").replace("+", "").replace("-", "")
                 val amount = Money.parse(cleanAmount)?.cents ?: return@mapNotNull null
-                val status = statusIdx?.let { cols.getOrNull(it)?.trim() } ?: ""
-                if (status.isNotEmpty() && status !in listOf("已支付", "支付成功", "已到账", "已收钱", "对方已收钱")) return@mapNotNull null
+                // 状态过滤已移除（issue#1：白名单遗漏"已存入零钱"等真实状态导致大面积丢行），
+                // 全部行进入预览由用户勾选
                 val merchant = merchantIdx?.let { cols.getOrNull(it)?.trim() } ?: ""
                 val goodsDesc = goodsIdx?.let { cols.getOrNull(it)?.trim() } ?: ""
                 val typeStr = typeIdx?.let { cols.getOrNull(it)?.trim() } ?: ""
@@ -210,11 +209,14 @@ class BillXlsxImporter {
 
     private fun parseXlsxDate(timeStr: String): Long? {
         val clean = timeStr.trim()
-        for (pat in listOf("yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd HH:mm", "yyyy-MM-dd")) {
+        for (pat in listOf(
+            "yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd HH:mm", "yyyy/MM/dd HH:mm:ss", "yyyy/MM/dd HH:mm",
+            "yyyy/M/d HH:mm:ss", "yyyy/M/d HH:mm", "yyyy-MM-dd", "yyyy/MM/dd", "yyyy/M/d", "yyyy年M月d日"
+        )) {
             try { return SimpleDateFormat(pat, Locale.getDefault()).parse(clean)?.time } catch (e: Exception) { AppLogger.w("XlsxImport", "parseXlsxDate failed for pattern: $pat", e) }
         }
         val num = clean.toDoubleOrNull()
-        if (num != null && num > 40000 && num < 60000) {
+        if (num != null && num > 30000 && num < 80000) {
             return excelSerialToMillis(num)
         }
         return null

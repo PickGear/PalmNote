@@ -204,4 +204,6 @@
     <string name="notification_channel_reminder_desc">生日、纪念日、订阅扣费提醒</string>
     <string name="app_lock_setup_pin">设置PIN码</string>
     <string name="asset_warranty_active">质保中</string>
+    <string name="wallpaper_preset">预设</string>
+    <string name="wallpaper_custom_color">自定义颜色</string>
 </resources>

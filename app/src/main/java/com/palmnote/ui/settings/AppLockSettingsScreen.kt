@@ -283,7 +283,7 @@ private fun LockSettingsCard(
             CapsuleSwitch(
                 checked = uiState.isLockEnabled,
                 onCheckedChange = onToggleLock,
-                checkedTrackColor = LocalSwitchColor.current
+                checkedTrackColor = MaterialTheme.colorScheme.primary
             )
         }
         if (uiState.isLockEnabled) {
@@ -305,7 +305,7 @@ private fun LockSettingsCard(
                     CapsuleSwitch(
                         checked = uiState.biometricEnabled,
                         onCheckedChange = onToggleBiometric,
-                        checkedTrackColor = LocalSwitchColor.current
+                        checkedTrackColor = MaterialTheme.colorScheme.primary
                     )
                 }
             }

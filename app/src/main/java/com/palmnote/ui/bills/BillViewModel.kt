@@ -459,6 +459,13 @@ class BillViewModel @Inject constructor(
 
     fun resetForm(selectedDate: Long? = null) {
         pendingNewFiles.clear()
+        // 消费来源账本：BillScreen FAB 传入用户当前选中的账本，避免新建 VM 时
+        // selectedBookId 落回 ALL_BOOKS_ID 而被自动改成默认账本（issue#1 补充问题）
+        val pendingBook = com.palmnote.PalmNoteApp.pendingAddBillBookId
+        com.palmnote.PalmNoteApp.pendingAddBillBookId = null
+        if (pendingBook != null && pendingBook != AccountBook.ALL_BOOKS_ID) {
+            _selectedBookId.value = pendingBook
+        }
         val date = selectedDate ?: System.currentTimeMillis()
         val walletId = cachedWallets.value.find { it.isDefault }?.id ?: cachedWallets.value.firstOrNull()?.id
         _formState.value = AddBillFormState(date = date, type = BillType.from(defaultBillType), walletId = walletId)

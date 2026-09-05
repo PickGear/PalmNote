@@ -113,8 +113,6 @@
     <string name="settings_dark_mode_subtitle">Choose dark mode display</string>
     <string name="settings_language">Language</string>
     <string name="settings_language_subtitle">Switch app display language</string>
-    <string name="settings_switch_color">Switch Color</string>
-    <string name="settings_switch_color_subtitle">Customize global switch button color</string>
     <string name="settings_follow_system">Follow System</string>
     <string name="settings_default_start_page">Default Start Page</string>
     <string name="settings_default_bill_type">Default Bill Type</string>
@@ -160,11 +158,8 @@
     <string name="settings_about_app">About PalmNote</string>
     <string name="settings_about_version">Version 1.3.0</string>
     <string name="settings_days">%d days</string>
-    <string name="settings_color_pick_title">Select Switch Color</string>
-    <string name="settings_preset_color">Preset Colors</string>
     <string name="settings_custom_color">Custom Color</string>
     <string name="settings_hex_color">HEX Color</string>
-    <string name="settings_color_done">Done</string>
     <string name="settings_select_start_page">Default Start Page</string>
     <string name="settings_select_bill_type">Default Bill Type</string>
     <string name="settings_select_dark_mode">Dark Mode</string>
@@ -279,6 +274,34 @@
     <string name="weekday_thursday">Thursday</string>
     <string name="weekday_friday">Friday</string>
     <string name="weekday_saturday">Saturday</string>
+    <!-- Dashboard Tips -->
+    <string name="tip_1">Don\'t forget to log your expenses!</string>
+    <string name="tip_2">Have you recorded today\'s expenses?</string>
+    <string name="tip_3">Keep recording clearly</string>
+    <string name="tip_4">Small expenses add up</string>
+    <string name="tip_5">Every entry is life</string>
+    <string name="tip_6">Financial management starts with tracking</string>
+    <string name="tip_7">Items piling up? Organize!</string>
+    <string name="tip_8">Regular inventory keeps you informed</string>
+    <string name="tip_9">Photo your items</string>
+    <string name="tip_10">Your goals are ahead, keep going!</string>
+    <string name="tip_11">One step closer to your goal</string>
+    <string name="tip_12">Build habits by checking in</string>
+    <string name="tip_13">Energetic day ahead</string>
+    <string name="tip_14">Don\'t forget important anniversaries</string>
+    <string name="tip_15">Cherish special days</string>
+    <string name="quote_1">Every day is a new beginning</string>
+    <string name="quote_2">Persistence leads to victory</string>
+    <string name="quote_3">Little by little</string>
+    <string name="quote_4">You can do it today!</string>
+    <string name="quote_5">Life needs a sense of ritual</string>
+    <string name="quote_6">Record and cherish</string>
+    <string name="quote_7">Small happiness is all around you</string>
+    <string name="quote_8">Stay passionate always</string>
+    <string name="quote_9">Slow and steady wins the race</string>
+    <string name="quote_10">You are stronger than you think</string>
+    <string name="quote_11">Worth recording today</string>
+    <string name="quote_12">Good start half the battle</string>
     <!-- Life Module -->
     <string name="life_title">Life</string>
     <string name="life_mood">Mood</string>
@@ -1688,11 +1711,6 @@
     <string name="settings_icon_confirm_title">Switch App Icon</string>
     <string name="settings_icon_confirm_text">The app will exit and the home screen icon will update.</string>
     <!-- Theme Colors -->
-    <string name="theme_cyan">Cyan</string>
-    <string name="theme_green">Green</string>
-    <string name="theme_blue">Blue</string>
-    <string name="theme_purple">Purple</string>
-    <string name="theme_orange">Orange</string>
     <string name="settings_theme_color">Theme Color</string>
     <string name="settings_theme_color_subtitle">Switch app primary color</string>
     <string name="settings_select_theme_color">Select Theme Color</string>
@@ -1700,7 +1718,7 @@
     <string name="settings_wallpaper">Wallpaper</string>
     <string name="settings_wallpaper_subtitle">Customize app background</string>
     <string name="settings_select_wallpaper">Select Wallpaper</string>
-    <string name="wallpaper_none">None</string>
+    <string name="wallpaper_none">Default</string>
     <string name="wallpaper_ocean">Ocean</string>
     <string name="wallpaper_sunset">Sunset</string>
     <string name="wallpaper_forest">Forest</string>
@@ -1708,7 +1726,13 @@
     <string name="wallpaper_midnight">Midnight</string>
     <string name="wallpaper_peach">Peach</string>
     <string name="wallpaper_custom">Custom Image</string>
+    <string name="wallpaper_color">Custom Color</string>
+    <string name="wallpaper_custom_color">Custom Color</string>
     <string name="wallpaper_blur">Blur</string>
     <string name="wallpaper_opacity">Opacity</string>
     <string name="wallpaper_load_failed">Failed to load wallpaper, please try again</string>
+    <string name="wallpaper_done">Done</string>
+    <string name="wallpaper_preset">Preset</string>
+    <string name="wallpaper_from_gallery">From Gallery</string>
+    <string name="dashboard_card_net_worth_color">Card Color</string>
 </resources>

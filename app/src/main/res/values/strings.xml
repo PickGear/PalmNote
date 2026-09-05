@@ -113,8 +113,6 @@
     <string name="settings_dark_mode_subtitle">选择深色模式显示方式</string>
     <string name="settings_language">语言设置</string>
     <string name="settings_language_subtitle">切换应用显示语言</string>
-    <string name="settings_switch_color">开关按钮颜色</string>
-    <string name="settings_switch_color_subtitle">自定义全局开关按钮的颜色</string>
     <string name="settings_follow_system">跟随系统</string>
     <string name="settings_default_start_page">默认启动页</string>
     <string name="settings_default_bill_type">默认记账类型</string>
@@ -160,11 +158,8 @@
     <string name="settings_about_app">关于掌记</string>
     <string name="settings_about_version">版本 1.3.0</string>
     <string name="settings_days">%d 天</string>
-    <string name="settings_color_pick_title">选择开关颜色</string>
-    <string name="settings_preset_color">预设颜色</string>
     <string name="settings_custom_color">自定义颜色</string>
     <string name="settings_hex_color">HEX色值</string>
-    <string name="settings_color_done">完成</string>
     <string name="settings_select_start_page">默认启动页</string>
     <string name="settings_select_bill_type">默认记账类型</string>
     <string name="settings_select_dark_mode">深色模式</string>
@@ -278,6 +273,34 @@
     <string name="weekday_thursday">星期四</string>
     <string name="weekday_friday">星期五</string>
     <string name="weekday_saturday">星期六</string>
+    <!-- Dashboard Tips -->
+    <string name="tip_1">记得记账哦～</string>
+    <string name="tip_2">今天有记账吗？</string>
+    <string name="tip_3">坚持记录更清晰</string>
+    <string name="tip_4">小账不记，大账不清</string>
+    <string name="tip_5">每笔都是生活痕迹</string>
+    <string name="tip_6">理财从记账开始</string>
+    <string name="tip_7">物品多了记得整理</string>
+    <string name="tip_8">定期盘点，心中有数</string>
+    <string name="tip_9">拍照记录物品样子</string>
+    <string name="tip_10">目标在前方，加油！</string>
+    <string name="tip_11">离目标又近了一步</string>
+    <string name="tip_12">坚持打卡养成习惯</string>
+    <string name="tip_13">今天元气满满</string>
+    <string name="tip_14">别忘了重要的纪念日</string>
+    <string name="tip_15">珍惜值得铭记的日子</string>
+    <string name="quote_1">每一天都是新的开始</string>
+    <string name="quote_2">坚持就是胜利</string>
+    <string name="quote_3">积少成多聚沙成塔</string>
+    <string name="quote_4">今天也要加油鸭！</string>
+    <string name="quote_5">生活需要仪式感</string>
+    <string name="quote_6">记录生活珍惜当下</string>
+    <string name="quote_7">小确幸就在身边</string>
+    <string name="quote_8">保持热爱奔赴山海</string>
+    <string name="quote_9">慢慢来，比较快</string>
+    <string name="quote_10">你比想象中更强大</string>
+    <string name="quote_11">今天值得记录</string>
+    <string name="quote_12">好的开始是成功一半</string>
     <!-- Life Module -->
     <string name="life_title">生活</string>
     <string name="life_mood">心情记录</string>
@@ -1685,11 +1708,6 @@
     <string name="settings_icon_confirm_title">切换应用图标</string>
     <string name="settings_icon_confirm_text">切换后应用将退出，桌面图标将更新。</string>
     <!-- Theme Colors -->
-    <string name="theme_cyan">青</string>
-    <string name="theme_green">绿</string>
-    <string name="theme_blue">蓝</string>
-    <string name="theme_purple">紫</string>
-    <string name="theme_orange">橙</string>
     <string name="settings_theme_color">主题色</string>
     <string name="settings_theme_color_subtitle">切换应用主色调</string>
     <string name="settings_select_theme_color">选择主题色</string>
@@ -1697,7 +1715,7 @@
     <string name="settings_wallpaper">背景壁纸</string>
     <string name="settings_wallpaper_subtitle">自定义应用背景</string>
     <string name="settings_select_wallpaper">选择壁纸</string>
-    <string name="wallpaper_none">无</string>
+    <string name="wallpaper_none">默认</string>
     <string name="wallpaper_ocean">海洋</string>
     <string name="wallpaper_sunset">日落</string>
     <string name="wallpaper_forest">森林</string>
@@ -1705,7 +1723,13 @@
     <string name="wallpaper_midnight">午夜</string>
     <string name="wallpaper_peach">蜜桃</string>
     <string name="wallpaper_custom">自定义图片</string>
+    <string name="wallpaper_color">自定义颜色</string>
+    <string name="wallpaper_custom_color">自定义颜色</string>
     <string name="wallpaper_blur">模糊度</string>
     <string name="wallpaper_opacity">透明度</string>
     <string name="wallpaper_load_failed">壁纸加载失败，请重试</string>
+    <string name="wallpaper_done">完成</string>
+    <string name="wallpaper_preset">预设</string>
+    <string name="wallpaper_from_gallery">从相册选择</string>
+    <string name="dashboard_card_net_worth_color">卡片颜色</string>
 </resources>

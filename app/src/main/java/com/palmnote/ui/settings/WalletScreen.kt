@@ -251,7 +251,7 @@ private fun WalletItem(
             CapsuleSwitch(
                 checked = wallet.isEnabled,
                 onCheckedChange = { onToggleEnabled() },
-                checkedTrackColor = LocalSwitchColor.current,
+                checkedTrackColor = MaterialTheme.colorScheme.primary,
             )
         }
     }

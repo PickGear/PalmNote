@@ -17,7 +17,6 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asAndroidBitmap
@@ -32,7 +31,7 @@ import android.graphics.Shader
 @Immutable
 data class WallpaperData(
     val bitmap: ImageBitmap? = null,
-    val gradientColors: List<Color>? = null,
+    val solidColor: Color? = null,
     val style: String = "none",
     val opacity: Float = 1f,
     val blur: Float = 0f
@@ -51,9 +50,9 @@ fun WallpaperBackground(
         // Render wallpaper background
         if (wallpaperData.style != "none") {
             when {
-                wallpaperData.gradientColors != null ->
-                    GradientWallpaper(
-                        colors = wallpaperData.gradientColors,
+                wallpaperData.solidColor != null ->
+                    SolidWallpaper(
+                        color = wallpaperData.solidColor,
                         opacity = wallpaperData.opacity,
                         modifier = Modifier.fillMaxSize()
                     )
@@ -70,17 +69,17 @@ fun WallpaperBackground(
     }
 }
 
-// 渐变直接用 Brush 绘制，不生成位图（渐变本身平滑，无需模糊处理）
+// 纯色壁纸：直接用 background 绘制，无渐变
 @Composable
-private fun GradientWallpaper(
-    colors: List<Color>,
+private fun SolidWallpaper(
+    color: Color,
     opacity: Float,
     modifier: Modifier = Modifier
 ) {
     Box(
         modifier = modifier
             .alpha(opacity)
-            .background(Brush.verticalGradient(colors))
+            .background(color)
     )
 }
 
