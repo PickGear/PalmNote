@@ -19,3 +19,4 @@ Thumbs.db
 *.aab
 *.jks
 *.keystore
+.mimosa/
