@@ -67,11 +67,13 @@ chore/gradle-agp-upgrade   # Gradle 升级
 
 ### 1.3 分支规则
 
-1. **main 分支受保护**：禁止直接 push，必须通过 PR 合并
-2. **一个分支一个主题**：不要在 `feature/vault` 里顺手改记账逻辑
-3. **分支从 main 创建**：`git checkout -b feature/xxx main`
-4. **合并后立即删除**：本地 + 远程都要删
-5. **合并方式**：使用 **squash merge**，保持 main 历史干净
+1. **main 分支保护**（GitHub 已配置）：禁止 force push、禁止删除分支——防误操作历史覆写与误删
+2. **单人开发例外**：允许直接 push main（不强制 PR）——PR 流程与夜班自动化轮次冲突；
+   多天期大功能仍必须走 feature 分支，完成后 squash 合回 main
+3. **一个分支一个主题**：不要在 `feature/vault` 里顺手改记账逻辑
+4. **分支从 main 创建**：`git checkout -b feature/xxx main`
+5. **合并后立即删除**：本地 + 远程都要删
+6. **合并方式**：feature 分支使用 **squash merge**，保持 main 历史干净
 
 ### 1.4 分支生命周期
 
