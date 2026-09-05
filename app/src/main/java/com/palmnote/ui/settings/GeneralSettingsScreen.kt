@@ -227,11 +227,16 @@ fun GeneralSettingsScreen(
                     }
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                     SettingRow(clickable = { showIconPicker = true }) {
-                        SettingRowContent(title = stringResource(R.string.settings_app_icon), subtitle = stringResource(R.string.settings_app_icon_subtitle))
+                        SettingRowContent(
+                            title = stringResource(R.string.settings_app_icon),
+                            subtitle = stringResource(R.string.settings_app_icon_subtitle)
+                        )
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            val (bgColor, fgColor) = iconVisuals[state.appIconStyle] ?: iconVisuals[PreferencesManager.DEFAULT_APP_ICON_STYLE]!!
+                            val (bgColor, fgColor) = iconVisuals[state.appIconStyle]
+                                ?: iconVisuals[PreferencesManager.DEFAULT_APP_ICON_STYLE]!!
                             Box(
-                                modifier = Modifier.size(32.dp).clip(RoundedCornerShape(8.dp)).background(bgColor).border(0.5.dp, Color.Black.copy(alpha = 0.15f), RoundedCornerShape(8.dp)),
+                                modifier = Modifier.size(32.dp).clip(RoundedCornerShape(8.dp)).background(bgColor)
+                                    .border(0.5.dp, Color.Black.copy(alpha = 0.15f), RoundedCornerShape(8.dp)),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Image(
@@ -531,7 +536,11 @@ fun GeneralSettingsScreen(
             title = { Text(stringResource(R.string.settings_select_app_icon), fontWeight = FontWeight.Bold) },
             text = {
                 Column {
-                    Text(stringResource(R.string.settings_app_icon_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        stringResource(R.string.settings_app_icon_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                     Spacer(Modifier.height(16.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -551,7 +560,10 @@ fun GeneralSettingsScreen(
                                                 pendingIconStyle = key
                                             }
                                         }
-                                        .then(if (isSelected) Modifier.border(3.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(14.dp)) else Modifier.border(1.5.dp, Color.Gray.copy(alpha = 0.4f), RoundedCornerShape(14.dp))),
+                                        .then(
+                                            if (isSelected) Modifier.border(3.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(14.dp))
+                                            else Modifier.border(1.5.dp, Color.Gray.copy(alpha = 0.4f), RoundedCornerShape(14.dp))
+                                        ),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Image(

@@ -126,7 +126,9 @@ fun SearchScreen(
             if (state.bills.isNotEmpty())
                 sections.add(SearchSection("BILLS", stringResource(R.string.search_section_bills), Icons.Outlined.AccountBalanceWallet, AccentOrange))
             if (state.goals.isNotEmpty())
-                sections.add(SearchSection("GOALS", stringResource(R.string.search_section_goals), Icons.Outlined.Flag, MaterialTheme.colorScheme.primary))
+                sections.add(
+                    SearchSection("GOALS", stringResource(R.string.search_section_goals), Icons.Outlined.Flag, MaterialTheme.colorScheme.primary)
+                )
             if (state.anniversaries.isNotEmpty())
                 sections.add(SearchSection("ANNIVERSARIES", stringResource(R.string.search_section_anniversaries), Icons.Outlined.FavoriteBorder, ModuleLife))
             if (state.moments.isNotEmpty())

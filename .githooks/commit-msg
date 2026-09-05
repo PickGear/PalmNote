@@ -1,0 +1,32 @@
+#!/bin/sh
+# commit-msg hook: 校验 Conventional Commits 格式（type/scope 英文，subject 中文或英文）
+
+commit_msg=$(cat "$1")
+
+# 正则：type(scope): subject
+# type 必须是预定义类型，scope 可选，subject 中文或英文均可
+pattern="^(feat|fix|refactor|docs|chore|test|perf|style|ci|revert)(\([a-z0-9-]+\))?: .{1,71}$"
+
+# 跳过 Merge commit 和 Revert commit
+if echo "$commit_msg" | grep -qE "^(Merge|Revert)"; then
+    exit 0
+fi
+
+# 校验第一行
+first_line=$(echo "$commit_msg" | head -n1)
+if ! echo "$first_line" | grep -qE "$pattern"; then
+    echo "❌ Commit message 格式错误:"
+    echo "   $first_line"
+    echo ""
+    echo "正确格式: type(scope): subject"
+    echo "  type: feat|fix|refactor|docs|chore|test|perf|style|ci|revert"
+    echo "  scope: 可选，小写字母和连字符"
+    echo "  subject: 中文或英文，不超过 72 字符，无句号"
+    echo ""
+    echo "示例:"
+    echo "  feat(vault): 新增生物识别解锁"
+    echo "  fix(backup): null check on getExternalFilesDir"
+    exit 1
+fi
+
+exit 0
