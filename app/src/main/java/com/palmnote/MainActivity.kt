@@ -36,6 +36,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -53,6 +54,7 @@ import com.palmnote.ui.lock.AppLockState
 import com.palmnote.ui.navigation.PalmNoteNavHost
 import com.palmnote.ui.theme.PalmNoteTheme
 import com.palmnote.ui.theme.WallpaperBackground
+import com.palmnote.ui.theme.ModuleHome
 import androidx.compose.ui.res.stringResource
 import com.palmnote.app.R
 import dagger.hilt.android.AndroidEntryPoint
@@ -64,7 +66,8 @@ private data class WallpaperPrefs(
     val style: String,
     val opacity: Float,
     val blur: Float,
-    val customUri: String
+    val customUri: String,
+    val customColor: String
 )
 
 @AndroidEntryPoint
@@ -168,8 +171,9 @@ class MainActivity : AppCompatActivity() {
                     preferencesManager.wallpaperStyle,
                     preferencesManager.wallpaperOpacity,
                     preferencesManager.wallpaperBlur,
-                    preferencesManager.wallpaperCustomUri
-                ) { style, opacity, blur, uri -> WallpaperPrefs(style, opacity, blur, uri) }
+                    preferencesManager.wallpaperCustomUri,
+                    preferencesManager.wallpaperCustomColor
+                ) { style, opacity, blur, uri, color -> WallpaperPrefs(style, opacity, blur, uri, color) }
                 combine(theme, wallpaper) { t, w -> t to w }
             }.collectAsStateWithLifecycle(
                 initialValue = ("SYSTEM" to PreferencesManager.DEFAULT_THEME_COLOR) to
@@ -177,7 +181,8 @@ class MainActivity : AppCompatActivity() {
                         PreferencesManager.DEFAULT_WALLPAPER_STYLE,
                         PreferencesManager.DEFAULT_WALLPAPER_OPACITY,
                         PreferencesManager.DEFAULT_WALLPAPER_BLUR,
-                        ""
+                        "",
+                        PreferencesManager.DEFAULT_WALLPAPER_CUSTOM_COLOR
                     )
             )
             val (themePrefs, wallpaper) = preferences
@@ -212,7 +217,8 @@ class MainActivity : AppCompatActivity() {
                 wallpaperStyle = wallpaper.style,
                 wallpaperOpacity = wallpaper.opacity,
                 wallpaperBlur = wallpaper.blur,
-                wallpaperCustomUri = wallpaper.customUri
+                wallpaperCustomUri = wallpaper.customUri,
+                wallpaperCustomColor = wallpaper.customColor
             ) {
                 WallpaperBackground(modifier = Modifier.fillMaxSize()) {
                     if (privacyAgreed == null) {
@@ -236,14 +242,14 @@ class MainActivity : AppCompatActivity() {
                                     modifier = Modifier
                                         .size(72.dp)
                                         .clip(CircleShape)
-                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
+                                        .background(ModuleHome),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
-                                        Icons.Filled.Spa,
+                                        painter = painterResource(id = R.drawable.ic_launcher_foreground_bw),
                                         contentDescription = null,
-                                        modifier = Modifier.size(36.dp),
-                                        tint = MaterialTheme.colorScheme.primary
+                                        modifier = Modifier.size(48.dp),
+                                        tint = Color.White
                                     )
                                 }
 

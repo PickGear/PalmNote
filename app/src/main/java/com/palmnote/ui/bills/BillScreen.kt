@@ -256,6 +256,9 @@ fun BillScreen(
                     } else {
                         System.currentTimeMillis()
                     }
+                    // 记一笔继承当前筛选的账本（全部账本视图时交由默认逻辑决定）
+                    com.palmnote.PalmNoteApp.pendingAddBillBookId =
+                        state.selectedBookId.takeIf { it != com.palmnote.data.db.entity.AccountBook.ALL_BOOKS_ID }
                     onNavigateToAdd(date)
                 },
                 containerColor = MaterialTheme.colorScheme.secondary,

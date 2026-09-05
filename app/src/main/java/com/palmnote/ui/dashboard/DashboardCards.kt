@@ -51,10 +51,12 @@ internal fun DashboardCardContent(
     onNavigateToVault: () -> Unit = {},
     onHabitCheckIn: (Long) -> Unit = {},
     presetCategoryOverrides: Map<String, String>,
-    categoryConfigs: List<com.palmnote.data.db.entity.CategoryConfig>
+    categoryConfigs: List<com.palmnote.data.db.entity.CategoryConfig>,
+    cardConfigs: List<DashboardCardConfig> = emptyList()
 ) {
+    val netWorthColor = cardConfigs.find { it.type == CardType.NET_WORTH }?.customColor?.toComposeColor() ?: ModuleHome
     when (type) {
-        CardType.NET_WORTH -> NetWorthCard(state, onNavigateToBill)
+        CardType.NET_WORTH -> NetWorthCard(state, cardColor = netWorthColor, onNavigateToBill)
         CardType.QUICK_ACTIONS -> QuickActionsCard(onNavigateToBill, onNavigateToAsset, onNavigateToLife)
         CardType.BUDGET_ALERT -> BudgetAlertCard(state, onNavigateToBill)
         CardType.GOALS -> GoalsCard(state, onNavigateToLife)
@@ -122,20 +124,20 @@ internal fun VaultCard(state: DashboardState, onNavigateToVault: () -> Unit) {
 }
 @Composable
 @Suppress("LongMethod")
-internal fun NetWorthCard(state: DashboardState, onNavigateToBill: () -> Unit) {
+internal fun NetWorthCard(state: DashboardState, cardColor: Color = ModuleHome, onNavigateToBill: () -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
+        border = BorderStroke(1.dp, cardColor.copy(alpha = 0.3f))
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(
                     Brush.linearGradient(
-                        colors = listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.primary.copy(alpha = 0.85f))
+                        colors = listOf(cardColor, cardColor.copy(alpha = 0.85f))
                     )
                 )
                 .padding(16.dp)
@@ -242,8 +244,8 @@ internal fun QuickActionsCard(
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             QuickActionButton(Icons.Outlined.AddCircle, stringResource(R.string.dashboard_quick_bill), AccentOrange, onNavigateToBill)
-            QuickActionButton(Icons.Outlined.Inventory2, stringResource(R.string.dashboard_quick_asset), MaterialTheme.colorScheme.primary, onNavigateToAsset)
-            QuickActionButton(Icons.Outlined.Flag, stringResource(R.string.dashboard_quick_goal), InfoBlue, onNavigateToLife)
+QuickActionButton(Icons.Outlined.Inventory2,      stringResource(R.string.dashboard_quick_asset),     ModuleItem, onNavigateToAsset)
+QuickActionButton(Icons.Outlined.Flag,            stringResource(R.string.dashboard_quick_goal),      StatusHeld,      onNavigateToLife)
             QuickActionButton(Icons.Outlined.Celebration, stringResource(R.string.dashboard_quick_anniversary), ModuleLife, onNavigateToLife)
         }
     }
@@ -851,11 +853,11 @@ internal fun TodayCard(state: DashboardState, onNavigateToLife: () -> Unit) {
             }
             Column(horizontalAlignment = Alignment.End) {
                 Text(stringResource(R.string.dashboard_recorded), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(stringResource(R.string.dashboard_items_recorded, state.activeAssetCount + state.goalCount + state.anniversaryCount), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                Text(stringResource(R.string.dashboard_items_recorded, state.activeAssetCount + state.goalCount + state.anniversaryCount), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = StatusHeld)
                 Spacer(modifier = Modifier.height(4.dp))
                 JumpCapsule(
                     label = stringResource(R.string.nav_life),
-                    color = MaterialTheme.colorScheme.primary,
+                    color = ModuleLife,
                     onClick = onNavigateToLife
                 )
             }
@@ -938,8 +940,12 @@ fun AssetDistributionChart(
 internal fun CardManagementDialog(
     allConfigs: List<DashboardCardConfig>,
     onToggle: (CardType) -> Unit,
+    onColorChange: (CardType, String?) -> Unit,
     onDismiss: () -> Unit
 ) {
+    var showColorPicker by remember { mutableStateOf(false) }
+    var editingCardType by remember { mutableStateOf<CardType?>(null) }
+
     AppDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.dashboard_card_manage), fontWeight = FontWeight.Bold) },
@@ -974,15 +980,152 @@ internal fun CardManagementDialog(
                             },
                             style = MaterialTheme.typography.bodyLarge
                         )
-                        CapsuleSwitch(
-                            checked = config.visible,
-                            onCheckedChange = { onToggle(config.type) },
-                            checkedTrackColor = MaterialTheme.colorScheme.primary,
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            if (config.type == CardType.NET_WORTH) {
+                                val cardColor = config.customColor?.toComposeColor() ?: ModuleHome
+                                Box(
+                                    modifier = Modifier
+                                        .size(28.dp)
+                                        .clip(CircleShape)
+                                        .background(cardColor)
+                                        .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f), CircleShape)
+                                        .clickable {
+                                            editingCardType = config.type
+                                            showColorPicker = true
+                                        }
+                                )
+                            }
+                            CapsuleSwitch(
+                                checked = config.visible,
+                                onCheckedChange = { onToggle(config.type) },
+                                checkedTrackColor = MaterialTheme.colorScheme.primary,
+                            )
+                        }
                     }
                 }
             }
         },
         confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.done)) } }
+    )
+
+    if (showColorPicker && editingCardType == CardType.NET_WORTH) {
+        val currentColor = allConfigs.find { it.type == CardType.NET_WORTH }?.customColor?.toComposeColor() ?: ModuleHome
+        CardColorPickerDialog(
+            currentColor = currentColor,
+            onSelect = { color ->
+                onColorChange(CardType.NET_WORTH, color)
+                showColorPicker = false
+                editingCardType = null
+            },
+            onDismiss = {
+                showColorPicker = false
+                editingCardType = null
+            }
+        )
+    }
+}
+
+@Composable
+private fun CardColorPickerDialog(
+    currentColor: Color,
+    onSelect: (String?) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val presetColors = listOf(
+        "#0891B2" to ModuleHome,
+        "#2A6BAB" to ModuleItem,
+        "#34A853" to StatusHeld,
+        "#FF8C42" to AccentOrange,
+        "#C2185B" to ModuleLife,
+        "#7C8CF0" to LifePlan
+    )
+    var customHex by remember { mutableStateOf("") }
+
+    AppDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.dashboard_card_net_worth_color), fontWeight = FontWeight.Bold) },
+        text = {
+            Column {
+                Text(
+                    stringResource(R.string.wallpaper_preset),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(8.dp))
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    presetColors.forEach { (name, color) ->
+                        val isSelected = currentColor == color
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(color)
+                                .then(
+                                    if (isSelected) Modifier.border(3.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                                    else Modifier.border(1.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f), CircleShape)
+                                )
+                                .clickable { onSelect(name) },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (isSelected) {
+                                Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(18.dp))
+                            }
+                        }
+                    }
+                }
+                Spacer(Modifier.height(12.dp))
+                HorizontalDivider()
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    stringResource(R.string.wallpaper_custom_color),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(8.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = customHex,
+                        onValueChange = { v -> customHex = v.filter { it.isLetterOrDigit() }.take(6) },
+                        label = { Text("HEX") },
+                        prefix = { Text("#", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold) },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f),
+                        shape = MaterialTheme.shapes.small
+                    )
+                    val previewColor = "#$customHex".toComposeColor(Color.Gray)
+                    val isValid = customHex.length == 6
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(previewColor)
+                            .then(
+                                if (isValid) Modifier.border(2.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                                else Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape)
+                            )
+                            .clickable(enabled = isValid) { onSelect("#$customHex") },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (isValid) {
+                            Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(18.dp))
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.done), fontWeight = FontWeight.Bold)
+            }
+        }
     )
 }

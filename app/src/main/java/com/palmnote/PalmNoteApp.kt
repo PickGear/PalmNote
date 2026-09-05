@@ -48,6 +48,10 @@ class PalmNoteApp : Application(), Configuration.Provider {
             private set
         var cachedStartPage: String = "dashboard"
         var pendingNavigation: String? = null
+
+        // 记一笔的来源账本：BillScreen FAB 设置，AddBill 的 resetForm 消费（跨 VM 实例传递，
+        // 因为 BillScreen 与 AddBillScreen 的 BillViewModel 分属不同 backStackEntry）
+        var pendingAddBillBookId: Long? = null
         private const val MAX_CRASH_LOG_CHARS = 100_000
         private const val REDACT_MARKER = "[REDACTED]"
         private val SENSITIVE_KEYWORDS = listOf(

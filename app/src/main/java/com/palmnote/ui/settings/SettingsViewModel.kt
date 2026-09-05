@@ -65,7 +65,8 @@ data class SettingsState(
     val wallpaperStyle: String = PreferencesManager.DEFAULT_WALLPAPER_STYLE,
     val wallpaperBlur: Float = PreferencesManager.DEFAULT_WALLPAPER_BLUR,
     val wallpaperOpacity: Float = PreferencesManager.DEFAULT_WALLPAPER_OPACITY,
-    val wallpaperCustomUri: String = ""
+    val wallpaperCustomUri: String = "",
+    val wallpaperCustomColor: String = PreferencesManager.DEFAULT_WALLPAPER_CUSTOM_COLOR
 )
 
 @HiltViewModel
@@ -119,6 +120,7 @@ class SettingsViewModel @Inject constructor(
                 preferencesManager.wallpaperBlur,
                 preferencesManager.wallpaperOpacity,
                 preferencesManager.wallpaperCustomUri,
+                preferencesManager.wallpaperCustomColor,
                 assetRepository.getTotalAssetCount(),
                 goalRepository.getGoalCount(),
                 momentRepository.getMomentCount(),
@@ -155,11 +157,12 @@ class SettingsViewModel @Inject constructor(
                         wallpaperBlur = (i(24) as? Float) ?: PreferencesManager.DEFAULT_WALLPAPER_BLUR,
                         wallpaperOpacity = (i(25) as? Float) ?: PreferencesManager.DEFAULT_WALLPAPER_OPACITY,
                         wallpaperCustomUri = (i(26) as? String) ?: "",
-                        assetCount = (i(27) as? Int) ?: 0,
-                        goalCount = (i(28) as? Int) ?: 0,
-                        momentCount = (i(29) as? Int) ?: 0,
-                        anniversaryCount = (i(30) as? Int) ?: 0,
-                        autoLockTimeoutMinutes = (i(31) as? Int) ?: 5
+                        wallpaperCustomColor = (i(27) as? String) ?: PreferencesManager.DEFAULT_WALLPAPER_CUSTOM_COLOR,
+                        assetCount = (i(28) as? Int) ?: 0,
+                        goalCount = (i(29) as? Int) ?: 0,
+                        momentCount = (i(30) as? Int) ?: 0,
+                        anniversaryCount = (i(31) as? Int) ?: 0,
+                        autoLockTimeoutMinutes = (i(32) as? Int) ?: 5
                     )
                 }
             }.catch { AppLogger.w("SettingsVM", "Settings flow failed", it) }.collect()
@@ -224,6 +227,10 @@ class SettingsViewModel @Inject constructor(
 
     fun setWallpaperCustomUri(uri: String) {
         viewModelScope.launch { preferencesManager.setWallpaperCustomUri(uri) }
+    }
+
+    fun setWallpaperCustomColor(color: String) {
+        viewModelScope.launch { preferencesManager.setWallpaperCustomColor(color) }
     }
 
     fun setDefaultStartPage(route: String) {

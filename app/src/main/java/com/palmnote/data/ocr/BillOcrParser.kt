@@ -107,7 +107,7 @@ class BillOcrParser {
 
     private fun findMerchant(lines: List<String>): String {
         val merchantKeywords = listOf(
-            "商户", "商家", "收款方", "对方", "门店", "店铺", "公司",
+            "商户", "商家", "收款方", "收款单位", "付款方", "对方", "门店", "店铺", "公司",
             "付款给", "向.*付款"
         )
         for (line in lines) {
@@ -120,19 +120,34 @@ class BillOcrParser {
             }
         }
 
-        for (line in lines) {
-            val clean = line.replace(" ", "").replace("　", "")
-            if (clean.length in 2..30
-                && !clean.any { it in "0123456789¥￥%./-+:*#@!&" }
-                && !clean.contains("支出") && !clean.contains("收入")
-                && !clean.contains("交易") && !clean.contains("账单")
-                && !clean.contains("支付") && !clean.contains("完成")
-                && !clean.contains("时间") && !clean.contains("状态")
-            ) {
-                return clean
-            }
+        // 支付截图布局中商户名通常紧邻金额：优先在金额行的上下邻近行找候选，
+        // 而不是取识别文本最前面的行（那常是"微信支付"/"账单详情"等页面装饰——issue#1）
+        val amountIdx = lines.indexOfFirst { AMOUNT_PATTERN.matcher(it).find() || LOOSE_AMOUNT.matcher(it).find() }
+        if (amountIdx >= 0) {
+            val nearby = (amountIdx - 1 downTo maxOf(0, amountIdx - 2)) + ((amountIdx + 1)..minOf(lines.size - 1, amountIdx + 2))
+            nearby.map { lines[it] }.firstOrNull { isCleanMerchantCandidate(it) }?.let { return it }
         }
-        return ""
+
+        // 兜底：全文首个干净行（排除页面装饰词）
+        return lines.firstOrNull { isCleanMerchantCandidate(it) } ?: ""
+    }
+
+    private fun isCleanMerchantCandidate(line: String): Boolean {
+        val clean = line.replace(" ", "").replace("　", "")
+        if (clean.length !in 2..30) return false
+        // 含金额符号/纯标点的行不是商户
+        if (clean.any { it in "¥￥%*#@!&=" }) return false
+        // 页面装饰词（支付截图的标题/状态/按钮文字）
+        val decorationWords = listOf(
+            "支出", "收入", "交易", "账单", "支付", "完成", "时间", "状态", "成功",
+            "凭证", "详情", "收款", "付款码", "二维码", "零钱", "余额", "钱包", "明细",
+            "小票", "收据", "订单", "编号", "单号", "金额", "备注", "当前", "退款",
+            "微信", "支付宝", "银行", "余额宝", "银行卡"
+        )
+        if (decorationWords.any { clean.contains(it) }) return false
+        // 至少含 2 个汉字（纯数字/单符号行不是商户）
+        if (clean.count { it.code in 0x4E00..0x9FFF } < 2) return false
+        return true
     }
 
     private fun findDate(lines: List<String>): Long? {
@@ -175,13 +190,16 @@ class BillOcrParser {
         }
         val candidates = lines.filter {
             it.length in 3..60
-            && it != merchant
-            && !it.any { c -> c in "¥￥%/*-+@#" }
-            && !DATE_PATTERNS.any { p -> p.matcher(it).find() }
-            && !AMOUNT_PATTERN.matcher(it).find()
-            && !it.contains("支出") && !it.contains("收入")
-            && !it.contains("交易") && !it.contains("支付")
-            && !it.contains("时间") && !it.contains("状态")
+                && it != merchant
+                && !it.any { c -> c in "¥￥%/*-+@#" }
+                && !DATE_PATTERNS.any { p -> p.matcher(it).find() }
+                && !AMOUNT_PATTERN.matcher(it).find()
+                && it.replace(" ", "").let { c ->
+                    !c.contains("支出") && !c.contains("收入") && !c.contains("交易") &&
+                        !c.contains("支付") && !c.contains("时间") && !c.contains("状态") &&
+                        !c.contains("成功") && !c.contains("凭证") && !c.contains("详情") &&
+                        !c.contains("账单") && !c.contains("商户")
+                }
         }
         return candidates.firstOrNull() ?: ""
     }

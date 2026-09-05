@@ -66,11 +66,13 @@ class BillCsvImporterTest {
     }
 
     @Test
-    fun `wechat skips non-paid statuses`() {
+    fun `wechat keeps refunded rows for preview selection`() {
+        // issue#1：状态白名单曾过滤掉"已存入零钱/对方已退款"等真实状态导致丢行；
+        // 现在全部行进入预览由用户勾选
         val header = "交易时间,交易类型,交易对方,商品,收/支,金额(元),支付方式,当前状态"
-        val unpaid = "2026-07-22 10:00:00,商户消费,咖啡店,,支出,30.00,零钱,对方已退款"
-        val bills = importer.parseFromLines(listOf(header, unpaid, "合计: 1笔"), CsvFormat.WECHAT)
-        assertEquals(0, bills.size)
+        val refunded = "2026-07-22 10:00:00,商户消费,咖啡店,,支出,30.00,零钱,对方已退款"
+        val bills = importer.parseFromLines(listOf(header, refunded, "合计: 1笔"), CsvFormat.WECHAT)
+        assertEquals(1, bills.size)
     }
 
     @Test
@@ -189,6 +191,26 @@ class BillCsvImporterTest {
     fun `unmatched header returns empty list`() {
         val bills = importer.parseFromLines(listOf("a,b,c", "1,2,3"), CsvFormat.WECHAT)
         assertEquals(0, bills.size)
+    }
+
+    @Test
+    fun `generic format parses non-brand exports`() {
+        // issue#1：银行/云闪付等非微信/支付宝导出曾全部"未能解析"
+        val detectLines = listOf("账单日期,摘要,收付类型,金额,备注")
+        assertEquals(CsvFormat.GENERIC, importer.detectFormat(detectLines))
+        val header = "账单日期,摘要,收付类型,金额,备注"
+        val rows = listOf(
+            "2026-07-21 09:30:00,地铁乘车,支出,4.00,通勤",
+            "2026-07-22 18:00:00,工资入账,收入,8500.00,七月工资"
+        )
+        val bills = importer.parseFromLines(listOf(header) + rows, CsvFormat.GENERIC)
+        assertEquals(2, bills.size)
+        assertEquals("其他", bills[0].category)
+        assertEquals("EXPENSE", bills[0].type)
+        assertEquals(400L, bills[0].amount)
+        assertEquals("通勤", bills[0].note)
+        assertEquals("INCOME", bills[1].type)
+        assertEquals(850000L, bills[1].amount)
     }
 }
 

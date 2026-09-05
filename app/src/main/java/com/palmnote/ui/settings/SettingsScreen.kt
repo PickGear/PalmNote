@@ -29,6 +29,7 @@ import com.palmnote.ui.components.AppDialog
 import com.palmnote.ui.components.CompactTopAppBar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import com.palmnote.app.R
 import com.palmnote.ui.theme.*
 import com.palmnote.ui.theme.AppIcon
@@ -142,13 +143,26 @@ fun SettingsScreen(
                                         contentScale = ContentScale.Crop
                                     )
                                 } else {
-                                    Icon(avatarIcon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
+                                    Box(
+                                        modifier = Modifier
+                                            .size(52.dp)
+                                            .clip(CircleShape)
+                                            .background(ModuleHome),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = "P",
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White
+                                        )
+                                    }
                                 }
                             }
                             Spacer(Modifier.width(14.dp))
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    if (state.profileNickname.isNotBlank()) state.profileNickname else stringResource(R.string.app_name),
+                                    if (state.profileNickname.isNotBlank()) state.profileNickname else "PalmNote",
                                     style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold
                                 )
                                 if (state.profileSignature.isNotBlank()) {
@@ -208,20 +222,22 @@ fun SettingsScreen(
         val scope = rememberCoroutineScope()
         val imagePickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
             uri?.let {
-                scope.launch(Dispatchers.IO) {
+                scope.launch {
                     try {
                         val inputStream = context.contentResolver.openInputStream(it)
                         val avatarDir = File(context.filesDir, "avatars")
                         avatarDir.mkdirs()
-                        val destFile = File(avatarDir, "profile_avatar.jpg")
-                        inputStream?.use { input ->
-                            destFile.outputStream().use { output ->
-                                input.copyTo(output)
+                        val destFile = File(avatarDir, "profile_avatar_${System.currentTimeMillis()}.jpg")
+                        withContext(Dispatchers.IO) {
+                            inputStream?.use { input ->
+                                destFile.outputStream().use { output ->
+                                    input.copyTo(output)
+                                }
                             }
                         }
                         editAvatarPath = destFile.absolutePath
                         editAvatar = ""
-                    } catch (e: Exception) { }
+                    } catch (e: Exception) { e.printStackTrace() }
                 }
             }
         }
@@ -244,8 +260,20 @@ fun SettingsScreen(
                                     contentScale = ContentScale.Crop
                                 )
                             } else {
-                                val icon = try { AppIcon.valueOf(editAvatar).imageVector } catch (_: Exception) { Icons.Filled.Spa }
-                                Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(32.dp))
+                                Box(
+                                    modifier = Modifier
+                                        .size(64.dp)
+                                        .clip(CircleShape)
+                                        .background(ModuleHome),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "P",
+                                        style = MaterialTheme.typography.titleLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White
+                                    )
+                                }
                             }
                         }
                         Spacer(Modifier.width(16.dp))
@@ -254,7 +282,7 @@ fun SettingsScreen(
                         }
                         if (editAvatarPath.isNotBlank()) {
                             Spacer(Modifier.width(8.dp))
-                            TextButton(onClick = { editAvatarPath = ""; editAvatar = "Spa" }) {
+                            TextButton(onClick = { editAvatarPath = "" }) {
                                 Text(stringResource(R.string.settings_profile_reset_avatar))
                             }
                         }

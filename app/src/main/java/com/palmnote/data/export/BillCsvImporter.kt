@@ -33,6 +33,11 @@ class BillCsvImporter {
             if (line.contains("微信支付") || line.contains("微信账单")) return CsvFormat.WECHAT
             if (line.contains("支付宝") || line.contains("Alipay")) return CsvFormat.ALIPAY
         }
+        // 通用兜底：任意来源（银行/云闪付/手动表格等），表头含"时间/日期"+"金额"即可尝试
+        for (line in lines) {
+            val clean = line.trimStart('\uFEFF').trim()
+            if (clean.contains("金额") && (clean.contains("时间") || clean.contains("日期"))) return CsvFormat.GENERIC
+        }
         return CsvFormat.UNKNOWN
     }
 
@@ -40,6 +45,9 @@ class BillCsvImporter {
         val headerLine = when (format) {
             CsvFormat.ALIPAY -> lines.firstOrNull {
                 it.contains("记录时间") || (it.contains("交易时间") && it.contains("收支"))
+            }
+            CsvFormat.GENERIC -> lines.firstOrNull {
+                it.contains("金额") && (it.contains("时间") || it.contains("日期"))
             }
             else -> lines.firstOrNull {
                 it.contains("交易时间") && (it.contains("收/支") || it.contains("金额"))
@@ -58,6 +66,7 @@ class BillCsvImporter {
         return when (format) {
             CsvFormat.WECHAT -> parseWechat(dataLines, headerIdx, sep)
             CsvFormat.ALIPAY -> parseAlipay(dataLines, headerIdx, sep)
+            CsvFormat.GENERIC -> parseGeneric(dataLines, headerIdx, sep)
             CsvFormat.UNKNOWN -> emptyList()
         }
     }
@@ -85,7 +94,6 @@ class BillCsvImporter {
         val ieIdx = col(headerIdx, "收/支")
         val amountIdx = col(headerIdx, "金额")
         val methodIdx = col(headerIdx, "支付方式")
-        val statusIdx = col(headerIdx, "状态")
         val noteIdx = col(headerIdx, "备注")
         val txIdIdx = col(headerIdx, "交易单号")
 
@@ -96,8 +104,6 @@ class BillCsvImporter {
                 val amountStr = cell(cols, amountIdx).ifBlank { return@mapNotNull null }
                 val cleanAmount = amountStr.replace(",", "").replace("¥", "").replace("￥", "").replace(" ", "").replace("+", "").replace("-", "")
                 val amount = Money.parse(cleanAmount)?.cents ?: return@mapNotNull null
-                val status = cell(cols, statusIdx)
-                if (status.isNotBlank() && status !in listOf("已支付", "支付成功", "已到账", "已收钱")) return@mapNotNull null
                 val date = parseDate(timeStr) ?: return@mapNotNull null
                 val isIncome = cell(cols, ieIdx).contains("收入")
 
@@ -114,6 +120,9 @@ class BillCsvImporter {
             } catch (_: Exception) { null }
         }
     }
+
+    // 状态过滤已移除：无效/退款行全部进入预览，由用户在导入预览中自行勾选
+    // （原白名单遗漏"已存入零钱"等大量真实状态变体，导致 Excel 导入大面积丢行——issue#1）
 
     private fun parseAlipay(lines: List<String>, headerIdx: Map<String, Int>, sep: Char): List<ParsedBill> {
         val dateIdx = col(headerIdx, "记录时间") ?: col(headerIdx, "交易时间")
@@ -151,9 +160,57 @@ class BillCsvImporter {
         }
     }
 
+    // 通用格式：不依赖品牌表头，按关键词匹配列（银行/云闪付/手动表格等其他导出来源）
+    private fun parseGeneric(lines: List<String>, headerIdx: Map<String, Int>, sep: Char): List<ParsedBill> {
+        val dateIdx = col(headerIdx, "时间") ?: col(headerIdx, "日期")
+        val amountIdx = col(headerIdx, "金额")
+        val ieIdx = col(headerIdx, "收/支") ?: col(headerIdx, "收支") ?: col(headerIdx, "类型")
+        val merchantIdx = col(headerIdx, "商户") ?: col(headerIdx, "对方") ?: col(headerIdx, "摘要")
+            ?: col(headerIdx, "描述") ?: col(headerIdx, "收款方") ?: col(headerIdx, "付款方")
+        val noteIdx = col(headerIdx, "备注") ?: col(headerIdx, "说明")
+        val categoryIdx = col(headerIdx, "分类") ?: col(headerIdx, "类别")
+
+        return lines.mapNotNull { line ->
+            try {
+                val cols = parseCsvLine(line, sep)
+                val timeStr = cell(cols, dateIdx).ifBlank { return@mapNotNull null }
+                val amountStr = cell(cols, amountIdx).ifBlank { return@mapNotNull null }
+                val ieText = cell(cols, ieIdx)
+                val isIncome = when {
+                    ieText.contains("收入") || ieText.contains("转入") || ieText.contains("贷") -> true
+                    ieText.contains("支出") || ieText.contains("转出") || ieText.contains("借") -> false
+                    else -> amountStr.trimStart().startsWith("+")
+                }
+                val negative = amountStr.trimStart().startsWith("-")
+                val cleanAmount = amountStr.replace(",", "").replace("¥", "").replace("￥", "").replace(" ", "").replace("+", "").replace("-", "")
+                val amount = Money.parse(cleanAmount)?.cents ?: return@mapNotNull null
+                val date = parseDate(timeStr) ?: return@mapNotNull null
+                val merchant = cell(cols, merchantIdx)
+                val note = cell(cols, noteIdx)
+                val categoryText = cell(cols, categoryIdx)
+                val type = if (isIncome && !negative) BillType.INCOME.value else BillType.EXPENSE.value
+
+                ParsedBill(
+                    date = date,
+                    type = type,
+                    amount = amount,
+                    category = if (categoryText.isNotBlank()) normalizeCategory(categoryText, type)
+                    else normalizeCategory(guessCategory(merchant, note, ieText), type),
+                    merchant = merchant,
+                    note = note,
+                    paymentMethod = "OTHER"
+                )
+            } catch (_: Exception) { null }
+        }
+    }
+
     private fun parseDate(timeStr: String): Long? {
         val clean = timeStr.trim()
-        for (pat in listOf("yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd HH:mm", "yyyy/MM/dd HH:mm:ss", "yyyy/MM/dd HH:mm", "yyyy-MM-dd", "yyyy/MM/dd")) {
+        for (pat in listOf(
+            "yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd HH:mm", "yyyy/MM/dd HH:mm:ss", "yyyy/MM/dd HH:mm",
+            "yyyy/M/d HH:mm:ss", "yyyy/M/d HH:mm", "yyyy-MM-dd", "yyyy/MM/dd", "yyyy/M/d",
+            "yyyy年M月d日 HH:mm:ss", "yyyy年M月d日 HH:mm", "yyyy年M月d日"
+        )) {
             try {
                 val parsed = SimpleDateFormat(pat, Locale.getDefault()).parse(clean)
                 if (parsed != null) return parsed.time
@@ -344,5 +401,5 @@ class BillCsvImporter {
         return result
     }
 
-    enum class CsvFormat { WECHAT, ALIPAY, UNKNOWN }
+    enum class CsvFormat { WECHAT, ALIPAY, GENERIC, UNKNOWN }
 }

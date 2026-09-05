@@ -4,15 +4,22 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.Animatable
 import kotlinx.coroutines.delay
@@ -38,6 +45,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.zIndex
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
@@ -57,6 +65,8 @@ import com.palmnote.domain.util.CurrencyUtils
 import com.palmnote.domain.util.DateUtils
 import com.palmnote.ui.components.*
 import com.palmnote.ui.theme.*
+import coil3.compose.AsyncImage
+import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -71,8 +81,12 @@ fun DashboardScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val rawConfigs by viewModel.visibleConfigs.collectAsStateWithLifecycle()
+    val allConfigs by viewModel.cardConfigs.collectAsStateWithLifecycle()
     val presetCategoryOverrides by viewModel.presetCategoryOverrides.collectAsStateWithLifecycle()
     val categoryConfigs by viewModel.categoryConfigs.collectAsStateWithLifecycle()
+    val profileNickname by viewModel.profileNickname.collectAsStateWithLifecycle()
+    val profileAvatar by viewModel.profileAvatar.collectAsStateWithLifecycle()
+    val profileAvatarPath by viewModel.profileAvatarPath.collectAsStateWithLifecycle()
 
     val hapticFeedback = LocalHapticFeedback.current
     val spacingPx = with(LocalDensity.current) { 16.dp.toPx() }
@@ -80,6 +94,65 @@ fun DashboardScreen(
     val context = androidx.compose.ui.platform.LocalContext.current
     val greeting = remember { getGreeting(context) }
     val weekDay = remember { getWeekDay(context) }
+
+    val dashboardMessages = remember {
+        listOf(
+            context.getString(R.string.tip_1),
+            context.getString(R.string.tip_2),
+            context.getString(R.string.tip_3),
+            context.getString(R.string.tip_4),
+            context.getString(R.string.tip_5),
+            context.getString(R.string.tip_6),
+            context.getString(R.string.tip_7),
+            context.getString(R.string.tip_8),
+            context.getString(R.string.tip_9),
+            context.getString(R.string.tip_10),
+            context.getString(R.string.tip_11),
+            context.getString(R.string.tip_12),
+            context.getString(R.string.tip_13),
+            context.getString(R.string.tip_14),
+            context.getString(R.string.tip_15),
+            context.getString(R.string.quote_1),
+            context.getString(R.string.quote_2),
+            context.getString(R.string.quote_3),
+            context.getString(R.string.quote_4),
+            context.getString(R.string.quote_5),
+            context.getString(R.string.quote_6),
+            context.getString(R.string.quote_7),
+            context.getString(R.string.quote_8),
+            context.getString(R.string.quote_9),
+            context.getString(R.string.quote_10),
+            context.getString(R.string.quote_11),
+            context.getString(R.string.quote_12)
+        )
+    }
+
+    val persistentMessageMode by viewModel.dashboardMessageMode.collectAsStateWithLifecycle()
+
+    var messageIndex by remember { mutableIntStateOf(if (persistentMessageMode) (Math.random() * (dashboardMessages.size + 1)).toInt() else 0) }
+
+    LaunchedEffect(persistentMessageMode) {
+        if (persistentMessageMode) {
+            messageIndex = (Math.random() * (dashboardMessages.size + 1)).toInt()
+        }
+    }
+
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
+        val observer = object : androidx.lifecycle.LifecycleEventObserver {
+            override fun onStateChanged(source: androidx.lifecycle.LifecycleOwner, event: androidx.lifecycle.Lifecycle.Event) {
+                if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME && persistentMessageMode) {
+                    messageIndex = (Math.random() * (dashboardMessages.size + 1)).toInt()
+                }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
+    val showMessage = persistentMessageMode
 
     var draggedType by remember { mutableStateOf<CardType?>(null) }
     var overlayTopPx by remember { mutableFloatStateOf(0f) }
@@ -122,41 +195,102 @@ fun DashboardScreen(
         Column(modifier = Modifier.fillMaxSize()) {
             CompactTopAppBar(
                 title = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = stringResource(R.string.app_name),
-                            style = MaterialTheme.typography.displaySmall,
-                            fontWeight = FontWeight.Bold,
-                            color = ModuleHome
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = greeting,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .combinedClickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                                onClick = {
+                                    if (persistentMessageMode) {
+                                        messageIndex = (Math.random() * (dashboardMessages.size + 1)).toInt()
+                                    }
+                                },
+                                onLongClick = {
+                                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    viewModel.toggleDashboardMessageMode()
+                                    if (!persistentMessageMode) {
+                                        messageIndex = (Math.random() * (dashboardMessages.size + 1)).toInt()
+                                    }
+                                }
+                            )
+                    ) {
+                        AnimatedContent(
+                            targetState = showMessage,
+                            transitionSpec = {
+                                fadeIn(tween(200)) + slideInVertically(tween(200)) { it / 2 } togetherWith
+                                fadeOut(tween(150)) + slideOutVertically(tween(150)) { -it / 2 }
+                            },
+                            label = "titleTransition"
+                        ) { showMsg ->
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (!showMsg) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(32.dp)
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .background(ModuleHome),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        if (profileAvatarPath.isNotBlank()) {
+                                            AsyncImage(
+                                                model = File(profileAvatarPath),
+                                                contentDescription = null,
+                                                modifier = Modifier.fillMaxSize(),
+                                                contentScale = ContentScale.Crop
+                                            )
+                                        } else {
+                                            Text(
+                                                text = "P",
+                                                style = MaterialTheme.typography.titleMedium,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color.White
+                                            )
+                                        }
+                                    }
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                }
+                                if (showMsg && persistentMessageMode) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(6.dp)
+                                            .clip(CircleShape)
+                                            .background(ModuleHome)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                }
+                                Text(
+                                    text = if (showMsg) {
+                                        if (messageIndex == 0) greeting else dashboardMessages[messageIndex - 1]
+                                    } else if (profileNickname.isNotBlank()) profileNickname else "PalmNote",
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (showMsg) ModuleHome else MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
                     }
                 },
                 actions = {
                     IconButton(onClick = onNavigateToSearch) {
-                        Icon(
-                            imageVector = Icons.Outlined.Search,
-                            contentDescription = stringResource(R.string.search),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
+                Icon(
+                    imageVector = Icons.Outlined.Search,
+                    contentDescription = stringResource(R.string.search),
+                    tint = Color(0xFF616161)
+                )
                     }
                     IconButton(onClick = { showCardDialog = true }) {
                         Icon(
                             imageVector = Icons.Outlined.GridView,
                             contentDescription = stringResource(R.string.dashboard_card_manage),
-                            tint = MaterialTheme.colorScheme.primary
+                            tint = Color(0xFF616161)
                         )
                     }
                     IconButton(onClick = onNavigateToSettings) {
                         Icon(
                             imageVector = Icons.Outlined.Person,
                             contentDescription = stringResource(R.string.settings_title),
-                            tint = MaterialTheme.colorScheme.primary
+                            tint = Color(0xFF616161)
                         )
                     }
                 }
@@ -264,7 +398,8 @@ fun DashboardScreen(
                                     onNavigateToVault = onNavigateToVault,
                                     onHabitCheckIn = { viewModel.checkInHabit(it) },
                                     presetCategoryOverrides = presetCategoryOverrides,
-                                    categoryConfigs = categoryConfigs
+                                    categoryConfigs = categoryConfigs,
+                                    cardConfigs = allConfigs
                                 )
                             }
                         }
@@ -299,7 +434,8 @@ fun DashboardScreen(
                             onNavigateToVault = onNavigateToVault,
                             onHabitCheckIn = { viewModel.checkInHabit(it) },
                             presetCategoryOverrides = presetCategoryOverrides,
-                            categoryConfigs = categoryConfigs
+                            categoryConfigs = categoryConfigs,
+                            cardConfigs = allConfigs
                         )
                     }
                 }
@@ -307,10 +443,10 @@ fun DashboardScreen(
         }
 
         if (showCardDialog) {
-            val cardConfigs by viewModel.cardConfigs.collectAsStateWithLifecycle()
             CardManagementDialog(
-                allConfigs = cardConfigs,
+                allConfigs = allConfigs,
                 onToggle = { type -> viewModel.toggleCard(type) },
+                onColorChange = { type, color -> viewModel.setCardCustomColor(type, color) },
                 onDismiss = { showCardDialog = false }
             )
         }
