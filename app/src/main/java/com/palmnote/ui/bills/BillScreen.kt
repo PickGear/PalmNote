@@ -182,7 +182,12 @@ fun BillScreen(
                                                         }
                                                     }
                                                     if (book.id == state.selectedBookId) {
-                                                        Icon(Icons.Filled.Check, contentDescription = null, tint = Color(0xFF616161), modifier = Modifier.size(20.dp))
+                                                        Icon(
+                                                            Icons.Filled.Check,
+                                                            contentDescription = null,
+                                                            tint = Color(0xFF616161),
+                                                            modifier = Modifier.size(20.dp)
+                                                        )
                                                     }
                                                 }
                                             }
@@ -217,14 +222,26 @@ fun BillScreen(
                             Icon(Icons.Outlined.Search, contentDescription = stringResource(R.string.search), tint = Color(0xFF616161))
                         }
                         IconButton(onClick = onNavigateToImportCsv) {
-                            Icon(Icons.Outlined.FileUpload, contentDescription = stringResource(R.string.bill_import), tint = Color(0xFF616161))
+                            Icon(
+                                Icons.Outlined.FileUpload,
+                                contentDescription = stringResource(R.string.bill_import),
+                                tint = Color(0xFF616161)
+                            )
                         }
                         val allBooksLabel = stringResource(R.string.bill_all_books)
                         IconButton(onClick = { onNavigateToReport(state.selectedBookId, currentBook?.getDisplayName(context) ?: allBooksLabel) }) {
-                            Icon(Icons.Outlined.Assessment, contentDescription = stringResource(R.string.bill_report), tint = Color(0xFF616161))
+                            Icon(
+                                Icons.Outlined.Assessment,
+                                contentDescription = stringResource(R.string.bill_report),
+                                tint = Color(0xFF616161)
+                            )
                         }
                         IconButton(onClick = onNavigateToBudget) {
-                            Icon(Icons.Outlined.AccountBalance, contentDescription = stringResource(R.string.bill_budget_tab), tint = Color(0xFF616161))
+                            Icon(
+                                Icons.Outlined.AccountBalance,
+                                contentDescription = stringResource(R.string.bill_budget_tab),
+                                tint = Color(0xFF616161)
+                            )
                         }
                     }
                 }

@@ -90,12 +90,24 @@ private fun DispatchScreen(tpl: LifeTemplate, tid: Long, navController: NavHostC
         LifeTemplateRouteType.MOOD -> MoodListScreen(onBack = back)
         LifeTemplateRouteType.JOURNAL -> JournalListScreen(onBack = back, onItemClick = onClick)
         LifeTemplateRouteType.FOCUS -> FocusTimerScreen(onBack = back)
-        LifeTemplateRouteType.COUNTUP -> CountUpListScreen(templateId = tid, onBack = back, onItemClick = onClick, onCreateClick = onCreate)
-        LifeTemplateRouteType.COUNTDOWN -> CountdownListScreen(templateId = tid, onBack = back, onItemClick = onClick, onCreateClick = onCreate)
-        LifeTemplateRouteType.BIRTHDAY -> BirthdayListScreen(templateId = tid, onBack = back, onItemClick = onClick, onCreateClick = onCreate)
-        LifeTemplateRouteType.ANNIVERSARY -> AnniversaryListScreen(templateId = tid, onBack = back, onItemClick = onClick, onCreateClick = onCreate)
-        LifeTemplateRouteType.TODO -> GenericTemplateListScreen(template = tpl, templateId = tid, onBack = back, onItemClick = onClick, onCreateClick = onCreate)
-        LifeTemplateRouteType.GENERIC -> GenericTemplateListScreen(template = tpl, templateId = tid, onBack = back, onItemClick = onClick, onCreateClick = onCreate)
+        LifeTemplateRouteType.COUNTUP -> CountUpListScreen(
+            templateId = tid, onBack = back, onItemClick = onClick, onCreateClick = onCreate
+        )
+        LifeTemplateRouteType.COUNTDOWN -> CountdownListScreen(
+            templateId = tid, onBack = back, onItemClick = onClick, onCreateClick = onCreate
+        )
+        LifeTemplateRouteType.BIRTHDAY -> BirthdayListScreen(
+            templateId = tid, onBack = back, onItemClick = onClick, onCreateClick = onCreate
+        )
+        LifeTemplateRouteType.ANNIVERSARY -> AnniversaryListScreen(
+            templateId = tid, onBack = back, onItemClick = onClick, onCreateClick = onCreate
+        )
+        LifeTemplateRouteType.TODO -> GenericTemplateListScreen(
+            template = tpl, templateId = tid, onBack = back, onItemClick = onClick, onCreateClick = onCreate
+        )
+        LifeTemplateRouteType.GENERIC -> GenericTemplateListScreen(
+            template = tpl, templateId = tid, onBack = back, onItemClick = onClick, onCreateClick = onCreate
+        )
     }
 }
 
@@ -105,6 +117,7 @@ private fun dispatchTemplateScreen(tpl: LifeTemplate, tid: Long, navController: 
 }
 
 @Composable
+@Suppress("CyclomaticComplexMethod")
 fun LifeNavHost(modifier: Modifier = Modifier, onChildNavigated: (Boolean) -> Unit = {}, navController: NavHostController = rememberNavController()) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     LaunchedEffect(navBackStackEntry?.destination?.route) {

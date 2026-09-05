@@ -1,0 +1,17 @@
+#!/bin/sh
+# pre-push hook: 推送前运行质量检查（对应 CI quality job 的本地等效）
+
+echo "🔍 Running lint..."
+if ! ./gradlew lintDebug --quiet; then
+    echo "❌ Lint 失败，阻止推送"
+    exit 1
+fi
+
+echo "🧪 Running unit tests..."
+if ! ./gradlew testDebugUnitTest --quiet; then
+    echo "❌ 测试失败，阻止推送"
+    exit 1
+fi
+
+echo "✅ 质量检查通过"
+exit 0

@@ -19,3 +19,5 @@ Thumbs.db
 *.aab
 *.jks
 *.keystore
+.mimosa/
+docs/widget-polish-log.md

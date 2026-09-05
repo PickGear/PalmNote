@@ -110,6 +110,7 @@ fun planProgress(subtasks: List<LifeItem>, planStart: LocalDate, planEnd: LocalD
     return planDoneCount(subtasks, planStart, planEnd, today).toFloat() / subtasks.size
 }
 
+@Suppress("LoopWithTooManyJumpStatements")
 fun streakCount(subtasks: List<LifeItem>, planStart: LocalDate, planEnd: LocalDate?, today: LocalDate): Int {
     var day = today
     var streak = 0
