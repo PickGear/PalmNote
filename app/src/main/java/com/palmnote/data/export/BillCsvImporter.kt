@@ -161,6 +161,7 @@ class BillCsvImporter {
     }
 
     // 通用格式：不依赖品牌表头，按关键词匹配列（银行/云闪付/手动表格等其他导出来源）
+    @Suppress("CyclomaticComplexMethod")
     private fun parseGeneric(lines: List<String>, headerIdx: Map<String, Int>, sep: Char): List<ParsedBill> {
         val dateIdx = col(headerIdx, "时间") ?: col(headerIdx, "日期")
         val amountIdx = col(headerIdx, "金额")

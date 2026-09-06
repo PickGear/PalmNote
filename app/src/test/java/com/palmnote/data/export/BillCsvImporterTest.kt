@@ -205,7 +205,7 @@ class BillCsvImporterTest {
         )
         val bills = importer.parseFromLines(listOf(header) + rows, CsvFormat.GENERIC)
         assertEquals(2, bills.size)
-        assertEquals("其他", bills[0].category)
+        assertEquals("交通", bills[0].category)
         assertEquals("EXPENSE", bills[0].type)
         assertEquals(400L, bills[0].amount)
         assertEquals("通勤", bills[0].note)

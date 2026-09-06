@@ -248,7 +248,7 @@ class MainActivity : AppCompatActivity() {
                                     Icon(
                                         painter = painterResource(id = R.drawable.ic_launcher_foreground_bw),
                                         contentDescription = null,
-                                        modifier = Modifier.size(48.dp),
+                                        modifier = Modifier.size(56.dp),
                                         tint = Color.White
                                     )
                                 }

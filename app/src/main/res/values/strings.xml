@@ -1708,11 +1708,6 @@
     <string name="settings_icon_confirm_title">切换应用图标</string>
     <string name="settings_icon_confirm_text">切换后应用将退出，桌面图标将更新。</string>
     <!-- Theme Colors -->
-    <string name="theme_cyan">青</string>
-    <string name="theme_green">绿</string>
-    <string name="theme_blue">蓝</string>
-    <string name="theme_purple">紫</string>
-    <string name="theme_orange">橙</string>
     <string name="settings_theme_color">主题色</string>
     <string name="settings_theme_color_subtitle">切换应用主色调</string>
     <string name="settings_select_theme_color">选择主题色</string>

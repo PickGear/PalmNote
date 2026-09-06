@@ -152,7 +152,7 @@ fun SettingsScreen(
                                     ) {
                                         Text(
                                             text = "P",
-                                            style = MaterialTheme.typography.titleMedium,
+                                            style = MaterialTheme.typography.titleLarge,
                                             fontWeight = FontWeight.Bold,
                                             color = Color.White
                                         )

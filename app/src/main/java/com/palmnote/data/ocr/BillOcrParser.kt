@@ -132,6 +132,7 @@ class BillOcrParser {
         return lines.firstOrNull { isCleanMerchantCandidate(it) } ?: ""
     }
 
+    @Suppress("ReturnCount")
     private fun isCleanMerchantCandidate(line: String): Boolean {
         val clean = line.replace(" ", "").replace("　", "")
         if (clean.length !in 2..30) return false

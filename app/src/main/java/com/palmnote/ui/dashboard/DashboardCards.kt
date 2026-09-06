@@ -853,7 +853,12 @@ internal fun TodayCard(state: DashboardState, onNavigateToLife: () -> Unit) {
             }
             Column(horizontalAlignment = Alignment.End) {
                 Text(stringResource(R.string.dashboard_recorded), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(stringResource(R.string.dashboard_items_recorded, state.activeAssetCount + state.goalCount + state.anniversaryCount), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = StatusHeld)
+                Text(
+                    stringResource(R.string.dashboard_items_recorded, state.activeAssetCount + state.goalCount + state.anniversaryCount),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = StatusHeld
+                )
                 Spacer(modifier = Modifier.height(4.dp))
                 JumpCapsule(
                     label = stringResource(R.string.nav_life),
@@ -937,6 +942,7 @@ fun AssetDistributionChart(
 }
 
 @Composable
+@Suppress("LongMethod", "CyclomaticComplexMethod", "LongParameterList")
 internal fun CardManagementDialog(
     allConfigs: List<DashboardCardConfig>,
     onToggle: (CardType) -> Unit,
@@ -944,7 +950,16 @@ internal fun CardManagementDialog(
     onDismiss: () -> Unit
 ) {
     var showColorPicker by remember { mutableStateOf(false) }
-    var editingCardType by remember { mutableStateOf<CardType?>(null) }
+    val presetColors = listOf(
+        "#0891B2" to ModuleHome,
+        "#2A6BAB" to ModuleItem,
+        "#34A853" to StatusHeld,
+        "#FF8C42" to AccentOrange,
+        "#C2185B" to ModuleLife,
+        "#FFCA28" to Color(0xFFFFCA28),
+        "#EF5350" to Color(0xFFEF5350),
+        "#29B6F6" to Color(0xFF29B6F6)
+    )
 
     AppDialog(
         onDismissRequest = onDismiss,
@@ -954,7 +969,7 @@ internal fun CardManagementDialog(
                 verticalArrangement = Arrangement.spacedBy(4.dp),
                 modifier = Modifier
                     .verticalScroll(rememberScrollState())
-                    .heightIn(max = 420.dp)
+                    .heightIn(max = 520.dp)
             ) {
                 allConfigs.forEach { config ->
                     Row(
@@ -992,10 +1007,7 @@ internal fun CardManagementDialog(
                                         .clip(CircleShape)
                                         .background(cardColor)
                                         .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f), CircleShape)
-                                        .clickable {
-                                            editingCardType = config.type
-                                            showColorPicker = true
-                                        }
+                                        .clickable { showColorPicker = !showColorPicker }
                                 )
                             }
                             CapsuleSwitch(
@@ -1005,127 +1017,20 @@ internal fun CardManagementDialog(
                             )
                         }
                     }
+
+                    if (showColorPicker && config.type == CardType.NET_WORTH) {
+                        InlineColorPicker(
+                            presetColors = presetColors,
+                            selectedColor = config.customColor,
+                            onColorSelected = { color ->
+                                onColorChange(CardType.NET_WORTH, color)
+                            },
+                            modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
+                        )
+                    }
                 }
             }
         },
         confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.done)) } }
-    )
-
-    if (showColorPicker && editingCardType == CardType.NET_WORTH) {
-        val currentColor = allConfigs.find { it.type == CardType.NET_WORTH }?.customColor?.toComposeColor() ?: ModuleHome
-        CardColorPickerDialog(
-            currentColor = currentColor,
-            onSelect = { color ->
-                onColorChange(CardType.NET_WORTH, color)
-                showColorPicker = false
-                editingCardType = null
-            },
-            onDismiss = {
-                showColorPicker = false
-                editingCardType = null
-            }
-        )
-    }
-}
-
-@Composable
-private fun CardColorPickerDialog(
-    currentColor: Color,
-    onSelect: (String?) -> Unit,
-    onDismiss: () -> Unit
-) {
-    val presetColors = listOf(
-        "#0891B2" to ModuleHome,
-        "#2A6BAB" to ModuleItem,
-        "#34A853" to StatusHeld,
-        "#FF8C42" to AccentOrange,
-        "#C2185B" to ModuleLife,
-        "#7C8CF0" to LifePlan
-    )
-    var customHex by remember { mutableStateOf("") }
-
-    AppDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.dashboard_card_net_worth_color), fontWeight = FontWeight.Bold) },
-        text = {
-            Column {
-                Text(
-                    stringResource(R.string.wallpaper_preset),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(Modifier.height(8.dp))
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    presetColors.forEach { (name, color) ->
-                        val isSelected = currentColor == color
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .background(color)
-                                .then(
-                                    if (isSelected) Modifier.border(3.dp, MaterialTheme.colorScheme.primary, CircleShape)
-                                    else Modifier.border(1.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f), CircleShape)
-                                )
-                                .clickable { onSelect(name) },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            if (isSelected) {
-                                Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(18.dp))
-                            }
-                        }
-                    }
-                }
-                Spacer(Modifier.height(12.dp))
-                HorizontalDivider()
-                Spacer(Modifier.height(12.dp))
-                Text(
-                    stringResource(R.string.wallpaper_custom_color),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(Modifier.height(8.dp))
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    OutlinedTextField(
-                        value = customHex,
-                        onValueChange = { v -> customHex = v.filter { it.isLetterOrDigit() }.take(6) },
-                        label = { Text("HEX") },
-                        prefix = { Text("#", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold) },
-                        singleLine = true,
-                        modifier = Modifier.weight(1f),
-                        shape = MaterialTheme.shapes.small
-                    )
-                    val previewColor = "#$customHex".toComposeColor(Color.Gray)
-                    val isValid = customHex.length == 6
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .background(previewColor)
-                            .then(
-                                if (isValid) Modifier.border(2.dp, MaterialTheme.colorScheme.primary, CircleShape)
-                                else Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape)
-                            )
-                            .clickable(enabled = isValid) { onSelect("#$customHex") },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (isValid) {
-                            Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(18.dp))
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.done), fontWeight = FontWeight.Bold)
-            }
-        }
     )
 }

@@ -1711,11 +1711,6 @@
     <string name="settings_icon_confirm_title">Switch App Icon</string>
     <string name="settings_icon_confirm_text">The app will exit and the home screen icon will update.</string>
     <!-- Theme Colors -->
-    <string name="theme_cyan">Cyan</string>
-    <string name="theme_green">Green</string>
-    <string name="theme_blue">Blue</string>
-    <string name="theme_purple">Purple</string>
-    <string name="theme_orange">Orange</string>
     <string name="settings_theme_color">Theme Color</string>
     <string name="settings_theme_color_subtitle">Switch app primary color</string>
     <string name="settings_select_theme_color">Select Theme Color</string>

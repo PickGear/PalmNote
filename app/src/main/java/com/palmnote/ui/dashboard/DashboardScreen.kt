@@ -129,7 +129,9 @@ fun DashboardScreen(
 
     val persistentMessageMode by viewModel.dashboardMessageMode.collectAsStateWithLifecycle()
 
-    var messageIndex by remember { mutableIntStateOf(if (persistentMessageMode) (Math.random() * (dashboardMessages.size + 1)).toInt() else 0) }
+    var messageIndex by remember {
+        mutableIntStateOf(if (persistentMessageMode) (Math.random() * (dashboardMessages.size + 1)).toInt() else 0)
+    }
 
     LaunchedEffect(persistentMessageMode) {
         if (persistentMessageMode) {
