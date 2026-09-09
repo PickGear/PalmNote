@@ -32,7 +32,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.palmnote.app.R
 import com.palmnote.ui.theme.*
-import com.palmnote.ui.theme.AppIcon
 import java.io.File
 import coil3.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
@@ -130,7 +129,6 @@ fun SettingsScreen(
                             modifier = Modifier.fillMaxWidth().clickable { showProfileEdit = true },
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            val avatarIcon = try { AppIcon.valueOf(state.profileAvatar).imageVector } catch (_: Exception) { Icons.Filled.Spa }
                             Box(
                                 modifier = Modifier.size(52.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
                                 contentAlignment = Alignment.Center

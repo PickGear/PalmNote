@@ -41,6 +41,9 @@ import com.palmnote.ui.theme.*
 import com.palmnote.ui.asset.getCategoryDisplayName
 import com.palmnote.ui.asset.getCategoryIcon
 
+// 10 种卡片的统一分发入口：参数为纯数据 + 导航回调，按卡片类型各自取用，
+// 收敛成状态对象只会把参数换个地方堆——Compose 惯例下保持显式签名并抑制告警
+@Suppress("LongParameterList")
 @Composable
 internal fun DashboardCardContent(
     type: CardType,
