@@ -33,34 +33,18 @@ class BillOcrParser {
     }
 
     fun parseMultiple(text: String): List<OcrBillResult> {
-        val lines = text.lines().map { it.trim() }.filter { it.isNotBlank() }
-        if (lines.isEmpty()) return emptyList()
+        val rawLines = text.lines().map { it.trim() }.filter { it.isNotBlank() }
+        if (rawLines.isEmpty()) return emptyList()
+        // 页面级汇总行（微信"支出¥156.45 收入¥2.40"、支付宝记账本"9月总支出…"）不是交易
+        val lines = rawLines.filterNot { isSummaryLine(it) }
 
-        val blocks = mutableListOf<List<String>>()
-        var current = mutableListOf<String>()
-        for (line in lines) {
-            // 电商订单列表每张卡片以“实付款”行收尾且多无日期，日期边界切不开——
-            // 遇到实付行且当前块已含金额，即收尾一张订单（抖音/拼多多/淘宝订单页实测）
-            if (line.contains("实付") && current.any { AMOUNT_PATTERN.matcher(it).find() }) {
-                current.add(line)
-                blocks.add(current)
-                current = mutableListOf()
-                continue
-            }
-            if (isNewTransaction(line, current)) {
-                if (current.isNotEmpty()) blocks.add(current)
-                current = mutableListOf()
-            }
-            current.add(line)
-        }
-        if (current.isNotEmpty()) blocks.add(current)
-
+        val blocks = splitIntoBlocks(lines)
         if (blocks.size <= 1) return listOf(parse(text))
 
-        return blocks.map { block ->
-            val amount = findAmount(block)
+        return blocks.mapNotNull { (block, gDate) ->
+            val amount = findAmount(block) ?: return@mapNotNull null
             val merchant = findMerchant(block)
-            val date = findDate(block)
+            val date = findDate(block) ?: gDate
             val note = findNote(block, merchant)
             val category = guessCategory(block, merchant, note)
             OcrBillResult(amount = amount, merchant = merchant, date = date, note = note,
@@ -69,15 +53,60 @@ class BillOcrParser {
     }
 
     /**
-     * 按笔识别收/支类型（收支混排截图不能共用同一类型——issue#1 修复的延伸）。
-     * 金额符号前缀（+¥/-¥）最可靠，其次关键词；两者都没有时返回 null 交由用户默认值。
+     * 按页面结构把识别行切成交易块，块关联所属日期分组的日期（支付宝记账本按日分组，
+     * 组内条目行常不带日期）。三种块边界：
+     * 1. 电商订单卡片以"实付款"行收尾（抖音/拼多多/淘宝订单页实测）
+     * 2. 微信/支付宝账单列表页金额无¥前缀独立成行，金额行即一条交易的结尾
+     * 3. isNewTransaction 的日期/分隔线边界
      */
-    private fun detectType(lines: List<String>): BillType? {
+    private fun splitIntoBlocks(lines: List<String>): List<Pair<MutableList<String>, Long?>> {
+        val blocks = mutableListOf<Pair<MutableList<String>, Long?>>()
+        var current = mutableListOf<String>()
+        var groupDate: Long? = null
+        fun flush() {
+            if (current.isNotEmpty()) blocks.add(current to groupDate)
+            current = mutableListOf()
+        }
+        for (line in lines) {
+            val headerDate = dayHeaderDate(line)
+            when {
+                // 电商订单卡片以"实付款"行收尾；账单列表页裸金额行即一条交易的结尾
+                (line.contains("实付") && current.any { AMOUNT_PATTERN.matcher(it).find() }) ||
+                    BARE_AMOUNT.matcher(line).matches() -> { current.add(line); flush() }
+                // 日期分组头（"9月9日 星期三 支0.00 收0.14"）：记录组日期供条目回退
+                headerDate != null -> { groupDate = headerDate; current.add(stripDaySummary(line)) }
+                else -> {
+                    if (isNewTransaction(line, current)) flush()
+                    current.add(line)
+                }
+            }
+        }
+        flush()
+        return blocks
+    }
+
+    /**
+     * 按笔识别收/支类型（收支混排截图不能共用同一类型——issue#1 修复的延伸）：
+     * 金额符号前缀最可靠，其次关键词；都没有时返回 null 交由用户默认值。
+     */
+    private fun detectType(lines: List<String>): BillType? =
+        detectSignType(lines) ?: detectKeywordType(lines)
+
+    /** 符号前缀：+¥/-¥ 最可靠，其次账单列表页的行首符号裸金额（+0.23/-32.22） */
+    private fun detectSignType(lines: List<String>): BillType? {
         val text = lines.joinToString(" ")
-        if (Regex("[+＋]\\s*[¥￥]").containsMatchIn(text)) return BillType.INCOME
-        if (Regex("[-−－]\\s*[¥￥]").containsMatchIn(text)) return BillType.EXPENSE
-        // 电商订单页常含“申请退款/红包抵扣”等按钮文字，不能用宽泛的“退款/红包”
-        // 判收入——只有成交态的退款/收入表述才算
+        return when {
+            Regex("[+＋]\\s*[¥￥]").containsMatchIn(text) -> BillType.INCOME
+            Regex("[-−－]\\s*[¥￥]").containsMatchIn(text) -> BillType.EXPENSE
+            lines.any { BARE_SIGNED_INCOME.matcher(it).find() } -> BillType.INCOME
+            lines.any { BARE_SIGNED_EXPENSE.matcher(it).find() } -> BillType.EXPENSE
+            else -> null
+        }
+    }
+
+    /** 关键词兜底：电商订单页常含"申请退款/红包抵扣"等按钮文字，不能用宽泛的"退款/红包"判收入 */
+    private fun detectKeywordType(lines: List<String>): BillType? {
+        val text = lines.joinToString(" ")
         val incomeWords = listOf("收入", "退款成功", "已退款", "退款到账", "收款", "转入", "返现", "报销")
         val expenseWords = listOf("支出", "付款", "消费", "转出", "扣款", "支付成功", "实付款")
         return when {
@@ -137,10 +166,10 @@ class BillOcrParser {
         return null
     }
 
-    /** 兜底：无实付行时取最大 ¥ 金额（微信/支付宝账单等原有场景） */
+    /** 兜底：无实付行时取最大金额（微信/支付宝账单等原有场景）。¥ 金额与裸金额合并取最大——
+     *  账单列表行常带"已退款(¥0.23)"副行，若 ¥ 优先会取到退款额而非实付额 */
     private fun largestAmount(lines: List<String>): Long? {
-        var candidates = lines.flatMap(::amountsIn).filter { it > 0 }
-        if (candidates.isEmpty()) candidates = lines.flatMap(::looseAmountsIn)
+        val candidates = (lines.flatMap(::amountsIn) + lines.flatMap(::looseAmountsIn)).filter { it > 0 }
         return candidates.maxOrNull()?.let { Money.fromYuan(it).cents }
     }
 
@@ -187,17 +216,35 @@ class BillOcrParser {
         return lines.firstOrNull { isCleanMerchantCandidate(it) } ?: ""
     }
 
+    /** 页面级收支汇总行（"支出¥156.45 收入¥2.40"），不是交易记录 */
+    private fun isSummaryLine(line: String): Boolean =
+        Regex("支出\\s*[¥￥]?\\s*\\d").containsMatchIn(line) && Regex("收入\\s*[¥￥]?\\s*\\d").containsMatchIn(line)
+
+    /** 日期分组头（"9月9日 星期三 支0.00 收0.14"）返回其日期，非分组头返回 null */
+    private fun dayHeaderDate(line: String): Long? {
+        val m = DAY_HEADER.find(line) ?: return null
+        if (m.range.first != 0) return null
+        return parseDateGroup(m.value)
+    }
+
+    /** 去掉日期分组头上的"支0.00 收0.14"汇总数字，避免污染金额识别 */
+    private fun stripDaySummary(line: String): String =
+        line.replace(Regex("[支收]\\s*[\\d.]+"), "").trim()
+
     @Suppress("ReturnCount")
     private fun isCleanMerchantCandidate(line: String): Boolean {
         val clean = line.replace(" ", "").replace("　", "")
         if (clean.length !in 2..30) return false
         // 含金额符号/纯标点的行不是商户
         if (clean.any { it in "¥￥%*#@!&=" }) return false
+        // 日期/时间行（"9月8日 17:23"）不是商户——账单列表页它们紧邻金额行
+        if (TIME_PATTERN.matcher(clean).find()) return false
+        if (Regex("^\\d{1,2}月\\d{1,2}日").containsMatchIn(clean)) return false
         // 页面装饰词（支付截图的标题/状态/按钮文字）
         val decorationWords = listOf(
             "支出", "收入", "交易", "账单", "支付", "完成", "时间", "状态", "成功",
             "凭证", "详情", "收款", "付款码", "二维码", "零钱", "余额", "钱包", "明细",
-            "小票", "收据", "订单", "编号", "单号", "金额", "备注", "当前", "退款",
+            "小票", "收据", "订单", "编号", "单号", "金额", "备注", "当前", "申请退款",
             "微信", "支付宝", "银行", "余额宝", "银行卡",
             // 电商订单页的操作按钮/服务标签（抖音/拼多多/淘宝实测会紧邻金额行）
             "评价", "售后", "转卖", "购物车", "拼单", "收货", "物流", "无理由", "退货"
@@ -292,5 +339,10 @@ class BillOcrParser {
             Pattern.compile("(\\d{4}\\d{2}\\d{2})")
         )
         private val TIME_PATTERN = Pattern.compile("\\d{1,2}:\\d{2}(:\\d{2})?")
+        // 账单列表页的裸金额行（微信"-10.14"、支付宝"+0.12"），须带两位小数避免误切年份等整数行
+        private val BARE_AMOUNT = Pattern.compile("[+＋\\-−－]?\\d{1,6}\\.\\d{2}")
+        private val BARE_SIGNED_INCOME = Pattern.compile("^[+＋]\\s*\\d")
+        private val BARE_SIGNED_EXPENSE = Pattern.compile("^[-−－]\\s*\\d")
+        private val DAY_HEADER = Regex("^\\d{1,2}月\\d{1,2}日")
     }
 }

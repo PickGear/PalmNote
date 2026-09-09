@@ -271,6 +271,108 @@ class BillOcrParserTest {
         assertFalse(result.merchant.contains("单号"))
     }
 
+    @Test
+    fun `wechat bill list page splits rows by bare amount lines`() {
+        // 微信账单列表页：金额无¥前缀独立成行，行序为 商户→日期时间→金额
+        val text = """
+            全部账单
+            2026年9月
+            支出¥156.45 收入¥2.40
+            京东
+            9月8日 17:23
+            -10.14
+            京东
+            9月7日 11:03
+            -14.29
+            朴朴超市-退款
+            9月6日 11:31
+            +0.23
+            商家转账-来自拼多多
+            9月6日 11:11
+            +0.88
+            朴朴
+            9月6日 10:53
+            -32.22
+            已退款(¥0.23)
+            京东
+            9月5日 20:00
+            -9.40
+            扫二维码付款-给张枳生
+            9月5日 12:48
+            -3.00
+            从3*****04的QQ钱包转到...
+            9月5日 12:47
+            11.64
+        """.trimIndent()
+
+        val results = parser.parseMultiple(text)
+
+        assertEquals(8, results.size)
+        assertEquals(1014L, results[0].amount)
+        assertEquals("京东", results[0].merchant)
+        assertEquals(BillType.EXPENSE, results[0].type)
+        assertSameLocalDate(2026, 9, 8, results[0].date ?: error("missing date"))
+        assertEquals(1429L, results[1].amount)
+        assertEquals(BillType.EXPENSE, results[1].type)
+        assertSameLocalDate(2026, 9, 7, results[1].date ?: error("missing date"))
+        // 退款 +0.23：行首 + 符号判收入
+        assertEquals(23L, results[2].amount)
+        assertEquals(BillType.INCOME, results[2].type)
+        assertTrue(results[2].merchant.contains("朴朴"))
+        // 朴朴 -32.22：金额取 32.22、类型为支出（行首符号优先于"已退款"关键词）
+        assertEquals(88L, results[3].amount)
+        assertEquals(BillType.INCOME, results[3].type)
+        assertEquals(3222L, results[4].amount)
+        assertEquals(BillType.EXPENSE, results[4].type)
+        assertEquals(940L, results[5].amount)
+        assertEquals("京东", results[5].merchant)
+        assertEquals(300L, results[6].amount)
+        // QQ 钱包转入 11.64：无符号无关键词，类型回退默认由用户确认
+        assertEquals(1164L, results[7].amount)
+    }
+
+    @Test
+    fun `alipay bookkeeping day groups give dates to entries`() {
+        // 支付宝"记账本"小程序：按日分组，组头带"支x 收x"汇总，条目行只有时间无日期
+        val text = """
+            记账本
+            总账本
+            9月总支出 ¥53.74 总收入 ¥0.37
+            9月9日 星期三 支0.00 收0.14
+            投资理财
+            11:24  余额宝-自动转入
+            0.12
+            转账
+            +0.12
+            11:24  淘宝签到提现-淘宝（中国）软件有...
+            投资理财
+            +0.02
+            02:10  余额宝-收益发放
+            9月8日 星期二 支0.00 收0.02
+            投资理财
+            +0.02
+            02:43  余额宝-收益发放
+        """.trimIndent()
+
+        val results = parser.parseMultiple(text)
+
+        // 汇总行不产生记录；9月9日两条 + 9月8日一条（02:10 的收益发放并入下一分组头前的块）
+        assertTrue(results.size >= 3)
+        assertEquals(12L, results[0].amount)
+        assertSameLocalDate(2026, 9, 9, results[0].date ?: error("missing date"))
+        // 行首 + 符号判收入
+        assertEquals(BillType.INCOME, results[1].type)
+        assertEquals(12L, results[1].amount)
+        assertSameLocalDate(2026, 9, 9, results[1].date ?: error("missing date"))
+        // 9月8日组内条目从组头拿到日期
+        val dayOfMonth8 = results.any {
+            it.amount == 2L && it.date != null &&
+                java.time.Instant.ofEpochMilli(it.date).atZone(java.time.ZoneId.systemDefault())
+                    .toLocalDate().dayOfMonth == 8
+        }
+        assertTrue(dayOfMonth8)
+    }
+
     private fun assertSameLocalDate(year: Int, month: Int, day: Int, epochMillis: Long) {
         val expected = java.time.LocalDate.of(year, month, day).toEpochDay()
         val actual = java.time.Instant.ofEpochMilli(epochMillis)
