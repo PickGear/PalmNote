@@ -238,6 +238,7 @@ private fun ErrorContent(error: String, diagnostic: String = "", onRetry: () -> 
 
 @Composable
 private fun FilePreviewContent(state: BillImportState, viewModel: BillImportViewModel, onPickAgain: () -> Unit) {
+    var editingIndex by remember { mutableStateOf<Int?>(null) }
     Column(modifier = Modifier.fillMaxSize()) {
         Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Column {
@@ -261,7 +262,12 @@ private fun FilePreviewContent(state: BillImportState, viewModel: BillImportView
         }
         LazyColumn(modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             itemsIndexed(state.parsed, key = { index, _ -> index }) { index, bill ->
-                FileBillRow(bill, index in state.selectedIndices) { viewModel.toggleFileSelection(index) }
+                FileBillRow(
+                    bill,
+                    index in state.selectedIndices,
+                    onToggle = { viewModel.toggleFileSelection(index) },
+                    onEdit = { editingIndex = index }
+                )
             }
         }
         Surface(modifier = Modifier.fillMaxWidth(), shadowElevation = 8.dp) {
@@ -271,10 +277,24 @@ private fun FilePreviewContent(state: BillImportState, viewModel: BillImportView
             }
         }
     }
+
+    // 逐笔编辑文件导入记录
+    editingIndex?.let { idx ->
+        state.parsed.getOrNull(idx)?.let { bill ->
+            FileEditDialog(
+                bill = bill,
+                onDismiss = { editingIndex = null },
+                onSave = { updated ->
+                    viewModel.updateParsedBill(idx, updated)
+                    editingIndex = null
+                }
+            )
+        }
+    }
 }
 
 @Composable
-private fun FileBillRow(bill: ParsedBill, selected: Boolean, onToggle: () -> Unit) {
+private fun FileBillRow(bill: ParsedBill, selected: Boolean, onToggle: () -> Unit, onEdit: () -> Unit) {
     val context = LocalContext.current
     Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = if (selected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surface), onClick = onToggle) {
         Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -295,8 +315,75 @@ private fun FileBillRow(bill: ParsedBill, selected: Boolean, onToggle: () -> Uni
                 }
                 if (bill.note.isNotEmpty()) Text(bill.note, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
             }
+            IconButton(onClick = onEdit) {
+                Icon(
+                    Icons.Outlined.Edit,
+                    contentDescription = stringResource(R.string.bill_import_edit_bill),
+                    modifier = Modifier.size(18.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     }
+}
+
+/** 文件导入预览的逐笔编辑对话框：金额/类型/商户/分类/日期/备注（表单与 OCR 编辑共用） */
+@Composable
+private fun FileEditDialog(bill: ParsedBill, onDismiss: () -> Unit, onSave: (ParsedBill) -> Unit) {
+    var form by remember {
+        mutableStateOf(
+            OcrEditForm(
+                amount = String.format(Locale.US, "%.2f", bill.amount / 100.0),
+                isIncome = bill.type == BillType.INCOME.value,
+                merchant = bill.merchant,
+                category = bill.category,
+                note = bill.note,
+                dateStr = DateUtils.formatDate(bill.date)
+            )
+        )
+    }
+    var dateError by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.bill_import_edit_bill), fontWeight = FontWeight.Bold) },
+        text = {
+            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                OcrEditFields(
+                    form = form,
+                    onForm = { form = it },
+                    dateError = dateError,
+                    onDate = { dateError = false }
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                val cents = Money.parse(form.amount)?.cents
+                if (cents == null || cents <= 0) return@TextButton
+                val dateMillis = if (form.dateStr.isBlank()) bill.date else runCatching {
+                    LocalDate.parse(form.dateStr, DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                        .atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                }.getOrElse {
+                    dateError = true
+                    return@TextButton
+                }
+                onSave(
+                    bill.copy(
+                        amount = cents,
+                        type = if (form.isIncome) BillType.INCOME.value else BillType.EXPENSE.value,
+                        merchant = form.merchant.trim(),
+                        category = form.category.ifBlank { "其他" },
+                        note = form.note.trim(),
+                        date = dateMillis
+                    )
+                )
+            }) { Text(stringResource(R.string.confirm)) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+        }
+    )
 }
 
 @Composable

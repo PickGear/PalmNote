@@ -180,6 +180,52 @@ class BillCsvImporterTest {
         assertEquals(12850L, bills[0].amount)
     }
 
+    // ── 支付宝当代官方格式（交易创建时间表头，此前识别为 0 条） ──
+
+    private val modernAlipayHeader =
+        "交易号,商家订单号,交易创建时间,付款时间,最近修改时间,交易来源地,类型,交易对方,商品名称,金额（元）,收/支,交易状态,服务费（元）,成功退款（元）,备注,资金状态"
+
+    @Test
+    fun `detectFormat modern alipay header returns ALIPAY`() {
+        val lines = listOf("支付宝交易记录明细查询", modernAlipayHeader)
+        assertEquals(CsvFormat.ALIPAY, importer.detectFormat(lines))
+    }
+
+    @Test
+    fun `modern alipay csv parses expense row with goods fallback note`() {
+        val row = listOf(
+            "20260931642663316140823101717199", "4574051995081900567352635951",
+            "2026-09-09 18:57:11", "2026-09-09 19:10:11", "2026-09-09 19:10:11",
+            "口碑", "即时到账-商户", "肯德基", "汉堡套餐", "4.56", "支出",
+            "交易成功", "0.00", "", "", "已支出"
+        ).joinToString(",")
+        val bills = importer.parseFromLines(listOf(modernAlipayHeader, row), CsvFormat.ALIPAY)
+
+        assertEquals(1, bills.size)
+        val bill = bills[0]
+        assertEquals("2026-09-09 18:57:11".ts(), bill.date)
+        assertEquals("EXPENSE", bill.type)
+        assertEquals(456L, bill.amount)
+        assertEquals("肯德基", bill.merchant)
+        assertEquals("汉堡套餐", bill.note)
+        assertEquals("餐饮", bill.category)
+        assertEquals("ALIPAY", bill.paymentMethod)
+    }
+
+    @Test
+    fun `modern alipay csv parses income and closed-status rows`() {
+        // 状态白名单已移除：交易关闭/退款行全部进入预览由用户勾选
+        val rows = listOf(
+            "20260931a,457b,2026-09-08 09:33:58,2026-09-08 10:01:58,2026-09-08 10:01:58,其他,即时到账-商户,余额宝,收益发放,12.34,收入,交易成功,0.00,,已收入",
+            "20260931c,457d,2026-09-07 23:23:09,2026-09-07 23:44:09,2026-09-07 23:44:09,其他,即时到账-商户,中国移动,流量包,446.98,支出,交易关闭,0.00,,等待中"
+        )
+        val bills = importer.parseFromLines(listOf(modernAlipayHeader) + rows, CsvFormat.ALIPAY)
+        assertEquals(2, bills.size)
+        assertEquals("INCOME", bills[0].type)
+        assertEquals("EXPENSE", bills[1].type)
+        assertEquals("通讯", bills[1].category)
+    }
+
     // ── 通用行为 ──
 
     @Test

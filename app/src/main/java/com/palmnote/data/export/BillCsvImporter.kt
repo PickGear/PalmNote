@@ -24,6 +24,8 @@ class BillCsvImporter {
         for (line in lines) {
             val clean = line.trimStart('\uFEFF').trim()
             if (clean.contains("记录时间") && clean.contains("收支")) return CsvFormat.ALIPAY
+            // 支付宝当代官方导出：表头为"交易创建时间…收/支"（无"记录时间/交易时间"字样）
+            if (clean.contains("交易创建时间") && clean.contains("收/支")) return CsvFormat.ALIPAY
             if (clean.contains("交易时间") && clean.contains("收/支")) {
                 if (clean.contains("商品说明") || clean.contains("交易分类")) return CsvFormat.ALIPAY
                 if (clean.contains("商品") || clean.contains("交易对方") || clean.contains("交易类型")) return CsvFormat.WECHAT
@@ -44,7 +46,8 @@ class BillCsvImporter {
     fun parseFromLines(lines: List<String>, format: CsvFormat, diag: StringBuilder? = null): List<ParsedBill> {
         val headerLine = when (format) {
             CsvFormat.ALIPAY -> lines.firstOrNull {
-                it.contains("记录时间") || (it.contains("交易时间") && it.contains("收支"))
+                it.contains("记录时间") || it.contains("交易创建时间") ||
+                    (it.contains("交易时间") && it.contains("收支"))
             }
             CsvFormat.GENERIC -> lines.firstOrNull {
                 it.contains("金额") && (it.contains("时间") || it.contains("日期"))
@@ -106,14 +109,19 @@ class BillCsvImporter {
                 val amount = Money.parse(cleanAmount)?.cents ?: return@mapNotNull null
                 val date = parseDate(timeStr) ?: return@mapNotNull null
                 val isIncome = cell(cols, ieIdx).contains("收入")
+                // 备注常为空，商品名承载消费内容（分类推断的重要信号），回退后再参与推断
+                val note = cell(cols, noteIdx).ifBlank { cell(cols, goodsIdx).ifBlank { cell(cols, typeIdx) } }
 
                 ParsedBill(
                     date = date,
                     type = if (isIncome) BillType.INCOME.value else BillType.EXPENSE.value,
                     amount = amount,
-                    category = normalizeCategory(guessCategory(cell(cols, merchantIdx), cell(cols, noteIdx), cell(cols, typeIdx)), if (isIncome) BillType.INCOME.value else BillType.EXPENSE.value),
+                    category = normalizeCategory(
+                        guessCategory(cell(cols, merchantIdx), note, cell(cols, typeIdx)),
+                        if (isIncome) BillType.INCOME.value else BillType.EXPENSE.value
+                    ),
                     merchant = cell(cols, merchantIdx),
-                    note = cell(cols, noteIdx).ifBlank { cell(cols, goodsIdx).ifBlank { cell(cols, typeIdx) } },
+                    note = note,
                     paymentMethod = mapPaymentMethod(cell(cols, methodIdx)),
                     transactionId = cell(cols, txIdIdx)
                 )
@@ -124,26 +132,45 @@ class BillCsvImporter {
     // 状态过滤已移除：无效/退款行全部进入预览，由用户在导入预览中自行勾选
     // （原白名单遗漏"已存入零钱"等大量真实状态变体，导致 Excel 导入大面积丢行——issue#1）
 
+    /** 支付宝两种官方格式的列索引（旧版：记录时间/交易分类/商品说明；当代：交易创建时间/类型/商品名称） */
+    private class AlipayColumns(
+        val dateIdx: Int?,
+        val categoryIdx: Int?,
+        val merchantIdx: Int?,
+        val goodsIdx: Int?,
+        val ieIdx: Int?,
+        val amountIdx: Int?,
+        val noteIdx: Int?,
+        val accountIdx: Int?
+    )
+
+    private fun alipayColumns(headerIdx: Map<String, Int>): AlipayColumns = AlipayColumns(
+        dateIdx = col(headerIdx, "记录时间") ?: col(headerIdx, "交易创建时间")
+            ?: col(headerIdx, "交易时间") ?: col(headerIdx, "付款时间"),
+        categoryIdx = col(headerIdx, "交易分类") ?: col(headerIdx, "分类"),
+        merchantIdx = col(headerIdx, "交易对方") ?: col(headerIdx, "商品说明"),
+        goodsIdx = col(headerIdx, "商品名称") ?: col(headerIdx, "商品说明") ?: col(headerIdx, "商品"),
+        ieIdx = col(headerIdx, "收支类型") ?: col(headerIdx, "收/支"),
+        amountIdx = col(headerIdx, "金额"),
+        noteIdx = col(headerIdx, "备注"),
+        accountIdx = col(headerIdx, "账户")
+    )
+
     private fun parseAlipay(lines: List<String>, headerIdx: Map<String, Int>, sep: Char): List<ParsedBill> {
-        val dateIdx = col(headerIdx, "记录时间") ?: col(headerIdx, "交易时间")
-        val categoryIdx = col(headerIdx, "分类") ?: col(headerIdx, "交易分类")
-        val merchantIdx = col(headerIdx, "交易对方") ?: col(headerIdx, "商品说明")
-        val ieIdx = col(headerIdx, "收支类型") ?: col(headerIdx, "收/支")
-        val amountIdx = col(headerIdx, "金额")
-        val noteIdx = col(headerIdx, "备注")
-        val accountIdx = col(headerIdx, "账户")
+        val c = alipayColumns(headerIdx)
 
         return lines.mapNotNull { line ->
             try {
                 val cols = parseCsvLine(line, sep)
-                val timeStr = cell(cols, dateIdx).ifBlank { return@mapNotNull null }
-                val amountStr = cell(cols, amountIdx).ifBlank { return@mapNotNull null }
+                val timeStr = cell(cols, c.dateIdx).ifBlank { return@mapNotNull null }
+                val amountStr = cell(cols, c.amountIdx).ifBlank { return@mapNotNull null }
                 val cleanAmount = amountStr.replace(",", "").replace("¥", "").replace("￥", "").replace(" ", "").replace("+", "").replace("-", "")
                 val amount = Money.parse(cleanAmount)?.cents ?: return@mapNotNull null
-                val ieType = cell(cols, ieIdx)
-                val merchant = cell(cols, merchantIdx)
-                val note = cell(cols, noteIdx).ifBlank { cell(cols, accountIdx) }
-                val category = cell(cols, categoryIdx)
+                val ieType = cell(cols, c.ieIdx)
+                val merchant = cell(cols, c.merchantIdx)
+                // 当代格式无"账户"列，商品名称承载消费内容（分类推断的重要信号）
+                val note = cell(cols, c.noteIdx).ifBlank { cell(cols, c.goodsIdx).ifBlank { cell(cols, c.accountIdx) } }
+                val category = cell(cols, c.categoryIdx)
                 val date = parseDate(timeStr) ?: return@mapNotNull null
                 val isIncome = ieType.contains("收入")
 
@@ -151,7 +178,13 @@ class BillCsvImporter {
                     date = date,
                     type = if (isIncome) BillType.INCOME.value else BillType.EXPENSE.value,
                     amount = amount,
-                    category = if (category.isNotBlank()) normalizeCategory(category, if (isIncome) BillType.INCOME.value else BillType.EXPENSE.value) else normalizeCategory(guessCategory(merchant, note, ""), if (isIncome) BillType.INCOME.value else BillType.EXPENSE.value),
+                    category = if (category.isNotBlank()) {
+                        val billType = if (isIncome) BillType.INCOME.value else BillType.EXPENSE.value
+                        normalizeCategory(category, billType)
+                    } else {
+                        val billType = if (isIncome) BillType.INCOME.value else BillType.EXPENSE.value
+                        normalizeCategory(guessCategory(merchant, note, ""), billType)
+                    },
                     merchant = merchant,
                     note = note,
                     paymentMethod = "ALIPAY"

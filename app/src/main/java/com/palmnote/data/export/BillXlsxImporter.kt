@@ -65,7 +65,8 @@ class BillXlsxImporter {
         val headerIdx = mutableMapOf<String, Int>()
         var headerRowIdx = -1
         for ((i, row) in rows.withIndex()) {
-            if (row.any { it.contains("交易时间") }) {
+            // 支付宝当代官方导出表头为"交易创建时间"（不含"交易时间"字样）
+            if (row.any { it.contains("交易时间") || it.contains("交易创建时间") }) {
                 row.forEachIndexed { ci, h -> headerIdx[h.trim()] = ci }
                 headerRowIdx = i
                 break
@@ -75,7 +76,8 @@ class BillXlsxImporter {
         diag.append("匹配列: ${headerIdx.keys.joinToString(", ")}\n")
         if (headerRowIdx < 0) return emptyList()
 
-        val dateIdx = findCol(headerIdx, "交易时间") ?: findCol(headerIdx, "时间") ?: findCol(headerIdx, "日期") ?: 0
+        val dateIdx = findCol(headerIdx, "交易时间") ?: findCol(headerIdx, "交易创建时间")
+            ?: findCol(headerIdx, "时间") ?: findCol(headerIdx, "日期") ?: 0
         val typeIdx = findCol(headerIdx, "交易类型")
         val merchantIdx = findCol(headerIdx, "交易对方")
         val goodsIdx = findCol(headerIdx, "商品")
@@ -101,14 +103,19 @@ class BillXlsxImporter {
                 val note = noteIdx?.let { cols.getOrNull(it)?.trim() } ?: ""
                 val isIncome = incomeExpense.contains("收入")
                 val date = parseXlsxDate(timeStr) ?: return@mapNotNull null
+                // 备注常为空，商品名承载消费内容（分类推断的重要信号），回退后再参与推断
+                val noteOrGoods = note.ifEmpty { goodsDesc }
 
                 ParsedBill(
                     date = date,
                     type = if (isIncome) BillType.INCOME.value else BillType.EXPENSE.value,
                     amount = amount,
-                    category = BillCsvImporter.normalizeCategory(BillCsvImporter.guessCategory(merchant, note, typeStr), if (isIncome) BillType.INCOME.value else BillType.EXPENSE.value),
+                    category = BillCsvImporter.normalizeCategory(
+                        BillCsvImporter.guessCategory(merchant, noteOrGoods, typeStr),
+                        if (isIncome) BillType.INCOME.value else BillType.EXPENSE.value
+                    ),
                     merchant = merchant,
-                    note = note.ifEmpty { goodsDesc.ifEmpty { typeStr } },
+                    note = noteOrGoods.ifEmpty { typeStr },
                     paymentMethod = BillCsvImporter.mapPaymentMethod(method)
                 )
             } catch (_: Exception) { null }

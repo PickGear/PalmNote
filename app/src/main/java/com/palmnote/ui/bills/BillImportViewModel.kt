@@ -235,6 +235,13 @@ class BillImportViewModel @Inject constructor(
     fun selectAllFiles() { _state.value = _state.value.copy(selectedIndices = _state.value.parsed.indices.toSet()) }
     fun deselectAllFiles() { _state.value = _state.value.copy(selectedIndices = emptySet()) }
 
+    /** 逐笔编辑文件导入预览中的记录（金额/类型/商户/分类/日期/备注） */
+    fun updateParsedBill(index: Int, bill: ParsedBill) {
+        val list = _state.value.parsed.toMutableList()
+        if (index in list.indices) list[index] = bill
+        _state.value = _state.value.copy(parsed = list)
+    }
+
     fun toggleOcrSelection(index: Int) {
         val s = _state.value
         _state.value = s.copy(ocrSelectedIndices = if (index in s.ocrSelectedIndices) s.ocrSelectedIndices - index else s.ocrSelectedIndices + index)

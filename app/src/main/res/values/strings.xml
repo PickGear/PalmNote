@@ -1012,6 +1012,7 @@
     <string name="bill_import_ocr_no_date">未识别日期，保存时记为今天</string>
     <string name="bill_import_ocr_edit">编辑</string>
     <string name="bill_import_ocr_edit_title">编辑识别结果</string>
+    <string name="bill_import_edit_bill">编辑账单</string>
     <string name="bill_import_ocr_tap_zoom">点击图片可放大查看</string>
     <!-- Budget -->
     <string name="budget_title">预算管理</string>
