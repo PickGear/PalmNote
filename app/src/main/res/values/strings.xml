@@ -145,10 +145,10 @@
     <string name="settings_recycle_bin">回收站</string>
     <string name="settings_recycle_bin_subtitle">查看已删除的记录</string>
     <string name="settings_export_data">导出数据</string>
-    <string name="settings_export_data_subtitle">导出全部数据为CSV-ZIP</string>
+    <string name="settings_export_data_subtitle">导出记账、资产等核心数据为CSV-ZIP（生活模块数据请用数据备份）</string>
     <string name="settings_export_file_suffix">_数据.zip</string>
     <string name="settings_import_data">导入数据</string>
-    <string name="settings_import_data_subtitle">从备份ZIP文件恢复数据</string>
+    <string name="settings_import_data_subtitle">从导出的CSV-ZIP文件合并导入数据（不会清除现有数据，非完整备份恢复）</string>
     <string name="settings_data_backup">数据备份</string>
     <string name="settings_data_backup_subtitle">备份和恢复完整数据</string>
     <string name="settings_clear_data">清除数据</string>
@@ -873,7 +873,7 @@
     <string name="bill_error_category_required">请选择分类</string>
     <!-- Backup Error Messages -->
     <string name="backup_error_corrupted">备份文件损坏或为空</string>
-    <string name="backup_error_cross_device">此备份由其他设备创建，数据库密钥无法解密，无法恢复。请在原设备重新备份。</string>
+    <string name="backup_error_cross_device">此备份由旧版本创建，缺少跨设备恢复所需的密钥，无法在当前设备恢复。请在原设备用新版本重新备份后再试</string>
     <string name="backup_error_create_failed">备份失败</string>
     <string name="backup_error_restore_failed">恢复失败</string>
     <!-- Calendar Sync -->
@@ -1200,14 +1200,14 @@
     <string name="backup_title">数据备份</string>
     <string name="backup_operation_success">操作成功</string>
     <string name="backup_create">创建备份</string>
-    <string name="backup_create_desc">将所有数据打包为 .palmnote 文件，存储到 Downloads/PalmNote/ 目录</string>
+    <string name="backup_create_desc">将所有数据打包为 .palmnote 文件，保存到您选择的文件夹。备份可在新手机上恢复；若设置了密码，恢复时需输入该密码，请牢记</string>
     <string name="backup_password_required">需要密码才能恢复此备份</string>
     <string name="backup_password_optional">设置密码（可选）</string>
     <string name="backup_password">输入密码</string>
     <string name="backup_backing_up">正在备份…</string>
     <string name="backup_now">立即备份</string>
     <string name="backup_restore_title">恢复备份</string>
-    <string name="backup_restore_desc">选择之前备份的 .palmnote 文件恢复数据，恢复后应用将自动重启</string>
+    <string name="backup_restore_desc">选择之前备份的 .palmnote 文件恢复数据，恢复将覆盖当前数据，完成后应用自动重启。加密备份需输入创建时设置的密码，支持换手机恢复</string>
     <string name="backup_restore_from_file">选择备份文件恢复</string>
     <string name="backup_restoring">正在恢复数据…</string>
     <string name="backup_restore_confirm">恢复将覆盖当前所有数据，此操作不可撤销。确定要恢复吗？</string>
