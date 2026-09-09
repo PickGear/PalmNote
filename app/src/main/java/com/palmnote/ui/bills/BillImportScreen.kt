@@ -22,6 +22,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -29,6 +34,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
@@ -36,12 +43,18 @@ import com.palmnote.app.R
 import com.palmnote.data.export.BillCsvImporter
 import com.palmnote.data.export.ParsedBill
 import com.palmnote.data.ocr.OcrBillResult
+import com.palmnote.domain.model.Money
 import com.palmnote.domain.model.toMoney
 import com.palmnote.domain.util.CurrencyUtils
 import com.palmnote.domain.util.DateUtils
 import com.palmnote.data.db.entity.Wallet
 import com.palmnote.ui.components.*
 import com.palmnote.ui.theme.*
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -289,9 +302,28 @@ private fun FileBillRow(bill: ParsedBill, selected: Boolean, onToggle: () -> Uni
 @Composable
 private fun OcrPreviewContent(state: BillImportState, viewModel: BillImportViewModel, context: android.content.Context, onPickAnother: () -> Unit) {
     val isMulti = state.ocrResults.size > 1
+    var showZoom by remember { mutableStateOf(false) }
+    var editingIndex by remember { mutableStateOf<Int?>(null) }
     Column(modifier = Modifier.fillMaxSize()) {
         if (state.ocrImageUri != null) {
-            AsyncImage(model = state.ocrImageUri, contentDescription = stringResource(R.string.bill_import_screenshot), modifier = Modifier.fillMaxWidth().height(160.dp).padding(16.dp).clip(MaterialTheme.shapes.medium), contentScale = ContentScale.Fit)
+            Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                AsyncImage(
+                    model = state.ocrImageUri,
+                    contentDescription = stringResource(R.string.bill_import_screenshot),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(160.dp)
+                        .clip(MaterialTheme.shapes.medium)
+                        .clickable { showZoom = true },
+                    contentScale = ContentScale.Fit
+                )
+                Text(
+                    stringResource(R.string.bill_import_ocr_tap_zoom),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+            }
         }
         if (isMulti) {
             Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -300,47 +332,16 @@ private fun OcrPreviewContent(state: BillImportState, viewModel: BillImportViewM
             }
             LazyColumn(modifier = Modifier.weight(1f).padding(horizontal = 16.dp)) {
                 itemsIndexed(state.ocrResults, key = { index, _ -> index }) { index, result ->
-                    OcrItem(result, index in state.ocrSelectedIndices) { viewModel.toggleOcrSelection(index) }
+                    OcrItem(
+                        result = result,
+                        selected = index in state.ocrSelectedIndices,
+                        onClick = { viewModel.toggleOcrSelection(index) },
+                        onEdit = { editingIndex = index }
+                    )
                 }
             }
         } else {
-            Text(stringResource(R.string.bill_import_ocr_result), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 16.dp))
-            Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
-                Spacer(modifier = Modifier.height(12.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf(BillType.EXPENSE to R.string.bill_expense, BillType.INCOME to R.string.bill_income).forEach { (t, labelRes) ->
-                        FilterChip(
-                            selected = state.ocrType == t,
-                            onClick = { viewModel.updateOcrType(t) },
-                            label = { Text(stringResource(labelRes)) },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = (if (t == BillType.EXPENSE) ExpenseRed else StatusActive).copy(alpha = 0.15f),
-                                selectedLabelColor = if (t == BillType.EXPENSE) ExpenseRed else StatusActive
-                            )
-                        )
-                    }
-                }
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(stringResource(R.string.bill_wallet), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                if (state.wallets.isNotEmpty()) {
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        items(state.wallets, key = { it.id }) { wallet ->
-                            FilterChip(
-                                selected = state.ocrWalletId == wallet.id,
-                                onClick = { viewModel.updateOcrWallet(wallet.id) },
-                                label = { Text(com.palmnote.ui.components.getLocalizedWalletDisplayName(wallet, context), fontSize = 11.sp) }
-                            )
-                        }
-                    }
-                }
-                Spacer(modifier = Modifier.height(12.dp))
-                EditField(stringResource(R.string.bill_import_amount), state.ocrAmount, viewModel::updateOcrAmount, prefix = "¥ ")
-                EditField(stringResource(R.string.bill_import_merchant), state.ocrMerchant, viewModel::updateOcrMerchant)
-                EditField(stringResource(R.string.bill_import_date), state.ocrDate, viewModel::updateOcrDate, placeholder = "yyyy-MM-dd")
-                EditField(stringResource(R.string.bill_import_category), state.ocrCategory, viewModel::updateOcrCategory)
-                EditField(stringResource(R.string.bill_import_note), state.ocrNote, viewModel::updateOcrNote)
-                if (state.error != null) { Spacer(modifier = Modifier.height(8.dp)); Text(state.error, color = ExpenseRed, style = MaterialTheme.typography.bodySmall) }
-            }
+            OcrSingleEditor(state, viewModel, context)
         }
         var showRaw by remember { mutableStateOf(false) }
         TextButton(onClick = { showRaw = !showRaw }, modifier = Modifier.padding(horizontal = 16.dp)) { Text(if (showRaw) stringResource(R.string.bill_import_hide_raw) else stringResource(R.string.bill_import_show_raw)) }
@@ -356,23 +357,73 @@ private fun OcrPreviewContent(state: BillImportState, viewModel: BillImportViewM
             }
         }
     }
+    if (showZoom && state.ocrImageUri != null) {
+        ZoomableImageDialog(uri = state.ocrImageUri, onDismiss = { showZoom = false })
+    }
+    editingIndex?.let { idx ->
+        state.ocrResults.getOrNull(idx)?.let { result ->
+            OcrEditDialog(
+                result = result,
+                onDismiss = { editingIndex = null },
+                onSave = { updated ->
+                    viewModel.updateOcrResult(idx, updated)
+                    editingIndex = null
+                }
+            )
+        }
+    }
+}
+
+/** 单笔识别结果的可编辑表单（收支/钱包/金额/商户/日期/分类/备注） */
+@Composable
+private fun OcrSingleEditor(state: BillImportState, viewModel: BillImportViewModel, context: android.content.Context, modifier: Modifier = Modifier) {
+    Column(modifier = modifier.verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
+        Text(stringResource(R.string.bill_import_ocr_result), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+        Spacer(modifier = Modifier.height(12.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf(BillType.EXPENSE to R.string.bill_expense, BillType.INCOME to R.string.bill_income).forEach { (t, labelRes) ->
+                FilterChip(
+                    selected = state.ocrType == t,
+                    onClick = { viewModel.updateOcrType(t) },
+                    label = { Text(stringResource(labelRes)) },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = (if (t == BillType.EXPENSE) ExpenseRed else StatusActive).copy(alpha = 0.15f),
+                        selectedLabelColor = if (t == BillType.EXPENSE) ExpenseRed else StatusActive
+                    )
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(12.dp))
+        Text(stringResource(R.string.bill_wallet), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (state.wallets.isNotEmpty()) {
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                items(state.wallets, key = { it.id }) { wallet ->
+                    FilterChip(
+                        selected = state.ocrWalletId == wallet.id,
+                        onClick = { viewModel.updateOcrWallet(wallet.id) },
+                        label = { Text(com.palmnote.ui.components.getLocalizedWalletDisplayName(wallet, context), fontSize = 11.sp) }
+                    )
+                }
+            }
+        }
+        Spacer(modifier = Modifier.height(12.dp))
+        EditField(stringResource(R.string.bill_import_amount), state.ocrAmount, viewModel::updateOcrAmount, prefix = "¥ ")
+        EditField(stringResource(R.string.bill_import_merchant), state.ocrMerchant, viewModel::updateOcrMerchant)
+        DateField(stringResource(R.string.bill_import_date), state.ocrDate, viewModel::updateOcrDate)
+        EditField(stringResource(R.string.bill_import_category), state.ocrCategory, viewModel::updateOcrCategory)
+        EditField(stringResource(R.string.bill_import_note), state.ocrNote, viewModel::updateOcrNote)
+        if (state.error != null) { Spacer(modifier = Modifier.height(8.dp)); Text(state.error, color = ExpenseRed, style = MaterialTheme.typography.bodySmall) }
+    }
 }
 
 @Composable
-private fun OcrItem(result: OcrBillResult, selected: Boolean, onClick: () -> Unit) {
+private fun OcrItem(result: OcrBillResult, selected: Boolean, onClick: () -> Unit, onEdit: () -> Unit) {
     val context = LocalContext.current
     Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).clip(MaterialTheme.shapes.medium).background(if (selected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)).clickable(onClick = onClick).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
         Checkbox(checked = selected, onCheckedChange = null)
         Spacer(modifier = Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
-            if (result.merchant.isNotBlank()) Text(result.merchant, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
-            Row {
-                if (result.date != null) { Text(DateUtils.formatDate(result.date), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant); Spacer(modifier = Modifier.width(8.dp)) }
-                if (result.category != "其他") {
-                    val impResId = getLocalizedCategoryName(result.category)
-                    Text(if (impResId != null) stringResource(impResId) else result.category, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
-                }
-            }
+            OcrItemInfo(result)
         }
         if (result.amount != null) {
             // 按笔类型显示符号与颜色（收+/绿，支-/红），与保存时的类型判定一致
@@ -384,6 +435,57 @@ private fun OcrItem(result: OcrBillResult, selected: Boolean, onClick: () -> Uni
                 color = if (isIncome) StatusActive else ExpenseRed
             )
         }
+        IconButton(onClick = onEdit, modifier = Modifier.size(28.dp)) {
+            Icon(
+                Icons.Outlined.Edit,
+                contentDescription = stringResource(R.string.bill_import_ocr_edit),
+                modifier = Modifier.size(16.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+/** 识别结果条目的信息列（商户/日期/分类/备注） */
+@Composable
+private fun OcrItemInfo(result: OcrBillResult) {
+    if (result.merchant.isNotBlank()) {
+        Text(
+            result.merchant, style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium, maxLines = 1
+        )
+    }
+    Row {
+        if (result.date != null) {
+            Text(
+                DateUtils.formatDate(result.date),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+        } else {
+            // 电商列表页无日期，提示将按今天记录，可点编辑修改
+            Text(
+                stringResource(R.string.bill_import_ocr_no_date),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+        }
+        if (result.category != "其他") {
+            val impResId = getLocalizedCategoryName(result.category)
+            Text(
+                if (impResId != null) stringResource(impResId) else result.category,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
+    }
+    if (result.note.isNotBlank()) {
+        Text(
+            result.note, style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1
+        )
     }
 }
 
@@ -392,4 +494,194 @@ private fun EditField(label: String, value: String, onValueChange: (String) -> U
     OutlinedTextField(value = value, onValueChange = onValueChange, label = { Text(label) }, singleLine = true,
         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
         prefix = prefix?.let { { Text(it) } }, placeholder = placeholder?.let { { Text(it) } })
+}
+
+/** 日期字段：可手输 yyyy-MM-dd，也可点日历图标弹出日期选择器 */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DateField(label: String, value: String, onValueChange: (String) -> Unit) {
+    var showPicker by remember { mutableStateOf(false) }
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(label) },
+        singleLine = true,
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        placeholder = { Text("yyyy-MM-dd") },
+        trailingIcon = {
+            IconButton(onClick = { showPicker = true }) {
+                Icon(Icons.Filled.CalendarMonth, contentDescription = stringResource(R.string.bill_import_date))
+            }
+        }
+    )
+    if (showPicker) {
+        val initialMillis = runCatching {
+            LocalDate.parse(value, DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+        }.getOrElse { LocalDate.now() }
+            .atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        val pickerState = rememberDatePickerState(initialSelectedDateMillis = initialMillis)
+        DatePickerDialog(
+            onDismissRequest = { showPicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    pickerState.selectedDateMillis?.let { ms ->
+                        onValueChange(
+                            Instant.ofEpochMilli(ms).atZone(ZoneId.systemDefault()).toLocalDate()
+                                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                        )
+                    }
+                    showPicker = false
+                }) { Text(stringResource(R.string.confirm)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showPicker = false }) { Text(stringResource(R.string.cancel)) }
+            }
+        ) { DatePicker(state = pickerState) }
+    }
+}
+
+/** 逐笔编辑对话框的表单值 */
+private data class OcrEditForm(
+    val amount: String,
+    val isIncome: Boolean,
+    val merchant: String,
+    val category: String,
+    val note: String,
+    val dateStr: String
+)
+
+/** 多笔识别结果的逐笔编辑对话框：金额/类型/商户/分类/日期/备注 */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun OcrEditDialog(result: OcrBillResult, onDismiss: () -> Unit, onSave: (OcrBillResult) -> Unit) {
+    var form by remember {
+        mutableStateOf(
+            OcrEditForm(
+                amount = result.amount?.let { String.format(Locale.US, "%.2f", it / 100.0) } ?: "",
+                isIncome = result.type == BillType.INCOME,
+                merchant = result.merchant,
+                category = result.category,
+                note = result.note,
+                dateStr = result.date?.let { DateUtils.formatDate(it) } ?: ""
+            )
+        )
+    }
+    var dateError by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.bill_import_ocr_edit_title)) },
+        text = {
+            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                OcrEditFields(
+                    form = form,
+                    onForm = { form = it },
+                    dateError = dateError,
+                    onDate = { dateError = false }
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                val cents = Money.parse(form.amount)?.cents
+                if (cents == null || cents <= 0) return@TextButton
+                val dateMillis = if (form.dateStr.isBlank()) null else runCatching {
+                    LocalDate.parse(form.dateStr, DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                        .atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                }.getOrElse {
+                    dateError = true
+                    return@TextButton
+                }
+                onSave(
+                    result.copy(
+                        amount = cents,
+                        type = if (form.isIncome) BillType.INCOME else BillType.EXPENSE,
+                        merchant = form.merchant.trim(),
+                        category = form.category.ifBlank { "其他" },
+                        note = form.note.trim(),
+                        date = dateMillis
+                    )
+                )
+            }) { Text(stringResource(R.string.confirm)) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+        }
+    )
+}
+
+/** 逐笔编辑对话框的表单区（收支 chips + 各字段） */
+@Composable
+private fun OcrEditFields(
+    form: OcrEditForm,
+    onForm: (OcrEditForm) -> Unit,
+    dateError: Boolean,
+    onDate: () -> Unit
+) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        listOf(BillType.EXPENSE to R.string.bill_expense, BillType.INCOME to R.string.bill_income).forEach { (t, labelRes) ->
+            FilterChip(
+                selected = if (t == BillType.INCOME) form.isIncome else !form.isIncome,
+                onClick = { onForm(form.copy(isIncome = t == BillType.INCOME)) },
+                label = { Text(stringResource(labelRes)) },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = (if (t == BillType.EXPENSE) ExpenseRed else StatusActive).copy(alpha = 0.15f),
+                    selectedLabelColor = if (t == BillType.EXPENSE) ExpenseRed else StatusActive
+                )
+            )
+        }
+    }
+    Spacer(modifier = Modifier.height(8.dp))
+    EditField(stringResource(R.string.bill_import_amount), form.amount, { onForm(form.copy(amount = it)) }, prefix = "¥ ")
+    EditField(stringResource(R.string.bill_import_merchant), form.merchant, { onForm(form.copy(merchant = it)) })
+    DateField(stringResource(R.string.bill_import_date), form.dateStr, { onForm(form.copy(dateStr = it)); onDate() })
+    if (dateError) Text("yyyy-MM-dd", color = ExpenseRed, style = MaterialTheme.typography.labelSmall)
+    EditField(stringResource(R.string.bill_import_category), form.category, { onForm(form.copy(category = it)) })
+    EditField(stringResource(R.string.bill_import_note), form.note, { onForm(form.copy(note = it)) })
+}
+
+/** 全屏可缩放查看识别原图：双指缩放 + 拖动，点背景关闭 */
+@Composable
+private fun ZoomableImageDialog(uri: Uri, onDismiss: () -> Unit) {
+    var scale by remember { mutableFloatStateOf(1f) }
+    var offset by remember { mutableStateOf(Offset.Zero) }
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.92f))
+                .clickable(onClick = onDismiss),
+            contentAlignment = Alignment.Center
+        ) {
+            AsyncImage(
+                model = uri,
+                contentDescription = stringResource(R.string.bill_import_screenshot),
+                contentScale = ContentScale.Fit,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer(
+                        scaleX = scale,
+                        scaleY = scale,
+                        translationX = offset.x,
+                        translationY = offset.y
+                    )
+                    .pointerInput(Unit) {
+                        detectTransformGestures { _, pan, zoom, _ ->
+                            scale = (scale * zoom).coerceIn(1f, 5f)
+                            offset = if (scale > 1f) offset + pan else Offset.Zero
+                        }
+                    }
+                    .clickable(enabled = false) { }
+            )
+            Text(
+                "×%.1f".format(scale),
+                color = Color.White.copy(alpha = 0.7f),
+                style = MaterialTheme.typography.labelMedium,
+                modifier = Modifier.align(Alignment.BottomCenter).padding(24.dp)
+            )
+        }
+    }
 }
