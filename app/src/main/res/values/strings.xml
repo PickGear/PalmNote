@@ -1009,6 +1009,10 @@
     <string name="bill_import_screenshot">截图</string>
     <string name="bill_import_total_records">共 %d 条记录</string>
     <string name="bill_import_selected_records">已选 %d 条</string>
+    <string name="bill_import_ocr_no_date">未识别日期，保存时记为今天</string>
+    <string name="bill_import_ocr_edit">编辑</string>
+    <string name="bill_import_ocr_edit_title">编辑识别结果</string>
+    <string name="bill_import_ocr_tap_zoom">点击图片可放大查看</string>
     <!-- Budget -->
     <string name="budget_title">预算管理</string>
     <string name="budget_month_format">%s 预算</string>
