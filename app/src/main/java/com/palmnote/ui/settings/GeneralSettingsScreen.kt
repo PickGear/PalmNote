@@ -216,7 +216,11 @@ fun GeneralSettingsScreen(
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                     SettingRow {
                         SettingRowContent(title = stringResource(R.string.settings_budget_reminder))
-                        CapsuleSwitch(checked = state.budgetReminderEnabled, onCheckedChange = { viewModel.setBudgetReminderEnabled(it) }, checkedTrackColor = MaterialTheme.colorScheme.primary)
+                        CapsuleSwitch(
+                            checked = state.budgetReminderEnabled,
+                            onCheckedChange = { viewModel.setBudgetReminderEnabled(it) },
+                            checkedTrackColor = MaterialTheme.colorScheme.primary
+                        )
                     }
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                     SettingRow {
@@ -243,7 +247,11 @@ fun GeneralSettingsScreen(
                     val tint = themeColors[mode] ?: MaterialTheme.colorScheme.primary
                     Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(tint.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) { Icon(icon, null, tint = tint, modifier = Modifier.size(20.dp)) }
                     Spacer(Modifier.width(12.dp)); Text(label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-                    RadioButton(selected = state.themeMode == mode, onClick = { viewModel.setThemeMode(mode); showThemePicker = false }, colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary))
+                    RadioButton(
+                        selected = state.themeMode == mode,
+                        onClick = { viewModel.setThemeMode(mode); showThemePicker = false },
+                        colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary)
+                    )
                 }
                 if (mode != themeOptions.last().first) HorizontalDivider(modifier = Modifier.padding(horizontal = 52.dp))
             } } },
@@ -261,7 +269,11 @@ fun GeneralSettingsScreen(
                     val tint = langColors[lang] ?: MaterialTheme.colorScheme.primary
                     Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(tint.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) { Icon(icon, null, tint = tint, modifier = Modifier.size(20.dp)) }
                     Spacer(Modifier.width(12.dp)); Text(label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-                    RadioButton(selected = state.language == lang, onClick = { viewModel.setLanguage(lang); showLanguagePicker = false }, colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary))
+                    RadioButton(
+                        selected = state.language == lang,
+                        onClick = { viewModel.setLanguage(lang); showLanguagePicker = false },
+                        colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary)
+                    )
                 }
                 if (lang != langOptions.last().first) HorizontalDivider(modifier = Modifier.padding(horizontal = 52.dp))
             } } },
@@ -332,7 +344,13 @@ fun GeneralSettingsScreen(
                         WallpaperPresets.presets.forEach { preset ->
                             add(Triple(preset.id, stringResource(wallpaperLabelRes(preset.id)), preset.lightColor))
                         }
-                        add(Triple("color", stringResource(R.string.wallpaper_color), state.wallpaperCustomColor.toComposeColor(MaterialTheme.colorScheme.primary)))
+                        add(
+                            Triple(
+                                "color",
+                                stringResource(R.string.wallpaper_color),
+                                state.wallpaperCustomColor.toComposeColor(MaterialTheme.colorScheme.primary)
+                            )
+                        )
                     }
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
@@ -357,7 +375,9 @@ fun GeneralSettingsScreen(
                                                 .background(color)
                                                 .then(
                                                     if (selected) Modifier.border(3.dp, MaterialTheme.colorScheme.primary, CircleShape)
-                                                    else Modifier.border(1.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f), CircleShape)
+                                                    else Modifier.border(
+                                                        1.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f), CircleShape
+                                                    )
                                                 )
                                                 .clickable {
                                                     viewModel.setWallpaperStyle(id)
@@ -373,7 +393,8 @@ fun GeneralSettingsScreen(
                                         Text(
                                             label,
                                             style = MaterialTheme.typography.labelSmall,
-                                            color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                            color = if (selected) MaterialTheme.colorScheme.primary
+                                            else MaterialTheme.colorScheme.onSurfaceVariant,
                                             maxLines = 1
                                         )
                                     }
@@ -523,7 +544,11 @@ fun GeneralSettingsScreen(
                 Row(modifier = Modifier.fillMaxWidth().clip(MaterialTheme.shapes.medium).clickable { viewModel.setDefaultStartPage(route); showStartPagePicker = false }.padding(vertical = 8.dp, horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(tint.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) { Icon(icon, null, tint = tint, modifier = Modifier.size(20.dp)) }
                     Spacer(Modifier.width(12.dp)); Text(label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-                    RadioButton(selected = state.defaultStartPage == route, onClick = { viewModel.setDefaultStartPage(route); showStartPagePicker = false }, colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary))
+                    RadioButton(
+                        selected = state.defaultStartPage == route,
+                        onClick = { viewModel.setDefaultStartPage(route); showStartPagePicker = false },
+                        colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary)
+                    )
                 }
                 if (route != startPageOptions.last().first) HorizontalDivider(modifier = Modifier.padding(horizontal = 52.dp))
             } } },
@@ -543,7 +568,11 @@ fun GeneralSettingsScreen(
                 Row(modifier = Modifier.fillMaxWidth().clip(MaterialTheme.shapes.medium).clickable { viewModel.setDefaultBillType(type); showBillTypePicker = false }.padding(vertical = 8.dp, horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(tint.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) { Icon(icon, null, tint = tint, modifier = Modifier.size(20.dp)) }
                     Spacer(Modifier.width(12.dp)); Text(label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-                    RadioButton(selected = state.defaultBillType.value == type, onClick = { viewModel.setDefaultBillType(type); showBillTypePicker = false }, colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary))
+                    RadioButton(
+                        selected = state.defaultBillType.value == type,
+                        onClick = { viewModel.setDefaultBillType(type); showBillTypePicker = false },
+                        colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary)
+                    )
                 }
                 if (type != billTypeOptions.last().first) HorizontalDivider(modifier = Modifier.padding(horizontal = 52.dp))
             } } },
