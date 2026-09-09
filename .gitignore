@@ -20,4 +20,5 @@ Thumbs.db
 *.jks
 *.keystore
 .mimosa/
+.workbuddy/
 docs/widget-polish-log.md
