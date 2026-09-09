@@ -434,6 +434,17 @@ class BackupManager(
                     try { backupFile.copyTo(file, overwrite = true) } catch (_: Exception) {}
                 }
             }
+            // 清理恢复过程新产生、但回滚目录没有对应副本的 -wal/-shm 残留，
+            // 避免旧主库与新 WAL 混用导致数据损坏
+            for (dir in listOf(dbDir, prefsDir, imagesDir, sharedPrefsDir)) {
+                dir.listFiles()?.forEach { file ->
+                    val isResidue = file.name.endsWith("-wal") || file.name.endsWith("-shm")
+                    val wasBackedUp = backedUpFiles.any { it.canonicalPath == file.canonicalPath }
+                    if (isResidue && !wasBackedUp) {
+                        try { file.delete() } catch (_: Exception) {}
+                    }
+                }
+            }
             throw e
         } finally {
             rollbackDir.deleteRecursively()

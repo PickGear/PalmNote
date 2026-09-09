@@ -157,12 +157,7 @@ object DatabaseModule {
             .addCallback(object : androidx.room.RoomDatabase.Callback() {
                 override fun onCreate(db: SupportSQLiteDatabase) {
                     super.onCreate(db)
-                    // FTS 全文搜索虚拟表（触发器在 createBillTriggers 中创建）
-                    db.execSQL("""
-                        CREATE VIRTUAL TABLE IF NOT EXISTS bills_fts USING fts5(
-                            note, merchant, tags, content='bills', content_rowid='id'
-                        )
-                    """)
+                    // yearMonth 自动生成触发器（bills_fts 全文索引已清退，见 MIGRATION_7_8 注释）
                     com.palmnote.data.db.createBillTriggers(db)
                 }
 

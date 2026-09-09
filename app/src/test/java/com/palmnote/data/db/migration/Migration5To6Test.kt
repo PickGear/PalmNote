@@ -108,10 +108,6 @@ class Migration5To6Test {
             "CREATE TRIGGER IF NOT EXISTS auto_yearmonth_update AFTER UPDATE OF date ON bills " +
                 "BEGIN UPDATE bills SET yearMonth = '2026-01' WHERE id = NEW.id; END"
         )
-        db.execSQL(
-            "CREATE TRIGGER IF NOT EXISTS bills_fts_ai AFTER INSERT ON bills BEGIN " +
-                "INSERT INTO bills_fts(rowid, note, merchant, tags) VALUES (new.id, new.note, new.merchant, new.tags); END"
-        )
         db.close()
 
         val migrated = helper.runMigrationsAndValidate(DB, 6, true, MIGRATION_5_6)
@@ -120,9 +116,6 @@ class Migration5To6Test {
         ).use { cursor -> assertTrue(cursor.moveToFirst()) }
         migrated.query(
             "SELECT name FROM sqlite_master WHERE type='trigger' AND name='auto_yearmonth_update'"
-        ).use { cursor -> assertTrue(cursor.moveToFirst()) }
-        migrated.query(
-            "SELECT name FROM sqlite_master WHERE type='trigger' AND name='bills_fts_ai'"
         ).use { cursor -> assertTrue(cursor.moveToFirst()) }
         migrated.close()
     }

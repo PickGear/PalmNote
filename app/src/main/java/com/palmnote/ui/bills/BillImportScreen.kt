@@ -374,12 +374,16 @@ private fun OcrItem(result: OcrBillResult, selected: Boolean, onClick: () -> Uni
                 }
             }
         }
-        if (result.amount != null) Text(
-            "-${CurrencyUtils.formatCurrency(context, result.amount.toMoney())}",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = ExpenseRed
-        )
+        if (result.amount != null) {
+            // 按笔类型显示符号与颜色（收+/绿，支-/红），与保存时的类型判定一致
+            val isIncome = result.type == BillType.INCOME
+            Text(
+                (if (isIncome) "+" else "-") + CurrencyUtils.formatCurrency(context, result.amount.toMoney()),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = if (isIncome) StatusActive else ExpenseRed
+            )
+        }
     }
 }
 
