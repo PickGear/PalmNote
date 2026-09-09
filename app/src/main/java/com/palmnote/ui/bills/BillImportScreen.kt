@@ -330,6 +330,8 @@ private fun OcrPreviewContent(state: BillImportState, viewModel: BillImportViewM
                 Text(stringResource(R.string.bill_import_ocr_recognized, state.ocrResults.size, state.ocrSelectedIndices.size), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
                 Row { TextButton(onClick = { viewModel.selectAllOcr() }) { Text(stringResource(R.string.bill_import_select_all)) }; TextButton(onClick = { viewModel.deselectAllOcr() }) { Text(stringResource(R.string.bill_import_select_none)) } }
             }
+            // 整批导入到哪个账本由用户选择（默认第一个）
+            WalletChipRow(state, viewModel, context, modifier = Modifier.padding(horizontal = 16.dp))
             LazyColumn(modifier = Modifier.weight(1f).padding(horizontal = 16.dp)) {
                 itemsIndexed(state.ocrResults, key = { index, _ -> index }) { index, result ->
                     OcrItem(
@@ -394,18 +396,7 @@ private fun OcrSingleEditor(state: BillImportState, viewModel: BillImportViewMod
             }
         }
         Spacer(modifier = Modifier.height(12.dp))
-        Text(stringResource(R.string.bill_wallet), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        if (state.wallets.isNotEmpty()) {
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                items(state.wallets, key = { it.id }) { wallet ->
-                    FilterChip(
-                        selected = state.ocrWalletId == wallet.id,
-                        onClick = { viewModel.updateOcrWallet(wallet.id) },
-                        label = { Text(com.palmnote.ui.components.getLocalizedWalletDisplayName(wallet, context), fontSize = 11.sp) }
-                    )
-                }
-            }
-        }
+        WalletChipRow(state, viewModel, context)
         Spacer(modifier = Modifier.height(12.dp))
         EditField(stringResource(R.string.bill_import_amount), state.ocrAmount, viewModel::updateOcrAmount, prefix = "¥ ")
         EditField(stringResource(R.string.bill_import_merchant), state.ocrMerchant, viewModel::updateOcrMerchant)
@@ -413,6 +404,24 @@ private fun OcrSingleEditor(state: BillImportState, viewModel: BillImportViewMod
         EditField(stringResource(R.string.bill_import_category), state.ocrCategory, viewModel::updateOcrCategory)
         EditField(stringResource(R.string.bill_import_note), state.ocrNote, viewModel::updateOcrNote)
         if (state.error != null) { Spacer(modifier = Modifier.height(8.dp)); Text(state.error, color = ExpenseRed, style = MaterialTheme.typography.bodySmall) }
+    }
+}
+
+/** 账本（钱包）选择 chips 行：导入记到哪个账本 */
+@Composable
+private fun WalletChipRow(state: BillImportState, viewModel: BillImportViewModel, context: android.content.Context, modifier: Modifier = Modifier) {
+    if (state.wallets.isEmpty()) return
+    Column(modifier = modifier) {
+        Text(stringResource(R.string.bill_wallet), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            items(state.wallets, key = { it.id }) { wallet ->
+                FilterChip(
+                    selected = state.ocrWalletId == wallet.id,
+                    onClick = { viewModel.updateOcrWallet(wallet.id) },
+                    label = { Text(com.palmnote.ui.components.getLocalizedWalletDisplayName(wallet, context), fontSize = 11.sp) }
+                )
+            }
+        }
     }
 }
 
