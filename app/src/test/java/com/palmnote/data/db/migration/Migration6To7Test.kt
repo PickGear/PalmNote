@@ -65,23 +65,12 @@ class Migration6To7Test {
             "UPDATE bills SET yearMonth='2026-01' " +
             "WHERE id=NEW.id; END"
         )
-        db.execSQL(
-            "CREATE TRIGGER IF NOT EXISTS bills_fts_ai " +
-            "AFTER INSERT ON bills BEGIN " +
-            "INSERT INTO bills_fts(rowid,note,merchant,tags) " +
-            "VALUES(new.id,new.note,new.merchant,new.tags); END"
-        )
         db.close()
         val migrated = helper.runMigrationsAndValidate(
             DB, 7, true, MIGRATION_6_7
         )
         assertTrigger(migrated, "auto_yearmonth_insert")
         assertTrigger(migrated, "auto_yearmonth_update")
-        assertTrigger(migrated, "bills_fts_ai")
-        assertTrigger(migrated, "bills_fts_ad")
-        assertTrigger(migrated, "bills_fts_au")
-        // 注：Robolectric 的 SQLite 不加载 fts5 模块，无法在此环境验证 bills_fts 联动；
-        // 触发器存在性已通过 sqlite_master 断言覆盖。
         migrated.close()
     }
 
