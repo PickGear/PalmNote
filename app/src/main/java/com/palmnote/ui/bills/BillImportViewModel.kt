@@ -250,6 +250,13 @@ class BillImportViewModel @Inject constructor(
     fun updateOcrType(t: BillType) { _state.value = _state.value.copy(ocrType = t) }
     fun updateOcrWallet(id: Long?) { _state.value = _state.value.copy(ocrWalletId = id) }
 
+    /** 逐笔编辑多笔识别结果（金额/类型/商户/分类/日期/备注） */
+    fun updateOcrResult(index: Int, result: OcrBillResult) {
+        val list = _state.value.ocrResults.toMutableList()
+        if (index in list.indices) list[index] = result
+        _state.value = _state.value.copy(ocrResults = list)
+    }
+
     fun importSelected() {
         val s = _state.value
         val selected = s.parsed.filterIndexed { i, _ -> i in s.selectedIndices }
@@ -268,7 +275,9 @@ class BillImportViewModel @Inject constructor(
             val existing = billRepository.getAllBills().first()
             val walletId = s.ocrWalletId ?: getWalletId()
 
-            val toSave = if (s.ocrResults.isNotEmpty() && s.ocrSelectedIndices.isNotEmpty()) {
+            // 多笔：按勾选的解析结果逐笔保存；单笔/手动：以表单编辑值为准（表单留空回退解析值）——
+            // 此前单笔编辑走解析值分支，用户在表单里改的金额/商户/日期/备注保存时被忽略
+            val toSave = if (s.ocrResults.size > 1 && s.ocrSelectedIndices.isNotEmpty()) {
                 s.ocrResults.filterIndexed { i, _ -> i in s.ocrSelectedIndices }.mapNotNull { r ->
                     val amount = r.amount ?: return@mapNotNull null
                     val date = r.date ?: System.currentTimeMillis()
@@ -277,13 +286,28 @@ class BillImportViewModel @Inject constructor(
                         merchant = r.merchant, createdAt = System.currentTimeMillis(), updatedAt = System.currentTimeMillis())
                 }
             } else {
-                val amount = Money.parse(s.ocrAmount)?.cents
-                if (amount == null) { _state.value = _state.value.copy(stage = ImportStage.PREVIEW, error = context.getString(R.string.bill_import_error_invalid_amount)); return@launch }
-                val billDate = try { java.time.LocalDate.parse(s.ocrDate, java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd")).atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli() }
-                catch (_: Exception) { System.currentTimeMillis() }
-                listOf(Bill(amount = amount, type = s.ocrType, category = s.ocrCategory, note = s.ocrNote,
-                    date = billDate, yearMonth = DateUtils.formatYearMonth(billDate), walletId = walletId,
-                    merchant = s.ocrMerchant, createdAt = System.currentTimeMillis(), updatedAt = System.currentTimeMillis()))
+                val parsed = s.ocrResults.firstOrNull()
+                val amount = Money.parse(s.ocrAmount)?.cents ?: parsed?.amount
+                if (amount == null) {
+                    _state.value = _state.value.copy(
+                        stage = ImportStage.PREVIEW,
+                        error = context.getString(R.string.bill_import_error_invalid_amount)
+                    )
+                    return@launch
+                }
+                val billDate = try {
+                    java.time.LocalDate.parse(s.ocrDate, java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                        .atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
+                } catch (_: Exception) { parsed?.date ?: System.currentTimeMillis() }
+                listOf(
+                    Bill(
+                        amount = amount, type = parsed?.type ?: s.ocrType,
+                        category = s.ocrCategory.ifBlank { parsed?.category ?: "其他" }, note = s.ocrNote,
+                        date = billDate, yearMonth = DateUtils.formatYearMonth(billDate), walletId = walletId,
+                        merchant = s.ocrMerchant,
+                        createdAt = System.currentTimeMillis(), updatedAt = System.currentTimeMillis()
+                    )
+                )
             }
 
             val count = insertBillsIfNew(toSave, existing)
