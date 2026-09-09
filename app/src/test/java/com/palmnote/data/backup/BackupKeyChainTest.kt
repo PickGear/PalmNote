@@ -22,8 +22,9 @@ import java.util.zip.ZipOutputStream
 
 /**
  * SQLCipher 密钥跨设备恢复链路测试：
- * 备份的 db_key_prefs.xml（Keystore 包裹的 db_key）在本机 Keystore 解不开时，
- * restore 应被 [com.palmnote.data.backup.BackupManager] 拦截并抛错，避免写入不可读数据库。
+ * - 本机 Keystore 能解开备份的 wrapped key → 原样恢复（同机路径）；
+ * - 解不开（换机/重装）但备份含便携密钥 db_key.txt → 跳过 wrapped key 条目并 importRawKey；
+ * - 两者皆无（旧版本备份）→ 拒绝恢复，避免写入不可读数据库。
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [30], application = Application::class)
@@ -35,7 +36,7 @@ class BackupKeyChainTest {
     private val context get() = InstrumentationRegistry.getInstrumentation().targetContext
 
     @Test
-    fun `restore rejects backup when wrapped key cannot be decrypted`() {
+    fun `restore rejects backup when wrapped key cannot be decrypted and no portable key`() {
         val keyStore = mockk<DbKeyStore>()
         every { keyStore.canDecryptWrappedKey(any()) } returns false
 
@@ -58,6 +59,41 @@ class BackupKeyChainTest {
 
         manager.restoreBackup(context, backup, null)
         verify { keyStore.canDecryptWrappedKey(any()) }
+        verify(exactly = 0) { keyStore.importRawKey(any()) }
+    }
+
+    @Test
+    fun `restore imports portable key on new device`() {
+        val keyStore = mockk<DbKeyStore>()
+        every { keyStore.canDecryptWrappedKey(any()) } returns false
+        every { keyStore.importRawKey(any()) } returns Unit
+
+        val rawKey = ByteArray(DbKeyStore.KEY_SIZE) { it.toByte() }
+        val backup = pnb3Backup(
+            "portable.palmnote",
+            listOf(dbKeyPrefsEntry() to dbKeyPrefsXml(), BackupManager.PORTABLE_KEY_ENTRY to portableKeyXml(rawKey))
+        )
+        BackupManager(keyStore).restoreBackup(context, backup, null)
+
+        verify(exactly = 1) { keyStore.importRawKey(rawKey) }
+    }
+
+    @Test
+    fun `restore rejects portable key of wrong size`() {
+        val keyStore = mockk<DbKeyStore>()
+        every { keyStore.canDecryptWrappedKey(any()) } returns false
+
+        val backup = pnb3Backup(
+            "badsize.palmnote",
+            listOf(
+                dbKeyPrefsEntry() to dbKeyPrefsXml(),
+                BackupManager.PORTABLE_KEY_ENTRY to portableKeyXml(ByteArray(16))
+            )
+        )
+        assertThrows(IllegalArgumentException::class.java) {
+            BackupManager(keyStore).restoreBackup(context, backup, null)
+        }
+        verify(exactly = 0) { keyStore.importRawKey(any()) }
     }
 
     @Test
@@ -87,21 +123,29 @@ class BackupKeyChainTest {
         </map>
     """.trimIndent()
 
+    private fun portableKeyXml(rawKey: ByteArray): String =
+        android.util.Base64.encodeToString(rawKey, android.util.Base64.NO_WRAP)
+
     /** 构造 PNB3 明文备份：MAGIC + zip 字节 + SHA-256 校验。 */
-    private fun pnb3Backup(fileName: String, entryName: String, entryBody: String): File {
-        val zipBytes = zipBytes(entryName, entryBody)
+    private fun pnb3Backup(fileName: String, entryName: String, entryBody: String): File =
+        pnb3Backup(fileName, listOf(entryName to entryBody))
+
+    private fun pnb3Backup(fileName: String, entries: List<Pair<String, String>>): File {
+        val zipBytes = zipBytes(entries)
         val digest = MessageDigest.getInstance("SHA-256").digest(zipBytes)
         val out = tempFolder.newFile(fileName)
         out.writeBytes("PNB3".toByteArray() + zipBytes + digest)
         return out
     }
 
-    private fun zipBytes(entryName: String, entryBody: String): ByteArray {
+    private fun zipBytes(entries: List<Pair<String, String>>): ByteArray {
         val bos = ByteArrayOutputStream()
         ZipOutputStream(bos).use { zos ->
-            zos.putNextEntry(ZipEntry(entryName))
-            zos.write(entryBody.toByteArray())
-            zos.closeEntry()
+            entries.forEach { (name, body) ->
+                zos.putNextEntry(ZipEntry(name))
+                zos.write(body.toByteArray())
+                zos.closeEntry()
+            }
         }
         return bos.toByteArray()
     }

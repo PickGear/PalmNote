@@ -36,6 +36,9 @@ class BackupManager(
         private const val MIN_FREE_SPACE = 50L * 1024 * 1024
         /** 自动备份保留份数 */
         private const val DEFAULT_KEEP_BACKUPS = 7
+        /** 便携数据库密钥条目：ZIP 内存放 Base64 原始 db_key，用于跨设备/重装恢复。
+         *  加密备份中该条目随 ZIP 一起被备份密码加密；明文备份中等于数据库本身也未加密，风险等价。 */
+        const val PORTABLE_KEY_ENTRY = "db_key.txt"
         private const val TAG = "BackupManager"
     }
 
@@ -124,20 +127,8 @@ class BackupManager(
                 if (shmFile.exists()) addFileToZip(zipOut, shmFile, "db/${AppDatabase.DATABASE_NAME}-shm")
             }
 
-            // 2. 密码本独立库（SQLCipher 加密，解密密钥随 db_key_prefs 一并备份），
-            //    带 -wal/-shm 一起打包保证一致性；缺失会导致恢复后密码本条目丢失
-            val vaultDb = context.getDatabasePath(com.palmnote.feature.vault.VaultDatabase.DATABASE_NAME)
-            if (vaultDb.exists()) {
-                addFileToZip(zipOut, vaultDb, "vault-db/${com.palmnote.feature.vault.VaultDatabase.DATABASE_NAME}")
-                val vaultWal = File(vaultDb.path + "-wal")
-                if (vaultWal.exists()) {
-                    addFileToZip(zipOut, vaultWal, "vault-db/${com.palmnote.feature.vault.VaultDatabase.DATABASE_NAME}-wal")
-                }
-                val vaultShm = File(vaultDb.path + "-shm")
-                if (vaultShm.exists()) {
-                    addFileToZip(zipOut, vaultShm, "vault-db/${com.palmnote.feature.vault.VaultDatabase.DATABASE_NAME}-shm")
-                }
-            }
+            // 2. 密码本独立库（SQLCipher 加密，解密密钥随备份一并打包）
+            addVaultDbToZip(context, zipOut)
 
             // 3. 备份 DataStore 文件
             val datastoreDir = File(context.filesDir, "datastore")
@@ -147,7 +138,7 @@ class BackupManager(
                 }
             }
 
-            // 3. 备份图片目录
+            // 4. 备份图片目录
             val imagesDir = File(context.filesDir, "images")
             if (imagesDir.exists()) {
                 imagesDir.listFiles()?.forEach { file ->
@@ -155,21 +146,51 @@ class BackupManager(
                 }
             }
 
-            // 4. 应用锁 SharedPreferences（PIN salt），缺失会导致恢复后旧版 SHA-256 PIN 无法验证
             val sharedPrefsDir = File(context.applicationInfo.dataDir, "shared_prefs")
+
+            // 5. 应用锁 SharedPreferences（PIN salt），缺失会导致恢复后旧版 SHA-256 PIN 无法验证
             val lockPrefs = File(sharedPrefsDir, "$LOCK_PREFS_NAME.xml")
             if (lockPrefs.exists()) {
                 addFileToZip(zipOut, lockPrefs, "shared_prefs/${lockPrefs.name}")
             }
 
-            // 5. SQLCipher 数据库密钥，缺失则跨设备恢复后加密库无法解密
+            // 6. SQLCipher 数据库密钥（Keystore 包裹，本机恢复用），缺失则恢复后加密库无法解密
             val dbKeyPrefs = File(sharedPrefsDir, "${DbKeyStore.PREFS_NAME}.xml")
             if (dbKeyPrefs.exists()) {
                 addFileToZip(zipOut, dbKeyPrefs, "shared_prefs/${dbKeyPrefs.name}")
             }
+
+            // 7. 便携数据库密钥（Base64 原始 db_key，跨设备/重装恢复用）
+            addPortableKeyEntry(zipOut)
         }
 
         if (hasSnapshot) snapshot.delete()
+    }
+
+    /** 打包密码本独立库：带 -wal/-shm 一起保证一致性；缺失会导致恢复后密码本条目丢失。 */
+    private fun addVaultDbToZip(context: Context, zipOut: ZipOutputStream) {
+        val vaultDb = context.getDatabasePath(com.palmnote.feature.vault.VaultDatabase.DATABASE_NAME)
+        if (!vaultDb.exists()) return
+        addFileToZip(zipOut, vaultDb, "vault-db/${com.palmnote.feature.vault.VaultDatabase.DATABASE_NAME}")
+        for (suffix in listOf("-wal", "-shm")) {
+            val sidecar = File(vaultDb.path + suffix)
+            if (sidecar.exists()) {
+                addFileToZip(zipOut, sidecar, "vault-db/${com.palmnote.feature.vault.VaultDatabase.DATABASE_NAME}$suffix")
+            }
+        }
+    }
+
+    /** 写入便携密钥条目；Keystore 不可用时跳过，不影响本机恢复（仍走 wrapped key）。 */
+    private fun addPortableKeyEntry(zipOut: ZipOutputStream) {
+        val keyStore = dbKeyStore ?: return
+        try {
+            val rawKey = keyStore.getOrCreateKey()
+            zipOut.putNextEntry(ZipEntry(PORTABLE_KEY_ENTRY))
+            zipOut.write(android.util.Base64.encodeToString(rawKey, android.util.Base64.NO_WRAP).toByteArray())
+            zipOut.closeEntry()
+        } catch (_: Exception) {
+            android.util.Log.w(TAG, "createBackup: 便携密钥写入失败，跳过（不影响本机恢复）")
+        }
     }
 
     // 执行 WAL checkpoint 并复制主库为一致快照；失败或 checkpoint 未完成（busy>0）返回 false，
@@ -213,24 +234,35 @@ class BackupManager(
                         if (tempZip.exists()) tempZip.delete()
                         decryptToTemp(backupFile, password, tempZip, CryptoUtils.LEGACY_PBKDF2_ITERATIONS)
                     }
-                    validateDbKeyRecoverable(context, tempZip)
-                    restoreFromZip(context, tempZip)
+                    restoreFromZipWithPlan(context, tempZip)
                 }
                 // 新明文备份：PNB3 + ZIP + SHA-256 校验
                 magic == MAGIC_PLAIN_V3 -> {
                     extractPlainWithChecksum(backupFile, tempZip)
-                    validateDbKeyRecoverable(context, tempZip)
-                    restoreFromZip(context, tempZip)
+                    restoreFromZipWithPlan(context, tempZip)
                 }
                 // 旧明文备份：纯 ZIP
-                else -> {
-                    validateDbKeyRecoverable(context, backupFile)
-                    restoreFromZip(context, backupFile)
-                }
+                else -> restoreFromZipWithPlan(context, backupFile)
             }
         } finally {
             // 无论成功失败都清理临时文件
             if (tempZip.exists()) tempZip.delete()
+        }
+    }
+
+    /** 规划 db_key 恢复方案并执行 ZIP 恢复；方案不可行时在写盘前抛错。 */
+    private fun restoreFromZipWithPlan(context: Context, zipFile: File) {
+        when (val plan = planDbKeyRestore(zipFile)) {
+            is DbKeyPlan.Unsupported -> throw IllegalArgumentException(
+                context.getString(R.string.backup_error_cross_device)
+            )
+            is DbKeyPlan.SameDevice -> restoreFromZip(context, zipFile, skipDbKeyPrefs = false)
+            is DbKeyPlan.Portable -> {
+                // 跳过备份中的 wrapped key 条目（本机解不开），恢复完成后用本机 Keystore 重新包裹导入；
+                // 导入放在恢复成功之后：若导入失败，原密钥未被覆盖，原数据仍可读（另有恢复前自动备份兜底）
+                restoreFromZip(context, zipFile, skipDbKeyPrefs = true)
+                dbKeyStore?.importRawKey(plan.rawKey)
+            }
         }
     }
 
@@ -281,17 +313,37 @@ class BackupManager(
     }
 
     /**
-     * 跨设备/重装恢复校验：SQLCipher 数据库密钥 db_key 由原设备 Keystore 包裹，
-     * 备份中的 db_key 在本机解不开则恢复后加密库不可读（会静默丢数据/崩溃）。
-     * 提前拦截并抛错（此时尚未写盘，当前数据由回滚保护保留）。
+     * 数据库密钥恢复方案（跨设备/重装兼容）：
+     * - [SAME_DEVICE]：备份中 wrapped key 本机 Keystore 能解开 → 原样恢复 prefs 条目；
+     * - [PORTABLE]：本机解不开（换机/重装），但备份含便携密钥 → 跳过 prefs 条目，
+     *   恢复完成后用 [DbKeyStore.importRawKey] 以本机 Keystore 重新包裹导入；
+     * - [UNSUPPORTED]：备份由旧版本创建且无便携密钥 → 拒绝恢复（写盘前拦截）。
      */
-    private fun validateDbKeyRecoverable(context: Context, zipFile: File) {
-        val keyStore = dbKeyStore ?: return
-        val prefXml = readZipEntryText(zipFile, "shared_prefs/${DbKeyStore.PREFS_NAME}.xml") ?: return
-        val wrapped = parseDbKeyFromPrefsXml(prefXml) ?: return
-        if (!keyStore.canDecryptWrappedKey(wrapped)) {
-            throw IllegalArgumentException(context.getString(R.string.backup_error_cross_device))
-        }
+    private sealed interface DbKeyPlan {
+        data object SameDevice : DbKeyPlan
+        class Portable(val rawKey: ByteArray) : DbKeyPlan
+        data object Unsupported : DbKeyPlan
+    }
+
+    private fun planDbKeyRestore(zipFile: File): DbKeyPlan {
+        val keyStore = dbKeyStore ?: return DbKeyPlan.SameDevice
+        val wrapped = readZipEntryText(zipFile, "shared_prefs/${DbKeyStore.PREFS_NAME}.xml")
+            ?.let { parseDbKeyFromPrefsXml(it) }
+            ?: return DbKeyPlan.SameDevice // 无密钥条目：无加密库或极旧备份，按原样恢复
+        if (keyStore.canDecryptWrappedKey(wrapped)) return DbKeyPlan.SameDevice
+
+        // 本机解不开 → 依赖便携密钥
+        return portableKeyFrom(zipFile) ?: DbKeyPlan.Unsupported
+    }
+
+    /** 读取并校验便携密钥条目，合法返回 Portable 方案，缺失/非法返回 null。 */
+    private fun portableKeyFrom(zipFile: File): DbKeyPlan.Portable? {
+        val b64 = readZipEntryText(zipFile, PORTABLE_KEY_ENTRY)?.trim()
+            ?: return null
+        val rawKey = runCatching { android.util.Base64.decode(b64, android.util.Base64.NO_WRAP) }
+            .getOrNull() ?: return null
+        if (rawKey.size != DbKeyStore.KEY_SIZE) return null
+        return DbKeyPlan.Portable(rawKey)
     }
 
     /** 读取 ZIP 中指定条目的完整文本；条目缺失返回 null。 */
@@ -334,120 +386,115 @@ class BackupManager(
         }
     }
 
-    // 从ZIP文件恢复（带回滚保护）
-    private fun restoreFromZip(context: Context, zipFile: File) {
-        val dbDir = context.getDatabasePath(AppDatabase.DATABASE_NAME).parentFile?.canonicalFile
-            ?: throw IllegalStateException("数据库目录不可用")
-        val prefsDir = File(context.filesDir, "datastore").canonicalFile
-        val imagesDir = File(context.filesDir, "images").canonicalFile
-        val sharedPrefsDir = File(context.applicationInfo.dataDir, "shared_prefs").canonicalFile
-        val rollbackDir = File(context.cacheDir, "restore_rollback_${System.currentTimeMillis()}")
-
-        // Phase 1: Backup existing files to rollback directory
-        val backedUpFiles = mutableListOf<File>()
+    // 从ZIP文件恢复（带回滚保护）；skipDbKeyPrefs 用于跨设备便携密钥恢复时跳过本机解不开的 wrapped key
+    private fun restoreFromZip(context: Context, zipFile: File, skipDbKeyPrefs: Boolean) {
+        val dirs = RestoreDirs(
+            dbDir = context.getDatabasePath(AppDatabase.DATABASE_NAME).parentFile?.canonicalFile
+                ?: throw IllegalStateException("数据库目录不可用"),
+            prefsDir = File(context.filesDir, "datastore").canonicalFile,
+            imagesDir = File(context.filesDir, "images").canonicalFile,
+            sharedPrefsDir = File(context.applicationInfo.dataDir, "shared_prefs").canonicalFile,
+            rollbackDir = File(context.cacheDir, "restore_rollback_${System.currentTimeMillis()}")
+        )
+        val backedUpFiles = backupCurrentData(dirs)
         try {
-            for (dir in listOf(dbDir, prefsDir, imagesDir, sharedPrefsDir)) {
-                if (dir.exists()) {
-                    dir.listFiles()?.forEach { file ->
-                        val backup = File(rollbackDir, file.name)
-                        file.copyTo(backup, overwrite = true)
-                        backedUpFiles.add(file)
-                    }
-                }
-            }
+            extractEntries(zipFile, dirs, skipDbKeyPrefs)
         } catch (e: Exception) {
-            // If backup fails, clean up and abort restore
-            rollbackDir.deleteRecursively()
-            throw java.io.IOException("Failed to backup current data before restore", e)
-        }
-
-        // Phase 2: Perform restore
-        var restoreFailed = false
-        try {
-            ZipInputStream(FileInputStream(zipFile)).use { zipIn ->
-                var entry = zipIn.nextEntry
-                while (entry != null) {
-                    val entryName = entry.name
-                    when {
-                        entryName.startsWith("db/") -> {
-                            val cleanName = entryName.removePrefix("db/")
-                            if (!cleanName.contains("..") && !cleanName.startsWith("/")) {
-                                val targetFile = File(dbDir, cleanName).canonicalFile
-                                if (targetFile.canonicalPath.startsWith(dbDir.canonicalPath)) {
-                                    targetFile.parentFile?.mkdirs()
-                                    extractFile(zipIn, targetFile)
-                                }
-                            }
-                        }
-                        entryName.startsWith("prefs/") -> {
-                            val cleanName = entryName.removePrefix("prefs/")
-                            if (!cleanName.contains("..") && !cleanName.startsWith("/")) {
-                                val targetFile = File(prefsDir, cleanName).canonicalFile
-                                if (targetFile.canonicalPath.startsWith(prefsDir.canonicalPath)) {
-                                    targetFile.parentFile?.mkdirs()
-                                    extractFile(zipIn, targetFile)
-                                }
-                            }
-                        }
-                        entryName.startsWith("vault-db/") -> {
-                            // 密码本独立库，同样落在 databases 目录，由 dbDir 回滚保护覆盖
-                            val cleanName = entryName.removePrefix("vault-db/")
-                            if (!cleanName.contains("..") && !cleanName.startsWith("/")) {
-                                val targetFile = File(dbDir, cleanName).canonicalFile
-                                if (targetFile.canonicalPath.startsWith(dbDir.canonicalPath)) {
-                                    targetFile.parentFile?.mkdirs()
-                                    extractFile(zipIn, targetFile)
-                                }
-                            }
-                        }
-                        entryName.startsWith("images/") -> {
-                            val cleanName = entryName.removePrefix("images/")
-                            if (!cleanName.contains("..") && !cleanName.startsWith("/")) {
-                                val targetFile = File(imagesDir, cleanName).canonicalFile
-                                if (targetFile.canonicalPath.startsWith(imagesDir.canonicalPath)) {
-                                    targetFile.parentFile?.mkdirs()
-                                    extractFile(zipIn, targetFile)
-                                }
-                            }
-                        }
-                        entryName.startsWith("shared_prefs/") -> {
-                            val cleanName = entryName.removePrefix("shared_prefs/")
-                            if (!cleanName.contains("..") && !cleanName.startsWith("/")) {
-                                val targetFile = File(sharedPrefsDir, cleanName).canonicalFile
-                                if (targetFile.canonicalPath.startsWith(sharedPrefsDir.canonicalPath)) {
-                                    targetFile.parentFile?.mkdirs()
-                                    extractFile(zipIn, targetFile)
-                                }
-                            }
-                        }
-                    }
-                    zipIn.closeEntry()
-                    entry = zipIn.nextEntry
-                }
-            }
-        } catch (e: Exception) {
-            restoreFailed = true
-            // Rollback: restore backed up files
-            for (file in backedUpFiles) {
-                val backupFile = File(rollbackDir, file.name)
-                if (backupFile.exists()) {
-                    try { backupFile.copyTo(file, overwrite = true) } catch (_: Exception) {}
-                }
-            }
-            // 清理恢复过程新产生、但回滚目录没有对应副本的 -wal/-shm 残留，
-            // 避免旧主库与新 WAL 混用导致数据损坏
-            for (dir in listOf(dbDir, prefsDir, imagesDir, sharedPrefsDir)) {
-                dir.listFiles()?.forEach { file ->
-                    val isResidue = file.name.endsWith("-wal") || file.name.endsWith("-shm")
-                    val wasBackedUp = backedUpFiles.any { it.canonicalPath == file.canonicalPath }
-                    if (isResidue && !wasBackedUp) {
-                        try { file.delete() } catch (_: Exception) {}
-                    }
-                }
-            }
+            rollbackRestore(backedUpFiles, dirs)
             throw e
         } finally {
-            rollbackDir.deleteRecursively()
+            dirs.rollbackDir.deleteRecursively()
+        }
+    }
+
+    /** 恢复涉及的目标目录与回滚目录。 */
+    private class RestoreDirs(
+        val dbDir: File,
+        val prefsDir: File,
+        val imagesDir: File,
+        val sharedPrefsDir: File,
+        val rollbackDir: File
+    ) {
+        fun all(): List<File> = listOf(dbDir, prefsDir, imagesDir, sharedPrefsDir)
+    }
+
+    // Phase 1: 备份现有文件到回滚目录；失败则清理回滚目录并中止恢复
+    private fun backupCurrentData(dirs: RestoreDirs): List<File> {
+        val backedUpFiles = mutableListOf<File>()
+        try {
+            for (dir in dirs.all()) {
+                if (!dir.exists()) continue
+                dir.listFiles()?.forEach { file ->
+                    file.copyTo(File(dirs.rollbackDir, file.name), overwrite = true)
+                    backedUpFiles.add(file)
+                }
+            }
+        } catch (e: Exception) {
+            dirs.rollbackDir.deleteRecursively()
+            throw java.io.IOException("Failed to backup current data before restore", e)
+        }
+        return backedUpFiles
+    }
+
+    // Phase 2: 遍历 ZIP 条目逐个解压
+    private fun extractEntries(zipFile: File, dirs: RestoreDirs, skipDbKeyPrefs: Boolean) {
+        ZipInputStream(FileInputStream(zipFile)).use { zipIn ->
+            var entry = zipIn.nextEntry
+            while (entry != null) {
+                extractEntry(zipIn, entry.name, dirs, skipDbKeyPrefs)
+                zipIn.closeEntry()
+                entry = zipIn.nextEntry
+            }
+        }
+    }
+
+    /** 按条目前缀分发解压；跨设备便携密钥模式下跳过备份的 wrapped key 条目。 */
+    private fun extractEntry(zipIn: ZipInputStream, entryName: String, dirs: RestoreDirs, skipDbKeyPrefs: Boolean) {
+        val cleanName = entryName.substringAfter('/')
+        when {
+            entryName.startsWith("db/") -> extractSafe(zipIn, cleanName, dirs.dbDir)
+            // 密码本独立库，同样落在 databases 目录，由 dbDir 回滚保护覆盖
+            entryName.startsWith("vault-db/") -> extractSafe(zipIn, cleanName, dirs.dbDir)
+            entryName.startsWith("prefs/") -> extractSafe(zipIn, cleanName, dirs.prefsDir)
+            entryName.startsWith("images/") -> extractSafe(zipIn, cleanName, dirs.imagesDir)
+            entryName.startsWith("shared_prefs/") -> {
+                if (skipDbKeyPrefs && cleanName == "${DbKeyStore.PREFS_NAME}.xml") return
+                extractSafe(zipIn, cleanName, dirs.sharedPrefsDir)
+            }
+        }
+    }
+
+    /** 安全校验后解压单个条目：拒绝路径穿越，目标必须位于目标目录内。 */
+    private fun extractSafe(zipIn: ZipInputStream, cleanName: String, targetDir: File) {
+        if (cleanName.contains("..") || cleanName.startsWith("/")) return
+        val targetFile = File(targetDir, cleanName).canonicalFile
+        if (!targetFile.canonicalPath.startsWith(targetDir.canonicalPath)) return
+        targetFile.parentFile?.mkdirs()
+        extractFile(zipIn, targetFile)
+    }
+
+    // 恢复失败回滚：还原已备份文件，并清理恢复过程新产生的 -wal/-shm 残留，
+    // 避免旧主库与新 WAL 混用导致数据损坏
+    private fun rollbackRestore(backedUpFiles: List<File>, dirs: RestoreDirs) {
+        for (file in backedUpFiles) {
+            val backupFile = File(dirs.rollbackDir, file.name)
+            if (backupFile.exists()) {
+                try { backupFile.copyTo(file, overwrite = true) } catch (_: Exception) {}
+            }
+        }
+        for (dir in dirs.all()) {
+            deleteWalResidue(backedUpFiles, dir)
+        }
+    }
+
+    /** 删除回滚目录没有对应副本的 -wal/-shm 残留文件。 */
+    private fun deleteWalResidue(backedUpFiles: List<File>, dir: File) {
+        dir.listFiles()?.forEach { file ->
+            val isResidue = file.name.endsWith("-wal") || file.name.endsWith("-shm")
+            val wasBackedUp = backedUpFiles.any { it.canonicalPath == file.canonicalPath }
+            if (isResidue && !wasBackedUp) {
+                try { file.delete() } catch (_: Exception) {}
+            }
         }
     }
 
