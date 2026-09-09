@@ -13,7 +13,9 @@ data class OcrBillResult(
     val merchant: String = "",
     val date: Long? = null,
     val note: String = "",
-    val category: String = "其他"
+    val category: String = "其他",
+    /** 按笔识别的收/支类型；null = 无法判断，由调用方回退到用户手选的默认类型 */
+    val type: BillType? = null
 )
 
 class BillOcrParser {
@@ -26,7 +28,8 @@ class BillOcrParser {
         val date = findDate(lines)
         val note = findNote(lines, merchant)
         val category = guessCategory(lines, merchant, note)
-        return OcrBillResult(amount = amount, merchant = merchant, date = date, note = note, category = category)
+        return OcrBillResult(amount = amount, merchant = merchant, date = date, note = note,
+            category = category, type = detectType(lines))
     }
 
     fun parseMultiple(text: String): List<OcrBillResult> {
@@ -52,8 +55,26 @@ class BillOcrParser {
             val date = findDate(block)
             val note = findNote(block, merchant)
             val category = guessCategory(block, merchant, note)
-            OcrBillResult(amount = amount, merchant = merchant, date = date, note = note, category = category)
+            OcrBillResult(amount = amount, merchant = merchant, date = date, note = note,
+                category = category, type = detectType(block))
         }.filter { (it.amount ?: 0) > 0 }
+    }
+
+    /**
+     * 按笔识别收/支类型（收支混排截图不能共用同一类型——issue#1 修复的延伸）。
+     * 金额符号前缀（+¥/-¥）最可靠，其次关键词；两者都没有时返回 null 交由用户默认值。
+     */
+    private fun detectType(lines: List<String>): BillType? {
+        val text = lines.joinToString(" ")
+        if (Regex("[+＋]\\s*[¥￥]").containsMatchIn(text)) return BillType.INCOME
+        if (Regex("[-−－]\\s*[¥￥]").containsMatchIn(text)) return BillType.EXPENSE
+        val incomeWords = listOf("收入", "退款", "收款", "红包", "转入", "返现", "报销", "退款成功")
+        val expenseWords = listOf("支出", "付款", "消费", "转出", "扣款", "支付成功")
+        return when {
+            incomeWords.any { text.contains(it) } -> BillType.INCOME
+            expenseWords.any { text.contains(it) } -> BillType.EXPENSE
+            else -> null
+        }
     }
 
     private fun isNewTransaction(line: String, prevLines: List<String>): Boolean {
