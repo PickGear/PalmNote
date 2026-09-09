@@ -252,16 +252,21 @@ class BillOcrParser {
             }
         }
         val candidates = lines.filter {
-            it.length in 3..60
+            it.length in 2..60
                 && it != merchant
                 && !it.any { c -> c in "¥￥%/*-+@#" }
                 && !DATE_PATTERNS.any { p -> p.matcher(it).find() }
                 && !AMOUNT_PATTERN.matcher(it).find()
+                // 截图角落/状态栏的纯时间行（"22:47"）不是备注
+                && !TIME_PATTERN.matcher(it).find()
+                // 至少含一个汉字或字母——纯数字/日期串（"20260909"）不是备注
+                && it.any { c -> c.code in 0x4E00..0x9FFF || c.isLetter() }
                 && it.replace(" ", "").let { c ->
                     !c.contains("支出") && !c.contains("收入") && !c.contains("交易") &&
                         !c.contains("支付") && !c.contains("时间") && !c.contains("状态") &&
                         !c.contains("成功") && !c.contains("凭证") && !c.contains("详情") &&
-                        !c.contains("账单") && !c.contains("商户")
+                        !c.contains("账单") && !c.contains("商户") &&
+                        !c.contains("日期") && !c.contains("订单号") && !c.contains("单号")
                 }
         }
         return candidates.firstOrNull() ?: ""
@@ -286,5 +291,6 @@ class BillOcrParser {
         private val LOOSE_DATE_PATTERNS = listOf(
             Pattern.compile("(\\d{4}\\d{2}\\d{2})")
         )
+        private val TIME_PATTERN = Pattern.compile("\\d{1,2}:\\d{2}(:\\d{2})?")
     }
 }

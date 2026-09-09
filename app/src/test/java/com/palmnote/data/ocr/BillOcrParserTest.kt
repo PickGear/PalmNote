@@ -59,6 +59,24 @@ class BillOcrParserTest {
     }
 
     @Test
+    fun `note never picks standalone time lines`() {
+        // 截图角落/状态栏时间行曾被选为备注（不含金额符号、不匹配日期模式、无"时间"字样）
+        val text = """
+            微信支付
+            22:47
+            商户：瑞幸咖啡
+            金额：¥9.90
+            支付成功
+        """.trimIndent()
+
+        val result = parser.parse(text)
+
+        assertEquals(990L, result.amount)
+        // 全部候选行都是装饰词/标签行/时间行，备注应为空而不是误取 "22:47"
+        assertEquals("", result.note)
+    }
+
+    @Test
     fun `parseMultiple splits receipts at separator`() {
         val text = """
             商户：店A
