@@ -46,8 +46,8 @@ class BillXlsxImporterTest {
         assertEquals("美团外卖", bill.merchant)
         assertEquals("午饭", bill.note)
         assertEquals("WECHAT", bill.paymentMethod)
-        // 当前 xlsx 导入实现未读取交易单号列，保持空串（CSV 导入才填充）
-        assertEquals("", bill.transactionId)
+        // 交易单号列现在会被读取并用于精确去重
+        assertEquals("420000123456", bill.transactionId)
     }
 
     @Test
@@ -108,6 +108,41 @@ class BillXlsxImporterTest {
     @Test
     fun `empty bytes return empty list without crash`() {
         assertEquals(0, importer.parseBytes(ByteArray(0), StringBuilder()).size)
+    }
+
+    @Test
+    fun `alipay-style sheet is detected as alipay brand with ALIPAY payment method`() {
+        // 支付宝当代官方导出：无"支付方式"列，有"交易创建时间/资金状态"
+        val headers = listOf(
+            "交易号", "商家订单号", "交易创建时间", "付款时间", "最近修改时间", "交易来源地",
+            "类型", "交易对方", "商品名称", "金额", "收/支", "交易状态", "备注", "资金状态"
+        )
+        val data = listOf(
+            "2026093101", "2026093102", "2026-09-09 18:57:11", "2026-09-09 19:10:11",
+            "2026-09-09 19:10:11", "中国", "即时到账交易", "肯德基", "汉堡套餐",
+            "支出", "交易成功", "", "已支出"
+        )
+        // 共享字符串索引 0-13 为表头，14-26 为数据行
+        val xlsx = buildXlsx(
+            headers + data,
+            sheetXml(listOf(
+                row(1, headers.indices.map { sharedCell(it, it, 1) }),
+                row(2, listOf(
+                    sharedCell(0, 14, 2), sharedCell(1, 15, 2), sharedCell(2, 16, 2), sharedCell(3, 17, 2),
+                    sharedCell(4, 18, 2), sharedCell(5, 19, 2), sharedCell(6, 20, 2), sharedCell(7, 21, 2),
+                    sharedCell(8, 22, 2), numCell(9, "4.56"), sharedCell(10, 23, 2), sharedCell(11, 24, 2),
+                    sharedCell(12, 25, 2), sharedCell(13, 26, 2)
+                ))
+            ))
+        )
+
+        val (format, bills) = importer.parseBytesWithFormat(xlsx, StringBuilder())
+        assertEquals(BillCsvImporter.CsvFormat.ALIPAY, format)
+        assertEquals(1, bills.size)
+        assertEquals("ALIPAY", bills.single().paymentMethod)
+        assertEquals("EXPENSE", bills.single().type)
+        assertEquals(456L, bills.single().amount)
+        assertEquals("2026093101", bills.single().transactionId)
     }
 
     // ── xlsx builders ──

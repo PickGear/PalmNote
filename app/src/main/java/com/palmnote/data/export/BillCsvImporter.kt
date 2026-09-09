@@ -141,19 +141,21 @@ class BillCsvImporter {
         val ieIdx: Int?,
         val amountIdx: Int?,
         val noteIdx: Int?,
-        val accountIdx: Int?
+        val accountIdx: Int?,
+        val txIdIdx: Int?
     )
 
     private fun alipayColumns(headerIdx: Map<String, Int>): AlipayColumns = AlipayColumns(
         dateIdx = col(headerIdx, "记录时间") ?: col(headerIdx, "交易创建时间")
-            ?: col(headerIdx, "交易时间") ?: col(headerIdx, "付款时间"),
+           ?: col(headerIdx, "交易时间") ?: col(headerIdx, "付款时间"),
         categoryIdx = col(headerIdx, "交易分类") ?: col(headerIdx, "分类"),
         merchantIdx = col(headerIdx, "交易对方") ?: col(headerIdx, "商品说明"),
         goodsIdx = col(headerIdx, "商品名称") ?: col(headerIdx, "商品说明") ?: col(headerIdx, "商品"),
         ieIdx = col(headerIdx, "收支类型") ?: col(headerIdx, "收/支"),
         amountIdx = col(headerIdx, "金额"),
         noteIdx = col(headerIdx, "备注"),
-        accountIdx = col(headerIdx, "账户")
+        accountIdx = col(headerIdx, "账户"),
+        txIdIdx = col(headerIdx, "交易号")
     )
 
     private fun parseAlipay(lines: List<String>, headerIdx: Map<String, Int>, sep: Char): List<ParsedBill> {
@@ -187,7 +189,9 @@ class BillCsvImporter {
                     },
                     merchant = merchant,
                     note = note,
-                    paymentMethod = "ALIPAY"
+                    paymentMethod = "ALIPAY",
+                    // 交易号是最可靠去重键：同商户同金额同时刻的账单不会被误判重复
+                    transactionId = cell(cols, c.txIdIdx)
                 )
             } catch (_: Exception) { null }
         }

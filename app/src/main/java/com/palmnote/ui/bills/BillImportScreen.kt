@@ -238,6 +238,7 @@ private fun ErrorContent(error: String, diagnostic: String = "", onRetry: () -> 
 
 @Composable
 private fun FilePreviewContent(state: BillImportState, viewModel: BillImportViewModel, onPickAgain: () -> Unit) {
+    val context = LocalContext.current
     var editingIndex by remember { mutableStateOf<Int?>(null) }
     Column(modifier = Modifier.fillMaxSize()) {
         Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -260,6 +261,8 @@ private fun FilePreviewContent(state: BillImportState, viewModel: BillImportView
                 }
             }
         }
+        // 导入到哪个账本由用户选择（文件与 OCR 导入共用同一选择）
+        WalletChipRow(state, viewModel, context, modifier = Modifier.padding(horizontal = 16.dp))
         LazyColumn(modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             itemsIndexed(state.parsed, key = { index, _ -> index }) { index, bill ->
                 FileBillRow(
@@ -304,10 +307,10 @@ private fun FileBillRow(bill: ParsedBill, selected: Boolean, onToggle: () -> Uni
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text(bill.merchant.ifEmpty { bill.category }, fontWeight = FontWeight.Medium, style = MaterialTheme.typography.bodyMedium)
                     Text(
-                                        CurrencyUtils.formatCurrency(context, bill.amount.toMoney()),
-                                        fontWeight = FontWeight.Bold,
-                                        color = if (bill.type == BillType.EXPENSE.value) ExpenseRed else IncomeGreen
-                                    )
+                        CurrencyUtils.formatCurrency(context, bill.amount.toMoney()),
+                        fontWeight = FontWeight.Bold,
+                        color = if (bill.type == BillType.EXPENSE.value) ExpenseRed else IncomeGreen
+                    )
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(DateUtils.formatDisplayDate(context, bill.date), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -503,8 +506,8 @@ private fun WalletChipRow(state: BillImportState, viewModel: BillImportViewModel
         LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             items(state.wallets, key = { it.id }) { wallet ->
                 FilterChip(
-                    selected = state.ocrWalletId == wallet.id,
-                    onClick = { viewModel.updateOcrWallet(wallet.id) },
+                    selected = state.importWalletId == wallet.id,
+                    onClick = { viewModel.updateImportWallet(wallet.id) },
                     label = { Text(com.palmnote.ui.components.getLocalizedWalletDisplayName(wallet, context), fontSize = 11.sp) }
                 )
             }

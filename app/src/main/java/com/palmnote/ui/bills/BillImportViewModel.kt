@@ -64,7 +64,8 @@ data class BillImportState(
     val ocrCategory: String = "其他",
     val ocrNote: String = "",
     val ocrType: BillType = BillType.EXPENSE,
-    val ocrWalletId: Long? = null,
+    /** 本次导入（文件/OCR 两条路径共用）记到哪个账本，默认第一个 */
+    val importWalletId: Long? = null,
     val wallets: List<com.palmnote.data.db.entity.Wallet> = emptyList()
 )
 
@@ -83,7 +84,7 @@ class BillImportViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             cachedWallets.first().let { wallets ->
-                _state.update { it.copy(wallets = wallets, ocrWalletId = wallets.firstOrNull()?.id) }
+                _state.update { it.copy(wallets = wallets, importWalletId = wallets.firstOrNull()?.id) }
             }
         }
     }
@@ -94,7 +95,12 @@ class BillImportViewModel @Inject constructor(
     }
 
     fun setMode(mode: ImportMode) {
-        _state.value = BillImportState(mode = mode)
+        // 切换模式只清解析结果，保留账本列表与选择（此前整表重置导致切换后账本 chips 消失）
+        _state.value = BillImportState(
+            mode = mode,
+            wallets = _state.value.wallets,
+            importWalletId = _state.value.importWalletId
+        )
     }
 
     fun parseFile(@ApplicationContext context: Context, uri: Uri, fileName: String) {
@@ -126,13 +132,8 @@ class BillImportViewModel @Inject constructor(
                 diag.append(context.getString(R.string.bill_import_diag_format, if (isZip) "XLSX(ZIP)" else "CSV/Text") + "\n")
 
                 if (isZip) {
-                    val parsed = withContext(Dispatchers.IO) { BillXlsxImporter().parseBytes(rawBytes, diag) }
-                    diag.append(context.getString(R.string.bill_import_diag_records, parsed.size) + "\n")
-                    if (parsed.isEmpty()) {
-                        _state.value = _state.value.copy(stage = ImportStage.ERROR, error = context.getString(R.string.bill_import_error_parse_invalid), diagnostic = diag.toString())
-                        return@launch
-                    }
-                    _state.value = _state.value.copy(stage = ImportStage.PREVIEW, parsed = parsed, selectedIndices = parsed.indices.toSet(), format = BillCsvImporter.CsvFormat.WECHAT, diagnostic = diag.toString())
+                    val (xlsxFormat, parsed) = withContext(Dispatchers.IO) { BillXlsxImporter().parseBytesWithFormat(rawBytes, diag) }
+                    showParsed(context, parsed, xlsxFormat, diag) ?: return@launch
                 } else {
                     val lines = withContext(Dispatchers.IO) { decodeText(rawBytes, diag) }
                     diag.append(context.getString(R.string.bill_import_diag_lines, lines.size) + "\n")
@@ -144,17 +145,27 @@ class BillImportViewModel @Inject constructor(
                         _state.value = _state.value.copy(stage = ImportStage.ERROR, error = context.getString(R.string.bill_import_error_format_unknown), diagnostic = diag.toString())
                         return@launch
                     }
-                    val parsed = importer.parseFromLines(lines, format, diag)
-                    diag.append(context.getString(R.string.bill_import_diag_records, parsed.size) + "\n")
-                    if (parsed.isEmpty()) {
-                        _state.value = _state.value.copy(stage = ImportStage.ERROR, error = context.getString(R.string.bill_import_error_parse_invalid), diagnostic = diag.toString())
-                        return@launch
-                    }
-                    _state.value = _state.value.copy(stage = ImportStage.PREVIEW, parsed = parsed, selectedIndices = parsed.indices.toSet(), format = format, diagnostic = diag.toString())
+                    val parsed = withContext(Dispatchers.IO) { importer.parseFromLines(lines, format, diag) }
+                    showParsed(context, parsed, format, diag) ?: return@launch
                 }
             } catch (e: Exception) {
                 _state.value = _state.value.copy(stage = ImportStage.ERROR, error = context.getString(R.string.bill_import_error_parse_failed, e.message))
             }
+        }
+    }
+
+    /** 解析结果进入预览；空结果则置错误态并返回 null */
+    private fun showParsed(context: Context, parsed: List<ParsedBill>, format: BillCsvImporter.CsvFormat, diag: StringBuilder): Unit? {
+        diag.append(context.getString(R.string.bill_import_diag_records, parsed.size) + "\n")
+        return if (parsed.isEmpty()) {
+            _state.value = _state.value.copy(stage = ImportStage.ERROR, error = context.getString(R.string.bill_import_error_parse_invalid), diagnostic = diag.toString())
+            null
+        } else {
+            _state.value = _state.value.copy(
+                stage = ImportStage.PREVIEW, parsed = parsed,
+                selectedIndices = parsed.indices.toSet(), format = format,
+                diagnostic = diag.toString()
+            )
         }
     }
 
@@ -255,7 +266,7 @@ class BillImportViewModel @Inject constructor(
     fun updateOcrCategory(v: String) { _state.value = _state.value.copy(ocrCategory = v) }
     fun updateOcrNote(v: String) { _state.value = _state.value.copy(ocrNote = v) }
     fun updateOcrType(t: BillType) { _state.value = _state.value.copy(ocrType = t) }
-    fun updateOcrWallet(id: Long?) { _state.value = _state.value.copy(ocrWalletId = id) }
+    fun updateImportWallet(id: Long?) { _state.value = _state.value.copy(importWalletId = id) }
 
     /** 逐笔编辑多笔识别结果（金额/类型/商户/分类/日期/备注） */
     fun updateOcrResult(index: Int, result: OcrBillResult) {
@@ -270,7 +281,7 @@ class BillImportViewModel @Inject constructor(
         if (selected.isEmpty()) return
         viewModelScope.launch {
             _state.value = s.copy(stage = ImportStage.IMPORTING)
-            val count = saveBills(selected)
+            val count = saveBills(selected, s.importWalletId ?: getWalletId())
             _state.value = _state.value.copy(stage = ImportStage.DONE, importCount = count)
         }
     }
@@ -280,7 +291,7 @@ class BillImportViewModel @Inject constructor(
         viewModelScope.launch {
             _state.value = s.copy(stage = ImportStage.IMPORTING)
             val existing = billRepository.getAllBills().first()
-            val walletId = s.ocrWalletId ?: getWalletId()
+            val walletId = s.importWalletId ?: getWalletId()
 
             // 多笔：按勾选的解析结果逐笔保存；单笔/手动：以表单编辑值为准（表单留空回退解析值）——
             // 此前单笔编辑走解析值分支，用户在表单里改的金额/商户/日期/备注保存时被忽略
@@ -322,8 +333,7 @@ class BillImportViewModel @Inject constructor(
         }
     }
 
-    private suspend fun saveBills(parsed: List<ParsedBill>): Int {
-        val walletId = getWalletId()
+    private suspend fun saveBills(parsed: List<ParsedBill>, walletId: Long?): Int {
         val existing = billRepository.getAllBills().first()
         val bills = parsed.map { pb ->
             Bill(
@@ -362,7 +372,13 @@ class BillImportViewModel @Inject constructor(
         return count
     }
 
-    fun reset() { _state.value = BillImportState(mode = _state.value.mode) }
+    fun reset() {
+        _state.value = BillImportState(
+            mode = _state.value.mode,
+            wallets = _state.value.wallets,
+            importWalletId = _state.value.importWalletId
+        )
+    }
 
     private fun rotateBitmapIfNeeded(@ApplicationContext context: Context, uri: Uri, bitmap: Bitmap): Bitmap {
         val degrees = try {

@@ -210,6 +210,7 @@ class BillCsvImporterTest {
         assertEquals("汉堡套餐", bill.note)
         assertEquals("餐饮", bill.category)
         assertEquals("ALIPAY", bill.paymentMethod)
+        assertEquals("20260931642663316140823101717199", bill.transactionId)
     }
 
     @Test

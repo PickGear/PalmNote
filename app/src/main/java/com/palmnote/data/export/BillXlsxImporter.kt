@@ -19,12 +19,20 @@ class BillXlsxImporter {
     fun parse(context: Context, uri: Uri): List<ParsedBill> {
         return try {
             val bytes = context.contentResolver.openInputStream(uri)?.use { readAllBytes(it) } ?: return emptyList()
-            parseZipBytes(bytes, StringBuilder())
+            parseZipBytes(bytes, StringBuilder()).second
         } catch (_: Exception) { emptyList() }
     }
 
     fun parseBytes(bytes: ByteArray, diag: StringBuilder): List<ParsedBill> {
-        return try { parseZipBytes(bytes, diag) } catch (e: Exception) { diag.append("异常: ${e.message}\n"); emptyList() }
+        return parseBytesWithFormat(bytes, diag).second
+    }
+
+    /** 解析并附带识别账单品牌（微信/支付宝），供导入预览显示格式标签与支付方式归属 */
+    fun parseBytesWithFormat(bytes: ByteArray, diag: StringBuilder): Pair<BillCsvImporter.CsvFormat, List<ParsedBill>> {
+        return try { parseZipBytes(bytes, diag) } catch (e: Exception) {
+            diag.append("异常: ${e.message}\n")
+            BillCsvImporter.CsvFormat.UNKNOWN to emptyList()
+        }
     }
 
     private fun readAllBytes(input: InputStream): ByteArray {
@@ -37,7 +45,25 @@ class BillXlsxImporter {
         return buf.toByteArray()
     }
 
-    private fun parseZipBytes(bytes: ByteArray, diag: StringBuilder): List<ParsedBill> {
+    private fun parseZipBytes(bytes: ByteArray, diag: StringBuilder): Pair<BillCsvImporter.CsvFormat, List<ParsedBill>> {
+        val rows = readSheetRows(bytes, diag)
+        if (rows.isEmpty()) return BillCsvImporter.CsvFormat.UNKNOWN to emptyList()
+
+        val layout = detectSheetLayout(rows, diag) ?: return BillCsvImporter.CsvFormat.UNKNOWN to emptyList()
+        val bills = rows.drop(layout.headerRowIdx + 1).mapNotNull { cols ->
+            try { parseDataRow(cols, layout) } catch (_: Exception) { null }
+        }
+        diag.append("有效记录: ${bills.size}条\n")
+        if (bills.isEmpty()) {
+            rows.drop(layout.headerRowIdx + 1).firstOrNull()?.let {
+                diag.append("首行数据: ${it.joinToString(" | ").take(200)}\n")
+            }
+        }
+        return layout.format to bills
+    }
+
+    /** 读取 ZIP 内工作表（含 shared strings 解引用），输出诊断信息 */
+    private fun readSheetRows(bytes: ByteArray, diag: StringBuilder): List<List<String>> {
         val entries = mutableMapOf<String, ByteArray>()
         val zis = ZipInputStream(bytes.inputStream())
         var entry = zis.nextEntry
@@ -59,74 +85,101 @@ class BillXlsxImporter {
         val rows = sheetBytes?.let { parseSheet(it.inputStream(), sharedStrings) } ?: emptyList()
         diag.append("行数: ${rows.size}\n")
         if (rows.isNotEmpty()) diag.append("表头: ${rows.first().joinToString(" | ")}\n")
+        return rows
+    }
 
-        if (rows.isEmpty()) return emptyList()
-
-        val headerIdx = mutableMapOf<String, Int>()
-        var headerRowIdx = -1
-        for ((i, row) in rows.withIndex()) {
-            // 支付宝当代官方导出表头为"交易创建时间"（不含"交易时间"字样）
-            if (row.any { it.contains("交易时间") || it.contains("交易创建时间") }) {
-                row.forEachIndexed { ci, h -> headerIdx[h.trim()] = ci }
-                headerRowIdx = i
-                break
-            }
+    /** 表头行定位、品牌识别与列索引映射（微信/支付宝两种官方格式） */
+    private fun detectSheetLayout(rows: List<List<String>>, diag: StringBuilder): SheetLayout? {
+        val headerRowIdx = rows.indexOfFirst { row ->
+            row.any { it.contains("交易时间") || it.contains("交易创建时间") }
         }
         diag.append("表头行: ${if (headerRowIdx >= 0) "第${headerRowIdx + 1}行" else "未找到"}\n")
+        if (headerRowIdx < 0) return null
+
+        val headerIdx = rows[headerRowIdx]
+            .mapIndexed { ci, h -> h.trim() to ci }
+            .toMap()
         diag.append("匹配列: ${headerIdx.keys.joinToString(", ")}\n")
-        if (headerRowIdx < 0) return emptyList()
 
-        val dateIdx = findCol(headerIdx, "交易时间") ?: findCol(headerIdx, "交易创建时间")
-            ?: findCol(headerIdx, "时间") ?: findCol(headerIdx, "日期") ?: 0
-        val typeIdx = findCol(headerIdx, "交易类型")
-        val merchantIdx = findCol(headerIdx, "交易对方")
-        val goodsIdx = findCol(headerIdx, "商品")
-        val ieIdx = findCol(headerIdx, "收/支")
-        val amountIdx = findCol(headerIdx, "金额")
-        val methodIdx = findCol(headerIdx, "支付方式")
-        val noteIdx = findCol(headerIdx, "备注")
-
-        return rows.drop(headerRowIdx + 1).mapNotNull { cols ->
-            try {
-                val timeStr = cols.getOrNull(dateIdx)?.trim()?.replace("T", " ")?.replace("Z", "") ?: return@mapNotNull null
-                if (timeStr.isBlank()) return@mapNotNull null
-                val amountStr = amountIdx?.let { cols.getOrNull(it)?.trim() } ?: return@mapNotNull null
-                val cleanAmount = amountStr.replace(",", "").replace("¥", "").replace("￥", "").replace(" ", "").replace("+", "").replace("-", "")
-                val amount = Money.parse(cleanAmount)?.cents ?: return@mapNotNull null
-                // 状态过滤已移除（issue#1：白名单遗漏"已存入零钱"等真实状态导致大面积丢行），
-                // 全部行进入预览由用户勾选
-                val merchant = merchantIdx?.let { cols.getOrNull(it)?.trim() } ?: ""
-                val goodsDesc = goodsIdx?.let { cols.getOrNull(it)?.trim() } ?: ""
-                val typeStr = typeIdx?.let { cols.getOrNull(it)?.trim() } ?: ""
-                val incomeExpense = ieIdx?.let { cols.getOrNull(it)?.trim() } ?: ""
-                val method = methodIdx?.let { cols.getOrNull(it)?.trim() } ?: ""
-                val note = noteIdx?.let { cols.getOrNull(it)?.trim() } ?: ""
-                val isIncome = incomeExpense.contains("收入")
-                val date = parseXlsxDate(timeStr) ?: return@mapNotNull null
-                // 备注常为空，商品名承载消费内容（分类推断的重要信号），回退后再参与推断
-                val noteOrGoods = note.ifEmpty { goodsDesc }
-
-                ParsedBill(
-                    date = date,
-                    type = if (isIncome) BillType.INCOME.value else BillType.EXPENSE.value,
-                    amount = amount,
-                    category = BillCsvImporter.normalizeCategory(
-                        BillCsvImporter.guessCategory(merchant, noteOrGoods, typeStr),
-                        if (isIncome) BillType.INCOME.value else BillType.EXPENSE.value
-                    ),
-                    merchant = merchant,
-                    note = noteOrGoods.ifEmpty { typeStr },
-                    paymentMethod = BillCsvImporter.mapPaymentMethod(method)
-                )
-            } catch (_: Exception) { null }
-        }.also { result ->
-            diag.append("有效记录: ${result.size}条\n")
-            if (result.isEmpty()) {
-                val sampleRow = rows.drop(headerRowIdx + 1).firstOrNull()
-                if (sampleRow != null) diag.append("首行数据: ${sampleRow.joinToString(" | ").take(200)}\n")
-            }
+        // 品牌识别：微信表头有"支付方式"；支付宝表头有"资金状态/交易号"（新旧版均无支付方式列）
+        val format = when {
+            headerIdx.keys.any { it.contains("支付方式") } -> BillCsvImporter.CsvFormat.WECHAT
+            headerIdx.keys.any { it.contains("资金状态") || it.contains("交易号") } -> BillCsvImporter.CsvFormat.ALIPAY
+            else -> BillCsvImporter.CsvFormat.UNKNOWN
         }
+        diag.append("品牌: $format\n")
+
+        return SheetLayout(
+            format = format,
+            headerRowIdx = headerRowIdx,
+            dateIdx = findCol(headerIdx, "交易时间") ?: findCol(headerIdx, "交易创建时间")
+                ?: findCol(headerIdx, "时间") ?: findCol(headerIdx, "日期") ?: 0,
+            typeIdx = findCol(headerIdx, "交易类型"),
+            merchantIdx = findCol(headerIdx, "交易对方"),
+            goodsIdx = findCol(headerIdx, "商品"),
+            ieIdx = findCol(headerIdx, "收/支"),
+            amountIdx = findCol(headerIdx, "金额"),
+            methodIdx = findCol(headerIdx, "支付方式"),
+            noteIdx = findCol(headerIdx, "备注"),
+            txIdIdx = findCol(headerIdx, "交易单号") ?: findCol(headerIdx, "交易号")
+        )
     }
+
+    private fun parseDataRow(cols: List<String>, layout: SheetLayout): ParsedBill? {
+        // 状态过滤已移除（issue#1：白名单遗漏"已存入零钱"等真实状态导致大面积丢行），
+        // 全部行进入预览由用户勾选
+        val date = parseXlsxDate(normalizeTime(cellOf(cols, layout.dateIdx))) ?: return null
+        val amount = Money.parse(cleanAmountText(cellOf(cols, layout.amountIdx)))?.cents ?: return null
+        val merchant = cellOf(cols, layout.merchantIdx)
+        val typeStr = cellOf(cols, layout.typeIdx)
+        val method = cellOf(cols, layout.methodIdx)
+        // 备注常为空，商品名承载消费内容（分类推断的重要信号），回退后再参与推断
+        val noteOrGoods = cellOf(cols, layout.noteIdx).ifEmpty { cellOf(cols, layout.goodsIdx) }
+        val isIncome = cellOf(cols, layout.ieIdx).contains("收入")
+
+        return ParsedBill(
+            date = date,
+            type = if (isIncome) BillType.INCOME.value else BillType.EXPENSE.value,
+            amount = amount,
+            category = BillCsvImporter.normalizeCategory(
+                BillCsvImporter.guessCategory(merchant, noteOrGoods, typeStr),
+                if (isIncome) BillType.INCOME.value else BillType.EXPENSE.value
+            ),
+            merchant = merchant,
+            note = noteOrGoods.ifEmpty { typeStr },
+            // 支付宝表头无支付方式列，按品牌归属而非落到 OTHER
+            paymentMethod = if (layout.format == BillCsvImporter.CsvFormat.ALIPAY) {
+                "ALIPAY"
+            } else {
+                BillCsvImporter.mapPaymentMethod(method)
+            },
+            // 交易单号是最可靠去重键（此前 xlsx 不读该列，只能靠属性匹配去重）
+            transactionId = cellOf(cols, layout.txIdIdx)
+        )
+    }
+
+    private fun cellOf(cols: List<String>, idx: Int?): String = idx?.let { cols.getOrNull(it)?.trim() } ?: ""
+
+    private fun normalizeTime(timeStr: String): String = timeStr.replace("T", " ").replace("Z", "")
+
+    private fun cleanAmountText(raw: String): String = raw.replace(",", "")
+        .replace("¥", "").replace("￥", "")
+        .replace(" ", "").replace("+", "").replace("-", "")
+
+    @Suppress("LongParameterList")
+    private class SheetLayout(
+        val format: BillCsvImporter.CsvFormat,
+        val headerRowIdx: Int,
+        val dateIdx: Int,
+        val typeIdx: Int?,
+        val merchantIdx: Int?,
+        val goodsIdx: Int?,
+        val ieIdx: Int?,
+        val amountIdx: Int?,
+        val methodIdx: Int?,
+        val noteIdx: Int?,
+        val txIdIdx: Int?
+    )
 
     private fun findCol(headerIdx: Map<String, Int>, keyword: String): Int? {
         return headerIdx.entries.firstOrNull { it.key.contains(keyword) }?.value
