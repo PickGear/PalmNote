@@ -421,7 +421,8 @@ fun GeneralSettingsScreen(
                             OutlinedTextField(
                                 value = customWallpaperColor,
                                 onValueChange = { v ->
-                                    customWallpaperColor = v.filter { it.isLetterOrDigit() }.take(6)
+                                    // 仅允许十六进制字符，防止 "#GGGGGG" 之类非法值被持久化后静默回退
+                                    customWallpaperColor = v.filter { it.isDigit() || it in 'a'..'f' || it in 'A'..'F' }.take(6)
                                     if (customWallpaperColor.length == 6) {
                                         viewModel.setWallpaperCustomColor("#$customWallpaperColor")
                                     }

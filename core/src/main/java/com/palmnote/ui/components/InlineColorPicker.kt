@@ -109,7 +109,7 @@ private fun CustomHexField(onColorSelected: (String?) -> Unit) {
     ) {
         OutlinedTextField(
             value = customHex,
-            onValueChange = { v -> customHex = v.filter { it.isLetterOrDigit() }.take(6) },
+            onValueChange = { v -> customHex = v.filter { it.isDigit() || it in 'a'..'f' || it in 'A'..'F' }.take(6) },
             label = { Text("HEX") },
             prefix = { Text("#", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold) },
             singleLine = true,
