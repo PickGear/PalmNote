@@ -272,7 +272,7 @@ class BillImportViewModel @Inject constructor(
                 s.ocrResults.filterIndexed { i, _ -> i in s.ocrSelectedIndices }.mapNotNull { r ->
                     val amount = r.amount ?: return@mapNotNull null
                     val date = r.date ?: System.currentTimeMillis()
-                    Bill(amount = amount, type = s.ocrType, category = r.category, note = r.note,
+                    Bill(amount = amount, type = r.type ?: s.ocrType, category = r.category, note = r.note,
                         date = date, yearMonth = DateUtils.formatYearMonth(date), walletId = walletId,
                         merchant = r.merchant, createdAt = System.currentTimeMillis(), updatedAt = System.currentTimeMillis())
                 }

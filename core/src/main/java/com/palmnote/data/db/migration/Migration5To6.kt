@@ -318,33 +318,6 @@ BEGIN
 END
             """
         )
-        db.execSQL(
-            """
-CREATE TRIGGER IF NOT EXISTS bills_fts_ai AFTER INSERT ON bills BEGIN
-    INSERT INTO bills_fts(rowid, note, merchant, tags)
-    VALUES (new.id, new.note, new.merchant, new.tags);
-END
-            """
-        )
-        db.execSQL(
-            """
-CREATE TRIGGER IF NOT EXISTS bills_fts_ad AFTER DELETE ON bills BEGIN
-    INSERT INTO bills_fts(bills_fts, rowid, note, merchant, tags)
-    VALUES ('delete', old.id, old.note, old.merchant, old.tags);
-END
-            """
-        )
-        db.execSQL(
-            """
-CREATE TRIGGER IF NOT EXISTS bills_fts_au AFTER UPDATE ON bills BEGIN
-    INSERT INTO bills_fts(bills_fts, rowid, note, merchant, tags)
-    VALUES ('delete', old.id, old.note, old.merchant, old.tags);
-    INSERT INTO bills_fts(rowid, note, merchant, tags)
-    VALUES (new.id, new.note, new.merchant, new.tags);
-END
-            """
-        )
-
     }
 
     /**
