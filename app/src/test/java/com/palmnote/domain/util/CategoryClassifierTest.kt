@@ -49,7 +49,7 @@ class CategoryClassifierTest {
 
     @Test
     fun `housing keywords map to 居住`() {
-        for (text in listOf("水电费", "燃气费", "物业", "房租", "宽带", "话费", "房贷", "暖气")) {
+        for (text in listOf("水电费", "燃气费", "物业", "房租", "宽带", "房贷", "暖气")) {
             assertEquals("居住", CategoryClassifier.guessCategory(text))
         }
     }
@@ -152,14 +152,9 @@ class CategoryClassifierTest {
 
     @Test
     fun `communication keywords map to 通讯`() {
-        for (text in listOf("通讯", "流量")) {
+        for (text in listOf("通讯", "流量", "话费", "电话费", "中国移动", "中国电信", "中国联通")) {
             assertEquals("通讯", CategoryClassifier.guessCategory(text))
         }
-    }
-
-    @Test
-    fun `电话费 matches 居住 before 通讯 due to ordering`() {
-        assertEquals("居住", CategoryClassifier.guessCategory("电话费"))
     }
 
     @Test

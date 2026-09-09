@@ -946,6 +946,7 @@
     <string name="bill_import_date">Date</string>
     <string name="bill_import_category">Category</string>
     <string name="bill_import_note">Note</string>
+    <string name="bill_import_edit_bill">Edit Bill</string>
     <string name="bill_import_hide_raw">Hide Original Text</string>
     <string name="bill_import_show_raw">View Original Text</string>
     <string name="bill_import_save">Save Bill</string>
