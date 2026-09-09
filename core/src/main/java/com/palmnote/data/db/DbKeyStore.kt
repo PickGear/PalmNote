@@ -53,6 +53,25 @@ class DbKeyStore @Inject constructor(@ApplicationContext context: Context) {
         }
     }
 
+    /** 用当前设备 Keystore 解开包裹密钥，返回原始 32 字节 db_key；解不开返回 null。 */
+    fun unwrapWrappedKey(wrappedB64: String): ByteArray? {
+        if (wrappedB64.isBlank()) return null
+        return try {
+            decrypt(Base64.decode(wrappedB64, Base64.NO_WRAP))
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    /** 导入跨设备恢复的原始 db_key：用当前设备 Keystore 重新包裹后覆盖存储。
+     *  仅在恢复备份前确认本地密钥不可用时调用；调用后所有加密库将用该密钥打开。 */
+    fun importRawKey(rawKey: ByteArray) {
+        require(rawKey.size == KEY_SIZE) { "db key 必须为 $KEY_SIZE 字节" }
+        prefs.edit()
+            .putString(KEY_NAME, Base64.encodeToString(encrypt(rawKey), Base64.NO_WRAP))
+            .apply()
+    }
+
     private fun getOrCreateKeystoreKey(): SecretKey {
         val ks = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
         ks.getKey(ALIAS, null)?.let { return it as SecretKey }
@@ -89,6 +108,7 @@ class DbKeyStore @Inject constructor(@ApplicationContext context: Context) {
     companion object {
         const val PREFS_NAME = "db_key_prefs"
         const val KEY_NAME = "db_key"
+        const val KEY_SIZE = 32
         private const val ALIAS = "palmnote_db_key"
     }
 }

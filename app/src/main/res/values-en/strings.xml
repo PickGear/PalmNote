@@ -145,10 +145,10 @@
     <string name="settings_recycle_bin">Recycle Bin</string>
     <string name="settings_recycle_bin_subtitle">View deleted records</string>
     <string name="settings_export_data">Export Data</string>
-    <string name="settings_export_data_subtitle">Export all data as CSV-ZIP</string>
+    <string name="settings_export_data_subtitle">Export core data (bills, assets, etc.) as CSV-ZIP. Use Data Backup for life-module data</string>
     <string name="settings_export_file_suffix">_data.zip</string>
     <string name="settings_import_data">Import Data</string>
-    <string name="settings_import_data_subtitle">Restore data from backup ZIP</string>
+    <string name="settings_import_data_subtitle">Merge data from an exported CSV-ZIP (does not clear existing data; not a full backup restore)</string>
     <string name="settings_data_backup">Data Backup</string>
     <string name="settings_data_backup_subtitle">Backup and restore complete data</string>
     <string name="settings_clear_data">Clear Data</string>
@@ -818,7 +818,7 @@
     <string name="bill_error_category_required">Please select a category</string>
     <!-- Backup Error Messages -->
     <string name="backup_error_corrupted">Backup file is corrupted or empty</string>
-    <string name="backup_error_cross_device">This backup was created on another device and its database key cannot be decrypted. Please create a new backup on the original device.</string>
+    <string name="backup_error_cross_device">This backup was created by an older version and lacks the key required for cross-device restore. Please create a new backup with the current version on the original device and try again</string>
     <string name="backup_error_create_failed">Backup failed</string>
     <string name="backup_error_restore_failed">Restore failed</string>
     <!-- Calendar Sync -->
@@ -1141,14 +1141,14 @@
     <string name="backup_title">Data Backup</string>
     <string name="backup_operation_success">Operation successful</string>
     <string name="backup_create">Create Backup</string>
-    <string name="backup_create_desc">Package all data as .palmnote file, saved to Downloads/PalmNote/</string>
+    <string name="backup_create_desc">Package all data as a .palmnote file saved to a folder of your choice. Backups can be restored on a new phone; if a password is set, it will be required to restore — keep it safe</string>
     <string name="backup_password_required">Password is required to restore this backup</string>
     <string name="backup_password_optional">Set password (optional)</string>
     <string name="backup_password">Enter password</string>
     <string name="backup_backing_up">Backing up…</string>
     <string name="backup_now">Backup Now</string>
     <string name="backup_restore_title">Restore Backup</string>
-    <string name="backup_restore_desc">Select a .palmnote backup file to restore data. The app will restart automatically after restore.</string>
+    <string name="backup_restore_desc">Select a .palmnote backup file to restore data. Restoring overwrites current data and the app restarts afterwards. Encrypted backups require the password set at creation. Works across phones</string>
     <string name="backup_restore_from_file">Select backup file to restore</string>
     <string name="backup_restoring">Restoring data…</string>
     <string name="backup_restore_confirm">Restore will overwrite all current data. This action cannot be undone. Continue?</string>

@@ -236,6 +236,19 @@ fun BackupScreen(
     restoreFileUri?.let { uri ->
         var restorePassword by remember { mutableStateOf("") }
         var restorePasswordVisible by remember { mutableStateOf(false) }
+        // 备份是否加密（读文件头 MAGIC）：明文备份无需密码，隐藏密码框避免误解
+        var isEncryptedBackup by remember(uri) { mutableStateOf<Boolean?>(null) }
+        LaunchedEffect(uri) {
+            isEncryptedBackup = try {
+                context.contentResolver.openInputStream(uri)?.use { ins ->
+                    val magic = ByteArray(4)
+                    val n = ins.read(magic)
+                    n == 4 && (String(magic) == "PNBK" || String(magic) == "PNB2")
+                } ?: false
+            } catch (_: Exception) {
+                false
+            }
+        }
         AppDialog(
             onDismissRequest = { restoreFileUri = null },
             title = { Text(stringResource(R.string.backup_restore_title), fontWeight = FontWeight.Bold) },
@@ -243,25 +256,31 @@ fun BackupScreen(
                 Column {
                     Text(stringResource(R.string.backup_restore_confirm))
                     Spacer(modifier = Modifier.height(12.dp))
-                    OutlinedTextField(
-                        value = restorePassword,
-                        onValueChange = { restorePassword = it },
-                        label = { Text(stringResource(R.string.backup_password)) },
-                        modifier = Modifier.fillMaxWidth(),
-                        visualTransformation = if (restorePasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                        trailingIcon = {
-                            IconButton(onClick = { restorePasswordVisible = !restorePasswordVisible }) {
-                                Icon(
-                                    if (restorePasswordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
-                                    contentDescription = stringResource(
-                                        if (restorePasswordVisible) R.string.backup_hide_password else R.string.backup_show_password
+                    if (isEncryptedBackup != false) {
+                        OutlinedTextField(
+                            value = restorePassword,
+                            onValueChange = { restorePassword = it },
+                            label = { Text(stringResource(R.string.backup_password)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            visualTransformation = if (restorePasswordVisible) {
+                                VisualTransformation.None
+                            } else {
+                                PasswordVisualTransformation()
+                            },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                            trailingIcon = {
+                                IconButton(onClick = { restorePasswordVisible = !restorePasswordVisible }) {
+                                    Icon(
+                                        if (restorePasswordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                                        contentDescription = stringResource(
+                                            if (restorePasswordVisible) R.string.backup_hide_password else R.string.backup_show_password
+                                        )
                                     )
-                                )
-                            }
-                        },
-                        singleLine = true
-                    )
+                                }
+                            },
+                            singleLine = true
+                        )
+                    }
                 }
             },
             confirmButton = {
