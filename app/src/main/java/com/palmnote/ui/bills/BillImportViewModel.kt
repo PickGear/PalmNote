@@ -238,7 +238,9 @@ class BillImportViewModel @Inject constructor(
                 if (results.size == 1) {
                     val r = results[0]
                     val amountStr = r.amount?.let { String.format(java.util.Locale.US, "%.2f", it / 100.0) } ?: ""
-                    val dateStr = r.date?.let { DateUtils.formatDate(it) } ?: ""
+                    // 截图无日期（如电商订单裁剪图）时预填今天：保存本就回退今天，界面上不该留空白让人疑惑
+                    val dateStr = r.date?.let { DateUtils.formatDate(it) }
+                        ?: DateUtils.formatDate(System.currentTimeMillis())
                     _state.value = _state.value.copy(
                         stage = ImportStage.PREVIEW, ocrResults = results, ocrSelectedIndices = setOf(0),
                         ocrImageUri = uri, ocrRawText = text, importWalletId = walletId,
