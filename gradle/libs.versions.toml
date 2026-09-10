@@ -24,7 +24,7 @@ mockk = "1.13.12"
 turbine = "1.1.0"
 robolectric = "4.14.1"
 detekt = "1.23.8"
-hilt = "2.58"
+hilt = "2.60.1"
 hilt-navigation-compose = "1.2.0"
 
 [libraries]
