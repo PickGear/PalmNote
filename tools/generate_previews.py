@@ -2,7 +2,8 @@
 import os
 from PIL import Image, ImageDraw, ImageFont
 
-OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "app", "src", "main", "res", "drawable-nodpi")
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+OUTPUT_DIR = os.path.join(_ROOT, "app", "src", "main", "res", "drawable-nodpi")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # Preview size (3x density, medium-ish)

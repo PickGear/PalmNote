@@ -105,6 +105,18 @@ Each component retains its own copyright and license terms.
               MockK (Apache 2.0), Turbine (Apache 2.0),
               Robolectric (MIT), sqlite4java (BSD-2-Clause)
 
-Full text of the Apache License 2.0 and the MIT License can be found at:
+11. SQLCipher Android
+----------------------
+  Component : net.zetetic:sqlcipher-android
+  Version   : 4.13.0
+  Copyright : (c) 2014, Zetetic LLC
+  License   : BSD-3-Clause (Zetetic Open Source BSD License)
+  URL       : https://github.com/sqlcipher/sqlcipher-android
+
+  Provides encrypted SQLite database storage for all local data.
+  Runs fully on-device; no network access is performed.
+
+Full text of the Apache License 2.0, the MIT License and BSD-3-Clause can be found at:
   https://www.apache.org/licenses/LICENSE-2.0
   https://opensource.org/licenses/MIT
+  https://opensource.org/licenses/BSD-3-Clause
