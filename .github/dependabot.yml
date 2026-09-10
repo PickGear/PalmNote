@@ -45,7 +45,8 @@ updates:
           - "*"
 
     # ── 冻结名单：工具链升级前不提 PR ─────────────────────────────────
-    # 下列依赖的新版本要求 compileSdk 37 / AGP 9.x，或与 Kotlin 编译器版本强耦合，
+    # 下列依赖属于三类"升不动"：① 新版本要求 compileSdk 37 / AGP 9.x；
+    # ② 与 Kotlin 编译器版本强耦合；③ 会把 compose 栈顶出 compose-bom 钉定值。
     # 在本项目当前工具链（compileSdk 36 + AGP 8.13.2 + Kotlin 2.2.20）下无法构建，
     # 合并过去只会得到永久红灯的 PR。升级策略与解禁条件见 docs/DEVELOPMENT.md §11.1。
     #
@@ -90,6 +91,20 @@ updates:
       # 1.9.3 超过 BOM 钉定值的版本）。
       # （另：3.6.0 起还叠加了 minCompileSdk=37 的门槛。）
       - dependency-name: "io.coil-kt.coil3:coil*"
+        versions: ["[3.4.0,)"]
+      # paging 与 coil 属于同一类故障：把 compose 栈顶出 compose-bom 2025.06.01
+      # 钉定的 compose-ui 1.8.3。**判定任何依赖是否安全，都先看它把 compose-ui
+      # 解析成了多少**，而不是看它自己要求哪个 SDK。
+      # 实测（paging-compose-android 声明的 compose 依赖 → 解析出的 compose-ui）：
+      #   3.3.4 → foundation/runtime 1.5.0 → 1.8.3 ✅（当前值）
+      #   3.4.0 → ui 1.10.0              → 1.10.0 ❌
+      #   3.5.1 → ui 1.10.0              → 1.10.0 ❌
+      # 症状比 coil 更重：compose-ui 1.10 一次引入多条新 lint 规则
+      # （LocalContextConfigurationRead、LocalContextGetResourceValueCall 等），
+      # lintDebug 直接报 57 error；而 Build job 仍然通过 —— 只有 Quality 拦得住。
+      # paging-runtime-ktx 自身不含 compose 依赖，但两者是同一个库的发布物、
+      # 必须同版本，故按整族冻结（不拆分单点冻结）。
+      - dependency-name: "androidx.paging:*"
         versions: ["[3.4.0,)"]
       # Hilt 插件自 2.59 起引用了 AGP 9 独有 API
       # （com.android.build.api.artifact.ScopedArtifact$POST_COMPILATION_CLASSES，

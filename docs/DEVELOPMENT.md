@@ -736,8 +736,9 @@ AGP、Gradle、Kotlin(KGP)、KSP 是**同一个整体**：其中任一跨大版�
 ① AGP / Gradle wrapper 的大版本（工具链升级由明确驱动触发，不接受机器人驱动）、
 ② 要求 compileSdk 37 / AGP 9.x 的依赖、③ 与 Kotlin 编译器强耦合的 Kotlin 生态、
 ④ 引用了 AGP 9 独有 API 的 Gradle 插件（如 Hilt）、
-⑤ 会把 `androidx.compose.ui` 顶上来的依赖（如 coil，与 `compose-bom 2025.06.01`
-钉定的 compose-ui `1.8.3` 及 `material-icons-extended` `1.7.8` 冲突），避免产生永久红灯的 PR。
+⑤ 会把 compose 栈顶过 `compose-bom 2025.06.01` 钉定值（compose-ui `1.8.3`）的依赖
+（已实测 coil、paging 两条不同路径，与同样被冻结在 `1.7.8` 的
+`material-icons-extended` 冲突），避免产生永久红灯的 PR。
 冻结只拦大版本/受门槛版本，**补丁级更新仍会正常提 PR**。
 
 **工具链迁移完成时必须删除该 `ignore` 块**，否则会静默冻结这些依赖的更新。
@@ -2953,6 +2954,8 @@ updates:
         versions: ["[4.18.0,)"] # 4.17.0 无门槛；4.18.0 → 37
       - dependency-name: "io.coil-kt.coil3:coil*"
         versions: ["[3.4.0,)"] # 3.4.0 起把 compose-ui 抬过 BOM 钉定的 1.8.3：3.4.0 触发新 lint 规则，3.5.0 触发 KSP MissingType
+      - dependency-name: "androidx.paging:*"
+        versions: ["[3.4.0,)"] # 3.4.0 起硬依赖 compose.ui 1.10.0（BOM 钉定 1.8.3）→ lint 一次报 57 error
       - dependency-name: "com.google.dagger*"
         versions: ["[2.59,)"] # 2.59 起引用 AGP 9 独有 API；插件与库版本须一致
       - dependency-name: "org.opencv:opencv"
@@ -3027,40 +3030,51 @@ androidx 分组的 PR 会稳定失败（报错来自 `checkDebugAarMetadata`，�
   ② 用被冻结的 Kotlin 编译器去读"更高版本 Kotlin 编译出的"元数据会直接报错。
   因此这一族整体按 minor/major 冻结，只放行 patch。
 
-- **Compose 版本耦合型**（最隐蔽的一类）：本项目依赖
-  `androidx.compose.material:material-icons-extended`（`AppIcon` 枚举的 120 个图标全部来自它），
-  该 artifact 已被 Google **冻结在 1.7.8**；`compose-bom 2025.06.01` 同时把
-  `androidx.compose.ui` 钉在 `1.8.3`。而某些库（典型是 coil）自身依赖 **JetBrains Compose**
-  （`org.jetbrains.compose.foundation`），会经它的 androidx 重定向模块把整个 compose 栈抬高。
-  一旦高过 BOM 的钉定值，会出现**两类症状完全不同的失败**：
+- **Compose 栈越界型**（最隐蔽的一类）：`androidx.compose.material:material-icons-extended`
+  （`AppIcon` 枚举的 120 个图标全部来自它）已被 Google **冻结在 1.7.8**，
+  `compose-bom 2025.06.01` 又把 `androidx.compose.ui` 钉在 `1.8.3`。
+  任何把 compose 栈顶过 `1.8.3` 的依赖都会出事，而且**至少有三条不同的传导路径**：
+
+  1. **经 JetBrains Compose** —— coil 走这条：它依赖 `org.jetbrains.compose.foundation`，
+     经其 androidx 重定向模块抬高整个栈。
+  2. **直接声明 compose 产物** —— paging 走这条：`paging-compose-android` 把
+     `androidx.compose.ui:ui` 直接写进自己的 POM，版本随库自身抬升。
+  3. 任何依赖 `androidx.compose.*` 的库同理。
+
+  **所以判定标准不是"这个库要求哪个 compileSdk"，而是"它把 compose-ui 解析成了多少"。**
+
+  越过 BOM 钉定值后，会出现三类症状完全不同的失败：
 
   | 被抬到的 compose-ui | 症状 | 报错 |
   | --- | --- | --- |
-  | `1.9.4`（coil 3.4.0） | **lint 红**：compose-ui 新增的 lint 规则命中既存代码 | `AboutScreen.kt:213/:255: Error: Reading Configuration using LocalContext.current.resources.configuration [LocalContextConfigurationRead from androidx.compose.ui]` |
+  | `1.9.4`（coil 3.4.0） | **lint 红**：新 lint 规则命中既存代码 | `AboutScreen.kt:213/:255: Error: Reading Configuration using LocalContext.current.resources.configuration [LocalContextConfigurationRead from androidx.compose.ui]` |
+  | `1.10.0`（paging 3.4.0） | **lint 红，量级大得多**：compose-ui 1.10 一次引入多条规则 | `LocalContextConfigurationRead` + `LocalContextGetResourceValueCall` 等 → `lintDebug` 报 **57 error** |
   | `1.11.2`（coil 3.5.0） | **KSP 红**：`Icons.Outlined.*` 解析失败 → `AppIcon` 枚举失效 | `Room KSP: MissingType: AccountBook references a type that is not present` |
 
-  两类报错都**指不到真正的原因**。尤其 lint 那一类：编译通过、单测通过
-  （`assembleDebug` / `testDebugUnitTest` 全绿），**只有 `lintDebug` 失败**，
-  极易被误判成"代码问题"或"测试依赖问题"而查偏方向。
+  三类的共同点是**报错都指不到真正的原因**。尤其 lint 那两类：编译通过、单测通过
+  （`assembleDebug` / `testDebugUnitTest` 全绿），**只有 `lintDebug` 失败** ——
+  Build job 照样是绿的，**只有 Quality job 拦得住**。
 
-  实测边界：coil `3.0.4` → `compose-ui 1.8.3` ✅；coil `3.3.0` → `1.8.3` ✅；
-  coil `3.4.0` → `1.9.4` ❌（lint）；coil `3.5.0` → `1.11.2` ❌（KSP）。
-  即 `3.4.0` 是首个 JetBrains Compose（`1.9.3`）高过 BOM 钉定值的版本 ——
-  所以下界取**首个越界的版本** `[3.4.0,)`，而不是"最高可用版本 + 1"。
-  这类依赖只能与 `compose-bom` 一起升。
+  实测边界（括号内为解析出的 compose-ui）：
+  coil `3.0.4`→`1.8.3` ✅、`3.3.0`→`1.8.3` ✅、`3.4.0`→`1.9.4` ❌、`3.5.0`→`1.11.2` ❌；
+  paging `3.3.4`→`1.8.3` ✅、`3.4.0`→`1.10.0` ❌、`3.5.1`→`1.10.0` ❌。
+  两类库的越界起点都是 `3.4.0`（同一批基于 Compose 1.9 构建的 androidx 版本）。
+  下界一律取**首个越界版本**，而不是"最高可用版本 + 1"。这类依赖只能与 `compose-bom` 一起升。
 
-  **排查手法**：见到 KSP `MissingType` **或** lint `LocalContextConfigurationRead`，
-  先别怀疑代码，先看依赖解析：
+  **排查手法**：见到 lint `LocalContextConfigurationRead` / `LocalContextGetResourceValueCall`
+  或 KSP `MissingType`，**先别怀疑代码**，先看依赖解析：
 
   ```bash
   ./gradlew :core:dependencies --configuration debugCompileClasspath \
-    | grep -E "compose.ui:ui:|material-icons-extended:|coil"
-  # compose.ui:ui 必须仍是 BOM 钉定的 1.8.3；一旦变成 1.9.x / 1.11.x 就是它
+    | grep -E "compose.ui:ui:|material-icons-extended:"
+  # compose.ui:ui 必须仍是 BOM 钉定的 1.8.3；一旦变成 1.9.x / 1.10.x / 1.11.x 就是它
   # material-icons-extended 必须与 compose.ui:ui 的大版本大致对齐
   ```
 
-  想知道是哪次依赖升级把 compose-ui 顶上来的：读该库的 POM，看它声明的
-  `org.jetbrains.compose.*` 版本是否高过 BOM 的 compose-ui 版本。
+  想知道是哪次依赖升级把它顶上来：读该库的 POM。注意 **KMP 库要读带 `-android`
+  后缀的产物**（如 `paging-compose-android-3.5.1.pom`），根产物的 POM 往往只声明
+  元数据依赖，会让人误判成"这个库很安全"（`paging-compose` 根 POM 只写 runtime 1.9.0，
+  而真正生效的 `-android` 产物写的是 ui 1.10.0）。
 
 **三个写法坑**：
 
