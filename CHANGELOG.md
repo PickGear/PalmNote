@@ -42,12 +42,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 - OCR 商户名改为从金额行邻近文本识别，不再误取"微信支付"等页面标题装饰词（#1）
 - OCR 识别电商订单截图增强（抖音/拼多多/淘宝实测）：优先取"实付款"而非页面最大金额（避免把商品原价当实付）；订单列表页按"实付款"行切分多订单逐笔勾选；支持"8月30日""09.01"式无年份日期（自动补当前年）
 - 非默认账本点击"记一笔"现在写入当前选中账本，而非默认账本（#1）
-- 修复数据库迁移缺陷：v7 升级用户因缺索引导致升级后启动崩溃；v5 及更早版本升级用户因全文索引表缺失导致无法记账（v1.4.0 起顺带移除无用的全文索引，降低写入开销）
+- 修复数据库迁移缺陷：v7 升级用户因缺索引导致升级后启动崩溃；v5 及更早版本升级用户因全文索引表缺失导致无法记账（顺带移除无用的全文索引，降低写入开销）
 - OCR 批量识别收支混排截图时，每笔按内容自动判定收入/支出，不再全部记为同一类型；识别结果列表按类型显示 +/- 符号与颜色
 - 自定义主题色/壁纸的 HEX 输入仅接受十六进制字符，非法颜色不再被静默保存后回退
 - 恢复备份失败回滚时清理残留的 -wal/-shm 文件，避免旧数据库与新日志混用损坏
 
 ### Security
+- **PBKDF2-HMAC-SHA256 迭代数 25k → 600k**（应用锁 PIN 与密码本主密码统一，取 OWASP 现行建议值）：迭代数随哈希/包裹参数一并存储，老 PIN 与老密码本包裹不受影响，首次成功解锁后自动重哈希/重包裹补齐强度，**无需重设密码**；派生在 IO 线程执行，解锁仅多出数百毫秒
 - 桌面小组件不再展示密码本条目标题/分类（仅显示条数与解锁提示）
 
 ## [1.3.0] - 2026-08-11
@@ -59,7 +60,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 - 密码本安全：**生物识别解锁**（Keystore 不可导出密钥包裹 DK + BiometricPrompt/CryptoObject）、**无锁模式**（可跳过密码设置，DK 用非认证 Keystore 密钥包裹，随时可升级为 PIN/生物识别）、自动锁定规则可配置（立即/跟系统锁屏/超时 5 分钟，默认跟系统）、失败 5 次锁定 30 秒（防暴力，`LockoutTracker` 复用）、进入需验证可配置、重置密码本
 - 密码本入口：Dashboard 卡片（仅显示条数统计，隐藏条目标题保护隐私，旧卡片配置自动合并）、设置页设置项（剪贴板清除/需验证/条目数/改主密码/重置）
 - 数据库 v4 → v5：新增 `vault_entries` 表（`Migration4To5`）
-- **数据库加密 SQLCipher**：全库加密（`net.zetetic:sqlcipher-android`），Room 经 `EncryptedOpenHelperFactory` 接入，明文库自动迁移，密钥存 SharedPreferences（跨设备恢复可用）
+- **数据库加密 SQLCipher**：全库加密（`net.zetetic:sqlcipher-android`），Room 经 `EncryptedOpenHelperFactory` 接入，明文库自动迁移；库密钥由 **Android Keystore（AES-256-GCM，TEE 内运算、不可导出）包裹**后存入 SharedPreferences（备份可携带便携密钥，支持跨设备恢复）
 - **OCR 引擎替换**：ML Kit 闭源模型 → 自研 `OcrEngine` 接口 + **PaddleOCR PP-OCRv6**（`ppocr-sdk` 模块，ONNX Runtime 离线推理，模型打包 assets）；移除 ML Kit 依赖与 `coroutines-play-services`
 - APK 体积优化：release 仅 arm64-v8a + `onnxruntime-mobile`，从 ~86MB 降至 ~42.6MB（后因 mobile 精简算子集不兼容 PP-OCRv6 模型导致 OCR 失败，回退为完整版 `onnxruntime-android 1.21.1`）
 - 测试：`VaultCryptoTest`（加密往返/篡改检测/密钥派生）、`VaultPasswordGeneratorTest`、`Migration4To5Test`，单测 75 → 150（含 6 个 Room 迁移测试）
@@ -109,7 +110,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 - 倒计时清除逻辑修复：`epoch/86400000`(UTC) 差一天
 
 ### Fixed (review pass)
-- **每日汇总按本地日分组**：参考 Cashew/Veri Fin 做法——账单存完整时间戳（保留具体时刻），日历/周报的按日聚合改为**应用层（Kotlin）按本地时区分组**，移除 SQL 按 UTC 日分组的 4 个聚合查询，彻底消除凌晨账错位/同日覆盖问题
+- **每日汇总按本地日分组**：参考主流记账应用的本地日聚合做法——账单存完整时间戳（保留具体时刻），日历/周报的按日聚合改为**应用层（Kotlin）按本地时区分组**，移除 SQL 按 UTC 日分组的 4 个聚合查询，彻底消除凌晨账错位/同日覆盖问题
 - **严重：Migration3To4 重建 `plan_list_items` 缺外键**、`wallets.icon` 缺 `DEFAULT 'Payments'`，Room 迁移后校验会崩——已补齐并与 schema 逐列/外键/索引完全一致
 - **备份 WAL checkpoint 结果未检查**：busy>0 时可能漏并 WAL 页导致备份丢最新数据，改为检查结果、失败回退原始 db+wal+shm
 - **订阅账单短月跳过**：billingDay 29/30/31 的订阅在短月被 `monthsBetween` 守卫压掉，改用 `plusMonths`（自动月末钳制）判断周期

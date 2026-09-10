@@ -76,7 +76,10 @@ class AppLockManager(
         if (storedPin.isEmpty()) return@withContext false
 
         val isValid = if (storedPin.startsWith(PBKDF2_PREFIX)) {
-            verifyPbkdf2Pin(pin, storedPin)
+            val valid = verifyPbkdf2Pin(pin, storedPin)
+            // 老参数哈希在本次成功校验后透明升级，用户无需重设 PIN
+            if (valid) upgradePbkdf2PinIfOutdated(pin, storedPin)
+            valid
         } else {
             val legacyValid = hashPinLegacy(pin) == storedPin
             if (legacyValid) {
@@ -194,6 +197,21 @@ class AppLockManager(
         } catch (_: Exception) { false }
     }
 
+    /**
+     * 历史哈希（低迭代数）升级为现行参数并落盘。
+     * 迭代数已写入存储格式，老 PIN 始终能用旧参数解开；升级只是把强度补齐，用户无感知。
+     */
+    private suspend fun upgradePbkdf2PinIfOutdated(pin: String, stored: String) {
+        val iterations = stored.removePrefix(PBKDF2_PREFIX)
+            .split(":")
+            .firstOrNull()
+            ?.toIntOrNull() ?: return
+        if (iterations >= PBKDF2_ITERATIONS) return
+        val upgraded = hashPin(pin)
+        preferencesManager.setEncryptedPin(upgraded)
+        cachedEncryptedPin = upgraded
+    }
+
     /** Legacy SHA-256 (for migration only) */
     private fun hashPinLegacy(pin: String): String {
         val salt = getOrCreateSalt()
@@ -214,7 +232,14 @@ class AppLockManager(
 
     companion object {
         private const val PBKDF2_ALGORITHM = "PBKDF2WithHmacSHA256"
-        private const val PBKDF2_ITERATIONS = 25000
+
+        /**
+         * PBKDF2-HMAC-SHA256 迭代数，取 OWASP 现行建议值 600k。
+         * 6 位 PIN 密钥空间仅 10^6，提升迭代数可将离线爆破成本放大数十倍；
+         * 校验在 IO 线程执行且每次解锁只算一次，数百毫秒等待可接受。
+         * 已存的低迭代数哈希由 [upgradePbkdf2PinIfOutdated] 在下次成功解锁时自动补齐。
+         */
+        private const val PBKDF2_ITERATIONS = 600000
         private const val SALT_SIZE = 16
         private const val KEY_LENGTH = 256
         private const val PBKDF2_PREFIX = "pbkdf2:"

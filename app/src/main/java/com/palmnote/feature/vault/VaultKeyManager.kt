@@ -127,10 +127,13 @@ class VaultKeyManager @Inject constructor(
                 null
             }
         }
-        return attempt(VaultCrypto.PBKDF2_ITERATIONS)
-            ?: attempt(VaultCrypto.PREVIOUS_PBKDF2_ITERATIONS)
-            ?: attempt(VaultCrypto.INTERIM_PBKDF2_ITERATIONS)
-            ?: attempt(VaultCrypto.LEGACY_PBKDF2_ITERATIONS)
+        // distinct：现行值与历史临时值可能相同，避免重复派生（失败路径本就最耗时）
+        return listOf(
+            VaultCrypto.PBKDF2_ITERATIONS,
+            VaultCrypto.PREVIOUS_PBKDF2_ITERATIONS,
+            VaultCrypto.INTERIM_PBKDF2_ITERATIONS,
+            VaultCrypto.LEGACY_PBKDF2_ITERATIONS
+        ).distinct().firstNotNullOfOrNull { attempt(it) }
     }
 
     /** 已解锁状态下改 PIN：用新 PIN 派生新 K 重新包裹当前 DK。失败返回 false（不崩溃）。 */
