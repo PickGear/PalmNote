@@ -1155,6 +1155,7 @@
     <string name="backup_password_hint">Encrypted · 6+ characters · Unrecoverable if forgotten</string>
     <string name="backup_remember_password">Remember password</string>
     <string name="backup_error_export_needs_password">Please set a backup password of at least 6 characters first: the exported backup leaves this device, and weak encryption exposes the photos and settings inside</string>
+    <string name="backup_error_export_failed">Could not write to the selected folder. Make sure it is writable or choose another folder.</string>
     <string name="backup_existing_count">On-device %1$d · Portable %2$d</string>
     <string name="backup_source_local">This device</string>
     <string name="backup_source_folder">Folder</string>
@@ -1164,7 +1165,7 @@
     <string name="backup_backing_up">Backing up…</string>
     <string name="backup_now">Backup Now</string>
     <string name="backup_restore_title">Restore Backup</string>
-    <string name="backup_restore_hint">Restoring overwrites current data and restarts the app</string>
+    <string name="backup_restore_hint">Restoring replaces current data; a snapshot is saved first, then the app restarts</string>
     <string name="backup_restore_from_file">Choose backup file</string>
     <string name="backup_restoring">Restoring data…</string>
     <string name="backup_restore_confirm">Restoring replaces current data with this backup. A snapshot of current data is saved first, so you can restore it back.</string>

@@ -1,5 +1,4 @@
 package com.palmnote.ui.backup
-import androidx.hilt.navigation.compose.hiltViewModel
 
 import android.content.Context
 import android.content.Intent
@@ -31,6 +30,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.palmnote.app.R
 import com.palmnote.data.backup.BackupState
@@ -68,9 +68,14 @@ fun BackupScreen(
         ActivityResultContracts.OpenDocumentTree()
     ) { treeUri ->
         treeUri?.let { uri ->
-            context.contentResolver.takePersistableUriPermission(
-                uri, Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-            )
+            // 部分 DocumentsProvider（第三方网盘等）不支持持久化授权并抛 SecurityException；
+            // 本次导出依然能写入，只是重启后目录列表会失效，不应因此崩溃
+            runCatching {
+                context.contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                )
+            }
             viewModel.saveBackupDir(uri)
             viewModel.createBackupToFolder(uri)
         }
@@ -262,7 +267,9 @@ fun BackupScreen(
                     Text(stringResource(R.string.backup_restoring), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 } else {
                     OutlinedButton(
-                        onClick = { restoreLauncher.launch(arrayOf("application/octet-stream", "application/zip")) },
+                        // .palmnote 没有注册的 MIME 类型，部分文件管理器会把它判为不可选而灰掉；
+                        // 放宽到任意类型，选错文件由文件头 MAGIC 校验拦下
+                        onClick = { restoreLauncher.launch(arrayOf("*/*")) },
                         modifier = Modifier.fillMaxWidth(),
                         enabled = backupState !is BackupState.Progress
                     ) {

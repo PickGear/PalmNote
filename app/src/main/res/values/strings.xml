@@ -1210,6 +1210,7 @@
     <string name="backup_password_hint">加密保存 · 至少 6 位 · 忘记密码无法恢复</string>
     <string name="backup_remember_password">记住密码</string>
     <string name="backup_error_export_needs_password">请先设置至少 6 位的备份密码：导出的备份会离开本机，加密不足会泄露其中的照片与设置</string>
+    <string name="backup_error_export_failed">无法写入所选文件夹，请确认该文件夹可写或换一个目录</string>
     <string name="backup_existing_count">本机 %1$d · 可换机 %2$d</string>
     <string name="backup_source_local">本机</string>
     <string name="backup_source_folder">文件夹</string>
@@ -1219,7 +1220,7 @@
     <string name="backup_backing_up">正在备份…</string>
     <string name="backup_now">立即备份</string>
     <string name="backup_restore_title">恢复备份</string>
-    <string name="backup_restore_hint">恢复会覆盖当前数据，完成后自动重启</string>
+    <string name="backup_restore_hint">恢复会用备份替换当前数据，先自动存一份本机快照，完成后重启</string>
     <string name="backup_restore_from_file">选择备份文件</string>
     <string name="backup_restoring">正在恢复数据…</string>
     <string name="backup_restore_confirm">恢复会用这份备份替换当前数据。恢复前会自动保存一份本机快照，可再恢复回来。</string>
