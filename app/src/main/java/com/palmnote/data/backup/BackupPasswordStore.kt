@@ -32,18 +32,21 @@ class BackupPasswordStore @Inject constructor(@ApplicationContext context: Conte
 
     private val keystoreKey: SecretKey by lazy { getOrCreateKeystoreKey() }
 
-    /** 读取已记住的密码；未记住或本机已解不开（换机/重装）时返回 null。 */
+    /**
+     * 读取已记住的密码；未记住或本机已解不开（换机/重装）时返回 null。
+     *
+     * 解不开说明这条记录对本机已经永久失效（Keystore 密钥随设备/重装一起换了），
+     * 顺手清掉，否则残留密文会让"是否记住过"长期为真，开关每次进来都错判。
+     */
     fun load(): String? {
         val wrapped = prefs.getString(KEY_NAME, null) ?: return null
         return try {
             String(decrypt(Base64.decode(wrapped, Base64.NO_WRAP)), Charsets.UTF_8)
         } catch (_: Exception) {
+            clear()
             null
         }
     }
-
-    /** 是否曾记住过密码（用于开关初始状态）。 */
-    fun hasRemembered(): Boolean = prefs.contains(KEY_NAME)
 
     /** 记住密码；传入空白等同于清除。 */
     fun save(password: String?) {
@@ -93,8 +96,10 @@ class BackupPasswordStore @Inject constructor(@ApplicationContext context: Conte
     }
 
     companion object {
-        private const val PREFS_NAME = "backup_password_prefs"
-        private const val KEY_NAME = "backup_password"
+        /** prefs 文件名与条目名对模块内可见：测试需要直接写入一条"本机已解不开"的残留记录。 */
+        internal const val PREFS_NAME = "backup_password_prefs"
+        internal const val KEY_NAME = "backup_password"
+
         private const val ALIAS = "palmnote_backup_password"
         private const val TRANSFORMATION = "AES/GCM/NoPadding"
         private const val KEY_SIZE = 256
