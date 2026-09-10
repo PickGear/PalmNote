@@ -734,8 +734,11 @@ AGP、Gradle、Kotlin(KGP)、KSP 是**同一个整体**：其中任一跨大版�
 
 **配套的 Dependabot 冻结**：条件 1 不成立期间，`.github/dependabot.yml` 里的 `ignore` 块会挡掉
 ① AGP / Gradle wrapper 的大版本（工具链升级由明确驱动触发，不接受机器人驱动）、
-② 要求 compileSdk 37 / AGP 9.x 的依赖、③ 与 Kotlin 编译器强耦合的 Kotlin 生态，
-避免产生永久红灯的 PR。冻结只拦大版本/受门槛版本，**补丁级更新仍会正常提 PR**。
+② 要求 compileSdk 37 / AGP 9.x 的依赖、③ 与 Kotlin 编译器强耦合的 Kotlin 生态、
+④ 引用了 AGP 9 独有 API 的 Gradle 插件（如 Hilt）、
+⑤ 会把 `androidx.compose.ui` 顶上来的依赖（如 coil，与已冻结的
+`material-icons-extended 1.7.8` 冲突），避免产生永久红灯的 PR。
+冻结只拦大版本/受门槛版本，**补丁级更新仍会正常提 PR**。
 
 **工具链迁移完成时必须删除该 `ignore` 块**，否则会静默冻结这些依赖的更新。
 冻结名单、版本下界的取值依据与 `versions` 的写法坑，见 §24.9。
@@ -2946,7 +2949,9 @@ updates:
       - dependency-name: "net.zetetic:sqlcipher-android"
         versions: ["[4.18.0,)"] # 4.17.0 无门槛；4.18.0 → 37
       - dependency-name: "io.coil-kt.coil3:coil*"
-        versions: ["[3.6.0,)"] # 3.5.0 → 36；3.6.0 起 → 37
+        versions: ["[3.5.0,)"] # 3.5.0 起把 compose-ui 抬到 1.11.x，与冻结的 material-icons-extended 1.7.8 冲突
+      - dependency-name: "com.google.dagger*"
+        versions: ["[2.59,)"] # 2.59 起引用 AGP 9 独有 API；插件与库版本须一致
       - dependency-name: "org.opencv:opencv"
         versions: ["[5.0.0,)"] # 4 → 5 跨大版本，API 不兼容，须人工迁移
       - dependency-name: "org.jetbrains.kotlin*"
@@ -2988,7 +2993,7 @@ androidx 分组的 PR 会稳定失败（报错来自 `checkDebugAarMetadata`，�
 
 **为什么用 `ignore` 而不是反复调分组**：分组只能改变"一个 PR 里装几样东西"，
 不能阻止"装进来的东西构建不过"。`ignore` 才是在源头掐掉这条 PR 的唯一手段。
-本项目在工具链冻结期间（见 §11.1）用 `ignore` 挡住两类依赖：
+本项目在工具链冻结期间（见 §11.1）用 `ignore` 挡住四类依赖：
 
 - **编译门槛型**：新版本在 AAR 里声明了 `minCompileSdk` / `minAgpVersion`，高于本项目当前值。
   取版本下界的办法是直接读目标版本 AAR 内的 `META-INF/com/android/build/gradle/aar-metadata.properties`：
@@ -3003,11 +3008,39 @@ androidx 分组的 PR 会稳定失败（报错来自 `checkDebugAarMetadata`，�
   这样得到的是**实测值**，不必靠试合并来猜。注意下界要写"首个要求 37 的版本"，
   不是当前版本 —— 例如 `androidx.core:core` 是 `1.18.0` 要 36、`1.19.0` 才要 37。
 
+- **插件/AGP 不兼容型**：Gradle 插件的新版本引用了只有 AGP 9 才有的 API，在**插件 apply 阶段**
+  就抛 `NoClassDefFoundError`（如 Hilt 2.59 引用 `ScopedArtifact$POST_COMPILATION_CLASSES`）。
+  这类失败**没有任何 Gradle 任务级的报错信息**，日志里只有插件名和一个 AGP 内部类名，
+  且在配置阶段秒挂（CI 上表现为 `Build` 任务 30 秒左右就失败）。
+  这类用 POM 查不到（Hilt 用 `compileOnly` 声明 AGP，不写进 POM），要**实测边界**：
+  建一个只应用 `com.android.application` + 目标插件的空工程，逐个版本跑
+  `./gradlew help`，看是否抛 `only compatible with Android Gradle plugin` 或
+  `NoClassDefFoundError`。插件与其配套库的版本必须一致（Hilt 插件与 `hilt-android`），
+  所以要用 `com.google.dagger*` 这种通配整族冻结，不能只冻插件。
+
 - **编译器生态型**：Kotlin 生态（KGP / Compose 编译器 / serialization 插件 / `kotlinx-*` 运行时）
   的版本互相耦合，Dependabot 无法把它们配套升对。两个具体原因：
   ① KSP 版本号内嵌 Kotlin 版本（`2.2.20-2.0.2`），与 Kotlin 必须严格对应；
   ② 用被冻结的 Kotlin 编译器去读"更高版本 Kotlin 编译出的"元数据会直接报错。
   因此这一族整体按 minor/major 冻结，只放行 patch。
+
+- **Compose 版本耦合型**：本项目依赖 `androidx.compose.material:material-icons-extended`
+  （`AppIcon` 枚举的 120 个图标全部来自它）。该 artifact 已被 Google **冻结在 1.7.8**，
+  而其他库的新版本会通过传递依赖把 `androidx.compose.ui` 往上顶。一旦 `compose-ui` 被顶得
+  过高，`Icons.Outlined.*` 就解析不出来，`AppIcon` 枚举失效，最终表现为
+  **Room KSP 报 `MissingType: AccountBook references a type that is not present`** ——
+  报错完全指不到真正的原因，排查成本很高。
+
+  典型实例：coil `3.4.0` → `compose-ui 1.9.4`（可用）；coil `3.5.0` → `compose-ui 1.11.2`（失败）。
+  这类依赖只能与 `compose-bom` 一起升，所以按"最高可用版本 + 1"设下界冻结。
+
+  **排查手法**：Node/Android 的 KSP `MissingType` 先别怀疑代码，先看依赖解析：
+
+  ```bash
+  ./gradlew :core:dependencies --configuration debugCompileClasspath \
+    | grep -E "compose.ui:ui:|material-icons-extended:"
+  # material-icons-extended 必须与 compose.ui:ui 的大版本大致对齐
+  ```
 
 **两个写法坑**：
 

@@ -71,8 +71,22 @@ updates:
         versions: ["[1.4.0,)"] # 1.3.0 → 35；1.4.0 → 37（minAgp 9.1.0）
       - dependency-name: "net.zetetic:sqlcipher-android"
         versions: ["[4.18.0,)"] # 4.17.0 无门槛；4.18.0 → 37
+      # coil 自 3.5.0 起会把 androidx.compose.ui 抬到 1.11.x，而本项目依赖的
+      # androidx.compose.material:material-icons-extended 已被 Google 冻结在 1.7.8，
+      # 二者混用会让 Icons.Outlined.* 解析失败，表现为 Room KSP 报
+      # "MissingType: AccountBook references a type that is not present"。
+      # 实测：3.4.0 可用（compose-ui 解析到 1.9.4）；3.5.0 不可用。
+      # coil 只有与 compose-bom 一起升才有意义，故一并冻结。
+      # （另：3.6.0 起还叠加了 minCompileSdk=37 的门槛。）
       - dependency-name: "io.coil-kt.coil3:coil*"
-        versions: ["[3.6.0,)"] # 3.5.0 → 36；3.6.0 起 → 37
+        versions: ["[3.5.0,)"]
+      # Hilt 插件自 2.59 起引用了 AGP 9 独有 API
+      # （com.android.build.api.artifact.ScopedArtifact$POST_COMPILATION_CLASSES，
+      # AGP 8.13.2 中不存在），在插件 apply 阶段即失败；且 Hilt 插件与
+      # hilt-android 库的版本必须一致，不能只升其中一个，故整族冻结。
+      # 实测边界：2.58 可用；2.59 / 2.59.1 / 2.59.2 / 2.60 / 2.60.1 均不可用。
+      - dependency-name: "com.google.dagger*"
+        versions: ["[2.59,)"]
       # OpenCV 4 → 5 跨大版本，C++/Java API 有重命名与移除，须人工迁移后再升
       - dependency-name: "org.opencv:opencv"
         versions: ["[5.0.0,)"]
