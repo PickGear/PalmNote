@@ -106,14 +106,33 @@ class VaultCryptoTest {
     }
 
     @Test
-    fun threeKdfParams_areDistinct() {
+    fun distinctKdfIterations_produceDistinctKeys() {
+        // 契约：迭代数不同 → 派生结果必不同（回退链按参数区分历史包裹依赖此性质）。
+        // 现行值与历史临时值可能重合（同为 600k），故先去重再比较。
         val salt = VaultCrypto.generateSalt()
-        val previous = VaultCrypto.deriveKey("123456", salt, VaultCrypto.PREVIOUS_PBKDF2_ITERATIONS).encoded.toList()
-        val interim = VaultCrypto.deriveKey("123456", salt, VaultCrypto.INTERIM_PBKDF2_ITERATIONS).encoded.toList()
-        val current = VaultCrypto.deriveKey("123456", salt).encoded.toList()
-        assertNotEquals(previous, interim)
-        assertNotEquals(previous, current)
-        assertNotEquals(interim, current)
+        val iterations = listOf(
+            VaultCrypto.PBKDF2_ITERATIONS,
+            VaultCrypto.PREVIOUS_PBKDF2_ITERATIONS,
+            VaultCrypto.INTERIM_PBKDF2_ITERATIONS,
+            VaultCrypto.LEGACY_PBKDF2_ITERATIONS
+        ).distinct()
+        assertTrue(iterations.size >= 3)
+        val derived = iterations.map { VaultCrypto.deriveKey("123456", salt, it).encoded.toList() }
+        assertEquals(iterations.size, derived.distinct().size)
+    }
+
+    @Test
+    fun kdfFallbackChain_coversAllHistoricalParams() {
+        // 去重后的回退链必须仍覆盖全部历史参数，否则对应年代的包裹将永久解不开
+        val chain = listOf(
+            VaultCrypto.PBKDF2_ITERATIONS,
+            VaultCrypto.PREVIOUS_PBKDF2_ITERATIONS,
+            VaultCrypto.INTERIM_PBKDF2_ITERATIONS,
+            VaultCrypto.LEGACY_PBKDF2_ITERATIONS
+        ).distinct()
+        assertTrue(chain.contains(VaultCrypto.LEGACY_PBKDF2_ITERATIONS))
+        assertTrue(chain.contains(VaultCrypto.PREVIOUS_PBKDF2_ITERATIONS))
+        assertTrue(chain.contains(VaultCrypto.INTERIM_PBKDF2_ITERATIONS))
     }
 
     @Test

@@ -39,15 +39,57 @@ fun AppLockScreen(
     var lockoutRemaining by rememberSaveable { mutableLongStateOf(appLockManager.getLockoutRemainingMs()) }
     var showForgotConfirm by rememberSaveable { mutableStateOf(false) }
     var shakeTrigger by remember { mutableIntStateOf(0) }
+    // PBKDF2 600k 在中低端机约 270ms–900ms，输入满位后立即给出"验证中"反馈，
+    // 否则用户会以为点击没生效而重复输入。
+    var isVerifying by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-
-    fun triggerShake() { shakeTrigger++ }
 
     val pinSuccessText = stringResource(R.string.app_lock_pin_success)
     val pinMismatchText = stringResource(R.string.app_lock_pin_mismatch)
     val pinWrongText = stringResource(R.string.app_lock_pin_wrong)
     val tooManyAttemptsText = stringResource(R.string.app_lock_too_many_attempts)
+
+    fun triggerShake() { shakeTrigger++ }
+
+    /** 校验 PIN：600k 派生较重，期间禁用键盘并显示进度，避免无响应观感。 */
+    fun submitPin(input: String) {
+        if (isVerifying) return
+        isVerifying = true
+        scope.launch {
+            try {
+                if (appLockManager.verifyPin(input)) {
+                    appLockManager.unlock()
+                } else {
+                    val remaining = appLockManager.getLockoutRemainingMs()
+                    if (remaining > 0) {
+                        lockoutRemaining = remaining
+                    } else {
+                        error = pinWrongText
+                        triggerShake()
+                    }
+                    pin = ""
+                }
+            } finally {
+                isVerifying = false
+            }
+        }
+    }
+
+    /** 设置 PIN（含 600k 派生）：同样需要等待反馈。 */
+    fun commitNewPin(input: String) {
+        if (isVerifying) return
+        isVerifying = true
+        scope.launch {
+            try {
+                appLockManager.setPin(input, enable = true)
+                appLockManager.unlock()
+                Toast.makeText(context, pinSuccessText, Toast.LENGTH_SHORT).show()
+            } finally {
+                isVerifying = false
+            }
+        }
+    }
 
     val actualIsSetupMode = isSetupMode || lockState is AppLockState.NeedSetup
 
@@ -139,7 +181,12 @@ fun AppLockScreen(
             modifier = Modifier.height(24.dp),
             contentAlignment = Alignment.Center
         ) {
-            if (error.isNotEmpty() || lockoutRemaining > 0) {
+            if (isVerifying) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    strokeWidth = 2.dp
+                )
+            } else if (error.isNotEmpty() || lockoutRemaining > 0) {
                 Text(
                     text = if (lockoutRemaining > 0)
                         tooManyAttemptsText.format(ceil(lockoutRemaining / 1000.0).toInt())
@@ -167,11 +214,7 @@ fun AppLockScreen(
                     if (actualIsSetupMode) {
                         if (isConfirming) {
                             if (pin == confirmPin) {
-                                scope.launch {
-                                    appLockManager.setPin(pin, enable = true)
-                                    appLockManager.unlock()
-                                    Toast.makeText(context, pinSuccessText, Toast.LENGTH_SHORT).show()
-                                }
+                                commitNewPin(pin)
                             } else {
                                 error = pinMismatchText
                                 triggerShake()
@@ -182,20 +225,7 @@ fun AppLockScreen(
                             scope.launch { delay(150); confirmPin = input; isConfirming = true; pin = "" }
                         }
                     } else {
-                        scope.launch {
-                            if (appLockManager.verifyPin(pin)) {
-                                appLockManager.unlock()
-                            } else {
-                                val remaining = appLockManager.getLockoutRemainingMs()
-                                if (remaining > 0) {
-                                    lockoutRemaining = remaining
-                                } else {
-                                    error = pinWrongText
-                                    triggerShake()
-                                }
-                                pin = ""
-                            }
-                        }
+                        submitPin(pin)
                     }
                 }
                 }
@@ -214,7 +244,8 @@ fun AppLockScreen(
                     }
                 }
             },
-            showBiometric = !actualIsSetupMode && bioEnabled && isBiometricAvailable(context)
+            showBiometric = !actualIsSetupMode && bioEnabled && isBiometricAvailable(context),
+            enabled = !isVerifying
         )
 
         if (!actualIsSetupMode) {

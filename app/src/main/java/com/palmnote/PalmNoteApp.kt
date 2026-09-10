@@ -10,6 +10,7 @@ import com.palmnote.data.LifeDataSeeder
 import com.palmnote.data.db.AppDatabase
 import com.palmnote.data.datastore.PreferencesManager
 import com.palmnote.data.AppIconManager
+import com.palmnote.data.backup.BackupManager
 import com.palmnote.data.db.entity.AccountBook
 import com.palmnote.data.db.entity.CategoryConfig
 import com.palmnote.data.db.entity.Wallet
@@ -88,6 +89,8 @@ class PalmNoteApp : Application(), Configuration.Provider {
             accountBookRepository.initDefaultBooks()
             scheduleDailyCheck()
             scheduleAutoBackup()
+            // 旧版本把备份写在应用专属外部存储（可被文件管理器读取），迁移到内部存储后旧文件不再外露
+            BackupManager.migrateLegacyExternalBackups(this@PalmNoteApp)
             lifeDataSeeder.seedIfEmpty()
             preferencesManager.categoryColorOverrides.first().let {
                 com.palmnote.ui.theme.ColorResolver.loadOverrides(it)

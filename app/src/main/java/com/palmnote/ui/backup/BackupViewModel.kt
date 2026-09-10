@@ -8,6 +8,7 @@ import android.net.Uri
 import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.palmnote.data.backup.BackupInfo
 import com.palmnote.data.backup.BackupManager
 import com.palmnote.data.backup.BackupState
 import com.palmnote.app.R
@@ -33,6 +34,11 @@ class BackupViewModel @Inject constructor(
 
     private val backupManager = BackupManager(dbKeyStore)
 
+    companion object {
+        /** 导出备份的密码最小长度：导出文件会离开应用沙箱，过短密码等于没有保护。 */
+        const val MIN_PASSWORD_LENGTH = 6
+    }
+
     private val _backupState = MutableStateFlow<BackupState>(BackupState.Idle)
     val backupState: StateFlow<BackupState> = _backupState
 
@@ -47,6 +53,12 @@ class BackupViewModel @Inject constructor(
      * Create backup and copy to user-chosen SAF folder.
      */
     fun createBackupToFolder(folderUri: Uri) {
+        // 导出的备份会离开应用沙箱（网盘/微信/U 盘），必须加密：无密码时包内照片、设置均为明文
+        val password = _password.value
+        if (password.isNullOrBlank() || password.length < MIN_PASSWORD_LENGTH) {
+            _backupState.value = BackupState.Error(context.getString(R.string.backup_error_export_needs_password))
+            return
+        }
         viewModelScope.launch {
             flow {
                 emit(BackupState.Progress(0))
@@ -54,7 +66,7 @@ class BackupViewModel @Inject constructor(
                     // 打包前先对密码本库做 WAL checkpoint，保证快照一致
                     checkpointVaultWal()
                     // 1. Create backup in app cache
-                    val tempFile = backupManager.createBackup(context, db, _password.value)
+                    val tempFile = backupManager.createBackup(context, db, password)
                     emit(BackupState.Progress(80))
 
                     // 2. Copy to user-chosen folder via SAF
@@ -96,27 +108,57 @@ class BackupViewModel @Inject constructor(
                     }
                     emit(BackupState.Progress(30))
 
-                    // 恢复前自动备份当前数据
-                    backupManager.createPreRestoreBackup(context, db)
-
-                    // 恢复前关闭主库与密码本库，避免已有连接占用文件导致覆盖失败
-                    closeDatabases()
-
-                    // Restore
-                    backupManager.restoreBackup(context, tempFile, password)
-                    tempFile.delete()
+                    try {
+                        performRestore(tempFile, password)
+                    } finally {
+                        tempFile.delete()
+                    }
 
                     emit(BackupState.Progress(100))
                     emit(BackupState.Success(""))
                 } catch (e: Exception) {
                     emit(BackupState.Error(e.message ?: "Restore failed"))
-                } finally {
-                    // 无论恢复成功还是失败，确保双数据库可重新打开，避免后续操作崩溃
-                    reopenDatabases()
                 }
             }.flowOn(Dispatchers.IO).collect { state ->
                 _backupState.value = state
             }
+        }
+    }
+
+    /**
+     * 从本机内部存储的备份恢复（自动备份 / 恢复前快照都落在这里）。
+     * 这些文件不经过 SAF，可直接就地读取，无需先拷贝到缓存。
+     */
+    fun restoreFromLocalFile(filePath: String, password: String? = null) {
+        viewModelScope.launch {
+            flow {
+                emit(BackupState.Progress(0))
+                try {
+                    val file = File(filePath)
+                    if (!file.exists()) {
+                        throw IllegalArgumentException(context.getString(R.string.backup_error_corrupted))
+                    }
+                    emit(BackupState.Progress(30))
+                    performRestore(file, password)
+                    emit(BackupState.Progress(100))
+                    emit(BackupState.Success(""))
+                } catch (e: Exception) {
+                    emit(BackupState.Error(e.message ?: "Restore failed"))
+                }
+            }.flowOn(Dispatchers.IO).collect { state ->
+                _backupState.value = state
+            }
+        }
+    }
+
+    /** 恢复公共流程：恢复前快照 → 关库 → 覆盖恢复 → 重开库（失败也重开，避免后续操作崩溃）。 */
+    private suspend fun performRestore(sourceFile: File, password: String?) {
+        backupManager.createPreRestoreBackup(context, db)
+        closeDatabases()
+        try {
+            backupManager.restoreBackup(context, sourceFile, password)
+        } finally {
+            reopenDatabases()
         }
     }
 
@@ -155,6 +197,12 @@ class BackupViewModel @Inject constructor(
         val s = backupPrefs.getString("backup_dir_uri", null) ?: return null
         return runCatching { Uri.parse(s) }.getOrNull()
     }
+
+    /**
+     * 列出本机内部存储中的备份（自动备份 + 恢复前快照）。
+     * 该目录其他应用不可读，也无法经系统文件管理器进入，必须由本界面提供恢复入口。
+     */
+    suspend fun listLocalBackups(): List<BackupInfo> = backupManager.listBackups(context)
 
     /** 列出已保存备份目录内的 .palmnote 备份文件（IO：DocumentsProvider 查询） */
     suspend fun listBackupsInDir(): List<Pair<String, Uri>> = withContext(Dispatchers.IO) {
