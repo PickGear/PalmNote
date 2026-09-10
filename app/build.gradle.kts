@@ -218,7 +218,7 @@ dependencies {
     // Core
     implementation(libs.core.ktx)
     implementation(libs.appcompat)
-    implementation("androidx.documentfile:documentfile:1.0.1")
+    implementation("androidx.documentfile:documentfile:1.1.0")
     implementation(libs.lifecycle.runtime.ktx)
     implementation(libs.lifecycle.process)
 
@@ -249,5 +249,5 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.espresso.core)
     androidTestImplementation("androidx.benchmark:benchmark-macro-junit4:1.3.1")
-    androidTestImplementation("androidx.test:core:1.6.1")
+    androidTestImplementation("androidx.test:core:1.7.0")
 }
