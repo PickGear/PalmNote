@@ -727,12 +727,16 @@ AGP、Gradle、Kotlin(KGP)、KSP 是**同一个整体**：其中任一跨大版�
 | 2 | 关键插件已有稳定版支持 | 尤其 detekt：`1.23.8` 的官方支持矩阵只测到 Gradle 8.12.1，而 `2.0` 至今仍是 alpha，且改了插件 ID 与规则集键名 |
 | 3 | detekt 基线条目数不增加 | `grep -c "<ID>" config/detekt/baseline.xml` ≤ 1824 |
 
-**升级路径（已勘定，届时照做）**：Gradle `9.4.1` + AGP `9.2.0` + compileSdk `37`。
+**升级路径（已勘定，届时照做）**：Gradle `9.4.1` + AGP `9.2.0` + compileSdk `37`
+（这是**最低可行落点**，取更高版本亦可）。
 注意 AGP `9.0.x` 最高只支持 API `36.1`，够不到 compileSdk 37 —— 所以**不存在"便宜的部分迁移"**，
 要么整体做，要么不做。执行前先建独立分支 `chore/toolchain-agp9`，不要直接改 main。
 
 **配套的 Dependabot 冻结**：条件 1 不成立期间，`.github/dependabot.yml` 里的 `ignore` 块会挡掉
-"要求 compileSdk 37 / AGP 9.x"或与 Kotlin 编译器强耦合的依赖，避免产生永久红灯的 PR。
+① AGP / Gradle wrapper 的大版本（工具链升级由明确驱动触发，不接受机器人驱动）、
+② 要求 compileSdk 37 / AGP 9.x 的依赖、③ 与 Kotlin 编译器强耦合的 Kotlin 生态，
+避免产生永久红灯的 PR。冻结只拦大版本/受门槛版本，**补丁级更新仍会正常提 PR**。
+
 **工具链迁移完成时必须删除该 `ignore` 块**，否则会静默冻结这些依赖的更新。
 冻结名单、版本下界的取值依据与 `versions` 的写法坑，见 §24.9。
 
@@ -2925,6 +2929,14 @@ updates:
 
     # 冻结名单：工具链升级前不提 PR（解禁条件见 §11.1）
     ignore:
+      # 构建工具链大版本（AGP / Gradle wrapper）由明确驱动触发人工迁移，
+      # 不接受 Dependabot 驱动；只拦 9.x，8.x 补丁/次要版本仍正常提 PR
+      - dependency-name: "com.android.application"
+        versions: ["[9.0.0,)"]
+      - dependency-name: "com.android.library"
+        versions: ["[9.0.0,)"]
+      - dependency-name: "gradle-wrapper"
+        versions: ["[9.0.0,)"]
       - dependency-name: "androidx.core:core"
         versions: ["[1.19.0,)"] # 1.18.0 → minCompileSdk 36；1.19.0 → 37（minAgp 9.1.0）
       - dependency-name: "androidx.core:core-ktx"

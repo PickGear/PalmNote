@@ -24,6 +24,8 @@ updates:
       # （AGP 9 要求 Gradle 9），且大版本升级只能人工执行，不可能靠合并
       # 机器人的 PR 完成。单独成组，避免与运行时依赖挤在同一个 PR 里 ——
       # 否则该 PR 既无法整体合并，也无法单独否决。
+      # 注意：该组三个依赖目前全部在下方 ignore 名单中冻结，因此不会产生 PR；
+      # 保留分组定义，是为了解冻之后 AGP 与 wrapper 仍作为一个整体升级。
       build-toolchain:
         patterns:
           - "gradle-wrapper"
@@ -52,6 +54,15 @@ updates:
     # 注意 Gradle 生态的 versions 必须写 Maven 范围语法（[1.19.0,)），
     # 写成 ">= 1.19.0" 不会报错，但规则会静默失效。
     ignore:
+      # 构建工具链：AGP / Gradle wrapper 的大版本迁移是独立项目（见 §11.1），
+      # 由明确驱动触发，不接受 Dependabot 驱动；迁移时这三项一起升即可。
+      # 冻结只拦 9.x，8.x 的补丁/次要版本仍会正常提 PR。
+      - dependency-name: "com.android.application"
+        versions: ["[9.0.0,)"]
+      - dependency-name: "com.android.library"
+        versions: ["[9.0.0,)"]
+      - dependency-name: "gradle-wrapper"
+        versions: ["[9.0.0,)"]
       - dependency-name: "androidx.core:core"
         versions: ["[1.19.0,)"] # 1.18.0 → minCompileSdk 36；1.19.0 → 37（minAgp 9.1.0）
       - dependency-name: "androidx.core:core-ktx"
