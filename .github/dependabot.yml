@@ -20,6 +20,15 @@ updates:
     # 分组目的：一个分组 = 一个 PR。命中多个分组时取声明顺序中的第一个，
     # 因此"兜底分组"必须放在最后。
     groups:
+      # 构建工具链：Gradle wrapper 与 Android Gradle Plugin 必须同步迁移
+      # （AGP 9 要求 Gradle 9），且大版本升级只能人工执行，不可能靠合并
+      # 机器人的 PR 完成。单独成组，避免与运行时依赖挤在同一个 PR 里 ——
+      # 否则该 PR 既无法整体合并，也无法单独否决。
+      build-toolchain:
+        patterns:
+          - "gradle-wrapper"
+          - "com.android.application"
+          - "com.android.library"
       androidx:
         patterns:
           - "androidx.*"
@@ -27,7 +36,7 @@ updates:
         patterns:
           - "org.jetbrains.kotlin*"
           - "com.google.devtools.ksp*"
-      # 兜底：其余依赖（hilt、opencv、mockk 等）统一合并为一个 PR，
+      # 兜底：其余依赖（hilt、sqlcipher、opencv、mockk 等）合并为一个 PR，
       # 不再逐个单开
       other:
         patterns:

@@ -2880,6 +2880,13 @@ updates:
     # 分组目的：一个分组 = 一个 PR。命中多个分组时取声明顺序中的
     # 第一个，故"兜底分组"必须放在最后
     groups:
+      # 构建工具链单独成组：Gradle wrapper 与 AGP 必须同步迁移，
+      # 且大版本升级只能人工执行，不能与运行时依赖挤在一个 PR 里
+      build-toolchain:
+        patterns:
+          - "gradle-wrapper"
+          - "com.android.application"
+          - "com.android.library"
       androidx:
         patterns:
           - "androidx.*"
@@ -2915,6 +2922,13 @@ updates:
 若只给部分依赖配了分组，未被任何分组命中的依赖仍会各自单开 —— 这正是本项目首次
 启用时一次冒出 9 个 PR 的原因。加一个 `patterns: ["*"]` 的兜底分组，即可把所有零散
 依赖并成一个 PR。
+
+**分组只解决"数量"，不解决"能不能合并"**：Dependabot 按包名分组，并不知道依赖之间
+的真实兼容约束。典型的两类：① `compileSdk` 低于新版本 androidx 所要求的版本时，
+androidx 分组的 PR 会稳定失败（报错来自 `checkDebugAarMetadata`，属配置阶段，构建
+日志里不会出现编译错误）；② `androidx.hilt` 与 `dagger/hilt` 存在配套版本关系，
+分属两个分组时会互相掣肘。遇到这类情况不要反复调分组，应把它当作一次工具链/SDK
+升级任务统一处理。
 
 ### 24.10 发布后监控
 
