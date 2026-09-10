@@ -873,7 +873,7 @@
     <string name="bill_error_category_required">请选择分类</string>
     <!-- Backup Error Messages -->
     <string name="backup_error_corrupted">备份文件损坏或为空</string>
-    <string name="backup_error_cross_device">此备份由旧版本创建，缺少跨设备恢复所需的密钥，无法在当前设备恢复。请在原设备用新版本重新备份后再试</string>
+    <string name="backup_error_cross_device">此备份无法在当前设备恢复：它不含跨设备恢复所需的密钥（通常是不设密码的明文备份，或由旧版本创建）。请在原设备上恢复，或设置密码后重新备份再换机</string>
     <string name="backup_error_create_failed">备份失败</string>
     <string name="backup_error_restore_failed">恢复失败</string>
     <!-- Calendar Sync -->
@@ -1201,14 +1201,18 @@
     <string name="backup_title">数据备份</string>
     <string name="backup_operation_success">操作成功</string>
     <string name="backup_create">创建备份</string>
-    <string name="backup_create_desc">将所有数据打包为 .palmnote 文件，保存到您选择的文件夹。备份可在新手机上恢复；若设置了密码，恢复时需输入该密码，请牢记</string>
+    <string name="backup_create_desc">将所有数据打包为 .palmnote 文件，保存到您选择的文件夹。备份会加密，可在新手机上恢复；密码必须设置且请牢记，忘记密码将无法恢复</string>
     <string name="backup_password_required">需要密码才能恢复此备份</string>
-    <string name="backup_password_optional">设置密码（可选）</string>
+    <string name="backup_password_label">设置备份密码（必填，至少 6 位）</string>
+    <string name="backup_plaintext_warning">密码不足 6 位时无法导出备份。备份文件会保存到您选择的文件夹，可能经网盘、U 盘等渠道流转，密码过短等于没有保护</string>
+    <string name="backup_error_export_needs_password">请先设置至少 6 位的备份密码：导出的备份会离开本机，加密不足会泄露其中的照片与设置</string>
+    <string name="backup_local_title">本机备份（自动创建，仅本机可恢复）：</string>
+    <string name="backup_local_subtitle">%1$s · %2$d MB</string>
     <string name="backup_password">输入密码</string>
     <string name="backup_backing_up">正在备份…</string>
     <string name="backup_now">立即备份</string>
     <string name="backup_restore_title">恢复备份</string>
-    <string name="backup_restore_desc">选择之前备份的 .palmnote 文件恢复数据，恢复将覆盖当前数据，完成后应用自动重启。加密备份需输入创建时设置的密码，支持换手机恢复</string>
+    <string name="backup_restore_desc">选择之前备份的 .palmnote 文件或本机自动备份恢复数据，恢复将覆盖当前数据，完成后应用自动重启。加密备份需输入创建时设置的密码，支持换手机恢复</string>
     <string name="backup_restore_from_file">选择备份文件恢复</string>
     <string name="backup_restoring">正在恢复数据…</string>
     <string name="backup_restore_confirm">恢复将覆盖当前所有数据，此操作不可撤销。确定要恢复吗？</string>

@@ -37,9 +37,46 @@ class BackupManager(
         /** 自动备份保留份数 */
         private const val DEFAULT_KEEP_BACKUPS = 7
         /** 便携数据库密钥条目：ZIP 内存放 Base64 原始 db_key，用于跨设备/重装恢复。
-         *  加密备份中该条目随 ZIP 一起被备份密码加密；明文备份中等于数据库本身也未加密，风险等价。 */
+         *  **仅写入加密备份**——该条目若与 SQLCipher 密文同处一个未加密的包里，等于把钥匙和保险箱
+         *  一起交出去；明文备份不含本条目，故只能在原设备恢复。见 [includePortableKeyInBackup]。 */
         const val PORTABLE_KEY_ENTRY = "db_key.txt"
         private const val TAG = "BackupManager"
+
+        /**
+         * 便携密钥是否随备份写入：仅当设置了备份密码（产出加密包 PNB2）时写入。
+         * 明文包写入便携密钥会使其自带解密钥匙，数据加密因此归零。
+         */
+        internal fun includePortableKeyInBackup(password: String?): Boolean = !password.isNullOrBlank()
+
+        // 获取备份存储目录：统一使用应用内部存储，其他应用无法读取。
+        // 旧版本使用应用专属外部存储，在 Android 10 及以下可被文件管理器读取，明文备份会经此目录外泄。
+        private fun getBackupDir(context: Context): File {
+            val dir = File(context.filesDir, BACKUP_DIR)
+            if (!dir.exists()) dir.mkdirs()
+            return dir
+        }
+
+        /**
+         * 迁移旧版本遗留在应用专属外部存储（Android/data/<包名>/files/Download/PalmNote）的备份。
+         * 只搬不删：复制成功后才删除源文件，目标同名已存在则跳过。失败静默忽略，不影响启动。
+         */
+        fun migrateLegacyExternalBackups(context: Context) {
+            try {
+                val legacyDir = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
+                    ?.let { File(it, BACKUP_DIR) } ?: return
+                if (!legacyDir.exists()) return
+                val targetDir = getBackupDir(context)
+                legacyDir.listFiles()?.forEach { file ->
+                    if (!file.isFile) return@forEach
+                    val dest = File(targetDir, file.name)
+                    if (dest.exists()) return@forEach
+                    val copied = runCatching { file.copyTo(dest, overwrite = false) }.isSuccess
+                    if (copied) runCatching { file.delete() }
+                }
+            } catch (_: Exception) {
+                // 迁移失败不影响功能：新备份已改为写入内部存储
+            }
+        }
     }
 
     /**
@@ -48,14 +85,6 @@ class BackupManager(
      */
     internal fun selectBackupsToPrune(files: List<File>, keep: Int = DEFAULT_KEEP_BACKUPS): List<File> =
         files.sortedByDescending { it.lastModified() }.drop(keep.coerceAtLeast(0))
-
-    // 获取备份存储目录（使用应用专属外部存储，无需权限；外部存储不可用时回退到内部存储）
-    private fun getBackupDir(context: Context): File {
-        val base = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) ?: context.filesDir
-        val dir = File(base, BACKUP_DIR)
-        if (!dir.exists()) dir.mkdirs()
-        return dir
-    }
 
     // 创建备份：打包 DB 一致快照 + 图片 + DataStore + 应用锁 SharedPreferences 为 ZIP，支持可选加密
     fun createBackup(context: Context, db: AppDatabase, password: String? = null): File {
@@ -72,7 +101,7 @@ class BackupManager(
         // 创建临时ZIP文件（UUID 命名避免并发冲突）
         val tempZip = File(context.cacheDir, "temp_backup_${java.util.UUID.randomUUID()}.zip")
         try {
-            createZipFile(context, db, tempZip)
+            createZipFile(context, db, tempZip, includePortableKey = includePortableKeyInBackup(password))
 
             // 如果有密码，加密ZIP文件（流式处理避免OOM）
             if (!password.isNullOrBlank()) {
@@ -106,65 +135,68 @@ class BackupManager(
         return backupFile
     }
 
-    // 创建ZIP文件
-    private fun createZipFile(context: Context, db: AppDatabase, zipFile: File) {
+    // 创建ZIP文件；[includePortableKey] 为真时额外写入便携密钥条目（仅加密备份）
+    private fun createZipFile(context: Context, db: AppDatabase, zipFile: File, includePortableKey: Boolean) {
         // 先做 WAL checkpoint 再复制主库文件，保证快照一致（避免 -wal/-shm 与主库不一致）
         val snapshot = File(context.cacheDir, "db_snapshot_${System.currentTimeMillis()}")
         val hasSnapshot = checkpointAndSnapshot(context, db, snapshot)
 
         ZipOutputStream(FileOutputStream(zipFile)).use { zipOut ->
-            // 1. 数据库（优先用一致快照）
-            if (hasSnapshot) {
-                addFileToZip(zipOut, snapshot, "db/${AppDatabase.DATABASE_NAME}")
-            } else {
-                val dbFile = context.getDatabasePath(AppDatabase.DATABASE_NAME)
-                if (dbFile.exists()) {
-                    addFileToZip(zipOut, dbFile, "db/${AppDatabase.DATABASE_NAME}")
-                }
-                val walFile = File(dbFile.path + "-wal")
-                if (walFile.exists()) addFileToZip(zipOut, walFile, "db/${AppDatabase.DATABASE_NAME}-wal")
-                val shmFile = File(dbFile.path + "-shm")
-                if (shmFile.exists()) addFileToZip(zipOut, shmFile, "db/${AppDatabase.DATABASE_NAME}-shm")
-            }
-
-            // 2. 密码本独立库（SQLCipher 加密，解密密钥随备份一并打包）
-            addVaultDbToZip(context, zipOut)
-
-            // 3. 备份 DataStore 文件
-            val datastoreDir = File(context.filesDir, "datastore")
-            if (datastoreDir.exists()) {
-                datastoreDir.listFiles()?.forEach { file ->
-                    addFileToZip(zipOut, file, "prefs/${file.name}")
-                }
-            }
-
-            // 4. 备份图片目录
-            val imagesDir = File(context.filesDir, "images")
-            if (imagesDir.exists()) {
-                imagesDir.listFiles()?.forEach { file ->
-                    addFileToZip(zipOut, file, "images/${file.name}")
-                }
-            }
-
-            val sharedPrefsDir = File(context.applicationInfo.dataDir, "shared_prefs")
-
-            // 5. 应用锁 SharedPreferences（PIN salt），缺失会导致恢复后旧版 SHA-256 PIN 无法验证
-            val lockPrefs = File(sharedPrefsDir, "$LOCK_PREFS_NAME.xml")
-            if (lockPrefs.exists()) {
-                addFileToZip(zipOut, lockPrefs, "shared_prefs/${lockPrefs.name}")
-            }
-
-            // 6. SQLCipher 数据库密钥（Keystore 包裹，本机恢复用），缺失则恢复后加密库无法解密
-            val dbKeyPrefs = File(sharedPrefsDir, "${DbKeyStore.PREFS_NAME}.xml")
-            if (dbKeyPrefs.exists()) {
-                addFileToZip(zipOut, dbKeyPrefs, "shared_prefs/${dbKeyPrefs.name}")
-            }
-
-            // 7. 便携数据库密钥（Base64 原始 db_key，跨设备/重装恢复用）
-            addPortableKeyEntry(zipOut)
+            writeZipEntries(context, zipOut, snapshot, hasSnapshot, includePortableKey)
         }
 
         if (hasSnapshot) snapshot.delete()
+    }
+
+    /** 写入备份 ZIP 的各类条目；条目前缀与恢复侧 [extractEntry] 的分发一一对应。 */
+    private fun writeZipEntries(
+        context: Context,
+        zipOut: ZipOutputStream,
+        snapshot: File,
+        hasSnapshot: Boolean,
+        includePortableKey: Boolean
+    ) {
+        addMainDbToZip(context, zipOut, snapshot, hasSnapshot)                                  // 1. 主库
+        addVaultDbToZip(context, zipOut)                                                       // 2. 密码本库
+        addDirectoryToZip(zipOut, File(context.filesDir, "datastore"), "prefs")                // 3. DataStore
+        addDirectoryToZip(zipOut, File(context.filesDir, "images"), "images")                  // 4. 图片
+        addDirectoryToZip(zipOut, File(context.filesDir, "vault_avatars"), "vault-images")     // 5. 密码本图片
+        addSharedPrefsToZip(context, zipOut)                                                   // 6/7. 应用锁 + db_key
+        if (includePortableKey) addPortableKeyEntry(zipOut)                                    // 8. 便携密钥
+    }
+
+    /** 打包主库：优先用 WAL checkpoint 后的一致快照，checkpoint 未完成时回退为 db + wal + shm 三件套。 */
+    private fun addMainDbToZip(context: Context, zipOut: ZipOutputStream, snapshot: File, hasSnapshot: Boolean) {
+        if (hasSnapshot) {
+            addFileToZip(zipOut, snapshot, "db/${AppDatabase.DATABASE_NAME}")
+            return
+        }
+        val dbFile = context.getDatabasePath(AppDatabase.DATABASE_NAME)
+        if (dbFile.exists()) addFileToZip(zipOut, dbFile, "db/${AppDatabase.DATABASE_NAME}")
+        for (suffix in listOf("-wal", "-shm")) {
+            val sidecar = File(dbFile.path + suffix)
+            if (sidecar.exists()) addFileToZip(zipOut, sidecar, "db/${AppDatabase.DATABASE_NAME}$suffix")
+        }
+    }
+
+    /** 打包目录下的全部文件，条目名为 `<entryPrefix>/<文件名>`。 */
+    private fun addDirectoryToZip(zipOut: ZipOutputStream, dir: File, entryPrefix: String) {
+        if (!dir.exists()) return
+        dir.listFiles()?.forEach { file ->
+            addFileToZip(zipOut, file, "$entryPrefix/${file.name}")
+        }
+    }
+
+    /**
+     * 打包 shared_prefs：应用锁（PIN salt/锁定状态）与 Keystore 包裹的 db_key。
+     * 二者缺失分别导致恢复后旧版 PIN 无法验证、加密库无法解密。
+     */
+    private fun addSharedPrefsToZip(context: Context, zipOut: ZipOutputStream) {
+        val sharedPrefsDir = File(context.applicationInfo.dataDir, "shared_prefs")
+        for (name in listOf("$LOCK_PREFS_NAME.xml", "${DbKeyStore.PREFS_NAME}.xml")) {
+            val prefs = File(sharedPrefsDir, name)
+            if (prefs.exists()) addFileToZip(zipOut, prefs, "shared_prefs/$name")
+        }
     }
 
     /** 打包密码本独立库：带 -wal/-shm 一起保证一致性；缺失会导致恢复后密码本条目丢失。 */
@@ -393,6 +425,7 @@ class BackupManager(
                 ?: throw IllegalStateException("数据库目录不可用"),
             prefsDir = File(context.filesDir, "datastore").canonicalFile,
             imagesDir = File(context.filesDir, "images").canonicalFile,
+            vaultImagesDir = File(context.filesDir, "vault_avatars").canonicalFile,
             sharedPrefsDir = File(context.applicationInfo.dataDir, "shared_prefs").canonicalFile,
             rollbackDir = File(context.cacheDir, "restore_rollback_${System.currentTimeMillis()}")
         )
@@ -412,10 +445,11 @@ class BackupManager(
         val dbDir: File,
         val prefsDir: File,
         val imagesDir: File,
+        val vaultImagesDir: File,
         val sharedPrefsDir: File,
         val rollbackDir: File
     ) {
-        fun all(): List<File> = listOf(dbDir, prefsDir, imagesDir, sharedPrefsDir)
+        fun all(): List<File> = listOf(dbDir, prefsDir, imagesDir, vaultImagesDir, sharedPrefsDir)
     }
 
     // Phase 1: 备份现有文件到回滚目录；失败则清理回滚目录并中止恢复
@@ -457,6 +491,7 @@ class BackupManager(
             entryName.startsWith("vault-db/") -> extractSafe(zipIn, cleanName, dirs.dbDir)
             entryName.startsWith("prefs/") -> extractSafe(zipIn, cleanName, dirs.prefsDir)
             entryName.startsWith("images/") -> extractSafe(zipIn, cleanName, dirs.imagesDir)
+            entryName.startsWith("vault-images/") -> extractSafe(zipIn, cleanName, dirs.vaultImagesDir)
             entryName.startsWith("shared_prefs/") -> {
                 if (skipDbKeyPrefs && cleanName == "${DbKeyStore.PREFS_NAME}.xml") return
                 extractSafe(zipIn, cleanName, dirs.sharedPrefsDir)

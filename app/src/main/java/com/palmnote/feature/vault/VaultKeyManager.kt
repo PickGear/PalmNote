@@ -8,7 +8,10 @@ import android.security.keystore.KeyProperties
 import android.util.Base64
 import com.palmnote.domain.util.AppLogger
 import com.palmnote.data.datastore.PreferencesManager
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.security.KeyStore
 import javax.crypto.AEADBadTagException
@@ -34,6 +37,9 @@ class VaultKeyManager @Inject constructor(
 ) {
     @Volatile
     private var dataKey: SecretKey? = null
+
+    /** 后台重包裹专用协程域：现行 600k 派生不阻塞解锁，失败仅意味下次解锁再迁一次。 */
+    private val migrationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     // 缓存 salt/keyWrap/bioKeyWrap，避免每次解锁都 runBlocking 读 DataStore（显著降低解锁延迟）。
     // isInitialized 可能在任何线程调用，而 setup/unlock/changePin 在 IO 线程写入，跨线程读写需 volatile。
@@ -104,14 +110,11 @@ class VaultKeyManager @Inject constructor(
             } else {
                 decryptWithFallback(pin, salt, wrapped) ?: return@withContext false
             }
-            // 包裹参数过时 → 用现行参数重包裹并记录（自动迁移）
-            if (storedIterations != VaultCrypto.PBKDF2_ITERATIONS) {
-                val newWrap = VaultCrypto.encrypt(VaultCrypto.deriveKey(pin, salt), dkBytes)
-                val newWrapB64 = Base64.encodeToString(newWrap, Base64.NO_WRAP)
-                preferencesManager.setVaultCredentials(saltB64, newWrapB64, VaultCrypto.PBKDF2_ITERATIONS)
-                cachedKeyWrap = newWrapB64
-            }
             dataKey = SecretKeySpec(dkBytes, "AES")
+            // 包裹参数过时 → 后台用现行参数重包裹并记录（自动迁移）
+            if (storedIterations != VaultCrypto.PBKDF2_ITERATIONS) {
+                scheduleRewrap(pin, salt, dkBytes, saltB64)
+            }
             true
         } catch (_: Exception) {
             false
@@ -127,10 +130,33 @@ class VaultKeyManager @Inject constructor(
                 null
             }
         }
-        return attempt(VaultCrypto.PBKDF2_ITERATIONS)
-            ?: attempt(VaultCrypto.PREVIOUS_PBKDF2_ITERATIONS)
-            ?: attempt(VaultCrypto.INTERIM_PBKDF2_ITERATIONS)
-            ?: attempt(VaultCrypto.LEGACY_PBKDF2_ITERATIONS)
+        // distinct：现行值与历史临时值可能相同，避免重复派生（失败路径本就最耗时）
+        return listOf(
+            VaultCrypto.PBKDF2_ITERATIONS,
+            VaultCrypto.PREVIOUS_PBKDF2_ITERATIONS,
+            VaultCrypto.INTERIM_PBKDF2_ITERATIONS,
+            VaultCrypto.LEGACY_PBKDF2_ITERATIONS
+        ).distinct().firstNotNullOfOrNull { attempt(it) }
+    }
+
+    /**
+     * 用现行派生参数重新包裹 DK 并落盘（自动迁移）。
+     *
+     * 600k 派生在中低端机约 270ms–900ms，若同步执行会让老用户解锁等待翻倍
+     * （旧参数解包 + 新参数重包裹）。DK 已在调用前交给 dataKey，故可安全后台执行：
+     * 本次解锁立即返回，重包裹在后台完成；失败或进程被杀只意味下次解锁再迁一次。
+     */
+    private fun scheduleRewrap(pin: String, salt: ByteArray, dkBytes: ByteArray, saltB64: String) {
+        migrationScope.launch {
+            runCatching {
+                val newWrap = VaultCrypto.encrypt(VaultCrypto.deriveKey(pin, salt), dkBytes)
+                val newWrapB64 = Base64.encodeToString(newWrap, Base64.NO_WRAP)
+                preferencesManager.setVaultCredentials(saltB64, newWrapB64, VaultCrypto.PBKDF2_ITERATIONS)
+                cachedKeyWrap = newWrapB64
+            }.onFailure { e ->
+                AppLogger.w(TAG, "rewrap migration deferred to next unlock", e)
+            }
+        }
     }
 
     /** 已解锁状态下改 PIN：用新 PIN 派生新 K 重新包裹当前 DK。失败返回 false（不崩溃）。 */
