@@ -711,6 +711,31 @@ env:
 | detekt | Kotlin 静态分析 | `config/detekt/detekt.yml` |
 | .editorconfig | 编辑器格式统一 | `.editorconfig` |
 
+#### 工具链升级策略
+
+当前基线（`gradle/libs.versions.toml`）：AGP `8.13.2` / Gradle `8.13` / Kotlin `2.2.20` /
+KSP `2.2.20-2.0.2` / compileSdk `36` / targetSdk `34`。
+
+AGP、Gradle、Kotlin(KGP)、KSP 是**同一个整体**：其中任一跨大版本，其余必须配套迁移。
+因此这类升级一律按**独立项目**处理，不混入日常提交。
+
+**三个条件同时成立才升级，缺一不升：**
+
+| # | 条件 | 说明 |
+|---|------|------|
+| 1 | 有明确驱动 | Play 上架要求 / 依赖安全事件 / 需要只有新工具链才提供的 API。**"Dependabot 提了 PR"不算驱动** |
+| 2 | 关键插件已有稳定版支持 | 尤其 detekt：`1.23.8` 的官方支持矩阵只测到 Gradle 8.12.1，而 `2.0` 至今仍是 alpha，且改了插件 ID 与规则集键名 |
+| 3 | detekt 基线条目数不增加 | `grep -c "<ID>" config/detekt/baseline.xml` ≤ 1824 |
+
+**升级路径（已勘定，届时照做）**：Gradle `9.4.1` + AGP `9.2.0` + compileSdk `37`。
+注意 AGP `9.0.x` 最高只支持 API `36.1`，够不到 compileSdk 37 —— 所以**不存在"便宜的部分迁移"**，
+要么整体做，要么不做。执行前先建独立分支 `chore/toolchain-agp9`，不要直接改 main。
+
+**配套的 Dependabot 冻结**：条件 1 不成立期间，`.github/dependabot.yml` 里的 `ignore` 块会挡掉
+"要求 compileSdk 37 / AGP 9.x"或与 Kotlin 编译器强耦合的依赖，避免产生永久红灯的 PR。
+**工具链迁移完成时必须删除该 `ignore` 块**，否则会静默冻结这些依赖的更新。
+冻结名单、版本下界的取值依据与 `versions` 的写法坑，见 §24.9。
+
 ### 11.2 detekt 规则
 
 ```yaml
@@ -2898,6 +2923,25 @@ updates:
         patterns:
           - "*"
 
+    # 冻结名单：工具链升级前不提 PR（解禁条件见 §11.1）
+    ignore:
+      - dependency-name: "androidx.core:core"
+        versions: ["[1.19.0,)"] # 1.18.0 → minCompileSdk 36；1.19.0 → 37（minAgp 9.1.0）
+      - dependency-name: "androidx.core:core-ktx"
+        versions: ["[1.19.0,)"]
+      - dependency-name: "androidx.hilt:hilt-navigation-compose"
+        versions: ["[1.4.0,)"] # 1.3.0 → 35；1.4.0 → 37（minAgp 9.1.0）
+      - dependency-name: "net.zetetic:sqlcipher-android"
+        versions: ["[4.18.0,)"] # 4.17.0 无门槛；4.18.0 → 37
+      - dependency-name: "io.coil-kt.coil3:coil*"
+        versions: ["[3.6.0,)"] # 3.5.0 → 36；3.6.0 起 → 37
+      - dependency-name: "org.opencv:opencv"
+        versions: ["[5.0.0,)"] # 4 → 5 跨大版本，API 不兼容，须人工迁移
+      - dependency-name: "org.jetbrains.kotlin*"
+        update-types: ["version-update:semver-minor", "version-update:semver-major"]
+      - dependency-name: "com.google.devtools.ksp*"
+        versions: ["[2.3.0,)"] # KSP 版本号不是标准 semver，用 Maven 范围更可靠
+
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
@@ -2929,6 +2973,39 @@ androidx 分组的 PR 会稳定失败（报错来自 `checkDebugAarMetadata`，�
 日志里不会出现编译错误）；② `androidx.hilt` 与 `dagger/hilt` 存在配套版本关系，
 分属两个分组时会互相掣肘。遇到这类情况不要反复调分组，应把它当作一次工具链/SDK
 升级任务统一处理。
+
+**为什么用 `ignore` 而不是反复调分组**：分组只能改变"一个 PR 里装几样东西"，
+不能阻止"装进来的东西构建不过"。`ignore` 才是在源头掐掉这条 PR 的唯一手段。
+本项目在工具链冻结期间（见 §11.1）用 `ignore` 挡住两类依赖：
+
+- **编译门槛型**：新版本在 AAR 里声明了 `minCompileSdk` / `minAgpVersion`，高于本项目当前值。
+  取版本下界的办法是直接读目标版本 AAR 内的 `META-INF/com/android/build/gradle/aar-metadata.properties`：
+
+  ```bash
+  # 例：确认 androidx.core 从哪个版本开始要求 compileSdk 37
+  curl -sO https://dl.google.com/dl/android/maven2/androidx/core/core/1.19.0/core-1.19.0.aar
+  unzip -p core-1.19.0.aar META-INF/com/android/build/gradle/aar-metadata.properties
+  # → minCompileSdk=37  minAndroidGradlePluginVersion=9.1.0
+  ```
+
+  这样得到的是**实测值**，不必靠试合并来猜。注意下界要写"首个要求 37 的版本"，
+  不是当前版本 —— 例如 `androidx.core:core` 是 `1.18.0` 要 36、`1.19.0` 才要 37。
+
+- **编译器生态型**：Kotlin 生态（KGP / Compose 编译器 / serialization 插件 / `kotlinx-*` 运行时）
+  的版本互相耦合，Dependabot 无法把它们配套升对。两个具体原因：
+  ① KSP 版本号内嵌 Kotlin 版本（`2.2.20-2.0.2`），与 Kotlin 必须严格对应；
+  ② 用被冻结的 Kotlin 编译器去读"更高版本 Kotlin 编译出的"元数据会直接报错。
+  因此这一族整体按 minor/major 冻结，只放行 patch。
+
+**两个写法坑**：
+
+1. **`versions` 必须用 Maven 范围语法**。Gradle 属 Maven 生态，范围要写 `["[1.19.0,)"]`；
+   写成 `[">= 1.19.0"]` 不会报错，但规则**静默失效** —— 属于最难发现的一类配置错误。
+2. **`update-types` 依赖 semver 解析**。`2.2.20-2.0.2` 不是合法 semver，用 `update-types`
+   拦不住它，所以 KSP 用 `versions` 范围，Kotlin 生态用 `update-types`。
+
+**注意**：`ignore` 只作用于**版本更新**；仓库设置里的 **Dependabot 安全更新是独立通道**，
+仍然会照常开 PR。所以冻结不会拖慢 CVE 修复。
 
 ### 24.10 发布后监控
 
