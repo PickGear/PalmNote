@@ -1,5 +1,6 @@
 package com.palmnote.ui.settings
 
+import androidx.lifecycle.viewModelScope
 import app.cash.turbine.test
 import com.palmnote.data.db.entity.Wallet
 import com.palmnote.domain.repository.WalletRepository
@@ -8,6 +9,7 @@ import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
@@ -33,6 +35,13 @@ class WalletViewModelTest {
 
     @After
     fun tearDown() {
+        // ViewModel 持有 stateIn(viewModelScope, WhileSubscribed(5000)) 的分享协程。
+        // 若测试结束时不取消，订阅取消后残留的 5 秒延迟任务会泄漏到下一个测试，
+        // 表现为偶发的 UncaughtExceptionsBeforeTest。
+        if (::viewModel.isInitialized) {
+            viewModel.viewModelScope.cancel()
+            testDispatcher.scheduler.advanceUntilIdle()
+        }
         Dispatchers.resetMain()
     }
 
