@@ -21,14 +21,14 @@ jobs:
     timeout-minutes: 45
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 17
 
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
         # 默认缓存 Gradle 依赖 + build cache + configuration cache（org.gradle.caching/configuration-cache 已在 gradle.properties 开启）。
         # fork 的 PR 只读不写缓存，避免缓存污染；主分支 push 正常读写。
         with:
@@ -59,14 +59,14 @@ jobs:
     timeout-minutes: 45
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 17
 
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
         # 默认缓存 Gradle 依赖 + build cache + configuration cache（org.gradle.caching/configuration-cache 已在 gradle.properties 开启）。
         # fork 的 PR 只读不写缓存，避免缓存污染；主分支 push 正常读写。
         with:
@@ -81,7 +81,7 @@ jobs:
       # - 手动触发 (workflow_dispatch) 上传且保留 3 天：需要留档时手动跑一次。
       - name: Upload APK
         if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: PalmNote-debug
           path: app/build/outputs/apk/debug/*.apk
