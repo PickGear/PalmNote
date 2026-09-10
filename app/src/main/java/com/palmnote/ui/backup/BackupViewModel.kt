@@ -10,6 +10,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.palmnote.data.backup.BackupInfo
 import com.palmnote.data.backup.BackupManager
+import com.palmnote.data.backup.BackupPasswordStore
 import com.palmnote.data.backup.BackupState
 import com.palmnote.app.R
 import com.palmnote.data.db.AppDatabase
@@ -29,7 +30,8 @@ class BackupViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val db: AppDatabase,
     dbKeyStore: DbKeyStore,
-    private val vaultDb: VaultDatabase
+    private val vaultDb: VaultDatabase,
+    private val passwordStore: BackupPasswordStore
 ) : ViewModel() {
 
     private val backupManager = BackupManager(dbKeyStore)
@@ -50,8 +52,31 @@ class BackupViewModel @Inject constructor(
     private val _password = MutableStateFlow<String?>(null)
     val password: StateFlow<String?> = _password
 
+    /** 「记住密码」：开启后导出用的密码经本机 Keystore 包裹保存，下次进入自动预填。 */
+    private val _rememberPassword = MutableStateFlow(false)
+    val rememberPassword: StateFlow<Boolean> = _rememberPassword
+
+    init {
+        // 仅当用户此前主动开启过才预填；换机/卸载重装后本机解不开 → 自动回到空白
+        if (passwordStore.hasRemembered()) {
+            passwordStore.load()?.let { remembered ->
+                _password.value = remembered
+                _rememberPassword.value = true
+            }
+        }
+    }
+
     fun setPassword(password: String?) {
         _password.value = password
+    }
+
+    fun setRememberPassword(enabled: Boolean) {
+        _rememberPassword.value = enabled
+        if (enabled) {
+            _password.value?.let { passwordStore.save(it) }
+        } else {
+            passwordStore.clear()
+        }
     }
 
     /**
@@ -85,6 +110,8 @@ class BackupViewModel @Inject constructor(
                     }
 
                     tempFile.delete()
+                    // 导出成功后再记住，避免密码错/导出失败也留下记忆
+                    if (_rememberPassword.value) passwordStore.save(password)
                     emit(BackupState.Progress(100))
                     emit(BackupState.Success(newFile?.uri?.toString() ?: folderUri.toString()))
                 } catch (e: Exception) {

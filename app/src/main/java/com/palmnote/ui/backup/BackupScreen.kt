@@ -23,6 +23,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -40,6 +41,9 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
+/** 「记住密码」开关的显示缩放：Material3 默认尺寸与一行说明文字并排时偏大。 */
+private const val REMEMBER_SWITCH_SCALE = 0.8f
+
 private const val BYTES_PER_KB = 1024L
 private const val BYTES_PER_MB = BYTES_PER_KB * 1024
 private const val BYTES_PER_GB = BYTES_PER_MB * 1024
@@ -52,6 +56,7 @@ fun BackupScreen(
 ) {
     val backupState by viewModel.backupState.collectAsStateWithLifecycle()
     val password by viewModel.password.collectAsStateWithLifecycle()
+    val rememberPassword by viewModel.rememberPassword.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
 
@@ -152,7 +157,23 @@ fun BackupScreen(
                     },
                     singleLine = true
                 )
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(4.dp))
+
+                // 可选：把密码交给本机 Keystore 包裹后记住，下次进入自动预填（默认关闭，不改变导出仍需密码的要求）
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Switch(
+                        checked = rememberPassword,
+                        onCheckedChange = { viewModel.setRememberPassword(it) },
+                        modifier = Modifier.scale(REMEMBER_SWITCH_SCALE)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = stringResource(R.string.backup_remember_password),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
 
                 if (backupState is BackupState.Progress && !isRestoring) {
                     val backupPercent = (backupState as BackupState.Progress).percent
@@ -207,8 +228,12 @@ fun BackupScreen(
                 }
 
                 if (candidates.isNotEmpty()) {
+                    // 两类分开计数：本机自动备份只能本机恢复；文件夹里的导出包才可换机。
+                    // 混成一个总数会让用户误以为"备份很多=很安全"。
+                    val localCount = candidates.count { it.source is RestoreSource.FromLocal }
                     RestoreSummaryRow(
-                        count = candidates.size,
+                        localCount = localCount,
+                        portableCount = candidates.size - localCount,
                         newestDate = candidates.first().date,
                         expanded = listExpanded,
                         onClick = { listExpanded = !listExpanded }
@@ -339,9 +364,15 @@ private fun isEncryptedBackupFile(context: Context, source: RestoreSource): Bool
     false
 }
 
-/** 折叠入口：一行给出备份数量与最新一份的时间，展开后才列出明细。 */
+/** 折叠入口：一行给出两类备份的数量与最新一份的时间，展开后才列出明细。 */
 @Composable
-private fun RestoreSummaryRow(count: Int, newestDate: Long, expanded: Boolean, onClick: () -> Unit) {
+private fun RestoreSummaryRow(
+    localCount: Int,
+    portableCount: Int,
+    newestDate: Long,
+    expanded: Boolean,
+    onClick: () -> Unit
+) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -359,7 +390,7 @@ private fun RestoreSummaryRow(count: Int, newestDate: Long, expanded: Boolean, o
             )
             Spacer(modifier = Modifier.width(10.dp))
             Text(
-                text = stringResource(R.string.backup_existing_count, count),
+                text = stringResource(R.string.backup_existing_count, localCount, portableCount),
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.weight(1f)
             )
