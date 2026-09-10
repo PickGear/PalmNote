@@ -37,9 +37,46 @@ class BackupManager(
         /** 自动备份保留份数 */
         private const val DEFAULT_KEEP_BACKUPS = 7
         /** 便携数据库密钥条目：ZIP 内存放 Base64 原始 db_key，用于跨设备/重装恢复。
-         *  加密备份中该条目随 ZIP 一起被备份密码加密；明文备份中等于数据库本身也未加密，风险等价。 */
+         *  **仅写入加密备份**——该条目若与 SQLCipher 密文同处一个未加密的包里，等于把钥匙和保险箱
+         *  一起交出去；明文备份不含本条目，故只能在原设备恢复。见 [includePortableKeyInBackup]。 */
         const val PORTABLE_KEY_ENTRY = "db_key.txt"
         private const val TAG = "BackupManager"
+
+        /**
+         * 便携密钥是否随备份写入：仅当设置了备份密码（产出加密包 PNB2）时写入。
+         * 明文包写入便携密钥会使其自带解密钥匙，数据加密因此归零。
+         */
+        internal fun includePortableKeyInBackup(password: String?): Boolean = !password.isNullOrBlank()
+
+        // 获取备份存储目录：统一使用应用内部存储，其他应用无法读取。
+        // 旧版本使用应用专属外部存储，在 Android 10 及以下可被文件管理器读取，明文备份会经此目录外泄。
+        private fun getBackupDir(context: Context): File {
+            val dir = File(context.filesDir, BACKUP_DIR)
+            if (!dir.exists()) dir.mkdirs()
+            return dir
+        }
+
+        /**
+         * 迁移旧版本遗留在应用专属外部存储（Android/data/<包名>/files/Download/PalmNote）的备份。
+         * 只搬不删：复制成功后才删除源文件，目标同名已存在则跳过。失败静默忽略，不影响启动。
+         */
+        fun migrateLegacyExternalBackups(context: Context) {
+            try {
+                val legacyDir = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
+                    ?.let { File(it, BACKUP_DIR) } ?: return
+                if (!legacyDir.exists()) return
+                val targetDir = getBackupDir(context)
+                legacyDir.listFiles()?.forEach { file ->
+                    if (!file.isFile) return@forEach
+                    val dest = File(targetDir, file.name)
+                    if (dest.exists()) return@forEach
+                    val copied = runCatching { file.copyTo(dest, overwrite = false) }.isSuccess
+                    if (copied) runCatching { file.delete() }
+                }
+            } catch (_: Exception) {
+                // 迁移失败不影响功能：新备份已改为写入内部存储
+            }
+        }
     }
 
     /**
@@ -48,14 +85,6 @@ class BackupManager(
      */
     internal fun selectBackupsToPrune(files: List<File>, keep: Int = DEFAULT_KEEP_BACKUPS): List<File> =
         files.sortedByDescending { it.lastModified() }.drop(keep.coerceAtLeast(0))
-
-    // 获取备份存储目录（使用应用专属外部存储，无需权限；外部存储不可用时回退到内部存储）
-    private fun getBackupDir(context: Context): File {
-        val base = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) ?: context.filesDir
-        val dir = File(base, BACKUP_DIR)
-        if (!dir.exists()) dir.mkdirs()
-        return dir
-    }
 
     // 创建备份：打包 DB 一致快照 + 图片 + DataStore + 应用锁 SharedPreferences 为 ZIP，支持可选加密
     fun createBackup(context: Context, db: AppDatabase, password: String? = null): File {
@@ -72,7 +101,7 @@ class BackupManager(
         // 创建临时ZIP文件（UUID 命名避免并发冲突）
         val tempZip = File(context.cacheDir, "temp_backup_${java.util.UUID.randomUUID()}.zip")
         try {
-            createZipFile(context, db, tempZip)
+            createZipFile(context, db, tempZip, includePortableKey = includePortableKeyInBackup(password))
 
             // 如果有密码，加密ZIP文件（流式处理避免OOM）
             if (!password.isNullOrBlank()) {
@@ -106,8 +135,8 @@ class BackupManager(
         return backupFile
     }
 
-    // 创建ZIP文件
-    private fun createZipFile(context: Context, db: AppDatabase, zipFile: File) {
+    // 创建ZIP文件；[includePortableKey] 为真时额外写入便携密钥条目（仅加密备份）
+    private fun createZipFile(context: Context, db: AppDatabase, zipFile: File, includePortableKey: Boolean) {
         // 先做 WAL checkpoint 再复制主库文件，保证快照一致（避免 -wal/-shm 与主库不一致）
         val snapshot = File(context.cacheDir, "db_snapshot_${System.currentTimeMillis()}")
         val hasSnapshot = checkpointAndSnapshot(context, db, snapshot)
@@ -160,8 +189,8 @@ class BackupManager(
                 addFileToZip(zipOut, dbKeyPrefs, "shared_prefs/${dbKeyPrefs.name}")
             }
 
-            // 7. 便携数据库密钥（Base64 原始 db_key，跨设备/重装恢复用）
-            addPortableKeyEntry(zipOut)
+            // 7. 便携数据库密钥（跨设备/重装恢复用）——仅加密备份写入，明文包携带它等于交出钥匙
+            if (includePortableKey) addPortableKeyEntry(zipOut)
         }
 
         if (hasSnapshot) snapshot.delete()

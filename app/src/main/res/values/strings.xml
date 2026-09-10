@@ -873,7 +873,7 @@
     <string name="bill_error_category_required">请选择分类</string>
     <!-- Backup Error Messages -->
     <string name="backup_error_corrupted">备份文件损坏或为空</string>
-    <string name="backup_error_cross_device">此备份由旧版本创建，缺少跨设备恢复所需的密钥，无法在当前设备恢复。请在原设备用新版本重新备份后再试</string>
+    <string name="backup_error_cross_device">此备份无法在当前设备恢复：它不含跨设备恢复所需的密钥（通常是不设密码的明文备份，或由旧版本创建）。请在原设备上恢复，或设置密码后重新备份再换机</string>
     <string name="backup_error_create_failed">备份失败</string>
     <string name="backup_error_restore_failed">恢复失败</string>
     <!-- Calendar Sync -->
@@ -1201,14 +1201,15 @@
     <string name="backup_title">数据备份</string>
     <string name="backup_operation_success">操作成功</string>
     <string name="backup_create">创建备份</string>
-    <string name="backup_create_desc">将所有数据打包为 .palmnote 文件，保存到您选择的文件夹。备份可在新手机上恢复；若设置了密码，恢复时需输入该密码，请牢记</string>
+    <string name="backup_create_desc">将所有数据打包为 .palmnote 文件，保存到您选择的文件夹。设置密码后备份会被加密，可在新手机上恢复；不设密码则备份为明文文件，且只能在原设备恢复</string>
     <string name="backup_password_required">需要密码才能恢复此备份</string>
-    <string name="backup_password_optional">设置密码（可选）</string>
+    <string name="backup_password_optional">设置备份密码（推荐）</string>
+    <string name="backup_plaintext_warning">未设密码：备份为明文文件，且无法在其它设备恢复。换机请务必设置密码</string>
     <string name="backup_password">输入密码</string>
     <string name="backup_backing_up">正在备份…</string>
     <string name="backup_now">立即备份</string>
     <string name="backup_restore_title">恢复备份</string>
-    <string name="backup_restore_desc">选择之前备份的 .palmnote 文件恢复数据，恢复将覆盖当前数据，完成后应用自动重启。加密备份需输入创建时设置的密码，支持换手机恢复</string>
+    <string name="backup_restore_desc">选择之前备份的 .palmnote 文件恢复数据，恢复将覆盖当前数据，完成后应用自动重启。加密备份需输入创建时设置的密码，支持换手机恢复；明文备份只能在原设备恢复</string>
     <string name="backup_restore_from_file">选择备份文件恢复</string>
     <string name="backup_restoring">正在恢复数据…</string>
     <string name="backup_restore_confirm">恢复将覆盖当前所有数据，此操作不可撤销。确定要恢复吗？</string>

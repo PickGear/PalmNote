@@ -99,4 +99,13 @@ class BackupManagerTest {
         assertEquals(2, prune.size)
         assertEquals(setOf(files[0], files[1]), prune.toSet())
     }
+
+    @Test
+    fun includePortableKeyInBackup_onlyWhenPasswordSet() {
+        // 明文包若携带便携密钥 db_key.txt，等于把密文与钥匙装在同一个包里 → 该契约不得回退
+        assertFalse(BackupManager.includePortableKeyInBackup(null))
+        assertFalse(BackupManager.includePortableKeyInBackup(""))
+        assertFalse(BackupManager.includePortableKeyInBackup("   "))
+        assertTrue(BackupManager.includePortableKeyInBackup("secret"))
+    }
 }

@@ -818,7 +818,7 @@
     <string name="bill_error_category_required">Please select a category</string>
     <!-- Backup Error Messages -->
     <string name="backup_error_corrupted">Backup file is corrupted or empty</string>
-    <string name="backup_error_cross_device">This backup was created by an older version and lacks the key required for cross-device restore. Please create a new backup with the current version on the original device and try again</string>
+    <string name="backup_error_cross_device">This backup cannot be restored on this device: it lacks the key required for cross-device restore (usually an unencrypted backup, or one created by an older version). Restore it on the original device, or set a password and create a new backup before switching phones</string>
     <string name="backup_error_create_failed">Backup failed</string>
     <string name="backup_error_restore_failed">Restore failed</string>
     <!-- Calendar Sync -->
@@ -1146,14 +1146,15 @@
     <string name="backup_title">Data Backup</string>
     <string name="backup_operation_success">Operation successful</string>
     <string name="backup_create">Create Backup</string>
-    <string name="backup_create_desc">Package all data as a .palmnote file saved to a folder of your choice. Backups can be restored on a new phone; if a password is set, it will be required to restore — keep it safe</string>
+    <string name="backup_create_desc">Package all data as a .palmnote file saved to a folder of your choice. With a backup password the file is encrypted and can be restored on a new phone; without one it stays a plain file and can only be restored on this device</string>
     <string name="backup_password_required">Password is required to restore this backup</string>
-    <string name="backup_password_optional">Set password (optional)</string>
+    <string name="backup_password_optional">Set backup password (recommended)</string>
+    <string name="backup_plaintext_warning">No password set: the backup stays unencrypted and cannot be restored on another device. Please set a password before switching phones</string>
     <string name="backup_password">Enter password</string>
     <string name="backup_backing_up">Backing up…</string>
     <string name="backup_now">Backup Now</string>
     <string name="backup_restore_title">Restore Backup</string>
-    <string name="backup_restore_desc">Select a .palmnote backup file to restore data. Restoring overwrites current data and the app restarts afterwards. Encrypted backups require the password set at creation. Works across phones</string>
+    <string name="backup_restore_desc">Select a .palmnote backup file to restore data. Restoring overwrites current data and the app restarts afterwards. Encrypted backups require the password set at creation and work across phones; plain backups can only be restored on the original device</string>
     <string name="backup_restore_from_file">Select backup file to restore</string>
     <string name="backup_restoring">Restoring data…</string>
     <string name="backup_restore_confirm">Restore will overwrite all current data. This action cannot be undone. Continue?</string>

@@ -140,6 +140,15 @@ fun BackupScreen(
                     },
                     singleLine = true
                 )
+                // 未设密码 → 产出明文包：既无法跨设备恢复，也不宜经外部渠道流转，此处明确告知
+                if (password.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = stringResource(R.string.backup_plaintext_warning),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
                 Spacer(modifier = Modifier.height(12.dp))
 
                 if (backupState is BackupState.Progress && !isRestoring) {
