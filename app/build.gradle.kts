@@ -34,8 +34,8 @@ android {
     defaultConfig {
         applicationId = "com.palmnote"
         minSdk = 26
-        // targetSdk 34锛氳嚜鐢?渚ц浇锛岀鐢?Android 15+ 寮哄埗 predictive back锛屾仮澶嶄紶缁熻繑鍥炲姩鐢伙紱
-        // compileSdk 淇濇寔 36 涓嶆崯澶辩紪璇戣兘鍔涖€備笂 Play 鏃堕渶鍗囧洖 35+銆?
+        // targetSdk 34：自用侧载，禁用 Android 15+ 强制 predictive back，恢复传统返回动画；
+        // compileSdk 保持 36 不损失编译能力。上 Play 时需升回 35+。
         targetSdk = 34
         versionCode = 4
         versionName = "1.3.0"
@@ -53,7 +53,7 @@ android {
 
     signingConfigs {
         create("release") {
-            // 瀵嗛挜鏂囦欢涓嶅瓨鍦ㄦ椂锛堝 CI 妫€鍑猴級閫€鍖栦负 unsigned 鍐掔儫鏋勫缓
+            // 密钥文件不存在时（如 CI 检出）退化为 unsigned 冒烟构建
             if (releaseStoreFile.exists()) {
                 storeFile = releaseStoreFile
                 storePassword = localProps["RELEASE_STORE_PASSWORD"] ?: ""
