@@ -123,21 +123,21 @@ fun LifeScreen(
                                 Icon(
                                     Icons.Outlined.BarChart,
                                     stringResource(R.string.life_home_stats),
-                                    tint = Color(0xFF616161)
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                             IconButton(onClick = { showSearch = true }) {
                                 Icon(
                                     Icons.Outlined.Search,
                                     stringResource(R.string.search),
-                                    tint = Color(0xFF616161)
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                             IconButton(onClick = onNavigateToManage) {
                                 Icon(
                                     Icons.Outlined.Dashboard,
                                     stringResource(R.string.life_template_manage),
-                                    tint = Color(0xFF616161)
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
@@ -717,8 +717,8 @@ private fun TodoHomeCard(state: LifeUiState, modifier: Modifier = Modifier, onVi
                 shown.forEach { item ->
                     val priority = getTodoPriority(item)
                     val dotColor = when (priority) {
-                        "HIGH_URGENT", "HIGH" -> Color(0xFFF44336)
-                        "URGENT" -> Color(0xFFFF9800)
+                        "HIGH_URGENT", "HIGH" -> ExpenseRed
+                        "URGENT" -> AccentOrange
                         else -> MaterialTheme.colorScheme.outline
                     }
                     val relLabel = when {

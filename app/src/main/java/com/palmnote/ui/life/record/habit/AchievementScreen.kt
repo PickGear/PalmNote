@@ -17,7 +17,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.res.stringResource
@@ -31,6 +30,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.palmnote.data.db.entity.Achievement
 import com.palmnote.domain.repository.AchievementRepository
+import com.palmnote.ui.theme.IncomeGreen
 import com.palmnote.ui.theme.iconFromName
 import kotlinx.coroutines.flow.*
 import java.text.SimpleDateFormat
@@ -73,7 +73,16 @@ fun AchievementScreen(onBack: () -> Unit, viewModel: AchievementViewModel = hilt
             title = { Text(ach.name, fontWeight = FontWeight.Bold) },
             text = {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(iconFromName(ach.icon), null, tint = if (ach.unlockedAt != null) Color(0xFF66D98D) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f), modifier = Modifier.size(48.dp))
+                    Icon(
+                        iconFromName(ach.icon),
+                        null,
+                        tint = if (ach.unlockedAt != null) {
+                            IncomeGreen
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                        },
+                        modifier = Modifier.size(48.dp)
+                    )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(ach.description, fontSize = 14.sp, textAlign = TextAlign.Center)
                     ach.unlockedAt?.let { unlockedAt ->

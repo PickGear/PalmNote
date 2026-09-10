@@ -14,7 +14,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.res.stringResource
@@ -142,11 +141,23 @@ fun CountdownListScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Long
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                         ) {
                             Box(modifier = Modifier.fillMaxWidth()) {
-                                Box(modifier = Modifier.width(3.dp).height(72.dp).align(Alignment.CenterStart).background(if (isExpired) Color(0xFFE8A848) else LifeCountdown, RoundedCornerShape(topEnd = 2.dp, bottomEnd = 2.dp)))
+                                val barShape = RoundedCornerShape(topEnd = 2.dp, bottomEnd = 2.dp)
+                                Box(
+                                    modifier = Modifier.width(3.dp).height(72.dp)
+                                        .align(Alignment.CenterStart)
+                                        .background(if (isExpired) LifeAmber else LifeCountdown, barShape)
+                                )
                                 Row(modifier = Modifier.padding(start = 15.dp, end = 14.dp, top = 14.dp, bottom = 14.dp), verticalAlignment = Alignment.CenterVertically) {
                                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(50.dp)) {
-                                        Text("${days ?: "--"}", fontSize = if (days != null && days >= 0) 36.sp else 28.sp, fontWeight = FontWeight.Bold, color = if (isExpired) Color(0xFFE8A848) else LifeCountdown)
-                                        Text(if (isExpired) stringResource(R.string.life_countdown_expired) else stringResource(R.string.life_countdown_day), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        val dayFontSize = if (days != null && days >= 0) 36.sp else 28.sp
+                                        val dayTextColor = if (isExpired) LifeAmber else LifeCountdown
+                                        Text("${days ?: "--"}", fontSize = dayFontSize, fontWeight = FontWeight.Bold, color = dayTextColor)
+                                        val dayLabel = if (isExpired) {
+                                            stringResource(R.string.life_countdown_expired)
+                                        } else {
+                                            stringResource(R.string.life_countdown_day)
+                                        }
+                                        Text(dayLabel, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
                                     Spacer(modifier = Modifier.width(14.dp))
                                     Column(modifier = Modifier.weight(1f)) {

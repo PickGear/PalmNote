@@ -28,6 +28,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import coil3.compose.AsyncImage
 import com.palmnote.app.R
+import com.palmnote.ui.theme.IncomeGreen
+import com.palmnote.ui.theme.RatingStar
 import com.palmnote.domain.util.DateUtils
 import com.palmnote.ui.components.AppDialog
 import com.palmnote.ui.components.ImageGridPicker
@@ -232,7 +234,7 @@ private fun RatingInput(value: String, onValueChange: (String) -> Unit) {
             Icon(
                 if (i <= rating) Icons.Default.Star else Icons.Default.StarBorder,
                 null,
-                tint = if (i <= rating) Color(0xFFFFCA28) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f),
+                tint = if (i <= rating) RatingStar else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f),
                 modifier = Modifier.size(32.dp).minimumInteractiveComponentSize().clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null
@@ -541,7 +543,7 @@ fun FieldDisplay(field: FieldDef, value: String) {
                 val checked = value.toBooleanStrictOrNull() ?: false
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(if (checked) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked, null,
-                        tint = if (checked) Color(0xFF34A853) else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+                        tint = if (checked) IncomeGreen else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(if (checked) "\u2713" else "\u2717", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
                 }
@@ -551,7 +553,7 @@ fun FieldDisplay(field: FieldDef, value: String) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     (1..5).forEach { i ->
                         Icon(if (i <= rating) Icons.Default.Star else Icons.Default.StarBorder, null,
-                            tint = if (i <= rating) Color(0xFFFFCA28) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f),
+                            tint = if (i <= rating) RatingStar else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f),
                             modifier = Modifier.size(18.dp))
                     }
                 }
