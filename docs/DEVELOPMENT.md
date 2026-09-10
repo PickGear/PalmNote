@@ -736,8 +736,8 @@ AGP、Gradle、Kotlin(KGP)、KSP 是**同一个整体**：其中任一跨大版�
 ① AGP / Gradle wrapper 的大版本（工具链升级由明确驱动触发，不接受机器人驱动）、
 ② 要求 compileSdk 37 / AGP 9.x 的依赖、③ 与 Kotlin 编译器强耦合的 Kotlin 生态、
 ④ 引用了 AGP 9 独有 API 的 Gradle 插件（如 Hilt）、
-⑤ 会把 `androidx.compose.ui` 顶上来的依赖（如 coil，与已冻结的
-`material-icons-extended 1.7.8` 冲突），避免产生永久红灯的 PR。
+⑤ 会把 `androidx.compose.ui` 顶上来的依赖（如 coil，与 `compose-bom 2025.06.01`
+钉定的 compose-ui `1.8.3` 及 `material-icons-extended` `1.7.8` 冲突），避免产生永久红灯的 PR。
 冻结只拦大版本/受门槛版本，**补丁级更新仍会正常提 PR**。
 
 **工具链迁移完成时必须删除该 `ignore` 块**，否则会静默冻结这些依赖的更新。
@@ -2944,12 +2944,15 @@ updates:
         versions: ["[1.19.0,)"] # 1.18.0 → minCompileSdk 36；1.19.0 → 37（minAgp 9.1.0）
       - dependency-name: "androidx.core:core-ktx"
         versions: ["[1.19.0,)"]
-      - dependency-name: "androidx.hilt:hilt-navigation-compose"
-        versions: ["[1.4.0,)"] # 1.3.0 → 35；1.4.0 → 37（minAgp 9.1.0）
+      # 必须写 androidx.hilt:* 而不能只写 hilt-navigation-compose：版本目录里
+      # hilt-work / hilt-compiler 与它共用同一个版本引用，只冻一个时另外两个
+      # 仍判定为可升级，会把共享引用整体抬到 1.4.0 —— 冻结规则静默失效。
+      - dependency-name: "androidx.hilt:*"
+        versions: ["[1.4.0,)"] # 1.3.0 → minCompileSdk 35；1.4.0 → 37（minAgp 9.1.0）
       - dependency-name: "net.zetetic:sqlcipher-android"
         versions: ["[4.18.0,)"] # 4.17.0 无门槛；4.18.0 → 37
       - dependency-name: "io.coil-kt.coil3:coil*"
-        versions: ["[3.5.0,)"] # 3.5.0 起把 compose-ui 抬到 1.11.x，与冻结的 material-icons-extended 1.7.8 冲突
+        versions: ["[3.4.0,)"] # 3.4.0 起把 compose-ui 抬过 BOM 钉定的 1.8.3：3.4.0 触发新 lint 规则，3.5.0 触发 KSP MissingType
       - dependency-name: "com.google.dagger*"
         versions: ["[2.59,)"] # 2.59 起引用 AGP 9 独有 API；插件与库版本须一致
       - dependency-name: "org.opencv:opencv"
@@ -3024,30 +3027,54 @@ androidx 分组的 PR 会稳定失败（报错来自 `checkDebugAarMetadata`，�
   ② 用被冻结的 Kotlin 编译器去读"更高版本 Kotlin 编译出的"元数据会直接报错。
   因此这一族整体按 minor/major 冻结，只放行 patch。
 
-- **Compose 版本耦合型**：本项目依赖 `androidx.compose.material:material-icons-extended`
-  （`AppIcon` 枚举的 120 个图标全部来自它）。该 artifact 已被 Google **冻结在 1.7.8**，
-  而其他库的新版本会通过传递依赖把 `androidx.compose.ui` 往上顶。一旦 `compose-ui` 被顶得
-  过高，`Icons.Outlined.*` 就解析不出来，`AppIcon` 枚举失效，最终表现为
-  **Room KSP 报 `MissingType: AccountBook references a type that is not present`** ——
-  报错完全指不到真正的原因，排查成本很高。
+- **Compose 版本耦合型**（最隐蔽的一类）：本项目依赖
+  `androidx.compose.material:material-icons-extended`（`AppIcon` 枚举的 120 个图标全部来自它），
+  该 artifact 已被 Google **冻结在 1.7.8**；`compose-bom 2025.06.01` 同时把
+  `androidx.compose.ui` 钉在 `1.8.3`。而某些库（典型是 coil）自身依赖 **JetBrains Compose**
+  （`org.jetbrains.compose.foundation`），会经它的 androidx 重定向模块把整个 compose 栈抬高。
+  一旦高过 BOM 的钉定值，会出现**两类症状完全不同的失败**：
 
-  典型实例：coil `3.4.0` → `compose-ui 1.9.4`（可用）；coil `3.5.0` → `compose-ui 1.11.2`（失败）。
-  这类依赖只能与 `compose-bom` 一起升，所以按"最高可用版本 + 1"设下界冻结。
+  | 被抬到的 compose-ui | 症状 | 报错 |
+  | --- | --- | --- |
+  | `1.9.4`（coil 3.4.0） | **lint 红**：compose-ui 新增的 lint 规则命中既存代码 | `AboutScreen.kt:213/:255: Error: Reading Configuration using LocalContext.current.resources.configuration [LocalContextConfigurationRead from androidx.compose.ui]` |
+  | `1.11.2`（coil 3.5.0） | **KSP 红**：`Icons.Outlined.*` 解析失败 → `AppIcon` 枚举失效 | `Room KSP: MissingType: AccountBook references a type that is not present` |
 
-  **排查手法**：Node/Android 的 KSP `MissingType` 先别怀疑代码，先看依赖解析：
+  两类报错都**指不到真正的原因**。尤其 lint 那一类：编译通过、单测通过
+  （`assembleDebug` / `testDebugUnitTest` 全绿），**只有 `lintDebug` 失败**，
+  极易被误判成"代码问题"或"测试依赖问题"而查偏方向。
+
+  实测边界：coil `3.0.4` → `compose-ui 1.8.3` ✅；coil `3.3.0` → `1.8.3` ✅；
+  coil `3.4.0` → `1.9.4` ❌（lint）；coil `3.5.0` → `1.11.2` ❌（KSP）。
+  即 `3.4.0` 是首个 JetBrains Compose（`1.9.3`）高过 BOM 钉定值的版本 ——
+  所以下界取**首个越界的版本** `[3.4.0,)`，而不是"最高可用版本 + 1"。
+  这类依赖只能与 `compose-bom` 一起升。
+
+  **排查手法**：见到 KSP `MissingType` **或** lint `LocalContextConfigurationRead`，
+  先别怀疑代码，先看依赖解析：
 
   ```bash
   ./gradlew :core:dependencies --configuration debugCompileClasspath \
-    | grep -E "compose.ui:ui:|material-icons-extended:"
+    | grep -E "compose.ui:ui:|material-icons-extended:|coil"
+  # compose.ui:ui 必须仍是 BOM 钉定的 1.8.3；一旦变成 1.9.x / 1.11.x 就是它
   # material-icons-extended 必须与 compose.ui:ui 的大版本大致对齐
   ```
 
-**两个写法坑**：
+  想知道是哪次依赖升级把 compose-ui 顶上来的：读该库的 POM，看它声明的
+  `org.jetbrains.compose.*` 版本是否高过 BOM 的 compose-ui 版本。
+
+**三个写法坑**：
 
 1. **`versions` 必须用 Maven 范围语法**。Gradle 属 Maven 生态，范围要写 `["[1.19.0,)"]`；
    写成 `[">= 1.19.0"]` 不会报错，但规则**静默失效** —— 属于最难发现的一类配置错误。
 2. **`update-types` 依赖 semver 解析**。`2.2.20-2.0.2` 不是合法 semver，用 `update-types`
    拦不住它，所以 KSP 用 `versions` 范围，Kotlin 生态用 `update-types`。
+3. **版本目录里共享 `version.ref` 时，`dependency-name` 必须覆盖共用该引用的全部依赖**。
+   例：`libs.versions.toml` 中 `hilt-work` / `hilt-compiler` 与 `hilt-navigation-compose`
+   共用同一个版本引用，只冻结 `androidx.hilt:hilt-navigation-compose` 时，另外两个仍被判定为
+   可升级，Dependabot 会把共享引用整体抬到 `1.4.0` —— **PR 照旧出现、照旧必红，冻结静默失效**。
+   正确写法是用通配覆盖整族：`androidx.hilt:*`。
+   排查手法：把 `libs.versions.toml` 里所有 `version.ref` 相同的依赖分组，逐个核对是否都被
+   某条 `ignore` 规则命中。
 
 **注意**：`ignore` 只作用于**版本更新**；仓库设置里的 **Dependabot 安全更新是独立通道**，
 仍然会照常开 PR。所以冻结不会拖慢 CVE 修复。
