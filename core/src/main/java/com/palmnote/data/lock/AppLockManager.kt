@@ -12,7 +12,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.security.MessageDigest
@@ -35,6 +38,15 @@ class AppLockManager(
     private val prefs: SharedPreferences by lazy {
         context.getSharedPreferences("app_lock_prefs", Context.MODE_PRIVATE)
     }
+
+    /**
+     * 后台迁移专用协程域：PIN 哈希升级（600k 派生）不阻塞解锁，
+     * 即便被进程杀死也只是下次解锁时再升级一次，不影响已通过的校验。
+     */
+    private val migrationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    // PBKDF2 需要高质量随机盐；复用实例避免每次 new SecureRandom() 触发种子初始化（首次可达数十 ms）
+    private val secureRandom = SecureRandom()
 
     // 防暴力破解追踪（失败次数/锁定期持久化，进程被杀不丢）
     private val lockoutTracker = LockoutTracker(
@@ -78,17 +90,11 @@ class AppLockManager(
         val isValid = if (storedPin.startsWith(PBKDF2_PREFIX)) {
             val valid = verifyPbkdf2Pin(pin, storedPin)
             // 老参数哈希在本次成功校验后透明升级，用户无需重设 PIN
-            if (valid) upgradePbkdf2PinIfOutdated(pin, storedPin)
+            if (valid) schedulePbkdf2Upgrade(pin, storedPin)
             valid
         } else {
             val legacyValid = hashPinLegacy(pin) == storedPin
-            if (legacyValid) {
-                // 旧 SHA-256 哈希迁移到 PBKDF2，并清理明文 salt
-                val migrated = hashPin(pin)
-                preferencesManager.setEncryptedPin(migrated)
-                cachedEncryptedPin = migrated
-                prefs.edit().remove("pin_salt").apply()
-            }
+            if (legacyValid) scheduleLegacyMigration(pin)
             legacyValid
         }
 
@@ -175,7 +181,7 @@ class AppLockManager(
     /** PBKDF2 hash: pbkdf2:<iterations>:<base64(salt)>:<base64(hash)> */
     private fun hashPin(pin: String): String {
         val salt = ByteArray(SALT_SIZE)
-        SecureRandom().nextBytes(salt)
+        secureRandom.nextBytes(salt)
         val spec = PBEKeySpec(pin.toCharArray(), salt, PBKDF2_ITERATIONS, KEY_LENGTH)
         val factory = SecretKeyFactory.getInstance(PBKDF2_ALGORITHM)
         val hash = factory.generateSecret(spec).encoded
@@ -200,16 +206,36 @@ class AppLockManager(
     /**
      * 历史哈希（低迭代数）升级为现行参数并落盘。
      * 迭代数已写入存储格式，老 PIN 始终能用旧参数解开；升级只是把强度补齐，用户无感知。
+     *
+     * 现行 600k 派生在中低端机约 270ms–900ms，若同步执行会让"输完 PIN 后的等待"翻倍
+     * （旧参数校验 + 新参数重哈希）。这里放到后台执行：本次解锁立即返回，
+     * 升级在后台完成；失败或进程被杀都只意味着下次解锁时再升级一次，幂等且无副作用。
      */
-    private suspend fun upgradePbkdf2PinIfOutdated(pin: String, stored: String) {
+    private fun schedulePbkdf2Upgrade(pin: String, stored: String) {
         val iterations = stored.removePrefix(PBKDF2_PREFIX)
             .split(":")
             .firstOrNull()
             ?.toIntOrNull() ?: return
         if (iterations >= PBKDF2_ITERATIONS) return
-        val upgraded = hashPin(pin)
-        preferencesManager.setEncryptedPin(upgraded)
-        cachedEncryptedPin = upgraded
+        migrationScope.launch {
+            runCatching {
+                val upgraded = hashPin(pin)
+                preferencesManager.setEncryptedPin(upgraded)
+                cachedEncryptedPin = upgraded
+            }
+        }
+    }
+
+    /** 旧 SHA-256 哈希后台迁移到 PBKDF2，并清理明文 salt。 */
+    private fun scheduleLegacyMigration(pin: String) {
+        migrationScope.launch {
+            runCatching {
+                val migrated = hashPin(pin)
+                preferencesManager.setEncryptedPin(migrated)
+                cachedEncryptedPin = migrated
+                prefs.edit().remove("pin_salt").apply()
+            }
+        }
     }
 
     /** Legacy SHA-256 (for migration only) */

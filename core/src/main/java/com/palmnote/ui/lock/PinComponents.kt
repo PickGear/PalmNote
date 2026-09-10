@@ -86,11 +86,9 @@ fun PinKeyboard(
     onDigitClick: (String) -> Unit,
     onDeleteClick: () -> Unit,
     onBiometricClick: () -> Unit,
-    showBiometric: Boolean
+    showBiometric: Boolean,
+    enabled: Boolean = true
 ) {
-    val view = LocalView.current
-    val deleteDesc = stringResource(R.string.app_lock_delete)
-    val bioDesc = stringResource(R.string.app_lock_biometric)
     val keys = listOf(
         listOf("1", "2", "3"),
         listOf("4", "5", "6"),
@@ -107,71 +105,106 @@ fun PinKeyboard(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 row.forEach { key ->
-                    val interactionSource = remember(key) { MutableInteractionSource() }
-                    val isPressed by interactionSource.collectIsPressedAsState()
-                    val keyScale by animateFloatAsState(
-                        targetValue = if (isPressed) 0.93f else 1f,
-                        animationSpec = tween(90),
-                        label = "pinKeyScale"
-                    )
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(56.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(
-                                if (isPressed) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                                else MaterialTheme.colorScheme.surfaceVariant
-                            )
-                            .graphicsLayer { scaleX = keyScale; scaleY = keyScale }
-                            .then(
-                                if (key.isEmpty()) Modifier
-                                else Modifier.semantics {
-                                    role = Role.Button
-                                    contentDescription = when (key) {
-                                        "del" -> deleteDesc
-                                        "bio" -> bioDesc
-                                        else -> key
-                                    }
-                                }
-                            )
-                            .clickable(
-                                interactionSource = interactionSource,
-                                indication = null
-                            ) {
-                                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                                when (key) {
-                                    "del" -> onDeleteClick()
-                                    "bio" -> onBiometricClick()
-                                    "" -> {}
-                                    else -> onDigitClick(key)
-                                }
-                            },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        when (key) {
-                            "del" -> Icon(
-                                imageVector = Icons.AutoMirrored.Outlined.Backspace,
-                                contentDescription = stringResource(R.string.app_lock_delete),
-                                tint = MaterialTheme.colorScheme.onSurface
-                            )
-                            "bio" -> Icon(
-                                imageVector = Icons.Outlined.Fingerprint,
-                                contentDescription = stringResource(R.string.app_lock_biometric),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            "" -> {}
-                            else -> Text(
-                                text = key,
-                                fontSize = 24.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
+                    PinKey(
+                        key = key,
+                        enabled = enabled,
+                        modifier = Modifier.weight(1f),
+                        onKeyClick = { clicked ->
+                            when (clicked) {
+                                "del" -> onDeleteClick()
+                                "bio" -> onBiometricClick()
+                                "" -> {}
+                                else -> onDigitClick(clicked)
+                            }
                         }
-                    }
+                    )
                 }
             }
         }
+    }
+}
+
+/**
+ * 单个 PIN 按键。
+ * [enabled] 为 false 时（如 PIN 校验中的 600k 派生期间）整盘按键不可点击并半透明，
+ * 避免用户以为没点中而重复输入。
+ */
+@Composable
+private fun PinKey(
+    key: String,
+    enabled: Boolean,
+    modifier: Modifier = Modifier,
+    onKeyClick: (String) -> Unit
+) {
+    val view = LocalView.current
+    val deleteDesc = stringResource(R.string.app_lock_delete)
+    val bioDesc = stringResource(R.string.app_lock_biometric)
+    val interactionSource = remember(key) { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val keyScale by animateFloatAsState(
+        targetValue = if (isPressed) 0.93f else 1f,
+        animationSpec = tween(90),
+        label = "pinKeyScale"
+    )
+    Box(
+        modifier = modifier
+            .height(56.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(
+                if (isPressed) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                else MaterialTheme.colorScheme.surfaceVariant
+            )
+            .graphicsLayer {
+                scaleX = keyScale
+                scaleY = keyScale
+                alpha = if (enabled) 1f else 0.45f
+            }
+            .then(
+                if (key.isEmpty()) Modifier
+                else Modifier.semantics {
+                    role = Role.Button
+                    contentDescription = when (key) {
+                        "del" -> deleteDesc
+                        "bio" -> bioDesc
+                        else -> key
+                    }
+                }
+            )
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                enabled = enabled
+            ) {
+                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                onKeyClick(key)
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        PinKeyLabel(key = key, deleteDesc = deleteDesc, bioDesc = bioDesc)
+    }
+}
+
+/** 按键内容：删除键 / 指纹键 / 数字。 */
+@Composable
+private fun PinKeyLabel(key: String, deleteDesc: String, bioDesc: String) {
+    when (key) {
+        "del" -> Icon(
+            imageVector = Icons.AutoMirrored.Outlined.Backspace,
+            contentDescription = deleteDesc,
+            tint = MaterialTheme.colorScheme.onSurface
+        )
+        "bio" -> Icon(
+            imageVector = Icons.Outlined.Fingerprint,
+            contentDescription = bioDesc,
+            tint = MaterialTheme.colorScheme.primary
+        )
+        "" -> {}
+        else -> Text(
+            text = key,
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
     }
 }
 
