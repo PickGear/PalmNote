@@ -48,6 +48,7 @@ import com.palmnote.domain.model.toMoney
 import com.palmnote.domain.util.CurrencyUtils
 import com.palmnote.domain.util.DateUtils
 import com.palmnote.data.db.entity.Wallet
+import com.palmnote.data.db.entity.getDisplayName
 import com.palmnote.ui.components.*
 import com.palmnote.ui.theme.*
 import java.time.Instant
@@ -261,7 +262,8 @@ private fun FilePreviewContent(state: BillImportState, viewModel: BillImportView
                 }
             }
         }
-        // 导入到哪个账本由用户选择（文件与 OCR 导入共用同一选择）
+        // 记到哪个账本、从哪个钱包出，均由用户选择（文件与 OCR 导入共用同一选择）
+        BookChipRow(state, viewModel, context, modifier = Modifier.padding(horizontal = 16.dp))
         WalletChipRow(state, viewModel, context, modifier = Modifier.padding(horizontal = 16.dp))
         LazyColumn(modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             itemsIndexed(state.parsed, key = { index, _ -> index }) { index, bill ->
@@ -420,7 +422,8 @@ private fun OcrPreviewContent(state: BillImportState, viewModel: BillImportViewM
                 Text(stringResource(R.string.bill_import_ocr_recognized, state.ocrResults.size, state.ocrSelectedIndices.size), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
                 Row { TextButton(onClick = { viewModel.selectAllOcr() }) { Text(stringResource(R.string.bill_import_select_all)) }; TextButton(onClick = { viewModel.deselectAllOcr() }) { Text(stringResource(R.string.bill_import_select_none)) } }
             }
-            // 整批导入到哪个账本由用户选择（默认第一个）
+            // 整批记到哪个账本、从哪个钱包出，由用户选择
+            BookChipRow(state, viewModel, context, modifier = Modifier.padding(horizontal = 16.dp))
             WalletChipRow(state, viewModel, context, modifier = Modifier.padding(horizontal = 16.dp))
             LazyColumn(modifier = Modifier.weight(1f).padding(horizontal = 16.dp)) {
                 itemsIndexed(state.ocrResults, key = { index, _ -> index }) { index, result ->
@@ -486,6 +489,8 @@ private fun OcrSingleEditor(state: BillImportState, viewModel: BillImportViewMod
             }
         }
         Spacer(modifier = Modifier.height(12.dp))
+        BookChipRow(state, viewModel, context)
+        Spacer(modifier = Modifier.height(4.dp))
         WalletChipRow(state, viewModel, context)
         Spacer(modifier = Modifier.height(12.dp))
         EditField(stringResource(R.string.bill_import_amount), state.ocrAmount, viewModel::updateOcrAmount, prefix = "¥ ")
@@ -497,7 +502,29 @@ private fun OcrSingleEditor(state: BillImportState, viewModel: BillImportViewMod
     }
 }
 
-/** 账本（钱包）选择 chips 行：导入记到哪个账本 */
+/** 账本选择 chips 行：这批账单记进哪个账本（与首页"当前账本"相互独立） */
+@Composable
+private fun BookChipRow(state: BillImportState, viewModel: BillImportViewModel, context: android.content.Context, modifier: Modifier = Modifier) {
+    if (state.accountBooks.isEmpty()) return
+    Column(modifier = modifier) {
+        Text(
+            stringResource(R.string.bill_book),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            items(state.accountBooks, key = { it.id }) { book ->
+                FilterChip(
+                    selected = state.importBookId == book.id,
+                    onClick = { viewModel.updateImportBook(book.id) },
+                    label = { Text(book.getDisplayName(context), fontSize = 11.sp) }
+                )
+            }
+        }
+    }
+}
+
+/** 钱包选择 chips 行：这笔钱从哪个账户出（微信/支付宝/现金…，默认按账单渠道推断） */
 @Composable
 private fun WalletChipRow(state: BillImportState, viewModel: BillImportViewModel, context: android.content.Context, modifier: Modifier = Modifier) {
     if (state.wallets.isEmpty()) return

@@ -124,7 +124,38 @@ class BillOcrParserTest {
         assertEquals(1800L, parser.parse(text).amount)
     }
 
-    // ── 电商订单页实测样张（抖音/拼多多/淘宝） ──────────────────────────
+    // ── 电商订单页实测样张（抖音/拼多多/淘宝/京东） ──────────────────────────
+
+    @Test
+    fun `jd order detail yields one bill and takes paid total over discount`() {
+        // 京东订单详情页同时有两处金额："到手¥4199"与"实付款 共减¥629.85 合计¥3569.15"；
+        // 且商品型号"适用65-7"带裸日期样式，曾被误判成新交易 → 一笔订单被识别成两笔
+        val text = """
+            自营 小米京东自营旗舰店
+            进店
+            回头客超481万+ 近90天100万好评
+            小米（MI）电视S75
+            到手¥4199
+            数量 ×1, 75英寸 【推荐观距2.3米】, 画质旗舰款
+            ¥4199
+            无理由退货政策 · 30天价保
+            普湃电视壁挂架适用65-7
+            附件 ×1
+            加购物车 使用说明
+            实付款
+            共减¥629.85 合计¥3569.15
+            订单编号 3616000000000001 复制
+            支付方式 在线支付
+            全部订单信息
+        """.trimIndent()
+
+        val results = parser.parseMultiple(text)
+
+        assertEquals(1, results.size)
+        // 应为实付合计 ¥3569.15 —— 既不是商品页到手价 ¥4199，也不是优惠掉的 ¥629.85
+        assertEquals(356915L, results[0].amount)
+        assertEquals(BillType.EXPENSE, results[0].type)
+    }
 
     @Test
     fun `pdd detail takes paid amount not product original price`() {

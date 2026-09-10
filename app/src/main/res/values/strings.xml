@@ -89,6 +89,7 @@
     <string name="bill_reimbursable_hint">标记后可在报销管理中统一处理</string>
     <string name="bill_edit_bill">编辑账单</string>
     <string name="bill_wallet">账户</string>
+    <string name="bill_book">账本</string>
     <!-- Settings -->
     <string name="settings_title">我的</string>
     <string name="settings_appearance">外观与个性化</string>
