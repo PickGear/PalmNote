@@ -89,6 +89,7 @@
     <string name="bill_reimbursable_hint">Track for reimbursement management</string>
     <string name="bill_edit_bill">Edit Bill</string>
     <string name="bill_wallet">Account</string>
+    <string name="bill_book">Book</string>
     <!-- Settings -->
     <string name="settings_title">Mine</string>
     <string name="settings_appearance">Appearance</string>

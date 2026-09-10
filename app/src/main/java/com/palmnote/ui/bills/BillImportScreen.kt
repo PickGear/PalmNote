@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.*
@@ -26,11 +27,13 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -48,6 +51,7 @@ import com.palmnote.domain.model.toMoney
 import com.palmnote.domain.util.CurrencyUtils
 import com.palmnote.domain.util.DateUtils
 import com.palmnote.data.db.entity.Wallet
+import com.palmnote.data.db.entity.getDisplayName
 import com.palmnote.ui.components.*
 import com.palmnote.ui.theme.*
 import java.time.Instant
@@ -261,7 +265,8 @@ private fun FilePreviewContent(state: BillImportState, viewModel: BillImportView
                 }
             }
         }
-        // 导入到哪个账本由用户选择（文件与 OCR 导入共用同一选择）
+        // 记到哪个账本、从哪个钱包出，均由用户选择（文件与 OCR 导入共用同一选择）
+        BookChipRow(state, viewModel, context, modifier = Modifier.padding(horizontal = 16.dp))
         WalletChipRow(state, viewModel, context, modifier = Modifier.padding(horizontal = 16.dp))
         LazyColumn(modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             itemsIndexed(state.parsed, key = { index, _ -> index }) { index, bill ->
@@ -396,22 +401,27 @@ private fun OcrPreviewContent(state: BillImportState, viewModel: BillImportViewM
     var editingIndex by remember { mutableStateOf<Int?>(null) }
     Column(modifier = Modifier.fillMaxSize()) {
         if (state.ocrImageUri != null) {
-            Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+            Box(modifier = Modifier.padding(horizontal = 16.dp)) {
                 AsyncImage(
                     model = state.ocrImageUri,
                     contentDescription = stringResource(R.string.bill_import_screenshot),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(160.dp)
-                        .clip(MaterialTheme.shapes.medium)
+                        .height(150.dp)
+                        .clip(MaterialTheme.shapes.large)
                         .clickable { showZoom = true },
                     contentScale = ContentScale.Fit
                 )
                 Text(
                     stringResource(R.string.bill_import_ocr_tap_zoom),
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 4.dp)
+                    color = Color.White,
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 8.dp)
+                        .clip(MaterialTheme.shapes.small)
+                        .background(Color.Black.copy(alpha = 0.45f))
+                        .padding(horizontal = 10.dp, vertical = 3.dp)
                 )
             }
         }
@@ -420,7 +430,8 @@ private fun OcrPreviewContent(state: BillImportState, viewModel: BillImportViewM
                 Text(stringResource(R.string.bill_import_ocr_recognized, state.ocrResults.size, state.ocrSelectedIndices.size), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
                 Row { TextButton(onClick = { viewModel.selectAllOcr() }) { Text(stringResource(R.string.bill_import_select_all)) }; TextButton(onClick = { viewModel.deselectAllOcr() }) { Text(stringResource(R.string.bill_import_select_none)) } }
             }
-            // 整批导入到哪个账本由用户选择（默认第一个）
+            // 整批记到哪个账本、从哪个钱包出，由用户选择
+            BookChipRow(state, viewModel, context, modifier = Modifier.padding(horizontal = 16.dp))
             WalletChipRow(state, viewModel, context, modifier = Modifier.padding(horizontal = 16.dp))
             LazyColumn(modifier = Modifier.weight(1f).padding(horizontal = 16.dp)) {
                 itemsIndexed(state.ocrResults, key = { index, _ -> index }) { index, result ->
@@ -433,7 +444,9 @@ private fun OcrPreviewContent(state: BillImportState, viewModel: BillImportViewM
                 }
             }
         } else {
-            OcrSingleEditor(state, viewModel, context)
+            // weight(1f) 把表单压在上方按钮行之内，否则自滚动的表单会占满剩余高度，
+            // 把「查看原文 / 重新选择 / 保存」整行挤出屏幕（单笔模式无法保存）
+            OcrSingleEditor(state, viewModel, context, modifier = Modifier.weight(1f))
         }
         var showRaw by remember { mutableStateOf(false) }
         TextButton(onClick = { showRaw = !showRaw }, modifier = Modifier.padding(horizontal = 16.dp)) { Text(if (showRaw) stringResource(R.string.bill_import_hide_raw) else stringResource(R.string.bill_import_show_raw)) }
@@ -466,38 +479,141 @@ private fun OcrPreviewContent(state: BillImportState, viewModel: BillImportViewM
     }
 }
 
-/** 单笔识别结果的可编辑表单（收支/钱包/金额/商户/日期/分类/备注） */
+/** 单笔识别结果的可编辑表单：与手动记账页（AddBillScreen）同一设计语言——
+ *  收支胶囊切换 → 大号金额卡 → 分类图标网格 → 账本/账户 → 详情字段 */
 @Composable
 private fun OcrSingleEditor(state: BillImportState, viewModel: BillImportViewModel, context: android.content.Context, modifier: Modifier = Modifier) {
-    Column(modifier = modifier.verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
-        Text(stringResource(R.string.bill_import_ocr_result), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
-        Spacer(modifier = Modifier.height(12.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            listOf(BillType.EXPENSE to R.string.bill_expense, BillType.INCOME to R.string.bill_income).forEach { (t, labelRes) ->
-                FilterChip(
-                    selected = state.ocrType == t,
-                    onClick = { viewModel.updateOcrType(t) },
-                    label = { Text(stringResource(labelRes)) },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = (if (t == BillType.EXPENSE) ExpenseRed else StatusActive).copy(alpha = 0.15f),
-                        selectedLabelColor = if (t == BillType.EXPENSE) ExpenseRed else StatusActive
-                    )
-                )
-            }
+    Column(
+        modifier = modifier.verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        OcrTypeToggle(selected = state.ocrType, onSelect = viewModel::updateOcrType)
+
+        // 金额：主字段，大号加粗（同手动记账页）
+        ModuleCard {
+            OutlinedTextField(
+                value = state.ocrAmount,
+                onValueChange = viewModel::updateOcrAmount,
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("0.00") },
+                prefix = { Text("¥", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold) },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                shape = MaterialTheme.shapes.medium,
+                textStyle = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                singleLine = true
+            )
         }
-        Spacer(modifier = Modifier.height(12.dp))
-        WalletChipRow(state, viewModel, context)
-        Spacer(modifier = Modifier.height(12.dp))
-        EditField(stringResource(R.string.bill_import_amount), state.ocrAmount, viewModel::updateOcrAmount, prefix = "¥ ")
-        EditField(stringResource(R.string.bill_import_merchant), state.ocrMerchant, viewModel::updateOcrMerchant)
-        DateField(stringResource(R.string.bill_import_date), state.ocrDate, viewModel::updateOcrDate)
-        EditField(stringResource(R.string.bill_import_category), state.ocrCategory, viewModel::updateOcrCategory)
-        EditField(stringResource(R.string.bill_import_note), state.ocrNote, viewModel::updateOcrNote)
-        if (state.error != null) { Spacer(modifier = Modifier.height(8.dp)); Text(state.error, color = ExpenseRed, style = MaterialTheme.typography.bodySmall) }
+
+        OcrCategoryCard(state, viewModel)
+
+        // 记账位置：账本 + 账户
+        ModuleCard {
+            BookChipRow(state, viewModel, context)
+            Spacer(modifier = Modifier.height(10.dp))
+            WalletChipRow(state, viewModel, context)
+        }
+
+        // 详情：商户 / 日期 / 备注
+        ModuleCard {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Box(modifier = Modifier.weight(1.4f)) {
+                    EditField(stringResource(R.string.bill_import_merchant), state.ocrMerchant, viewModel::updateOcrMerchant)
+                }
+                Box(modifier = Modifier.weight(1f)) {
+                    DateField(stringResource(R.string.bill_import_date), state.ocrDate, viewModel::updateOcrDate)
+                }
+            }
+            EditField(stringResource(R.string.bill_import_note), state.ocrNote, viewModel::updateOcrNote)
+        }
+
+        if (state.error != null) {
+            Text(state.error, color = ExpenseRed, style = MaterialTheme.typography.bodySmall)
+        }
     }
 }
 
-/** 账本（钱包）选择 chips 行：导入记到哪个账本 */
+/** 收支切换：与手动记账页相同的胶囊分段样式 */
+@Composable
+private fun OcrTypeToggle(selected: BillType, onSelect: (BillType) -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.medium)
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+            .padding(3.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        listOf(BillType.EXPENSE to R.string.bill_expense, BillType.INCOME to R.string.bill_income).forEach { (t, labelRes) ->
+            val isSelected = selected == t
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(MaterialTheme.shapes.small)
+                    .background(
+                        when {
+                            isSelected && t == BillType.EXPENSE -> ExpenseRed
+                            isSelected -> StatusActive
+                            else -> Color.Transparent
+                        }
+                    )
+                    .clickable(
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() }
+                    ) { onSelect(t) }
+                    .padding(vertical = 10.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    stringResource(labelRes),
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                    color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+/** 分类卡：图标网格；识别出的分类不在预设里时追加为临时项，保证值不丢 */
+@Composable
+private fun OcrCategoryCard(state: BillImportState, viewModel: BillImportViewModel) {
+    ModuleCard {
+        Text(stringResource(R.string.bill_category), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+        Spacer(modifier = Modifier.height(8.dp))
+        val presets = if (state.ocrType == BillType.EXPENSE) expenseCategoryItems else incomeCategoryItems
+        val fallbackColor = MaterialTheme.colorScheme.onSurfaceVariant
+        val categories = remember(state.ocrType, state.ocrCategory, fallbackColor) {
+            if (state.ocrCategory.isNotBlank() && presets.none { it.name == state.ocrCategory })
+                presets + CategoryItem(state.ocrCategory, Icons.Outlined.Edit, fallbackColor)
+            else presets
+        }
+        CategoryPicker(selected = state.ocrCategory, onSelected = viewModel::updateOcrCategory, categories = categories)
+    }
+}
+
+/** 账本选择 chips 行：这批账单记进哪个账本（与首页"当前账本"相互独立） */
+@Composable
+private fun BookChipRow(state: BillImportState, viewModel: BillImportViewModel, context: android.content.Context, modifier: Modifier = Modifier) {
+    if (state.accountBooks.isEmpty()) return
+    Column(modifier = modifier) {
+        Text(
+            stringResource(R.string.bill_book),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            items(state.accountBooks, key = { it.id }) { book ->
+                FilterChip(
+                    selected = state.importBookId == book.id,
+                    onClick = { viewModel.updateImportBook(book.id) },
+                    label = { Text(book.getDisplayName(context), fontSize = 11.sp) }
+                )
+            }
+        }
+    }
+}
+
+/** 钱包选择 chips 行：这笔钱从哪个账户出（微信/支付宝/现金…，默认按账单渠道推断） */
 @Composable
 private fun WalletChipRow(state: BillImportState, viewModel: BillImportViewModel, context: android.content.Context, modifier: Modifier = Modifier) {
     if (state.wallets.isEmpty()) return
