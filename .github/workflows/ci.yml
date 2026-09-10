@@ -28,7 +28,7 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
         # 默认缓存 Gradle 依赖 + build cache + configuration cache（org.gradle.caching/configuration-cache 已在 gradle.properties 开启）。
         # fork 的 PR 只读不写缓存，避免缓存污染；主分支 push 正常读写。
         with:
@@ -66,7 +66,7 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
         # 默认缓存 Gradle 依赖 + build cache + configuration cache（org.gradle.caching/configuration-cache 已在 gradle.properties 开启）。
         # fork 的 PR 只读不写缓存，避免缓存污染；主分支 push 正常读写。
         with:
