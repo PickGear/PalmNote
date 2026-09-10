@@ -95,7 +95,7 @@
     <string name="settings_theme_light">Light Mode</string>
     <string name="settings_theme_dark">Dark Mode</string>
     <string name="settings_general">General</string>
-    <string name="settings_data">Data Management</string>
+    <string name="settings_data">Data &amp; Storage</string>
     <string name="settings_about">About PalmNote</string>
     <string name="settings_export">Export Data</string>
     <string name="settings_recycle">Recycle Bin</string>
@@ -145,12 +145,17 @@
     <string name="settings_recycle_bin">Recycle Bin</string>
     <string name="settings_recycle_bin_subtitle">View deleted records</string>
     <string name="settings_export_data">Export Data</string>
-    <string name="settings_export_data_subtitle">Export core data (bills, assets, etc.) as CSV-ZIP. Use Data Backup for life-module data</string>
+    <string name="settings_export_data_subtitle">Export core data as a readable CSV-ZIP for merging or other apps. Use Backup &amp; Restore to switch phones</string>
     <string name="settings_export_file_suffix">_data.zip</string>
     <string name="settings_import_data">Import Data</string>
-    <string name="settings_import_data_subtitle">Merge data from an exported CSV-ZIP (does not clear existing data; not a full backup restore)</string>
-    <string name="settings_data_backup">Data Backup</string>
-    <string name="settings_data_backup_subtitle">Backup and restore complete data</string>
+    <string name="settings_import_data_subtitle">Merge from a CSV-ZIP without clearing existing data; covers exported scope only</string>
+    <string name="settings_data_backup">Backup &amp; Restore</string>
+    <string name="settings_data_backup_subtitle">Full snapshot including vault; for switching phones or rollback</string>
+    <string name="export_scope_includes_title">Included</string>
+    <string name="export_scope_includes">Bills · Assets · Life (goals, anniversaries, moments, tags) · Images</string>
+    <string name="export_scope_excludes_title">Not included</string>
+    <string name="export_scope_excludes">To-dos and plans · Mood diary · Focus records · Achievements · Recycle bin · Vault</string>
+    <string name="export_scope_note">Readable CSV-ZIP for merging or other apps; use Backup &amp; Restore to switch phones</string>
     <string name="settings_clear_data">Clear Data</string>
     <string name="settings_clear_data_subtitle">Delete personal data, not recoverable</string>
     <string name="settings_clear_cache">Clear Cache</string>
@@ -1142,14 +1147,15 @@
     <string name="search_section_anniversaries">Anniversaries</string>
     <string name="search_section_moments">Moments</string>
     <!-- Backup -->
-    <string name="backup_title">Data Backup</string>
+    <string name="backup_title">Backup &amp; Restore</string>
     <string name="backup_operation_success">Operation successful</string>
     <string name="backup_create">Create Backup</string>
     <string name="backup_password_required">Password is required to restore this backup</string>
     <string name="backup_password_label">Backup password</string>
     <string name="backup_password_hint">Encrypted · 6+ characters · Unrecoverable if forgotten</string>
+    <string name="backup_remember_password">Remember password</string>
     <string name="backup_error_export_needs_password">Please set a backup password of at least 6 characters first: the exported backup leaves this device, and weak encryption exposes the photos and settings inside</string>
-    <string name="backup_existing_count">%1$d backups</string>
+    <string name="backup_existing_count">On-device %1$d · Portable %2$d</string>
     <string name="backup_source_local">This device</string>
     <string name="backup_source_folder">Folder</string>
     <string name="backup_time_today">Today %1$s</string>
@@ -1161,7 +1167,7 @@
     <string name="backup_restore_hint">Restoring overwrites current data and restarts the app</string>
     <string name="backup_restore_from_file">Choose backup file</string>
     <string name="backup_restoring">Restoring data…</string>
-    <string name="backup_restore_confirm">Restore will overwrite all current data. This action cannot be undone. Continue?</string>
+    <string name="backup_restore_confirm">Restoring replaces current data with this backup. A snapshot of current data is saved first, so you can restore it back.</string>
     <string name="backup_restore">Restore</string>
     <!-- Common Components -->
     <string name="common_today">Today</string>
@@ -1181,7 +1187,7 @@
     <string name="settings_cache_clear_failed">Clear failed: %s</string>
     <string name="settings_appearance_subtitle">Theme, language, accent color</string>
     <string name="settings_reminder_subtitle">Daily, bill, birthday reminders</string>
-    <string name="settings_data_subtitle">Export, import, recycle bin</string>
+    <string name="settings_data_subtitle">Backup, export, import, recycle bin</string>
     <string name="life_empty_habit_start">Start checking in</string>
     <string name="life_empty_habit_hint">Build good habits</string>
     <string name="life_empty_countup">No count-up yet</string>
@@ -1587,7 +1593,7 @@
     <string name="app_lock_pin_mismatch">PIN codes do not match</string>
     <string name="app_lock_pin_success">PIN code set successfully</string>
     <string name="app_lock_setup_pin">Set PIN Code</string>
-    <string name="app_version">v1.3.0</string>
+    <string name="app_version">v1.4.0</string>
     <string name="asset_category_appliance">Appliance</string>
     <string name="asset_category_books">Books</string>
     <string name="asset_category_clothing">Clothing</string>

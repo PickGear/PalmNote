@@ -95,7 +95,7 @@
     <string name="settings_theme_light">浅色模式</string>
     <string name="settings_theme_dark">深色模式</string>
     <string name="settings_general">偏好设置</string>
-    <string name="settings_data">数据管理</string>
+    <string name="settings_data">数据与存储</string>
     <string name="settings_about">关于掌记</string>
     <string name="settings_export">导出数据</string>
     <string name="settings_recycle">回收站</string>
@@ -145,12 +145,17 @@
     <string name="settings_recycle_bin">回收站</string>
     <string name="settings_recycle_bin_subtitle">查看已删除的记录</string>
     <string name="settings_export_data">导出数据</string>
-    <string name="settings_export_data_subtitle">导出记账、资产等核心数据为CSV-ZIP（生活模块数据请用数据备份）</string>
+    <string name="settings_export_data_subtitle">导出核心数据为可读的 CSV-ZIP，可合并导入或给其他软件；换机请用「备份与恢复」</string>
     <string name="settings_export_file_suffix">_数据.zip</string>
     <string name="settings_import_data">导入数据</string>
-    <string name="settings_import_data_subtitle">从导出的CSV-ZIP文件合并导入数据（不会清除现有数据，非完整备份恢复）</string>
-    <string name="settings_data_backup">数据备份</string>
-    <string name="settings_data_backup_subtitle">备份和恢复完整数据</string>
+    <string name="settings_import_data_subtitle">从 CSV-ZIP 合并导入，不覆盖现有数据；仅含导出范围内的数据</string>
+    <string name="settings_data_backup">备份与恢复</string>
+    <string name="settings_data_backup_subtitle">完整快照（含密码本），用于换机或回退</string>
+    <string name="export_scope_includes_title">将导出</string>
+    <string name="export_scope_includes">记账 · 物品 · 生活（目标/纪念日/时刻/标签）· 图片</string>
+    <string name="export_scope_excludes_title">不含</string>
+    <string name="export_scope_excludes">待办与规划 · 心情日记 · 专注记录 · 成长成就 · 回收站 · 密码本</string>
+    <string name="export_scope_note">可读的 CSV-ZIP，可合并导入或给其他软件；换机恢复请用「备份与恢复」</string>
     <string name="settings_clear_data">清除数据</string>
     <string name="settings_clear_data_subtitle">删除个人数据，不可恢复</string>
     <string name="settings_clear_cache">清除缓存</string>
@@ -1197,14 +1202,15 @@
     <string name="search_section_anniversaries">纪念日</string>
     <string name="search_section_moments">时刻</string>
     <!-- Backup -->
-    <string name="backup_title">数据备份</string>
+    <string name="backup_title">备份与恢复</string>
     <string name="backup_operation_success">操作成功</string>
     <string name="backup_create">创建备份</string>
     <string name="backup_password_required">需要密码才能恢复此备份</string>
     <string name="backup_password_label">备份密码</string>
     <string name="backup_password_hint">加密保存 · 至少 6 位 · 忘记密码无法恢复</string>
+    <string name="backup_remember_password">记住密码</string>
     <string name="backup_error_export_needs_password">请先设置至少 6 位的备份密码：导出的备份会离开本机，加密不足会泄露其中的照片与设置</string>
-    <string name="backup_existing_count">已有备份 %1$d 个</string>
+    <string name="backup_existing_count">本机 %1$d · 可换机 %2$d</string>
     <string name="backup_source_local">本机</string>
     <string name="backup_source_folder">文件夹</string>
     <string name="backup_time_today">今天 %1$s</string>
@@ -1216,7 +1222,7 @@
     <string name="backup_restore_hint">恢复会覆盖当前数据，完成后自动重启</string>
     <string name="backup_restore_from_file">选择备份文件</string>
     <string name="backup_restoring">正在恢复数据…</string>
-    <string name="backup_restore_confirm">恢复将覆盖当前所有数据，此操作不可撤销。确定要恢复吗？</string>
+    <string name="backup_restore_confirm">恢复会用这份备份替换当前数据。恢复前会自动保存一份本机快照，可再恢复回来。</string>
     <string name="backup_restore">恢复</string>
     <!-- Common Components -->
     <string name="common_today">今天</string>
@@ -1236,7 +1242,7 @@
     <string name="settings_cache_clear_failed">清除失败: %s</string>
     <string name="settings_appearance_subtitle">主题、语言、主题色</string>
     <string name="settings_reminder_subtitle">日常提醒、账单提醒、生日提醒</string>
-    <string name="settings_data_subtitle">导出、导入、回收站</string>
+    <string name="settings_data_subtitle">备份、导出、导入与回收站</string>
     <string name="life_empty_habit_start">开始打卡</string>
     <string name="life_empty_habit_hint">养成良好的习惯</string>
     <string name="life_empty_countup">暂无正数日</string>
@@ -1657,7 +1663,7 @@
     <string name="app_lock_pin_mismatch">两次输入不一致</string>
     <string name="app_lock_pin_success">PIN码设置成功</string>
     <string name="app_lock_setup_pin">设置PIN码</string>
-    <string name="app_version">v1.3.0</string>
+    <string name="app_version">v1.4.0</string>
     <string name="asset_category_appliance">家电</string>
     <string name="asset_category_books">图书</string>
     <string name="asset_category_clothing">服饰</string>
