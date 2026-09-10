@@ -92,8 +92,8 @@ dependencies {
     implementation(libs.lunar.java)
 
     // Paging
-    implementation("androidx.paging:paging-runtime-ktx:3.3.4")
-    implementation("androidx.paging:paging-compose:3.3.4")
+    implementation("androidx.paging:paging-runtime-ktx:3.5.1")
+    implementation("androidx.paging:paging-compose:3.5.1")
 
     // Coil 3.x
     implementation(libs.coil.compose)
