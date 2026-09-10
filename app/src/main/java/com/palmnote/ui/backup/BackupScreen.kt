@@ -1,5 +1,4 @@
 package com.palmnote.ui.backup
-import androidx.hilt.navigation.compose.hiltViewModel
 
 import android.content.Context
 import android.content.Intent
@@ -9,9 +8,13 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.outlined.*
@@ -19,6 +22,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -26,15 +30,23 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.palmnote.app.R
-import com.palmnote.data.backup.BackupInfo
 import com.palmnote.data.backup.BackupState
 import com.palmnote.ui.components.*
 import com.palmnote.ui.theme.*
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+
+/** 「记住密码」开关的显示缩放：Material3 默认尺寸与一行说明文字并排时偏大。 */
+private const val REMEMBER_SWITCH_SCALE = 0.8f
+
+private const val BYTES_PER_KB = 1024L
+private const val BYTES_PER_MB = BYTES_PER_KB * 1024
+private const val BYTES_PER_GB = BYTES_PER_MB * 1024
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,6 +56,7 @@ fun BackupScreen(
 ) {
     val backupState by viewModel.backupState.collectAsStateWithLifecycle()
     val password by viewModel.password.collectAsStateWithLifecycle()
+    val rememberPassword by viewModel.rememberPassword.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
 
@@ -55,9 +68,14 @@ fun BackupScreen(
         ActivityResultContracts.OpenDocumentTree()
     ) { treeUri ->
         treeUri?.let { uri ->
-            context.contentResolver.takePersistableUriPermission(
-                uri, Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-            )
+            // 部分 DocumentsProvider（第三方网盘等）不支持持久化授权并抛 SecurityException；
+            // 本次导出依然能写入，只是重启后目录列表会失效，不应因此崩溃
+            runCatching {
+                context.contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                )
+            }
             viewModel.saveBackupDir(uri)
             viewModel.createBackupToFolder(uri)
         }
@@ -115,14 +133,13 @@ fun BackupScreen(
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
                 .padding(innerPadding)
+                .verticalScroll(rememberScrollState())
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // ── Backup ──
             ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(R.string.backup_create), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(stringResource(R.string.backup_create_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(modifier = Modifier.height(12.dp))
 
                 var passwordVisible by remember { mutableStateOf(false) }
@@ -145,16 +162,23 @@ fun BackupScreen(
                     },
                     singleLine = true
                 )
-                // 导出的备份会经网盘/U 盘等外部渠道流转，必须加密后才允许导出
-                if ((password?.length ?: 0) < BackupViewModel.MIN_PASSWORD_LENGTH) {
-                    Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(4.dp))
+
+                // 可选：把密码交给本机 Keystore 包裹后记住，下次进入自动预填（默认关闭，不改变导出仍需密码的要求）
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Switch(
+                        checked = rememberPassword,
+                        onCheckedChange = { viewModel.setRememberPassword(it) },
+                        modifier = Modifier.scale(REMEMBER_SWITCH_SCALE)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = stringResource(R.string.backup_plaintext_warning),
+                        text = stringResource(R.string.backup_remember_password),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 if (backupState is BackupState.Progress && !isRestoring) {
                     val backupPercent = (backupState as BackupState.Progress).percent
@@ -177,74 +201,60 @@ fun BackupScreen(
                         Text(stringResource(R.string.backup_now))
                     }
                 }
+
+                Spacer(modifier = Modifier.height(10.dp))
+                val typedLength = password?.length ?: 0
+                Text(
+                    text = stringResource(R.string.backup_password_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (typedLength in 1 until BackupViewModel.MIN_PASSWORD_LENGTH) {
+                        MaterialTheme.colorScheme.error
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+                )
             }
 
             // ── Restore ──
             ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(R.string.backup_restore_title), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(stringResource(R.string.backup_restore_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // 备份文件夹内的备份直接列出（无需再导航文件选择器）；备份成功后刷新列表
-                val dirBackups = remember { mutableStateOf<List<Pair<String, Uri>>>(emptyList()) }
-                LaunchedEffect(backupListRefreshKey) { dirBackups.value = viewModel.listBackupsInDir() }
-
-                if (dirBackups.value.isNotEmpty()) {
-                    Text(
-                        stringResource(R.string.backup_in_folder),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    dirBackups.value.forEach { (name, uri) ->
-                        Surface(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 2.dp)
-                                .clickable { restoreSource = RestoreSource.FromUri(uri) },
-                            shape = MaterialTheme.shapes.medium,
-                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    Icons.Outlined.Restore, contentDescription = null,
-                                    modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    name, style = MaterialTheme.typography.bodyMedium, maxLines = 1,
-                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                                )
-                            }
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
+                // 本机自动备份与备份文件夹内的包合并为一个列表：对用户而言都是"可以拿来恢复的备份"，
+                // 分成两组只会让人多读一段说明。默认折叠，展开后按时间倒序。
+                var candidates by remember { mutableStateOf<List<RestoreCandidate>>(emptyList()) }
+                var listExpanded by remember { mutableStateOf(false) }
+                LaunchedEffect(backupListRefreshKey) {
+                    val local = viewModel.listLocalBackups()
+                        .map { RestoreCandidate(it.date, it.size, RestoreSource.FromLocal(it.filePath)) }
+                    val inFolder = viewModel.listBackupsInDir()
+                        .map { RestoreCandidate(it.date, it.size, RestoreSource.FromUri(it.uri)) }
+                    candidates = (local + inFolder).sortedByDescending { it.date }
                 }
 
-                // 本机备份（自动备份 / 恢复前快照）：落在应用私有目录，其他应用与文件管理器都进不去，
-                // 若此处不提供入口，这些备份即等同于不可恢复。
-                val localBackups = remember { mutableStateOf<List<BackupInfo>>(emptyList()) }
-                LaunchedEffect(backupListRefreshKey) { localBackups.value = viewModel.listLocalBackups() }
-                if (localBackups.value.isNotEmpty()) {
-                    Text(
-                        stringResource(R.string.backup_local_title),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                if (candidates.isNotEmpty()) {
+                    // 两类分开计数：本机自动备份只能本机恢复；文件夹里的导出包才可换机。
+                    // 混成一个总数会让用户误以为"备份很多=很安全"。
+                    val localCount = candidates.count { it.source is RestoreSource.FromLocal }
+                    RestoreSummaryRow(
+                        localCount = localCount,
+                        portableCount = candidates.size - localCount,
+                        newestDate = candidates.first().date,
+                        expanded = listExpanded,
+                        onClick = { listExpanded = !listExpanded }
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    val localDateFormat = remember { SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()) }
-                    localBackups.value.forEach { info ->
-                        LocalBackupRow(
-                            info = info,
-                            dateText = localDateFormat.format(Date(info.date)),
-                            onClick = { restoreSource = RestoreSource.FromLocal(info.filePath) }
-                        )
+                    if (listExpanded) {
+                        Spacer(modifier = Modifier.height(6.dp))
+                        candidates.forEach { candidate ->
+                            RestoreCandidateRow(
+                                date = candidate.date,
+                                size = candidate.size,
+                                fromLocal = candidate.source is RestoreSource.FromLocal,
+                                onClick = { restoreSource = candidate.source }
+                            )
+                        }
                     }
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
                 }
 
                 if (isRestoring && backupState is BackupState.Progress) {
@@ -257,7 +267,9 @@ fun BackupScreen(
                     Text(stringResource(R.string.backup_restoring), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 } else {
                     OutlinedButton(
-                        onClick = { restoreLauncher.launch(arrayOf("application/octet-stream", "application/zip")) },
+                        // .palmnote 没有注册的 MIME 类型，部分文件管理器会把它判为不可选而灰掉；
+                        // 放宽到任意类型，选错文件由文件头 MAGIC 校验拦下
+                        onClick = { restoreLauncher.launch(arrayOf("*/*")) },
                         modifier = Modifier.fillMaxWidth(),
                         enabled = backupState !is BackupState.Progress
                     ) {
@@ -266,6 +278,13 @@ fun BackupScreen(
                         Text(stringResource(R.string.backup_restore_from_file))
                     }
                 }
+
+                Spacer(modifier = Modifier.height(10.dp))
+                Text(
+                    text = stringResource(R.string.backup_restore_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }
@@ -337,6 +356,9 @@ private sealed interface RestoreSource {
     data class FromLocal(val filePath: String) : RestoreSource
 }
 
+/** 一条可恢复的备份：本机自动备份或备份文件夹内的包，两者统一按时间倒序展示。 */
+private data class RestoreCandidate(val date: Long, val size: Long, val source: RestoreSource)
+
 /** 读备份文件头 MAGIC，判断是否为加密备份（仅加密包恢复时才需要密码）。 */
 private fun isEncryptedBackupFile(context: Context, source: RestoreSource): Boolean = try {
     val magic = ByteArray(4)
@@ -349,9 +371,55 @@ private fun isEncryptedBackupFile(context: Context, source: RestoreSource): Bool
     false
 }
 
-/** 本机备份列表项：文件名 + 创建时间 + 体积。 */
+/** 折叠入口：一行给出两类备份的数量与最新一份的时间，展开后才列出明细。 */
 @Composable
-private fun LocalBackupRow(info: BackupInfo, dateText: String, onClick: () -> Unit) {
+private fun RestoreSummaryRow(
+    localCount: Int,
+    portableCount: Int,
+    newestDate: Long,
+    expanded: Boolean,
+    onClick: () -> Unit
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                Icons.Outlined.Restore, contentDescription = null,
+                modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary
+            )
+            Spacer(modifier = Modifier.width(10.dp))
+            Text(
+                text = stringResource(R.string.backup_existing_count, localCount, portableCount),
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.weight(1f)
+            )
+            Text(
+                text = backupTimeText(newestDate),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Icon(
+                if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+/** 单条备份明细：友好时间 + 来源与体积。长串文件名对用户没有信息量，不再展示。 */
+@Composable
+private fun RestoreCandidateRow(date: Long, size: Long, fromLocal: Boolean, onClick: () -> Unit) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -364,22 +432,56 @@ private fun LocalBackupRow(info: BackupInfo, dateText: String, onClick: () -> Un
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                Icons.Outlined.Restore, contentDescription = null,
-                modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary
+            Text(
+                text = backupTimeText(date),
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.weight(1f)
             )
-            Spacer(modifier = Modifier.width(8.dp))
-            Column {
-                Text(
-                    info.fileName, style = MaterialTheme.typography.bodyMedium, maxLines = 1,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                )
-                Text(
-                    text = stringResource(R.string.backup_local_subtitle, dateText, (info.size / 1024 / 1024).toInt()),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+            Text(
+                text = backupMetaText(size, fromLocal),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
+
+/** 备份时间：今天/昨天用相对说法，其余按日期。 */
+@Composable
+private fun backupTimeText(date: Long): String {
+    if (date <= 0L) return ""
+    val now = remember(date) { Calendar.getInstance() }
+    val then = remember(date) { Calendar.getInstance().apply { timeInMillis = date } }
+    val sameYear = now.get(Calendar.YEAR) == then.get(Calendar.YEAR)
+    val dayGap = now.get(Calendar.DAY_OF_YEAR) - then.get(Calendar.DAY_OF_YEAR)
+    val time = remember(date) { formatWithSkeleton(date, "Hm") }
+    val day = remember(date) { formatWithSkeleton(date, if (sameYear) "MMMd" else "yMMMd") }
+    return when {
+        sameYear && dayGap == 0 -> stringResource(R.string.backup_time_today, time)
+        sameYear && dayGap == 1 -> stringResource(R.string.backup_time_yesterday, time)
+        else -> day
+    }
+}
+
+/** 来源 + 体积，形如「本机 · 350 KB」。 */
+@Composable
+private fun backupMetaText(size: Long, fromLocal: Boolean): String {
+    val source = stringResource(if (fromLocal) R.string.backup_source_local else R.string.backup_source_folder)
+    val sizeText = formatBackupSize(size)
+    return if (sizeText.isEmpty()) source else "$source · $sizeText"
+}
+
+/** 体积自适应单位：350 KB 不再被取整成 0 MB。 */
+private fun formatBackupSize(bytes: Long): String = when {
+    bytes >= BYTES_PER_GB -> String.format(Locale.getDefault(), "%.1f GB", bytes.toDouble() / BYTES_PER_GB)
+    bytes >= BYTES_PER_MB -> String.format(Locale.getDefault(), "%.1f MB", bytes.toDouble() / BYTES_PER_MB)
+    bytes >= BYTES_PER_KB -> "${bytes / BYTES_PER_KB} KB"
+    bytes > 0L -> "$bytes B"
+    else -> ""
+}
+
+/** 按 locale 取最佳日期格式（zh 得到「9月10日」，en 得到「Sep 10」）。 */
+private fun formatWithSkeleton(date: Long, skeleton: String): String = SimpleDateFormat(
+    android.text.format.DateFormat.getBestDateTimePattern(Locale.getDefault(), skeleton),
+    Locale.getDefault()
+).format(Date(date))

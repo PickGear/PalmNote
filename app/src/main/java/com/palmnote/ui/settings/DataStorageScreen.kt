@@ -33,6 +33,8 @@ fun DataStorageScreen(
     viewModel: SettingsViewModel
 ) {
     var showClearCacheDialog by remember { mutableStateOf(false) }
+    // 导出前先让用户看清覆盖范围：导出是可读的 CSV-ZIP，只含核心数据，不能当备份用
+    var showExportScopeDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -81,7 +83,13 @@ fun DataStorageScreen(
                 ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
                     SettingsMenuItem(icon = Icons.Outlined.DeleteOutline, title = stringResource(R.string.settings_recycle_bin), subtitle = stringResource(R.string.settings_recycle_bin_subtitle), tint = StatusActive, onClick = onNavigateToRecycleBin)
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 12.dp))
-                    SettingsMenuItem(icon = Icons.Outlined.FileDownload, title = stringResource(R.string.settings_export_data), subtitle = stringResource(R.string.settings_export_data_subtitle), tint = InfoBlue, onClick = { exportLauncher.launch(appName + exportSuffix) })
+                    SettingsMenuItem(
+                        icon = Icons.Outlined.FileDownload,
+                        title = stringResource(R.string.settings_export_data),
+                        subtitle = stringResource(R.string.settings_export_data_subtitle),
+                        tint = InfoBlue,
+                        onClick = { showExportScopeDialog = true }
+                    )
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 12.dp))
                     SettingsMenuItem(icon = Icons.Outlined.FileUpload, title = stringResource(R.string.settings_import_data), subtitle = stringResource(R.string.settings_import_data_subtitle), tint = AccentOrange, onClick = { importLauncher.launch(arrayOf("application/zip")) })
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 12.dp))
@@ -93,6 +101,51 @@ fun DataStorageScreen(
                 }
             }
         }
+    }
+
+    if (showExportScopeDialog) {
+        AppDialog(
+            onDismissRequest = { showExportScopeDialog = false },
+            title = { Text(stringResource(R.string.settings_export_data), fontWeight = FontWeight.Bold) },
+            text = {
+                Column {
+                    Text(
+                        text = stringResource(R.string.export_scope_includes_title),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(stringResource(R.string.export_scope_includes), style = MaterialTheme.typography.bodySmall)
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = stringResource(R.string.export_scope_excludes_title),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = stringResource(R.string.export_scope_excludes),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = stringResource(R.string.export_scope_note),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showExportScopeDialog = false
+                    exportLauncher.launch(appName + exportSuffix)
+                }) { Text(stringResource(R.string.settings_export_data)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showExportScopeDialog = false }) { Text(stringResource(R.string.settings_cancel)) }
+            }
+        )
     }
 
     if (showClearCacheDialog) {
