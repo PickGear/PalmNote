@@ -186,6 +186,10 @@ git clone https://github.com/PickGear/PalmNote.git
 
 本项目基于 [GPL-3.0](LICENSE) 许可证发布。第三方组件及依赖的版权与许可证声明见 [NOTICE](NOTICE)。
 
+## 免责声明
+
+PalmNote 与微信、支付宝等第三方服务的权利人无任何关联、合作或背书关系。对第三方账单文件（CSV/XLSX）的导入仅为在本地对用户自有数据作格式兼容处理，"微信""支付宝"等名称仅作描述性使用，相关商标归其权利人所有。账单解析全程在设备本地完成，不联网、不上传任何数据。
+
 ## 联系方式
 
 - GitHub Issues：https://github.com/PickGear/PalmNote/issues

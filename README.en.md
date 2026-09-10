@@ -182,7 +182,11 @@ git clone https://github.com/PickGear/PalmNote.git
 
 ## License
 
-This project is licensed under the [GPL-3.0](LICENSE) license.
+This project is licensed under the [GPL-3.0](LICENSE) license. Copyright and license notices for third-party components and dependencies can be found in [NOTICE](NOTICE).
+
+## Disclaimer
+
+PalmNote is not affiliated with, endorsed by, or associated with WeChat, Alipay, or any other third-party service provider. Importing third-party bill files (CSV/XLSX) is provided solely for local format compatibility with the user's own data; names such as "WeChat" and "Alipay" are used descriptively only, and the relevant trademarks belong to their respective owners. Bill parsing is performed entirely on-device — no network access, no data upload.
 
 ## Contact
 

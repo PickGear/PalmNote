@@ -603,7 +603,7 @@ val VAULT_CARD_VISIBLE = booleanPreferencesKey("vault_card_visible")
 │                             │
 │  AI 端点                    │
 │  ┌───────────────────────┐  │
-│  │ http://192.168.1.100  │  │
+│  │ https://ai.example.io │  │
 │  └───────────────────────┘  │
 │  [测试连接]                  │
 │                             │

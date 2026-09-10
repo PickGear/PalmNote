@@ -194,7 +194,7 @@ class BillCsvImporterTest {
     @Test
     fun `modern alipay csv parses expense row with goods fallback note`() {
         val row = listOf(
-            "20260931642663316140823101717199", "4574051995081900567352635951",
+            "TEST20260909000000000000000001", "TEST_ORDER_0001",
             "2026-09-09 18:57:11", "2026-09-09 19:10:11", "2026-09-09 19:10:11",
             "口碑", "即时到账-商户", "肯德基", "汉堡套餐", "4.56", "支出",
             "交易成功", "0.00", "", "", "已支出"
@@ -210,7 +210,7 @@ class BillCsvImporterTest {
         assertEquals("汉堡套餐", bill.note)
         assertEquals("餐饮", bill.category)
         assertEquals("ALIPAY", bill.paymentMethod)
-        assertEquals("20260931642663316140823101717199", bill.transactionId)
+        assertEquals("TEST20260909000000000000000001", bill.transactionId)
     }
 
     @Test
