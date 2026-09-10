@@ -818,7 +818,7 @@
     <string name="bill_error_category_required">Please select a category</string>
     <!-- Backup Error Messages -->
     <string name="backup_error_corrupted">Backup file is corrupted or empty</string>
-    <string name="backup_error_cross_device">This backup was created by an older version and lacks the key required for cross-device restore. Please create a new backup with the current version on the original device and try again</string>
+    <string name="backup_error_cross_device">This backup cannot be restored on this device: it lacks the key required for cross-device restore (usually an unencrypted backup, or one created by an older version). Restore it on the original device, or set a password and create a new backup before switching phones</string>
     <string name="backup_error_create_failed">Backup failed</string>
     <string name="backup_error_restore_failed">Restore failed</string>
     <!-- Calendar Sync -->
@@ -1146,14 +1146,18 @@
     <string name="backup_title">Data Backup</string>
     <string name="backup_operation_success">Operation successful</string>
     <string name="backup_create">Create Backup</string>
-    <string name="backup_create_desc">Package all data as a .palmnote file saved to a folder of your choice. Backups can be restored on a new phone; if a password is set, it will be required to restore — keep it safe</string>
+    <string name="backup_create_desc">Package all data as a .palmnote file saved to a folder of your choice. The backup is encrypted and can be restored on a new phone; a password is required, so keep it safe — without it the backup cannot be restored</string>
     <string name="backup_password_required">Password is required to restore this backup</string>
-    <string name="backup_password_optional">Set password (optional)</string>
+    <string name="backup_password_label">Set backup password (required, 6+ characters)</string>
+    <string name="backup_plaintext_warning">A password of at least 6 characters is required to export. The backup file is saved to a folder you choose and may travel through cloud drives or USB disks, where a short password offers no real protection</string>
+    <string name="backup_error_export_needs_password">Please set a backup password of at least 6 characters first: the exported backup leaves this device, and weak encryption exposes the photos and settings inside</string>
+    <string name="backup_local_title">On-device backups (created automatically, restorable only on this device):</string>
+    <string name="backup_local_subtitle">%1$s · %2$d MB</string>
     <string name="backup_password">Enter password</string>
     <string name="backup_backing_up">Backing up…</string>
     <string name="backup_now">Backup Now</string>
     <string name="backup_restore_title">Restore Backup</string>
-    <string name="backup_restore_desc">Select a .palmnote backup file to restore data. Restoring overwrites current data and the app restarts afterwards. Encrypted backups require the password set at creation. Works across phones</string>
+    <string name="backup_restore_desc">Select a .palmnote backup file or an on-device backup to restore data. Restoring overwrites current data and the app restarts afterwards. Encrypted backups require the password set at creation and work across phones</string>
     <string name="backup_restore_from_file">Select backup file to restore</string>
     <string name="backup_restoring">Restoring data…</string>
     <string name="backup_restore_confirm">Restore will overwrite all current data. This action cannot be undone. Continue?</string>
