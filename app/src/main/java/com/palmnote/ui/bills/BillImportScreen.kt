@@ -436,7 +436,9 @@ private fun OcrPreviewContent(state: BillImportState, viewModel: BillImportViewM
                 }
             }
         } else {
-            OcrSingleEditor(state, viewModel, context)
+            // weight(1f) 把表单压在上方按钮行之内，否则自滚动的表单会占满剩余高度，
+            // 把「查看原文 / 重新选择 / 保存」整行挤出屏幕（单笔模式无法保存）
+            OcrSingleEditor(state, viewModel, context, modifier = Modifier.weight(1f))
         }
         var showRaw by remember { mutableStateOf(false) }
         TextButton(onClick = { showRaw = !showRaw }, modifier = Modifier.padding(horizontal = 16.dp)) { Text(if (showRaw) stringResource(R.string.bill_import_hide_raw) else stringResource(R.string.bill_import_show_raw)) }
