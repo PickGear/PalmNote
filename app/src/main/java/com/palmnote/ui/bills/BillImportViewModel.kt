@@ -16,6 +16,7 @@ import androidx.compose.runtime.Stable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.palmnote.app.R
+import com.palmnote.data.db.entity.AccountBook
 import com.palmnote.data.db.entity.Bill
 import com.palmnote.data.export.BillCsvImporter
 import com.palmnote.data.export.BillXlsxImporter
@@ -64,9 +65,12 @@ data class BillImportState(
     val ocrCategory: String = "其他",
     val ocrNote: String = "",
     val ocrType: BillType = BillType.EXPENSE,
-    /** 本次导入（文件/OCR 两条路径共用）记到哪个账本，默认第一个 */
+    /** 本次导入（文件/OCR 两条路径共用）记到哪个钱包，默认第一个 */
     val importWalletId: Long? = null,
-    val wallets: List<com.palmnote.data.db.entity.Wallet> = emptyList()
+    val wallets: List<Wallet> = emptyList(),
+    /** 本次导入记到哪个账本；与手动记账一样可选，默认账本 */
+    val importBookId: Long? = null,
+    val accountBooks: List<AccountBook> = emptyList()
 )
 
 @HiltViewModel
@@ -74,6 +78,7 @@ class BillImportViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val billRepository: BillRepository,
     private val cachedWallets: @JvmSuppressWildcards StateFlow<List<Wallet>>,
+    private val cachedAccountBooks: @JvmSuppressWildcards StateFlow<List<AccountBook>>,
     private val ocrEngine: OcrEngine
 ) : ViewModel() {
 
@@ -83,8 +88,16 @@ class BillImportViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            cachedWallets.first().let { wallets ->
-                _state.update { it.copy(wallets = wallets, importWalletId = wallets.firstOrNull()?.id) }
+            val wallets = cachedWallets.first()
+            // "全部账本"（ALL_BOOKS_ID）只是首页的筛选视图，不能作为记账目标
+            val books = cachedAccountBooks.first().filter { !it.isAllBooks && !it.isHidden }
+            _state.update {
+                it.copy(
+                    wallets = wallets,
+                    importWalletId = wallets.firstOrNull()?.id,
+                    accountBooks = books,
+                    importBookId = (books.find { book -> book.isDefault } ?: books.firstOrNull())?.id
+                )
             }
         }
     }
@@ -95,11 +108,13 @@ class BillImportViewModel @Inject constructor(
     }
 
     fun setMode(mode: ImportMode) {
-        // 切换模式只清解析结果，保留账本列表与选择（此前整表重置导致切换后账本 chips 消失）
+        // 切换模式只清解析结果，保留账本/钱包列表与选择（此前整表重置导致切换后 chips 消失）
         _state.value = BillImportState(
             mode = mode,
             wallets = _state.value.wallets,
-            importWalletId = _state.value.importWalletId
+            importWalletId = _state.value.importWalletId,
+            accountBooks = _state.value.accountBooks,
+            importBookId = _state.value.importBookId
         )
     }
 
@@ -161,10 +176,12 @@ class BillImportViewModel @Inject constructor(
             _state.value = _state.value.copy(stage = ImportStage.ERROR, error = context.getString(R.string.bill_import_error_parse_invalid), diagnostic = diag.toString())
             null
         } else {
+            // 微信账单默认记到"微信"钱包、支付宝账单默认记到"支付宝"；找不到同名钱包时保持原选择
+            val walletId = pickWalletFor(channelOf(format), _state.value.wallets) ?: _state.value.importWalletId
             _state.value = _state.value.copy(
                 stage = ImportStage.PREVIEW, parsed = parsed,
                 selectedIndices = parsed.indices.toSet(), format = format,
-                diagnostic = diag.toString()
+                diagnostic = diag.toString(), importWalletId = walletId
             )
         }
     }
@@ -216,13 +233,15 @@ class BillImportViewModel @Inject constructor(
                     _state.value = _state.value.copy(stage = ImportStage.ERROR, error = context.getString(R.string.bill_import_error_ocr_invalid), ocrRawText = text)
                     return@launch
                 }
+                // 微信/支付宝截图默认记到对应钱包（截图判不出渠道时保持原选择）
+                val walletId = pickWalletFor(detectChannel(text), _state.value.wallets) ?: _state.value.importWalletId
                 if (results.size == 1) {
                     val r = results[0]
                     val amountStr = r.amount?.let { String.format(java.util.Locale.US, "%.2f", it / 100.0) } ?: ""
                     val dateStr = r.date?.let { DateUtils.formatDate(it) } ?: ""
                     _state.value = _state.value.copy(
                         stage = ImportStage.PREVIEW, ocrResults = results, ocrSelectedIndices = setOf(0),
-                        ocrImageUri = uri, ocrRawText = text,
+                        ocrImageUri = uri, ocrRawText = text, importWalletId = walletId,
                         ocrAmount = amountStr, ocrMerchant = r.merchant, ocrDate = dateStr,
                         ocrCategory = r.category, ocrNote = r.note
                     )
@@ -230,7 +249,7 @@ class BillImportViewModel @Inject constructor(
                     _state.value = _state.value.copy(
                         stage = ImportStage.PREVIEW, ocrResults = results,
                         ocrSelectedIndices = results.indices.toSet(),
-                        ocrImageUri = uri, ocrRawText = text
+                        ocrImageUri = uri, ocrRawText = text, importWalletId = walletId
                     )
                 }
             } catch (e: Exception) {
@@ -268,6 +287,9 @@ class BillImportViewModel @Inject constructor(
     fun updateOcrType(t: BillType) { _state.value = _state.value.copy(ocrType = t) }
     fun updateImportWallet(id: Long?) { _state.value = _state.value.copy(importWalletId = id) }
 
+    /** 切换本次导入记到哪个账本 */
+    fun updateImportBook(id: Long?) { _state.value = _state.value.copy(importBookId = id) }
+
     /** 逐笔编辑多笔识别结果（金额/类型/商户/分类/日期/备注） */
     fun updateOcrResult(index: Int, result: OcrBillResult) {
         val list = _state.value.ocrResults.toMutableList()
@@ -281,7 +303,7 @@ class BillImportViewModel @Inject constructor(
         if (selected.isEmpty()) return
         viewModelScope.launch {
             _state.value = s.copy(stage = ImportStage.IMPORTING)
-            val count = saveBills(selected, s.importWalletId ?: getWalletId())
+            val count = saveBills(selected, s.importWalletId ?: getWalletId(), resolveBookId(s))
             _state.value = _state.value.copy(stage = ImportStage.DONE, importCount = count)
         }
     }
@@ -292,6 +314,7 @@ class BillImportViewModel @Inject constructor(
             _state.value = s.copy(stage = ImportStage.IMPORTING)
             val existing = billRepository.getAllBills().first()
             val walletId = s.importWalletId ?: getWalletId()
+            val bookId = resolveBookId(s)
 
             // 多笔：按勾选的解析结果逐笔保存；单笔/手动：以表单编辑值为准（表单留空回退解析值）——
             // 此前单笔编辑走解析值分支，用户在表单里改的金额/商户/日期/备注保存时被忽略
@@ -300,7 +323,8 @@ class BillImportViewModel @Inject constructor(
                     val amount = r.amount ?: return@mapNotNull null
                     val date = r.date ?: System.currentTimeMillis()
                     Bill(amount = amount, type = r.type ?: s.ocrType, category = r.category, note = r.note,
-                        date = date, yearMonth = DateUtils.formatYearMonth(date), walletId = walletId,
+                        date = date, yearMonth = DateUtils.formatYearMonth(date),
+                        accountBookId = bookId, walletId = walletId,
                         merchant = r.merchant, createdAt = System.currentTimeMillis(), updatedAt = System.currentTimeMillis())
                 }
             } else {
@@ -321,7 +345,8 @@ class BillImportViewModel @Inject constructor(
                     Bill(
                         amount = amount, type = parsed?.type ?: s.ocrType,
                         category = s.ocrCategory.ifBlank { parsed?.category ?: "其他" }, note = s.ocrNote,
-                        date = billDate, yearMonth = DateUtils.formatYearMonth(billDate), walletId = walletId,
+                        date = billDate, yearMonth = DateUtils.formatYearMonth(billDate),
+                        accountBookId = bookId, walletId = walletId,
                         merchant = s.ocrMerchant,
                         createdAt = System.currentTimeMillis(), updatedAt = System.currentTimeMillis()
                     )
@@ -333,12 +358,13 @@ class BillImportViewModel @Inject constructor(
         }
     }
 
-    private suspend fun saveBills(parsed: List<ParsedBill>, walletId: Long?): Int {
+    private suspend fun saveBills(parsed: List<ParsedBill>, walletId: Long?, bookId: Long): Int {
         val existing = billRepository.getAllBills().first()
         val bills = parsed.map { pb ->
             Bill(
                 amount = pb.amount, type = BillType.from(pb.type), category = pb.category, note = pb.note,
-                date = pb.date, yearMonth = DateUtils.formatYearMonth(pb.date), walletId = walletId,
+                date = pb.date, yearMonth = DateUtils.formatYearMonth(pb.date),
+                accountBookId = bookId, walletId = walletId,
                 paymentMethod = PaymentMethod.from(pb.paymentMethod), merchant = pb.merchant,
                 transactionId = pb.transactionId,
                 createdAt = System.currentTimeMillis(), updatedAt = System.currentTimeMillis()
@@ -350,6 +376,42 @@ class BillImportViewModel @Inject constructor(
     private suspend fun getWalletId(): Long? = try {
         cachedWallets.first().firstOrNull()?.id
     } catch (_: Exception) { null }
+
+    /** 导入目标账本：用户所选 → 默认账本 → 列表首个 → 兜底默认账本 */
+    private fun resolveBookId(s: BillImportState): Long =
+        s.importBookId ?: s.accountBooks.find { it.isDefault }?.id ?: s.accountBooks.firstOrNull()?.id ?: DEFAULT_BOOK_ID
+
+    /** 账单渠道，用于挑默认钱包 */
+    private enum class Channel { WECHAT, ALIPAY }
+
+    private fun channelOf(format: BillCsvImporter.CsvFormat): Channel? = when (format) {
+        BillCsvImporter.CsvFormat.WECHAT -> Channel.WECHAT
+        BillCsvImporter.CsvFormat.ALIPAY -> Channel.ALIPAY
+        else -> null
+    }
+
+    /** OCR 截图只能靠关键词判渠道；判不出返回 null，此时保持原有选择 */
+    private fun detectChannel(text: String): Channel? = when {
+        text.contains("微信") -> Channel.WECHAT
+        text.contains("支付宝") -> Channel.ALIPAY
+        else -> null
+    }
+
+    /**
+     * 按渠道挑默认钱包：微信账单默认记到"微信"，支付宝账单默认记到"支付宝"。
+     * 找不到同名钱包时返回 null，由调用方保持原选择——用户始终可以手动改成别的。
+     */
+    private fun pickWalletFor(channel: Channel?, wallets: List<Wallet>): Long? {
+        val keywords = when (channel) {
+            Channel.WECHAT -> listOf("微信", "wechat", "weixin")
+            Channel.ALIPAY -> listOf("支付宝", "alipay", "zhifubao")
+            null -> return null
+        }
+        return wallets.firstOrNull { wallet ->
+            val name = wallet.name.lowercase()
+            keywords.any { name.contains(it) }
+        }?.id
+    }
 
     private suspend fun insertBillsIfNew(bills: List<Bill>, existing: List<Bill>): Int {
         var count = 0
@@ -376,7 +438,9 @@ class BillImportViewModel @Inject constructor(
         _state.value = BillImportState(
             mode = _state.value.mode,
             wallets = _state.value.wallets,
-            importWalletId = _state.value.importWalletId
+            importWalletId = _state.value.importWalletId,
+            accountBooks = _state.value.accountBooks,
+            importBookId = _state.value.importBookId
         )
     }
 
@@ -428,5 +492,8 @@ class BillImportViewModel @Inject constructor(
     private companion object {
         /** 导入文件大小上限（30MB），避免整读大文件导致 OOM */
         const val MAX_IMPORT_SIZE = 30L * 1024 * 1024
+
+        /** 兜底账本 ID，与 Bill.accountBookId 的默认值保持一致 */
+        const val DEFAULT_BOOK_ID = 1L
     }
 }

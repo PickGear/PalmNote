@@ -67,12 +67,19 @@ class BillOcrParser {
             if (current.isNotEmpty()) blocks.add(current to groupDate)
             current = mutableListOf()
         }
-        for (line in lines) {
+        var i = 0
+        while (i < lines.size) {
+            val line = lines[i]
             val headerDate = dayHeaderDate(line)
             when {
-                // 电商订单卡片以"实付款"行收尾；账单列表页裸金额行即一条交易的结尾
-                (line.contains("实付") && current.any { AMOUNT_PATTERN.matcher(it).find() }) ||
-                    BARE_AMOUNT.matcher(line).matches() -> { current.add(line); flush() }
+                // 电商订单卡片以"实付款"行收尾
+                line.contains("实付") && current.any { AMOUNT_PATTERN.matcher(it).find() } -> {
+                    current.add(line)
+                    i += consumeAmountFollowup(lines, i, current)
+                    flush()
+                }
+                // 账单列表页裸金额行即一条交易的结尾
+                BARE_AMOUNT.matcher(line).matches() -> { current.add(line); flush() }
                 // 日期分组头（"9月9日 星期三 支0.00 收0.14"）：记录组日期供条目回退
                 headerDate != null -> { groupDate = headerDate; current.add(stripDaySummary(line)) }
                 else -> {
@@ -80,9 +87,26 @@ class BillOcrParser {
                     current.add(line)
                 }
             }
+            i++
         }
         flush()
         return blocks
+    }
+
+    /** 该行是否完全不含金额（¥ 前缀金额与裸两位小数两种写法都算） */
+    private fun hasNoAmount(line: String): Boolean =
+        amountsIn(line).isEmpty() && looseAmountsIn(line).isEmpty()
+
+    /**
+     * "实付款"行的金额常因排版/OCR 落到下一行（"实付款" ‖ "共减¥629.85 合计¥3569.15"）：
+     * 本行没有金额时把下一行的金额一并收进本笔，返回额外消费的行数；否则一笔订单会被切成两笔。
+     */
+    private fun consumeAmountFollowup(lines: List<String>, i: Int, current: MutableList<String>): Int {
+        if (!hasNoAmount(lines[i])) return 0
+        val next = lines.getOrNull(i + 1) ?: return 0
+        if (hasNoAmount(next)) return 0
+        current.add(next)
+        return 1
     }
 
     /**
@@ -119,14 +143,14 @@ class BillOcrParser {
     private fun isNewTransaction(line: String, prevLines: List<String>): Boolean {
         if (prevLines.isEmpty()) return false
 
-        val hasDateHere = DATE_PATTERNS.any { it.matcher(line).find() }
+        val hasDateHere = hasValidDate(line)
         val hasAmountHere = AMOUNT_PATTERN.matcher(line).find()
 
         val prevHasAmount = prevLines.any { AMOUNT_PATTERN.matcher(it).find() }
 
         if (hasDateHere && prevHasAmount) return true
 
-        if (hasAmountHere && prevLines.any { DATE_PATTERNS.any { p -> p.matcher(it).find() } }) {
+        if (hasAmountHere && prevLines.any { hasValidDate(it) }) {
             if (!prevLines.any { AMOUNT_PATTERN.matcher(it).find() }) return true
         }
 
@@ -139,6 +163,17 @@ class BillOcrParser {
 
         return false
     }
+
+    /**
+     * 行内是否存在**可用**日期：正则命中还不够，月/日必须真的能解析出日期。
+     * 商品型号常形如"适用65-7..."、"S75-2025"，宽松的裸日期正则会命中它们，
+     * 于是把同一笔订单从中间切成两笔。
+     */
+    private fun hasValidDate(line: String): Boolean =
+        DATE_PATTERNS.any { pat ->
+            val m = pat.matcher(line)
+            m.find() && parseDateGroup(m.group(1)) != null
+        }
 
     private fun findAmount(lines: List<String>): Long? =
         findPaidAmount(lines) ?: largestAmount(lines)
@@ -161,7 +196,9 @@ class BillOcrParser {
                 afterAmts.isNotEmpty() -> afterAmts
                 else -> nextAmts
             }
-            picked.firstOrNull { it > 0 }?.let { return Money.fromYuan(it).cents }
+            // 取最大而非第一个：同一行常同时出现优惠与实付（"共减¥629.85 合计¥3569.15"），
+            // 优惠额必然小于实付额，取第一个会把"省下的钱"记成消费额
+            picked.maxOrNull()?.takeIf { it > 0 }?.let { return Money.fromYuan(it).cents }
         }
         return null
     }
