@@ -13,6 +13,12 @@ updates:
       - "dependencies"
     commit-message:
       prefix: "chore(deps)"
+    # 新版本发布满 7 天才提 PR，避开"投毒版本存在的头几天"。
+    # 仅作用于版本更新，安全更新（CVE 补丁）不受影响，仍会立即提 PR。
+    cooldown:
+      default-days: 7
+    # 分组目的：一个分组 = 一个 PR。命中多个分组时取声明顺序中的第一个，
+    # 因此"兜底分组"必须放在最后。
     groups:
       androidx:
         patterns:
@@ -21,15 +27,29 @@ updates:
         patterns:
           - "org.jetbrains.kotlin*"
           - "com.google.devtools.ksp*"
+      # 兜底：其余依赖（hilt、opencv、mockk 等）统一合并为一个 PR，
+      # 不再逐个单开
+      other:
+        patterns:
+          - "*"
 
-  # GitHub Actions 工作流
+  # GitHub Actions 工作流（每周一检查）
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
       day: "monday"
     open-pull-requests-limit: 5
+    reviewers:
+      - "PickGear"
     labels:
       - "dependencies"
     commit-message:
       prefix: "chore(ci)"
+    cooldown:
+      default-days: 7
+    groups:
+      # Actions 的更新全部合并为一个 PR
+      actions:
+        patterns:
+          - "*"

@@ -2874,6 +2874,11 @@ updates:
       - "dependencies"
     commit-message:
       prefix: "chore(deps)"
+    # 新版本发布满 7 天才提 PR；仅影响版本更新，安全更新不受影响
+    cooldown:
+      default-days: 7
+    # 分组目的：一个分组 = 一个 PR。命中多个分组时取声明顺序中的
+    # 第一个，故"兜底分组"必须放在最后
     groups:
       androidx:
         patterns:
@@ -2882,6 +2887,9 @@ updates:
         patterns:
           - "org.jetbrains.kotlin*"
           - "com.google.devtools.ksp*"
+      other:
+        patterns:
+          - "*"
 
   - package-ecosystem: "github-actions"
     directory: "/"
@@ -2889,11 +2897,24 @@ updates:
       interval: "weekly"
       day: "monday"
     open-pull-requests-limit: 5
+    reviewers:
+      - "PickGear"
     labels:
       - "dependencies"
     commit-message:
       prefix: "chore(ci)"
+    cooldown:
+      default-days: 7
+    groups:
+      actions:
+        patterns:
+          - "*"
 ```
+
+**为什么必须配 `groups`**：Dependabot 的默认行为是"每个依赖开一个 PR（并附一条同名分支）"。
+若只给部分依赖配了分组，未被任何分组命中的依赖仍会各自单开 —— 这正是本项目首次
+启用时一次冒出 9 个 PR 的原因。加一个 `patterns: ["*"]` 的兜底分组，即可把所有零散
+依赖并成一个 PR。
 
 ### 24.10 发布后监控
 
