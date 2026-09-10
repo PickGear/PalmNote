@@ -13,7 +13,6 @@ import androidx.compose.runtime.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -22,13 +21,14 @@ import com.palmnote.app.R
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.palmnote.ui.components.EmptyState
 import com.palmnote.ui.components.SecondaryTopAppBar
+import com.palmnote.ui.theme.LifeReport
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReportListScreen(onBack: () -> Unit, onItemClick: (Long) -> Unit, viewModel: LifeReportViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) { viewModel.load() }
-    val rColor = Color(0xFF42A5F5)
+    val rColor = LifeReport
     Scaffold(topBar = { SecondaryTopAppBar(title = { Text(stringResource(R.string.life_report_title), fontWeight = FontWeight.Bold, color = rColor) }, navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.life_back)) } }, colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)) }, containerColor = MaterialTheme.colorScheme.background) { innerPadding ->
         if (state.isLoading) { Box(modifier = Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = rColor) }; return@Scaffold }
         if (state.reports.isEmpty()) {

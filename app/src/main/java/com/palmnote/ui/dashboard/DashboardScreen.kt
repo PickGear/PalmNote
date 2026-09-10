@@ -278,21 +278,21 @@ fun DashboardScreen(
                 Icon(
                     imageVector = Icons.Outlined.Search,
                     contentDescription = stringResource(R.string.search),
-                    tint = Color(0xFF616161)
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                     }
                     IconButton(onClick = { showCardDialog = true }) {
                         Icon(
                             imageVector = Icons.Outlined.GridView,
                             contentDescription = stringResource(R.string.dashboard_card_manage),
-                            tint = Color(0xFF616161)
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                     IconButton(onClick = onNavigateToSettings) {
                         Icon(
                             imageVector = Icons.Outlined.Person,
                             contentDescription = stringResource(R.string.settings_title),
-                            tint = Color(0xFF616161)
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }

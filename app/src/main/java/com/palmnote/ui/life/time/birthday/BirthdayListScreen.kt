@@ -12,7 +12,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.res.stringResource
@@ -113,7 +112,7 @@ fun BirthdayListScreen(templateId: Long, onBack: () -> Unit, onItemClick: (Long)
                         HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
                         Spacer(modifier = Modifier.height(8.dp))
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.CardGiftcard, null, tint = Color(0xFFE8A848), modifier = Modifier.size(14.dp))
+                            Icon(Icons.Default.CardGiftcard, null, tint = LifeAmber, modifier = Modifier.size(14.dp))
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(stringResource(R.string.life_birthday_last_gift, fields.third), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }

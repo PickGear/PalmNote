@@ -118,6 +118,8 @@ val LifeJournal = Color(0xFFAB47BC)
 val LifeFocus = Color(0xFF00ACC1)
 val LifeSubscription = Color(0xFF66BB6A)
 val LifeReport = Color(0xFF42A5F5)
+val LifeAmber = Color(0xFFE8A848)
+val RatingStar = Color(0xFFFFCA28)
 
 // ----- Mood Colors -----
 val LifeMoodHappy = Color(0xFFFFCA28)
