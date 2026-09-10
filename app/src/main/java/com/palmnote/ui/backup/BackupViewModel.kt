@@ -37,7 +37,12 @@ class BackupViewModel @Inject constructor(
     companion object {
         /** 导出备份的密码最小长度：导出文件会离开应用沙箱，过短密码等于没有保护。 */
         const val MIN_PASSWORD_LENGTH = 6
+
+        private const val BACKUP_SUFFIX = ".palmnote"
     }
+
+    /** 用户所选备份文件夹内的一条备份（SAF 来源）。 */
+    data class FolderBackup(val name: String, val uri: Uri, val date: Long, val size: Long)
 
     private val _backupState = MutableStateFlow<BackupState>(BackupState.Idle)
     val backupState: StateFlow<BackupState> = _backupState
@@ -205,14 +210,27 @@ class BackupViewModel @Inject constructor(
     suspend fun listLocalBackups(): List<BackupInfo> = backupManager.listBackups(context)
 
     /** 列出已保存备份目录内的 .palmnote 备份文件（IO：DocumentsProvider 查询） */
-    suspend fun listBackupsInDir(): List<Pair<String, Uri>> = withContext(Dispatchers.IO) {
+    suspend fun listBackupsInDir(): List<FolderBackup> = withContext(Dispatchers.IO) {
         val dirUri = getBackupDir() ?: return@withContext emptyList()
         runCatching {
             val dir = DocumentFile.fromTreeUri(context, dirUri) ?: return@withContext emptyList()
             dir.listFiles()
-                .filter { it.isFile && it.name?.endsWith(".palmnote") == true }
-                .map { (it.name ?: context.getString(R.string.backup_file)) to it.uri }
-                .sortedByDescending { it.first }
+                .filter { it.isFile && it.name?.endsWith(BACKUP_SUFFIX) == true }
+                .map { file ->
+                    val name = file.name ?: context.getString(R.string.backup_file)
+                    FolderBackup(
+                        name = name,
+                        uri = file.uri,
+                        // 部分 DocumentsProvider 不返回 lastModified，回退到文件名内嵌的时间戳
+                        date = file.lastModified().takeIf { it > 0L } ?: timestampFromName(name),
+                        size = file.length()
+                    )
+                }
+                .sortedByDescending { it.date }
         }.getOrDefault(emptyList())
     }
+
+    /** 备份文件名形如 `palmnote_backup_<epochMillis>.palmnote`，从中取回创建时间。 */
+    private fun timestampFromName(name: String): Long =
+        Regex("""palmnote_backup_(\d+)""").find(name)?.groupValues?.get(1)?.toLongOrNull() ?: 0L
 }
