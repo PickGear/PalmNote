@@ -16,13 +16,13 @@ interface BillDao {
 
     @Query(
         "SELECT * FROM bills WHERE yearMonth = :yearMonth " +
-            "ORDER BY date DESC, createdAt DESC LIMIT 5000"
+            "ORDER BY date DESC, createdAt DESC LIMIT 20000"
     )
     fun getBillsByMonth(yearMonth: String): Flow<List<Bill>>
 
     @Query(
         "SELECT * FROM bills WHERE accountBookId = :bookId AND yearMonth = :yearMonth " +
-            "ORDER BY date DESC, createdAt DESC LIMIT 5000"
+            "ORDER BY date DESC, createdAt DESC LIMIT 20000"
     )
     fun getBillsByBookAndMonth(bookId: Long, yearMonth: String): Flow<List<Bill>>
 
@@ -278,6 +278,15 @@ interface BillDao {
 
     @Query("DELETE FROM bills WHERE id = :id")
     suspend fun deleteById(id: Long)
+
+    @Query("SELECT * FROM bills WHERE category = :category")
+    suspend fun getBillsByCategoryOnce(category: String): List<Bill>
+
+    @Query("SELECT * FROM bills WHERE walletId = :walletId OR toWalletId = :walletId")
+    suspend fun getBillsByWalletOnce(walletId: Long): List<Bill>
+
+    @Query("SELECT * FROM bills WHERE accountBookId = :bookId")
+    suspend fun getBillsByBookOnce(bookId: Long): List<Bill>
 
     @Query("DELETE FROM bills WHERE category = :category")
     suspend fun deleteByCategory(category: String)

@@ -31,6 +31,7 @@ import com.palmnote.domain.util.CurrencyUtils
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.palmnote.data.db.entity.Wallet
 import com.palmnote.ui.components.*
+import com.palmnote.ui.components.SectionHeader
 import com.palmnote.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -120,11 +121,7 @@ fun WalletEditScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 },
-                actions = {
-                    TextButton(onClick = { save() }, enabled = name.isNotBlank()) {
-                        Text(stringResource(R.string.save), fontWeight = FontWeight.Bold, color = AccentOrange)
-                    }
-                }
+                actions = {}
             )
         }
     ) { padding ->
@@ -141,7 +138,7 @@ fun WalletEditScreen(
             // 基本信息
             // ══════════════════════════════════════
             ModuleCard(tint = MaterialTheme.colorScheme.surface) {
-                SectionHeader(Icons.Outlined.Info, stringResource(R.string.wallet_basic_info))
+                SectionHeader(stringResource(R.string.wallet_basic_info), Icons.Outlined.Info)
                 Spacer(modifier = Modifier.height(12.dp))
 
                 // 名称
@@ -203,7 +200,7 @@ fun WalletEditScreen(
             // 余额
             // ══════════════════════════════════════
             ModuleCard(tint = MaterialTheme.colorScheme.surface) {
-                SectionHeader(Icons.Outlined.AccountBalance, stringResource(R.string.wallet_balance))
+                SectionHeader(stringResource(R.string.wallet_balance), Icons.Outlined.AccountBalance)
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
                     value = initialBalance,
@@ -234,7 +231,7 @@ fun WalletEditScreen(
             // 外观（图标）+ 颜色）
             // ══════════════════════════════════════
             ModuleCard(tint = MaterialTheme.colorScheme.surface) {
-                SectionHeader(Icons.Outlined.Palette, stringResource(R.string.wallet_appearance))
+                SectionHeader(stringResource(R.string.wallet_appearance), Icons.Outlined.Palette)
                 Spacer(modifier = Modifier.height(12.dp))
 
                 // 预览
@@ -290,11 +287,3 @@ fun WalletEditScreen(
     }
 }
 
-@Composable
-private fun SectionHeader(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Icon(icon, null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-    }
-}

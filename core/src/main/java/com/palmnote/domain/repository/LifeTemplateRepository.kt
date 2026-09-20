@@ -15,4 +15,6 @@ interface LifeTemplateRepository {
     suspend fun updateTemplate(template: LifeTemplate)
     suspend fun setTemplateHidden(id: Long, hidden: Boolean)
     suspend fun deleteTemplate(id: Long)
+    /** 关联删除：先删该模板下全部用户记录，再删模板（仅自定义模板调用）。 */
+    suspend fun deleteTemplateCascade(id: Long)
 }

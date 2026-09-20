@@ -40,8 +40,12 @@
 
 # Room DAO 由 KSP 自动生成 keep 规则（上面的 RoomDatabase/Entity 规则足够），无需通配全保
 
-# OpenCV（PaddleOCR 依赖，R8 下需保留完整类）
--keep class org.opencv.** { *; }
+# OpenCV（PaddleOCR 依赖）：native 侧按名查找，需保留实际用到的包；
+# 未使用的模块包（dnn/features2d/ml/photo/video 等）交由 R8 收缩
+-keep class org.opencv.core.** { *; }
+-keep class org.opencv.android.** { *; }
+-keep class org.opencv.imgproc.** { *; }
+-keep class org.opencv.utils.** { *; }
 -dontwarn org.opencv.**
 
 # 移除调试日志（release 混淆时生效）；保留 w/e 错误级日志

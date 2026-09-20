@@ -89,10 +89,16 @@ class VaultRepositoryImpl @Inject constructor(
         return true
     }
 
-    override suspend fun delete(entry: VaultEntry) = dao.deleteEntry(entry)
+    override suspend fun delete(entry: VaultEntry) {
+        dao.deleteEntry(entry)
+        // 头像文件清理放在仓库层：列表页/详情页两个删除入口此前只有详情页会删文件
+        if (entry.avatarPath.isNotBlank()) {
+            runCatching { java.io.File(entry.avatarPath).delete() }
+        }
+    }
 
     override suspend fun deleteById(id: Long) {
-        dao.getEntryById(id)?.let { dao.deleteEntry(it) }
+        dao.getEntryById(id)?.let { delete(it) }
     }
 
     override suspend fun clearAll() = dao.clearAll()

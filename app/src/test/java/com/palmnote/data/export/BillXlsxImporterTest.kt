@@ -145,6 +145,64 @@ class BillXlsxImporterTest {
         assertEquals("2026093101", bills.single().transactionId)
     }
 
+    // ── 批17：微信官方 xlsx（抬头多行 + 序列号日期 + "/" 空值哨兵；数据行全部自造） ──
+
+    @Test
+    fun `wechat mobile workbook with preamble and serial dates parses`() {
+        val preamble = (1..17).map { r -> row(r, listOf(inlineCell(0, "抬头行$r", r))) }
+        val header = row(18, listOf(
+            inlineCell(0, "交易时间", 18), inlineCell(1, "交易类型", 18), inlineCell(2, "交易对方", 18),
+            inlineCell(3, "商品", 18), inlineCell(4, "收/支", 18), inlineCell(5, "金额(元)", 18),
+            inlineCell(6, "支付方式", 18), inlineCell(7, "当前状态", 18), inlineCell(8, "交易单号", 18),
+            inlineCell(9, "商户单号", 18), inlineCell(10, "备注", 18)
+        ))
+        // 交易时间是 Excel 序列号（不是日期字符串）
+        val serial = "46273.724432870367"
+        fun num(col: Int, r: Int, raw: String) = cell(colLetter(col) + r, null, "<v>$raw</v>")
+        fun txt(col: Int, r: Int, v: String) = inlineCell(col, v, r)
+        val data = listOf(
+            // 1) 交易对方"/"、商品"/" → merchant 空；支付方式"/" → WECHAT；序列号日期
+            row(19, listOf(num(0, 19, serial), txt(1, 19, "商户消费"), txt(2, 19, "/"), txt(3, 19, "/"),
+                txt(4, 19, "支出"), num(5, 19, "13.53"), txt(6, 19, "/"), txt(7, 19, "已支付"),
+                txt(8, 19, "TX001"), txt(9, 19, "/"), txt(10, 19, "测试商户A"))),
+            // 2) 备注"/"、商品"/" → note 回退到「交易类型」
+            row(20, listOf(num(0, 20, serial), txt(1, 20, "商户消费"), txt(2, 20, "测试商户B"), txt(3, 20, "/"),
+                txt(4, 20, "支出"), num(5, 20, "8.00"), txt(6, 20, "零钱"), txt(7, 20, "已支付"),
+                txt(8, 20, "TX002"), txt(9, 20, "/"), txt(10, 20, "/"))),
+            // 3) 收入
+            row(21, listOf(num(0, 21, serial), txt(1, 21, "转账"), txt(2, 21, "测试商户C"), txt(3, 21, "/"),
+                txt(4, 21, "收入"), num(5, 21, "50.00"), txt(6, 21, "零钱通"), txt(7, 21, "已到账"),
+                txt(8, 21, "TX003"), txt(9, 21, "/"), txt(10, 21, "收款"))),
+            // 4) 收/支"/" → 默认不勾选（进「已跳过」）
+            row(22, listOf(num(0, 22, serial), txt(1, 22, "零钱提现"), txt(2, 22, "测试商户D"), txt(3, 22, "/"),
+                txt(4, 22, "/"), num(5, 22, "100.00"), txt(6, 22, "/"), txt(7, 22, "提现已到账"),
+                txt(8, 22, "TX004"), txt(9, 22, "/"), txt(10, 22, "/"))),
+            // 5) 普通支出（默认勾选）
+            row(23, listOf(num(0, 23, serial), txt(1, 23, "商户消费"), txt(2, 23, "测试商户E"), txt(3, 23, "午餐"),
+                txt(4, 23, "支出"), num(5, 23, "20.00"), txt(6, 23, "兴业银行储蓄卡(0000)"), txt(7, 23, "已支付"),
+                txt(8, 23, "TX005"), txt(9, 23, "/"), txt(10, 23, "工作日午餐")))
+        )
+        val xlsx = buildXlsx(listOf(), sheetXml(preamble + header + data))
+
+        val (format, bills) = importer.parseBytesWithFormat(xlsx, StringBuilder())
+
+        assertEquals(BillCsvImporter.CsvFormat.WECHAT, format)
+        assertEquals(5, bills.size)
+        // 序列号 46273.724432870367 对应 2026-09-09 01:23:10 GMT+8（excelSerialToMillis 按 UTC 换算：1899-12-30 起，-25569 天）；
+        // 序列号小数部分是当天时间 17:23:10 UTC，容差 ±2s
+        val fmt = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+        fmt.timeZone = java.util.TimeZone.getTimeZone("GMT+8")
+        val expected = fmt.parse("2026-09-09 01:23:10")!!.time
+        assertEquals(expected.toDouble(), bills[0].date.toDouble(), 2000.0)
+        assertEquals("", bills[0].merchant)          // 交易对方 "/" → 空
+        assertEquals("WECHAT", bills[0].paymentMethod) // 支付方式 "/" → 回退 WECHAT
+        assertEquals("商户消费", bills[1].note)        // 备注 "/" 且 商品 "/" → 回退交易类型
+        assertEquals("INCOME", bills[2].type)
+        assertEquals(false, bills[3].defaultSelected)  // 收/支 "/" → 默认不勾选
+        assertEquals("EXPENSE", bills[3].type)         // 类型语义仍按 isIncome=false
+        assertEquals(true, bills[4].defaultSelected)
+    }
+
     // ── xlsx builders ──
 
     private fun buildXlsx(shared: List<String>, sheetXml: String): ByteArray {

@@ -60,7 +60,11 @@ class ReportViewModel @Inject constructor(
 
     fun setPeriodTab(tab: Int) { _state.value = _state.value.copy(periodTab = tab); loadData() }
     fun setIncomeExpenseTab(tab: Int) { _state.value = _state.value.copy(incomeExpenseTab = tab); loadData() }
-    fun setSelectedBookId(bookId: Long) { _state.value = _state.value.copy(selectedBookId = bookId); loadData() }
+    fun setSelectedBookId(bookId: Long) {
+        if (_state.value.selectedBookId == bookId) return  // 同值重复设置会触发一次多余的整页重载
+        _state.value = _state.value.copy(selectedBookId = bookId)
+        loadData()
+    }
 
     fun previousMonth() {
         // Bug fix: validate format before parsing to avoid IndexOutOfBoundsException
@@ -157,8 +161,9 @@ class ReportViewModel @Inject constructor(
                 if (isAllBooks) billRepository.getBillsByDateRange(s, e) else billRepository.getBillsByDateRangeByBook(bookId, s, e)
             ) { billCount, expense, income, categories, bills ->
                 val daily = bills.groupToDailySummaries()
-                val days = daily.filter { if (isExpense) it.expense > 0 else it.income > 0 }
-                val avg = if (days.isNotEmpty()) (if (isExpense) expense ?: 0L else income ?: 0L).toDouble() / days.size else 0.0
+                // 日均按自然日（周 = 7 天）算：按有账单的天数除会把数字抬高
+                val total = if (isExpense) expense ?: 0L else income ?: 0L
+                val avg = total.toDouble() / ((e - s) / com.palmnote.domain.util.DateUtils.MILLIS_PER_DAY + 1)
                 ReportData(expense ?: 0L, income ?: 0L, billCount, avg, categories, daily)
             }.collect { reportData ->
                 hasLoadedOnce = true
@@ -167,7 +172,7 @@ class ReportViewModel @Inject constructor(
         } catch (e: kotlinx.coroutines.CancellationException) {
             throw e
         } catch (e: Exception) {
-            _state.update { it.copy(isLoading = false) }
+            _state.update { it.copy(isLoading = false, error = e.message ?: e.javaClass.simpleName) }
         }
     }
 
@@ -188,8 +193,15 @@ class ReportViewModel @Inject constructor(
                 if (isAllBooks) billRepository.getBillsByMonth(ym) else billRepository.getBillsByBookAndMonth(bookId, ym)
             ) { billCount, expense, income, categories, bills ->
                 val daily = bills.groupToDailySummaries()
-                val days = daily.filter { if (isExpense) it.expense > 0 else it.income > 0 }
-                val avg = if (days.isNotEmpty()) (if (isExpense) expense ?: 0L else income ?: 0L).toDouble() / days.size else 0.0
+                // 日均按已过自然日算：当前月取本月已过天数，历史月取整月天数，未来月为 0
+                val total = if (isExpense) expense ?: 0L else income ?: 0L
+                val parsedYm = java.time.YearMonth.parse(ym)
+                val elapsedDays = when {
+                    parsedYm.isAfter(java.time.YearMonth.now()) -> 0
+                    parsedYm == java.time.YearMonth.now() -> java.time.LocalDate.now().dayOfMonth
+                    else -> parsedYm.lengthOfMonth()
+                }
+                val avg = if (elapsedDays > 0) total.toDouble() / elapsedDays else 0.0
                 ReportData(expense ?: 0L, income ?: 0L, billCount, avg, categories, daily)
             }.collect { reportData ->
                 hasLoadedOnce = true
@@ -198,7 +210,7 @@ class ReportViewModel @Inject constructor(
         } catch (e: kotlinx.coroutines.CancellationException) {
             throw e
         } catch (e: Exception) {
-            _state.update { it.copy(isLoading = false) }
+            _state.update { it.copy(isLoading = false, error = e.message ?: e.javaClass.simpleName) }
         }
     }
 
@@ -231,7 +243,7 @@ class ReportViewModel @Inject constructor(
         } catch (e: kotlinx.coroutines.CancellationException) {
             throw e
         } catch (e: Exception) {
-            _state.update { it.copy(isLoading = false) }
+            _state.update { it.copy(isLoading = false, error = e.message ?: e.javaClass.simpleName) }
         }
     }
 }

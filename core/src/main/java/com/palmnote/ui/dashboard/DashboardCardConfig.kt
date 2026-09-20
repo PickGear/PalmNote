@@ -9,7 +9,6 @@ enum class CardType {
     NET_WORTH,
     QUICK_ACTIONS,
     BUDGET_ALERT,
-    GOALS,
     ANNIVERSARIES,
     ASSET_DISTRIBUTION,
     TODAY,
@@ -26,9 +25,8 @@ data class DashboardCardConfig(
     val customColor: String? = null
 ) {
     companion object {
-        val defaults: List<DashboardCardConfig> = CardType.entries.map {
-            if (it == CardType.SUBSCRIPTION) DashboardCardConfig(it, visible = false) else DashboardCardConfig(it)
-        }
+        // 默认全部打开：显隐完全由用户在卡片管理里决定，应用不做自作主张的预关
+        val defaults: List<DashboardCardConfig> = CardType.entries.map { DashboardCardConfig(it) }
 
         private val json = Json {
             ignoreUnknownKeys = true

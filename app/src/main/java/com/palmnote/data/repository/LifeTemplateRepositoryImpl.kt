@@ -1,12 +1,14 @@
 package com.palmnote.data.repository
 import javax.inject.Inject
 
+import com.palmnote.data.db.dao.LifeItemDao
 import com.palmnote.data.db.dao.LifeTemplateDao
 import com.palmnote.data.db.entity.LifeTemplate
 import com.palmnote.domain.repository.LifeTemplateRepository
 import kotlinx.coroutines.flow.Flow
 class LifeTemplateRepositoryImpl @Inject constructor(
-    private val dao: LifeTemplateDao
+    private val dao: LifeTemplateDao,
+    private val itemDao: LifeItemDao
 ) : LifeTemplateRepository {
     override fun getAllVisibleTemplates(): Flow<List<LifeTemplate>> = dao.getAllVisibleTemplates()
     override fun getTemplatesByCategory(category: String): Flow<List<LifeTemplate>> = dao.getTemplatesByCategory(category)
@@ -19,4 +21,8 @@ class LifeTemplateRepositoryImpl @Inject constructor(
     override suspend fun updateTemplate(template: LifeTemplate) = dao.updateTemplate(template)
     override suspend fun setTemplateHidden(id: Long, hidden: Boolean) = dao.setTemplateHidden(id, hidden)
     override suspend fun deleteTemplate(id: Long) = dao.deleteTemplate(id)
+    override suspend fun deleteTemplateCascade(id: Long) {
+        itemDao.deleteItemsByTemplate(id)
+        dao.deleteTemplate(id)
+    }
 }

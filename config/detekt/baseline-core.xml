@@ -1,0 +1,215 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>ComplexCondition:FieldContract.kt$DerivedEvaluator$t == "-" &amp;&amp; (prev == null || prev in prec || prev == "(")</ID>
+    <ID>ComplexCondition:FieldValueExtractor.kt$FieldValueExtractor$h != null &amp;&amp; m != null &amp;&amp; h in 0..23 &amp;&amp; m in 0..59</ID>
+    <ID>CyclomaticComplexMethod:AppIconMapper.kt$fun iconFromName(name: String): ImageVector</ID>
+    <ID>CyclomaticComplexMethod:AppLockScreen.kt$@Composable fun AppLockScreen( appLockManager: AppLockManager, onUnlocked: () -&gt; Unit, isSetupMode: Boolean = false )</ID>
+    <ID>CyclomaticComplexMethod:CategoryClassifier.kt$CategoryClassifier$fun guessCategory(text: String): String</ID>
+    <ID>CyclomaticComplexMethod:CommonComponents.kt$@Composable fun TagPicker( selectedTags: List&lt;String&gt;, status: String, onTagsChanged: (List&lt;String&gt;) -&gt; Unit, modifier: Modifier = Modifier )</ID>
+    <ID>CyclomaticComplexMethod:CommonComponents.kt$@StringRes fun getLocalizedTagName(tag: String): Int</ID>
+    <ID>CyclomaticComplexMethod:CommonComponents.kt$fun getCategoryName(key: String, context: android.content.Context): String</ID>
+    <ID>CyclomaticComplexMethod:CommonComponents.kt$fun getLocalizedWalletDisplayName(wallet: com.palmnote.data.db.entity.Wallet, context: android.content.Context): String</ID>
+    <ID>CyclomaticComplexMethod:FieldContract.kt$DerivedEvaluator$private fun evalArithmetic(expr: String): Double?</ID>
+    <ID>CyclomaticComplexMethod:FieldContract.kt$fun parseMap(raw: String?): MapModel</ID>
+    <ID>CyclomaticComplexMethod:FieldValueExtractor.kt$FieldValueExtractor$fun extract(fieldsConfigJson: String, fieldsData: String): List&lt;FieldValueRow&gt;</ID>
+    <ID>CyclomaticComplexMethod:LifeTemplate.kt$fun LifeTemplate.getDisplayDescription(context: Context): String</ID>
+    <ID>CyclomaticComplexMethod:LifeTemplate.kt$fun LifeTemplate.getDisplayName(context: Context): String</ID>
+    <ID>CyclomaticComplexMethod:Migration5To6.kt$Migration5To6$private fun preserveLegacyVault(db: SupportSQLiteDatabase)</ID>
+    <ID>CyclomaticComplexMethod:PinComponents.kt$@Composable fun ChangePinDialog( appLockManager: AppLockManager, onDismiss: () -&gt; Unit, onSuccess: () -&gt; Unit )</ID>
+    <ID>ForEachOnRange:FieldInputComponent.kt$1..5</ID>
+    <ID>ForEachOnRange:RatingInputComponent.kt$1..maxStars</ID>
+    <ID>LongMethod:AppLockScreen.kt$@Composable fun AppLockScreen( appLockManager: AppLockManager, onUnlocked: () -&gt; Unit, isSetupMode: Boolean = false )</ID>
+    <ID>LongMethod:CommonComponents.kt$@Composable fun CategoryPicker( selected: String, onSelected: (String) -&gt; Unit, categories: List&lt;CategoryItem&gt;, rows: Int = 2, columns: Int = 5, onManageCategories: (() -&gt; Unit)? = null, getDisplayName: ((String) -&gt; String)? = null, modifier: Modifier = Modifier )</ID>
+    <ID>LongMethod:CommonComponents.kt$@Composable fun TagPicker( selectedTags: List&lt;String&gt;, status: String, onTagsChanged: (List&lt;String&gt;) -&gt; Unit, modifier: Modifier = Modifier )</ID>
+    <ID>LongMethod:IconPicker.kt$@Composable fun IconPickerGrid( selectedIcon: AppIcon, onSelected: (AppIcon) -&gt; Unit, modifier: Modifier = Modifier, columns: Int = 6 )</ID>
+    <ID>LongMethod:Migration3To4.kt$&lt;no name provided&gt;$private fun migrateAssets(db: SupportSQLiteDatabase)</ID>
+    <ID>LongMethod:Migration5To6.kt$Migration5To6$override fun migrate(db: SupportSQLiteDatabase)</ID>
+    <ID>LongMethod:PinComponents.kt$@Composable fun ChangePinDialog( appLockManager: AppLockManager, onDismiss: () -&gt; Unit, onSuccess: () -&gt; Unit )</ID>
+    <ID>LongMethod:PinComponents.kt$@Composable fun PinVerifyDialog( title: String, onVerify: suspend (String) -&gt; Boolean, onLockedOut: () -&gt; Long = { 0L }, onSuccess: () -&gt; Unit, onDismiss: () -&gt; Unit )</ID>
+    <ID>LongParameterList:FieldContract.kt$FieldContracts$( type: FieldType, group: FieldGroup, input: InputKind, display: DisplayKind, agg: Set&lt;AggFn&gt; = emptySet(), defaultPolicy: DefaultPolicy = DefaultPolicy.NONE, editorOnly: Boolean = false, progressCapable: Boolean = false, countable: Boolean = false, segmented: Boolean = false )</ID>
+    <ID>LoopWithTooManyJumpStatements:FieldValueExtractor.kt$FieldValueExtractor$for</ID>
+    <ID>LoopWithTooManyJumpStatements:Migration8To9.kt$&lt;no name provided&gt;$while</ID>
+    <ID>MatchingDeclarationName:TypeTokens.kt$TypeScale</ID>
+    <ID>MaxLineLength:AnniversaryDao.kt$AnniversaryDao$@Query("SELECT * FROM anniversaries WHERE (title LIKE '%' || :query || '%' OR description LIKE '%' || :query || '%' OR personName LIKE '%' || :query || '%') ORDER BY updatedAt DESC")</ID>
+    <ID>MaxLineLength:AppLockManager.kt$AppLockManager$return "${PBKDF2_PREFIX}${PBKDF2_ITERATIONS}:${Base64.getEncoder().encodeToString(salt)}:${Base64.getEncoder().encodeToString(hash)}"</ID>
+    <ID>MaxLineLength:AssetDao.kt$AssetDao$@Query("SELECT * FROM assets WHERE (name LIKE '%' || :query || '%' OR brand LIKE '%' || :query || '%' OR model LIKE '%' || :query || '%' OR description LIKE '%' || :query || '%' OR tags LIKE '%' || :query || '%')")</ID>
+    <ID>MaxLineLength:AssetDao.kt$AssetDao$@Query("SELECT * FROM assets WHERE (name LIKE '%' || :query || '%' OR brand LIKE '%' || :query || '%' OR model LIKE '%' || :query || '%' OR serialNumber LIKE '%' || :query || '%' OR description LIKE '%' || :query || '%') ORDER BY updatedAt DESC")</ID>
+    <ID>MaxLineLength:AssetDao.kt$AssetDao$@Query("SELECT * FROM assets WHERE insuranceExpireDate IS NOT NULL AND insuranceExpireDate &gt; :now AND ((insuranceExpireDate - :now) / 86400000) &lt;= 30 AND status = 'HELD'")</ID>
+    <ID>MaxLineLength:AssetDao.kt$AssetDao$@Query("SELECT * FROM assets WHERE warrantyExpireDate IS NOT NULL AND warrantyExpireDate &gt; :now AND ((warrantyExpireDate - :now) / 86400000) &lt;= 30 AND status = 'HELD'")</ID>
+    <ID>MaxLineLength:AssetDao.kt$AssetDao$@Query("SELECT brand, COUNT(*) as count, SUM(purchasePrice) as totalValue FROM assets WHERE brand != '' GROUP BY brand ORDER BY count DESC LIMIT 10")</ID>
+    <ID>MaxLineLength:AssetDao.kt$AssetDao$@Query("UPDATE assets SET status = 'HELD', lastMaintenanceDate = :date, nextMaintenanceDate = :nextDate, maintenanceNotes = :notes, updatedAt = :now WHERE id = :id")</ID>
+    <ID>MaxLineLength:AssetDao.kt$AssetDao$@Query("UPDATE assets SET status = 'HELD', retireDate = null, retireReason = '', lostDate = null, lostReason = '', soldDate = null, soldPrice = null, soldChannel = null, soldToWhom = null, updatedAt = :now WHERE id = :id")</ID>
+    <ID>MaxLineLength:AssetDao.kt$AssetDao$@Query("UPDATE assets SET status = 'REMOVED', soldDate = :soldDate, soldPrice = :soldPrice, soldChannel = :soldChannel, soldToWhom = :soldToWhom, updatedAt = :now WHERE id = :id")</ID>
+    <ID>MaxLineLength:AssetDao.kt$AssetDao$suspend</ID>
+    <ID>MaxLineLength:BillDao.kt$BillDao$@Query("SELECT * FROM bills WHERE note LIKE '%' || :query || '%' OR merchant LIKE '%' || :query || '%' OR tags LIKE '%' || :query || '%' ORDER BY date DESC")</ID>
+    <ID>MaxLineLength:CommonComponents.kt$confirmButton = { TextButton(onClick = { datePickerState.selectedDateMillis?.let { onDateSelected(it) }; showDatePicker = false }) { Text(stringResource(R.string.confirm), fontWeight = FontWeight.Bold) } }</ID>
+    <ID>MaxLineLength:CommonComponents.kt$dismissButton = { TextButton(onClick = { showDatePicker = false }) { Text(stringResource(R.string.cancel), fontWeight = FontWeight.Bold) } }</ID>
+    <ID>MaxLineLength:CommonComponents.kt$var month by remember(currentMonth) { mutableIntStateOf(parts[1].toIntOrNull() ?: java.util.Calendar.getInstance().get(java.util.Calendar.MONTH) + 1) }</ID>
+    <ID>MaxLineLength:CommonComponents.kt$var year by remember(currentMonth) { mutableIntStateOf(parts[0].toIntOrNull() ?: java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)) }</ID>
+    <ID>MaxLineLength:CrossLinkDao.kt$CrossLinkDao$@Query("SELECT * FROM cross_links WHERE linkType = :linkType AND ((sourceType = :typeA AND sourceId = :idA) OR (targetType = :typeA AND targetId = :idA))")</ID>
+    <ID>MaxLineLength:CrossLinkDao.kt$CrossLinkDao$@Query("SELECT * FROM cross_links WHERE sourceType = :sourceType AND sourceId = :sourceId AND targetType = :targetType AND targetId = :targetId AND linkType = :linkType")</ID>
+    <ID>MaxLineLength:CrossLinkDao.kt$CrossLinkDao$@Query("SELECT EXISTS(SELECT 1 FROM cross_links WHERE sourceType = :sourceType AND sourceId = :sourceId AND targetType = :targetType AND targetId = :targetId AND linkType = :linkType)")</ID>
+    <ID>MaxLineLength:DateInputComponent.kt$dismissButton = { TextButton(onClick = { showPicker = false }) { Text(stringResource(R.string.cancel), fontWeight = FontWeight.Bold) } }</ID>
+    <ID>MaxLineLength:DateUtils.kt$DateUtils$@Deprecated("Use formatDisplayDateWithWeekday(context, timestamp) for proper i18n", ReplaceWith("formatDisplayDateWithWeekday(context, timestamp)"))</ID>
+    <ID>MaxLineLength:DateUtils.kt$DateUtils$@Deprecated("Use formatWeekRange(context, startDate, endDate) for proper i18n", ReplaceWith("formatWeekRange(context, startDate, endDate)"))</ID>
+    <ID>MaxLineLength:FieldContract.kt$FieldContracts$put(FieldType.FORMULA, c(FieldType.FORMULA, FieldGroup.DERIVED, InputKind.NONE, DisplayKind.DERIVED_VALUE, editorOnly = true, progressCapable = true))</ID>
+    <ID>MaxLineLength:FieldContract.kt$FieldContracts$put(FieldType.STREAK, c(FieldType.STREAK, FieldGroup.DERIVED, InputKind.NONE, DisplayKind.DERIVED_VALUE, editorOnly = true, countable = true, segmented = true))</ID>
+    <ID>MaxLineLength:FieldInputComponent.kt$dismissButton = { TextButton(onClick = { showPicker = false }) { Text(stringResource(R.string.cancel), fontWeight = FontWeight.Bold) } }</ID>
+    <ID>MaxLineLength:FieldInputComponent.kt$try { java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date(value.toLong())) } catch (_: Exception) { value }</ID>
+    <ID>MaxLineLength:FocusRecordDao.kt$FocusRecordDao$@Query("SELECT COALESCE(SUM(durationMinutes), 0) FROM focus_records WHERE startTime &gt;= :startOfDay AND startTime &lt; :endOfDay AND completed = 1")</ID>
+    <ID>MaxLineLength:GoalDao.kt$GoalDao$@Query("UPDATE goals SET currentCount = 0, currentPeriodStart = :periodStart, currentPeriodEnd = :periodEnd, updatedAt = :now WHERE id IN (:ids)")</ID>
+    <ID>MaxLineLength:GoalDao.kt$GoalDao$@Query("UPDATE goals SET streak = :streak, longestStreak = MAX(longestStreak, :streak), lastCheckInDate = :checkInDate, totalCheckInDays = totalCheckInDays + 1, updatedAt = :now WHERE id = :id")</ID>
+    <ID>MaxLineLength:IconPicker.kt$creativeLabel to listOf(AppIcon.Palette, AppIcon.MusicNote, AppIcon.Movie, AppIcon.Mic, AppIcon.CameraAlt, AppIcon.VideogameAsset, AppIcon.Brush, AppIcon.Headphones, AppIcon.Tv)</ID>
+    <ID>MaxLineLength:IconPicker.kt$financeLabel to listOf(AppIcon.Savings, AppIcon.TrendingUp, AppIcon.AccountBalance, AppIcon.CreditCard, AppIcon.Percent, AppIcon.HealthAndSafety)</ID>
+    <ID>MaxLineLength:IconPicker.kt$goalsLabel to listOf(AppIcon.CheckCircle, AppIcon.LocalFireDepartment, AppIcon.Repeat, AppIcon.CalendarMonth, AppIcon.Today, AppIcon.Assignment, AppIcon.EmojiEvents, AppIcon.Celebration)</ID>
+    <ID>MaxLineLength:IconPicker.kt$healthLabel to listOf(AppIcon.WaterDrop, AppIcon.Medication, AppIcon.WbSunny, AppIcon.SmokingRooms, AppIcon.Bedtime, AppIcon.Eco)</ID>
+    <ID>MaxLineLength:IconPicker.kt$lifeLabel to listOf(AppIcon.Home, AppIcon.Restaurant, AppIcon.Coffee, AppIcon.CleaningServices, AppIcon.ShoppingCart, AppIcon.Pets, AppIcon.ContentCut, AppIcon.ChildCare, AppIcon.Chair, AppIcon.Kitchen, AppIcon.Checkroom, AppIcon.Face, AppIcon.Cookie, AppIcon.LocalCafe)</ID>
+    <ID>MaxLineLength:IconPicker.kt$moodLabel to listOf(AppIcon.SentimentVerySatisfied, AppIcon.SentimentSatisfied, AppIcon.SentimentNeutral, AppIcon.SentimentDissatisfied, AppIcon.SentimentVeryDissatisfied, AppIcon.Mood, AppIcon.Favorite)</ID>
+    <ID>MaxLineLength:IconPicker.kt$otherLabel to listOf(AppIcon.Timer, AppIcon.Settings, AppIcon.MoreHoriz, AppIcon.Inventory2, AppIcon.PieChart, AppIcon.BarChart, AppIcon.ShowChart, AppIcon.Analytics, AppIcon.CardGiftcard, AppIcon.Redeem, AppIcon.VolunteerActivism, AppIcon.Groups, AppIcon.Group, AppIcon.Gavel, AppIcon.Shield, AppIcon.Casino, AppIcon.FamilyRestroom, AppIcon.HouseSiding, AppIcon.Workspaces, AppIcon.RecordVoiceOver, AppIcon.Air, AppIcon.AcUnit, AppIcon.Cloud, AppIcon.Handshake, AppIcon.SwapHoriz, AppIcon.LocalHospital, AppIcon.LocalBar, AppIcon.Star)</ID>
+    <ID>MaxLineLength:IconPicker.kt$sportsLabel to listOf(AppIcon.DirectionsRun, AppIcon.FitnessCenter, AppIcon.SelfImprovement, AppIcon.DirectionsBike, AppIcon.SportsSoccer, AppIcon.SportsBasketball, AppIcon.SportsEsports)</ID>
+    <ID>MaxLineLength:IconPicker.kt$studyLabel to listOf(AppIcon.MenuBook, AppIcon.School, AppIcon.Edit, AppIcon.Psychology, AppIcon.Flag, AppIcon.Lightbulb, AppIcon.PushPin, AppIcon.Note, AppIcon.Star)</ID>
+    <ID>MaxLineLength:IconPicker.kt$style</ID>
+    <ID>MaxLineLength:IconPicker.kt$travelLabel to listOf(AppIcon.Flight, AppIcon.DirectionsCar, AppIcon.BeachAccess, AppIcon.DirectionsCarFilled, AppIcon.LocalShipping)</ID>
+    <ID>MaxLineLength:IconPicker.kt$workLabel to listOf(AppIcon.Work, AppIcon.Payments, AppIcon.BusinessCenter, AppIcon.Build, AppIcon.Receipt, AppIcon.Devices, AppIcon.Code, AppIcon.PhoneAndroid)</ID>
+    <ID>MaxLineLength:LifeCharts.kt$Text(label, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)</ID>
+    <ID>MaxLineLength:LifeCharts.kt$drawArc(color, startAngle = -90f, sweepAngle = 360f * fraction.coerceIn(0f, 1f), useCenter = false, style = Stroke(stroke, cap = StrokeCap.Round), topLeft = Offset(inset, inset), size = arcSize)</ID>
+    <ID>MaxLineLength:LifeCharts.kt$drawArc(track, startAngle = 0f, sweepAngle = 360f, useCenter = false, style = Stroke(stroke, cap = StrokeCap.Round), topLeft = Offset(inset, inset), size = arcSize)</ID>
+    <ID>MaxLineLength:LifeCharts.kt$drawRoundRect(if (v == values.maxOf { it.second }) color else dim, topLeft = Offset(x, size.height - h), size = Size(barW, h), cornerRadius = androidx.compose.ui.geometry.CornerRadius(3.dp.toPx()))</ID>
+    <ID>MaxLineLength:LifeCharts.kt$drawRoundRect(track, topLeft = Offset(x, 0f), size = Size(barW, size.height), cornerRadius = androidx.compose.ui.geometry.CornerRadius(3.dp.toPx()))</ID>
+    <ID>MaxLineLength:LifeItemDao.kt$LifeItemDao$@Query("SELECT * FROM life_items WHERE (title LIKE '%' || :query || '%' OR note LIKE '%' || :query || '%') ORDER BY updatedAt DESC LIMIT 50")</ID>
+    <ID>MaxLineLength:LifeItemDao.kt$LifeItemDao$suspend</ID>
+    <ID>MaxLineLength:LifeItemPagingSource.kt$LifeItemPagingSource$LoadResult.Page(data = items, prevKey = if (page &gt; 0) page - 1 else null, nextKey = if (items.size == pageSize) page + 1 else null)</ID>
+    <ID>MaxLineLength:Migration3To4.kt$&lt;no name provided&gt;$db.execSQL("CREATE INDEX IF NOT EXISTS index_bills_isReimbursable_isReimbursed_isDeleted ON bills(isReimbursable, isReimbursed, isDeleted)")</ID>
+    <ID>MaxLineLength:Migration5To6.kt$Migration5To6$"INSERT INTO vault_entries (title, username, passwordEncrypted, url, notes, category, createdAt, updatedAt) VALUES (?,?,?,?,?,?,?,?)"</ID>
+    <ID>MaxLineLength:Migration5To6.kt$Migration5To6$db.execSQL("""INSERT INTO new_account_books (`id`, `name`, `icon`, `color`, `description`, `bookType`, `sortOrder`, `isDefault`, `isAllBooks`, `isHidden`, `createdAt`, `updatedAt`) SELECT `id`, `name`, `icon`, `color`, `description`, `bookType`, `sortOrder`, `isDefault`, `isAllBooks`, `isHidden`, `createdAt`, `updatedAt` FROM account_books""")</ID>
+    <ID>MaxLineLength:Migration5To6.kt$Migration5To6$db.execSQL("""INSERT INTO new_anniversaries (`id`, `title`, `description`, `solarDate`, `isLunar`, `lunarYear`, `lunarMonth`, `lunarDay`, `lunarLeapMonth`, `type`, `personName`, `personRelation`, `isYearly`, `displayMode`, `multiRemindJson`, `reminderTime`, `notificationEnabled`, `color`, `icon`, `emoji`, `linkedMomentId`, `isPinned`, `createdAt`, `updatedAt`) SELECT `id`, `title`, `description`, `solarDate`, `isLunar`, `lunarYear`, `lunarMonth`, `lunarDay`, `lunarLeapMonth`, `type`, `personName`, `personRelation`, `isYearly`, `displayMode`, `multiRemindJson`, `reminderTime`, `notificationEnabled`, `color`, `icon`, `emoji`, `linkedMomentId`, `isPinned`, `createdAt`, `updatedAt` FROM anniversaries""")</ID>
+    <ID>MaxLineLength:Migration5To6.kt$Migration5To6$db.execSQL("""INSERT INTO new_assets (`id`, `name`, `category`, `subCategory`, `brand`, `model`, `purchasePrice`, `acquisitionType`, `acquisitionDate`, `status`, `costMode`, `quantity`, `useCount`, `totalUsageHours`, `location`, `room`, `purchaseChannel`, `warrantyExpireDate`, `insuranceExpireDate`, `insuranceCompany`, `insurancePolicyNo`, `images`, `description`, `condition`, `serialNumber`, `receiptPath`, `depreciationRate`, `currentValue`, `maintenanceIntervalDays`, `lastMaintenanceDate`, `nextMaintenanceDate`, `maintenanceNotes`, `isFavorite`, `tags`, `linkedBillId`, `linkedMomentId`, `retireDate`, `retireReason`, `lostDate`, `lostReason`, `soldDate`, `soldPrice`, `soldChannel`, `soldToWhom`, `sortOrder`, `createdAt`, `updatedAt`) SELECT `id`, `name`, `category`, `subCategory`, `brand`, `model`, `purchasePrice`, `acquisitionType`, `acquisitionDate`, `status`, `costMode`, `quantity`, `useCount`, `totalUsageHours`, `location`, `room`, `purchaseChannel`, `warrantyExpireDate`, `insuranceExpireDate`, `insuranceCompany`, `insurancePolicyNo`, `images`, `description`, `condition`, `serialNumber`, `receiptPath`, `depreciationRate`, `currentValue`, `maintenanceIntervalDays`, `lastMaintenanceDate`, `nextMaintenanceDate`, `maintenanceNotes`, `isFavorite`, `tags`, `linkedBillId`, `linkedMomentId`, `retireDate`, `retireReason`, `lostDate`, `lostReason`, `soldDate`, `soldPrice`, `soldChannel`, `soldToWhom`, `sortOrder`, `createdAt`, `updatedAt` FROM assets""")</ID>
+    <ID>MaxLineLength:Migration5To6.kt$Migration5To6$db.execSQL("""INSERT INTO new_bills (`id`, `amount`, `type`, `category`, `subCategory`, `note`, `date`, `yearMonth`, `timeOfDay`, `accountBookId`, `walletId`, `toWalletId`, `paymentMethod`, `merchant`, `transactionId`, `location`, `tags`, `images`, `linkedAssetId`, `linkType`, `recurringId`, `recurringFrequency`, `splitGroupId`, `isReimbursable`, `isReimbursed`, `reimbursedDate`, `isTaxDeductible`, `latitude`, `longitude`, `isAutoGenerated`, `createdAt`, `updatedAt`) SELECT `id`, `amount`, `type`, `category`, `subCategory`, `note`, `date`, `yearMonth`, `timeOfDay`, `accountBookId`, `walletId`, `toWalletId`, `paymentMethod`, `merchant`, `transactionId`, `location`, `tags`, `images`, `linkedAssetId`, `linkType`, `recurringId`, `recurringFrequency`, `splitGroupId`, `isReimbursable`, `isReimbursed`, `reimbursedDate`, `isTaxDeductible`, `latitude`, `longitude`, `isAutoGenerated`, `createdAt`, `updatedAt` FROM bills""")</ID>
+    <ID>MaxLineLength:Migration5To6.kt$Migration5To6$db.execSQL("""INSERT INTO new_custom_tags (`id`, `name`, `color`, `icon`, `usageCount`, `applicableTypes`, `createdAt`, `updatedAt`) SELECT `id`, `name`, `color`, `icon`, `usageCount`, `applicableTypes`, `createdAt`, `updatedAt` FROM custom_tags""")</ID>
+    <ID>MaxLineLength:Migration5To6.kt$Migration5To6$db.execSQL("""INSERT INTO new_goals (`id`, `title`, `description`, `category`, `goalType`, `totalCount`, `currentCount`, `unit`, `frequency`, `targetPerPeriod`, `currentPeriodCount`, `periodStartDate`, `deadline`, `startDate`, `priority`, `color`, `icon`, `streak`, `longestStreak`, `lastCheckInDate`, `totalCheckInDays`, `currentPeriodStart`, `currentPeriodEnd`, `direction`, `initialValue`, `reminderEnabled`, `reminderTime`, `linkedAssetId`, `isPublic`, `notes`, `createdAt`, `updatedAt`) SELECT `id`, `title`, `description`, `category`, `goalType`, `totalCount`, `currentCount`, `unit`, `frequency`, `targetPerPeriod`, `currentPeriodCount`, `periodStartDate`, `deadline`, `startDate`, `priority`, `color`, `icon`, `streak`, `longestStreak`, `lastCheckInDate`, `totalCheckInDays`, `currentPeriodStart`, `currentPeriodEnd`, `direction`, `initialValue`, `reminderEnabled`, `reminderTime`, `linkedAssetId`, `isPublic`, `notes`, `createdAt`, `updatedAt` FROM goals""")</ID>
+    <ID>MaxLineLength:Migration5To6.kt$Migration5To6$db.execSQL("""INSERT INTO new_life_items (`id`, `templateId`, `title`, `fieldsData`, `status`, `note`, `sortOrder`, `isFavorite`, `createdAt`, `updatedAt`) SELECT `id`, `templateId`, `title`, `fieldsData`, `status`, `note`, `sortOrder`, `isFavorite`, `createdAt`, `updatedAt` FROM life_items""")</ID>
+    <ID>MaxLineLength:Migration5To6.kt$Migration5To6$db.execSQL("""INSERT INTO new_life_moments (`id`, `title`, `content`, `imageUri`, `date`, `tags`, `mood`, `locationName`, `latitude`, `longitude`, `weather`, `temperature`, `isMarkdown`, `category`, `isFavorite`, `lifeItemId`, `createdAt`, `updatedAt`) SELECT `id`, `title`, `content`, `imageUri`, `date`, `tags`, `mood`, `locationName`, `latitude`, `longitude`, `weather`, `temperature`, `isMarkdown`, `category`, `isFavorite`, `lifeItemId`, `createdAt`, `updatedAt` FROM life_moments""")</ID>
+    <ID>MaxLineLength:Migration5To6.kt$Migration5To6$db.execSQL("""INSERT INTO new_life_templates (`id`, `name`, `category`, `icon`, `color`, `description`, `fieldsConfig`, `layoutType`, `availableLayouts`, `statusFlowConfig`, `linkConfig`, `isBuiltin`, `isHidden`, `isSpecial`, `sortOrder`, `createdAt`, `updatedAt`) SELECT `id`, `name`, `category`, `icon`, `color`, `description`, `fieldsConfig`, `layoutType`, `availableLayouts`, `statusFlowConfig`, `linkConfig`, `isBuiltin`, `isHidden`, `isSpecial`, `sortOrder`, `createdAt`, `updatedAt` FROM life_templates""")</ID>
+    <ID>MaxLineLength:Migration5To6.kt$Migration5To6$db.execSQL("""INSERT INTO new_moments (`id`, `title`, `content`, `timestamp`, `images`, `videoPath`, `audioPath`, `mood`, `weather`, `temperature`, `location`, `latitude`, `longitude`, `tags`, `category`, `privacy`, `isPinned`, `isFavorite`, `wordCount`, `linkedAssetId`, `linkedAnniversaryId`, `linkedGoalId`, `createdAt`, `updatedAt`) SELECT `id`, `title`, `content`, `timestamp`, `images`, `videoPath`, `audioPath`, `mood`, `weather`, `temperature`, `location`, `latitude`, `longitude`, `tags`, `category`, `privacy`, `isPinned`, `isFavorite`, `wordCount`, `linkedAssetId`, `linkedAnniversaryId`, `linkedGoalId`, `createdAt`, `updatedAt` FROM moments""")</ID>
+    <ID>MaxLineLength:Migration5To6.kt$Migration5To6$db.execSQL("""INSERT INTO new_plan_lists (`id`, `title`, `emoji`, `description`, `dueDate`, `template`, `isCompleted`, `sortOrder`, `createdAt`, `updatedAt`) SELECT `id`, `title`, `emoji`, `description`, `dueDate`, `template`, `isCompleted`, `sortOrder`, `createdAt`, `updatedAt` FROM plan_lists""")</ID>
+    <ID>MaxLineLength:Migration5To6.kt$Migration5To6$db.execSQL("""INSERT INTO new_plans (`id`, `name`, `icon`, `category`, `sortOrder`, `createdAt`, `updatedAt`) SELECT `id`, `name`, `icon`, `category`, `sortOrder`, `createdAt`, `updatedAt` FROM plans""")</ID>
+    <ID>MaxLineLength:Migration5To6.kt$Migration5To6$db.execSQL("""INSERT INTO new_recurring_templates (`id`, `name`, `amount`, `type`, `category`, `frequency`, `dayOfMonth`, `dayOfWeek`, `isActive`, `lastGeneratedDate`, `nextGenerateDate`, `autoGenerate`, `remindBeforeDays`, `note`, `createdAt`, `updatedAt`) SELECT `id`, `name`, `amount`, `type`, `category`, `frequency`, `dayOfMonth`, `dayOfWeek`, `isActive`, `lastGeneratedDate`, `nextGenerateDate`, `autoGenerate`, `remindBeforeDays`, `note`, `createdAt`, `updatedAt` FROM recurring_templates""")</ID>
+    <ID>MaxLineLength:Migration5To6.kt$Migration5To6$db.execSQL("""INSERT INTO new_todo_items (`id`, `title`, `isCompleted`, `dueDate`, `priority`, `category`, `sortOrder`, `planId`, `parentId`, `attachments`, `recurring`, `recurringEndType`, `recurringEndCount`, `recurringEndDate`, `lifeItemId`, `createdAt`, `updatedAt`) SELECT `id`, `title`, `isCompleted`, `dueDate`, `priority`, `category`, `sortOrder`, `planId`, `parentId`, `attachments`, `recurring`, `recurringEndType`, `recurringEndCount`, `recurringEndDate`, `lifeItemId`, `createdAt`, `updatedAt` FROM todo_items""")</ID>
+    <ID>MaxLineLength:Migration5To6.kt$Migration5To6$db.execSQL("""INSERT INTO new_wallets (`id`, `name`, `type`, `icon`, `color`, `bankName`, `cardNumber`, `initialBalance`, `currentBalance`, `currency`, `isDefault`, `isEnabled`, `sortOrder`, `description`, `createdAt`, `updatedAt`) SELECT `id`, `name`, `type`, `icon`, `color`, `bankName`, `cardNumber`, `initialBalance`, `currentBalance`, `currency`, `isDefault`, `isEnabled`, `sortOrder`, `description`, `createdAt`, `updatedAt` FROM wallets""")</ID>
+    <ID>MaxLineLength:Migration5To6.kt$Migration5To6$db.query("SELECT title, username, passwordEncrypted, url, notes, category, createdAt, updatedAt FROM vault_entries")</ID>
+    <ID>MaxLineLength:MomentDao.kt$MomentDao$@Query("SELECT * FROM moments WHERE (title LIKE '%' || :query || '%' OR content LIKE '%' || :query || '%' OR location LIKE '%' || :query || '%' OR tags LIKE '%' || :query || '%') ORDER BY timestamp DESC")</ID>
+    <ID>MaxLineLength:MomentDao.kt$MomentDao$@Query("SELECT * FROM moments WHERE (title LIKE '%' || :query || '%' OR content LIKE '%' || :query || '%' OR tags LIKE '%' || :query || '%') ORDER BY timestamp DESC")</ID>
+    <ID>MaxLineLength:NotificationHelper.kt$NotificationHelper$.</ID>
+    <ID>MaxLineLength:NotificationHelper.kt$NotificationHelper$mgr.createNotificationChannel(NotificationChannel(CHANNEL_CHECKIN, context.getString(R.string.notification_channel_checkin), NotificationManager.IMPORTANCE_HIGH).apply { description = context.getString(R.string.notification_channel_checkin_desc) })</ID>
+    <ID>MaxLineLength:NotificationHelper.kt$NotificationHelper$mgr.createNotificationChannel(NotificationChannel(CHANNEL_LIFE, context.getString(R.string.notification_channel_life), NotificationManager.IMPORTANCE_DEFAULT).apply { description = context.getString(R.string.notification_channel_life_desc) })</ID>
+    <ID>MaxLineLength:NotificationHelper.kt$NotificationHelper$mgr.createNotificationChannel(NotificationChannel(CHANNEL_REMINDER, context.getString(R.string.notification_channel_reminder), NotificationManager.IMPORTANCE_HIGH).apply { description = context.getString(R.string.notification_channel_reminder_desc) })</ID>
+    <ID>MaxLineLength:NotificationHelper.kt$NotificationHelper$try { NotificationManagerCompat.from(context).notify(id, notification) } catch (_: SecurityException) { /* Notification permission not granted */ }</ID>
+    <ID>MaxLineLength:PinComponents.kt$return</ID>
+    <ID>MaxLineLength:SettingsComponents.kt$Box</ID>
+    <ID>MaxLineLength:SettingsComponents.kt$Row</ID>
+    <ID>MaxLineLength:SettingsComponents.kt$Row(modifier = mod.padding(vertical = 12.dp, horizontal = 16.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically, content = content)</ID>
+    <ID>MaxLineLength:SettingsComponents.kt$Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)</ID>
+    <ID>MaxLineLength:SettingsComponents.kt$Text(text = title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
+    <ID>MaxLineLength:SettingsComponents.kt$if (subtitle != null) Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)</ID>
+    <ID>MaxLineLength:SettingsComponents.kt$val mod = if (clickable != null) Modifier.fillMaxWidth().clip(MaterialTheme.shapes.medium).clickable(onClick = clickable) else Modifier.fillMaxWidth()</ID>
+    <ID>MaxLineLength:TimeAgo.kt$isSameYear(timestampMillis, now) -&gt; SimpleDateFormat(context.getString(R.string.date_format_display), Locale.getDefault()).format(Date(timestampMillis))</ID>
+    <ID>MaxLineLength:TriggerEngine.kt$TriggerAction$CreateAutoLink : TriggerAction</ID>
+    <ID>MaxLineLength:TriggerEngine.kt$TriggerEngine$TriggerAction.CreateAutoLink(EntityType.ASSET, LinkType.PART_OF, targetId = item.id, metadata = """{"reason":"saving_completed"}""")</ID>
+    <ID>MaxLineLength:TriggerEngine.kt$TriggerEngine$val data = try { json.decodeFromString&lt;JsonObject&gt;(item.fieldsData) } catch (e: Exception) { AppLogger.w("TriggerEngine", "decode fieldsData failed", e); JsonObject(emptyMap()) }</ID>
+    <ID>NestedBlockDepth:FieldContract.kt$DerivedEvaluator$private fun evalArithmetic(expr: String): Double?</ID>
+    <ID>NestedBlockDepth:Migration5To6.kt$Migration5To6$private fun preserveLegacyVault(db: SupportSQLiteDatabase)</ID>
+    <ID>NestedBlockDepth:Migration8To9.kt$&lt;no name provided&gt;$override fun migrate(db: SupportSQLiteDatabase)</ID>
+    <ID>ReturnCount:FieldContract.kt$DerivedEvaluator$private fun evalArithmetic(expr: String): Double?</ID>
+    <ID>ThrowsCount:EncryptedOpenHelperFactory.kt$EncryptedOpenHelperFactory.Companion$@Synchronized fun migrateIfPlaintext(context: Context, dbName: String, key: ByteArray)</ID>
+    <ID>TooManyFunctions:DateUtils.kt$DateUtils</ID>
+    <ID>UnusedParameter:CommonComponents.kt$onSearch: () -&gt; Unit = {}</ID>
+    <ID>UseCheckOrError:EncryptedOpenHelperFactory.kt$EncryptedOpenHelperFactory.Companion$throw IllegalStateException("加密库改名失败，恢复原库: $dbFile")</ID>
+    <ID>UseCheckOrError:EncryptedOpenHelperFactory.kt$EncryptedOpenHelperFactory.Companion$throw IllegalStateException("明文库重命名失败，中止加密迁移: $dbFile")</ID>
+    <ID>WildcardImport:AccountBookDao.kt$import androidx.room.*</ID>
+    <ID>WildcardImport:AchievementDao.kt$import androidx.room.*</ID>
+    <ID>WildcardImport:AnniversaryDao.kt$import androidx.room.*</ID>
+    <ID>WildcardImport:AppDatabase.kt$import com.palmnote.data.db.dao.*</ID>
+    <ID>WildcardImport:AppDatabase.kt$import com.palmnote.data.db.entity.*</ID>
+    <ID>WildcardImport:AppIcon.kt$import androidx.compose.material.icons.automirrored.outlined.*</ID>
+    <ID>WildcardImport:AppIcon.kt$import androidx.compose.material.icons.outlined.*</ID>
+    <ID>WildcardImport:AppIconMapper.kt$import androidx.compose.material.icons.automirrored.filled.*</ID>
+    <ID>WildcardImport:AppIconMapper.kt$import androidx.compose.material.icons.filled.*</ID>
+    <ID>WildcardImport:AppLockScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:AppLockScreen.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:AppLockScreen.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:AppLockScreen.kt$import com.palmnote.ui.theme.*</ID>
+    <ID>WildcardImport:AssetDao.kt$import androidx.room.*</ID>
+    <ID>WildcardImport:BillDao.kt$import androidx.room.*</ID>
+    <ID>WildcardImport:BudgetDao.kt$import androidx.room.*</ID>
+    <ID>WildcardImport:CategoryConfigDao.kt$import androidx.room.*</ID>
+    <ID>WildcardImport:CategoryMappingDao.kt$import androidx.room.*</ID>
+    <ID>WildcardImport:CommonComponents.kt$import androidx.compose.animation.core.*</ID>
+    <ID>WildcardImport:CommonComponents.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:CommonComponents.kt$import androidx.compose.material.icons.filled.*</ID>
+    <ID>WildcardImport:CommonComponents.kt$import androidx.compose.material.icons.outlined.*</ID>
+    <ID>WildcardImport:CommonComponents.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:CommonComponents.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:CommonComponents.kt$import com.palmnote.ui.theme.*</ID>
+    <ID>WildcardImport:CounterInputComponent.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:CounterInputComponent.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:CounterInputComponent.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:CrossLinkDao.kt$import androidx.room.*</ID>
+    <ID>WildcardImport:DateInputComponent.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:DateInputComponent.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:DateRangeInputComponent.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:DateRangeInputComponent.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:DateRangeInputComponent.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:FieldDisplayComponent.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:FieldDisplayComponent.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:FieldDisplayComponent.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:FieldInputComponent.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:FieldInputComponent.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:FieldInputComponent.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:FocusRecordDao.kt$import androidx.room.*</ID>
+    <ID>WildcardImport:GoalCheckInDao.kt$import androidx.room.*</ID>
+    <ID>WildcardImport:GoalDao.kt$import androidx.room.*</ID>
+    <ID>WildcardImport:IconPicker.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:IconPicker.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:IconPicker.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:ImagesInputComponent.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:ImagesInputComponent.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:ImagesInputComponent.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:LegacyDao.kt$import androidx.room.*</ID>
+    <ID>WildcardImport:LifeItemDao.kt$import androidx.room.*</ID>
+    <ID>WildcardImport:LifeMomentDao.kt$import androidx.room.*</ID>
+    <ID>WildcardImport:LifeReportDao.kt$import androidx.room.*</ID>
+    <ID>WildcardImport:LifeTemplateDao.kt$import androidx.room.*</ID>
+    <ID>WildcardImport:MomentDao.kt$import androidx.room.*</ID>
+    <ID>WildcardImport:MoneyInputComponent.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:MoneyInputComponent.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:MoodDiaryDao.kt$import androidx.room.*</ID>
+    <ID>WildcardImport:PinComponents.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:PinComponents.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:PinComponents.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:PlanDao.kt$import androidx.room.*</ID>
+    <ID>WildcardImport:PlanListDao.kt$import androidx.room.*</ID>
+    <ID>WildcardImport:PlanListItemDao.kt$import androidx.room.*</ID>
+    <ID>WildcardImport:PreferencesManager.kt$import androidx.datastore.preferences.core.*</ID>
+    <ID>WildcardImport:ProgressInputComponent.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:ProgressInputComponent.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:ProgressInputComponent.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:RatingInputComponent.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:RatingInputComponent.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:RatingInputComponent.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:RecurringTemplateDao.kt$import androidx.room.*</ID>
+    <ID>WildcardImport:SelectInputComponent.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:SelectInputComponent.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:SkeletonScreen.kt$import androidx.compose.animation.core.*</ID>
+    <ID>WildcardImport:SkeletonScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:SkeletonScreen.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:TagsInputComponent.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:TagsInputComponent.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:TagsInputComponent.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:Theme.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:TodoItemDao.kt$import androidx.room.*</ID>
+    <ID>WildcardImport:UsageRecordDao.kt$import androidx.room.*</ID>
+    <ID>WildcardImport:WalletDao.kt$import androidx.room.*</ID>
+  </CurrentIssues>
+</SmellBaseline>

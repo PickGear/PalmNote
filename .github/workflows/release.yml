@@ -85,7 +85,7 @@ jobs:
           ls -la app/build/outputs/apk/release/*.apk
 
       # 发布到 GitHub Release：复用同名 tag 的既有 release（--clobber 覆盖同名 asset），
-      # 无则创建。上传 APK + R8 mapping.txt（崩溃反解用）。
+      # 无则创建。上传 APK + R8 mapping.txt（崩溃反解用）+ SHA256SUMS.txt（完整性校验）。
       - name: Publish to GitHub Release
         shell: bash
         env:
@@ -96,6 +96,14 @@ jobs:
           MAPPING=app/build/outputs/mapping/release/mapping.txt
           ASSETS=("$APK")
           if [ -f "$MAPPING" ]; then ASSETS+=("$MAPPING"); fi
+
+          # 生成 SHA256SUMS.txt：文件名与 Release 附件名一致，sha256sum -c 可直接校验
+          SUMS=app/build/outputs/apk/release/SHA256SUMS.txt
+          (cd app/build/outputs/apk/release && sha256sum "$(basename "$APK")" > SHA256SUMS.txt)
+          if [ -f "$MAPPING" ]; then
+            sha256sum "$MAPPING" | sed 's#app/build/outputs/mapping/release/##' >> "$SUMS"
+          fi
+          ASSETS+=("$SUMS")
 
           if gh release view "$TAG" >/dev/null 2>&1; then
             echo "Release $TAG already exists; uploading assets."

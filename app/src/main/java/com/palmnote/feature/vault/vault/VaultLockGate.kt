@@ -66,8 +66,9 @@ fun VaultLockGate(
     onPinTyped: () -> Unit = {}
 ) {
     var step by rememberSaveable { mutableIntStateOf(1) }
-    var pin by rememberSaveable { mutableStateOf("") }
-    var confirmPin by rememberSaveable { mutableStateOf("") }
+    // PIN 缓冲不做实例状态持久化（同 AppLockScreen）
+    var pin by remember { mutableStateOf("") }
+    var confirmPin by remember { mutableStateOf("") }
     var localError by rememberSaveable { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
 

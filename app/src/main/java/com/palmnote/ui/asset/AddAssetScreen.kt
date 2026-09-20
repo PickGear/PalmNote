@@ -38,6 +38,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.ui.res.stringResource
 import com.palmnote.app.R
 import com.palmnote.ui.components.*
+import com.palmnote.ui.components.SectionHeader
 import com.palmnote.ui.theme.*
 
 private data class AcquisitionTypeOption(
@@ -96,6 +97,10 @@ fun AddAssetScreen(
         if (assetId != null) viewModel.initFormForEdit(assetId) else viewModel.resetForm()
     }
     LaunchedEffect(formState.isSaved) { if (formState.isSaved) onNavigateBack() }
+    // 保存失败的兜底提示：否则只有按钮禁用，用户不知道发生了什么
+    LaunchedEffect(formState.saveError) {
+        formState.saveError?.let { android.widget.Toast.makeText(context, it, android.widget.Toast.LENGTH_LONG).show() }
+    }
 
     Scaffold(
         topBar = {

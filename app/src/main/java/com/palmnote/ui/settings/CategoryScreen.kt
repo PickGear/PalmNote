@@ -11,10 +11,10 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -119,8 +119,8 @@ fun CategoryScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { editingCustom = null; showAddSheet = true },
-                containerColor = MaterialTheme.colorScheme.secondary,
-                contentColor = Color.White,
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
                 shape = MaterialTheme.shapes.large
             ) {
                 Icon(Icons.Filled.Add, stringResource(R.string.category_manage_add))
@@ -153,13 +153,14 @@ fun CategoryScreen(
                 }
             }
 
+            // 预设分类展开态：必须挂在 item 外（item 内的 remember 会随滚动出屏而重置）
+            val presetsExpanded = rememberSaveable { mutableStateOf(false) }
             LazyColumn(
-                contentPadding = PaddingValues(16.dp),
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 if (state.presetEntries.isNotEmpty()) {
                     item(key = "preset_header") {
-                        val presetsExpanded = remember { mutableStateOf(false) }
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,

@@ -108,4 +108,45 @@ class BackupManagerTest {
         assertFalse(BackupManager.includePortableKeyInBackup("   "))
         assertTrue(BackupManager.includePortableKeyInBackup("secret"))
     }
+
+    @Test
+    fun selectBackupsToPrune_snapshotPoolIsCountedSeparately() {
+        // 恢复前快照是恢复失败后的唯一退路，不能和每天新增的自动备份抢同一个名额窗口
+        val autos = (1..10).map { i ->
+            val f = tempFolder.newFile("palmnote_auto_${1_000_000_000_000L + i * 60_000L}.palmnote")
+            f.setLastModified(1_000_000_000_000L + i * 60_000L)
+            f
+        }
+        val snapshots = (1..5).map { i ->
+            val f = tempFolder.newFile("palmnote_snapshot_${2_000_000_000_000L + i * 60_000L}.palmnote")
+            f.setLastModified(2_000_000_000_000L + i * 60_000L)
+            f
+        }
+        val prune = backupManager.selectBackupsToPrune(autos + snapshots, keep = 7, snapshotKeep = 3)
+        assertEquals(5, prune.size) // 3 份最旧自动备份 + 2 份最旧快照
+        assertEquals(autos.take(3).toSet() + snapshots.take(2).toSet(), prune.toSet())
+    }
+
+    @Test
+    fun selectBackupsToPrune_snapshotDoesNotConsumeRotatingQuota() {
+        // 只有快照时，自动备份的保留名额不应被它们占用
+        val snapshots = (1..5).map { i ->
+            val f = tempFolder.newFile("palmnote_snapshot_${2_000_000_000_000L + i * 60_000L}.palmnote")
+            f.setLastModified(2_000_000_000_000L + i * 60_000L)
+            f
+        }
+        assertEquals(2, backupManager.selectBackupsToPrune(snapshots, keep = 7, snapshotKeep = 3).size)
+    }
+
+    @Test
+    fun backupKind_parsesFileName() {
+        assertEquals(BackupKind.AUTO, BackupKind.fromFileName("palmnote_auto_1700000000000.palmnote"))
+        assertEquals(BackupKind.MANUAL, BackupKind.fromFileName("palmnote_manual_1700000000000.palmnote"))
+        assertEquals(BackupKind.SNAPSHOT, BackupKind.fromFileName("palmnote_snapshot_1700000000000.palmnote"))
+        // 旧版本命名必须仍被识别并归入可轮转池，否则升级后旧包会永久堆积、再也不被清理
+        assertEquals(BackupKind.LEGACY, BackupKind.fromFileName("palmnote_backup_1700000000000.palmnote"))
+        assertEquals(BackupKind.LEGACY, BackupKind.fromFileName("random.palmnote"))
+        assertEquals(1700000000000L, BackupKind.timestampFromFileName("palmnote_auto_1700000000000.palmnote"))
+        assertEquals(0L, BackupKind.timestampFromFileName("random.palmnote"))
+    }
 }

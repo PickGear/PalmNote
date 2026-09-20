@@ -75,6 +75,7 @@ import com.palmnote.feature.vault.VaultPasswordGenerator
 import com.palmnote.ui.components.ModuleCard
 import com.palmnote.ui.components.SecondaryTopAppBar
 import com.palmnote.ui.components.saveImageToVaultStorage
+import com.palmnote.ui.components.SectionHeader
 import com.palmnote.ui.theme.vaultTint
 import java.io.File
 import kotlinx.coroutines.launch

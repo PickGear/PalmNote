@@ -10,6 +10,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import com.palmnote.R
+import com.palmnote.ui.components.NoDialogWindowAnimation
 
 @Composable
 fun DateInputComponent(
@@ -51,6 +52,9 @@ fun DateInputComponent(
                 }) { Text(stringResource(R.string.confirm), fontWeight = FontWeight.Bold) }
             },
             dismissButton = { TextButton(onClick = { showPicker = false }) { Text(stringResource(R.string.cancel), fontWeight = FontWeight.Bold) } }
-        ) { DatePicker(state = pickerState, colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.background)) }
+        ) {
+            NoDialogWindowAnimation()
+            DatePicker(state = pickerState, colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.background))
+        }
     }
 }

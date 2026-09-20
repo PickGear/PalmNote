@@ -218,13 +218,7 @@ class VaultDetailViewModel @Inject constructor(
 
     fun delete() {
         viewModelScope.launch {
-            entryState.value?.let {
-                repository.delete(it)
-                // 清理条目关联的头像文件，避免孤儿文件残留
-                if (it.avatarPath.isNotBlank()) {
-                    runCatching { java.io.File(it.avatarPath).delete() }
-                }
-            }
+            entryState.value?.let { repository.delete(it) }
             deletedState.value = true
         }
     }

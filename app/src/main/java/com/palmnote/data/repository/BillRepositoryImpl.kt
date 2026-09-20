@@ -88,6 +88,15 @@ class BillRepositoryImpl @Inject constructor(
         id
     }
 
+    override suspend fun createBillsWithWalletAdjustment(bills: List<Bill>): List<Long> =
+        appDatabase.withTransaction {
+            bills.map { bill ->
+                val id = billDao.insertBill(bill)
+                applyNewBalance(bill)
+                id
+            }
+        }
+
     override suspend fun updateBillWithWalletAdjustment(newBill: Bill) = appDatabase.withTransaction {
         val oldBill = billDao.getBillById(newBill.id)
         billDao.updateBill(newBill)
@@ -238,18 +247,47 @@ class BillRepositoryImpl @Inject constructor(
     override suspend fun countByCategory(category: String): Int =
         billDao.countByCategory(category)
 
+    /**
+     * 批量删除账单（按分类/钱包/账本）：与单条 [deleteBill] 保持一致 ——
+     * 进回收站、回滚钱包余额，事务提交后再删除图片文件。
+     */
+    private suspend fun deleteBillsToRecycleBin(
+        select: suspend () -> List<Bill>,
+        delete: suspend () -> Unit
+    ) {
+        // 查询必须在事务内：先查后删的两段式会让"查询之后、删除之前"新写入的
+        // 目标账单被硬删（无回收站行、余额不回滚）
+        val bills = appDatabase.withTransaction {
+            val selected = select()
+            selected.forEach { bill ->
+                recycleBinDao.insert(bill.toRecycleBin())
+                revertOldBalance(bill)
+            }
+            delete()
+            selected
+        }
+        // 事务提交成功后再清理图片文件，避免回滚时误删
+        bills.forEach { deleteImageFiles(it.images) }
+    }
+
     override suspend fun deleteByCategory(category: String) =
-        billDao.deleteByCategory(category)
+        deleteBillsToRecycleBin({ billDao.getBillsByCategoryOnce(category) }) {
+            billDao.deleteByCategory(category)
+        }
 
     override suspend fun countByWallet(walletId: Long): Int =
         billDao.countByWallet(walletId)
 
     override suspend fun deleteByWallet(walletId: Long) =
-        billDao.deleteByWallet(walletId)
+        deleteBillsToRecycleBin({ billDao.getBillsByWalletOnce(walletId) }) {
+            billDao.deleteByWallet(walletId)
+        }
 
     override suspend fun countByBook(bookId: Long): Int =
         billDao.countByBook(bookId)
 
     override suspend fun deleteByBook(bookId: Long) =
-        billDao.deleteByBook(bookId)
+        deleteBillsToRecycleBin({ billDao.getBillsByBookOnce(bookId) }) {
+            billDao.deleteByBook(bookId)
+        }
 }

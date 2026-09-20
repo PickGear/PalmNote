@@ -75,7 +75,8 @@ object AppModule {
     fun provideCalendarSyncManager(
         @ApplicationContext context: Context,
         anniversaryRepository: AnniversaryRepository
-    ): CalendarSyncManager = CalendarSyncManager(context, anniversaryRepository)
+    ,
+        lifeItemRepository: LifeItemRepository): CalendarSyncManager = CalendarSyncManager(context, anniversaryRepository, lifeItemRepository)
 
     @Provides
     @Singleton
@@ -89,10 +90,15 @@ object AppModule {
     @Provides
     @Singleton
     fun provideLifeDataSeeder(
+        @ApplicationContext context: Context,
         lifeTemplateRepository: LifeTemplateRepository,
         appDatabase: AppDatabase
     ): LifeDataSeeder =
-        LifeDataSeeder(lifeTemplateRepository, appDatabase)
+        LifeDataSeeder(
+            lifeTemplateRepository,
+            appDatabase,
+            context.getSharedPreferences("builtin_template_sync", Context.MODE_PRIVATE)
+        )
 
     @Provides
     @Singleton
@@ -152,7 +158,8 @@ object DatabaseModule {
                     dbKeyStore.getOrCreateKey()
                 ),
                 com.palmnote.data.db.migration.MIGRATION_6_7,
-                com.palmnote.data.db.migration.MIGRATION_7_8
+                com.palmnote.data.db.migration.MIGRATION_7_8,
+                com.palmnote.data.db.migration.MIGRATION_8_9
             )
             .addCallback(object : androidx.room.RoomDatabase.Callback() {
                 override fun onCreate(db: SupportSQLiteDatabase) {
@@ -200,6 +207,7 @@ object DatabaseModule {
     @Provides fun provideTodoItemDao(db: AppDatabase): TodoItemDao = db.todoItemDao()
     @Provides fun provideMoodDiaryDao(db: AppDatabase): MoodDiaryDao = db.moodDiaryDao()
     @Provides fun provideLifeMomentDao(db: AppDatabase): LifeMomentDao = db.lifeMomentDao()
+    @Provides fun provideFieldValueDao(db: AppDatabase): FieldValueDao = db.fieldValueDao()
     @Provides fun provideBillRecycleBinDao(db: AppDatabase): BillRecycleBinDao = db.billRecycleBinDao()
     @Provides fun provideAssetRecycleBinDao(db: AppDatabase): AssetRecycleBinDao = db.assetRecycleBinDao()
 }
@@ -268,8 +276,8 @@ object RepositoryModule {
         BudgetRepositoryImpl(dao)
 
     @Provides @Singleton
-    fun provideGoalRepository(dao: GoalDao, checkInDao: GoalCheckInDao): GoalRepository =
-        GoalRepositoryImpl(dao, checkInDao)
+    fun provideGoalRepository(dao: GoalDao, checkInDao: GoalCheckInDao, appDatabase: AppDatabase): GoalRepository =
+        GoalRepositoryImpl(dao, checkInDao, appDatabase)
 
     @Provides @Singleton
     fun provideAnniversaryRepository(dao: AnniversaryDao): AnniversaryRepository =
@@ -334,12 +342,17 @@ object RepositoryModule {
         LifeMomentRepositoryImpl(dao)
 
     @Provides @Singleton
-    fun provideLifeTemplateRepository(dao: LifeTemplateDao): LifeTemplateRepository =
-        LifeTemplateRepositoryImpl(dao)
+    fun provideLifeTemplateRepository(dao: LifeTemplateDao, itemDao: LifeItemDao): LifeTemplateRepository =
+        LifeTemplateRepositoryImpl(dao, itemDao)
 
     @Provides @Singleton
-    fun provideLifeItemRepository(dao: LifeItemDao, templateRepo: LifeTemplateRepository): LifeItemRepository =
-        LifeItemRepositoryImpl(dao, templateRepo)
+    fun provideLifeItemRepository(
+        dao: LifeItemDao,
+        fieldValueDao: FieldValueDao,
+        appDatabase: AppDatabase,
+        templateRepo: LifeTemplateRepository
+    ): LifeItemRepository =
+        LifeItemRepositoryImpl(dao, fieldValueDao, appDatabase, templateRepo)
 
     @Provides @Singleton
     fun provideCrossLinkRepository(dao: CrossLinkDao): CrossLinkRepository =

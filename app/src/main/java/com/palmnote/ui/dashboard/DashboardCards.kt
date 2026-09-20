@@ -52,6 +52,8 @@ internal fun DashboardCardContent(
     onNavigateToBill: () -> Unit,
     onNavigateToLife: () -> Unit,
     onNavigateToVault: () -> Unit = {},
+    onNavigateToAddBill: () -> Unit = {},
+    onNavigateToAddAsset: () -> Unit = {},
     onHabitCheckIn: (Long) -> Unit = {},
     presetCategoryOverrides: Map<String, String>,
     categoryConfigs: List<com.palmnote.data.db.entity.CategoryConfig>,
@@ -60,9 +62,8 @@ internal fun DashboardCardContent(
     val netWorthColor = cardConfigs.find { it.type == CardType.NET_WORTH }?.customColor?.toComposeColor() ?: ModuleHome
     when (type) {
         CardType.NET_WORTH -> NetWorthCard(state, cardColor = netWorthColor, onNavigateToBill)
-        CardType.QUICK_ACTIONS -> QuickActionsCard(onNavigateToBill, onNavigateToAsset, onNavigateToLife)
+        CardType.QUICK_ACTIONS -> QuickActionsCard(onNavigateToAddBill, onNavigateToAddAsset, onNavigateToLife)
         CardType.BUDGET_ALERT -> BudgetAlertCard(state, onNavigateToBill)
-        CardType.GOALS -> GoalsCard(state, onNavigateToLife)
         CardType.ANNIVERSARIES -> AnniversariesCard(state, onNavigateToLife)
         CardType.ASSET_DISTRIBUTION -> AssetDistributionCard(state, onNavigateToAsset, presetCategoryOverrides, categoryConfigs)
         CardType.TODAY -> TodayCard(state, onNavigateToLife)
@@ -230,14 +231,15 @@ internal fun NetWorthCard(state: DashboardState, cardColor: Color = ModuleHome, 
 
 @Composable
 internal fun QuickActionsCard(
-    onNavigateToBill: () -> Unit,
-    onNavigateToAsset: () -> Unit,
+    onNavigateToAddBill: () -> Unit,
+    onNavigateToAddAsset: () -> Unit,
     onNavigateToLife: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Row(
@@ -246,9 +248,10 @@ internal fun QuickActionsCard(
                 .padding(vertical = 16.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            QuickActionButton(Icons.Outlined.AddCircle, stringResource(R.string.dashboard_quick_bill), AccentOrange, onNavigateToBill)
-QuickActionButton(Icons.Outlined.Inventory2,      stringResource(R.string.dashboard_quick_asset),     ModuleItem, onNavigateToAsset)
-QuickActionButton(Icons.Outlined.Flag,            stringResource(R.string.dashboard_quick_goal),      StatusHeld,      onNavigateToLife)
+            // 快捷卡直达创建动作：记账/物品一步进表单，目标/纪念日进生活模块
+            QuickActionButton(Icons.Outlined.AddCircle, stringResource(R.string.dashboard_quick_bill), AccentOrange, onNavigateToAddBill)
+            QuickActionButton(Icons.Outlined.Inventory2, stringResource(R.string.dashboard_quick_asset), ModuleItem, onNavigateToAddAsset)
+            QuickActionButton(Icons.Outlined.Flag, stringResource(R.string.dashboard_quick_goal), StatusHeld, onNavigateToLife)
             QuickActionButton(Icons.Outlined.Celebration, stringResource(R.string.dashboard_quick_anniversary), ModuleLife, onNavigateToLife)
         }
     }
@@ -258,7 +261,11 @@ QuickActionButton(Icons.Outlined.Flag,            stringResource(R.string.dashbo
 private fun QuickActionButton(icon: ImageVector, label: String, color: Color, onClick: () -> Unit) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.clickable(onClick = onClick)
+        modifier = Modifier.clickable(
+            interactionSource = remember { MutableInteractionSource() },
+            indication = null,
+            onClick = onClick
+        )
     ) {
         Box(
             modifier = Modifier
@@ -292,74 +299,6 @@ internal fun BudgetAlertCard(state: DashboardState, onNavigateToBill: () -> Unit
 
 @Composable
 @Suppress("LongMethod")
-internal fun GoalsCard(state: DashboardState, onNavigateToLife: () -> Unit) {
-    if (state.goalCount <= 0) return
-    val progress = if (state.goalCount > 0) state.completedGoalCount.toFloat() / state.goalCount else 0f
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(Icons.Filled.Flag, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
-                    }
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Column {
-                        Text(stringResource(R.string.dashboard_goal_progress), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        Text(
-                            stringResource(R.string.dashboard_goals_completed, state.completedGoalCount, state.goalCount),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-                JumpCapsule(
-                    label = stringResource(R.string.nav_life),
-                    color = com.palmnote.ui.theme.ModuleLife,
-                    onClick = onNavigateToLife
-                )
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(contentAlignment = Alignment.Center, modifier = Modifier.size(76.dp)) {
-                    GoalProgressRing(progress = progress, modifier = Modifier.fillMaxSize())
-                    Text(
-                        "${(progress * 100).toInt()}%",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-                Text(
-                    text = stringResource(R.string.dashboard_goals_view_all),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(start = 16.dp).clickable(onClick = onNavigateToLife)
-                )
-            }
-        }
-    }
-}
-
-@Composable
 internal fun AnniversariesCard(state: DashboardState, onNavigateToLife: () -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
     if (state.anniversaryCount <= 0) return
@@ -370,35 +309,10 @@ internal fun AnniversariesCard(state: DashboardState, onNavigateToLife: () -> Un
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier.size(36.dp)
-                            .clip(CircleShape)
-                            .background(AccentOrange.copy(alpha = 0.15f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(Icons.Filled.Celebration, null, tint = AccentOrange, modifier = Modifier.size(20.dp))
-                    }
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Column {
-                        Text(stringResource(R.string.dashboard_card_anniversaries), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        Text(                            stringResource(R.string.dashboard_anniversaries_count, state.anniversaryCount), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                }
-                JumpCapsule(
-                    label = stringResource(R.string.nav_life),
-                    color = AccentOrange,
-                    onClick = onNavigateToLife
-                )
-            }
+            // 不画卡片自己的标题行（图标 + 标题 + 条数 + 「生活 >」）：
+            // 卡里显示的本来就是纪念日本身，再套一层同名标题是重复信息。
             val first = state.upcomingAnniversaries.firstOrNull()
             if (first != null) {
-                Spacer(modifier = Modifier.height(12.dp))
                 val daysUntil = first.daysUntil
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
@@ -466,7 +380,6 @@ internal fun AnniversariesCard(state: DashboardState, onNavigateToLife: () -> Un
                     )
                 }
             } else {
-                Spacer(modifier = Modifier.height(8.dp))
                 Text(stringResource(R.string.dashboard_no_anniversaries), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.clickable(onClick = onNavigateToLife))
             }
@@ -589,7 +502,6 @@ private fun JumpCapsule(label: String, color: Color, onClick: () -> Unit, modifi
     Row(
         modifier = modifier
             .clip(MaterialTheme.shapes.small)
-            .border(1.dp, color.copy(alpha = 0.5f), MaterialTheme.shapes.small)
             .background(color.copy(alpha = 0.08f))
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onClick)
             .padding(horizontal = 8.dp, vertical = 3.dp),
@@ -598,40 +510,6 @@ private fun JumpCapsule(label: String, color: Color, onClick: () -> Unit, modifi
     ) {
         Text(label, style = MaterialTheme.typography.labelSmall, color = color, maxLines = 1)
         Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = color, modifier = Modifier.size(14.dp))
-    }
-}
-
-@Composable
-private fun GoalProgressRing(progress: Float, modifier: Modifier = Modifier, strokeWidth: androidx.compose.ui.unit.Dp = 8.dp) {
-    val trackColor = MaterialTheme.colorScheme.surfaceVariant
-    val progressColor = MaterialTheme.colorScheme.primary
-    Canvas(modifier = modifier) {
-        val strokePx = strokeWidth.toPx()
-        val radius = (size.minDimension - strokePx) / 2
-        val center = Offset(size.width / 2, size.height / 2)
-        val arcSize = Size(radius * 2, radius * 2)
-        val topLeft = Offset(center.x - radius, center.y - radius)
-        drawArc(
-            color = trackColor,
-            startAngle = -90f,
-            sweepAngle = 360f,
-            useCenter = false,
-            topLeft = topLeft,
-            size = arcSize,
-            style = Stroke(width = strokePx, cap = StrokeCap.Round)
-        )
-        val sweep = progress.coerceIn(0f, 1f) * 360f
-        if (sweep > 0f) {
-            drawArc(
-                color = progressColor,
-                startAngle = -90f,
-                sweepAngle = sweep,
-                useCenter = false,
-                topLeft = topLeft,
-                size = arcSize,
-                style = Stroke(width = strokePx, cap = StrokeCap.Round)
-            )
-        }
     }
 }
 
@@ -857,7 +735,7 @@ internal fun TodayCard(state: DashboardState, onNavigateToLife: () -> Unit) {
             Column(horizontalAlignment = Alignment.End) {
                 Text(stringResource(R.string.dashboard_recorded), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(
-                    stringResource(R.string.dashboard_items_recorded, state.activeAssetCount + state.goalCount + state.anniversaryCount),
+                    stringResource(R.string.dashboard_items_recorded, state.activeAssetCount + state.anniversaryCount),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = StatusHeld
@@ -988,7 +866,6 @@ internal fun CardManagementDialog(
                                 CardType.NET_WORTH -> stringResource(R.string.dashboard_card_net_worth)
                                 CardType.QUICK_ACTIONS -> stringResource(R.string.dashboard_card_quick_actions)
                                 CardType.BUDGET_ALERT -> stringResource(R.string.dashboard_card_budget_alert)
-                                CardType.GOALS -> stringResource(R.string.dashboard_card_goals)
                                 CardType.ANNIVERSARIES -> stringResource(R.string.dashboard_card_anniversaries)
                                 CardType.ASSET_DISTRIBUTION -> stringResource(R.string.dashboard_card_asset_distribution)
                                 CardType.TODAY -> stringResource(R.string.dashboard_card_today)
@@ -1037,3 +914,4 @@ internal fun CardManagementDialog(
         confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.done)) } }
     )
 }
+

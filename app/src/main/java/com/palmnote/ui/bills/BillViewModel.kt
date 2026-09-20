@@ -222,9 +222,12 @@ class BillViewModel @Inject constructor(
             (data.expense.toFloat() / data.budget.totalBudget).toFloat() else 0f
 
         val filterActive = filter.type != null || filter.category != null || filter.paymentMethod != null || filter.amountMin != null || filter.amountMax != null
+        // 全局搜索 DAO 不带账本条件：列表按账本展示，搜索结果也需按当前账本收敛（ALL_BOOKS 除外）
+        val scopedSearchRes = if (bookId == AccountBook.ALL_BOOKS_ID) searchRes
+        else searchRes.filter { it.accountBookId == bookId }
         @Suppress("InjectDispatcher")
         val filtered = withContext(kotlinx.coroutines.Dispatchers.Default) {
-            if (searching) searchRes
+            if (searching) scopedSearchRes
             else if (!filterActive && query.isBlank()) emptyList()
             else (data?.bills.orEmpty()).filter { bill ->
                 (filter.type == null || bill.type == filter.type) &&
@@ -300,17 +303,26 @@ class BillViewModel @Inject constructor(
                 }
             }
         }
+        // 只在需要持久化的字段真正变化时才写 SavedStateHandle：
+        // 此前对每次 state 发射（每次搜索键入、每次 DB tick）都写 9 个 key
         viewModelScope.launch {
-            state.drop(1).collect { s ->
-                savedStateHandle["bill_year_month"] = s.currentYearMonth
-                savedStateHandle["bill_selected_day"] = s.selectedDay ?: -1
-                savedStateHandle["bill_selected_book"] = s.selectedBookId
-                savedStateHandle["bill_search_query"] = s.searchQuery
-                savedStateHandle["bill_filter_type"] = s.currentFilter.type?.value.orEmpty()
-                savedStateHandle["bill_filter_category"] = s.currentFilter.category.orEmpty()
-                savedStateHandle["bill_filter_payment_method"] = s.currentFilter.paymentMethod ?: ""
-                savedStateHandle["bill_filter_amount_min"] = s.currentFilter.amountMin ?: -1L
-                savedStateHandle["bill_filter_amount_max"] = s.currentFilter.amountMax ?: -1L
+            state.drop(1).map { s ->
+                listOf(
+                    s.currentYearMonth, s.selectedDay ?: -1, s.selectedBookId, s.searchQuery,  // selectedDay 必须写 Int：恢复侧 get<Int>，写 Long 会 ClassCastException
+                    s.currentFilter.type?.value.orEmpty(), s.currentFilter.category.orEmpty(),
+                    s.currentFilter.paymentMethod?.value.orEmpty(), s.currentFilter.amountMin ?: -1L,
+                    s.currentFilter.amountMax ?: -1L
+                )
+            }.distinctUntilChanged().collect { v ->
+                savedStateHandle["bill_year_month"] = v[0]
+                savedStateHandle["bill_selected_day"] = v[1]
+                savedStateHandle["bill_selected_book"] = v[2]
+                savedStateHandle["bill_search_query"] = v[3]
+                savedStateHandle["bill_filter_type"] = v[4]
+                savedStateHandle["bill_filter_category"] = v[5]
+                savedStateHandle["bill_filter_payment_method"] = v[6]
+                savedStateHandle["bill_filter_amount_min"] = v[7]
+                savedStateHandle["bill_filter_amount_max"] = v[8]
             }
         }
         // 恢复上次未提交的表单草稿（进程被杀重建后）
@@ -512,7 +524,9 @@ class BillViewModel @Inject constructor(
                     note = form.note.trim(),
                     date = form.date,
                     yearMonth = DateUtils.formatYearMonth(form.date),
-                    accountBookId = state.value.selectedBookId,
+                    // 直接读 _selectedBookId（权威来源）：combined state 依赖 init 里的 collect 链，
+                    // 在未收集/未发射时读到的是默认值，可能把账单记错账本
+                    accountBookId = _selectedBookId.value,
                     walletId = form.walletId,
                     toWalletId = if (form.type == BillType.TRANSFER) form.toWalletId else null,
                     paymentMethod = form.paymentMethod,

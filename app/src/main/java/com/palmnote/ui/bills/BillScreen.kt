@@ -73,10 +73,11 @@ fun BillScreen(
     
     var calendarExpanded by remember { mutableStateOf(false) }
     val selectedFilter = state.currentFilter.type?.value ?: "ALL"
-    val filteredBills by remember(state.bills, state.filteredBills, state.currentFilter, selectedFilter, state.selectedDay) {
+    // 无 key 的 remember(derivedStateOf)：状态字段变化时只重算本块，避免整个过滤器随任意 state 发射重建
+    val filteredBills by remember {
         derivedStateOf {
             val base = if (state.currentFilter.isActive || state.searchQuery.isNotBlank()) state.filteredBills else state.bills
-            val byType = when (selectedFilter) {
+            val byType = when (state.currentFilter.type?.value ?: "ALL") {
                 "EXPENSE" -> base.filter { it.type == BillType.EXPENSE }
                 "INCOME" -> base.filter { it.type == BillType.INCOME }
                 "TRANSFER" -> base.filter { it.type == BillType.TRANSFER }
@@ -265,8 +266,8 @@ fun BillScreen(
                         state.selectedBookId.takeIf { it != com.palmnote.data.db.entity.AccountBook.ALL_BOOKS_ID }
                     onNavigateToAdd(date)
                 },
-                containerColor = MaterialTheme.colorScheme.secondary,
-                contentColor = Color.White,
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
                 shape = MaterialTheme.shapes.large,
                 icon = { Icon(Icons.Filled.Add, contentDescription = null) },
                 text = { Text(stringResource(R.string.bill_add), fontWeight = FontWeight.Medium) }
@@ -414,6 +415,8 @@ fun BillScreen(
 
                 // Bill list (scrollable)
                 val billListState = rememberLazyListState()
+                // 滚动状态用 derivedStateOf 收敛，列表项读取它才不会在每次滚动帧重组整张列表
+                val isListScrolling by remember { derivedStateOf { billListState.isScrollInProgress } }
                 LazyColumn(
                     modifier = Modifier.weight(1f),
                     state = billListState,
@@ -491,7 +494,7 @@ fun BillScreen(
                         }
                     }
                     itemsIndexed(bills, key = { _, bill -> bill.id }) { index, bill ->
-                        AnimatedCard(index = (index + 4).coerceAtMost(10), instant = remember(bill.id) { billListState.isScrollInProgress }) {
+                        AnimatedCard(index = (index + 4).coerceAtMost(10), instant = isListScrolling) {
                         BillListItem(
                             bill = bill,
                             wallets = state.wallets,

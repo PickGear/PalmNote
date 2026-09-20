@@ -25,14 +25,43 @@ class PaddleOcrEngine @Inject constructor(
     private var ocr: PaddleOCR? = null
 
     override suspend fun recognize(bitmap: Bitmap): String {
-        val engine = lock.withLock { ensureLoaded() }
-        val result = engine.recognize(bitmap)
-        return buildString {
-            for (r in result.results) {
-                if (isNotEmpty()) append('\n')
-                append(r.text)
+        // 整个推理过程持锁：release() 可能在推理中途释放 native 引擎导致崩溃
+        val text = lock.withLock {
+            val engine = ensureLoaded()
+            val result = engine.recognize(bitmap)
+            buildString {
+                for (r in result.results) {
+                    if (isNotEmpty()) append('\n')
+                    append(r.text)
+                }
             }
         }
+        return text
+    }
+
+    /**
+     * 透出每行识别置信度 + 文本框坐标（引擎以 recScoreThresh = 0.0f 运行，低分行不会被丢弃）。
+     *
+     * 【坐标系实证结论】`box.points` 已由 SDK 换算回**传入本方法的 bitmap 的像素坐标系**，无需再做变换。
+     * 依据（逐文件逐行确认，非推测）：
+     * 1. `DetPreprocessor.preprocess(...)`（ppocr-sdk/.../preprocess/DetPreprocessor.kt:60-61）
+     *    取 `originalH = src.rows()` / `originalW = src.cols()`，而 `src` 来自
+     *    `BitmapUtils.bitmapToBGRMat(bitmap)`（同文件 :45），即**输入 bitmap 的原始尺寸**。
+     * 2. `ImageUtils.resizeToMultipleOf32(...)`（ppocr-sdk/.../util/ImageUtils.kt:23-51）只做
+     *    等比 `Imgproc.resize`（按 limitSideLen/limitType 求 ratio，再对齐到 32 的倍数），
+     *    **没有任何 letterbox / padding / 补边**，故检测图与原图只差一个均匀缩放。
+     * 3. `DBPostProcessor.process(...)`（ppocr-sdk/.../postprocess/DBPostProcessor.kt:48-51）
+     *    以 `scaleX = originalW / pW`、`scaleY = originalH / pH`（pW/pH 为网络输入尺寸）把顶点缩放回
+     *    `originalW/H`，并在 :159-160 用 `coerceIn(0, originalW/H)` 夹取。
+     *    → 顶点落在输入 bitmap 的坐标空间，且不超出其边界。
+     */
+    override suspend fun recognizeDetailed(bitmap: Bitmap): List<OcrLine> {
+        val lines = lock.withLock {
+            val engine = ensureLoaded()
+            val result = engine.recognize(bitmap)
+            result.results.map { OcrLine(it.text, it.confidence, it.box.points) }
+        }
+        return lines
     }
 
     override suspend fun release() {

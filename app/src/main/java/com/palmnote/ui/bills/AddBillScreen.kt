@@ -465,7 +465,10 @@ fun AddBillScreen(
                             dismissButton = {
                                 TextButton(onClick = { showDatePicker = false }) { Text(stringResource(R.string.cancel), fontWeight = FontWeight.Bold) }
                             }
-                        ) { DatePicker(state = state, colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.background)) }
+                        ) {
+                            NoDialogWindowAnimation()
+                            DatePicker(state = state, colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.background))
+                        }
                     }
 
                     if (showTimePicker) {
@@ -492,7 +495,10 @@ fun AddBillScreen(
                                     Text(stringResource(R.string.cancel), fontWeight = FontWeight.Bold)
                                 }
                             },
-                            text = { TimePicker(state = timeState) }
+                            text = {
+                                NoDialogWindowAnimation()
+                                TimePicker(state = timeState)
+                            }
                         )
                     }
                 }

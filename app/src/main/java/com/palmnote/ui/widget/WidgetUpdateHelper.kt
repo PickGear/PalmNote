@@ -17,6 +17,17 @@ object WidgetUpdateHelper {
 
     private lateinit var appContext: Context
 
+    /**
+     * 恢复备份期间抑制一切 Widget 更新广播：Widget 的 onUpdate/onReceive 会读数据库，
+     * 在备份文件被替换的窗口里打开数据库会把恢复写坏。恢复完成后进程重启，
+     * 标志随进程消亡，无需复位。
+     */
+    @Volatile
+    var restoring: Boolean = false
+        private set
+
+    fun setRestoring(value: Boolean) { restoring = value }
+
     fun init(context: Context) {
         appContext = context.applicationContext
         scheduleMidnightRefresh(appContext)
@@ -48,40 +59,44 @@ object WidgetUpdateHelper {
         }
     }
 
+    // 各 provider 只能收到自己的 widgetId：框架不校验广播里的 id 属于哪个 provider，
+    // 把 Dashboard 的 id 拼进别的 provider 的更新广播会把 Dashboard 界面覆盖成账单/待办布局
+
     fun refreshBillWidgets() {
         val manager = AppWidgetManager.getInstance(appContext)
         val billIds = manager.getAppWidgetIds(ComponentName(appContext, BillWidgetProvider::class.java))
         val quickIds = manager.getAppWidgetIds(ComponentName(appContext, QuickBillWidgetProvider::class.java))
-        val dashIds = manager.getAppWidgetIds(ComponentName(appContext, DashboardWidgetProvider::class.java))
-        sendUpdate(BillWidgetProvider::class.java, billIds + quickIds + dashIds)
+        sendUpdate(BillWidgetProvider::class.java, billIds)
+        sendUpdate(QuickBillWidgetProvider::class.java, quickIds)
+        refreshDashboardWidgets()
     }
 
     fun refreshTodoWidgets() {
         val manager = AppWidgetManager.getInstance(appContext)
         val todoIds = manager.getAppWidgetIds(ComponentName(appContext, TodoWidgetProvider::class.java))
-        val dashIds = manager.getAppWidgetIds(ComponentName(appContext, DashboardWidgetProvider::class.java))
-        sendUpdate(TodoWidgetProvider::class.java, todoIds + dashIds)
+        sendUpdate(TodoWidgetProvider::class.java, todoIds)
+        refreshDashboardWidgets()
     }
 
     fun refreshCounterWidgets() {
         val manager = AppWidgetManager.getInstance(appContext)
         val counterIds = manager.getAppWidgetIds(ComponentName(appContext, LifeCounterWidgetProvider::class.java))
-        val dashIds = manager.getAppWidgetIds(ComponentName(appContext, DashboardWidgetProvider::class.java))
-        sendUpdate(LifeCounterWidgetProvider::class.java, counterIds + dashIds)
+        sendUpdate(LifeCounterWidgetProvider::class.java, counterIds)
+        refreshDashboardWidgets()
     }
 
     fun refreshAssetWidgets() {
         val manager = AppWidgetManager.getInstance(appContext)
         val assetIds = manager.getAppWidgetIds(ComponentName(appContext, AssetWidgetProvider::class.java))
-        val dashIds = manager.getAppWidgetIds(ComponentName(appContext, DashboardWidgetProvider::class.java))
-        sendUpdate(AssetWidgetProvider::class.java, assetIds + dashIds)
+        sendUpdate(AssetWidgetProvider::class.java, assetIds)
+        refreshDashboardWidgets()
     }
 
     fun refreshVaultWidgets() {
         val manager = AppWidgetManager.getInstance(appContext)
         val vaultIds = manager.getAppWidgetIds(ComponentName(appContext, VaultWidgetProvider::class.java))
-        val dashIds = manager.getAppWidgetIds(ComponentName(appContext, DashboardWidgetProvider::class.java))
-        sendUpdate(VaultWidgetProvider::class.java, vaultIds + dashIds)
+        sendUpdate(VaultWidgetProvider::class.java, vaultIds)
+        refreshDashboardWidgets()
     }
 
     fun refreshDashboardWidgets() {
@@ -95,17 +110,28 @@ object WidgetUpdateHelper {
     }
 
     fun refreshAllWidgets() {
-        refreshBillWidgets()
-        refreshTodoWidgets()
-        refreshCounterWidgets()
-        refreshAssetWidgets()
-        refreshVaultWidgets()
+        // 各 refresh* 内部会附带刷新 Dashboard，这里手动展开避免连发 5 次 Dashboard 广播
+        val manager = AppWidgetManager.getInstance(appContext)
+        sendUpdate(BillWidgetProvider::class.java,
+            manager.getAppWidgetIds(ComponentName(appContext, BillWidgetProvider::class.java)))
+        sendUpdate(QuickBillWidgetProvider::class.java,
+            manager.getAppWidgetIds(ComponentName(appContext, QuickBillWidgetProvider::class.java)))
+        sendUpdate(TodoWidgetProvider::class.java,
+            manager.getAppWidgetIds(ComponentName(appContext, TodoWidgetProvider::class.java)))
+        sendUpdate(LifeCounterWidgetProvider::class.java,
+            manager.getAppWidgetIds(ComponentName(appContext, LifeCounterWidgetProvider::class.java)))
+        sendUpdate(AssetWidgetProvider::class.java,
+            manager.getAppWidgetIds(ComponentName(appContext, AssetWidgetProvider::class.java)))
+        sendUpdate(VaultWidgetProvider::class.java,
+            manager.getAppWidgetIds(ComponentName(appContext, VaultWidgetProvider::class.java)))
+        refreshDashboardWidgets()
         refreshHabitWidgets()
     }
 
     // Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND 是隐藏 API（0x01000000），只能以字面量使用
     @Suppress("WrongConstant")
     private fun sendUpdate(providerClass: Class<*>, ids: IntArray) {
+        if (restoring) return  // 恢复窗口内静默丢弃：见 restoring 注释
         if (ids.isEmpty()) return
         val intent = Intent(appContext, providerClass).apply {
             action = AppWidgetManager.ACTION_APPWIDGET_UPDATE

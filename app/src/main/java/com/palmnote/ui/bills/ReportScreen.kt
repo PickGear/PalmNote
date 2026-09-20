@@ -776,9 +776,13 @@ private fun YearlyBarChart(monthlyTrend: List<MonthTotal>, isExpense: Boolean) {
             textAlign = android.graphics.Paint.Align.CENTER
         }
 
-        monthlyTrend.forEachIndexed { index, month ->
+        monthlyTrend.forEach { month ->
+            // 趋势查询按 yearMonth GROUP BY，只返回有账单的月份；
+            // 若按下标画柱，缺月会让后面的柱子全部落在错误的月份标签下
+            val realMonth = month.yearMonth.substringAfter('-').toIntOrNull() ?: 1
+            val slot = (realMonth - 1).coerceIn(0, 11)
             val barHeight = (month.total.toFloat() / maxValue) * chartH
-            val x = leftPad + gap + index * (barWidth + gap)
+            val x = leftPad + gap + slot * (barWidth + gap)
             val y = size.height - bottomPad - barHeight
 
             drawRoundRect(
@@ -789,7 +793,7 @@ private fun YearlyBarChart(monthlyTrend: List<MonthTotal>, isExpense: Boolean) {
             )
 
             drawContext.canvas.nativeCanvas.drawText(
-                "${index + 1}",
+                "$realMonth",
                 x + barWidth / 2,
                 size.height - 4.dp.toPx(),
                 monthPaint

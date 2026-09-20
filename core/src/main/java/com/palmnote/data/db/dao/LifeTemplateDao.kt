@@ -18,6 +18,9 @@ interface LifeTemplateDao {
     @Query("SELECT * FROM life_templates WHERE id = :id")
     suspend fun getTemplateById(id: Long): LifeTemplate?
 
+    @Query("SELECT * FROM life_templates WHERE icon = :icon AND isHidden = 0 LIMIT 1")
+    suspend fun getTemplateByIcon(icon: String): LifeTemplate?
+
     @Query("SELECT * FROM life_templates WHERE id = :id")
     fun getTemplateByIdFlow(id: Long): Flow<LifeTemplate?>
 

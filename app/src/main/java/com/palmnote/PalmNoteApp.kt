@@ -7,6 +7,7 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.palmnote.data.LifeDataSeeder
+import com.palmnote.data.LifeDemoSeeder
 import com.palmnote.data.db.AppDatabase
 import com.palmnote.data.datastore.PreferencesManager
 import com.palmnote.data.AppIconManager
@@ -15,7 +16,7 @@ import com.palmnote.data.db.entity.AccountBook
 import com.palmnote.data.db.entity.CategoryConfig
 import com.palmnote.data.db.entity.Wallet
 import com.palmnote.data.worker.LifeDailyCheckWorker
-import com.palmnote.data.worker.AutoBackupWorker
+import com.palmnote.data.backup.AutoBackupScheduler
 import com.palmnote.domain.repository.AccountBookRepository
 import com.palmnote.domain.repository.WalletRepository
 import com.palmnote.ui.notification.NotificationHelper
@@ -38,8 +39,10 @@ class PalmNoteApp : Application(), Configuration.Provider {
     @Inject lateinit var walletRepository: WalletRepository
     @Inject lateinit var accountBookRepository: AccountBookRepository
     @Inject lateinit var lifeDataSeeder: LifeDataSeeder
+    @Inject lateinit var lifeDemoSeeder: LifeDemoSeeder
     @Inject lateinit var database: AppDatabase
     @Inject lateinit var workerFactory: HiltWorkerFactory
+    @Inject lateinit var autoBackupScheduler: AutoBackupScheduler
     @Inject @JvmSuppressWildcards lateinit var cachedCategoryConfigs: StateFlow<List<CategoryConfig>>
     @Inject @JvmSuppressWildcards lateinit var cachedWallets: StateFlow<List<Wallet>>
     @Inject @JvmSuppressWildcards lateinit var cachedAccountBooks: StateFlow<List<AccountBook>>
@@ -54,6 +57,8 @@ class PalmNoteApp : Application(), Configuration.Provider {
         // 因为 BillScreen 与 AddBillScreen 的 BillViewModel 分属不同 backStackEntry）
         var pendingAddBillBookId: Long? = null
         private const val MAX_CRASH_LOG_CHARS = 100_000
+        // 崩溃日志最多保留份数，超出按文件名时间戳删除最旧，避免 cacheDir 只增不减
+        private const val MAX_CRASH_LOG_FILES = 10
         private const val REDACT_MARKER = "[REDACTED]"
         private val SENSITIVE_KEYWORDS = listOf(
             "password", "passwordEncrypted", "secret", "token", "credential",
@@ -88,10 +93,22 @@ class PalmNoteApp : Application(), Configuration.Provider {
             walletRepository.initDefaultWallets()
             accountBookRepository.initDefaultBooks()
             scheduleDailyCheck()
-            scheduleAutoBackup()
+            // 自动备份按用户偏好重建（开关/频率/约束都存在 DataStore，改设置后由设置侧再调一次 sync）
+            autoBackupScheduler.sync()
             // 旧版本把备份写在应用专属外部存储（可被文件管理器读取），迁移到内部存储后旧文件不再外露
             BackupManager.migrateLegacyExternalBackups(this@PalmNoteApp)
             lifeDataSeeder.seedIfEmpty()
+            // 演示数据同样在**启动时**保证最新：模板播完后调用；改过示例内容（SEED_VERSION +1）
+            // 即自动重播种，不必等用户进生活页、也不必手动开关演示模式。
+            lifeDemoSeeder.ensureSeeded(preferencesManager)
+            // 恢复备份成功后进程重启：恢复窗口内的 Widget 广播被抑制过，
+            // 这里补一次全量刷新，让桌面小组件立即显示恢复后的数据
+            val justRestored = getSharedPreferences("restore_flags", MODE_PRIVATE)
+                .getBoolean("just_restored", false)
+            if (justRestored) {
+                getSharedPreferences("restore_flags", MODE_PRIVATE).edit().clear().apply()
+                com.palmnote.ui.widget.WidgetUpdateHelper.refreshAllWidgets()
+            }
             preferencesManager.categoryColorOverrides.first().let {
                 com.palmnote.ui.theme.ColorResolver.loadOverrides(it)
             }
@@ -120,6 +137,7 @@ class PalmNoteApp : Application(), Configuration.Provider {
                         "Thread: ${thread.name}\n" +
                         sanitizeStackTrace(throwable)
                 )
+                pruneCrashLogs()
                 android.util.Log.e("PalmNote", "Uncaught exception", throwable)
             } catch (_: Exception) {
             }
@@ -127,9 +145,19 @@ class PalmNoteApp : Application(), Configuration.Provider {
         }
     }
 
+    /** 崩溃日志只保留最近 MAX_CRASH_LOG_FILES 份，超出按时间（文件名时间戳）删除最旧的，避免只增不减。 */
+    private fun pruneCrashLogs() {
+        val logs = cacheDir.listFiles { file ->
+            file.isFile && file.name.startsWith("crash_") && file.name.endsWith(".log")
+        } ?: return
+        if (logs.size <= MAX_CRASH_LOG_FILES) return
+        logs.sortedByDescending { it.name }.drop(MAX_CRASH_LOG_FILES).forEach { it.delete() }
+    }
+
     private val defaultCrashHandler = Thread.getDefaultUncaughtExceptionHandler()
 
-    private fun scheduleDailyCheck() {
+    /** 每日检查任务重建入口：恢复失败等不重启进程的场景需要立即恢复被取消的任务。 */
+    fun scheduleDailyCheck() {
         applicationScope.launch {
             val hour = preferencesManager.dailyReminderHour.first()
             val minute = preferencesManager.dailyReminderMinute.first()
@@ -146,19 +174,11 @@ class PalmNoteApp : Application(), Configuration.Provider {
                 .setInitialDelay(initialDelay, TimeUnit.MILLISECONDS)
                 .build()
             WorkManager.getInstance(this@PalmNoteApp).enqueueUniquePeriodicWork(
-                "life_daily_check", ExistingPeriodicWorkPolicy.REPLACE, request
+                LifeDailyCheckWorker.UNIQUE_WORK_NAME, ExistingPeriodicWorkPolicy.REPLACE, request
             )
         }
     }
     
-    private fun scheduleAutoBackup() {
-        val request = PeriodicWorkRequestBuilder<AutoBackupWorker>(24, TimeUnit.HOURS)
-            .build()
-        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
-            "auto_backup", ExistingPeriodicWorkPolicy.KEEP, request
-        )
-    }
-
     private fun applySavedLanguage() {
         val savedLanguage = preferencesManager.getLanguage()
         com.palmnote.ui.settings.LanguageHelper.applyLanguage(savedLanguage)

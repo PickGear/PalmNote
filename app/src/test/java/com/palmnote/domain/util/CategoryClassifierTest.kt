@@ -190,4 +190,24 @@ class CategoryClassifierTest {
         assertEquals("其他", CategoryClassifier.guessCategory(""))
         assertEquals("其他", CategoryClassifier.guessCategory("   "))
     }
+
+    // ── 批16：自由文本分类器只保留低歧义词根；高歧义标签改由 BillCsvImporter 的标签别名表处理 ──
+
+    @Test
+    fun `low-ambiguity alias roots map to expected categories`() {
+        assertEquals("餐饮", CategoryClassifier.guessCategory("美食"))
+        assertEquals("购物", CategoryClassifier.guessCategory("服饰"))
+        assertEquals("购物", CategoryClassifier.guessCategory("装扮"))
+        assertEquals("运动", CategoryClassifier.guessCategory("户外"))
+        assertEquals("居住", CategoryClassifier.guessCategory("住房"))
+    }
+
+    @Test
+    fun `high-ambiguity roots are not caught by free-text classifier`() {
+        // 防误伤：这些词作为自由文本（商户名/地址）不应被分类器吞掉
+        // （批16 回退了「交通/出行/文化/休闲/健康/电器/亲子」这批高歧义裸词根）
+        assertEquals("其他", CategoryClassifier.guessCategory("交通银行"))
+        assertEquals("其他", CategoryClassifier.guessCategory("文化路支行"))
+        assertEquals("其他", CategoryClassifier.guessCategory("健康路"))
+    }
 }

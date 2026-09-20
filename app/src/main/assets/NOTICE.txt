@@ -1,0 +1,150 @@
+PalmNote Third-Party Notices
+============================
+
+PalmNote - A fully local-first life tracking tool
+Copyright (C) 2026 PickGear
+This project is licensed under the GNU General Public License v3.0 (GPL-3.0).
+See the LICENSE file for details.
+
+The PalmNote project includes the following third-party components.
+Each component retains its own copyright and license terms.
+All components run fully on-device; PalmNote performs no network access.
+
+
+1. PaddleOCR (PP-OCRv6 SDK and models)
+---------------------------------------
+  Component : com.paddle.ocr SDK (ppocr-sdk, vendored source)
+              + PP-OCRv6_tiny detection / recognition ONNX models
+  Source    : https://github.com/PaddlePaddle/PaddleOCR (deploy/ppocr-android)
+  Copyright : (c) 2026 PaddlePaddle Authors. All Rights Reserved.
+  License   : Apache License 2.0
+
+  The SDK is used for offline Chinese text recognition (bill image import),
+  running fully on-device via ONNX Runtime. No network access is performed.
+
+  Model files are redistributed under the terms of the Apache License 2.0:
+    - models/det/inference.onnx        (PP-OCRv6_tiny text detection)
+    - models/det/inference.yml
+    - models/rec/inference.onnx        (PP-OCRv6_tiny text recognition)
+    - models/rec/inference.yml
+
+
+2. ONNX Runtime
+----------------
+  Component : com.microsoft.onnxruntime:onnxruntime-android
+  Version   : 1.29.0
+  Copyright : (c) Microsoft Corporation
+  License   : MIT License
+  URL       : https://onnxruntime.ai
+
+
+3. OpenCV
+----------
+  Component : org.opencv:opencv (OpenCV 4.14.0 Android build)
+  Version   : 4.14.0
+  Copyright : (c) OpenCV team (Intel Corporation, Willow Garage, Itseez, etc.)
+  License   : Apache License 2.0
+  URL       : https://opencv.org
+
+
+4. Lunar (Solar / Chinese Lunar Calendar)
+-----------------------------------------
+  Component : cn.6tail:lunar
+  Version   : 1.7.7
+  Copyright : (c) 2018 6tail
+  License   : MIT License
+  URL       : https://github.com/6tail/lunar-java
+
+
+5. SQLCipher Android
+----------------------
+  Component : net.zetetic:sqlcipher-android
+  Version   : 4.17.0
+  Copyright : (c) 2014, Zetetic LLC
+  License   : BSD-3-Clause (Zetetic Open Source BSD License)
+  URL       : https://github.com/sqlcipher/sqlcipher-android
+
+  Provides encrypted SQLite database storage for all local data.
+  Runs fully on-device; no network access is performed.
+
+
+6. AndroidX Libraries
+----------------------
+  Component : androidx.core:core-ktx 1.15.0, androidx.appcompat:appcompat 1.8.0,
+              androidx.activity:activity-compose 1.9.3,
+              androidx.lifecycle:* 2.8.7,
+              androidx.navigation:navigation-compose 2.8.5,
+              androidx.room:* 2.7.2, androidx.datastore:datastore-preferences 1.1.1,
+              androidx.work:work-runtime-ktx 2.10.0,
+              androidx.paging:paging-runtime-ktx 3.3.4, androidx.paging:paging-compose 3.3.4,
+              androidx.documentfile:documentfile 1.1.0, androidx.biometric:biometric 1.1.0,
+              androidx.compose.material3:material3-window-size-class,
+              androidx.sqlite, androidx.test (test only)
+  Copyright : (c) The Android Open Source Project
+  License   : Apache License 2.0
+  URL       : https://developer.android.com/jetpack
+
+
+7. Jetpack Compose / Material 3
+--------------------------------
+  Component : androidx.compose.* (ui, foundation, material3,
+              material-icons-extended, animation, runtime;
+              versions resolved via compose-bom 2025.06.01)
+  Copyright : (c) The Android Open Source Project
+  License   : Apache License 2.0
+  URL       : https://developer.android.com/jetpack/compose
+
+
+8. Kotlin / Kotlin Coroutines / Serialization
+-----------------------------------------------
+  Component : org.jetbrains.kotlin (2.2.21),
+              org.jetbrains.kotlinx:kotlinx-coroutines (1.10.2),
+              org.jetbrains.kotlinx:kotlinx-serialization-json (1.8.1)
+  Copyright : (c) JetBrains s.r.o. and contributors
+  License   : Apache License 2.0
+  URL       : https://kotlinlang.org
+
+
+9. Hilt (Dagger)
+-----------------
+  Component : com.google.dagger:hilt-android 2.58,
+              androidx.hilt:hilt-navigation-compose 1.2.0
+  Copyright : (c) The Dagger Authors / Google LLC
+  License   : Apache License 2.0
+  URL       : https://dagger.dev
+
+
+10. Coil
+---------
+  Component : io.coil-kt.coil3:coil-compose
+  Version   : 3.3.0
+  Copyright : (c) Coil Contributors
+  License   : Apache License 2.0
+  URL       : https://coil-kt.github.io/coil
+
+
+11. Test-Only Dependencies
+---------------------------
+  These are used by the test suite only and are not shipped in the release APK.
+
+  Component : JUnit 4 (4.13.2), androidx.test.ext:junit (1.3.0),
+              androidx.test.espresso:espresso-core (3.7.0),
+              io.mockk:mockk (1.14.11), app.cash.turbine:turbine (1.2.1),
+              org.robolectric:robolectric (4.16.1), sqlite4java
+  License   : JUnit 4 (Eclipse Public License 1.0),
+              AndroidX Test / Espresso (Apache License 2.0),
+              MockK (Apache License 2.0),
+              Turbine (Apache License 2.0),
+              Robolectric (MIT License),
+              sqlite4java (BSD-2-Clause)
+
+
+Full license texts
+-------------------
+  Apache License 2.0            https://www.apache.org/licenses/LICENSE-2.0
+  MIT License                   https://opensource.org/licenses/MIT
+  BSD-3-Clause                  https://opensource.org/licenses/BSD-3-Clause
+  BSD-2-Clause                  https://opensource.org/licenses/BSD-2-Clause
+  Eclipse Public License 1.0    https://www.eclipse.org/legal/epl-v10.html
+
+  The GNU General Public License v3.0 is reproduced in full in the LICENSE file.

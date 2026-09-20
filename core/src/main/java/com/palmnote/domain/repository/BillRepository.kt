@@ -50,6 +50,9 @@ interface BillRepository {
     /** 事务：写账单 + 按类型调整钱包余额（新建） */
     suspend fun createBillWithWalletAdjustment(bill: Bill): Long
 
+    /** 单事务批量新建（导入用）：逐条按类型调整钱包余额，返回各账单 id */
+    suspend fun createBillsWithWalletAdjustment(bills: List<Bill>): List<Long>
+
     /** 事务：更新账单 + 回滚旧余额 + 应用新余额（仅金额/类型/钱包变化时） */
     suspend fun updateBillWithWalletAdjustment(newBill: Bill)
     suspend fun search(query: String): List<Bill>

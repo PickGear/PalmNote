@@ -46,6 +46,10 @@ import androidx.core.app.ActivityCompat
 import android.app.Activity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.palmnote.ui.components.CompactTopAppBar
+import com.palmnote.ui.components.ChoiceDialog
+import com.palmnote.ui.components.SectionHeader
+import com.palmnote.ui.components.SettingRowContent
+import com.palmnote.ui.components.SettingRow
 import com.palmnote.app.R
 import com.palmnote.ui.theme.*
 
@@ -237,47 +241,35 @@ fun GeneralSettingsScreen(
         }
     }
 
+    val fallbackTint = MaterialTheme.colorScheme.primary
+
     if (showThemePicker) {
         val themeOptions = listOf(Triple("SYSTEM", stringResource(R.string.settings_follow_system), Icons.Outlined.BrightnessAuto), Triple("LIGHT", stringResource(R.string.settings_theme_light), Icons.Outlined.WbSunny), Triple("DARK", stringResource(R.string.settings_theme_dark), Icons.Outlined.Brightness3))
         val themeColors = mapOf("SYSTEM" to InfoBlue, "LIGHT" to AccentOrange, "DARK" to LifePlan)
-        AppDialog(
-            onDismissRequest = { showThemePicker = false }, title = { Text(stringResource(R.string.settings_select_dark_mode), fontWeight = FontWeight.Bold) },
-            text = { Column { themeOptions.forEach { (mode, label, icon) ->
-                Row(modifier = Modifier.fillMaxWidth().clip(MaterialTheme.shapes.medium).clickable { viewModel.setThemeMode(mode); showThemePicker = false }.padding(vertical = 8.dp, horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    val tint = themeColors[mode] ?: MaterialTheme.colorScheme.primary
-                    Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(tint.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) { Icon(icon, null, tint = tint, modifier = Modifier.size(20.dp)) }
-                    Spacer(Modifier.width(12.dp)); Text(label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-                    RadioButton(
-                        selected = state.themeMode == mode,
-                        onClick = { viewModel.setThemeMode(mode); showThemePicker = false },
-                        colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary)
-                    )
-                }
-                if (mode != themeOptions.last().first) HorizontalDivider(modifier = Modifier.padding(horizontal = 52.dp))
-            } } },
-            confirmButton = { TextButton(onClick = { showThemePicker = false }) { Text(stringResource(R.string.settings_cancel), fontWeight = FontWeight.Bold) } }
+        ChoiceDialog(
+            title = stringResource(R.string.settings_select_dark_mode),
+            options = themeOptions,
+            selected = themeOptions.firstOrNull { it.first == state.themeMode } ?: themeOptions[0],
+            optionLabel = { it.second },
+            optionIcon = { it.third },
+            optionTint = { themeColors[it.first] ?: fallbackTint },
+            onSelect = { (mode, _, _) -> viewModel.setThemeMode(mode) },
+            onDismiss = { showThemePicker = false }
         )
     }
 
     if (showLanguagePicker) {
         val langOptions = listOf(Triple("SYSTEM", stringResource(R.string.settings_follow_system), Icons.Outlined.BrightnessAuto), Triple("zh", stringResource(R.string.settings_language_chinese), Icons.Outlined.Translate), Triple("en", "English", Icons.Outlined.Translate))
         val langColors = mapOf("SYSTEM" to InfoBlue, "zh" to AccentOrange, "en" to StatusActive)
-        AppDialog(
-            onDismissRequest = { showLanguagePicker = false }, title = { Text(stringResource(R.string.settings_select_language), fontWeight = FontWeight.Bold) },
-            text = { Column { langOptions.forEach { (lang, label, icon) ->
-                Row(modifier = Modifier.fillMaxWidth().clip(MaterialTheme.shapes.medium).clickable { viewModel.setLanguage(lang); showLanguagePicker = false }.padding(vertical = 8.dp, horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    val tint = langColors[lang] ?: MaterialTheme.colorScheme.primary
-                    Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(tint.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) { Icon(icon, null, tint = tint, modifier = Modifier.size(20.dp)) }
-                    Spacer(Modifier.width(12.dp)); Text(label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-                    RadioButton(
-                        selected = state.language == lang,
-                        onClick = { viewModel.setLanguage(lang); showLanguagePicker = false },
-                        colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary)
-                    )
-                }
-                if (lang != langOptions.last().first) HorizontalDivider(modifier = Modifier.padding(horizontal = 52.dp))
-            } } },
-            confirmButton = { TextButton(onClick = { showLanguagePicker = false }) { Text(stringResource(R.string.settings_cancel), fontWeight = FontWeight.Bold) } }
+        ChoiceDialog(
+            title = stringResource(R.string.settings_select_language),
+            options = langOptions,
+            selected = langOptions.firstOrNull { it.first == state.language } ?: langOptions[0],
+            optionLabel = { it.second },
+            optionIcon = { it.third },
+            optionTint = { langColors[it.first] ?: fallbackTint },
+            onSelect = { (lang, _, _) -> viewModel.setLanguage(lang) },
+            onDismiss = { showLanguagePicker = false }
         )
     }
 
@@ -538,22 +530,15 @@ fun GeneralSettingsScreen(
     if (showStartPagePicker) {
         val startPageColors = mapOf("dashboard" to ModuleHome, "asset" to ModuleItem, "bill" to ModuleBill, "life" to ModuleLife)
         val startPageOptions = listOf(Triple("dashboard", stringResource(R.string.settings_home), Icons.Outlined.Home), Triple("asset", stringResource(R.string.settings_items), Icons.Outlined.Inventory2), Triple("bill", stringResource(R.string.bill_title), Icons.Outlined.AccountBalanceWallet), Triple("life", stringResource(R.string.life_title), Icons.Outlined.FavoriteBorder))
-        AppDialog(
-            onDismissRequest = { showStartPagePicker = false }, title = { Text(stringResource(R.string.settings_select_start_page), fontWeight = FontWeight.Bold) },
-            text = { Column { startPageOptions.forEach { (route, label, icon) ->
-                val tint = startPageColors[route] ?: MaterialTheme.colorScheme.primary
-                Row(modifier = Modifier.fillMaxWidth().clip(MaterialTheme.shapes.medium).clickable { viewModel.setDefaultStartPage(route); showStartPagePicker = false }.padding(vertical = 8.dp, horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(tint.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) { Icon(icon, null, tint = tint, modifier = Modifier.size(20.dp)) }
-                    Spacer(Modifier.width(12.dp)); Text(label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-                    RadioButton(
-                        selected = state.defaultStartPage == route,
-                        onClick = { viewModel.setDefaultStartPage(route); showStartPagePicker = false },
-                        colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary)
-                    )
-                }
-                if (route != startPageOptions.last().first) HorizontalDivider(modifier = Modifier.padding(horizontal = 52.dp))
-            } } },
-            confirmButton = { TextButton(onClick = { showStartPagePicker = false }) { Text(stringResource(R.string.settings_cancel), fontWeight = FontWeight.Bold) } }
+        ChoiceDialog(
+            title = stringResource(R.string.settings_select_start_page),
+            options = startPageOptions,
+            selected = startPageOptions.firstOrNull { it.first == state.defaultStartPage } ?: startPageOptions[0],
+            optionLabel = { it.second },
+            optionIcon = { it.third },
+            optionTint = { startPageColors[it.first] ?: fallbackTint },
+            onSelect = { (route, _, _) -> viewModel.setDefaultStartPage(route) },
+            onDismiss = { showStartPagePicker = false }
         )
     }
 
@@ -562,22 +547,15 @@ fun GeneralSettingsScreen(
         val billTypeIncome = stringResource(R.string.settings_bill_income)
         val billTypeColors = mapOf(BillType.EXPENSE.value to ExpenseRed, BillType.INCOME.value to IncomeGreen)
         val billTypeOptions = listOf(Triple(BillType.EXPENSE.value, billTypeExpense, Icons.AutoMirrored.Outlined.TrendingDown), Triple(BillType.INCOME.value, billTypeIncome, Icons.AutoMirrored.Outlined.TrendingUp))
-        AppDialog(
-            onDismissRequest = { showBillTypePicker = false }, title = { Text(stringResource(R.string.settings_select_bill_type), fontWeight = FontWeight.Bold) },
-            text = { Column { billTypeOptions.forEach { (type, label, icon) ->
-                val tint = billTypeColors[type] ?: AccentOrange
-                Row(modifier = Modifier.fillMaxWidth().clip(MaterialTheme.shapes.medium).clickable { viewModel.setDefaultBillType(type); showBillTypePicker = false }.padding(vertical = 8.dp, horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(tint.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) { Icon(icon, null, tint = tint, modifier = Modifier.size(20.dp)) }
-                    Spacer(Modifier.width(12.dp)); Text(label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-                    RadioButton(
-                        selected = state.defaultBillType.value == type,
-                        onClick = { viewModel.setDefaultBillType(type); showBillTypePicker = false },
-                        colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary)
-                    )
-                }
-                if (type != billTypeOptions.last().first) HorizontalDivider(modifier = Modifier.padding(horizontal = 52.dp))
-            } } },
-            confirmButton = { TextButton(onClick = { showBillTypePicker = false }) { Text(stringResource(R.string.settings_cancel), fontWeight = FontWeight.Bold) } }
+        ChoiceDialog(
+            title = stringResource(R.string.settings_select_bill_type),
+            options = billTypeOptions,
+            selected = billTypeOptions.firstOrNull { it.first == state.defaultBillType.value } ?: billTypeOptions[0],
+            optionLabel = { it.second },
+            optionIcon = { it.third },
+            optionTint = { billTypeColors[it.first] ?: fallbackTint },
+            onSelect = { (type, _, _) -> viewModel.setDefaultBillType(type) },
+            onDismiss = { showBillTypePicker = false }
         )
     }
 

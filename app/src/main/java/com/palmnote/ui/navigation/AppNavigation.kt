@@ -48,6 +48,8 @@ import com.palmnote.ui.search.SearchScreen
 import com.palmnote.ui.settings.AboutScreen
 import com.palmnote.ui.settings.PrivacyPolicyScreen
 import com.palmnote.ui.settings.TermsOfServiceScreen
+import com.palmnote.ui.settings.LicenseScreen
+import com.palmnote.ui.settings.VersionHistoryScreen
 import com.palmnote.ui.settings.CategoryScreen
 import com.palmnote.ui.settings.RecycleBinScreen
 import com.palmnote.ui.settings.SettingsScreen
@@ -62,8 +64,9 @@ import com.palmnote.ui.settings.AppLockSettingsScreen
 
 import com.palmnote.PalmNoteApp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.palmnote.ui.life.common.LifeNavHost
+import com.palmnote.ui.life.LifeNavHost
 import com.palmnote.ui.backup.BackupScreen
+import com.palmnote.ui.settings.DataExchangeScreen
 import com.palmnote.ui.theme.*
 import com.palmnote.feature.vault.vault.VaultScreen
 import com.palmnote.feature.vault.vault.VaultDetailScreen
@@ -278,6 +281,7 @@ fun PalmNoteNavHost() {
                 onNavigateToRecycleBin = { navController.navigate(RecycleBin) },
                 onNavigateToDataClear = { navController.navigate(DataClear) },
                 onNavigateToBackup = { navController.navigate(Backup) },
+                onNavigateToDataExchange = { navController.navigate(DataExchange) },
                 viewModel = hiltViewModel()
             )
         }
@@ -285,6 +289,13 @@ fun PalmNoteNavHost() {
         composable<Backup> {
             BackupScreen(
                 onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable<DataExchange> {
+            DataExchangeScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToBackup = { navController.navigate(Backup) }
             )
         }
 
@@ -306,7 +317,9 @@ fun PalmNoteNavHost() {
             AboutScreen(
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToPrivacy = { navController.navigate(PrivacyPolicy) },
-                onNavigateToTerms = { navController.navigate(TermsOfService) }
+                onNavigateToTerms = { navController.navigate(TermsOfService) },
+                onNavigateToLicense = { navController.navigate(OpenSourceLicense) },
+                onNavigateToVersionHistory = { navController.navigate(VersionHistory) }
             )
         }
 
@@ -361,6 +374,18 @@ fun PalmNoteNavHost() {
 
         composable<TermsOfService> {
             TermsOfServiceScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable<OpenSourceLicense> {
+            LicenseScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable<VersionHistory> {
+            VersionHistoryScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
         }
@@ -590,7 +615,9 @@ private fun MainTabs(
                     },
                     onNavigateToSettings = onNavigateToSettings,
                     onNavigateToSearch = onNavigateToSearch,
-                    onNavigateToVault = onNavigateToVault
+                    onNavigateToVault = onNavigateToVault,
+                    onNavigateToAddBill = { onNavigateToAddBill(System.currentTimeMillis()) },
+                    onNavigateToAddAsset = onNavigateToAddAsset
                 )
             }
 
@@ -643,7 +670,9 @@ private fun MainTabs(
             }
 
             composable<TabLife> {
-                LifeNavHost(onChildNavigated = { lifeChildAtHome = it })
+                LifeNavHost(
+                    onChildNavigated = { lifeChildAtHome = it }
+                )
             }
                 }
             }

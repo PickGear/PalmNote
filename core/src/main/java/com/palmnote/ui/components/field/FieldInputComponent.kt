@@ -21,6 +21,7 @@ import com.palmnote.domain.model.FieldConfig
 import com.palmnote.domain.model.FieldType
 import com.palmnote.ui.theme.Spacing
 import com.palmnote.ui.components.CapsuleSwitch
+import com.palmnote.ui.components.NoDialogWindowAnimation
 
 @Composable
 fun FieldInputComponent(
@@ -100,7 +101,10 @@ private fun DateInputField(config: FieldConfig, value: String, onValueChange: (S
                 }) { Text(stringResource(R.string.confirm), fontWeight = FontWeight.Bold) }
             },
             dismissButton = { TextButton(onClick = { showPicker = false }) { Text(stringResource(R.string.cancel), fontWeight = FontWeight.Bold) } }
-        ) { DatePicker(state = pickerState, colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.background)) }
+        ) {
+            NoDialogWindowAnimation()
+            DatePicker(state = pickerState, colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.background))
+        }
     }
 }
 

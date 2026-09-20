@@ -3,7 +3,6 @@ package com.palmnote.ui.settings
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -63,8 +62,8 @@ fun WalletScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onNavigateToAddWallet,
-                containerColor = MaterialTheme.colorScheme.secondary,
-                contentColor = Color.White,
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
                 shape = MaterialTheme.shapes.large
             ) {
                 Icon(Icons.Filled.Add, stringResource(R.string.wallet_add))
@@ -76,7 +75,7 @@ fun WalletScreen(
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
                 .padding(padding),
-            contentPadding = PaddingValues(16.dp),
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             item {
@@ -148,7 +147,15 @@ fun WalletScreen(
                     detailWallet = null
                 }
             },
-            onSetDefault = { viewModel.setDefault(detailWalletSnapshot.id) },
+            onSetDefault = {
+                viewModel.setDefault(detailWalletSnapshot.id)
+                android.widget.Toast.makeText(
+                    context,
+                    context.getString(R.string.wallet_default_set),
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
+                detailWallet = null
+            },
             onDismiss = { detailWallet = null }
         )
     }
@@ -190,10 +197,7 @@ private fun WalletItem(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable(
-                    indication = null,
-                    interactionSource = remember { MutableInteractionSource() }
-                ) { onClick() }
+                .clickable { onClick() }
                 .padding(4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {

@@ -1,6 +1,5 @@
 package com.palmnote.data.export
 
-import com.palmnote.domain.util.AppLogger
 import com.palmnote.domain.model.BillType
 import com.palmnote.domain.model.Money
 import com.palmnote.domain.util.CategoryClassifier
@@ -15,7 +14,11 @@ data class ParsedBill(
     val merchant: String,
     val note: String,
     val paymentMethod: String,
-    val transactionId: String = ""
+    val transactionId: String = "",
+    /** 分类是否「明确」：true=源分类标签/词表命中；false=未能识别、回退「其他」（供复核判定用） */
+    val categoryResolved: Boolean = true,
+    /** false = 源账单标记为「不计收支」（转账/还款/理财申赎等），导入预览默认不勾选、落入「已跳过」档；用户勾上即可导入 */
+    val defaultSelected: Boolean = true
 )
 
 class BillCsvImporter {
@@ -43,35 +46,58 @@ class BillCsvImporter {
         return CsvFormat.UNKNOWN
     }
 
-    fun parseFromLines(lines: List<String>, format: CsvFormat, diag: StringBuilder? = null): List<ParsedBill> {
-        val headerLine = when (format) {
-            CsvFormat.ALIPAY -> lines.firstOrNull {
-                it.contains("记录时间") || it.contains("交易创建时间") ||
-                    (it.contains("交易时间") && it.contains("收支"))
-            }
-            CsvFormat.GENERIC -> lines.firstOrNull {
-                it.contains("金额") && (it.contains("时间") || it.contains("日期"))
-            }
-            else -> lines.firstOrNull {
-                it.contains("交易时间") && (it.contains("收/支") || it.contains("金额"))
-            }
-        }
+    fun parseFromLines(lines: List<String>, format: CsvFormat, diag: StringBuilder? = null): List<ParsedBill> =
+        parseWithFailures(lines, format, diag, null)
+
+    /**
+     * 与 [parseFromLines] 接受完全相同的记录，但额外把被丢弃的行（原始文本 + 原因）收集到 [fails]，
+     * 供结果页统计与导出「可修正后重新导入」的 CSV。
+     */
+    fun parseWithFailures(
+        lines: List<String>,
+        format: CsvFormat,
+        diag: StringBuilder? = null,
+        fails: MutableList<ImportFailure>? = null
+    ): List<ParsedBill> {
+        val headerLine = findHeaderLine(lines, format)
         diag?.append("CSV表头行: ${if (headerLine != null) headerLine.take(80) else "未找到"}\n")
         if (headerLine == null) return emptyList()
         val sep = detectSeparator(headerLine)
-        val headerCols = parseCsvLine(headerLine, sep)
-        val headerIdx = headerCols.mapIndexed { i, h -> h.trim() to i }.toMap()
-        val headerLineIdx = lines.indexOf(headerLine)
-        val dataLines = lines.drop(headerLineIdx + 1).filter {
+        val headerIdx = parseCsvLine(headerLine, sep).mapIndexed { i, h -> h.trim() to i }.toMap()
+        val dataLines = dataLinesAfter(lines, headerLine)
+
+        return when (format) {
+            CsvFormat.WECHAT -> parseWechat(dataLines, headerIdx, sep, fails)
+            CsvFormat.ALIPAY -> parseAlipay(dataLines, headerIdx, sep, fails)
+            CsvFormat.GENERIC -> parseGeneric(dataLines, headerIdx, sep, fails)
+            CsvFormat.UNKNOWN -> emptyList()
+        }
+    }
+
+    /** 按品牌格式的关键词定位表头行 */
+    private fun findHeaderLine(lines: List<String>, format: CsvFormat): String? = when (format) {
+        CsvFormat.ALIPAY -> lines.firstOrNull {
+            it.contains("记录时间") || it.contains("交易创建时间") ||
+                (it.contains("交易时间") && it.contains("收支"))
+        }
+        CsvFormat.GENERIC -> lines.firstOrNull {
+            it.contains("金额") && (it.contains("时间") || it.contains("日期"))
+        }
+        else -> lines.firstOrNull {
+            it.contains("交易时间") && (it.contains("收/支") || it.contains("金额"))
+        }
+    }
+
+    /** 表头之后的真实数据行（过滤空行 / 分隔线 / 合计行） */
+    private fun dataLinesAfter(lines: List<String>, headerLine: String): List<String> =
+        lines.drop(lines.indexOf(headerLine) + 1).filter {
             it.isNotBlank() && !it.startsWith("---") && !it.contains("合计") && !it.contains("本笔")
         }
 
-        return when (format) {
-            CsvFormat.WECHAT -> parseWechat(dataLines, headerIdx, sep)
-            CsvFormat.ALIPAY -> parseAlipay(dataLines, headerIdx, sep)
-            CsvFormat.GENERIC -> parseGeneric(dataLines, headerIdx, sep)
-            CsvFormat.UNKNOWN -> emptyList()
-        }
+    /** 记录一条被丢弃的行并返回 null，便于在 `ifBlank {}` / elvis 表达式中内联使用 */
+    private fun MutableList<ImportFailure>?.reject(line: String, reason: ImportFailureReason): Nothing? {
+        this?.add(ImportFailure(line.trim(), reason))
+        return null
     }
 
     private fun detectSeparator(line: String): Char {
@@ -89,7 +115,19 @@ class BillCsvImporter {
         return idx?.let { cols.getOrNull(it)?.trim() } ?: ""
     }
 
-    private fun parseWechat(lines: List<String>, headerIdx: Map<String, Int>, sep: Char): List<ParsedBill> {
+    /** 金额文本清洗：去货币符号/正负号/半角与全角千分位/各类空格（实测支付宝导出会用全角逗号做千分位） */
+    private fun cleanAmountText(raw: String): String = raw
+        .replace("¥", "").replace("￥", "")
+        .replace("+", "").replace("-", "")
+        .replace(",", "").replace("\uFF0C", "") // 半角 / 全角逗号千分位
+        .replace(" ", "").replace("\u3000", "").replace("\u00A0", "")
+
+    private fun parseWechat(
+        lines: List<String>,
+        headerIdx: Map<String, Int>,
+        sep: Char,
+        fails: MutableList<ImportFailure>?
+    ): List<ParsedBill> {
         val dateIdx = col(headerIdx, "交易时间")
         val typeIdx = col(headerIdx, "交易类型")
         val merchantIdx = col(headerIdx, "交易对方")
@@ -103,29 +141,35 @@ class BillCsvImporter {
         return lines.mapNotNull { line ->
             try {
                 val cols = parseCsvLine(line, sep)
-                val timeStr = cell(cols, dateIdx).ifBlank { return@mapNotNull null }
-                val amountStr = cell(cols, amountIdx).ifBlank { return@mapNotNull null }
-                val cleanAmount = amountStr.replace(",", "").replace("¥", "").replace("￥", "").replace(" ", "").replace("+", "").replace("-", "")
-                val amount = Money.parse(cleanAmount)?.cents ?: return@mapNotNull null
-                val date = parseDate(timeStr) ?: return@mapNotNull null
+                val timeStr = cell(cols, dateIdx).ifBlank { return@mapNotNull fails.reject(line, ImportFailureReason.MISSING_DATE) }
+                val amountStr = cell(cols, amountIdx).ifBlank { return@mapNotNull fails.reject(line, ImportFailureReason.MISSING_AMOUNT) }
+                val cleanAmount = cleanAmountText(amountStr)
+                val amount = Money.parse(cleanAmount)?.cents ?: return@mapNotNull fails.reject(line, ImportFailureReason.MISSING_AMOUNT)
+                val date = parseDate(timeStr) ?: return@mapNotNull fails.reject(line, ImportFailureReason.MISSING_DATE)
                 val isIncome = cell(cols, ieIdx).contains("收入")
                 // 备注常为空，商品名承载消费内容（分类推断的重要信号），回退后再参与推断
                 val note = cell(cols, noteIdx).ifBlank { cell(cols, goodsIdx).ifBlank { cell(cols, typeIdx) } }
+                val billType = if (isIncome) BillType.INCOME.value else BillType.EXPENSE.value
+                val nc = normalizeCategoryEx(
+                    guessCategory(cell(cols, merchantIdx), note, cell(cols, typeIdx)),
+                    billType
+                )
 
                 ParsedBill(
                     date = date,
-                    type = if (isIncome) BillType.INCOME.value else BillType.EXPENSE.value,
+                    type = billType,
                     amount = amount,
-                    category = normalizeCategory(
-                        guessCategory(cell(cols, merchantIdx), note, cell(cols, typeIdx)),
-                        if (isIncome) BillType.INCOME.value else BillType.EXPENSE.value
-                    ),
+                    category = nc.category,
                     merchant = cell(cols, merchantIdx),
                     note = note,
                     paymentMethod = mapPaymentMethod(cell(cols, methodIdx)),
-                    transactionId = cell(cols, txIdIdx)
+                    transactionId = cell(cols, txIdIdx),
+                    categoryResolved = nc.category != "其他"
                 )
-            } catch (_: Exception) { null }
+            } catch (_: Exception) {
+                fails?.add(ImportFailure(line.trim(), ImportFailureReason.UNPARSEABLE))
+                null
+            }
         }
     }
 
@@ -158,48 +202,67 @@ class BillCsvImporter {
         txIdIdx = col(headerIdx, "交易号")
     )
 
-    private fun parseAlipay(lines: List<String>, headerIdx: Map<String, Int>, sep: Char): List<ParsedBill> {
+    private fun parseAlipay(
+        lines: List<String>,
+        headerIdx: Map<String, Int>,
+        sep: Char,
+        fails: MutableList<ImportFailure>?
+    ): List<ParsedBill> {
         val c = alipayColumns(headerIdx)
 
         return lines.mapNotNull { line ->
             try {
                 val cols = parseCsvLine(line, sep)
-                val timeStr = cell(cols, c.dateIdx).ifBlank { return@mapNotNull null }
-                val amountStr = cell(cols, c.amountIdx).ifBlank { return@mapNotNull null }
-                val cleanAmount = amountStr.replace(",", "").replace("¥", "").replace("￥", "").replace(" ", "").replace("+", "").replace("-", "")
-                val amount = Money.parse(cleanAmount)?.cents ?: return@mapNotNull null
+                val timeStr = cell(cols, c.dateIdx).ifBlank { return@mapNotNull fails.reject(line, ImportFailureReason.MISSING_DATE) }
+                val amountStr = cell(cols, c.amountIdx).ifBlank { return@mapNotNull fails.reject(line, ImportFailureReason.MISSING_AMOUNT) }
+                val cleanAmount = cleanAmountText(amountStr)
+                val amount = Money.parse(cleanAmount)?.cents ?: return@mapNotNull fails.reject(line, ImportFailureReason.MISSING_AMOUNT)
                 val ieType = cell(cols, c.ieIdx)
-                val merchant = cell(cols, c.merchantIdx)
-                // 当代格式无"账户"列，商品名称承载消费内容（分类推断的重要信号）
-                val note = cell(cols, c.noteIdx).ifBlank { cell(cols, c.goodsIdx).ifBlank { cell(cols, c.accountIdx) } }
+                // 手机支付宝导出没有"交易对方/商品说明/商品名称"列，此时"备注"是唯一可读文本（实测多为商户名）。
+                // 不回退则每行 merchant 皆空 → reviewReasonOf 全命中 BLANK_MERCHANT → 分拣台退化成"全部待复核"
+                val rawMerchant = cell(cols, c.merchantIdx).ifBlank { cell(cols, c.goodsIdx) }
+                val note = cell(cols, c.noteIdx).ifBlank { cell(cols, c.goodsIdx) }.ifBlank { cell(cols, c.accountIdx) }
+                val merchant = rawMerchant.ifBlank { note }
                 val category = cell(cols, c.categoryIdx)
-                val date = parseDate(timeStr) ?: return@mapNotNull null
+                val date = parseDate(timeStr) ?: return@mapNotNull fails.reject(line, ImportFailureReason.MISSING_DATE)
                 val isIncome = ieType.contains("收入")
+                val billType = if (isIncome) BillType.INCOME.value else BillType.EXPENSE.value
+                val nc = if (category.isNotBlank()) {
+                    normalizeCategoryEx(category, billType)
+                } else {
+                    // 源分类为空：靠商户/备注推断，推断结果仍为「其他」时视为未识别
+                    val inferred = normalizeCategoryEx(guessCategory(merchant, note, ""), billType)
+                    NormalizedCategory(inferred.category, inferred.category != "其他")
+                }
 
                 ParsedBill(
                     date = date,
-                    type = if (isIncome) BillType.INCOME.value else BillType.EXPENSE.value,
+                    type = billType,
                     amount = amount,
-                    category = if (category.isNotBlank()) {
-                        val billType = if (isIncome) BillType.INCOME.value else BillType.EXPENSE.value
-                        normalizeCategory(category, billType)
-                    } else {
-                        val billType = if (isIncome) BillType.INCOME.value else BillType.EXPENSE.value
-                        normalizeCategory(guessCategory(merchant, note, ""), billType)
-                    },
+                    category = nc.category,
                     merchant = merchant,
                     note = note,
                     paymentMethod = "ALIPAY",
                     // 交易号是最可靠去重键：同商户同金额同时刻的账单不会被误判重复
-                    transactionId = cell(cols, c.txIdIdx)
+                    transactionId = cell(cols, c.txIdIdx),
+                    categoryResolved = nc.resolved,
+                    defaultSelected = !ieType.contains("不计收支")
                 )
-            } catch (_: Exception) { null }
+            } catch (_: Exception) {
+                fails?.add(ImportFailure(line.trim(), ImportFailureReason.UNPARSEABLE))
+                null
+            }
         }
     }
 
     // 通用格式：不依赖品牌表头，按关键词匹配列（银行/云闪付/手动表格等其他导出来源）
     @Suppress("CyclomaticComplexMethod")
-    private fun parseGeneric(lines: List<String>, headerIdx: Map<String, Int>, sep: Char): List<ParsedBill> {
+    private fun parseGeneric(
+        lines: List<String>,
+        headerIdx: Map<String, Int>,
+        sep: Char,
+        fails: MutableList<ImportFailure>?
+    ): List<ParsedBill> {
         val dateIdx = col(headerIdx, "时间") ?: col(headerIdx, "日期")
         val amountIdx = col(headerIdx, "金额")
         val ieIdx = col(headerIdx, "收/支") ?: col(headerIdx, "收支") ?: col(headerIdx, "类型")
@@ -211,8 +274,8 @@ class BillCsvImporter {
         return lines.mapNotNull { line ->
             try {
                 val cols = parseCsvLine(line, sep)
-                val timeStr = cell(cols, dateIdx).ifBlank { return@mapNotNull null }
-                val amountStr = cell(cols, amountIdx).ifBlank { return@mapNotNull null }
+                val timeStr = cell(cols, dateIdx).ifBlank { return@mapNotNull fails.reject(line, ImportFailureReason.MISSING_DATE) }
+                val amountStr = cell(cols, amountIdx).ifBlank { return@mapNotNull fails.reject(line, ImportFailureReason.MISSING_AMOUNT) }
                 val ieText = cell(cols, ieIdx)
                 val isIncome = when {
                     ieText.contains("收入") || ieText.contains("转入") || ieText.contains("贷") -> true
@@ -220,25 +283,35 @@ class BillCsvImporter {
                     else -> amountStr.trimStart().startsWith("+")
                 }
                 val negative = amountStr.trimStart().startsWith("-")
-                val cleanAmount = amountStr.replace(",", "").replace("¥", "").replace("￥", "").replace(" ", "").replace("+", "").replace("-", "")
-                val amount = Money.parse(cleanAmount)?.cents ?: return@mapNotNull null
-                val date = parseDate(timeStr) ?: return@mapNotNull null
+                val cleanAmount = cleanAmountText(amountStr)
+                val amount = Money.parse(cleanAmount)?.cents ?: return@mapNotNull fails.reject(line, ImportFailureReason.MISSING_AMOUNT)
+                val date = parseDate(timeStr) ?: return@mapNotNull fails.reject(line, ImportFailureReason.MISSING_DATE)
                 val merchant = cell(cols, merchantIdx)
                 val note = cell(cols, noteIdx)
                 val categoryText = cell(cols, categoryIdx)
                 val type = if (isIncome && !negative) BillType.INCOME.value else BillType.EXPENSE.value
+                val nc = if (categoryText.isNotBlank()) {
+                    normalizeCategoryEx(categoryText, type)
+                } else {
+                    val inferred = normalizeCategoryEx(guessCategory(merchant, note, ieText), type)
+                    NormalizedCategory(inferred.category, inferred.category != "其他")
+                }
 
                 ParsedBill(
                     date = date,
                     type = type,
                     amount = amount,
-                    category = if (categoryText.isNotBlank()) normalizeCategory(categoryText, type)
-                    else normalizeCategory(guessCategory(merchant, note, ieText), type),
+                    category = nc.category,
                     merchant = merchant,
                     note = note,
-                    paymentMethod = "OTHER"
+                    paymentMethod = "OTHER",
+                    categoryResolved = nc.resolved,
+                    defaultSelected = !ieText.contains("不计收支")
                 )
-            } catch (_: Exception) { null }
+            } catch (_: Exception) {
+                fails?.add(ImportFailure(line.trim(), ImportFailureReason.UNPARSEABLE))
+                null
+            }
         }
     }
 
@@ -249,10 +322,8 @@ class BillCsvImporter {
             "yyyy/M/d HH:mm:ss", "yyyy/M/d HH:mm", "yyyy-MM-dd", "yyyy/MM/dd", "yyyy/M/d",
             "yyyy年M月d日 HH:mm:ss", "yyyy年M月d日 HH:mm", "yyyy年M月d日"
         )) {
-            try {
-                val parsed = SimpleDateFormat(pat, Locale.getDefault()).parse(clean)
-                if (parsed != null) return parsed.time
-            } catch (e: Exception) { AppLogger.w("CsvImport", "parseDate failed", e) }
+            // parse 返回 null 时继续试下一个模式；不再为每个失败模式记一条日志（真正无法解析由上层 MISSING_DATE 兜底）
+            try { SimpleDateFormat(pat, Locale.getDefault()).parse(clean)?.let { return it.time } } catch (_: Exception) { /* 试下一个模式 */ }
         }
         return null
     }
@@ -261,7 +332,37 @@ class BillCsvImporter {
         private val EXPENSE_CATEGORIES = setOf("餐饮", "零食", "饮品", "交通", "购物", "服饰", "数码", "二手", "居住", "家居", "租金", "娱乐", "旅游", "运动", "医疗", "健身", "美容", "教育", "文具", "社交", "人情", "红包", "赠与", "通讯", "家政", "快递", "维修", "投资", "股票", "理财", "保险", "宠物", "母婴", "烟酒", "捐赠", "罚款", "手续费", "其他")
         private val INCOME_CATEGORIES = setOf("工资", "奖金", "兼职", "副业", "报销", "投资", "股票", "理财", "分红", "利息", "租金", "二手", "红包", "赠与", "人情", "退款", "中奖", "保险理赔", "继承", "其他")
 
-        fun normalizeCategory(category: String, type: String): String {
+        /**
+         * 支付宝等渠道的**分类标签**别名（入参已知是分类名，不是自由文本；勿并入 CategoryClassifier）。
+         * 按**完整**标签匹配——避免自由文本误伤（如「交通银行」「文化路支行」）。
+         */
+        private val CATEGORY_ALIASES: Map<String, String> = mapOf(
+            "餐饮美食" to "餐饮", "食品酒饮" to "餐饮",
+            "交通出行" to "交通",
+            "日用百货" to "购物", "服饰装扮" to "购物", "生活日用" to "购物",
+            "居家物业" to "居住", "住房物业" to "居住",
+            "医疗保健" to "医疗",
+            "数码电器" to "数码",
+            "休闲玩乐" to "娱乐", "文化休闲" to "娱乐",
+            "运动户外" to "运动",
+            "母婴亲子" to "母婴",
+            "酒店旅行" to "旅游",
+            "投资理财" to "投资"
+        )
+
+        /**
+         * [resolved]=true：分类来自 when 词表 / [CATEGORY_ALIASES] 的**明确**映射
+         * （含源值本来就是「其他」，以及词表有意映射到「其他」的「转账/生活服务/其他支出/其他收入」）；
+         * false：都没命中、只能回退「其他」。
+         */
+        data class NormalizedCategory(val category: String, val resolved: Boolean)
+
+        fun normalizeCategory(category: String, type: String): String =
+            normalizeCategoryEx(category, type).category
+
+        // 大 when 词表：与旧 normalizeCategory 同体量，等价于 baseline 原条目（改名后需显式抑制）
+        @Suppress("LongMethod", "CyclomaticComplexMethod")
+        fun normalizeCategoryEx(category: String, type: String): NormalizedCategory {
             val valid = if (type == BillType.EXPENSE.value) EXPENSE_CATEGORIES else INCOME_CATEGORIES
             val norm = when (category) {
                 // 转账/其他
@@ -398,7 +499,11 @@ class BillCsvImporter {
                 "捐款" -> "捐赠"
                 else -> category
             }
-            return if (norm in valid) norm else "其他"
+            if (norm in valid) return NormalizedCategory(norm, true)
+            // 分类标签专用别名表（精确匹配完整标签，可容纳「交通出行」这类在自由文本里高风险的高歧义词）
+            val alias = CATEGORY_ALIASES[category]
+            if (alias != null && alias in valid) return NormalizedCategory(alias, true)
+            return NormalizedCategory("其他", false)
         }
 
         fun guessCategory(merchant: String, note: String, typeHint: String): String {
