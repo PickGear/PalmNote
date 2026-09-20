@@ -385,6 +385,8 @@ fun AppDialog(
         onDismissRequest = { visible = false; onDismissRequest() },
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
+        // 必须在 Dialog 内容内调用，LocalView 才会解析到弹窗自身的 decor view
+        NoDialogWindowAnimation()
         AnimatedVisibility(
             visible = visible,
             enter = scaleIn(spring(dampingRatio = 0.8f, stiffness = 300f)) + fadeIn(tween(150)),
@@ -936,7 +938,10 @@ fun DatePickerField(
             colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.background),
             confirmButton = { TextButton(onClick = { datePickerState.selectedDateMillis?.let { onDateSelected(it) }; showDatePicker = false }) { Text(stringResource(R.string.confirm), fontWeight = FontWeight.Bold) } },
             dismissButton = { TextButton(onClick = { showDatePicker = false }) { Text(stringResource(R.string.cancel), fontWeight = FontWeight.Bold) } }
-        ) { DatePicker(state = datePickerState, colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.background)) }
+        ) {
+            NoDialogWindowAnimation()
+            DatePicker(state = datePickerState, colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.background))
+        }
     }
 }
 

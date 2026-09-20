@@ -55,6 +55,12 @@ data object PrivacyPolicy
 data object TermsOfService
 
 @Serializable
+data object OpenSourceLicense
+
+@Serializable
+data object VersionHistory
+
+@Serializable
 data object RecycleBin
 
 @Serializable
@@ -74,6 +80,9 @@ data object AccountBookManage
 
 @Serializable
 data object Backup
+
+@Serializable
+data object DataExchange
 
 @Serializable
 data object GeneralSettings

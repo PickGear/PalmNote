@@ -14,6 +14,9 @@ android {
 
     defaultConfig {
         minSdk = 26
+        // 版本号单一事实来源：resValue 生成 app_version 字符串资源，
+        // 供 AppLockScreen 的 stringResource(R.string.app_version) 使用（non-transitive R）。
+        resValue("string", "app_version", "v${libs.versions.palmnote.get()}")
     }
 
     compileOptions {
@@ -82,6 +85,7 @@ dependencies {
 
     // Core
     implementation(libs.core.ktx)
+    implementation("androidx.documentfile:documentfile:1.1.0")
     implementation(libs.appcompat)
     implementation(libs.lifecycle.runtime.ktx)
 

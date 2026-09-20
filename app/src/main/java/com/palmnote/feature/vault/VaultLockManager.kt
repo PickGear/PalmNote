@@ -41,6 +41,7 @@ class VaultLockManager @Inject constructor(
         prefsName = PREFS_NAME,
         keyFailedAttempts = KEY_FAILED_ATTEMPTS,
         keyLockoutUntil = KEY_LOCKOUT_UNTIL,
+        keyOffenseCount = KEY_LOCKOUT_OFFENSES,
     )
     // 串行化解锁，避免并发触发失败计数非原子递增（防暴力窗口扩大）
     private val unlockMutex = Mutex()
@@ -208,5 +209,6 @@ class VaultLockManager @Inject constructor(
         const val PREFS_NAME = "vault_prefs"
         const val KEY_FAILED_ATTEMPTS = "vault_failed_attempts"
         const val KEY_LOCKOUT_UNTIL = "vault_lockout_until"
+        const val KEY_LOCKOUT_OFFENSES = "vault_lockout_offenses"
     }
 }

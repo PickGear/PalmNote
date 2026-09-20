@@ -1,0 +1,56 @@
+name: Bug 反馈
+description: 提交问题以帮助改进 PalmNote
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢反馈！请完整填写以下信息——信息越完整，问题越容易被定位和修复。
+  - type: dropdown
+    id: app-version
+    attributes:
+      label: 应用版本
+      description: 可在「设置 → 关于」中查看
+      options:
+        - 1.4.0
+        - 1.3.0
+        - 1.2.0
+        - 1.1.0
+        - 1.0.0
+        - 更旧版本 / 自行构建
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: 设备型号与系统版本
+      placeholder: 例如：Xiaomi 13 / HyperOS（Android 16）
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤
+      placeholder: |
+        1. 进入 "..."
+        2. 点击 "..."
+        3. 看到错误
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期望行为与实际行为
+      description: 你希望发生什么，实际发生了什么
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: 截图或崩溃日志
+      description: 如有崩溃可附上应用内导出的崩溃日志；请务必隐去密码、账单金额等敏感信息
+  - type: textarea
+    id: extra
+    attributes:
+      label: 补充说明
+      description: 其他有助于定位问题的上下文

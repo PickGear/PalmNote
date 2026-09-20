@@ -102,22 +102,59 @@ val LifeTime = Color(0xFFF07070)
 val LifeRecord = Color(0xFF50C890)
 
 // ----- Life Module Preset Template Colors -----
-val LifeSaving = Color(0xFFEC407A)
-val LifeShopping = Color(0xFF7C8CF0)
-val LifeTravel = Color(0xFFFF7043)
-val LifeReading = Color(0xFF26A69A)
-val LifeStudy = Color(0xFFAB47BC)
-val LifeTodo = Color(0xFF5C6BC0)
-val LifeCountdown = Color(0xFFF07070)
-val LifeCountUp = Color(0xFF50C890)
-val LifeBirthday = Color(0xFFFFCA28)
-val LifeAnniversary = Color(0xFFF07070)
-val LifeHabit = Color(0xFFFF7043)
-val LifeMoodColor = Color(0xFFFFCA28)
-val LifeJournal = Color(0xFFAB47BC)
-val LifeFocus = Color(0xFF00ACC1)
-val LifeSubscription = Color(0xFF66BB6A)
-val LifeReport = Color(0xFF42A5F5)
+/**
+ * 模板身份色唯一真源（总纲 §5.2，2026-09-20 定案 26）：按 6 领域族分配，
+ * key = 内置模板 icon（与 LifeDataSeeder.lifeTemplateSeeds 的身份标识一致）。
+ * 种子写入 DB 的 color 与下面所有 LifeXxx 常量都从这张表取值，
+ * 「宫格」与「列表页」在类型层面不可能不一致。
+ * 注意：给内置模板换 icon 时必须同步这里，否则取到灰色兜底。
+ */
+val LifeTemplateIdentityHex: Map<String, String> = mapOf(
+    "savings" to "#EC407A",         // 存钱计划（钱）
+    "shopping_cart" to "#FF7043",   // 购物计划（钱）
+    "subscriptions" to "#FFB300",   // 订阅记录（钱）
+    "checklist" to "#5C6BC0",       // 待办（事）
+    "calendar_month" to "#3F51B5",  // 打卡（事）
+    "celebration" to "#EF5350",     // 纪念日（日子）
+    "cake" to "#F06292",            // 生日（日子）
+    "timer_off" to "#FFCA28",       // 倒计时（日子）
+    "trending_up" to "#AB47BC",     // 正数日（日子）
+    "book" to "#7E57C2",            // 日记（心）
+    "mood" to "#FFA726",            // 心情（心）
+    "menu_book" to "#26A69A",       // 阅读（远方与成长）
+    "flight" to "#66BB6A",          // 旅行计划（远方与成长）
+    "school" to "#29B6F6",          // 学习计划（远方与成长）
+    "BarChart" to "#42A5F5",        // 周报月报（系统型）
+    "timer" to "#00ACC1",           // 专注（系统型）
+    "fitness_center" to "#00897B",  // 身体记录（身体，§5.3 新增）
+    "build" to "#8D6E63"            // 物品维护（家物，§5.3 新增）
+)
+
+/** 取内置模板身份色（hex 字符串，DB 存储用）；未知 icon 返回 null。 */
+fun lifeTemplateIdentityHex(icon: String): String? = LifeTemplateIdentityHex[icon]
+
+/** 取内置模板身份色；未知 icon 返回 null。 */
+fun lifeTemplateIdentityColor(icon: String): Color? =
+    LifeTemplateIdentityHex[icon]?.let { Color(0xFF000000L or it.removePrefix("#").toLong(16)) }
+
+private fun identity(icon: String): Color = lifeTemplateIdentityColor(icon)!!
+
+val LifeSaving = identity("savings")
+val LifeShopping = identity("shopping_cart")
+val LifeTravel = identity("flight")
+val LifeReading = identity("menu_book")
+val LifeStudy = identity("school")
+val LifeTodo = identity("checklist")
+val LifeCountdown = identity("timer_off")
+val LifeCountUp = identity("trending_up")
+val LifeBirthday = identity("cake")
+val LifeAnniversary = identity("celebration")
+val LifeHabit = identity("calendar_month")
+val LifeMoodColor = identity("mood")
+val LifeJournal = identity("book")
+val LifeFocus = identity("timer")
+val LifeSubscription = identity("subscriptions")
+val LifeReport = identity("BarChart")
 val LifeAmber = Color(0xFFE8A848)
 val RatingStar = Color(0xFFFFCA28)
 

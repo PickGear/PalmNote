@@ -31,11 +31,11 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -187,8 +187,8 @@ fun AssetScreen(
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = onNavigateToAdd,
-                containerColor = MaterialTheme.colorScheme.secondary,
-                contentColor = Color.White,
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
                 shape = MaterialTheme.shapes.large,
                 icon = { Icon(Icons.Filled.Add, contentDescription = null) },
                 text = { Text(stringResource(R.string.asset_add), fontWeight = FontWeight.Medium) }
@@ -569,7 +569,8 @@ fun AssetScreen(
                 }
             } else if (isGridView) {
                 val chunked = state.filteredAssets.chunked(2)
-                itemsIndexed(chunked, key = { i, _ -> chunked[i].firstOrNull()?.id ?: i }) { rowIdx, rowAssets ->
+                // key 取整行成员：只按首个 id 做 key，增删后行成员移位会导致状态错位复用
+                itemsIndexed(chunked, key = { i, row -> row.joinToString("-") { it.id.toString() }.ifEmpty { "row_$i" } }) { rowIdx, rowAssets ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)

@@ -15,9 +15,9 @@ import com.palmnote.data.db.entity.*
         AccountBook::class, PlanList::class, PlanListItem::class, Plan::class,
         LifeTemplate::class, LifeItem::class, CrossLink::class, Achievement::class,
         LifeReport::class, TodoItem::class, LifeMoment::class, MoodDiary::class, FocusRecord::class,
-        BillRecycleBin::class, AssetRecycleBin::class
+        BillRecycleBin::class, AssetRecycleBin::class, FieldValue::class
     ],
-    version = 8,
+    version = 9,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -49,6 +49,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun todoItemDao(): TodoItemDao
     abstract fun moodDiaryDao(): MoodDiaryDao
     abstract fun lifeMomentDao(): LifeMomentDao
+    abstract fun fieldValueDao(): FieldValueDao
 
     abstract fun billRecycleBinDao(): BillRecycleBinDao
     abstract fun assetRecycleBinDao(): AssetRecycleBinDao

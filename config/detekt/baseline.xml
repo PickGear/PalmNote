@@ -4,7 +4,6 @@
   <CurrentIssues>
     <ID>ComplexCondition:BillImportViewModel.kt$BillImportViewModel$b0 == 0xEF &amp;&amp; b1 == 0xBB &amp;&amp; rawBytes.size &gt; 2 &amp;&amp; (rawBytes[2].toInt() and 0xFF) == 0xBF</ID>
     <ID>ComplexCondition:BillImportViewModel.kt$BillImportViewModel$existing.any { it.date == bill.date &amp;&amp; it.amount == bill.amount &amp;&amp; it.merchant == bill.merchant &amp;&amp; it.type == bill.type } || !seenByAttrs.add(attrKey)</ID>
-    <ID>ComplexCondition:BillOcrParser.kt$BillOcrParser$clean.length in 2..30 &amp;&amp; !clean.any { it in "0123456789¥￥%./-+:*#@!&amp;" } &amp;&amp; !clean.contains("支出") &amp;&amp; !clean.contains("收入") &amp;&amp; !clean.contains("交易") &amp;&amp; !clean.contains("账单") &amp;&amp; !clean.contains("支付") &amp;&amp; !clean.contains("完成") &amp;&amp; !clean.contains("时间") &amp;&amp; !clean.contains("状态")</ID>
     <ID>ComplexCondition:BillOcrParser.kt$BillOcrParser$line.startsWith("-¥") || line.startsWith("-￥") || line.startsWith("+¥") || line.startsWith("+￥")</ID>
     <ID>ComplexCondition:BillViewModel.kt$BillViewModel$fType != null || fCategory != null || fMethod != null || fMin != null || fMax != null</ID>
     <ID>ComplexCondition:CsvDataExporter.kt$CsvDataExporter$value.contains(',') || value.contains('"') || value.contains('\n') || value.contains('\r')</ID>
@@ -20,24 +19,22 @@
     <ID>CyclomaticComplexMethod:AssetScreen.kt$@Composable fun AssetScreen( onNavigateToDetail: (Long) -&gt; Unit = {}, onNavigateToAdd: () -&gt; Unit = {}, viewModel: AssetViewModel = hiltViewModel() )</ID>
     <ID>CyclomaticComplexMethod:AssetViewModel.kt$AssetViewModel$fun saveAsset()</ID>
     <ID>CyclomaticComplexMethod:AssetViewModel.kt$AssetViewModel$private fun filterAssets( assets: List&lt;Asset&gt;, category: String?, statusFilter: AssetFilter, sortOption: SortOption, ascending: Boolean, query: String ): List&lt;Asset&gt;</ID>
-    <ID>CyclomaticComplexMethod:BackupManager.kt$BackupManager$private fun createZipFile(context: Context, db: AppDatabase, zipFile: File)</ID>
-    <ID>CyclomaticComplexMethod:BackupManager.kt$BackupManager$private fun restoreFromZip(context: Context, zipFile: File)</ID>
     <ID>CyclomaticComplexMethod:BackupScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun BackupScreen( onNavigateBack: () -&gt; Unit = {}, viewModel: BackupViewModel = hiltViewModel() )</ID>
     <ID>CyclomaticComplexMethod:BillCsvImporter.kt$BillCsvImporter$fun detectFormat(lines: List&lt;String&gt;): CsvFormat</ID>
     <ID>CyclomaticComplexMethod:BillCsvImporter.kt$BillCsvImporter$fun parseFromLines(lines: List&lt;String&gt;, format: CsvFormat, diag: StringBuilder? = null): List&lt;ParsedBill&gt;</ID>
     <ID>CyclomaticComplexMethod:BillCsvImporter.kt$BillCsvImporter.Companion$fun normalizeCategory(category: String, type: String): String</ID>
+    <ID>CyclomaticComplexMethod:BillImportScreen.kt$@Composable private fun BillPreviewRow( selected: Boolean, type: BillType, amountCents: Long?, merchant: String, category: String, dateMillis: Long?, note: String, onToggle: () -&gt; Unit, onEdit: () -&gt; Unit, isDuplicate: Boolean = false )</ID>
+    <ID>CyclomaticComplexMethod:BillImportScreen.kt$@Composable private fun OcrPreviewContent(state: BillImportState, viewModel: BillImportViewModel, context: android.content.Context, onPickAnother: () -&gt; Unit)</ID>
     <ID>CyclomaticComplexMethod:BillImportScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun BillImportScreen( onNavigateBack: () -&gt; Unit = {}, viewModel: BillImportViewModel = hiltViewModel() )</ID>
     <ID>CyclomaticComplexMethod:BillImportViewModel.kt$BillImportViewModel$fun parseFile(@ApplicationContext context: Context, uri: Uri, fileName: String)</ID>
+    <ID>CyclomaticComplexMethod:BillImportViewModel.kt$BillImportViewModel$fun processOcrImage(@ApplicationContext context: Context, uri: Uri)</ID>
     <ID>CyclomaticComplexMethod:BillImportViewModel.kt$BillImportViewModel$private fun detectEncoding(rawBytes: ByteArray): String</ID>
-    <ID>CyclomaticComplexMethod:BillOcrParser.kt$BillOcrParser$private fun findMerchant(lines: List&lt;String&gt;): String</ID>
     <ID>CyclomaticComplexMethod:BillOcrParser.kt$BillOcrParser$private fun findNote(lines: List&lt;String&gt;, merchant: String): String</ID>
     <ID>CyclomaticComplexMethod:BillScreen.kt$@Composable fun BillListItem(bill: Bill, wallets: Map&lt;Long, String&gt; = emptyMap(), onDetail: () -&gt; Unit, onDelete: () -&gt; Unit, customExpenseItems: List&lt;CategoryItem&gt;? = null, customIncomeItems: List&lt;CategoryItem&gt;? = null, presetOverrides: Map&lt;String, String&gt; = emptyMap())</ID>
     <ID>CyclomaticComplexMethod:BillScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun BillScreen( onNavigateToAdd: (Long) -&gt; Unit = {}, onNavigateToDetail: (Long) -&gt; Unit = {}, onNavigateToBudget: () -&gt; Unit = {}, onNavigateToReport: (Long, String) -&gt; Unit = { _, _ -&gt; }, onNavigateToImportCsv: () -&gt; Unit = {}, onNavigateToAccountBook: () -&gt; Unit = {}, viewModel: BillViewModel = hiltViewModel() )</ID>
     <ID>CyclomaticComplexMethod:BillViewModel.kt$BillViewModel$fun saveBill()</ID>
     <ID>CyclomaticComplexMethod:BillWidgetProvider.kt$BillWidgetProvider$private fun updateWidgets(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray)</ID>
     <ID>CyclomaticComplexMethod:BillXlsxImporter.kt$BillXlsxImporter$private fun parseSheet(input: InputStream, sharedStrings: List&lt;String&gt;): List&lt;List&lt;String&gt;&gt;</ID>
-    <ID>CyclomaticComplexMethod:BillXlsxImporter.kt$BillXlsxImporter$private fun parseZipBytes(bytes: ByteArray, diag: StringBuilder): List&lt;ParsedBill&gt;</ID>
-    <ID>CyclomaticComplexMethod:BirthdayListScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun BirthdayListScreen(templateId: Long, onBack: () -&gt; Unit, onItemClick: (Long) -&gt; Unit, onCreateClick: () -&gt; Unit = {}, viewModel: BirthdayViewModel = hiltViewModel())</ID>
     <ID>CyclomaticComplexMethod:BudgetScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun BudgetScreen( onNavigateBack: () -&gt; Unit = {}, viewModel: BillViewModel = hiltViewModel() )</ID>
     <ID>CyclomaticComplexMethod:CalendarView.kt$@Composable fun CalendarView( yearMonth: String, // "2024-01" dailyData: Map&lt;Int, Pair&lt;Long, Long&gt;&gt;, // day -&gt; (expense, income) selectedDay: Int?, onDaySelected: (Int) -&gt; Unit, collapsed: Boolean = false, onMonthChanged: ((String) -&gt; Unit)? = null, modifier: Modifier = Modifier )</ID>
     <ID>CyclomaticComplexMethod:CalendarView.kt$@Composable private fun RowScope.DayCell( day: Int, isCurrentMonth: Boolean, isToday: Boolean, isSelected: Boolean, hasExpense: Boolean, hasIncome: Boolean, onClick: () -&gt; Unit )</ID>
@@ -48,7 +45,6 @@
     <ID>CyclomaticComplexMethod:CommonComponents.kt$@StringRes fun getLocalizedTagName(tag: String): Int</ID>
     <ID>CyclomaticComplexMethod:CommonComponents.kt$fun getCategoryName(key: String, context: android.content.Context): String</ID>
     <ID>CyclomaticComplexMethod:CommonComponents.kt$fun getLocalizedWalletDisplayName(wallet: com.palmnote.data.db.entity.Wallet, context: android.content.Context): String</ID>
-    <ID>CyclomaticComplexMethod:CountdownListScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun CountdownListScreen(templateId: Long, onBack: () -&gt; Unit, onItemClick: (Long) -&gt; Unit, onCreateClick: () -&gt; Unit = {}, viewModel: CountdownViewModel = hiltViewModel())</ID>
     <ID>CyclomaticComplexMethod:CsvDataExporter.kt$CsvDataExporter$private fun buildGroupCsv( groupEntries: List&lt;Pair&lt;String, List&lt;*&gt;&gt;&gt;, extraColumns: Map&lt;Class&lt;*&gt;, List&lt;Pair&lt;String, (Any?) -&gt; Any&gt;&gt;&gt; = emptyMap() ): String</ID>
     <ID>CyclomaticComplexMethod:CsvDataExporter.kt$CsvDataExporter$private fun rowToAnniversary(row: Map&lt;String, String&gt;): Anniversary?</ID>
     <ID>CyclomaticComplexMethod:CsvDataExporter.kt$CsvDataExporter$private fun rowToAsset(row: Map&lt;String, String&gt;, pathMapping: Map&lt;String, String&gt;): Asset?</ID>
@@ -62,8 +58,6 @@
     <ID>CyclomaticComplexMethod:CsvDataExporter.kt$CsvDataExporter$suspend fun exportToUri(uri: Uri): Result&lt;String&gt;</ID>
     <ID>CyclomaticComplexMethod:CsvDataExporter.kt$CsvDataExporter$suspend fun importFromUri(uri: Uri): Result&lt;Int&gt;</ID>
     <ID>CyclomaticComplexMethod:DashboardScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun DashboardScreen( onNavigateToAsset: () -&gt; Unit = {}, onNavigateToBill: () -&gt; Unit = {}, onNavigateToLife: () -&gt; Unit = {}, onNavigateToSettings: () -&gt; Unit = {}, onNavigateToSearch: () -&gt; Unit = {}, onNavigateToVault: () -&gt; Unit = {}, viewModel: DashboardViewModel = hiltViewModel() )</ID>
-    <ID>CyclomaticComplexMethod:DynamicFormScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun DynamicFormScreen( template: LifeTemplate, existingItem: LifeItem? = null, onSave: (title: String, fieldsData: String) -&gt; Unit = { _, _ -&gt; }, onBack: () -&gt; Unit = {}, viewModel: CreateItemViewModel? = null )</ID>
-    <ID>CyclomaticComplexMethod:FieldComponents.kt$@Composable fun FieldDisplay(field: FieldDef, value: String)</ID>
     <ID>CyclomaticComplexMethod:FieldComponents.kt$@Composable fun FieldInput(field: FieldDef, value: String, onValueChange: (String) -&gt; Unit)</ID>
     <ID>CyclomaticComplexMethod:FocusTimerScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun FocusTimerScreen(onBack: () -&gt; Unit, viewModel: FocusViewModel = hiltViewModel())</ID>
     <ID>CyclomaticComplexMethod:GeneralSettingsScreen.kt$@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class) @Composable fun GeneralSettingsScreen( onNavigateBack: () -&gt; Unit, viewModel: SettingsViewModel )</ID>
@@ -71,10 +65,7 @@
     <ID>CyclomaticComplexMethod:ItemDetailScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun ItemDetailScreen( item: LifeItem?, template: LifeTemplate?, onBack: () -&gt; Unit = {}, onEdit: () -&gt; Unit = {}, onDelete: () -&gt; Unit = {}, viewModel: ItemDetailViewModel? = null )</ID>
     <ID>CyclomaticComplexMethod:JournalListScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun JournalListScreen(onBack: () -&gt; Unit, onItemClick: (Long) -&gt; Unit, viewModel: JournalViewModel = hiltViewModel())</ID>
     <ID>CyclomaticComplexMethod:LifeCards.kt$@Composable fun PlanCard(tpl: LifeTemplate, previews: List&lt;LifeItem&gt;, iconColor: Color, onClick: () -&gt; Unit)</ID>
-    <ID>CyclomaticComplexMethod:LifeCards.kt$private fun extractFieldSummary(context: android.content.Context, item: LifeItem, tpl: LifeTemplate): String</ID>
     <ID>CyclomaticComplexMethod:LifeDailyCheckWorker.kt$LifeDailyCheckWorker$private suspend fun checkSubscriptionBilling()</ID>
-    <ID>CyclomaticComplexMethod:LifeNavHost.kt$@Composable private fun DispatchScreen(tpl: LifeTemplate, tid: Long, navController: NavHostController)</ID>
-    <ID>CyclomaticComplexMethod:LifeScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun LifeScreen( onNavigateToTemplate: (Long) -&gt; Unit = {}, onNavigateToItem: (Long) -&gt; Unit = {}, onNavigateToCreate: (Long) -&gt; Unit = {}, onNavigateToFocus: () -&gt; Unit = {}, onNavigateToHabit: () -&gt; Unit = {}, onNavigateToMood: () -&gt; Unit = {}, onNavigateToJournal: () -&gt; Unit = {}, onNavigateToReport: () -&gt; Unit = {}, onNavigateToManage: () -&gt; Unit = {}, onNavigateToTodo: () -&gt; Unit = {}, viewModel: LifeViewModel = hiltViewModel() )</ID>
     <ID>CyclomaticComplexMethod:LifeTemplate.kt$fun LifeTemplate.getDisplayDescription(context: Context): String</ID>
     <ID>CyclomaticComplexMethod:LifeTemplate.kt$fun LifeTemplate.getDisplayName(context: Context): String</ID>
     <ID>CyclomaticComplexMethod:LifeTemplateLocalizer.kt$private fun nameRes(tpl: LifeTemplate): Int?</ID>
@@ -84,31 +75,24 @@
     <ID>CyclomaticComplexMethod:MoodCalendarView.kt$@Composable fun MoodCalendarView(diaries: List&lt;MoodDiary&gt;, month: LocalDate = LocalDate.now())</ID>
     <ID>CyclomaticComplexMethod:MoodListScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun MoodListScreen(onBack: () -&gt; Unit, viewModel: MoodViewModel = hiltViewModel())</ID>
     <ID>CyclomaticComplexMethod:PinComponents.kt$@Composable fun ChangePinDialog( appLockManager: AppLockManager, onDismiss: () -&gt; Unit, onSuccess: () -&gt; Unit )</ID>
-    <ID>CyclomaticComplexMethod:PinComponents.kt$@Composable fun PinKeyboard( onDigitClick: (String) -&gt; Unit, onDeleteClick: () -&gt; Unit, onBiometricClick: () -&gt; Unit, showBiometric: Boolean )</ID>
     <ID>CyclomaticComplexMethod:QuickMoodSheet.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun QuickMoodSheet( onDismiss: () -&gt; Unit, onSave: (mood: String, content: String, factors: String) -&gt; Unit, editMood: String? = null, editContent: String? = null, editFactors: String? = null )</ID>
-    <ID>CyclomaticComplexMethod:ReadingListScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun ReadingListScreen(templateId: Long, onBack: () -&gt; Unit, onItemClick: (Long) -&gt; Unit, onCreateClick: () -&gt; Unit = {}, viewModel: ReadingPlanViewModel = hiltViewModel())</ID>
     <ID>CyclomaticComplexMethod:RecycleBinScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun RecycleBinScreen( onNavigateBack: () -&gt; Unit = {}, viewModel: RecycleBinViewModel = hiltViewModel() )</ID>
     <ID>CyclomaticComplexMethod:ReminderSettingsScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun ReminderSettingsScreen( onNavigateBack: () -&gt; Unit, viewModel: SettingsViewModel )</ID>
     <ID>CyclomaticComplexMethod:ReportScreen.kt$@Composable private fun DonutChartSection(state: ReportState, onNavigateToAddBill: () -&gt; Unit, customExpense: List&lt;CategoryItem&gt; = emptyList(), customIncome: List&lt;CategoryItem&gt; = emptyList())</ID>
     <ID>CyclomaticComplexMethod:ReportScreen.kt$@Composable private fun WeeklyBarChart(dailySummary: List&lt;DailySummary&gt;, isExpense: Boolean)</ID>
     <ID>CyclomaticComplexMethod:ReportViewModel.kt$ReportViewModel$private suspend fun loadMonthlyData(isExpense: Boolean)</ID>
     <ID>CyclomaticComplexMethod:ReportViewModel.kt$ReportViewModel$private suspend fun loadWeeklyData(isExpense: Boolean)</ID>
-    <ID>CyclomaticComplexMethod:SavingListScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun SavingListScreen(templateId: Long, onBack: () -&gt; Unit, onItemClick: (Long) -&gt; Unit, onCreateClick: () -&gt; Unit = {}, viewModel: SavingPlanViewModel = hiltViewModel())</ID>
     <ID>CyclomaticComplexMethod:SearchScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun SearchScreen( onNavigateToAsset: (Long) -&gt; Unit = {}, onNavigateToBill: (Long) -&gt; Unit = {}, onNavigateToGoal: (Long) -&gt; Unit = {}, onNavigateToAnniversary: (Long) -&gt; Unit = {}, onNavigateToMoment: (Long) -&gt; Unit = {}, onBack: () -&gt; Unit = {}, viewModel: SearchViewModel = hiltViewModel() )</ID>
     <ID>CyclomaticComplexMethod:SettingsViewModel.kt$SettingsViewModel$private fun loadSettings()</ID>
-    <ID>CyclomaticComplexMethod:ShoppingKanbanScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun ShoppingKanbanScreen(templateId: Long, onBack: () -&gt; Unit, onItemClick: (Long) -&gt; Unit, onCreateClick: () -&gt; Unit = {}, viewModel: ShoppingPlanViewModel = hiltViewModel())</ID>
-    <ID>CyclomaticComplexMethod:TodoScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun TodoScreen( templateId: Long = 0, onBack: () -&gt; Unit, onItemClick: (Long) -&gt; Unit, onCreateClick: () -&gt; Unit = {}, viewModel: TodoViewModel = hiltViewModel() )</ID>
     <ID>CyclomaticComplexMethod:VaultDetailScreen.kt$@Composable fun VaultDetailScreen( viewModel: VaultDetailViewModel = hiltViewModel(), onNavigateBack: () -&gt; Unit, onNavigateToEdit: (Long) -&gt; Unit )</ID>
     <ID>CyclomaticComplexMethod:VaultEditScreen.kt$@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class) @Composable fun VaultEditScreen( viewModel: VaultEditViewModel = hiltViewModel(), onNavigateBack: () -&gt; Unit )</ID>
     <ID>CyclomaticComplexMethod:VaultLockGate.kt$@Composable fun VaultLockGate( lockState: LockState, error: String?, lockoutRemainingMs: Long, biometricEnabled: Boolean, onBiometricUnlock: () -&gt; Unit, onSetup: (String) -&gt; Unit, onUnlock: (String) -&gt; Unit, onSkip: (() -&gt; Unit)? = null, onForgotPin: (() -&gt; Unit)? = null, onPinTyped: () -&gt; Unit = {} )</ID>
     <ID>CyclomaticComplexMethod:VaultSettingsScreen.kt$@Composable fun VaultSettingsScreen( viewModel: VaultSettingsViewModel = hiltViewModel(), onNavigateBack: () -&gt; Unit )</ID>
     <ID>CyclomaticComplexMethod:VaultSettingsScreen.kt$@Composable private fun ChangeVaultPinDialog( onVerifyOld: suspend (String) -&gt; Boolean, onConfirm: (String) -&gt; Unit, onDismiss: () -&gt; Unit, skipVerify: Boolean = false, onLockedOut: () -&gt; Long = { 0L } )</ID>
     <ID>CyclomaticComplexMethod:WalletEditScreen.kt$@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class) @Composable fun WalletEditScreen( walletId: Long? = null, onNavigateBack: () -&gt; Unit = {}, viewModel: WalletViewModel = hiltViewModel() )</ID>
-    <ID>EmptyCatchBlock:SettingsScreen.kt${ }</ID>
     <ID>ForEachOnRange:FieldComponents.kt$1..5</ID>
     <ID>ForEachOnRange:FieldInputComponent.kt$1..5</ID>
     <ID>ForEachOnRange:RatingInputComponent.kt$1..maxStars</ID>
-    <ID>ForEachOnRange:TodoScreen.kt$1..daysInMonth</ID>
     <ID>ImplicitDefaultLocale:AssetScreen.kt$String.format("%.1f", purchasePrice / 100.0 / daysOwned)</ID>
     <ID>ImplicitDefaultLocale:AssetScreen.kt$String.format("%.1f", purchasePrice / 100.0 / useCount)</ID>
     <ID>ImplicitDefaultLocale:CalendarView.kt$String.format("%04d-%02d", newYear, newMonth)</ID>
@@ -125,7 +109,6 @@
     <ID>LongMethod:AchievementScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun AchievementScreen(onBack: () -&gt; Unit, viewModel: AchievementViewModel = hiltViewModel())</ID>
     <ID>LongMethod:AddAssetScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun AddAssetScreen( assetId: Long? = null, onNavigateBack: () -&gt; Unit = {}, onNavigateToCategory: (String) -&gt; Unit = {}, viewModel: AssetViewModel = hiltViewModel() )</ID>
     <ID>LongMethod:AddBillScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun AddBillScreen( billId: Long? = null, selectedDate: Long? = null, onNavigateBack: () -&gt; Unit = {}, onBillDateSaved: (Long) -&gt; Unit = {}, onNavigateToWallet: () -&gt; Unit = {}, onNavigateToCategory: (String) -&gt; Unit = {}, viewModel: BillViewModel = hiltViewModel() )</ID>
-    <ID>LongMethod:AnniversaryListScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun AnniversaryListScreen(templateId: Long, onBack: () -&gt; Unit, onItemClick: (Long) -&gt; Unit, onCreateClick: () -&gt; Unit = {}, viewModel: AnniversaryViewModel = hiltViewModel())</ID>
     <ID>LongMethod:AppLockScreen.kt$@Composable fun AppLockScreen( appLockManager: AppLockManager, onUnlocked: () -&gt; Unit, isSetupMode: Boolean = false )</ID>
     <ID>LongMethod:AppLockSettingsScreen.kt$@Composable private fun SetupPinDialog( appLockManager: AppLockManager, onDismiss: () -&gt; Unit, onSuccess: () -&gt; Unit )</ID>
     <ID>LongMethod:AppNavigation.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun PalmNoteNavHost()</ID>
@@ -135,18 +118,21 @@
     <ID>LongMethod:AssetScreen.kt$@Composable fun EnhancedAssetCard( asset: Asset, onClick: () -&gt; Unit, presetOverrides: Map&lt;String, String&gt;? = null, customItems: List&lt;CategoryItem&gt;? = null )</ID>
     <ID>LongMethod:AssetScreen.kt$@Composable fun GridAssetCard( modifier: Modifier = Modifier, asset: Asset, onClick: () -&gt; Unit, presetOverrides: Map&lt;String, String&gt;? = null, customItems: List&lt;CategoryItem&gt;? = null )</ID>
     <ID>LongMethod:AssetViewModel.kt$AssetViewModel$fun saveAsset()</ID>
-    <ID>LongMethod:BackupManager.kt$BackupManager$private fun restoreFromZip(context: Context, zipFile: File)</ID>
     <ID>LongMethod:BackupScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun BackupScreen( onNavigateBack: () -&gt; Unit = {}, viewModel: BackupViewModel = hiltViewModel() )</ID>
     <ID>LongMethod:BillCsvImporter.kt$BillCsvImporter.Companion$fun normalizeCategory(category: String, type: String): String</ID>
     <ID>LongMethod:BillFilterSheet.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun BillFilterSheet( onDismiss: () -&gt; Unit, onApply: (BillFilter) -&gt; Unit, currentFilter: BillFilter = BillFilter(), expenseCategories: List&lt;CategoryItem&gt; = emptyList(), incomeCategories: List&lt;CategoryItem&gt; = emptyList(), onManageCategories: ((String) -&gt; Unit)? = null, presetOverrides: Map&lt;String, String&gt; = emptyMap() )</ID>
+    <ID>LongMethod:BillImportScreen.kt$@Composable private fun BillPreviewRow( selected: Boolean, type: BillType, amountCents: Long?, merchant: String, category: String, dateMillis: Long?, note: String, onToggle: () -&gt; Unit, onEdit: () -&gt; Unit, isDuplicate: Boolean = false )</ID>
+    <ID>LongMethod:BillImportScreen.kt$@Composable private fun FileEditDialog(bill: ParsedBill, viewModel: BillImportViewModel, onDismiss: () -&gt; Unit, onSave: (ParsedBill) -&gt; Unit)</ID>
+    <ID>LongMethod:BillImportScreen.kt$@Composable private fun FilePreviewContent(state: BillImportState, viewModel: BillImportViewModel, onPickAgain: () -&gt; Unit)</ID>
+    <ID>LongMethod:BillImportScreen.kt$@Composable private fun ImportSettingsRow(state: BillImportState, viewModel: BillImportViewModel, context: android.content.Context)</ID>
     <ID>LongMethod:BillImportScreen.kt$@Composable private fun OcrPreviewContent(state: BillImportState, viewModel: BillImportViewModel, context: android.content.Context, onPickAnother: () -&gt; Unit)</ID>
+    <ID>LongMethod:BillImportScreen.kt$@Composable private fun OcrSourceImageCard(state: BillImportState, onZoom: () -&gt; Unit, modifier: Modifier = Modifier)</ID>
     <ID>LongMethod:BillImportScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun BillImportScreen( onNavigateBack: () -&gt; Unit = {}, viewModel: BillImportViewModel = hiltViewModel() )</ID>
+    <ID>LongMethod:BillImportScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable private fun OcrEditDialog(result: OcrBillResult, viewModel: BillImportViewModel, onDismiss: () -&gt; Unit, onSave: (OcrBillResult) -&gt; Unit)</ID>
     <ID>LongMethod:BillScreen.kt$@Composable fun BillListItem(bill: Bill, wallets: Map&lt;Long, String&gt; = emptyMap(), onDetail: () -&gt; Unit, onDelete: () -&gt; Unit, customExpenseItems: List&lt;CategoryItem&gt;? = null, customIncomeItems: List&lt;CategoryItem&gt;? = null, presetOverrides: Map&lt;String, String&gt; = emptyMap())</ID>
     <ID>LongMethod:BillScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun BillScreen( onNavigateToAdd: (Long) -&gt; Unit = {}, onNavigateToDetail: (Long) -&gt; Unit = {}, onNavigateToBudget: () -&gt; Unit = {}, onNavigateToReport: (Long, String) -&gt; Unit = { _, _ -&gt; }, onNavigateToImportCsv: () -&gt; Unit = {}, onNavigateToAccountBook: () -&gt; Unit = {}, viewModel: BillViewModel = hiltViewModel() )</ID>
     <ID>LongMethod:BillViewModel.kt$BillViewModel$fun saveBill()</ID>
     <ID>LongMethod:BillWidgetProvider.kt$BillWidgetProvider$private fun updateWidgets(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray)</ID>
-    <ID>LongMethod:BillXlsxImporter.kt$BillXlsxImporter$private fun parseZipBytes(bytes: ByteArray, diag: StringBuilder): List&lt;ParsedBill&gt;</ID>
-    <ID>LongMethod:BirthdayListScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun BirthdayListScreen(templateId: Long, onBack: () -&gt; Unit, onItemClick: (Long) -&gt; Unit, onCreateClick: () -&gt; Unit = {}, viewModel: BirthdayViewModel = hiltViewModel())</ID>
     <ID>LongMethod:BudgetScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun BudgetScreen( onNavigateBack: () -&gt; Unit = {}, viewModel: BillViewModel = hiltViewModel() )</ID>
     <ID>LongMethod:CalendarView.kt$@Composable fun CalendarView( yearMonth: String, // "2024-01" dailyData: Map&lt;Int, Pair&lt;Long, Long&gt;&gt;, // day -&gt; (expense, income) selectedDay: Int?, onDaySelected: (Int) -&gt; Unit, collapsed: Boolean = false, onMonthChanged: ((String) -&gt; Unit)? = null, modifier: Modifier = Modifier )</ID>
     <ID>LongMethod:CalendarView.kt$@Composable private fun RowScope.DayCell( day: Int, isCurrentMonth: Boolean, isToday: Boolean, isSelected: Boolean, hasExpense: Boolean, hasIncome: Boolean, onClick: () -&gt; Unit )</ID>
@@ -154,19 +140,14 @@
     <ID>LongMethod:CategoryScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun CategoryScreen( onNavigateBack: () -&gt; Unit = {}, initialType: String = "ASSET", viewModel: CategoryViewModel = hiltViewModel() )</ID>
     <ID>LongMethod:CommonComponents.kt$@Composable fun CategoryPicker( selected: String, onSelected: (String) -&gt; Unit, categories: List&lt;CategoryItem&gt;, rows: Int = 2, columns: Int = 5, onManageCategories: (() -&gt; Unit)? = null, getDisplayName: ((String) -&gt; String)? = null, modifier: Modifier = Modifier )</ID>
     <ID>LongMethod:CommonComponents.kt$@Composable fun TagPicker( selectedTags: List&lt;String&gt;, status: String, onTagsChanged: (List&lt;String&gt;) -&gt; Unit, modifier: Modifier = Modifier )</ID>
-    <ID>LongMethod:CountUpListScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun CountUpListScreen(templateId: Long, onBack: () -&gt; Unit, onItemClick: (Long) -&gt; Unit, onCreateClick: () -&gt; Unit = {}, viewModel: CountUpViewModel = hiltViewModel())</ID>
-    <ID>LongMethod:CountdownListScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun CountdownListScreen(templateId: Long, onBack: () -&gt; Unit, onItemClick: (Long) -&gt; Unit, onCreateClick: () -&gt; Unit = {}, viewModel: CountdownViewModel = hiltViewModel())</ID>
     <ID>LongMethod:CsvDataExporter.kt$CsvDataExporter$private suspend fun updateCrossReferences(idMaps: Map&lt;Class&lt;*&gt;, Map&lt;Long, Long&gt;&gt;)</ID>
     <ID>LongMethod:CsvDataExporter.kt$CsvDataExporter$suspend fun exportToUri(uri: Uri): Result&lt;String&gt;</ID>
     <ID>LongMethod:CsvDataExporter.kt$CsvDataExporter$suspend fun importFromUri(uri: Uri): Result&lt;Int&gt;</ID>
     <ID>LongMethod:DashboardCards.kt$@Composable internal fun AnniversariesCard(state: DashboardState, onNavigateToLife: () -&gt; Unit)</ID>
-    <ID>LongMethod:DashboardCards.kt$@Composable internal fun NetWorthCard(state: DashboardState)</ID>
     <ID>LongMethod:DashboardScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun DashboardScreen( onNavigateToAsset: () -&gt; Unit = {}, onNavigateToBill: () -&gt; Unit = {}, onNavigateToLife: () -&gt; Unit = {}, onNavigateToSettings: () -&gt; Unit = {}, onNavigateToSearch: () -&gt; Unit = {}, onNavigateToVault: () -&gt; Unit = {}, viewModel: DashboardViewModel = hiltViewModel() )</ID>
     <ID>LongMethod:DataClearScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun DataClearScreen( onNavigateBack: () -&gt; Unit = {}, viewModel: DataClearViewModel = hiltViewModel() )</ID>
     <ID>LongMethod:DataStorageScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun DataStorageScreen( onNavigateBack: () -&gt; Unit, onNavigateToRecycleBin: () -&gt; Unit, onNavigateToDataClear: () -&gt; Unit, onNavigateToBackup: () -&gt; Unit, viewModel: SettingsViewModel )</ID>
     <ID>LongMethod:DepositSheet.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun DepositSheet( savingItemName: String = "", onConfirm: (Long) -&gt; Unit, onDismiss: () -&gt; Unit )</ID>
-    <ID>LongMethod:DynamicFormScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun DynamicFormScreen( template: LifeTemplate, existingItem: LifeItem? = null, onSave: (title: String, fieldsData: String) -&gt; Unit = { _, _ -&gt; }, onBack: () -&gt; Unit = {}, viewModel: CreateItemViewModel? = null )</ID>
-    <ID>LongMethod:FieldComponents.kt$@Composable fun FieldDisplay(field: FieldDef, value: String)</ID>
     <ID>LongMethod:FocusTimerScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun FocusTimerScreen(onBack: () -&gt; Unit, viewModel: FocusViewModel = hiltViewModel())</ID>
     <ID>LongMethod:GeneralSettingsScreen.kt$@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class) @Composable fun GeneralSettingsScreen( onNavigateBack: () -&gt; Unit, viewModel: SettingsViewModel )</ID>
     <ID>LongMethod:HabitListScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun HabitListScreen(onBack: () -&gt; Unit, onItemClick: (Long) -&gt; Unit, onAchievementClick: () -&gt; Unit = {}, viewModel: HabitViewModel = hiltViewModel())</ID>
@@ -175,35 +156,24 @@
     <ID>LongMethod:ItemDetailScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun ItemDetailScreen( item: LifeItem?, template: LifeTemplate?, onBack: () -&gt; Unit = {}, onEdit: () -&gt; Unit = {}, onDelete: () -&gt; Unit = {}, viewModel: ItemDetailViewModel? = null )</ID>
     <ID>LongMethod:JournalListScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun JournalListScreen(onBack: () -&gt; Unit, onItemClick: (Long) -&gt; Unit, viewModel: JournalViewModel = hiltViewModel())</ID>
     <ID>LongMethod:LifeNavHost.kt$@Composable @Suppress("CyclomaticComplexMethod") fun LifeNavHost(modifier: Modifier = Modifier, onChildNavigated: (Boolean) -&gt; Unit = {}, navController: NavHostController = rememberNavController())</ID>
-    <ID>LongMethod:LifeNavHost.kt$@Composable fun LifeNavHost(modifier: Modifier = Modifier, onChildNavigated: (Boolean) -&gt; Unit = {}, navController: NavHostController = rememberNavController())</ID>
-    <ID>LongMethod:LifeScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun LifeScreen( onNavigateToTemplate: (Long) -&gt; Unit = {}, onNavigateToItem: (Long) -&gt; Unit = {}, onNavigateToCreate: (Long) -&gt; Unit = {}, onNavigateToFocus: () -&gt; Unit = {}, onNavigateToHabit: () -&gt; Unit = {}, onNavigateToMood: () -&gt; Unit = {}, onNavigateToJournal: () -&gt; Unit = {}, onNavigateToReport: () -&gt; Unit = {}, onNavigateToManage: () -&gt; Unit = {}, onNavigateToTodo: () -&gt; Unit = {}, viewModel: LifeViewModel = hiltViewModel() )</ID>
     <ID>LongMethod:LinkSelectorSheet.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun LinkSelectorSheet( sourceItemId: Long, onDismiss: () -&gt; Unit, viewModel: LinkSelectorViewModel = hiltViewModel() )</ID>
     <ID>LongMethod:MainActivity.kt$MainActivity$override fun onCreate(savedInstanceState: Bundle?)</ID>
     <ID>LongMethod:Migration3To4.kt$&lt;no name provided&gt;$private fun migrateAssets(db: SupportSQLiteDatabase)</ID>
     <ID>LongMethod:Migration5To6.kt$Migration5To6$override fun migrate(db: SupportSQLiteDatabase)</ID>
     <ID>LongMethod:MoodListScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun MoodListScreen(onBack: () -&gt; Unit, viewModel: MoodViewModel = hiltViewModel())</ID>
     <ID>LongMethod:PinComponents.kt$@Composable fun ChangePinDialog( appLockManager: AppLockManager, onDismiss: () -&gt; Unit, onSuccess: () -&gt; Unit )</ID>
-    <ID>LongMethod:PinComponents.kt$@Composable fun PinKeyboard( onDigitClick: (String) -&gt; Unit, onDeleteClick: () -&gt; Unit, onBiometricClick: () -&gt; Unit, showBiometric: Boolean )</ID>
     <ID>LongMethod:PinComponents.kt$@Composable fun PinVerifyDialog( title: String, onVerify: suspend (String) -&gt; Boolean, onLockedOut: () -&gt; Long = { 0L }, onSuccess: () -&gt; Unit, onDismiss: () -&gt; Unit )</ID>
     <ID>LongMethod:QuickMoodSheet.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun QuickMoodSheet( onDismiss: () -&gt; Unit, onSave: (mood: String, content: String, factors: String) -&gt; Unit, editMood: String? = null, editContent: String? = null, editFactors: String? = null )</ID>
-    <ID>LongMethod:ReadingListScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun ReadingListScreen(templateId: Long, onBack: () -&gt; Unit, onItemClick: (Long) -&gt; Unit, onCreateClick: () -&gt; Unit = {}, viewModel: ReadingPlanViewModel = hiltViewModel())</ID>
     <ID>LongMethod:RecycleBinScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun RecycleBinScreen( onNavigateBack: () -&gt; Unit = {}, viewModel: RecycleBinViewModel = hiltViewModel() )</ID>
     <ID>LongMethod:ReminderSettingsScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun ReminderSettingsScreen( onNavigateBack: () -&gt; Unit, viewModel: SettingsViewModel )</ID>
     <ID>LongMethod:ReportScreen.kt$@Composable private fun CategoryRankingItem(cat: CategoryTotal, total: Long, isExpense: Boolean, customItems: List&lt;CategoryItem&gt; = emptyList())</ID>
     <ID>LongMethod:ReportScreen.kt$@Composable private fun DonutChartSection(state: ReportState, onNavigateToAddBill: () -&gt; Unit, customExpense: List&lt;CategoryItem&gt; = emptyList(), customIncome: List&lt;CategoryItem&gt; = emptyList())</ID>
     <ID>LongMethod:ReportScreen.kt$@Composable private fun WeeklyBarChart(dailySummary: List&lt;DailySummary&gt;, isExpense: Boolean)</ID>
     <ID>LongMethod:ReportScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun ReportScreen( onNavigateBack: () -&gt; Unit = {}, onNavigateToAddBill: () -&gt; Unit = {}, selectedBookId: Long = -1L, bookName: String? = null, viewModel: ReportViewModel = hiltViewModel() )</ID>
-    <ID>LongMethod:SavingListScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun SavingListScreen(templateId: Long, onBack: () -&gt; Unit, onItemClick: (Long) -&gt; Unit, onCreateClick: () -&gt; Unit = {}, viewModel: SavingPlanViewModel = hiltViewModel())</ID>
     <ID>LongMethod:SearchScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun SearchScreen( onNavigateToAsset: (Long) -&gt; Unit = {}, onNavigateToBill: (Long) -&gt; Unit = {}, onNavigateToGoal: (Long) -&gt; Unit = {}, onNavigateToAnniversary: (Long) -&gt; Unit = {}, onNavigateToMoment: (Long) -&gt; Unit = {}, onBack: () -&gt; Unit = {}, viewModel: SearchViewModel = hiltViewModel() )</ID>
     <ID>LongMethod:SettingsScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun SettingsScreen( onNavigateBack: () -&gt; Unit = {}, onNavigateToGeneral: () -&gt; Unit = {}, onNavigateToReminder: () -&gt; Unit = {}, onNavigateToManageCategory: () -&gt; Unit = {}, onNavigateToDataStorage: () -&gt; Unit = {}, onNavigateToAppLock: () -&gt; Unit = {}, onNavigateToAbout: () -&gt; Unit = {}, viewModel: SettingsViewModel = hiltViewModel() )</ID>
     <ID>LongMethod:SettingsViewModel.kt$SettingsViewModel$private fun loadSettings()</ID>
-    <ID>LongMethod:ShoppingKanbanScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun ShoppingKanbanScreen(templateId: Long, onBack: () -&gt; Unit, onItemClick: (Long) -&gt; Unit, onCreateClick: () -&gt; Unit = {}, viewModel: ShoppingPlanViewModel = hiltViewModel())</ID>
-    <ID>LongMethod:StudyListScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun StudyListScreen(templateId: Long, onBack: () -&gt; Unit, onItemClick: (Long) -&gt; Unit, onCreateClick: () -&gt; Unit = {}, viewModel: StudyPlanViewModel = hiltViewModel())</ID>
-    <ID>LongMethod:TemplateCreateScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun TemplateCreateScreen( onBack: () -&gt; Unit, onCreated: (Long) -&gt; Unit, viewModel: TemplateCreateViewModel = hiltViewModel() )</ID>
-    <ID>LongMethod:TemplateCreateViewModel.kt$TemplateCreateViewModel$fun createTemplate( name: String, category: String, description: String, icon: String, color: String, fields: List&lt;TemplateField&gt;, layout: String )</ID>
     <ID>LongMethod:TemplateManageScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun TemplateManageScreen( onBack: () -&gt; Unit, onCreateClick: () -&gt; Unit = {}, viewModel: LifeViewModel = hiltViewModel() )</ID>
-    <ID>LongMethod:TodoScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun TodoScreen( templateId: Long = 0, onBack: () -&gt; Unit, onItemClick: (Long) -&gt; Unit, onCreateClick: () -&gt; Unit = {}, viewModel: TodoViewModel = hiltViewModel() )</ID>
-    <ID>LongMethod:TravelListScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun TravelListScreen(templateId: Long, onBack: () -&gt; Unit, onItemClick: (Long) -&gt; Unit, onCreateClick: () -&gt; Unit = {}, viewModel: TravelPlanViewModel = hiltViewModel())</ID>
     <ID>LongMethod:VaultDetailScreen.kt$@Composable fun VaultDetailScreen( viewModel: VaultDetailViewModel = hiltViewModel(), onNavigateBack: () -&gt; Unit, onNavigateToEdit: (Long) -&gt; Unit )</ID>
     <ID>LongMethod:VaultEditScreen.kt$@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class) @Composable fun VaultEditScreen( viewModel: VaultEditViewModel = hiltViewModel(), onNavigateBack: () -&gt; Unit )</ID>
     <ID>LongMethod:VaultLockGate.kt$@Composable fun VaultLockGate( lockState: LockState, error: String?, lockoutRemainingMs: Long, biometricEnabled: Boolean, onBiometricUnlock: () -&gt; Unit, onSetup: (String) -&gt; Unit, onUnlock: (String) -&gt; Unit, onSkip: (() -&gt; Unit)? = null, onForgotPin: (() -&gt; Unit)? = null, onPinTyped: () -&gt; Unit = {} )</ID>
@@ -214,11 +184,9 @@
     <ID>LongMethod:WalletScreen.kt$@Composable private fun WalletItem( wallet: Wallet, onClick: () -&gt; Unit, onToggleEnabled: () -&gt; Unit )</ID>
     <ID>LongMethod:WalletScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun WalletScreen( onNavigateBack: () -&gt; Unit = {}, onNavigateToAddWallet: () -&gt; Unit = {}, onNavigateToEditWallet: (Long) -&gt; Unit = {}, viewModel: WalletViewModel = hiltViewModel() )</ID>
     <ID>LongParameterList:AppNavigation.kt$( startTab: Any, onNavigateToAddBill: (Long) -&gt; Unit, onNavigateToBillDetail: (Long) -&gt; Unit, onNavigateToBudget: () -&gt; Unit, onNavigateToReport: (Long, String) -&gt; Unit, onNavigateToImportCsv: () -&gt; Unit, onNavigateToAccountBook: () -&gt; Unit, onNavigateToAssetDetail: (Long) -&gt; Unit, onNavigateToAddAsset: () -&gt; Unit, onNavigateToSettings: () -&gt; Unit, onNavigateToSearch: () -&gt; Unit, onNavigateToVault: () -&gt; Unit, appNavController: NavHostController, )</ID>
+    <ID>LongParameterList:BillImportScreen.kt$( selected: Boolean, type: BillType, amountCents: Long?, merchant: String, category: String, dateMillis: Long?, note: String, onToggle: () -&gt; Unit, onEdit: () -&gt; Unit, isDuplicate: Boolean = false )</ID>
     <ID>LongParameterList:LifeDataSeeder.kt$LifeDataSeeder$(name: String, category: String, icon: String, color: String, description: String, sortOrder: Int, fieldsConfig: String, availableLayouts: String, statusFlowConfig: String, linkConfig: String, isHidden: Boolean = false)</ID>
-    <ID>LongParameterList:LifeScreen.kt$( innerPadding: PaddingValues, state: LifeUiState, showSearch: Boolean, searchQuery: String, onSearchChange: (String) -&gt; Unit, filteredPlans: List&lt;LifeTemplate&gt;, filteredTimes: List&lt;LifeTemplate&gt;, filteredRecords: List&lt;LifeTemplate&gt;, planExpanded: Boolean, timeExpanded: Boolean, recordExpanded: Boolean, onPlanToggle: () -&gt; Unit, onTimeToggle: () -&gt; Unit, onRecordToggle: () -&gt; Unit, onTemplateClick: (Long) -&gt; Unit, onHabitClick: () -&gt; Unit, onFocusClick: () -&gt; Unit, onTodayTodosClick: () -&gt; Unit, onRetry: () -&gt; Unit, snackbarHostState: SnackbarHostState, scope: kotlinx.coroutines.CoroutineScope )</ID>
-    <ID>LongParameterList:LifeScreen.kt$( onNavigateToTemplate: (Long) -&gt; Unit = {}, onNavigateToItem: (Long) -&gt; Unit = {}, onNavigateToCreate: (Long) -&gt; Unit = {}, onNavigateToFocus: () -&gt; Unit = {}, onNavigateToHabit: () -&gt; Unit = {}, onNavigateToMood: () -&gt; Unit = {}, onNavigateToJournal: () -&gt; Unit = {}, onNavigateToReport: () -&gt; Unit = {}, onNavigateToManage: () -&gt; Unit = {}, onNavigateToTodo: () -&gt; Unit = {}, viewModel: LifeViewModel = hiltViewModel() )</ID>
     <ID>LongParameterList:LifeScreen.kt$( templates: List&lt;LifeTemplate&gt;, planTemplates: List&lt;LifeTemplate&gt;, timeTemplates: List&lt;LifeTemplate&gt;, recordTemplates: List&lt;LifeTemplate&gt;, onDismiss: () -&gt; Unit, onTemplateClick: (Long) -&gt; Unit, onNavigateToCreate: (Long) -&gt; Unit = {}, onNavigateToFocus: () -&gt; Unit = {}, onNavigateToHabit: () -&gt; Unit = {}, onNavigateToMood: () -&gt; Unit = {}, onNavigateToJournal: () -&gt; Unit = {}, onNavigateToReport: () -&gt; Unit = {} )</ID>
-    <ID>LongParameterList:TemplateCreateScreen.kt$(name: String, onNameChange: (String) -&gt; Unit, description: String, onDescChange: (String) -&gt; Unit, selectedIcon: String, onIconSelect: (String) -&gt; Unit, selectedColor: String, onColorSelect: (String) -&gt; Unit, icons: List&lt;String&gt;, colors: List&lt;String&gt;)</ID>
     <ID>LongParameterList:VaultEditViewModel.kt$VaultEditViewModel$( title: String, username: String, email: String, phone: String, password: String, url: String, notes: String, category: String, avatarPath: String, onResult: (Boolean) -&gt; Unit )</ID>
     <ID>LongParameterList:VaultLockGate.kt$( lockState: LockState, error: String?, lockoutRemainingMs: Long, biometricEnabled: Boolean, onBiometricUnlock: () -&gt; Unit, onSetup: (String) -&gt; Unit, onUnlock: (String) -&gt; Unit, onSkip: (() -&gt; Unit)? = null, onForgotPin: (() -&gt; Unit)? = null, onPinTyped: () -&gt; Unit = {} )</ID>
     <ID>LongParameterList:VaultRepository.kt$VaultRepository$( id: Long, title: String, username: String, email: String, phone: String, password: String, url: String, notes: String, category: String, avatarPath: String )</ID>
@@ -246,13 +214,10 @@
     <ID>MaxLineLength:AchievementScreen.kt$Column</ID>
     <ID>MaxLineLength:AchievementScreen.kt$Icon(iconFromName(ach.icon), null, tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f), modifier = Modifier.size(24.dp))</ID>
     <ID>MaxLineLength:AchievementScreen.kt$Icon(iconFromName(ach.icon), null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(24.dp))</ID>
-    <ID>MaxLineLength:AchievementScreen.kt$Icon(iconFromName(ach.icon), null, tint = if (ach.unlockedAt != null) Color(0xFF66D98D) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f), modifier = Modifier.size(48.dp))</ID>
     <ID>MaxLineLength:AchievementScreen.kt$LazyVerticalGrid</ID>
     <ID>MaxLineLength:AchievementScreen.kt$Text(ach.name, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)</ID>
-    <ID>MaxLineLength:AchievementScreen.kt$Text(dateFmt.format(Date(ach.unlockedAt)), fontSize = 9.sp, color = MaterialTheme.colorScheme.outline, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)</ID>
     <ID>MaxLineLength:AchievementScreen.kt$Text(stringResource(R.string.life_achievement_locked), fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.outline)</ID>
     <ID>MaxLineLength:AchievementScreen.kt$Text(stringResource(R.string.life_achievement_unlocked), fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.tertiary)</ID>
-    <ID>MaxLineLength:AchievementScreen.kt$Text(stringResource(R.string.life_achievement_unlocked_on, dateFmt.format(Date(ach.unlockedAt))), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
     <ID>MaxLineLength:AchievementScreen.kt$confirmButton = { TextButton(onClick = { selectedAchievement = null }) { Text(stringResource(R.string.life_achievement_close)) } }</ID>
     <ID>MaxLineLength:AchievementScreen.kt$navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.life_back)) } }</ID>
     <ID>MaxLineLength:AddAssetScreen.kt$DatePickerField(selectedDate = formState.insuranceExpireDate, onDateSelected = { viewModel.updateFormField { copy(insuranceExpireDate = it) } }, placeholder = stringResource(R.string.asset_select_insurance_date))</ID>
@@ -314,16 +279,10 @@
     <ID>MaxLineLength:AddBillScreen.kt$text = "${getLocalizedWalletDisplayName(selectedWallet, context)} ${stringResource(R.string.balance)}"</ID>
     <ID>MaxLineLength:AddBillScreen.kt$text = if (formState.type == BillType.TRANSFER) stringResource(R.string.bill_transfer_from) else stringResource(R.string.bill_wallet)</ID>
     <ID>MaxLineLength:AnniversaryDao.kt$AnniversaryDao$@Query("SELECT * FROM anniversaries WHERE (title LIKE '%' || :query || '%' OR description LIKE '%' || :query || '%' OR personName LIKE '%' || :query || '%') ORDER BY updatedAt DESC")</ID>
-    <ID>MaxLineLength:AnniversaryListScreen.kt$Box(modifier = Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = LifeAnniversary) }</ID>
     <ID>MaxLineLength:AnniversaryListScreen.kt$Box(modifier = Modifier.width(3.dp).height(60.dp).align(Alignment.CenterStart).background(LifeAnniversary, RoundedCornerShape(topEnd = 2.dp, bottomEnd = 2.dp)))</ID>
-    <ID>MaxLineLength:AnniversaryListScreen.kt$LifeLazyList</ID>
     <ID>MaxLineLength:AnniversaryListScreen.kt$Row</ID>
-    <ID>MaxLineLength:AnniversaryListScreen.kt$Text(item.title, fontWeight = FontWeight.Medium, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)</ID>
     <ID>MaxLineLength:AnniversaryListScreen.kt$Text(stringResource(R.string.life_anniversary_days_ago, days.toInt()), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
-    <ID>MaxLineLength:AnniversaryListScreen.kt$confirmButton = { TextButton(onClick = { deleteTarget?.let { viewModel.deleteItem(it) }; deleteTarget = null }) { Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error) } }</ID>
     <ID>MaxLineLength:AnniversaryListScreen.kt$fun</ID>
-    <ID>MaxLineLength:AnniversaryListScreen.kt$if (dateText.isNotEmpty()) Text(stringResource(R.string.life_anniversary_days_ago, days.toInt()), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
-    <ID>MaxLineLength:AnniversaryListScreen.kt$navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.life_back)) } }</ID>
     <ID>MaxLineLength:AnniversaryViewModel.kt$AnniversaryUiState</ID>
     <ID>MaxLineLength:AnniversaryViewModel.kt$AnniversaryViewModel$itemsJob = itemRepo.getItemsByTemplate(templateId).onEach { items -&gt; _uiState.update { state -&gt; state.copy(items = items, isLoading = false) } }.launchIn(viewModelScope)</ID>
     <ID>MaxLineLength:AnniversaryViewModel.kt$AnniversaryViewModel$templateJob = templateRepo.getTemplateByIdFlow(templateId).onEach { tpl -&gt; _uiState.update { state -&gt; state.copy(template = tpl) } }.launchIn(viewModelScope)</ID>
@@ -343,7 +302,6 @@
     <ID>MaxLineLength:AssetDetailScreen.kt$DetailRow(stringResource(R.string.asset_category), com.palmnote.ui.asset.getCategoryDisplayName(asset.category, context, presetVer))</ID>
     <ID>MaxLineLength:AssetDetailScreen.kt$DetailRow(stringResource(R.string.asset_condition), when (asset.condition) { "NEW" -&gt; stringResource(R.string.asset_condition_new); "GOOD" -&gt; stringResource(R.string.asset_condition_good); "FAIR" -&gt; stringResource(R.string.asset_condition_fair); "POOR" -&gt; stringResource(R.string.asset_condition_poor); else -&gt; asset.condition })</ID>
     <ID>MaxLineLength:AssetDetailScreen.kt$DetailRow(stringResource(R.string.asset_cost_calculation), when (asset.costMode) { "DAILY" -&gt; stringResource(R.string.asset_cost_daily); "PER_USE" -&gt; stringResource(R.string.asset_cost_per_use); "DEPRECIATION" -&gt; stringResource(R.string.asset_depreciation); else -&gt; asset.costMode })</ID>
-    <ID>MaxLineLength:AssetDetailScreen.kt$DetailRow(stringResource(R.string.asset_profit_loss), (if (asset.soldPrice &gt;= asset.purchasePrice) "+" else "") + CurrencyUtils.formatCurrency((asset.soldPrice - asset.purchasePrice).toMoney()))</ID>
     <ID>MaxLineLength:AssetDetailScreen.kt$Icon(Icons.Outlined.Build, contentDescription = null, tint = if (isDue) AccentOrange else MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))</ID>
     <ID>MaxLineLength:AssetDetailScreen.kt$Icon(Icons.Outlined.ErrorOutline, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(48.dp))</ID>
     <ID>MaxLineLength:AssetDetailScreen.kt$Icon(Icons.Outlined.Schedule, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
@@ -361,7 +319,6 @@
     <ID>MaxLineLength:AssetDetailScreen.kt$OutlinedTextField(value = reason, onValueChange = { reason = it; selectedPreset = -1 }, label = { Text(reasonLabel[2]) }, modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium)</ID>
     <ID>MaxLineLength:AssetDetailScreen.kt$OutlinedTextField(value = reason, onValueChange = { reason = it; selectedPreset = -1 }, label = { Text(reasonLabel[clearType]) }, modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium)</ID>
     <ID>MaxLineLength:AssetDetailScreen.kt$Row</ID>
-    <ID>MaxLineLength:AssetDetailScreen.kt$StatItem(label = if (asset.costMode == "PER_USE") stringResource(R.string.asset_cost_single) else stringResource(R.string.asset_cost_daily_avg), value = CurrencyUtils.formatCurrency(Money.fromYuan(if (asset.costMode == "PER_USE") detailState.costPerUse else detailState.costPerDay)), color = MaterialTheme.colorScheme.onSurface)</ID>
     <ID>MaxLineLength:AssetDetailScreen.kt$StatItem(label = stringResource(R.string.asset_days_owned), value = "${detailState.daysOwned}", color = MaterialTheme.colorScheme.primary)</ID>
     <ID>MaxLineLength:AssetDetailScreen.kt$StatusChip(text = if (daysUntil &gt;= 0) stringResource(R.string.asset_days_later_format, daysUntil) else stringResource(R.string.asset_maintenance_expired), color = if (daysUntil &lt; 7) AccentOrange else StatusActive)</ID>
     <ID>MaxLineLength:AssetDetailScreen.kt$Text(if (showAllRecords) stringResource(R.string.asset_collapse) else stringResource(R.string.asset_expand_all_format, detailState.usageRecords.size), color = MaterialTheme.colorScheme.primary)</ID>
@@ -380,14 +337,12 @@
     <ID>MaxLineLength:AssetDetailScreen.kt$Text(text = stringResource(R.string.asset_usage_count_format, asset.useCount), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
     <ID>MaxLineLength:AssetDetailScreen.kt$Text(text = stringResource(R.string.asset_usage_records), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)</ID>
     <ID>MaxLineLength:AssetDetailScreen.kt$Text(text = stringResource(R.string.asset_value_info), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)</ID>
-    <ID>MaxLineLength:AssetDetailScreen.kt$Text(text = stringResource(R.string.asset_warranty_expiry_format, DateUtils.formatDisplayYearDate(context, asset.warrantyExpireDate)), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
     <ID>MaxLineLength:AssetDetailScreen.kt$Text(text = stringResource(R.string.asset_warranty_info), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)</ID>
     <ID>MaxLineLength:AssetDetailScreen.kt$asset.acquisitionDate?.let { DetailRow(if (asset.acquisitionType == "PURCHASE") stringResource(R.string.asset_purchase_date) else stringResource(R.string.asset_acquisition_date), DateUtils.formatDisplayFullDate(context, it)) }</ID>
     <ID>MaxLineLength:AssetDetailScreen.kt$asset.lostDate?.let { DetailRow(stringResource(R.string.asset_lost_date), DateUtils.formatDisplayFullDate(context, it)) }</ID>
     <ID>MaxLineLength:AssetDetailScreen.kt$asset.retireDate?.let { DetailRow(stringResource(R.string.asset_away_date), DateUtils.formatDisplayFullDate(context, it)) }</ID>
     <ID>MaxLineLength:AssetDetailScreen.kt$asset.retireDate?.let { DetailRow(stringResource(R.string.asset_retire_date), DateUtils.formatDisplayFullDate(context, it)) }</ID>
     <ID>MaxLineLength:AssetDetailScreen.kt$asset.soldDate?.let { DetailRow(stringResource(R.string.asset_sold_date), DateUtils.formatDisplayFullDate(context, it)) }</ID>
-    <ID>MaxLineLength:AssetDetailScreen.kt$asset.soldPrice?.let { DetailRow(stringResource(R.string.asset_sold_price_label), CurrencyUtils.formatCurrency(it.toMoney())) }</ID>
     <ID>MaxLineLength:AssetDetailScreen.kt$border = BorderStroke(if (selectedPreset == i) 1.dp else 0.dp, if (selectedPreset == i) typeColors[clearType] else MaterialTheme.colorScheme.outline)</ID>
     <ID>MaxLineLength:AssetDetailScreen.kt$confirmButton = { TextButton(onClick = { datePickerState.selectedDateMillis?.let { editDate = it }; showDatePicker = false }) { Text(stringResource(R.string.confirm), color = AccentOrange) } }</ID>
     <ID>MaxLineLength:AssetDetailScreen.kt$confirmButton = { TextButton(onClick = { viewModel.awayAsset(assetId, asset.tags, reason) }) { Text(stringResource(R.string.asset_dialog_away_action), color = StatusAway) } }</ID>
@@ -398,15 +353,11 @@
     <ID>MaxLineLength:AssetDetailScreen.kt$dismissButton = { TextButton(onClick = { showReactConfirm = false }) { Text(stringResource(R.string.cancel)) } }</ID>
     <ID>MaxLineLength:AssetDetailScreen.kt$if</ID>
     <ID>MaxLineLength:AssetDetailScreen.kt$if (asset.acquisitionType == "PURCHASE" &amp;&amp; asset.purchaseChannel.isNotEmpty()) DetailRow(stringResource(R.string.asset_purchase_channel), asset.purchaseChannel)</ID>
-    <ID>MaxLineLength:AssetDetailScreen.kt$if (asset.currentValue &gt; 0) DetailRow(stringResource(R.string.asset_current_value), CurrencyUtils.formatCurrency(asset.currentValue.toMoney()))</ID>
     <ID>MaxLineLength:AssetDetailScreen.kt$if (asset.depreciationRate &gt; 0) DetailRow(stringResource(R.string.asset_depreciation_rate), "${"%.1f".format(asset.depreciationRate)}%")</ID>
     <ID>MaxLineLength:AssetDetailScreen.kt$if (asset.getInsuranceStatusText(context).isNotEmpty()) DetailRow(stringResource(R.string.asset_status), asset.getInsuranceStatusText(context))</ID>
     <ID>MaxLineLength:AssetDetailScreen.kt$if (asset.insuranceCompany.isNotEmpty()) DetailRow(stringResource(R.string.asset_insurance_company), asset.insuranceCompany)</ID>
-    <ID>MaxLineLength:AssetDetailScreen.kt$if (asset.insuranceExpireDate != null) DetailRow(stringResource(R.string.asset_insurance_expiry), DateUtils.formatDisplayYearDate(context, asset.insuranceExpireDate))</ID>
     <ID>MaxLineLength:AssetDetailScreen.kt$if (asset.insurancePolicyNo.isNotEmpty()) DetailRow(stringResource(R.string.asset_insurance_policy), asset.insurancePolicyNo)</ID>
-    <ID>MaxLineLength:AssetDetailScreen.kt$if (asset.lastMaintenanceDate != null) Text(text = stringResource(R.string.asset_last_maintenance_format, DateUtils.formatDisplayYearDate(context, asset.lastMaintenanceDate)), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
     <ID>MaxLineLength:AssetDetailScreen.kt$if (asset.maintenanceIntervalDays &gt; 0) Text(text = stringResource(R.string.asset_maintenance_cycle_format, asset.maintenanceIntervalDays), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
-    <ID>MaxLineLength:AssetDetailScreen.kt$if (asset.purchasePrice &gt; 0) DetailRow(stringResource(R.string.asset_price), CurrencyUtils.formatCurrency(asset.purchasePrice.toMoney()))</ID>
     <ID>MaxLineLength:AssetDetailScreen.kt$if (asset.retireReason.isNotEmpty()) DetailRow(stringResource(R.string.asset_description), asset.retireReason)</ID>
     <ID>MaxLineLength:AssetDetailScreen.kt$if (asset.retireReason.isNotEmpty()) DetailRow(stringResource(R.string.asset_retire_reason), asset.retireReason)</ID>
     <ID>MaxLineLength:AssetDetailScreen.kt$if (asset.warrantyExpireDate != null) StatusChip(text = asset.getWarrantyStatusText(context), color = if (asset.isWarrantyValid) StatusActive else StatusRetired)</ID>
@@ -426,7 +377,6 @@
     <ID>MaxLineLength:AssetScreen.kt$"PER_USE" -&gt; if (useCount &gt; 0) stringResource(R.string.asset_cost_per_use_price, String.format("%.1f", purchasePrice / 100.0 / useCount)) else stringResource(R.string.asset_cost_per_use_none)</ID>
     <ID>MaxLineLength:AssetScreen.kt$AnimatedCard</ID>
     <ID>MaxLineLength:AssetScreen.kt$Box</ID>
-    <ID>MaxLineLength:AssetScreen.kt$Icon(Icons.Outlined.Search, contentDescription = stringResource(R.string.search), tint = MaterialTheme.colorScheme.primary)</ID>
     <ID>MaxLineLength:AssetScreen.kt$TextButton</ID>
     <ID>MaxLineLength:AssetScreen.kt$contentDescription = if (catExpanded) stringResource(R.string.bill_collapse) else stringResource(R.string.bill_expand)</ID>
     <ID>MaxLineLength:AssetScreen.kt$contentDescription = if (isGridView) stringResource(R.string.asset_list_view) else stringResource(R.string.asset_grid_view)</ID>
@@ -454,13 +404,8 @@
     <ID>MaxLineLength:AssetViewModel.kt$AssetViewModel$val showDeleteDialog: StateFlow&lt;Boolean&gt; = _dialogType.map { it == DialogType.DELETE }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)</ID>
     <ID>MaxLineLength:AssetWidgetProvider.kt$AssetWidgetProvider$override</ID>
     <ID>MaxLineLength:BackupScreen.kt$Text(stringResource(R.string.backup_backing_up), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
-    <ID>MaxLineLength:BackupScreen.kt$Text(stringResource(R.string.backup_create_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
-    <ID>MaxLineLength:BackupScreen.kt$Text(stringResource(R.string.backup_restore_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
     <ID>MaxLineLength:BackupScreen.kt$Text(stringResource(R.string.backup_restore_title), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)</ID>
     <ID>MaxLineLength:BackupScreen.kt$Text(stringResource(R.string.backup_restoring), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
-    <ID>MaxLineLength:BillCsvImporter.kt$BillCsvImporter$category = if (category.isNotBlank()) normalizeCategory(category, if (isIncome) BillType.INCOME.value else BillType.EXPENSE.value) else normalizeCategory(guessCategory(merchant, note, ""), if (isIncome) BillType.INCOME.value else BillType.EXPENSE.value)</ID>
-    <ID>MaxLineLength:BillCsvImporter.kt$BillCsvImporter$category = normalizeCategory(guessCategory(cell(cols, merchantIdx), cell(cols, noteIdx), cell(cols, typeIdx)), if (isIncome) BillType.INCOME.value else BillType.EXPENSE.value)</ID>
-    <ID>MaxLineLength:BillCsvImporter.kt$BillCsvImporter$for</ID>
     <ID>MaxLineLength:BillCsvImporter.kt$BillCsvImporter$val cleanAmount = amountStr.replace(",", "").replace("¥", "").replace("￥", "").replace(" ", "").replace("+", "").replace("-", "")</ID>
     <ID>MaxLineLength:BillCsvImporter.kt$BillCsvImporter.Companion$private val EXPENSE_CATEGORIES = setOf("餐饮", "零食", "饮品", "交通", "购物", "服饰", "数码", "二手", "居住", "家居", "租金", "娱乐", "旅游", "运动", "医疗", "健身", "美容", "教育", "文具", "社交", "人情", "红包", "赠与", "通讯", "家政", "快递", "维修", "投资", "股票", "理财", "保险", "宠物", "母婴", "烟酒", "捐赠", "罚款", "手续费", "其他")</ID>
     <ID>MaxLineLength:BillCsvImporter.kt$BillCsvImporter.Companion$private val INCOME_CATEGORIES = setOf("工资", "奖金", "兼职", "副业", "报销", "投资", "股票", "理财", "分红", "利息", "租金", "二手", "红包", "赠与", "人情", "退款", "中奖", "保险理赔", "继承", "其他")</ID>
@@ -475,69 +420,41 @@
     <ID>MaxLineLength:BillDetailScreen.kt$color = if (bill.type == BillType.EXPENSE) ExpenseRed else if (bill.type == BillType.TRANSFER) InfoBlue else IncomeGreen</ID>
     <ID>MaxLineLength:BillDetailScreen.kt$if (bill.paymentMethod != PaymentMethod.OTHER) DetailRow(stringResource(R.string.bill_payment_method), stringResource(getLocalizedPaymentMethod(bill.paymentMethod.value)))</ID>
     <ID>MaxLineLength:BillDetailScreen.kt$if (bill.type != BillType.TRANSFER &amp;&amp; bill.merchant.isNotEmpty()) DetailRow(stringResource(R.string.bill_merchant), bill.merchant)</ID>
-    <ID>MaxLineLength:BillDetailScreen.kt$text = "${if (bill.type == BillType.EXPENSE) "-" else if (bill.type == BillType.TRANSFER) "" else "+"}${CurrencyUtils.formatCurrency(bill.amount.toMoney())}"</ID>
     <ID>MaxLineLength:BillDetailScreen.kt$val item = (if (bill.type == BillType.EXPENSE) expenseCategoryItems else incomeCategoryItems).find { it.name == bill.category }</ID>
     <ID>MaxLineLength:BillFilterSheet.kt$Icon(Icons.Outlined.Close, contentDescription = stringResource(R.string.close), tint = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
     <ID>MaxLineLength:BillFilterSheet.kt$Row</ID>
-    <ID>MaxLineLength:BillImportScreen.kt$AsyncImage(model = state.ocrImageUri, contentDescription = stringResource(R.string.bill_import_screenshot), modifier = Modifier.fillMaxWidth().height(160.dp).padding(16.dp).clip(MaterialTheme.shapes.medium), contentScale = ContentScale.Fit)</ID>
-    <ID>MaxLineLength:BillImportScreen.kt$Button</ID>
-    <ID>MaxLineLength:BillImportScreen.kt$Card</ID>
+    <ID>MaxLineLength:BillImportScreen.kt$Box(modifier = Modifier.width(20.dp).height(4.dp).clip(MaterialTheme.shapes.small).background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f)))</ID>
+    <ID>MaxLineLength:BillImportScreen.kt$Box(modifier = Modifier.width(26.dp).height(4.dp).clip(MaterialTheme.shapes.small).background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f)))</ID>
+    <ID>MaxLineLength:BillImportScreen.kt$Box(modifier = Modifier.width(30.dp).height(4.dp).clip(MaterialTheme.shapes.small).background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f)))</ID>
+    <ID>MaxLineLength:BillImportScreen.kt$Box(modifier = Modifier.width(34.dp).height(6.dp).clip(MaterialTheme.shapes.small).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)))</ID>
     <ID>MaxLineLength:BillImportScreen.kt$Column</ID>
-    <ID>MaxLineLength:BillImportScreen.kt$LazyColumn</ID>
-    <ID>MaxLineLength:BillImportScreen.kt$Row</ID>
-    <ID>MaxLineLength:BillImportScreen.kt$Row { TextButton(onClick = { viewModel.selectAllOcr() }) { Text(stringResource(R.string.bill_import_select_all)) }; TextButton(onClick = { viewModel.deselectAllOcr() }) { Text(stringResource(R.string.bill_import_select_none)) } }</ID>
+    <ID>MaxLineLength:BillImportScreen.kt$ImportStage.IMPORTING -&gt; LoadingContent(stringResource(R.string.bill_import_importing), onCancel = viewModel::cancelWork)</ID>
+    <ID>MaxLineLength:BillImportScreen.kt$ImportStage.PARSING -&gt; LoadingContent(stringResource(R.string.bill_import_parsing), onCancel = viewModel::cancelWork)</ID>
+    <ID>MaxLineLength:BillImportScreen.kt$OcrSourceImageCard(state = state, onZoom = { showZoom = true }, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))</ID>
     <ID>MaxLineLength:BillImportScreen.kt$Surface</ID>
-    <ID>MaxLineLength:BillImportScreen.kt$Text(CurrencyUtils.formatCurrency(bill.amount.toMoney()), fontWeight = FontWeight.Bold, color = if (bill.type == BillType.EXPENSE.value) ExpenseRed else IncomeGreen)</ID>
-    <ID>MaxLineLength:BillImportScreen.kt$Text(DateUtils.formatDisplayDate(context, bill.date), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
-    <ID>MaxLineLength:BillImportScreen.kt$Text(bill.merchant.ifEmpty { bill.category }, fontWeight = FontWeight.Medium, style = MaterialTheme.typography.bodyMedium)</ID>
+    <ID>MaxLineLength:BillImportScreen.kt$Text("¥", color = MaterialTheme.colorScheme.onTertiary, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)</ID>
+    <ID>MaxLineLength:BillImportScreen.kt$Text(category, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)</ID>
     <ID>MaxLineLength:BillImportScreen.kt$Text(diagnostic, modifier = Modifier.padding(12.dp), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
-    <ID>MaxLineLength:BillImportScreen.kt$Text(if (impResId != null) stringResource(impResId) else result.category, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)</ID>
-    <ID>MaxLineLength:BillImportScreen.kt$Text(if (isMulti) stringResource(R.string.bill_import_batch_save, state.ocrSelectedIndices.size) else stringResource(R.string.bill_import_save))</ID>
-    <ID>MaxLineLength:BillImportScreen.kt$Text(label, modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp), style = MaterialTheme.typography.labelMedium, color = color)</ID>
-    <ID>MaxLineLength:BillImportScreen.kt$Text(state.ocrRawText, modifier = Modifier.padding(12.dp), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
-    <ID>MaxLineLength:BillImportScreen.kt$Text(stringResource(R.string.bill_import_file_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
-    <ID>MaxLineLength:BillImportScreen.kt$Text(stringResource(R.string.bill_import_image_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
-    <ID>MaxLineLength:BillImportScreen.kt$Text(stringResource(R.string.bill_import_ocr_recognized, state.ocrResults.size, state.ocrSelectedIndices.size), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)</ID>
-    <ID>MaxLineLength:BillImportScreen.kt$Text(stringResource(R.string.bill_import_ocr_result), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 16.dp))</ID>
-    <ID>MaxLineLength:BillImportScreen.kt$Text(stringResource(R.string.bill_import_selected_records, state.selectedIndices.size), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
-    <ID>MaxLineLength:BillImportScreen.kt$Text(stringResource(R.string.bill_import_total_records, state.parsed.size), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)</ID>
-    <ID>MaxLineLength:BillImportScreen.kt$Text(stringResource(R.string.bill_wallet), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
-    <ID>MaxLineLength:BillImportScreen.kt$TextButton(onClick = { showRaw = !showRaw }, modifier = Modifier.padding(horizontal = 16.dp)) { Text(if (showRaw) stringResource(R.string.bill_import_hide_raw) else stringResource(R.string.bill_import_show_raw)) }</ID>
-    <ID>MaxLineLength:BillImportScreen.kt$if (bill.note.isNotEmpty()) Text(bill.note, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)</ID>
-    <ID>MaxLineLength:BillImportScreen.kt$if (result.amount != null) Text("-${CurrencyUtils.formatCurrency(result.amount.toMoney())}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = ExpenseRed)</ID>
-    <ID>MaxLineLength:BillImportScreen.kt$if (result.date != null) { Text(DateUtils.formatDate(result.date), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant); Spacer(modifier = Modifier.width(8.dp)) }</ID>
-    <ID>MaxLineLength:BillImportScreen.kt$if (result.merchant.isNotBlank()) Text(result.merchant, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)</ID>
-    <ID>MaxLineLength:BillImportScreen.kt$if (state.error != null) { Spacer(modifier = Modifier.height(8.dp)); Text(state.error, color = ExpenseRed, style = MaterialTheme.typography.bodySmall) }</ID>
-    <ID>MaxLineLength:BillImportScreen.kt$label = { Text(com.palmnote.ui.components.getLocalizedWalletDisplayName(wallet, context), fontSize = 11.sp) }</ID>
+    <ID>MaxLineLength:BillImportScreen.kt$placeholder = { Text("0.00", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)) }</ID>
+    <ID>MaxLineLength:BillImportScreen.kt$prefix = { Text("¥ ", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface) }</ID>
     <ID>MaxLineLength:BillImportScreen.kt$private</ID>
-    <ID>MaxLineLength:BillImportScreen.kt$val color = when (state.format) { BillCsvImporter.CsvFormat.WECHAT -&gt; IncomeGreen; BillCsvImporter.CsvFormat.ALIPAY -&gt; InfoBlue; else -&gt; MaterialTheme.colorScheme.onSurfaceVariant }</ID>
-    <ID>MaxLineLength:BillImportScreen.kt$val label = when (state.format) { BillCsvImporter.CsvFormat.WECHAT -&gt; stringResource(R.string.bill_import_wechat_bill); BillCsvImporter.CsvFormat.ALIPAY -&gt; stringResource(R.string.bill_import_alipay_bill); else -&gt; "" }</ID>
+    <ID>MaxLineLength:BillImportScreen.kt$tint = if (Money.parse(state.ocrAmount)?.cents?.let { it &gt; 0 } == true) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant</ID>
     <ID>MaxLineLength:BillImportViewModel.kt$BillImportViewModel$_state.value = _state.value.copy(stage = ImportStage.ERROR, error = context.getString(R.string.bill_import_error_format_unknown), diagnostic = diag.toString())</ID>
     <ID>MaxLineLength:BillImportViewModel.kt$BillImportViewModel$_state.value = _state.value.copy(stage = ImportStage.ERROR, error = context.getString(R.string.bill_import_error_ocr_failed, e.message))</ID>
     <ID>MaxLineLength:BillImportViewModel.kt$BillImportViewModel$_state.value = _state.value.copy(stage = ImportStage.ERROR, error = context.getString(R.string.bill_import_error_ocr_invalid), ocrRawText = text)</ID>
     <ID>MaxLineLength:BillImportViewModel.kt$BillImportViewModel$_state.value = _state.value.copy(stage = ImportStage.ERROR, error = context.getString(R.string.bill_import_error_parse_failed, e.message))</ID>
     <ID>MaxLineLength:BillImportViewModel.kt$BillImportViewModel$_state.value = _state.value.copy(stage = ImportStage.ERROR, error = context.getString(R.string.bill_import_error_parse_invalid), diagnostic = diag.toString())</ID>
     <ID>MaxLineLength:BillImportViewModel.kt$BillImportViewModel$_state.value = _state.value.copy(stage = ImportStage.ERROR, error = context.getString(R.string.bill_import_error_read_file))</ID>
-    <ID>MaxLineLength:BillImportViewModel.kt$BillImportViewModel$_state.value = _state.value.copy(stage = ImportStage.PREVIEW, parsed = parsed, selectedIndices = parsed.indices.toSet(), format = BillCsvImporter.CsvFormat.WECHAT, diagnostic = diag.toString())</ID>
-    <ID>MaxLineLength:BillImportViewModel.kt$BillImportViewModel$_state.value = _state.value.copy(stage = ImportStage.PREVIEW, parsed = parsed, selectedIndices = parsed.indices.toSet(), format = format, diagnostic = diag.toString())</ID>
     <ID>MaxLineLength:BillImportViewModel.kt$BillImportViewModel$_state.value = s.copy(ocrSelectedIndices = if (index in s.ocrSelectedIndices) s.ocrSelectedIndices - index else s.ocrSelectedIndices + index)</ID>
-    <ID>MaxLineLength:BillImportViewModel.kt$BillImportViewModel$if (amount == null) { _state.value = _state.value.copy(stage = ImportStage.PREVIEW, error = context.getString(R.string.bill_import_error_invalid_amount)); return@launch }</ID>
     <ID>MaxLineLength:BillImportViewModel.kt$BillImportViewModel$if (existing.any { it.date == bill.date &amp;&amp; it.amount == bill.amount &amp;&amp; it.merchant == bill.merchant &amp;&amp; it.type == bill.type } || !seenByAttrs.add(attrKey)) continue</ID>
     <ID>MaxLineLength:BillImportViewModel.kt$BillImportViewModel$if (lines.isNotEmpty()) diag.append(context.getString(R.string.bill_import_diag_first_line, lines.first().take(80)) + "\n")</ID>
-    <ID>MaxLineLength:BillImportViewModel.kt$BillImportViewModel$val</ID>
     <ID>MaxLineLength:BillImportViewModel.kt$BillImportViewModel$val content = try { String(rawBytes, Charset.forName(encoding)) } catch (_: Exception) { String(rawBytes, Charset.forName("UTF-8")) }</ID>
     <ID>MaxLineLength:BillImportViewModel.kt$BillImportViewModel$val isZip = rawBytes.size &gt;= 4 &amp;&amp; rawBytes[0] == 0x50.toByte() &amp;&amp; rawBytes[1] == 0x4B.toByte() &amp;&amp; rawBytes[2] == 0x03.toByte() &amp;&amp; rawBytes[3] == 0x04.toByte()</ID>
     <ID>MaxLineLength:BillImportViewModel.kt$BillImportViewModel$val rotated = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, Matrix().apply { postRotate(degrees.toFloat()) }, true)</ID>
-    <ID>MaxLineLength:BillOcrParser.kt$BillOcrParser$return java.time.LocalDate.parse(dateStr, java.time.format.DateTimeFormatter.ofPattern("yyyy-M-d")).atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()</ID>
     <ID>MaxLineLength:BillRepositoryImpl.kt$BillRepositoryImpl$override fun getBillsByDateRangeByBook(bookId: Long, startDate: Long, endDate: Long): Flow&lt;List&lt;Bill&gt;&gt;</ID>
     <ID>MaxLineLength:BillScreen.kt$AnimatedCard</ID>
     <ID>MaxLineLength:BillScreen.kt$Box</ID>
     <ID>MaxLineLength:BillScreen.kt$Box(contentAlignment = Alignment.Center) { Icon(book.icon.imageVector, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color.White) }</ID>
-    <ID>MaxLineLength:BillScreen.kt$Icon(Icons.Filled.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))</ID>
-    <ID>MaxLineLength:BillScreen.kt$Icon(Icons.Outlined.AccountBalance, contentDescription = stringResource(R.string.bill_budget_tab), tint = MaterialTheme.colorScheme.primary)</ID>
-    <ID>MaxLineLength:BillScreen.kt$Icon(Icons.Outlined.Assessment, contentDescription = stringResource(R.string.bill_report), tint = MaterialTheme.colorScheme.primary)</ID>
-    <ID>MaxLineLength:BillScreen.kt$Icon(Icons.Outlined.FileUpload, contentDescription = stringResource(R.string.bill_import), tint = MaterialTheme.colorScheme.primary)</ID>
-    <ID>MaxLineLength:BillScreen.kt$Icon(Icons.Outlined.Search, contentDescription = stringResource(R.string.search), tint = MaterialTheme.colorScheme.primary)</ID>
     <ID>MaxLineLength:BillScreen.kt$IconButton</ID>
     <ID>MaxLineLength:BillScreen.kt$Row</ID>
     <ID>MaxLineLength:BillScreen.kt$Surface</ID>
@@ -554,34 +471,24 @@
     <ID>MaxLineLength:BillScreen.kt$modifier = Modifier.clickable(interactionSource = interactionSource2, indication = null) { viewModel.setFilterType("EXPENSE") }</ID>
     <ID>MaxLineLength:BillScreen.kt$modifier = Modifier.clickable(interactionSource = interactionSource3, indication = null) { viewModel.setFilterType("INCOME") }</ID>
     <ID>MaxLineLength:BillScreen.kt$modifier = Modifier.fillMaxHeight().width(80.dp).clip(MaterialTheme.shapes.medium).background(MaterialTheme.colorScheme.errorContainer).clickable { onDelete() }.align(Alignment.CenterEnd)</ID>
-    <ID>MaxLineLength:BillScreen.kt$text = stringResource(R.string.bill_expense_short, CurrencyUtils.formatCurrency(dayExpense.toMoney()))</ID>
-    <ID>MaxLineLength:BillScreen.kt$text = stringResource(R.string.bill_income_short, CurrencyUtils.formatCurrency(dayIncome.toMoney()))</ID>
     <ID>MaxLineLength:BillScreen.kt$val</ID>
     <ID>MaxLineLength:BillScreen.kt$val groupedBills = remember(filteredBills) { filteredBills.groupBy { DateUtils.formatDate(it.date) }.mapValues { it.value.sortedByDescending { b -&gt; b.createdAt } } }</ID>
     <ID>MaxLineLength:BillViewModel.kt$BillViewModel$val filterActive = filter.type != null || filter.category != null || filter.paymentMethod != null || filter.amountMin != null || filter.amountMax != null</ID>
     <ID>MaxLineLength:BillWidgetProvider.kt$BillWidgetProvider$bannerText = context.getString(R.string.widget_month_balance_format, "$sign${WidgetData.formatMoneyCompact(context, balance)}")</ID>
     <ID>MaxLineLength:BillWidgetProvider.kt$BillWidgetProvider$views.setTextViewText(R.id.widget_budget_amount, WidgetData.formatMoneyCompact(context, budget.totalBudget - monthlyExpense))</ID>
-    <ID>MaxLineLength:BillXlsxImporter.kt$BillXlsxImporter$category = BillCsvImporter.normalizeCategory(BillCsvImporter.guessCategory(merchant, note, typeStr), if (isIncome) BillType.INCOME.value else BillType.EXPENSE.value)</ID>
     <ID>MaxLineLength:BillXlsxImporter.kt$BillXlsxImporter$try { return SimpleDateFormat(pat, Locale.getDefault()).parse(clean)?.time } catch (e: Exception) { AppLogger.w("XlsxImport", "parseXlsxDate failed for pattern: $pat", e) }</ID>
-    <ID>MaxLineLength:BillXlsxImporter.kt$BillXlsxImporter$val cleanAmount = amountStr.replace(",", "").replace("¥", "").replace("￥", "").replace(" ", "").replace("+", "").replace("-", "")</ID>
     <ID>MaxLineLength:BirthdayListScreen.kt$Box</ID>
-    <ID>MaxLineLength:BirthdayListScreen.kt$Box(modifier = Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = LifeBirthday) }</ID>
     <ID>MaxLineLength:BirthdayListScreen.kt$Box(modifier = Modifier.width(3.dp).height(80.dp).align(Alignment.CenterStart).background(LifeBirthday, RoundedCornerShape(topEnd = 2.dp, bottomEnd = 2.dp)))</ID>
-    <ID>MaxLineLength:BirthdayListScreen.kt$LifeLazyList</ID>
     <ID>MaxLineLength:BirthdayListScreen.kt$Text(item.title, fontWeight = FontWeight.Medium, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)</ID>
     <ID>MaxLineLength:BirthdayListScreen.kt$Text(stringResource(R.string.life_birthday_days_after), fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
     <ID>MaxLineLength:BirthdayListScreen.kt$Text(stringResource(R.string.life_birthday_last_gift, fields.third), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
-    <ID>MaxLineLength:BirthdayListScreen.kt$confirmButton = { TextButton(onClick = { deleteTarget?.let { viewModel.deleteItem(it) }; deleteTarget = null }) { Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error) } }</ID>
     <ID>MaxLineLength:BirthdayListScreen.kt$fun</ID>
-    <ID>MaxLineLength:BirthdayListScreen.kt$navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.life_back)) } }</ID>
     <ID>MaxLineLength:BirthdayViewModel.kt$BirthdayUiState</ID>
     <ID>MaxLineLength:BirthdayViewModel.kt$BirthdayViewModel$templateJob = templateRepo.getTemplateByIdFlow(templateId).onEach { tpl -&gt; _uiState.update { it.copy(template = tpl) } }.launchIn(viewModelScope)</ID>
     <ID>MaxLineLength:BudgetScreen.kt$Text(if (state.budget != null) stringResource(R.string.budget_modify) else stringResource(R.string.budget_set), fontWeight = FontWeight.Bold)</ID>
     <ID>MaxLineLength:BudgetScreen.kt$Text(stringResource(R.string.budget_total), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
     <ID>MaxLineLength:BudgetScreen.kt$Text(stringResource(R.string.budget_used), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
-    <ID>MaxLineLength:BudgetScreen.kt$if</ID>
     <ID>MaxLineLength:CalendarSyncManager.kt$CalendarSyncManager$val calendarId = getOrCreateCalendarId() ?: return@withContext Result.failure(Exception(context.getString(R.string.calendar_sync_error_create_failed)))</ID>
-    <ID>MaxLineLength:CalendarView.kt$val dayData = if (showDay) dailyData[selectedDay] else Pair(dailyData.values.sumOf { it.first }, dailyData.values.sumOf { it.second })</ID>
     <ID>MaxLineLength:CategoryScreen.kt$Box</ID>
     <ID>MaxLineLength:CategoryScreen.kt$OutlinedTextField</ID>
     <ID>MaxLineLength:CategoryScreen.kt$Text</ID>
@@ -601,30 +508,20 @@
     <ID>MaxLineLength:CommonComponents.kt$dismissButton = { TextButton(onClick = { showDatePicker = false }) { Text(stringResource(R.string.cancel), fontWeight = FontWeight.Bold) } }</ID>
     <ID>MaxLineLength:CommonComponents.kt$var month by remember(currentMonth) { mutableIntStateOf(parts[1].toIntOrNull() ?: java.util.Calendar.getInstance().get(java.util.Calendar.MONTH) + 1) }</ID>
     <ID>MaxLineLength:CommonComponents.kt$var year by remember(currentMonth) { mutableIntStateOf(parts[0].toIntOrNull() ?: java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)) }</ID>
-    <ID>MaxLineLength:CountUpListScreen.kt$Box(modifier = Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = LifeCountUp) }</ID>
-    <ID>MaxLineLength:CountUpListScreen.kt$LifeLazyList</ID>
     <ID>MaxLineLength:CountUpListScreen.kt$Text("$target", fontSize = 9.sp, color = if (reached) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurfaceVariant)</ID>
     <ID>MaxLineLength:CountUpListScreen.kt$Text(item.title, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))</ID>
     <ID>MaxLineLength:CountUpListScreen.kt$Text(stringResource(R.string.life_countup_days, days), fontSize = 32.sp, fontWeight = FontWeight.Bold, color = LifeCountUp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())</ID>
     <ID>MaxLineLength:CountUpListScreen.kt$Text(stringResource(R.string.life_countup_milestone, nextMilestone - days), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())</ID>
-    <ID>MaxLineLength:CountUpListScreen.kt$confirmButton = { TextButton(onClick = { deleteTarget?.let { viewModel.deleteItem(it) }; deleteTarget = null }) { Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error) } }</ID>
     <ID>MaxLineLength:CountUpListScreen.kt$fun</ID>
-    <ID>MaxLineLength:CountUpListScreen.kt$navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.life_back)) } }</ID>
     <ID>MaxLineLength:CountUpViewModel.kt$CountUpUiState</ID>
     <ID>MaxLineLength:CountUpViewModel.kt$CountUpViewModel$templateJob = templateRepo.getTemplateByIdFlow(templateId).onEach { tpl -&gt; _uiState.update { it.copy(template = tpl) } }.launchIn(viewModelScope)</ID>
-    <ID>MaxLineLength:CountdownListScreen.kt$Box(modifier = Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = LifeCountdown) }</ID>
-    <ID>MaxLineLength:CountdownListScreen.kt$Box(modifier = Modifier.width(3.dp).height(72.dp).align(Alignment.CenterStart).background(if (isExpired) Color(0xFFE8A848) else LifeCountdown, RoundedCornerShape(topEnd = 2.dp, bottomEnd = 2.dp)))</ID>
     <ID>MaxLineLength:CountdownListScreen.kt$IconButton(onClick = { showClearExpired = true }) { Icon(Icons.Filled.Delete, stringResource(R.string.countdown_clear_expired_title)) }</ID>
     <ID>MaxLineLength:CountdownListScreen.kt$LifeLazyList</ID>
     <ID>MaxLineLength:CountdownListScreen.kt$Row</ID>
-    <ID>MaxLineLength:CountdownListScreen.kt$Text("${days ?: "--"}", fontSize = if (days != null &amp;&amp; days &gt;= 0) 36.sp else 28.sp, fontWeight = FontWeight.Bold, color = if (isExpired) Color(0xFFE8A848) else LifeCountdown)</ID>
-    <ID>MaxLineLength:CountdownListScreen.kt$Text(if (isExpired) stringResource(R.string.life_countdown_expired) else stringResource(R.string.life_countdown_day), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
     <ID>MaxLineLength:CountdownListScreen.kt$Text(if (isExpired) stringResource(R.string.life_countdown_expired_text, dateStr) else stringResource(R.string.life_countdown_active_text, dateStr), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
     <ID>MaxLineLength:CountdownListScreen.kt$Text(item.title, fontWeight = FontWeight.Medium, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)</ID>
-    <ID>MaxLineLength:CountdownListScreen.kt$confirmButton = { TextButton(onClick = { deleteTarget?.let { viewModel.deleteItem(it) }; deleteTarget = null }) { Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error) } }</ID>
     <ID>MaxLineLength:CountdownListScreen.kt$dateMillis != null &amp;&amp; ChronoUnit.DAYS.between(LocalDate.now(), java.time.Instant.ofEpochMilli(dateMillis).atZone(java.time.ZoneId.systemDefault()).toLocalDate()) &lt; 0</ID>
     <ID>MaxLineLength:CountdownListScreen.kt$fun</ID>
-    <ID>MaxLineLength:CountdownListScreen.kt$if</ID>
     <ID>MaxLineLength:CountdownListScreen.kt$navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.life_back)) } }</ID>
     <ID>MaxLineLength:CountdownViewModel.kt$CountdownUiState</ID>
     <ID>MaxLineLength:CountdownViewModel.kt$CountdownViewModel$templateJob = templateRepo.getTemplateByIdFlow(templateId).onEach { tpl -&gt; _uiState.update { it.copy(template = tpl) } }.launchIn(viewModelScope)</ID>
@@ -645,31 +542,21 @@
     <ID>MaxLineLength:CsvDataExporter.kt$CsvDataExporter.Companion$"type" to mapOf("ASSET" to "物品", "BILL_EXPENSE" to "支出", "BILL_INCOME" to "收入", "GOAL" to "目标", "ANNIVERSARY" to "纪念日", "MOMENT" to "瞬间", "TAG" to "标签")</ID>
     <ID>MaxLineLength:CsvDataExporter.kt$CsvDataExporter.Companion$"type" to mapOf("BIRTHDAY" to "生日", "WEDDING" to "结婚", "MEETING" to "相识", "GRADUATION" to "毕业", "JOB" to "工作", "TRAVEL" to "旅行", "BABY" to "宝宝", "PET" to "宠物", "CUSTOM" to "自定义")</ID>
     <ID>MaxLineLength:CsvDataExporter.kt$CsvDataExporter.Companion$"type" to mapOf("CASH" to "现金", "E_WALLET" to "电子钱包", "BANK_CARD" to "银行卡", "CREDIT_CARD" to "信用卡", "INVESTMENT" to "投资账户", "OTHER" to "其他")</ID>
-    <ID>MaxLineLength:DashboardCards.kt$"COUNT_DOWN" -&gt; if (daysUntil == 0) stringResource(R.string.dashboard_today) else if (daysUntil &gt; 0) stringResource(R.string.dashboard_days_until, daysUntil) else stringResource(R.string.dashboard_days_passed, -daysUntil)</ID>
-    <ID>MaxLineLength:DashboardCards.kt$Box</ID>
     <ID>MaxLineLength:DashboardCards.kt$Icon(Icons.Outlined.Inventory2, null, tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f), modifier = Modifier.size(32.dp))</ID>
     <ID>MaxLineLength:DashboardCards.kt$QuickActionButton(Icons.Outlined.Celebration, stringResource(R.string.dashboard_quick_anniversary), ModuleLife, onNavigateToLife)</ID>
-    <ID>MaxLineLength:DashboardCards.kt$QuickActionButton(Icons.Outlined.Inventory2, stringResource(R.string.dashboard_quick_asset), MaterialTheme.colorScheme.primary, onNavigateToAsset)</ID>
     <ID>MaxLineLength:DashboardCards.kt$Text</ID>
     <ID>MaxLineLength:DashboardCards.kt$Text( stringResource(R.string.dashboard_anniversaries_count, state.anniversaryCount), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
-    <ID>MaxLineLength:DashboardCards.kt$Text("${goal.currentCount}/${goal.totalCount}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
-    <ID>MaxLineLength:DashboardCards.kt$Text(DateUtils.formatDisplayDate(context, anniversary.solarDate), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
-    <ID>MaxLineLength:DashboardCards.kt$Text(DateUtils.formatDisplayFullDate(context, System.currentTimeMillis()), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
-    <ID>MaxLineLength:DashboardCards.kt$Text(anniversary.displayTitle, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)</ID>
     <ID>MaxLineLength:DashboardCards.kt$Text(getCategoryDisplayName(item.category, context, dashPresetVer), style = MaterialTheme.typography.bodySmall, maxLines = maxLines, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))</ID>
-    <ID>MaxLineLength:DashboardCards.kt$Text(goal.title, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))</ID>
     <ID>MaxLineLength:DashboardCards.kt$Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)</ID>
     <ID>MaxLineLength:DashboardCards.kt$Text(pluralStringResource(R.plurals.dashboard_items_count, item.count, item.count), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Medium)</ID>
     <ID>MaxLineLength:DashboardCards.kt$Text(pluralStringResource(R.plurals.dashboard_items_count, state.activeAssetCount, state.activeAssetCount), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimary)</ID>
     <ID>MaxLineLength:DashboardCards.kt$Text(stringResource(R.string.dashboard_card_anniversaries), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)</ID>
     <ID>MaxLineLength:DashboardCards.kt$Text(stringResource(R.string.dashboard_card_vault), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)</ID>
     <ID>MaxLineLength:DashboardCards.kt$Text(stringResource(R.string.dashboard_goal_progress), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)</ID>
-    <ID>MaxLineLength:DashboardCards.kt$Text(stringResource(R.string.dashboard_items_recorded, state.activeAssetCount + state.goalCount + state.anniversaryCount), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)</ID>
     <ID>MaxLineLength:DashboardCards.kt$Text(stringResource(R.string.dashboard_monthly_expense), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f))</ID>
     <ID>MaxLineLength:DashboardCards.kt$Text(stringResource(R.string.dashboard_monthly_income), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f))</ID>
     <ID>MaxLineLength:DashboardCards.kt$Text(stringResource(R.string.dashboard_recorded), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
     <ID>MaxLineLength:DashboardCards.kt$else</ID>
-    <ID>MaxLineLength:DashboardCards.kt$else -&gt; if (anniversary.daysSince == 0) stringResource(R.string.dashboard_today) else stringResource(R.string.dashboard_days_passed, anniversary.daysSince)</ID>
     <ID>MaxLineLength:DashboardCards.kt$text</ID>
     <ID>MaxLineLength:DashboardCards.kt$text = if (state.vaultCount &gt; 0) stringResource(R.string.vault_card_count, state.vaultCount) else stringResource(R.string.vault_card_empty_subtitle)</ID>
     <ID>MaxLineLength:DashboardCards.kt$text = if (state.vaultCount &gt; 0) stringResource(R.string.vault_card_privacy_hint) else stringResource(R.string.vault_card_empty)</ID>
@@ -682,7 +569,6 @@
     <ID>MaxLineLength:DataStorageScreen.kt$SettingsMenuItem(icon = Icons.Outlined.CleaningServices, title = stringResource(R.string.settings_clear_cache), subtitle = stringResource(R.string.settings_clear_cache_subtitle), tint = Amber, onClick = { showClearCacheDialog = true })</ID>
     <ID>MaxLineLength:DataStorageScreen.kt$SettingsMenuItem(icon = Icons.Outlined.DeleteForever, title = stringResource(R.string.settings_clear_data), subtitle = stringResource(R.string.settings_clear_data_subtitle), tint = ErrorLight, onClick = onNavigateToDataClear)</ID>
     <ID>MaxLineLength:DataStorageScreen.kt$SettingsMenuItem(icon = Icons.Outlined.DeleteOutline, title = stringResource(R.string.settings_recycle_bin), subtitle = stringResource(R.string.settings_recycle_bin_subtitle), tint = StatusActive, onClick = onNavigateToRecycleBin)</ID>
-    <ID>MaxLineLength:DataStorageScreen.kt$SettingsMenuItem(icon = Icons.Outlined.FileDownload, title = stringResource(R.string.settings_export_data), subtitle = stringResource(R.string.settings_export_data_subtitle), tint = InfoBlue, onClick = { exportLauncher.launch(appName + exportSuffix) })</ID>
     <ID>MaxLineLength:DataStorageScreen.kt$SettingsMenuItem(icon = Icons.Outlined.FileUpload, title = stringResource(R.string.settings_import_data), subtitle = stringResource(R.string.settings_import_data_subtitle), tint = AccentOrange, onClick = { importLauncher.launch(arrayOf("application/zip")) })</ID>
     <ID>MaxLineLength:DataStorageScreen.kt$TextButton(onClick = { showClearCacheDialog = false }) { Text(stringResource(R.string.settings_cancel), fontWeight = FontWeight.Bold) }</ID>
     <ID>MaxLineLength:DateInputComponent.kt$dismissButton = { TextButton(onClick = { showPicker = false }) { Text(stringResource(R.string.cancel), fontWeight = FontWeight.Bold) } }</ID>
@@ -718,13 +604,11 @@
     <ID>MaxLineLength:FieldComponents.kt$Text("${value}${field.unit}", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface, lineHeight = 22.sp)</ID>
     <ID>MaxLineLength:FieldComponents.kt$Text(dateStr, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface, lineHeight = 22.sp)</ID>
     <ID>MaxLineLength:FieldComponents.kt$Text(if (checked) stringResource(R.string.field_enabled) else stringResource(R.string.field_disabled), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
-    <ID>MaxLineLength:FieldComponents.kt$Text(stringResource(R.string.field_image_helper), fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))</ID>
     <ID>MaxLineLength:FieldComponents.kt$Text(value.ifEmpty { "-" }, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface, maxLines = 5, overflow = TextOverflow.Ellipsis, lineHeight = 22.sp)</ID>
     <ID>MaxLineLength:FieldComponents.kt$TextButton(onClick = { state.selectedDateMillis?.let { onValueChange(it.toString()) }; picker = false }) { Text(stringResource(R.string.confirm), fontWeight = FontWeight.Bold) }</ID>
     <ID>MaxLineLength:FieldComponents.kt$colors = OutlinedTextFieldDefaults.colors(unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f), focusedBorderColor = MaterialTheme.colorScheme.outline)</ID>
     <ID>MaxLineLength:FieldComponents.kt$confirmButton = { TextButton(onClick = { onValueChange("${state.hour}:${state.minute.toString().padStart(2, '0')}"); picker = false }) { Text(stringResource(R.string.confirm), fontWeight = FontWeight.Bold) } }</ID>
     <ID>MaxLineLength:FieldComponents.kt$dismissButton = { TextButton(onClick = { picker = false }) { Text(stringResource(R.string.cancel), fontWeight = FontWeight.Bold) } }</ID>
-    <ID>MaxLineLength:FieldComponents.kt$tint = if (checked) Color(0xFF34A853) else MaterialTheme.colorScheme.onSurfaceVariant</ID>
     <ID>MaxLineLength:FieldComponents.kt$trailingIcon = { IconButton(onClick = { picker = true }) { Icon(Icons.Default.DateRange, stringResource(R.string.field_select_date)) } }</ID>
     <ID>MaxLineLength:FieldComponents.kt$val opts = field.options.ifEmpty { listOf(stringResource(R.string.field_option, "1"), stringResource(R.string.field_option, "2"), stringResource(R.string.field_option, "3")) }</ID>
     <ID>MaxLineLength:FieldComponents.kt$val palette = listOf("#F44336", "#E91E63", "#9C27B0", "#673AB7", "#3F51B5", "#2196F3", "#03A9F4", "#00BCD4", "#009688", "#4CAF50", "#8BC34A", "#CDDC39", "#FFEB3B", "#FFC107", "#FF9800", "#FF5722", "#795548", "#607D8B")</ID>
@@ -742,29 +626,17 @@
     <ID>MaxLineLength:FocusTimerScreen.kt$confirmButton = { TextButton(onClick = { showGiveUpDialog = false; isRunning = false; remainingSeconds = selectedMinutes * 60 }) { Text(stringResource(R.string.life_focus_giveup), color = MaterialTheme.colorScheme.error) } }</ID>
     <ID>MaxLineLength:FocusTimerScreen.kt$drawArc(color = focusColor, startAngle = -90f, sweepAngle = 360f * progress, useCenter = false, style = Stroke(width = s, cap = StrokeCap.Round), topLeft = Offset(s / 2, s / 2), size = Size(size.width - s, size.height - s))</ID>
     <ID>MaxLineLength:FocusTimerScreen.kt$navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.life_back)) } }</ID>
-    <ID>MaxLineLength:GeneralSettingsScreen.kt$Box</ID>
-    <ID>MaxLineLength:GeneralSettingsScreen.kt$Box(modifier = Modifier.size(28.dp).clip(CircleShape).background(switchColor).border(2.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape))</ID>
     <ID>MaxLineLength:GeneralSettingsScreen.kt$Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(tint.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) { Icon(icon, null, tint = tint, modifier = Modifier.size(20.dp)) }</ID>
-    <ID>MaxLineLength:GeneralSettingsScreen.kt$CapsuleSwitch(checked = state.budgetReminderEnabled, onCheckedChange = { viewModel.setBudgetReminderEnabled(it) }, checkedTrackColor = LocalSwitchColor.current)</ID>
-    <ID>MaxLineLength:GeneralSettingsScreen.kt$OutlinedTextField(value = customColor, onValueChange = { v -&gt; customColor = v.filter { it.isLetterOrDigit() }.take(6); customColorError = false }, label = { Text(stringResource(R.string.settings_hex_color), fontWeight = FontWeight.Bold) }, prefix = { Text("#") }, isError = customColorError, singleLine = true, modifier = Modifier.weight(1f), shape = MaterialTheme.shapes.small)</ID>
-    <ID>MaxLineLength:GeneralSettingsScreen.kt$RadioButton(selected = state.defaultBillType.value == type, onClick = { viewModel.setDefaultBillType(type); showBillTypePicker = false }, colors = RadioButtonDefaults.colors(selectedColor = LocalSwitchColor.current))</ID>
-    <ID>MaxLineLength:GeneralSettingsScreen.kt$RadioButton(selected = state.defaultStartPage == route, onClick = { viewModel.setDefaultStartPage(route); showStartPagePicker = false }, colors = RadioButtonDefaults.colors(selectedColor = LocalSwitchColor.current))</ID>
-    <ID>MaxLineLength:GeneralSettingsScreen.kt$RadioButton(selected = state.language == lang, onClick = { viewModel.setLanguage(lang); showLanguagePicker = false }, colors = RadioButtonDefaults.colors(selectedColor = LocalSwitchColor.current))</ID>
-    <ID>MaxLineLength:GeneralSettingsScreen.kt$RadioButton(selected = state.themeMode == mode, onClick = { viewModel.setThemeMode(mode); showThemePicker = false }, colors = RadioButtonDefaults.colors(selectedColor = LocalSwitchColor.current))</ID>
     <ID>MaxLineLength:GeneralSettingsScreen.kt$Row</ID>
     <ID>MaxLineLength:GeneralSettingsScreen.kt$SettingRowContent(title = stringResource(R.string.settings_calendar_sync), subtitle = stringResource(R.string.settings_calendar_sync_subtitle))</ID>
     <ID>MaxLineLength:GeneralSettingsScreen.kt$SettingRowContent(title = stringResource(R.string.settings_dark_mode), subtitle = stringResource(R.string.settings_dark_mode_subtitle), value = themes[state.themeMode], showChevron = true)</ID>
     <ID>MaxLineLength:GeneralSettingsScreen.kt$SettingRowContent(title = stringResource(R.string.settings_default_bill_type), value = billTypes[state.defaultBillType.value], showChevron = true)</ID>
     <ID>MaxLineLength:GeneralSettingsScreen.kt$SettingRowContent(title = stringResource(R.string.settings_default_start_page), value = startPages[state.defaultStartPage], showChevron = true)</ID>
     <ID>MaxLineLength:GeneralSettingsScreen.kt$SettingRowContent(title = stringResource(R.string.settings_language), subtitle = stringResource(R.string.settings_language_subtitle), value = languageLabels[state.language], showChevron = true)</ID>
-    <ID>MaxLineLength:GeneralSettingsScreen.kt$SettingRowContent(title = stringResource(R.string.settings_switch_color), subtitle = stringResource(R.string.settings_switch_color_subtitle))</ID>
     <ID>MaxLineLength:GeneralSettingsScreen.kt$Text(iconLabels[key] ?: "", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
-    <ID>MaxLineLength:GeneralSettingsScreen.kt$Text(stringResource(R.string.settings_custom_color), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
-    <ID>MaxLineLength:GeneralSettingsScreen.kt$Text(stringResource(R.string.settings_preset_color), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
     <ID>MaxLineLength:GeneralSettingsScreen.kt$TextButton(onClick = { pendingIconStyle = null }) { Text(stringResource(R.string.settings_cancel), fontWeight = FontWeight.Bold) }</ID>
     <ID>MaxLineLength:GeneralSettingsScreen.kt$TextButton(onClick = { showCalendarPermissionDialog = false; calendarPermissionLauncher.launch(arrayOf(Manifest.permission.WRITE_CALENDAR, Manifest.permission.READ_CALENDAR)) }) { Text(stringResource(R.string.settings_calendar_permission_action), fontWeight = FontWeight.Bold) }</ID>
     <ID>MaxLineLength:GeneralSettingsScreen.kt$confirmButton = { TextButton(onClick = { showBillTypePicker = false }) { Text(stringResource(R.string.settings_cancel), fontWeight = FontWeight.Bold) } }</ID>
-    <ID>MaxLineLength:GeneralSettingsScreen.kt$confirmButton = { TextButton(onClick = { showColorPicker = false }) { Text(stringResource(R.string.settings_color_done), fontWeight = FontWeight.Bold) } }</ID>
     <ID>MaxLineLength:GeneralSettingsScreen.kt$confirmButton = { TextButton(onClick = { showLanguagePicker = false }) { Text(stringResource(R.string.settings_cancel), fontWeight = FontWeight.Bold) } }</ID>
     <ID>MaxLineLength:GeneralSettingsScreen.kt$confirmButton = { TextButton(onClick = { showStartPagePicker = false }) { Text(stringResource(R.string.settings_cancel), fontWeight = FontWeight.Bold) } }</ID>
     <ID>MaxLineLength:GeneralSettingsScreen.kt$confirmButton = { TextButton(onClick = { showThemePicker = false }) { Text(stringResource(R.string.settings_cancel), fontWeight = FontWeight.Bold) } }</ID>
@@ -773,7 +645,6 @@
     <ID>MaxLineLength:GeneralSettingsScreen.kt$if</ID>
     <ID>MaxLineLength:GeneralSettingsScreen.kt$modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.3f), RoundedCornerShape(14.dp))</ID>
     <ID>MaxLineLength:GeneralSettingsScreen.kt$onDismissRequest = { showBillTypePicker = false }</ID>
-    <ID>MaxLineLength:GeneralSettingsScreen.kt$onDismissRequest = { showColorPicker = false }</ID>
     <ID>MaxLineLength:GeneralSettingsScreen.kt$onDismissRequest = { showLanguagePicker = false }</ID>
     <ID>MaxLineLength:GeneralSettingsScreen.kt$onDismissRequest = { showStartPagePicker = false }</ID>
     <ID>MaxLineLength:GeneralSettingsScreen.kt$onDismissRequest = { showThemePicker = false }</ID>
@@ -781,15 +652,12 @@
     <ID>MaxLineLength:GeneralSettingsScreen.kt$val billTypes = mapOf(BillType.EXPENSE.value to stringResource(R.string.settings_bill_expense), BillType.INCOME.value to stringResource(R.string.settings_bill_income))</ID>
     <ID>MaxLineLength:GeneralSettingsScreen.kt$val langOptions = listOf(Triple("SYSTEM", stringResource(R.string.settings_follow_system), Icons.Outlined.BrightnessAuto), Triple("zh", stringResource(R.string.settings_language_chinese), Icons.Outlined.Translate), Triple("en", "English", Icons.Outlined.Translate))</ID>
     <ID>MaxLineLength:GeneralSettingsScreen.kt$val languageLabels = mapOf("SYSTEM" to stringResource(R.string.settings_follow_system), "zh" to stringResource(R.string.settings_language_chinese), "en" to stringResource(R.string.settings_language_english))</ID>
-    <ID>MaxLineLength:GeneralSettingsScreen.kt$val presetColors = listOf("#2D4A3E", "#34A853", "#4285F4", "#EA4335", "#FBBC04", "#FF6D01", "#AB47BC", "#1E88E5", "#00BCD4", "#66BB6A")</ID>
     <ID>MaxLineLength:GeneralSettingsScreen.kt$val startPageOptions = listOf(Triple("dashboard", stringResource(R.string.settings_home), Icons.Outlined.Home), Triple("asset", stringResource(R.string.settings_items), Icons.Outlined.Inventory2), Triple("bill", stringResource(R.string.bill_title), Icons.Outlined.AccountBalanceWallet), Triple("life", stringResource(R.string.life_title), Icons.Outlined.FavoriteBorder))</ID>
     <ID>MaxLineLength:GeneralSettingsScreen.kt$val startPages = mapOf("dashboard" to stringResource(R.string.settings_home), "asset" to stringResource(R.string.settings_items), "bill" to stringResource(R.string.bill_title), "life" to stringResource(R.string.life_title))</ID>
     <ID>MaxLineLength:GeneralSettingsScreen.kt$val themeOptions = listOf(Triple("SYSTEM", stringResource(R.string.settings_follow_system), Icons.Outlined.BrightnessAuto), Triple("LIGHT", stringResource(R.string.settings_theme_light), Icons.Outlined.WbSunny), Triple("DARK", stringResource(R.string.settings_theme_dark), Icons.Outlined.Brightness3))</ID>
     <ID>MaxLineLength:GeneralSettingsScreen.kt$val themes = mapOf("SYSTEM" to stringResource(R.string.settings_follow_system), "LIGHT" to stringResource(R.string.settings_theme_light), "DARK" to stringResource(R.string.settings_theme_dark))</ID>
     <ID>MaxLineLength:GoalDao.kt$GoalDao$@Query("UPDATE goals SET currentCount = 0, currentPeriodStart = :periodStart, currentPeriodEnd = :periodEnd, updatedAt = :now WHERE id IN (:ids)")</ID>
     <ID>MaxLineLength:GoalDao.kt$GoalDao$@Query("UPDATE goals SET streak = :streak, longestStreak = MAX(longestStreak, :streak), lastCheckInDate = :checkInDate, totalCheckInDays = totalCheckInDays + 1, updatedAt = :now WHERE id = :id")</ID>
-    <ID>MaxLineLength:GoalRepositoryImpl.kt$GoalRepositoryImpl$override suspend fun batchResetPeriod(ids: List&lt;Long&gt;, periodStart: Long, periodEnd: Long)</ID>
-    <ID>MaxLineLength:GoalRepositoryImpl.kt$GoalRepositoryImpl$override suspend fun updateStreak(id: Long, streak: Int, checkInDate: Long, now: Long)</ID>
     <ID>MaxLineLength:HabitListScreen.kt$Box(modifier = Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = LifeHabit) }</ID>
     <ID>MaxLineLength:HabitListScreen.kt$Card</ID>
     <ID>MaxLineLength:HabitListScreen.kt$IconButton(onClick = { onAchievementClick() }) { Icon(Icons.Default.EmojiEvents, stringResource(R.string.life_habit_achievement)) }</ID>
@@ -847,7 +715,6 @@
     <ID>MaxLineLength:ItemDetailScreen.kt$else</ID>
     <ID>MaxLineLength:ItemDetailScreen.kt$navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.life_back)) } }</ID>
     <ID>MaxLineLength:ItemDetailScreen.kt$onClick = { viewModel?.archive(); scope.launch { snackbarHostState.showSnackbar(context.getString(R.string.life_item_archived_hint)) } }</ID>
-    <ID>MaxLineLength:ItemDetailScreen.kt$options = try { (obj["options"] as? JsonArray)?.map { it.jsonPrimitive.content } ?: emptyList() } catch (_: Exception) { emptyList() }</ID>
     <ID>MaxLineLength:ItemDetailScreen.kt$scope.launch { snackbarHostState.showSnackbar(context.getString(R.string.life_item_updated_to, label ?: key ?: "")) }</ID>
     <ID>MaxLineLength:ItemDetailScreen.kt$showAsProgress = try { obj["showAsProgress"]?.jsonPrimitive?.content?.toBooleanStrictOrNull() } catch (_: Exception) { null } ?: false</ID>
     <ID>MaxLineLength:ItemDetailScreen.kt$try { java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date(millis)) } catch (_: Exception) { value.content }</ID>
@@ -866,10 +733,6 @@
     <ID>MaxLineLength:JournalListScreen.kt$navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.life_back)) } }</ID>
     <ID>MaxLineLength:JournalListScreen.kt$val grouped = remember(state.moments) { state.moments.groupBy { Instant.ofEpochMilli(it.date).atZone(ZoneId.systemDefault()).toLocalDate() }.toSortedMap(compareByDescending { it }) }</ID>
     <ID>MaxLineLength:JournalListScreen.kt$val moodE = when (moment.mood) { "HAPPY" -&gt; "\uD83D\uDE04"; "GOOD" -&gt; "\uD83D\uDE42"; "NORMAL" -&gt; "\uD83D\uDE14"; "SAD" -&gt; "\uD83D\uDE22"; "ANGRY" -&gt; "\uD83D\uDE21"; else -&gt; null }</ID>
-    <ID>MaxLineLength:LifeCards.kt$"completedLessons" -&gt; { val v = value.jsonPrimitive.content; parts.add(context.getString(R.string.life_card_completed_lessons, v.toIntOrNull() ?: 0)) }</ID>
-    <ID>MaxLineLength:LifeCards.kt$"currentStreak" -&gt; { val v = value.jsonPrimitive.content; parts.add(context.getString(R.string.life_card_streak_days, v.toIntOrNull() ?: 0)) }</ID>
-    <ID>MaxLineLength:LifeCards.kt$"targetDays" -&gt; { val v = value.jsonPrimitive.content; parts.add(context.getString(R.string.life_card_target_days, v.toIntOrNull() ?: 0)) }</ID>
-    <ID>MaxLineLength:LifeCards.kt$"totalLessons" -&gt; { val v = value.jsonPrimitive.content; parts.add(context.getString(R.string.life_card_total_lessons, v.toIntOrNull() ?: 0)) }</ID>
     <ID>MaxLineLength:LifeCards.kt$Box</ID>
     <ID>MaxLineLength:LifeCards.kt$Box(modifier = Modifier.fillMaxWidth(fraction = progress.coerceIn(0f, 1f)).height(4.dp).background(tplColor, RoundedCornerShape(2.dp)))</ID>
     <ID>MaxLineLength:LifeCards.kt$Box(modifier = Modifier.width(3.dp).height(72.dp).align(Alignment.CenterStart).background(if (isDone) MaterialTheme.colorScheme.tertiary else tplColor, RoundedCornerShape(topEnd = 2.dp, bottomEnd = 2.dp)))</ID>
@@ -885,7 +748,6 @@
     <ID>MaxLineLength:LifeCards.kt$val statusColor = when (itemStatus) { "COMPLETED" -&gt; MaterialTheme.colorScheme.tertiary; "ARCHIVED" -&gt; MaterialTheme.colorScheme.outline; else -&gt; tplColor }</ID>
     <ID>MaxLineLength:LifeCards.kt$val statusLabel = when (itemStatus) { "COMPLETED" -&gt; stringResource(R.string.life_card_status_completed); "ARCHIVED" -&gt; stringResource(R.string.life_card_status_archived); else -&gt; stringResource(R.string.life_card_status_ongoing) }</ID>
     <ID>MaxLineLength:LifeCounterWidgetProvider.kt$LifeCounterWidgetProvider$override</ID>
-    <ID>MaxLineLength:LifeDailyCheckWorker.kt$LifeDailyCheckWorker$applicationContext.getString(com.palmnote.R.string.notification_countdown_soon_message, item.title, daysLeft)</ID>
     <ID>MaxLineLength:LifeDailyCheckWorker.kt$LifeDailyCheckWorker$reportRepo.insertReport(LifeReport(type = "WEEKLY", periodStart = weekStart, periodEnd = weekEnd, reportData = """{"focusMinutes":$focusMinutes}"""))</ID>
     <ID>MaxLineLength:LifeDailyCheckWorker.kt$LifeDailyCheckWorker$val diff = ChronoUnit.DAYS.between(today, if (nextAnni.isAfter(today) || nextAnni == today) nextAnni else nextAnni.plusYears(1))</ID>
     <ID>MaxLineLength:LifeDailyCheckWorker.kt$LifeDailyCheckWorker$val diff = ChronoUnit.DAYS.between(today, if (nextBirthday.isAfter(today) || nextBirthday == today) nextBirthday else nextBirthday.plusYears(1))</ID>
@@ -909,10 +771,6 @@
     <ID>MaxLineLength:LifeItemDao.kt$LifeItemDao$@Query("SELECT * FROM life_items WHERE (title LIKE '%' || :query || '%' OR note LIKE '%' || :query || '%') ORDER BY updatedAt DESC LIMIT 50")</ID>
     <ID>MaxLineLength:LifeItemDao.kt$LifeItemDao$suspend</ID>
     <ID>MaxLineLength:LifeItemPagingSource.kt$LifeItemPagingSource$LoadResult.Page(data = items, prevKey = if (page &gt; 0) page - 1 else null, nextKey = if (items.size == pageSize) page + 1 else null)</ID>
-    <ID>MaxLineLength:LifeItemRepositoryImpl.kt$LifeItemRepositoryImpl$dao.updateItem(id = item.id, title = item.title, fieldsData = item.fieldsData, status = item.status, note = item.note, sortOrder = item.sortOrder, isFavorite = item.isFavorite)</ID>
-    <ID>MaxLineLength:LifeItemRepositoryImpl.kt$LifeItemRepositoryImpl$override fun getActiveItemsByTemplate(templateId: Long, limit: Int): Flow&lt;List&lt;LifeItem&gt;&gt;</ID>
-    <ID>MaxLineLength:LifeItemRepositoryImpl.kt$LifeItemRepositoryImpl$override fun getItemsByTemplateAndStatus(templateId: Long, status: String): Flow&lt;List&lt;LifeItem&gt;&gt;</ID>
-    <ID>MaxLineLength:LifeItemRepositoryImpl.kt$LifeItemRepositoryImpl$override fun getPagedItemsByTemplate(templateId: Long): Flow&lt;PagingData&lt;LifeItem&gt;&gt;</ID>
     <ID>MaxLineLength:LifeNavHost.kt$DynamicFormScreen(template = createTpl, existingItem = existingItem, onSave = { title, data -&gt; vm.saveItem(title, data) }, onBack = { navController.popBackStack() }, viewModel = vm)</ID>
     <ID>MaxLineLength:LifeNavHost.kt$DynamicFormScreen(template = createTpl, existingItem = null, onSave = { title, data -&gt; vm.saveItem(title, data) }, onBack = { navController.popBackStack() }, viewModel = vm)</ID>
     <ID>MaxLineLength:LifeNavHost.kt$ItemDetailScreen(item = s.item, template = s.template, viewModel = vm, onBack = { navController.popBackStack() }, onEdit = { s.item?.let { item -&gt; navController.navigate(LifeEditRoute(item.id)) } }, onDelete = { vm.deleteItem(); navController.popBackStack() })</ID>
@@ -925,44 +783,18 @@
     <ID>MaxLineLength:LifeNavHost.kt$val vm: CreateItemViewModel = hiltViewModel()</ID>
     <ID>MaxLineLength:LifeNavHost.kt$val vm: ItemDetailViewModel = hiltViewModel()</ID>
     <ID>MaxLineLength:LifeReportRepositoryImpl.kt$LifeReportRepositoryImpl$override fun getReportsByTypeAndRange(type: String, start: Long, end: Long): Flow&lt;List&lt;LifeReport&gt;&gt;</ID>
-    <ID>MaxLineLength:LifeScreen.kt$Box(modifier = Modifier.size(24.dp).background(iconColor.copy(alpha = 0.12f), RoundedCornerShape(7.dp)), contentAlignment = Alignment.Center) { Icon(sectionIcon, null, tint = iconColor, modifier = Modifier.size(16.dp)) }</ID>
     <ID>MaxLineLength:LifeScreen.kt$Card</ID>
-    <ID>MaxLineLength:LifeScreen.kt$Icon(Icons.Default.SearchOff, null, tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f), modifier = Modifier.size(48.dp))</ID>
-    <ID>MaxLineLength:LifeScreen.kt$Icon(if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))</ID>
-    <ID>MaxLineLength:LifeScreen.kt$IconButton(onClick = onNavigateToManage) { Icon(Icons.Outlined.Dashboard, stringResource(R.string.life_template_manage), tint = MaterialTheme.colorScheme.primary) }</ID>
-    <ID>MaxLineLength:LifeScreen.kt$IconButton(onClick = { showSearch = true }) { Icon(Icons.Outlined.Search, stringResource(R.string.search), tint = MaterialTheme.colorScheme.primary) }</ID>
-    <ID>MaxLineLength:LifeScreen.kt$LifeSection(title = stringResource(R.string.life_section_title_plan), iconColor = LifePlan, count = stringResource(R.string.life_section_count, filteredPlans.size), templates = filteredPlans, isTimeSection = false, previewItems = state.templatePreviewItems, onTemplateClick = onTemplateClick, expanded = planExpanded, onToggle = onPlanToggle)</ID>
-    <ID>MaxLineLength:LifeScreen.kt$LifeSection(title = stringResource(R.string.life_section_title_record), iconColor = LifeRecord, count = stringResource(R.string.life_section_count_record, filteredRecords.size), templates = filteredRecords, isTimeSection = false, previewItems = state.templatePreviewItems, onTemplateClick = onTemplateClick, expanded = recordExpanded, onToggle = onRecordToggle)</ID>
-    <ID>MaxLineLength:LifeScreen.kt$LifeSection(title = stringResource(R.string.life_section_title_time), iconColor = LifeTime, count = stringResource(R.string.life_section_count_time, filteredTimes.size), templates = filteredTimes, isTimeSection = true, previewItems = state.templatePreviewItems, onTemplateClick = onTemplateClick, expanded = timeExpanded, onToggle = onTimeToggle)</ID>
     <ID>MaxLineLength:LifeScreen.kt$Row</ID>
-    <ID>MaxLineLength:LifeScreen.kt$StatsRow(state = state, scope = scope, snackbarHostState = snackbarHostState, onHabitClick = onHabitClick, onFocusClick = onFocusClick, onTodayTodosClick = onTodayTodosClick)</ID>
-    <ID>MaxLineLength:LifeScreen.kt$Text(card.label, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)</ID>
-    <ID>MaxLineLength:LifeScreen.kt$Text(count, fontSize = 11.sp, color = MaterialTheme.colorScheme.outline, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)</ID>
     <ID>MaxLineLength:LifeScreen.kt$Text(state.error ?: "", fontSize = 13.sp, color = MaterialTheme.colorScheme.onErrorContainer, modifier = Modifier.weight(1f))</ID>
     <ID>MaxLineLength:LifeScreen.kt$Text(stringResource(R.string.life_empty_here), fontSize = 16.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
     <ID>MaxLineLength:LifeScreen.kt$Text(stringResource(R.string.life_empty_hint), fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f))</ID>
-    <ID>MaxLineLength:LifeScreen.kt$Text(stringResource(R.string.life_screen_search_template_not_found, searchQuery), fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
-    <ID>MaxLineLength:LifeScreen.kt$Text(stringResource(com.palmnote.R.string.life_title), style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold, color = ModuleLife)</ID>
     <ID>MaxLineLength:LifeScreen.kt$Text(tpl.getDisplayDescription(LocalContext.current), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)</ID>
     <ID>MaxLineLength:LifeScreen.kt$TextButton(onClick = onRetry) { Text(stringResource(R.string.life_screen_retry), color = MaterialTheme.colorScheme.onErrorContainer) }</ID>
-    <ID>MaxLineLength:LifeScreen.kt$if</ID>
-    <ID>MaxLineLength:LifeScreen.kt$innerPadding = innerPadding</ID>
-    <ID>MaxLineLength:LifeScreen.kt$modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).clip(MaterialTheme.shapes.large).clickable(interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }, indication = null, onClick = onToggle)</ID>
-    <ID>MaxLineLength:LifeScreen.kt$onPlanToggle = { scope.launch { contextLife.dataStore.edit { it[booleanPreferencesKey("life_plan_expanded")] = !planExpanded } } }</ID>
-    <ID>MaxLineLength:LifeScreen.kt$onTemplateClick = onNavigateToTemplate</ID>
     <ID>MaxLineLength:LifeScreen.kt$private</ID>
-    <ID>MaxLineLength:LifeScreen.kt$val sectionIcon = when (title) { planTitle -&gt; Icons.AutoMirrored.Filled.Assignment; timeTitle -&gt; Icons.Default.CalendarMonth; else -&gt; Icons.Default.AutoStories }</ID>
     <ID>MaxLineLength:LifeViewModel.kt$LifeViewModel$"book" -&gt; momentRepo.getAllMoments().map { moments -&gt; tpl.id to if (moments.isEmpty()) emptyList() else listOf(LifeItem(templateId = tpl.id, title = moments.first().title.take(30))) }</ID>
     <ID>MaxLineLength:LifeViewModel.kt$LifeViewModel$"calendar_month" -&gt; goalRepo.getHabitGoals().map { goals -&gt; tpl.id to if (goals.isEmpty()) emptyList() else listOf(LifeItem(templateId = tpl.id, title = goals.first().title)) }</ID>
     <ID>MaxLineLength:LifeViewModel.kt$LifeViewModel$"mood" -&gt; moodRepo.getAllMoodDiaries().map { diaries -&gt; tpl.id to if (diaries.isEmpty()) emptyList() else listOf(LifeItem(templateId = tpl.id, title = diaries.first().content.take(20))) }</ID>
     <ID>MaxLineLength:LifeViewModel.kt$LifeViewModel$.</ID>
-    <ID>MaxLineLength:LifeViewModel.kt$LifeViewModel$_uiState.update { it.copy(templates = templates, planTemplates = plans, timeTemplates = times, recordTemplates = records, templatePreviewItems = emptyMap(), isLoading = false) }</ID>
-    <ID>MaxLineLength:LifeViewModel.kt$LifeViewModel$_uiState.update { it.copy(templates = templates, planTemplates = plans, timeTemplates = times, recordTemplates = records, templatePreviewItems = merged, todayTodos = todayCount, isLoading = false) }</ID>
-    <ID>MaxLineLength:LifeViewModel.kt$LifeViewModel$val greet = when (hour) { in 0..4 -&gt; application.getString(R.string.greeting_night); in 5..8 -&gt; application.getString(R.string.greeting_morning); in 9..11 -&gt; application.getString(R.string.greeting_forenoon); in 12..13 -&gt; application.getString(R.string.greeting_noon); in 14..17 -&gt; application.getString(R.string.greeting_afternoon); else -&gt; application.getString(R.string.greeting_evening) }</ID>
-    <ID>MaxLineLength:LifeViewModel.kt$LifeViewModel$val planNames = setOf(application.getString(R.string.life_type_saving), application.getString(R.string.life_type_shopping), application.getString(R.string.life_type_todo), application.getString(R.string.life_type_travel), application.getString(R.string.life_type_reading), application.getString(R.string.life_type_study))</ID>
-    <ID>MaxLineLength:LifeViewModel.kt$LifeViewModel$val recordNames = setOf(application.getString(R.string.life_type_habit), application.getString(R.string.life_type_mood), application.getString(R.string.life_type_journal), application.getString(R.string.life_type_focus), application.getString(R.string.life_type_subscription), application.getString(R.string.life_type_report), application.getString(R.string.life_report_tab_weekly), application.getString(R.string.life_type_subscription))</ID>
-    <ID>MaxLineLength:LifeViewModel.kt$LifeViewModel$val timeNames = setOf(application.getString(R.string.life_type_countdown), application.getString(R.string.life_type_countup), application.getString(R.string.life_type_birthday), application.getString(R.string.life_type_anniversary))</ID>
-    <ID>MaxLineLength:LifeViewModel.kt$LifeViewModel$val todayStart = java.time.LocalDate.now().atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()</ID>
     <ID>MaxLineLength:LifeViewModel.kt$LifeViewModel$}</ID>
     <ID>MaxLineLength:LinkSelectorSheet.kt$Icon(Icons.Default.AccountBalanceWallet, null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(24.dp))</ID>
     <ID>MaxLineLength:LinkSelectorSheet.kt$Text(stringResource(R.string.life_link_assets), fontWeight = FontWeight.Medium, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
@@ -974,7 +806,6 @@
     <ID>MaxLineLength:MainActivity.kt$style = if (isHeading) MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold) else MaterialTheme.typography.bodyMedium</ID>
     <ID>MaxLineLength:ManageCategoryScreen.kt$SettingsMenuItem(icon = Icons.Outlined.AccountBalanceWallet, title = stringResource(R.string.settings_wallet_manage), subtitle = stringResource(R.string.settings_wallet_manage_subtitle), tint = AccentOrange, onClick = onNavigateToWallet)</ID>
     <ID>MaxLineLength:ManageCategoryScreen.kt$SettingsMenuItem(icon = Icons.Outlined.Book, title = stringResource(R.string.settings_bill_manage), subtitle = stringResource(R.string.settings_bill_manage_subtitle), tint = MaterialTheme.colorScheme.primary, onClick = onNavigateToAccountBook)</ID>
-    <ID>MaxLineLength:ManageCategoryScreen.kt$SettingsMenuItem(icon = Icons.Outlined.Book, title = stringResource(R.string.settings_bill_manage), subtitle = stringResource(R.string.settings_bill_manage_subtitle), tint = PrimaryGreenLight, onClick = onNavigateToAccountBook)</ID>
     <ID>MaxLineLength:ManageCategoryScreen.kt$SettingsMenuItem(icon = Icons.Outlined.Category, title = stringResource(R.string.settings_category_manage), subtitle = stringResource(R.string.settings_category_manage_subtitle), tint = InfoBlue, onClick = onNavigateToCategory)</ID>
     <ID>MaxLineLength:Migration3To4.kt$&lt;no name provided&gt;$db.execSQL("CREATE INDEX IF NOT EXISTS index_bills_isReimbursable_isReimbursed_isDeleted ON bills(isReimbursable, isReimbursed, isDeleted)")</ID>
     <ID>MaxLineLength:Migration5To6.kt$Migration5To6$"INSERT INTO vault_entries (title, username, passwordEncrypted, url, notes, category, createdAt, updatedAt) VALUES (?,?,?,?,?,?,?,?)"</ID>
@@ -1006,7 +837,6 @@
     <ID>MaxLineLength:MoodCalendarView.kt$Row(modifier = Modifier.fillMaxWidth()) { listOf(stringResource(R.string.date_weekday_short_mon), stringResource(R.string.date_weekday_short_tue), stringResource(R.string.date_weekday_short_wed), stringResource(R.string.date_weekday_short_thu), stringResource(R.string.date_weekday_short_fri), stringResource(R.string.date_weekday_short_sat), stringResource(R.string.date_weekday_short_sun)).forEach { Text(it, fontSize = 10.sp, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f)) } }</ID>
     <ID>MaxLineLength:MoodCalendarView.kt$Text("\u276E", fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(40.dp).clickable { currentMonth = currentMonth.minusMonths(1) })</ID>
     <ID>MaxLineLength:MoodCalendarView.kt$Text("\u276F", fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(40.dp).clickable { currentMonth = currentMonth.plusMonths(1) })</ID>
-    <ID>MaxLineLength:MoodCalendarView.kt$Text(stringResource(R.string.date_format_display_month).format(currentMonth.year, currentMonth.monthValue), fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)</ID>
     <ID>MaxLineLength:MoodCalendarView.kt$if (emoji != null) Text(emoji, fontSize = 14.sp) else Text("$day", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
     <ID>MaxLineLength:MoodCalendarView.kt$val emoji = when (mood?.mood) { "HAPPY" -&gt; "\uD83D\uDE04"; "GOOD" -&gt; "\uD83D\uDE42"; "NORMAL" -&gt; "\uD83D\uDE14"; "SAD" -&gt; "\uD83D\uDE22"; "ANGRY" -&gt; "\uD83D\uDE21"; else -&gt; null }</ID>
     <ID>MaxLineLength:MoodCalendarView.kt$val mc = when (mood?.mood) { "HAPPY" -&gt; LifeMoodHappy; "GOOD" -&gt; LifeMoodNormal; "NORMAL" -&gt; LifeMoodUpset; "SAD" -&gt; LifeMoodSad; "ANGRY" -&gt; LifeMoodAngry; else -&gt; null }</ID>
@@ -1045,26 +875,8 @@
     <ID>MaxLineLength:QuickMoodSheet.kt$Text(stringResource(R.string.life_mood_factors), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace, modifier = Modifier.padding(horizontal = 24.dp))</ID>
     <ID>MaxLineLength:QuickMoodSheet.kt$val factors = listOf(stringResource(R.string.life_mood_factor_work) to "work", stringResource(R.string.life_mood_factor_health) to "favorite", stringResource(R.string.life_mood_factor_family) to "family_restroom", stringResource(R.string.life_mood_factor_finance) to "account_balance", stringResource(R.string.life_mood_factor_weather) to "cloud", stringResource(R.string.life_mood_factor_social) to "groups")</ID>
     <ID>MaxLineLength:QuickMoodSheet.kt$}</ID>
-    <ID>MaxLineLength:ReadingListScreen.kt$Box</ID>
-    <ID>MaxLineLength:ReadingListScreen.kt$Box(modifier = Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = LifeReading) }</ID>
-    <ID>MaxLineLength:ReadingListScreen.kt$Box(modifier = Modifier.fillMaxWidth(progress).height(4.dp).background(LifeReading, RoundedCornerShape(2.dp)))</ID>
-    <ID>MaxLineLength:ReadingListScreen.kt$Box(modifier = Modifier.width(3.dp).height(72.dp).align(Alignment.CenterStart).background(LifeReading, RoundedCornerShape(topEnd = 2.dp, bottomEnd = 2.dp)))</ID>
-    <ID>MaxLineLength:ReadingListScreen.kt$LifeLazyList</ID>
-    <ID>MaxLineLength:ReadingListScreen.kt$Text(if (isDone) stringResource(R.string.life_reading_done) else stringResource(R.string.life_reading_reading), fontSize = 10.sp, fontWeight = FontWeight.Medium, color = if (isDone) LifeRecord else LifeReading, modifier = Modifier.background((if (isDone) LifeRecord else LifeReading).copy(alpha = 0.12f), RoundedCornerShape(4.dp)).padding(horizontal = 8.dp, vertical = 2.dp))</ID>
-    <ID>MaxLineLength:ReadingListScreen.kt$Text(item.title, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))</ID>
-    <ID>MaxLineLength:ReadingListScreen.kt$confirmButton = { TextButton(onClick = { deleteTarget?.let { viewModel.deleteItem(it) }; deleteTarget = null }) { Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error) } }</ID>
-    <ID>MaxLineLength:ReadingListScreen.kt$fun</ID>
-    <ID>MaxLineLength:ReadingListScreen.kt$if (fields.first.isNotEmpty()) Text(fields.first, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
-    <ID>MaxLineLength:ReadingListScreen.kt$if (fields.second &gt; 0) Text(stringResource(R.string.life_reading_page_format, fields.third.toString(), fields.second.toString()), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
-    <ID>MaxLineLength:ReadingListScreen.kt$navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.life_back)) } }</ID>
-    <ID>MaxLineLength:ReadingPlanViewModel.kt$ReadingPlanViewModel$templateJob = templateRepo.getTemplateByIdFlow(templateId).onEach { tpl -&gt; _uiState.update { it.copy(template = tpl) } }.launchIn(viewModelScope)</ID>
-    <ID>MaxLineLength:ReadingPlanViewModel.kt$ReadingUiState</ID>
     <ID>MaxLineLength:ReminderSettingsScreen.kt$Box</ID>
-    <ID>MaxLineLength:ReminderSettingsScreen.kt$CapsuleSwitch(checked = state.billReminderEnabled, onCheckedChange = { viewModel.setBillReminderEnabled(it) }, checkedTrackColor = LocalSwitchColor.current)</ID>
-    <ID>MaxLineLength:ReminderSettingsScreen.kt$CapsuleSwitch(checked = state.dailyReminderEnabled, onCheckedChange = { enabled -&gt; if (enabled &amp;&amp; Build.VERSION.SDK_INT &gt;= 33) { showNotificationPermissionDialog = true } else { viewModel.setDailyReminderEnabled(enabled) } }, checkedTrackColor = LocalSwitchColor.current)</ID>
     <ID>MaxLineLength:ReminderSettingsScreen.kt$Icon(Icons.Outlined.FavoriteBorder, contentDescription = null, tint = ErrorLight, modifier = Modifier.size(20.dp))</ID>
-    <ID>MaxLineLength:ReminderSettingsScreen.kt$RadioButton(selected = state.anniversaryReminderAdvanceDays == days, onClick = { viewModel.setAnniversaryReminderAdvanceDays(days); showAnniversaryAdvancePicker = false }, colors = RadioButtonDefaults.colors(selectedColor = LocalSwitchColor.current))</ID>
-    <ID>MaxLineLength:ReminderSettingsScreen.kt$RadioButton(selected = state.birthdayReminderAdvanceDays == days, onClick = { viewModel.setBirthdayReminderAdvanceDays(days); showBirthdayAdvancePicker = false }, colors = RadioButtonDefaults.colors(selectedColor = LocalSwitchColor.current))</ID>
     <ID>MaxLineLength:ReminderSettingsScreen.kt$Text(stringResource(R.string.settings_days, days), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))</ID>
     <ID>MaxLineLength:ReminderSettingsScreen.kt$TextButton</ID>
     <ID>MaxLineLength:ReminderSettingsScreen.kt$TextButton(onClick = { showNotificationDeniedDialog = false }) { Text(stringResource(R.string.settings_cancel), fontWeight = FontWeight.Bold) }</ID>
@@ -1087,22 +899,6 @@
     <ID>MaxLineLength:ReportViewModel.kt$ReportViewModel$if (isExpense) billRepository.getExpenseByCategoryByBook(bookId, ym) else billRepository.getIncomeByCategoryByBook(bookId, ym)</ID>
     <ID>MaxLineLength:ReportViewModel.kt$ReportViewModel$if (isExpense) billRepository.getWeeklyExpenseByCategoryByBook(bookId, s, e) else billRepository.getWeeklyIncomeByCategoryByBook(bookId, s, e)</ID>
     <ID>MaxLineLength:ReportViewModel.kt$ReportViewModel$if (isExpense) billRepository.getYearlyExpenseByCategoryByBook(bookId, year) else billRepository.getYearlyIncomeByCategoryByBook(bookId, year)</ID>
-    <ID>MaxLineLength:SavingListScreen.kt$Box</ID>
-    <ID>MaxLineLength:SavingListScreen.kt$Box(modifier = Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = LifeSaving) }</ID>
-    <ID>MaxLineLength:SavingListScreen.kt$Box(modifier = Modifier.fillMaxWidth(if (isDone) 1f else progress).height(4.dp).background(if (isDone) LifeRecord else LifeSaving, RoundedCornerShape(2.dp)))</ID>
-    <ID>MaxLineLength:SavingListScreen.kt$Box(modifier = Modifier.width(3.dp).height(72.dp).align(Alignment.CenterStart).background(if (isDone) LifeRecord else LifeSaving, RoundedCornerShape(topEnd = 2.dp, bottomEnd = 2.dp)))</ID>
-    <ID>MaxLineLength:SavingListScreen.kt$Icon(Icons.Default.Savings, null, tint = if (isDone) LifeRecord else LifeSaving, modifier = Modifier.size(20.dp))</ID>
-    <ID>MaxLineLength:SavingListScreen.kt$LazyColumn</ID>
-    <ID>MaxLineLength:SavingListScreen.kt$Row</ID>
-    <ID>MaxLineLength:SavingListScreen.kt$Text(if (isDone) stringResource(R.string.life_saving_filter_done) else stringResource(R.string.life_saving_filter_active), fontSize = 10.sp, fontWeight = FontWeight.Medium, color = if (isDone) LifeRecord else LifeSaving, modifier = Modifier.background((if (isDone) LifeRecord else LifeSaving).copy(alpha = 0.12f), RoundedCornerShape(4.dp)).padding(horizontal = 8.dp, vertical = 2.dp))</ID>
-    <ID>MaxLineLength:SavingListScreen.kt$Text(item.title, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))</ID>
-    <ID>MaxLineLength:SavingListScreen.kt$fun</ID>
-    <ID>MaxLineLength:SavingListScreen.kt$modifier = Modifier.fillMaxWidth().clickable { onItemClick(item.id) }.then(if (isDone) Modifier.alpha(0.7f) else Modifier)</ID>
-    <ID>MaxLineLength:SavingListScreen.kt$navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.life_back)) } }</ID>
-    <ID>MaxLineLength:SavingListScreen.kt$val saved = (obj["saved_amount"] as? JsonPrimitive)?.content ?: (obj["currentAmount"] as? JsonPrimitive)?.content ?: ""</ID>
-    <ID>MaxLineLength:SavingListScreen.kt$val target = (obj["target_amount"] as? JsonPrimitive)?.content ?: (obj["targetAmount"] as? JsonPrimitive)?.content ?: ""</ID>
-    <ID>MaxLineLength:SavingPlanViewModel.kt$SavingPlanUiState</ID>
-    <ID>MaxLineLength:SavingPlanViewModel.kt$SavingPlanViewModel$templateJob = templateRepo.getTemplateByIdFlow(templateId).onEach { tpl -&gt; _uiState.update { it.copy(template = tpl) } }.launchIn(viewModelScope)</ID>
     <ID>MaxLineLength:SearchScreen.kt$Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.back), tint = MaterialTheme.colorScheme.primary)</ID>
     <ID>MaxLineLength:SearchScreen.kt$Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.search_clear), tint = MaterialTheme.colorScheme.primary)</ID>
     <ID>MaxLineLength:SearchScreen.kt$SearchSection("GOALS", stringResource(R.string.search_section_goals), Icons.Outlined.Flag, MaterialTheme.colorScheme.primary)</ID>
@@ -1114,7 +910,6 @@
     <ID>MaxLineLength:SettingsScreen.kt$Row(modifier = mod.padding(vertical = 12.dp, horizontal = 16.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically, content = content)</ID>
     <ID>MaxLineLength:SettingsScreen.kt$SettingsRowItem(icon = Icons.Outlined.Category, title = stringResource(R.string.settings_category_manage), subtitle = stringResource(R.string.settings_category_manage_subtitle), tint = InfoBlue, onClick = onNavigateToManageCategory)</ID>
     <ID>MaxLineLength:SettingsScreen.kt$SettingsRowItem(icon = Icons.Outlined.Info, title = stringResource(R.string.settings_about_app), subtitle = stringResource(R.string.settings_about_version), tint = MaterialTheme.colorScheme.primary, onClick = onNavigateToAbout)</ID>
-    <ID>MaxLineLength:SettingsScreen.kt$SettingsRowItem(icon = Icons.Outlined.Info, title = stringResource(R.string.settings_about_app), subtitle = stringResource(R.string.settings_about_version), tint = PrimaryGreenLight, onClick = onNavigateToAbout)</ID>
     <ID>MaxLineLength:SettingsScreen.kt$SettingsRowItem(icon = Icons.Outlined.Lock, title = stringResource(R.string.settings_security), subtitle = if (state.appLockEnabled) stringResource(R.string.settings_security_subtitle_on) else stringResource(R.string.settings_security_subtitle), tint = ModuleSettings, onClick = onNavigateToAppLock)</ID>
     <ID>MaxLineLength:SettingsScreen.kt$SettingsRowItem(icon = Icons.Outlined.Notifications, title = stringResource(R.string.settings_reminder), subtitle = stringResource(R.string.settings_reminder_subtitle), tint = AccentOrange, onClick = onNavigateToReminder)</ID>
     <ID>MaxLineLength:SettingsScreen.kt$SettingsRowItem(icon = Icons.Outlined.Palette, title = stringResource(R.string.settings_appearance), subtitle = stringResource(R.string.settings_appearance_subtitle), tint = LifePlan, onClick = onNavigateToGeneral)</ID>
@@ -1131,114 +926,18 @@
     <ID>MaxLineLength:SettingsScreen.kt$modifier = Modifier.size(52.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f))</ID>
     <ID>MaxLineLength:SettingsScreen.kt$modifier = Modifier.size(64.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f))</ID>
     <ID>MaxLineLength:SettingsScreen.kt$title = { Text(stringResource(R.string.settings_title), style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold, color = ModuleSettings) }</ID>
-    <ID>MaxLineLength:SettingsScreen.kt$val avatarIcon = try { AppIcon.valueOf(state.profileAvatar).imageVector } catch (_: Exception) { Icons.Filled.Spa }</ID>
     <ID>MaxLineLength:SettingsScreen.kt$val mod = if (clickable != null) Modifier.fillMaxWidth().clip(MaterialTheme.shapes.medium).clickable(onClick = clickable) else Modifier.fillMaxWidth()</ID>
     <ID>MaxLineLength:SettingsViewModel.kt$SettingsViewModel$val msg = if (count &gt; 0) context.getString(R.string.settings_import_success, count) else context.getString(R.string.settings_import_no_data)</ID>
-    <ID>MaxLineLength:ShoppingKanbanScreen.kt$Box(modifier = Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = LifeShopping) }</ID>
-    <ID>MaxLineLength:ShoppingKanbanScreen.kt$Card</ID>
-    <ID>MaxLineLength:ShoppingKanbanScreen.kt$Column(modifier = Modifier.weight(1f)) { Text(item.title, fontSize = 13.sp, fontWeight = FontWeight.Medium); if (price.isNotEmpty()) Text("\u00A5$price", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }</ID>
-    <ID>MaxLineLength:ShoppingKanbanScreen.kt$KanbanColumn(title = stringResource(R.string.life_ongoing), count = progress.size, color = Color(0xFFE8A848), icon = Icons.Default.Pending, items = progress, onItemClick = onItemClick, onDelete = { deleteTarget = it }, modifier = Modifier.width(180.dp))</ID>
-    <ID>MaxLineLength:ShoppingKanbanScreen.kt$KanbanColumn(title = stringResource(R.string.life_shopping_tab_ordered), count = done.size, color = LifeRecord, icon = Icons.Default.CheckCircle, items = done, onItemClick = onItemClick, onDelete = { deleteTarget = it }, dimItems = true, modifier = Modifier.width(180.dp))</ID>
-    <ID>MaxLineLength:ShoppingKanbanScreen.kt$KanbanColumn(title = stringResource(R.string.life_shopping_tab_wishlist), count = active.size, color = LifeShopping, icon = Icons.Default.RadioButtonUnchecked, items = active, onItemClick = onItemClick, onDelete = { deleteTarget = it }, modifier = Modifier.width(180.dp))</ID>
-    <ID>MaxLineLength:ShoppingKanbanScreen.kt$LazyColumn</ID>
-    <ID>MaxLineLength:ShoppingKanbanScreen.kt$Row</ID>
-    <ID>MaxLineLength:ShoppingKanbanScreen.kt$Text("$count", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)</ID>
-    <ID>MaxLineLength:ShoppingKanbanScreen.kt$Text(when (item.status) { "ACTIVE" -&gt; stringResource(R.string.life_shopping_tab_wishlist); "ONGOING" -&gt; stringResource(R.string.life_ongoing); else -&gt; stringResource(R.string.life_shopping_tab_ordered) }, fontSize = 11.sp, color = when (item.status) { "ACTIVE" -&gt; LifeShopping; "ONGOING" -&gt; Color(0xFFE8A848); else -&gt; LifeRecord })</ID>
-    <ID>MaxLineLength:ShoppingKanbanScreen.kt$confirmButton = { TextButton(onClick = { deleteTarget?.let { viewModel.deleteItem(it) }; deleteTarget = null }) { Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error) } }</ID>
-    <ID>MaxLineLength:ShoppingKanbanScreen.kt$fun</ID>
-    <ID>MaxLineLength:ShoppingKanbanScreen.kt$if (price.isNotEmpty()) Text(stringResource(R.string.life_shopping_budget, price), fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
-    <ID>MaxLineLength:ShoppingKanbanScreen.kt$navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.life_back)) } }</ID>
-    <ID>MaxLineLength:ShoppingKanbanScreen.kt$private</ID>
-    <ID>MaxLineLength:ShoppingKanbanScreen.kt$val price = try { val obj = Json.decodeFromString&lt;JsonObject&gt;(item.fieldsData); (obj["budget"] as? JsonPrimitive)?.content ?: "" } catch (_: Exception) { "" }</ID>
-    <ID>MaxLineLength:ShoppingKanbanScreen.kt$val price = try { val obj = Json.decodeFromString&lt;JsonObject&gt;(item.fieldsData); (obj["budget"] as? JsonPrimitive)?.content ?: (obj["price"] as? JsonPrimitive)?.content ?: "" } catch (_: Exception) { "" }</ID>
-    <ID>MaxLineLength:ShoppingPlanViewModel.kt$ShoppingPlanUiState</ID>
-    <ID>MaxLineLength:ShoppingPlanViewModel.kt$ShoppingPlanViewModel$templateJob = templateRepo.getTemplateByIdFlow(templateId).onEach { tpl -&gt; _uiState.update { it.copy(template = tpl) } }.launchIn(viewModelScope)</ID>
-    <ID>MaxLineLength:StudyListScreen.kt$Box(modifier = Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = LifeStudy) }</ID>
-    <ID>MaxLineLength:StudyListScreen.kt$Box(modifier = Modifier.width(3.dp).height(56.dp).align(Alignment.CenterStart).background(if (isDone) LifeRecord else LifeStudy, RoundedCornerShape(topEnd = 2.dp, bottomEnd = 2.dp)))</ID>
-    <ID>MaxLineLength:StudyListScreen.kt$Icon(iconFromName("school"), null, tint = if (isDone) LifeRecord else LifeStudy, modifier = Modifier.size(20.dp))</ID>
-    <ID>MaxLineLength:StudyListScreen.kt$LifeLazyList</ID>
-    <ID>MaxLineLength:StudyListScreen.kt$Row</ID>
-    <ID>MaxLineLength:StudyListScreen.kt$Text(if (isDone) stringResource(R.string.life_study_done) else stringResource(R.string.life_study_learning), fontSize = 10.sp, fontWeight = FontWeight.Medium, color = if (isDone) LifeRecord else LifeStudy, modifier = Modifier.background((if (isDone) LifeRecord else LifeStudy).copy(alpha = 0.12f), RoundedCornerShape(4.dp)).padding(horizontal = 8.dp, vertical = 2.dp))</ID>
-    <ID>MaxLineLength:StudyListScreen.kt$Text(item.title, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))</ID>
-    <ID>MaxLineLength:StudyListScreen.kt$confirmButton = { TextButton(onClick = { deleteTarget?.let { viewModel.deleteItem(it) }; deleteTarget = null }) { Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error) } }</ID>
-    <ID>MaxLineLength:StudyListScreen.kt$fun</ID>
-    <ID>MaxLineLength:StudyListScreen.kt$navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.life_back)) } }</ID>
-    <ID>MaxLineLength:StudyPlanViewModel.kt$StudyPlanViewModel$templateJob = templateRepo.getTemplateByIdFlow(templateId).onEach { tpl -&gt; _uiState.update { it.copy(template = tpl) } }.launchIn(viewModelScope)</ID>
-    <ID>MaxLineLength:StudyPlanViewModel.kt$StudyUiState</ID>
-    <ID>MaxLineLength:SwipeableItem.kt$onDelete?.let { listOf(SwipeAction(Icons.Default.Delete, stringResource(com.palmnote.R.string.delete), MaterialTheme.colorScheme.error, it)) } ?: emptyList()</ID>
-    <ID>MaxLineLength:TemplateCreateScreen.kt$1 -&gt; BasicInfoStep(name = name, onNameChange = { name = it }, description = description, onDescChange = { description = it }, selectedIcon = selectedIcon, onIconSelect = { selectedIcon = it }, selectedColor = selectedColor, onColorSelect = { selectedColor = it }, icons = icons, colors = colors)</ID>
-    <ID>MaxLineLength:TemplateCreateScreen.kt$AnimatedContent</ID>
-    <ID>MaxLineLength:TemplateCreateScreen.kt$Box</ID>
-    <ID>MaxLineLength:TemplateCreateScreen.kt$Card</ID>
-    <ID>MaxLineLength:TemplateCreateScreen.kt$Checkbox(checked = fields[index].required, onCheckedChange = { onFieldsChange(fields.toMutableList().apply { this[index] = this[index].copy(required = it) }) })</ID>
-    <ID>MaxLineLength:TemplateCreateScreen.kt$Icon(icon, null, tint = if (selectedLayout == key) ModuleLife else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(24.dp))</ID>
-    <ID>MaxLineLength:TemplateCreateScreen.kt$Icon(if (key == "PLAN") Icons.Default.Star else if (key == "TIME") Icons.Default.CalendarMonth else Icons.Default.AutoStories, null, tint = if (selectedType == key) ModuleLife else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(24.dp))</ID>
-    <ID>MaxLineLength:TemplateCreateScreen.kt$LinearProgressIndicator(progress = { (step + 1) / 4f }, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), color = ModuleLife)</ID>
-    <ID>MaxLineLength:TemplateCreateScreen.kt$OutlinedTextField(value = fields[index].label, onValueChange = { onFieldsChange(fields.toMutableList().apply { this[index] = this[index].copy(label = it) }) }, label = { Text(stringResource(R.string.life_template_field_name)) }, singleLine = true, modifier = Modifier.fillMaxWidth())</ID>
-    <ID>MaxLineLength:TemplateCreateScreen.kt$Text(if (step &lt; 3) stringResource(R.string.life_template_next) else stringResource(R.string.life_template_create), fontWeight = FontWeight.Medium)</ID>
-    <ID>MaxLineLength:TemplateCreateScreen.kt$Text(stringResource(R.string.life_template_field_index, index + 1), fontWeight = FontWeight.Medium, fontSize = 13.sp, modifier = Modifier.weight(1f))</ID>
-    <ID>MaxLineLength:TemplateCreateScreen.kt$Text(stringResource(R.string.life_template_step_format, step + 1), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
-    <ID>MaxLineLength:TemplateCreateScreen.kt$border = if (selectedType == key) ButtonDefaults.outlinedButtonBorder(enabled = true).copy(1.dp, brush = androidx.compose.ui.graphics.SolidColor(ModuleLife)) else null</ID>
-    <ID>MaxLineLength:TemplateCreateScreen.kt$colors = CardDefaults.cardColors(containerColor = if (selectedType == key) ModuleLife.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surface)</ID>
-    <ID>MaxLineLength:TemplateCreateScreen.kt$fieldTypes.forEach { (key, label) -&gt; FilterChip(selected = fields[index].type == key, onClick = { onFieldsChange(fields.toMutableList().apply { this[index] = this[index].copy(type = key) }) }, label = { Text(label, fontSize = 11.sp) }) }</ID>
-    <ID>MaxLineLength:TemplateCreateScreen.kt$if (fields.size &gt; 1) IconButton(onClick = { onFieldsChange(fields.toMutableList().apply { removeAt(index) }) }, modifier = Modifier.size(24.dp)) { Icon(Icons.Default.Close, null, modifier = Modifier.size(16.dp)) }</ID>
-    <ID>MaxLineLength:TemplateCreateScreen.kt$item { LazyVerticalGrid(columns = GridCells.Fixed(6), modifier = Modifier.height(80.dp)) { items(colors) { color -&gt; Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(color.toComposeColor(ModuleLife)).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onColorSelect(color) }.then(if (selectedColor == color) Modifier.border(2.dp, MaterialTheme.colorScheme.onSurface, CircleShape) else Modifier), contentAlignment = Alignment.Center) { if (selectedColor == color) Icon(Icons.Default.Check, null, tint = Color.White, modifier = Modifier.size(16.dp)) } } } }</ID>
-    <ID>MaxLineLength:TemplateCreateScreen.kt$item { LazyVerticalGrid(columns = GridCells.Fixed(8), modifier = Modifier.height(120.dp)) { items(icons) { icon -&gt; Box(modifier = Modifier.size(40.dp).clip(RoundedCornerShape(8.dp)).background(if (selectedIcon == icon) ModuleLife.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onIconSelect(icon) }, contentAlignment = Alignment.Center) { Icon(iconFromName(icon), null, tint = if (selectedIcon == icon) ModuleLife else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp)) } } } }</ID>
-    <ID>MaxLineLength:TemplateCreateScreen.kt$item { OutlinedButton(onClick = { onFieldsChange(fields + TemplateField()) }, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Default.Add, null); Spacer(modifier = Modifier.width(8.dp)); Text(stringResource(R.string.life_template_add_field)) } }</ID>
-    <ID>MaxLineLength:TemplateCreateScreen.kt$item { OutlinedTextField(value = description, onValueChange = onDescChange, label = { Text(stringResource(R.string.life_template_desc)) }, modifier = Modifier.fillMaxWidth()) }</ID>
-    <ID>MaxLineLength:TemplateCreateScreen.kt$item { OutlinedTextField(value = name, onValueChange = onNameChange, label = { Text(stringResource(R.string.life_template_name)) }, singleLine = true, modifier = Modifier.fillMaxWidth()) }</ID>
-    <ID>MaxLineLength:TemplateCreateScreen.kt$navigationIcon = { IconButton(onClick = { if (step &gt; 0) step-- else onBack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.life_back)) } }</ID>
-    <ID>MaxLineLength:TemplateCreateScreen.kt$private</ID>
-    <ID>MaxLineLength:TemplateCreateScreen.kt$title = { Text(if (step == 0) stringResource(R.string.life_template_step_type) else if (step == 1) stringResource(R.string.life_template_step_basic) else if (step == 2) stringResource(R.string.life_template_step_fields) else stringResource(R.string.life_template_step_layout), fontWeight = FontWeight.Bold) }</ID>
     <ID>MaxLineLength:TemplateCreateScreen.kt$val colors = listOf("#EC407A", "#F07070", "#FF7043", "#FFCA28", "#66BB6A", "#50C890", "#26A69A", "#00ACC1", "#42A5F5", "#5C6BC0", "#AB47BC", "#7C8CF0", "#78909C", "#8D6E63", "#E53935", "#1E88E5")</ID>
-    <ID>MaxLineLength:TemplateCreateScreen.kt$val fieldTypes = listOf("TEXT" to stringResource(R.string.life_template_field_text), "NUMBER" to stringResource(R.string.life_template_field_number), "DATE" to stringResource(R.string.life_template_field_date), "SELECT" to stringResource(R.string.life_template_field_select), "DECIMAL" to stringResource(R.string.life_template_field_decimal))</ID>
-    <ID>MaxLineLength:TemplateCreateScreen.kt$val icons = listOf("EditNote", "CheckCircle", "Savings", "ShoppingCart", "Flight", "MenuBook", "School", "Timer", "CalendarMonth", "Favorite", "Cake", "Notifications", "AutoStories", "Mood", "BarChart", "Settings")</ID>
     <ID>MaxLineLength:TemplateListScreen.kt$"subscriptions" to Triple(Icons.Default.Subscriptions, R.string.life_empty_subscription_title, R.string.life_empty_subscription_subtitle)</ID>
     <ID>MaxLineLength:TemplateListScreen.kt$FloatingActionButton(onClick = onCreateClick, containerColor = tplColor) { Icon(Icons.Default.Add, stringResource(R.string.create_new), tint = Color.White) }</ID>
-    <ID>MaxLineLength:TemplateListScreen.kt$HorizontalDivider(modifier = Modifier.padding(start = 52.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))</ID>
-    <ID>MaxLineLength:TemplateListScreen.kt$Icon(Icons.Default.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))</ID>
-    <ID>MaxLineLength:TemplateListScreen.kt$Text(item.note, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)</ID>
-    <ID>MaxLineLength:TemplateListScreen.kt$Text(item.title, fontWeight = FontWeight.Medium, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)</ID>
     <ID>MaxLineLength:TemplateListScreen.kt$Text(stringResource(emptyConfig.second), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
     <ID>MaxLineLength:TemplateListScreen.kt$Text(stringResource(emptyConfig.third), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f))</ID>
-    <ID>MaxLineLength:TemplateListScreen.kt$modifier = Modifier.fillMaxWidth().height(56.dp).clickable { onItemClick(item.id) }.padding(horizontal = 16.dp).alpha(if (isDone) 0.6f else 1f)</ID>
     <ID>MaxLineLength:TemplateListScreen.kt$navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) } }</ID>
     <ID>MaxLineLength:TemplateListScreen.kt$val emptyConfig = remember(template.icon) { emptyStateConfigs[template.icon] ?: Triple(Icons.Default.Inbox, R.string.life_empty_default_title, R.string.life_empty_default_subtitle) }</ID>
-    <ID>MaxLineLength:TemplateManageScreen.kt$Text(stringResource(R.string.life_custom_templates), fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
-    <ID>MaxLineLength:TemplateManageScreen.kt$Text(stringResource(R.string.life_no_custom_templates), fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
-    <ID>MaxLineLength:TemplateManageScreen.kt$Text(stringResource(R.string.life_preset_templates), fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
     <ID>MaxLineLength:TemplateManageScreen.kt$Text(tpl.getDisplayDescription(LocalContext.current), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)</ID>
     <ID>MaxLineLength:TimeAgo.kt$isSameYear(timestampMillis, now) -&gt; SimpleDateFormat(context.getString(R.string.date_format_display), Locale.getDefault()).format(Date(timestampMillis))</ID>
     <ID>MaxLineLength:TimeListScreen.kt$navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.life_back)) } }</ID>
-    <ID>MaxLineLength:TodoScreen.kt$Box</ID>
-    <ID>MaxLineLength:TodoScreen.kt$Box(modifier = Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = LifeTodo) }</ID>
-    <ID>MaxLineLength:TodoScreen.kt$FilterChipItem(stringResource(R.string.life_todo_filter_calendar), viewMode == "calendar", LifeTodo) { viewMode = "calendar" }</ID>
-    <ID>MaxLineLength:TodoScreen.kt$IconButton(onClick = { calendarMonth = calendarMonth.minusMonths(1) }) { Icon(Icons.Default.ChevronLeft, stringResource(R.string.report_previous)) }</ID>
-    <ID>MaxLineLength:TodoScreen.kt$IconButton(onClick = { calendarMonth = calendarMonth.plusMonths(1) }) { Icon(Icons.Default.ChevronRight, stringResource(R.string.report_next)) }</ID>
-    <ID>MaxLineLength:TodoScreen.kt$QuadBox(stringResource(R.string.life_todo_quad_important), Color(0xFFE8A848), Color(0x1AE8A848), q2, viewModel, onItemClick, onDelete = { deleteTarget = it }, modifier = Modifier.weight(1f))</ID>
-    <ID>MaxLineLength:TodoScreen.kt$QuadBox(stringResource(R.string.life_todo_quad_important_urgent), Color(0xFFFF6B6B), Color(0x1AFF6B6B), q1, viewModel, onItemClick, onDelete = { deleteTarget = it }, modifier = Modifier.weight(1f))</ID>
-    <ID>MaxLineLength:TodoScreen.kt$QuadBox(stringResource(R.string.life_todo_quad_normal), MaterialTheme.colorScheme.onSurfaceVariant, Color(0x0A808080), q4, viewModel, onItemClick, onDelete = { deleteTarget = it }, modifier = Modifier.weight(1f))</ID>
-    <ID>MaxLineLength:TodoScreen.kt$QuadBox(stringResource(R.string.life_todo_quad_urgent), Color(0xFF4285F4), Color(0x1A4285F4), q3, viewModel, onItemClick, onDelete = { deleteTarget = it }, modifier = Modifier.weight(1f))</ID>
-    <ID>MaxLineLength:TodoScreen.kt$Row</ID>
-    <ID>MaxLineLength:TodoScreen.kt$Row(Modifier.fillMaxWidth()) { listOf("一","二","三","四","五","六","日").forEach { Text(it, fontSize = 11.sp, modifier = Modifier.weight(1f), textAlign = androidx.compose.ui.text.style.TextAlign.Center) } }</ID>
-    <ID>MaxLineLength:TodoScreen.kt$Text("${cell.day}", fontSize = 12.sp, fontWeight = if (cell.hasItem) FontWeight.Bold else FontWeight.Normal)</ID>
-    <ID>MaxLineLength:TodoScreen.kt$Text(item.title, fontSize = 14.sp, fontWeight = FontWeight.Medium, textDecoration = if (isDone) TextDecoration.LineThrough else TextDecoration.None, modifier = Modifier.weight(1f).clickable { onItemClick(item.id) })</ID>
-    <ID>MaxLineLength:TodoScreen.kt$Text(stringResource(R.string.life_todo_empty), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))</ID>
-    <ID>MaxLineLength:TodoScreen.kt$confirmButton = { TextButton(onClick = { deleteTarget?.let { viewModel.deleteItem(it) }; deleteTarget = null }) { Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error) } }</ID>
-    <ID>MaxLineLength:TodoScreen.kt$if (cell.hasItem) Box(Modifier.size(4.dp).clip(androidx.compose.foundation.shape.CircleShape).background(LifeTodo))</ID>
-    <ID>MaxLineLength:TodoScreen.kt$navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.life_back)) } }</ID>
-    <ID>MaxLineLength:TodoScreen.kt$val priColor = when (pri) { "HIGH_URGENT" -&gt; Color(0xFFFF6B6B); "HIGH" -&gt; Color(0xFFE8A848); "URGENT" -&gt; Color(0xFF4285F4); "LOW" -&gt; Color(0xFF808080); else -&gt; Color(0xFFAAAAAA) }</ID>
-    <ID>MaxLineLength:TodoScreen.kt$val priLabel = when (pri) { "HIGH_URGENT" -&gt; "紧急重要"; "HIGH" -&gt; "重要"; "URGENT" -&gt; "紧急"; "LOW" -&gt; "低优先"; else -&gt; "普通" }</ID>
-    <ID>MaxLineLength:TravelListScreen.kt$Box(modifier = Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = LifeTravel) }</ID>
-    <ID>MaxLineLength:TravelListScreen.kt$Box(modifier = Modifier.width(3.dp).height(56.dp).align(Alignment.CenterStart).background(LifeTravel, RoundedCornerShape(topEnd = 2.dp, bottomEnd = 2.dp)))</ID>
-    <ID>MaxLineLength:TravelListScreen.kt$Icon(Icons.Default.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))</ID>
-    <ID>MaxLineLength:TravelListScreen.kt$LifeLazyList</ID>
-    <ID>MaxLineLength:TravelListScreen.kt$Row</ID>
-    <ID>MaxLineLength:TravelListScreen.kt$confirmButton = { TextButton(onClick = { deleteTarget?.let { viewModel.deleteItem(it) }; deleteTarget = null }) { Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error) } }</ID>
-    <ID>MaxLineLength:TravelListScreen.kt$fun</ID>
-    <ID>MaxLineLength:TravelListScreen.kt$navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.life_back)) } }</ID>
-    <ID>MaxLineLength:TravelPlanViewModel.kt$TravelPlanViewModel$templateJob = templateRepo.getTemplateByIdFlow(templateId).onEach { tpl -&gt; _uiState.update { it.copy(template = tpl) } }.launchIn(viewModelScope)</ID>
-    <ID>MaxLineLength:TravelPlanViewModel.kt$TravelUiState</ID>
     <ID>MaxLineLength:TriggerEngine.kt$TriggerAction$CreateAutoLink : TriggerAction</ID>
     <ID>MaxLineLength:TriggerEngine.kt$TriggerEngine$TriggerAction.CreateAutoLink(EntityType.ASSET, LinkType.PART_OF, targetId = item.id, metadata = """{"reason":"saving_completed"}""")</ID>
     <ID>MaxLineLength:TriggerEngine.kt$TriggerEngine$val data = try { json.decodeFromString&lt;JsonObject&gt;(item.fieldsData) } catch (e: Exception) { AppLogger.w("TriggerEngine", "decode fieldsData failed", e); JsonObject(emptyMap()) }</ID>
@@ -1247,7 +946,6 @@
     <ID>MaxLineLength:VaultSettingsScreen.kt$title = stringResource(if (state.isNoLockMode) R.string.vault_settings_set_pin else R.string.vault_settings_change_pin)</ID>
     <ID>MaxLineLength:VaultWidgetProvider.kt$VaultWidgetProvider$override</ID>
     <ID>MaxLineLength:WalletEditScreen.kt$currentBalance = existingWallet?.let { it.currentBalance + (balance - it.initialBalance) } ?: balance</ID>
-    <ID>MaxLineLength:WalletEditScreen.kt$stringResource(R.string.wallet_current_balance) + ": " + com.palmnote.domain.util.CurrencyUtils.formatCurrency(existingWallet!!.currentBalance.toMoney())</ID>
     <ID>MaxLineLength:WalletRepositoryImpl.kt$WalletRepositoryImpl$color = "#%02X%02X%02X".format((preset.color.red * 255).toInt(), (preset.color.green * 255).toInt(), (preset.color.blue * 255).toInt())</ID>
     <ID>MaxLineLength:WalletScreen.kt$Text(com.palmnote.ui.components.getLocalizedWalletDisplayName(wallet, context), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)</ID>
     <ID>MaxLineLength:WalletScreen.kt$Text(stringResource(R.string.wallet_count_format, wallets.size), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f))</ID>
@@ -1258,19 +956,13 @@
     <ID>NestedBlockDepth:BackupManager.kt$BackupManager$fun createBackup(context: Context, db: AppDatabase, password: String? = null): File</ID>
     <ID>NestedBlockDepth:BackupManager.kt$BackupManager$fun restoreBackup(context: Context, backupFile: File, password: String? = null)</ID>
     <ID>NestedBlockDepth:BackupManager.kt$BackupManager$private fun readZipEntryText(zipFile: File, entryName: String): String?</ID>
-    <ID>NestedBlockDepth:BackupManager.kt$BackupManager$private fun restoreFromZip(context: Context, zipFile: File)</ID>
-    <ID>NestedBlockDepth:BillOcrParser.kt$BillOcrParser$private fun findAmount(lines: List&lt;String&gt;): Long?</ID>
-    <ID>NestedBlockDepth:BillOcrParser.kt$BillOcrParser$private fun findDate(lines: List&lt;String&gt;): Long?</ID>
     <ID>NestedBlockDepth:BillXlsxImporter.kt$BillXlsxImporter$private fun parseSharedStrings(input: InputStream): List&lt;String&gt;</ID>
     <ID>NestedBlockDepth:BillXlsxImporter.kt$BillXlsxImporter$private fun parseSheet(input: InputStream, sharedStrings: List&lt;String&gt;): List&lt;List&lt;String&gt;&gt;</ID>
-    <ID>NestedBlockDepth:ColorResolver.kt$ColorResolver$fun loadPresetColorOverrides(presetOverrides: Map&lt;String, String&gt;)</ID>
-    <ID>NestedBlockDepth:LifeCards.kt$private fun extractFieldSummary(context: android.content.Context, item: LifeItem, tpl: LifeTemplate): String</ID>
     <ID>NestedBlockDepth:LifeDailyCheckWorker.kt$LifeDailyCheckWorker$private suspend fun checkAnniversaryReminders()</ID>
     <ID>NestedBlockDepth:LifeDailyCheckWorker.kt$LifeDailyCheckWorker$private suspend fun checkBirthdayReminders()</ID>
     <ID>NestedBlockDepth:LifeDailyCheckWorker.kt$LifeDailyCheckWorker$private suspend fun checkCountUpMilestones()</ID>
     <ID>NestedBlockDepth:LifeDailyCheckWorker.kt$LifeDailyCheckWorker$private suspend fun checkCountdownExpiry()</ID>
     <ID>NestedBlockDepth:LifeDailyCheckWorker.kt$LifeDailyCheckWorker$private suspend fun checkSubscriptionBilling()</ID>
-    <ID>NestedBlockDepth:LifeViewModel.kt$LifeViewModel$private fun countTodayTodos(items: Map&lt;Long, List&lt;LifeItem&gt;&gt;): Int</ID>
     <ID>NestedBlockDepth:Migration5To6.kt$Migration5To6$private fun preserveLegacyVault(db: SupportSQLiteDatabase)</ID>
     <ID>NewLineAtEndOfFile:AnniversaryListScreen.kt$com.palmnote.ui.life.time.anniversary.AnniversaryListScreen.kt</ID>
     <ID>NewLineAtEndOfFile:BirthdayViewModel.kt$com.palmnote.ui.life.time.birthday.BirthdayViewModel.kt</ID>
@@ -1288,18 +980,7 @@
     <ID>NewLineAtEndOfFile:MoodViewModel.kt$com.palmnote.ui.life.record.mood.MoodViewModel.kt</ID>
     <ID>NewLineAtEndOfFile:QuickBillWidgetProvider.kt$com.palmnote.ui.widget.QuickBillWidgetProvider.kt</ID>
     <ID>NewLineAtEndOfFile:QuickMoodSheet.kt$com.palmnote.ui.life.record.mood.QuickMoodSheet.kt</ID>
-    <ID>NewLineAtEndOfFile:ReadingPlanViewModel.kt$com.palmnote.ui.life.plan.reading.ReadingPlanViewModel.kt</ID>
     <ID>NewLineAtEndOfFile:ReportViewModel.kt$com.palmnote.ui.life.record.report.ReportViewModel.kt</ID>
-    <ID>NewLineAtEndOfFile:SavingListScreen.kt$com.palmnote.ui.life.plan.saving.SavingListScreen.kt</ID>
-    <ID>NewLineAtEndOfFile:SavingPlanViewModel.kt$com.palmnote.ui.life.plan.saving.SavingPlanViewModel.kt</ID>
-    <ID>NewLineAtEndOfFile:ShoppingPlanViewModel.kt$com.palmnote.ui.life.plan.shopping.ShoppingPlanViewModel.kt</ID>
-    <ID>NewLineAtEndOfFile:StudyListScreen.kt$com.palmnote.ui.life.plan.study.StudyListScreen.kt</ID>
-    <ID>NewLineAtEndOfFile:StudyPlanViewModel.kt$com.palmnote.ui.life.plan.study.StudyPlanViewModel.kt</ID>
-    <ID>NewLineAtEndOfFile:TodoScreen.kt$com.palmnote.ui.life.plan.todo.TodoScreen.kt</ID>
-    <ID>NewLineAtEndOfFile:TodoViewModel.kt$com.palmnote.ui.life.plan.todo.TodoViewModel.kt</ID>
-    <ID>NewLineAtEndOfFile:TravelListScreen.kt$com.palmnote.ui.life.plan.travel.TravelListScreen.kt</ID>
-    <ID>NewLineAtEndOfFile:TravelPlanViewModel.kt$com.palmnote.ui.life.plan.travel.TravelPlanViewModel.kt</ID>
-    <ID>NewLineAtEndOfFile:VaultSettingsScreen.kt$.VaultSettingsScreen.kt</ID>
     <ID>ReturnCount:BillCsvImporter.kt$BillCsvImporter$fun detectFormat(lines: List&lt;String&gt;): CsvFormat</ID>
     <ID>ReturnCount:BillImportViewModel.kt$BillImportViewModel$private fun detectEncoding(rawBytes: ByteArray): String</ID>
     <ID>ReturnCount:BillOcrParser.kt$BillOcrParser$private fun isNewTransaction(line: String, prevLines: List&lt;String&gt;): Boolean</ID>
@@ -1310,13 +991,10 @@
     <ID>SwallowedException:CryptoUtils.kt$CryptoUtils$e: Exception</ID>
     <ID>SwallowedException:ItemDetailViewModel.kt$ItemDetailViewModel$e: Exception</ID>
     <ID>SwallowedException:LifeDailyCheckWorker.kt$LifeDailyCheckWorker$e: Exception</ID>
-    <ID>SwallowedException:LifeViewModel.kt$LifeViewModel$e: Exception</ID>
-    <ID>SwallowedException:Money.kt$Money.Companion$e: ArithmeticException</ID>
     <ID>SwallowedException:ReportViewModel.kt$ReportViewModel$e: Exception</ID>
     <ID>SwallowedException:SearchViewModel.kt$SearchViewModel$e: Exception</ID>
-    <ID>SwallowedException:SettingsScreen.kt$e: Exception</ID>
-    <ID>ThrowsCount:BackupManager.kt$BackupManager$private fun restoreFromZip(context: Context, zipFile: File)</ID>
     <ID>TooGenericExceptionThrown:BillImportViewModel.kt$BillImportViewModel$throw Exception(context.getString(R.string.bill_import_error_read_image))</ID>
+    <ID>TooManyFunctions:BillImportScreen.kt$com.palmnote.ui.bills.BillImportScreen.kt</ID>
     <ID>TooManyFunctions:DateUtils.kt$DateUtils</ID>
     <ID>TooManyFunctions:HiltModules.kt$DatabaseModule</ID>
     <ID>TooManyFunctions:HiltModules.kt$RepositoryModule</ID>
@@ -1326,27 +1004,20 @@
     <ID>UnusedParameter:HabitListScreen.kt$habit: Goal</ID>
     <ID>UnusedParameter:HabitListScreen.kt$onItemClick: (Long) -&gt; Unit</ID>
     <ID>UnusedParameter:JournalListScreen.kt$onItemClick: (Long) -&gt; Unit</ID>
-    <ID>UnusedParameter:LifeCards.kt$tpl: LifeTemplate</ID>
     <ID>UnusedParameter:LifeScreen.kt$onNavigateToCreate: (Long) -&gt; Unit = {}</ID>
     <ID>UnusedParameter:LifeScreen.kt$onNavigateToFocus: () -&gt; Unit = {}</ID>
     <ID>UnusedParameter:LifeScreen.kt$onNavigateToHabit: () -&gt; Unit = {}</ID>
-    <ID>UnusedParameter:LifeScreen.kt$onNavigateToItem: (Long) -&gt; Unit = {}</ID>
     <ID>UnusedParameter:LifeScreen.kt$onNavigateToJournal: () -&gt; Unit = {}</ID>
     <ID>UnusedParameter:LifeScreen.kt$onNavigateToMood: () -&gt; Unit = {}</ID>
     <ID>UnusedParameter:LifeScreen.kt$onNavigateToReport: () -&gt; Unit = {}</ID>
-    <ID>UnusedParameter:LifeScreen.kt$onSearchChange: (String) -&gt; Unit</ID>
-    <ID>UnusedParameter:LifeScreen.kt$scope: kotlinx.coroutines.CoroutineScope</ID>
-    <ID>UnusedParameter:LifeScreen.kt$snackbarHostState: SnackbarHostState</ID>
-    <ID>UnusedParameter:LifeScreen.kt$templates: List&lt;LifeTemplate&gt;</ID>
     <ID>UnusedParameter:ReportListScreen.kt$onItemClick: (Long) -&gt; Unit</ID>
+    <ID>UnusedPrivateClass:BillImportScreen.kt$PreviewSourceKind</ID>
     <ID>UnusedPrivateMember:HabitListScreen.kt$@Preview(showBackground = true, showSystemUi = true) @Composable private fun HabitListPreview()</ID>
     <ID>UnusedPrivateMember:LifeScreen.kt$@Preview(showBackground = true, showSystemUi = true) @Composable private fun LifeScreenPreview()</ID>
     <ID>UnusedPrivateProperty:DashboardScreen.kt$val spacingPx = with(LocalDensity.current) { 16.dp.toPx() }</ID>
     <ID>UnusedPrivateProperty:DashboardScreen.kt$val weekDay = remember { getWeekDay(context) }</ID>
     <ID>UnusedPrivateProperty:HabitListScreen.kt$val scope = rememberCoroutineScope()</ID>
     <ID>UnusedPrivateProperty:MainActivity.kt$MainActivity$val showPrivacyDialog = privacyAgreed == false</ID>
-    <ID>UnusedPrivateProperty:TodoScreen.kt$val scope = rememberCoroutineScope()</ID>
-    <ID>UnusedPrivateProperty:WalletEditScreen.kt$val context = LocalContext.current</ID>
     <ID>UseCheckOrError:BackupManager.kt$BackupManager$throw IllegalStateException("数据库目录不可用")</ID>
     <ID>VariableNaming:BaseLifeViewModel.kt$BaseLifeViewModel$protected val _uiState = MutableStateFlow&lt;T&gt;(initialState())</ID>
     <ID>VariableNaming:CsvDataExporter.kt$CsvDataExporter$private val CLASS_BY_TYPE_NAME: Map&lt;String, Class&lt;*&gt;&gt; = mapOf( "物品" to Asset::class.java, "账单" to Bill::class.java, "钱包" to Wallet::class.java, "目标" to Goal::class.java, "纪念日" to Anniversary::class.java, "瞬间" to Moment::class.java, "打卡记录" to GoalCheckIn::class.java, "周期模板" to RecurringTemplate::class.java, "预算" to Budget::class.java, "分类配置" to CategoryConfig::class.java, "标签" to CustomTag::class.java, "分类映射" to CategoryMapping::class.java )</ID>
@@ -1656,7 +1327,6 @@
     <ID>WildcardImport:LifeScreen.kt$import com.palmnote.ui.theme.*</ID>
     <ID>WildcardImport:LifeTemplateDao.kt$import androidx.room.*</ID>
     <ID>WildcardImport:LifeViewModel.kt$import kotlinx.coroutines.flow.*</ID>
-    <ID>WildcardImport:LifeViewModel.kt$import kotlinx.serialization.json.*</ID>
     <ID>WildcardImport:LinkSelectorSheet.kt$import androidx.compose.foundation.layout.*</ID>
     <ID>WildcardImport:LinkSelectorSheet.kt$import androidx.compose.material.icons.filled.*</ID>
     <ID>WildcardImport:LinkSelectorSheet.kt$import androidx.compose.material3.*</ID>
@@ -1704,11 +1374,6 @@
     <ID>WildcardImport:RatingInputComponent.kt$import androidx.compose.foundation.layout.*</ID>
     <ID>WildcardImport:RatingInputComponent.kt$import androidx.compose.material3.*</ID>
     <ID>WildcardImport:RatingInputComponent.kt$import androidx.compose.runtime.*</ID>
-    <ID>WildcardImport:ReadingListScreen.kt$import androidx.compose.foundation.layout.*</ID>
-    <ID>WildcardImport:ReadingListScreen.kt$import androidx.compose.material3.*</ID>
-    <ID>WildcardImport:ReadingListScreen.kt$import androidx.compose.runtime.*</ID>
-    <ID>WildcardImport:ReadingListScreen.kt$import com.palmnote.ui.theme.*</ID>
-    <ID>WildcardImport:ReadingPlanViewModel.kt$import kotlinx.coroutines.flow.*</ID>
     <ID>WildcardImport:RecurringTemplateDao.kt$import androidx.room.*</ID>
     <ID>WildcardImport:RecycleBinScreen.kt$import androidx.compose.foundation.layout.*</ID>
     <ID>WildcardImport:RecycleBinScreen.kt$import androidx.compose.material.icons.automirrored.filled.*</ID>
@@ -1737,11 +1402,6 @@
     <ID>WildcardImport:ReportScreen.kt$import com.palmnote.ui.components.*</ID>
     <ID>WildcardImport:ReportScreen.kt$import com.palmnote.ui.theme.*</ID>
     <ID>WildcardImport:ReportViewModel.kt$import kotlinx.coroutines.flow.*</ID>
-    <ID>WildcardImport:SavingListScreen.kt$import androidx.compose.foundation.layout.*</ID>
-    <ID>WildcardImport:SavingListScreen.kt$import androidx.compose.material3.*</ID>
-    <ID>WildcardImport:SavingListScreen.kt$import androidx.compose.runtime.*</ID>
-    <ID>WildcardImport:SavingListScreen.kt$import com.palmnote.ui.theme.*</ID>
-    <ID>WildcardImport:SavingPlanViewModel.kt$import kotlinx.coroutines.flow.*</ID>
     <ID>WildcardImport:SearchScreen.kt$import androidx.compose.foundation.layout.*</ID>
     <ID>WildcardImport:SearchScreen.kt$import androidx.compose.material.icons.automirrored.outlined.*</ID>
     <ID>WildcardImport:SearchScreen.kt$import androidx.compose.material.icons.filled.*</ID>
@@ -1759,32 +1419,20 @@
     <ID>WildcardImport:SettingsScreen.kt$import com.palmnote.ui.theme.*</ID>
     <ID>WildcardImport:SettingsViewModel.kt$import com.palmnote.domain.repository.*</ID>
     <ID>WildcardImport:SettingsViewModel.kt$import kotlinx.coroutines.flow.*</ID>
-    <ID>WildcardImport:ShoppingKanbanScreen.kt$import androidx.compose.foundation.layout.*</ID>
-    <ID>WildcardImport:ShoppingKanbanScreen.kt$import androidx.compose.material3.*</ID>
-    <ID>WildcardImport:ShoppingKanbanScreen.kt$import androidx.compose.runtime.*</ID>
-    <ID>WildcardImport:ShoppingKanbanScreen.kt$import com.palmnote.ui.theme.*</ID>
-    <ID>WildcardImport:ShoppingPlanViewModel.kt$import kotlinx.coroutines.flow.*</ID>
     <ID>WildcardImport:SkeletonScreen.kt$import androidx.compose.animation.core.*</ID>
     <ID>WildcardImport:SkeletonScreen.kt$import androidx.compose.foundation.layout.*</ID>
     <ID>WildcardImport:SkeletonScreen.kt$import androidx.compose.runtime.*</ID>
-    <ID>WildcardImport:StudyListScreen.kt$import androidx.compose.foundation.layout.*</ID>
-    <ID>WildcardImport:StudyListScreen.kt$import androidx.compose.material3.*</ID>
-    <ID>WildcardImport:StudyListScreen.kt$import androidx.compose.runtime.*</ID>
-    <ID>WildcardImport:StudyListScreen.kt$import com.palmnote.ui.theme.*</ID>
-    <ID>WildcardImport:StudyPlanViewModel.kt$import kotlinx.coroutines.flow.*</ID>
     <ID>WildcardImport:SwipeableItem.kt$import androidx.compose.foundation.layout.*</ID>
     <ID>WildcardImport:SwipeableItem.kt$import androidx.compose.material3.*</ID>
     <ID>WildcardImport:SwipeableItem.kt$import androidx.compose.runtime.*</ID>
     <ID>WildcardImport:TagsInputComponent.kt$import androidx.compose.foundation.layout.*</ID>
     <ID>WildcardImport:TagsInputComponent.kt$import androidx.compose.material3.*</ID>
     <ID>WildcardImport:TagsInputComponent.kt$import androidx.compose.runtime.*</ID>
-    <ID>WildcardImport:TemplateCreateScreen.kt$import androidx.compose.animation.*</ID>
     <ID>WildcardImport:TemplateCreateScreen.kt$import androidx.compose.foundation.layout.*</ID>
     <ID>WildcardImport:TemplateCreateScreen.kt$import androidx.compose.material.icons.filled.*</ID>
     <ID>WildcardImport:TemplateCreateScreen.kt$import androidx.compose.material3.*</ID>
     <ID>WildcardImport:TemplateCreateScreen.kt$import androidx.compose.runtime.*</ID>
     <ID>WildcardImport:TemplateCreateScreen.kt$import com.palmnote.ui.theme.*</ID>
-    <ID>WildcardImport:TemplateCreateScreen.kt$import kotlinx.serialization.json.*</ID>
     <ID>WildcardImport:TemplateCreateViewModel.kt$import kotlinx.coroutines.flow.*</ID>
     <ID>WildcardImport:TemplateCreateViewModel.kt$import kotlinx.serialization.json.*</ID>
     <ID>WildcardImport:TemplateListScreen.kt$import androidx.compose.foundation.layout.*</ID>
@@ -1798,16 +1446,6 @@
     <ID>WildcardImport:TemplateManageScreen.kt$import com.palmnote.ui.theme.*</ID>
     <ID>WildcardImport:Theme.kt$import androidx.compose.material3.*</ID>
     <ID>WildcardImport:TodoItemDao.kt$import androidx.room.*</ID>
-    <ID>WildcardImport:TodoScreen.kt$import androidx.compose.foundation.layout.*</ID>
-    <ID>WildcardImport:TodoScreen.kt$import androidx.compose.material3.*</ID>
-    <ID>WildcardImport:TodoScreen.kt$import androidx.compose.runtime.*</ID>
-    <ID>WildcardImport:TodoScreen.kt$import com.palmnote.ui.theme.*</ID>
-    <ID>WildcardImport:TodoViewModel.kt$import kotlinx.coroutines.flow.*</ID>
-    <ID>WildcardImport:TravelListScreen.kt$import androidx.compose.foundation.layout.*</ID>
-    <ID>WildcardImport:TravelListScreen.kt$import androidx.compose.material3.*</ID>
-    <ID>WildcardImport:TravelListScreen.kt$import androidx.compose.runtime.*</ID>
-    <ID>WildcardImport:TravelListScreen.kt$import com.palmnote.ui.theme.*</ID>
-    <ID>WildcardImport:TravelPlanViewModel.kt$import kotlinx.coroutines.flow.*</ID>
     <ID>WildcardImport:UsageRecordDao.kt$import androidx.room.*</ID>
     <ID>WildcardImport:WalletDao.kt$import androidx.room.*</ID>
     <ID>WildcardImport:WalletEditScreen.kt$import androidx.compose.foundation.layout.*</ID>

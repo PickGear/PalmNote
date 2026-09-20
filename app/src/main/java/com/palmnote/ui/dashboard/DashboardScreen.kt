@@ -77,6 +77,8 @@ fun DashboardScreen(
     onNavigateToSettings: () -> Unit = {},
     onNavigateToSearch: () -> Unit = {},
     onNavigateToVault: () -> Unit = {},
+    onNavigateToAddBill: () -> Unit = {},
+    onNavigateToAddAsset: () -> Unit = {},
     viewModel: DashboardViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -165,6 +167,7 @@ fun DashboardScreen(
     var dragStartOffsetPx by remember { mutableFloatStateOf(0f) }
     var dragTotalY by remember { mutableFloatStateOf(0f) }
 
+    // 没有数据的卡片自动隐藏，保持首页干净；显隐开关只决定哪些卡片参与展示
     val filterVisible: (DashboardCardConfig) -> Boolean = { config ->
         when (config.type) {
             CardType.BUDGET_ALERT -> {
@@ -173,7 +176,6 @@ fun DashboardScreen(
                     state.monthlyExpense > 0 && state.monthlyExpense > budget.totalBudget * 0.8
             }
             CardType.ASSET_DISTRIBUTION -> state.assetDistribution.isNotEmpty()
-            CardType.GOALS -> state.goalCount > 0
             CardType.ANNIVERSARIES -> state.anniversaryCount > 0
             CardType.HABIT_TODAY -> state.habitTotal > 0
             CardType.SUBSCRIPTION -> state.upcomingSubscriptions.isNotEmpty()
@@ -398,6 +400,8 @@ fun DashboardScreen(
                                     onNavigateToBill = onNavigateToBill,
                                     onNavigateToLife = onNavigateToLife,
                                     onNavigateToVault = onNavigateToVault,
+                                    onNavigateToAddBill = onNavigateToAddBill,
+                                    onNavigateToAddAsset = onNavigateToAddAsset,
                                     onHabitCheckIn = { viewModel.checkInHabit(it) },
                                     presetCategoryOverrides = presetCategoryOverrides,
                                     categoryConfigs = categoryConfigs,

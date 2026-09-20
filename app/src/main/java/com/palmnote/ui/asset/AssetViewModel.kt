@@ -130,7 +130,8 @@ data class AddAssetFormState(
     val isSaved: Boolean = false,
     val nameError: String? = null,
     val categoryError: String? = null,
-    val dateError: String? = null
+    val dateError: String? = null,
+    val saveError: String? = null
 )
 
 @HiltViewModel
@@ -543,9 +544,10 @@ class AssetViewModel @Inject constructor(
         }
         if (hasError) return
 
-        _formState.value = form.copy(isSaving = true)
+        _formState.value = form.copy(isSaving = true, saveError = null)
 
         viewModelScope.launch {
+            try {
             val price = Money.parse(form.purchasePrice)?.cents ?: 0L
             val now = System.currentTimeMillis()
 
@@ -597,6 +599,12 @@ class AssetViewModel @Inject constructor(
             }
 
             _formState.value = form.copy(isSaving = false, isSaved = true)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // 保存失败必须复位 isSaving 并提示，否则按钮永久禁用、用户无感知
+                _formState.value = _formState.value.copy(isSaving = false, saveError = e.message ?: e.javaClass.simpleName)
+            }
         }
     }
 

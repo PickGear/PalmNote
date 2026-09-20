@@ -15,7 +15,8 @@ import java.util.TimeZone
 
 class CalendarSyncManager(
     private val context: Context,
-    private val anniversaryRepository: AnniversaryRepository
+    private val anniversaryRepository: AnniversaryRepository,
+    private val lifeItemRepository: com.palmnote.domain.repository.LifeItemRepository
 ) {
     companion object {
         const val CALENDAR_ACCOUNT = "com.palmnote.sync"
@@ -67,7 +68,20 @@ class CalendarSyncManager(
         try {
             val calendarId = getOrCreateCalendarId() ?: return@withContext Result.failure(Exception(context.getString(R.string.calendar_sync_error_create_failed)))
             val resolver = context.contentResolver
-            val anniversaries = anniversaryRepository.getAllAnniversaries().first().filter { it.isYearly }
+            // 数据源 = 旧版 anniversary 表（CSV 导入）∪ 生日/纪念日 LifeItem（生活页创建）
+            val legacy = anniversaryRepository.getAllAnniversaries().first().filter { it.isYearly }
+            val lifeItems = lifeItemRepository.getAnniversaryLikeItems().first()
+                .map { item -> item.copy(dueDate = item.dueDate) }
+                .map { item ->
+                    Anniversary(
+                        id = -item.id - 1_000_000L,
+                        title = item.title,
+                        solarDate = item.dueDate ?: 0L,
+                        type = "CUSTOM",
+                        isYearly = true
+                    )
+                }
+            val anniversaries = legacy + lifeItems
 
             deleteExistingEvents(resolver, calendarId)
             var count = 0

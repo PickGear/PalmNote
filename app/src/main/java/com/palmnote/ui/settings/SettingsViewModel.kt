@@ -14,6 +14,7 @@ import com.palmnote.app.R
 import com.palmnote.data.datastore.PreferencesManager
 import com.palmnote.data.AppIconManager
 import com.palmnote.data.export.CsvDataExporter
+import com.palmnote.data.export.ExportScope
 import com.palmnote.data.lock.AppLockManager
 import com.palmnote.domain.repository.*
 import com.palmnote.data.sync.CalendarSyncManager
@@ -319,9 +320,9 @@ class SettingsViewModel @Inject constructor(
     fun setProfileAvatar(avatar: String) { viewModelScope.launch { preferencesManager.setProfileAvatar(avatar) } }
     fun setProfileAvatarPath(path: String) { viewModelScope.launch { preferencesManager.setProfileAvatarPath(path) } }
 
-    fun exportData(uri: Uri) {
+    fun exportData(uri: Uri, scope: ExportScope = ExportScope.ALL) {
         viewModelScope.launch {
-            csvDataExporter.exportToUri(uri).onSuccess { msg ->
+            csvDataExporter.exportToUri(uri, scope).onSuccess { msg ->
                 _state.value = _state.value.copy(resultMessage = msg)
             }.onFailure { e ->
                 _state.value = _state.value.copy(resultMessage = context.getString(R.string.settings_export_failed, e.message ?: ""))
@@ -329,16 +330,6 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun importData(uri: Uri) {
-        viewModelScope.launch {
-            csvDataExporter.importFromUri(uri).onSuccess { count ->
-                val msg = if (count > 0) context.getString(R.string.settings_import_success, count) else context.getString(R.string.settings_import_no_data)
-                _state.value = _state.value.copy(resultMessage = msg)
-            }.onFailure { e ->
-                _state.value = _state.value.copy(resultMessage = context.getString(R.string.settings_import_failed, e.message ?: ""))
-            }
-        }
-    }
 
     fun clearCache(@ApplicationContext context: Context) {
         viewModelScope.launch {

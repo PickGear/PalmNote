@@ -47,6 +47,14 @@ class EncryptedOpenHelperFactory(
         @Synchronized
         fun migrateIfPlaintext(context: Context, dbName: String, key: ByteArray) {
             val dbFile = context.getDatabasePath(dbName)
+            // 进程死亡恢复：改名备份已就位但加密库未替换完成时，dbFile 不存在而备份在。
+            // 不恢复的话 SupportOpenHelperFactory 会静默建一个全新空库，用户数据滞留在备份里。
+            // 恢复后不能 return：恢复出来的是明文库，必须继续落入下方流程，
+            // 在本次调用内完成加密迁移——否则下一步拿 SQLCipher 密钥开明文库必然报错。
+            val backup = File(dbFile.path + ".plaintext-bak")
+            if (!dbFile.exists() && backup.exists()) {
+                backup.renameTo(dbFile)
+            }
             if (!dbFile.exists()) return
             if (!isPlaintext(dbFile)) return
 
@@ -74,11 +82,25 @@ class EncryptedOpenHelperFactory(
                     stmt.close()
                 }
 
-                // 3. 原子替换：删除明文库及附属文件，改名加密库
-                dbFile.delete()
-                File(dbFile.path + "-wal").delete()
-                File(dbFile.path + "-shm").delete()
-                temp.renameTo(dbFile)
+                // 3. 原子替换：先把明文库改名留作备份，再改名加密库；仅当加密库就位后才删除备份。
+                //    直接 delete 明文库再 rename，中途任何一步失败都会永久丢库。
+                val backup = File(dbFile.path + ".plaintext-bak")
+                backup.delete()
+                if (!dbFile.renameTo(backup)) {
+                    throw IllegalStateException("明文库重命名失败，中止加密迁移: $dbFile")
+                }
+                try {
+                    File(dbFile.path + "-wal").delete()
+                    File(dbFile.path + "-shm").delete()
+                    if (!temp.renameTo(dbFile)) {
+                        throw IllegalStateException("加密库改名失败，恢复原库: $dbFile")
+                    }
+                } catch (e: Throwable) {
+                    // 加密库未就位：把明文备份改回原名，保住数据
+                    backup.renameTo(dbFile)
+                    throw e
+                }
+                backup.delete()
             } finally {
                 temp.delete()
             }

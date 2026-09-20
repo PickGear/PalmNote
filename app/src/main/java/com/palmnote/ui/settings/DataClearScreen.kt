@@ -11,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
@@ -18,8 +19,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.palmnote.app.R
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.palmnote.ui.components.*
 import com.palmnote.ui.theme.*
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -30,8 +34,32 @@ fun DataClearScreen(
     var showConfirmDialog by remember { mutableStateOf(false) }
     var clearTarget by remember { mutableStateOf("") }
     var clearLabelResId by remember { mutableIntStateOf(R.string.data_clear_asset) }
+    val clearContext = LocalContext.current
+    val clearState by viewModel.state.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
+    // 清除结果反馈：成功提示 + 失败可感知；失败留在本页让用户可以重试
+    LaunchedEffect(clearState.success, clearState.error) {
+        when {
+            clearState.success -> snackbarHostState.showSnackbar(clearContext.getString(R.string.data_clear_done))
+            clearState.error != null -> snackbarHostState.showSnackbar(clearState.error ?: "")
+        }
+        if (clearState.success || clearState.error != null) {
+            delay(100)
+            viewModel.consumeResult()
+        }
+    }
+
+    if (clearState.clearing) {
+        BlockingProgressDialog(
+            message = stringResource(R.string.data_clear_running),
+            detail = stringResource(R.string.data_clear_running_detail)
+        )
+    }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             CompactTopAppBar(
                 title = stringResource(R.string.data_clear_title),
@@ -109,8 +137,8 @@ fun DataClearScreen(
                         "life" -> viewModel.clearLife()
                         "all" -> viewModel.clearAll()
                     }
+                    // 不再立即返回：阻断进度 + 结果反馈需要留在本页展示
                     showConfirmDialog = false
-                    onNavigateBack()
                 }) {
                     Text(stringResource(R.string.data_clear_action), color = ErrorLight)
                 }

@@ -4,8 +4,13 @@ import javax.inject.Inject
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
+import androidx.room.withTransaction
+import com.palmnote.data.db.AppDatabase
+import com.palmnote.data.db.FieldValueExtractor
+import com.palmnote.data.db.dao.FieldValueDao
 import com.palmnote.data.db.dao.LifeItemDao
 import com.palmnote.data.db.dao.LifeItemPagingSource
+import com.palmnote.data.db.entity.FieldValue
 import com.palmnote.data.db.entity.LifeItem
 import com.palmnote.domain.model.FieldConfig
 import com.palmnote.domain.model.FieldType
@@ -26,6 +31,8 @@ import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 class LifeItemRepositoryImpl @Inject constructor(
     private val dao: LifeItemDao,
+    private val fieldValueDao: FieldValueDao,
+    private val appDatabase: AppDatabase,
     private val templateRepo: LifeTemplateRepository
 ) : LifeItemRepository {
     private val permissiveJson = Json { ignoreUnknownKeys = true }
@@ -46,31 +53,38 @@ class LifeItemRepositoryImpl @Inject constructor(
     override suspend fun search(query: String): List<LifeItem> = dao.search(query)
     override suspend fun insertItem(item: LifeItem): Long = try {
         val (dueDate, dueTime) = mirrorExecutionColumns(item.templateId, item.fieldsData)
-        dao.insertItem(item.copy(dueDate = item.dueDate ?: dueDate, dueTime = item.dueTime ?: dueTime))
+        val id = appDatabase.withTransaction {
+            dao.insertItem(item.copy(dueDate = item.dueDate ?: dueDate, dueTime = item.dueTime ?: dueTime))
+        }
+        syncFieldValues(id, item.templateId, item.fieldsData)
+        id
     } catch (e: Exception) {
         AppLogger.e("LifeItemRepo", "insertItem failed", e)
         throw e
     }
     override suspend fun updateItem(item: LifeItem) = try {
         val (dueDate, dueTime) = mirrorExecutionColumns(item.templateId, item.fieldsData)
-        dao.updateItem(
-            id = item.id,
-            title = item.title,
-            fieldsData = item.fieldsData,
-            status = item.status,
-            note = item.note,
-            sortOrder = item.sortOrder,
-            isFavorite = item.isFavorite,
-            dueDate = item.dueDate ?: dueDate,
-            dueTime = item.dueTime ?: dueTime,
-            recurring = item.recurring,
-            recurringEndType = item.recurringEndType,
-            recurringEndCount = item.recurringEndCount,
-            recurringEndDate = item.recurringEndDate,
-            parentId = item.parentId,
-            remindAt = item.remindAt,
-            meta = item.meta
-        )
+        appDatabase.withTransaction {
+            dao.updateItem(
+                id = item.id,
+                title = item.title,
+                fieldsData = item.fieldsData,
+                status = item.status,
+                note = item.note,
+                sortOrder = item.sortOrder,
+                isFavorite = item.isFavorite,
+                dueDate = item.dueDate ?: dueDate,
+                dueTime = item.dueTime ?: dueTime,
+                recurring = item.recurring,
+                recurringEndType = item.recurringEndType,
+                recurringEndCount = item.recurringEndCount,
+                recurringEndDate = item.recurringEndDate,
+                parentId = item.parentId,
+                remindAt = item.remindAt,
+                meta = item.meta
+            )
+        }
+        syncFieldValues(item.id, item.templateId, item.fieldsData)
     } catch (e: Exception) {
         AppLogger.e("LifeItemRepo", "updateItem failed", e)
         throw e
@@ -85,9 +99,29 @@ class LifeItemRepositoryImpl @Inject constructor(
         val existing = dao.getItemById(id)
         val (dueDate, dueTime) = mirrorExecutionColumns(existing?.templateId ?: -1L, fieldsData)
         dao.updateFieldsDataWithSchedule(id, fieldsData, dueDate ?: existing?.dueDate, dueTime ?: existing?.dueTime)
+        syncFieldValues(id, existing?.templateId ?: -1L, fieldsData)
     } catch (e: Exception) {
         AppLogger.e("LifeItemRepo", "updateFieldsData failed", e)
         throw e
+    }
+
+    /**
+     * 统计信源双写（总纲 §7.1）：删旧插新，与 fieldsData 同一变更生效。
+     * fieldsConfig 缺失 / 解析失败时清空该条目统计行并记录，不让统计问题阻断主写入。
+     */
+    private suspend fun syncFieldValues(itemId: Long, templateId: Long, fieldsData: String) {
+        try {
+            val config = templateRepo.getTemplateById(templateId)?.fieldsConfig ?: ""
+            val rows = FieldValueExtractor.extract(config, fieldsData)
+            appDatabase.withTransaction {
+                fieldValueDao.deleteByItem(itemId)
+                if (rows.isNotEmpty()) {
+                    fieldValueDao.insertAll(rows.map { FieldValue(itemId = itemId, fieldKey = it.fieldKey, type = it.type, num = it.num, text = it.text, dateMs = it.dateMs, json = it.json, idx = it.idx) })
+                }
+            }
+        } catch (e: Exception) {
+            AppLogger.e("LifeItemRepo", "syncFieldValues failed for item $itemId", e)
+        }
     }
     override suspend fun setFavorite(id: Long, favorite: Boolean) = try {
         dao.setFavorite(id, favorite)
@@ -201,6 +235,12 @@ class LifeItemRepositoryImpl @Inject constructor(
 
     override fun getSubtasks(parentId: Long): Flow<List<LifeItem>> = dao.getSubtasks(parentId)
 
+    override fun getAnniversaryLikeItems(): Flow<List<LifeItem>> = dao.getAnniversaryLikeItems()
+
     override fun getOverdue(now: Long): Flow<List<LifeItem>> = dao.getOverdue(now)
     override fun searchItems(query: String): Flow<List<LifeItem>> = dao.searchItems(query)
+    override fun getDayCountsBetween(start: Long, end: Long): Flow<List<com.palmnote.data.db.dao.LifeDayCount>> =
+        dao.getDayCountsBetween(start, end)
+    override fun getDayCategoryCountsBetween(start: Long, end: Long): Flow<List<com.palmnote.data.db.dao.LifeDayCategoryCount>> =
+        dao.getDayCategoryCountsBetween(start, end)
 }

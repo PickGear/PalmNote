@@ -30,6 +30,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.palmnote.ui.components.CompactTopAppBar
 import com.palmnote.app.R
 import com.palmnote.ui.components.*
+import com.palmnote.ui.components.SectionHeader
+import com.palmnote.ui.components.ChoiceDialog
+import com.palmnote.ui.components.SettingRowContent
+import com.palmnote.ui.components.SettingRow
 import com.palmnote.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -39,12 +43,12 @@ fun ReminderSettingsScreen(
     viewModel: SettingsViewModel
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    var showDailyTimePicker by remember { mutableStateOf(false) }
-    var showBillTimePicker by remember { mutableStateOf(false) }
     var showBirthdayAdvancePicker by remember { mutableStateOf(false) }
     var showAnniversaryAdvancePicker by remember { mutableStateOf(false) }
     var showNotificationPermissionDialog by remember { mutableStateOf(false) }
     var showNotificationDeniedDialog by remember { mutableStateOf(false) }
+    // 两个提醒时间选择共用同一个参数化对话框
+    var pickerTarget by remember { mutableStateOf<TimePickerTarget?>(null) }
     val context = LocalContext.current
     val notificationPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) viewModel.setDailyReminderEnabled(true)
@@ -79,7 +83,6 @@ fun ReminderSettingsScreen(
             item { SectionHeader(stringResource(R.string.settings_reminder_daily_section), Icons.Outlined.Notifications, AccentOrange) }
             item {
                 ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
-                    Spacer(modifier = Modifier.height(12.dp))
                     SettingRow {
                         SettingRowContent(
                             title = stringResource(R.string.settings_daily_reminder),
@@ -99,7 +102,7 @@ fun ReminderSettingsScreen(
                     }
                     if (state.dailyReminderEnabled) {
                         HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-                        SettingRow(clickable = { showDailyTimePicker = true }) {
+                        SettingRow(clickable = { pickerTarget = TimePickerTarget(state.dailyReminderHour, state.dailyReminderMinute) { h, m -> viewModel.setDailyReminderTime(h, m) } }) {
                             SettingRowContent(
                                 title = stringResource(R.string.settings_reminder_time),
                                 subtitle = stringResource(R.string.settings_reminder_time_subtitle),
@@ -122,7 +125,7 @@ fun ReminderSettingsScreen(
                     }
                     if (state.billReminderEnabled) {
                         HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-                        SettingRow(clickable = { showBillTimePicker = true }) {
+                        SettingRow(clickable = { pickerTarget = TimePickerTarget(state.billReminderHour, state.billReminderMinute) { h, m -> viewModel.setBillReminderTime(h, m) } }) {
                             SettingRowContent(
                                 title = stringResource(R.string.settings_reminder_time),
                                 subtitle = stringResource(R.string.settings_reminder_time_bill_subtitle),
@@ -137,7 +140,6 @@ fun ReminderSettingsScreen(
             item { SectionHeader(stringResource(R.string.settings_reminder_advance_section), Icons.Outlined.Event, LifePlan) }
             item {
                 ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
-                    Spacer(modifier = Modifier.height(12.dp))
                     SettingRow(clickable = { showBirthdayAdvancePicker = true }) {
                         SettingRowContent(
                             title = stringResource(R.string.settings_birthday_advance),
@@ -162,14 +164,14 @@ fun ReminderSettingsScreen(
         }
     }
 
-    if (showDailyTimePicker) {
+    pickerTarget?.let { target ->
         val timePickerState = rememberTimePickerState(
-            initialHour = state.dailyReminderHour,
-            initialMinute = state.dailyReminderMinute,
+            initialHour = target.initialHour,
+            initialMinute = target.initialMinute,
             is24Hour = true
         )
         AppDialog(
-            onDismissRequest = { showDailyTimePicker = false },
+            onDismissRequest = { pickerTarget = null },
             title = { Text(stringResource(R.string.settings_select_reminder_time), fontWeight = FontWeight.Bold) },
             text = {
                 Column(
@@ -181,112 +183,45 @@ fun ReminderSettingsScreen(
             },
             confirmButton = {
                 TextButton(onClick = {
-                    viewModel.setDailyReminderTime(timePickerState.hour, timePickerState.minute)
-                    showDailyTimePicker = false
+                    target.onConfirm(timePickerState.hour, timePickerState.minute)
+                    pickerTarget = null
                 }) {
                     Text(stringResource(R.string.confirm))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDailyTimePicker = false }) {
+                TextButton(onClick = { pickerTarget = null }) {
                     Text(stringResource(R.string.settings_cancel))
                 }
             }
         )
     }
 
-    if (showBillTimePicker) {
-        val timePickerState = rememberTimePickerState(
-            initialHour = state.billReminderHour,
-            initialMinute = state.billReminderMinute,
-            is24Hour = true
-        )
-        AppDialog(
-            onDismissRequest = { showBillTimePicker = false },
-            title = { Text(stringResource(R.string.settings_select_reminder_time), fontWeight = FontWeight.Bold) },
-            text = {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    TimePicker(state = timePickerState, modifier = Modifier.fillMaxWidth())
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    viewModel.setBillReminderTime(timePickerState.hour, timePickerState.minute)
-                    showBillTimePicker = false
-                }) {
-                    Text(stringResource(R.string.confirm))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showBillTimePicker = false }) {
-                    Text(stringResource(R.string.settings_cancel))
-                }
-            }
-        )
-    }
-
+    // 提前天数选择：两个对话框结构相同，仅色与图标不同，用 ChoiceDialog 统一
+    val advanceDaysOptions = listOf(1, 2, 3, 5, 7, 14)
     if (showBirthdayAdvancePicker) {
-        val options = listOf(1, 2, 3, 5, 7, 14)
-        AppDialog(
-            onDismissRequest = { showBirthdayAdvancePicker = false },
-            title = { Text(stringResource(R.string.settings_birthday_advance_title), fontWeight = FontWeight.Bold) },
-            text = {
-                Column {
-                    options.forEach { days ->
-                        Row(
-                            modifier = Modifier.fillMaxWidth().clip(MaterialTheme.shapes.medium).clickable { viewModel.setBirthdayReminderAdvanceDays(days); showBirthdayAdvancePicker = false }.padding(vertical = 8.dp, horizontal = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(AccentOrange.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) {
-                                Icon(Icons.Outlined.Cake, contentDescription = null, tint = AccentOrange, modifier = Modifier.size(20.dp))
-                            }
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Text(stringResource(R.string.settings_days, days), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-                            RadioButton(
-                                selected = state.birthdayReminderAdvanceDays == days,
-                                onClick = { viewModel.setBirthdayReminderAdvanceDays(days); showBirthdayAdvancePicker = false },
-                                colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary)
-                            )
-                        }
-                        if (days != options.last()) HorizontalDivider(modifier = Modifier.padding(horizontal = 52.dp))
-                    }
-                }
-            },
-            confirmButton = { TextButton(onClick = { showBirthdayAdvancePicker = false }) { Text(stringResource(R.string.settings_cancel), fontWeight = FontWeight.Bold) } }
+        ChoiceDialog(
+            title = stringResource(R.string.settings_birthday_advance_title),
+            options = advanceDaysOptions,
+            selected = state.birthdayReminderAdvanceDays,
+            optionLabel = { stringResource(R.string.settings_days, it) },
+            optionIcon = { Icons.Outlined.Cake },
+            optionTint = { AccentOrange },
+            onSelect = { viewModel.setBirthdayReminderAdvanceDays(it) },
+            onDismiss = { showBirthdayAdvancePicker = false }
         )
     }
 
     if (showAnniversaryAdvancePicker) {
-        val options = listOf(1, 2, 3, 5, 7, 14)
-        AppDialog(
-            onDismissRequest = { showAnniversaryAdvancePicker = false },
-            title = { Text(stringResource(R.string.settings_anniversary_advance_title), fontWeight = FontWeight.Bold) },
-            text = {
-                Column {
-                    options.forEach { days ->
-                        Row(
-                            modifier = Modifier.fillMaxWidth().clip(MaterialTheme.shapes.medium).clickable { viewModel.setAnniversaryReminderAdvanceDays(days); showAnniversaryAdvancePicker = false }.padding(vertical = 8.dp, horizontal = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(ErrorLight.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) {
-                                Icon(Icons.Outlined.FavoriteBorder, contentDescription = null, tint = ErrorLight, modifier = Modifier.size(20.dp))
-                            }
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Text(stringResource(R.string.settings_days, days), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-                            RadioButton(
-                                selected = state.anniversaryReminderAdvanceDays == days,
-                                onClick = { viewModel.setAnniversaryReminderAdvanceDays(days); showAnniversaryAdvancePicker = false },
-                                colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary)
-                            )
-                        }
-                        if (days != options.last()) HorizontalDivider(modifier = Modifier.padding(horizontal = 52.dp))
-                    }
-                }
-            },
-            confirmButton = { TextButton(onClick = { showAnniversaryAdvancePicker = false }) { Text(stringResource(R.string.settings_cancel), fontWeight = FontWeight.Bold) } }
+        ChoiceDialog(
+            title = stringResource(R.string.settings_anniversary_advance_title),
+            options = advanceDaysOptions,
+            selected = state.anniversaryReminderAdvanceDays,
+            optionLabel = { stringResource(R.string.settings_days, it) },
+            optionIcon = { Icons.Outlined.FavoriteBorder },
+            optionTint = { ErrorLight },
+            onSelect = { viewModel.setAnniversaryReminderAdvanceDays(it) },
+            onDismiss = { showAnniversaryAdvancePicker = false }
         )
     }
 
@@ -327,3 +262,10 @@ fun ReminderSettingsScreen(
         )
     }
 }
+
+/** 时间选择对话框的目标：初始值 + 确认回调（每日提醒/记账提醒共用一个对话框）。 */
+private data class TimePickerTarget(
+    val initialHour: Int,
+    val initialMinute: Int,
+    val onConfirm: (Int, Int) -> Unit
+)

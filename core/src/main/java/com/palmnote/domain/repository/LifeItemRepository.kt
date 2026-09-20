@@ -42,10 +42,17 @@ interface LifeItemRepository {
 
     /** 计划页子任务。 */
     fun getSubtasks(parentId: Long): Flow<List<LifeItem>>
+    fun getAnniversaryLikeItems(): Flow<List<LifeItem>>
 
     /** 逾期反馈。 */
     fun getOverdue(now: Long): Flow<List<LifeItem>>
 
     /** 全量搜索：标题 / 备注 / 字段值全文。 */
     fun searchItems(query: String): Flow<List<LifeItem>>
+
+    /** 月历密度（v4 §五）：按天条数。 */
+    fun getDayCountsBetween(start: Long, end: Long): Flow<List<com.palmnote.data.db.dao.LifeDayCount>>
+
+    /** 月历分类小点：按天 × 模板分类计数。 */
+    fun getDayCategoryCountsBetween(start: Long, end: Long): Flow<List<com.palmnote.data.db.dao.LifeDayCategoryCount>>
 }

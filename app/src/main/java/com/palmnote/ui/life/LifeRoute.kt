@@ -2,51 +2,29 @@ package com.palmnote.ui.life
 
 import kotlinx.serialization.Serializable
 
-/** Life 模块内嵌 NavHost 的类型安全路由（后缀 Route 避免与主题色/实体类撞名） */
+/** 生活页内部（嵌套）路由——页面内导航跳转与路由切换。 */
 @Serializable
-data object LifeHomeRoute
+data object LifeHome
 
 @Serializable
-data class LifeTemplateRoute(val templateId: Long)
+data class LifeDetail(
+    val title: String,
+    val iconKey: String = "",
+    val accentHex: String = "",
+    val heroLabel: String = "",
+    val heroValue: String = ""
+)
 
 @Serializable
-data class LifeItemRoute(val itemId: Long)
+data class LifeList(
+    val title: String,
+    val subtitle: String = ""
+)
 
 @Serializable
-data class LifeCreateRoute(val templateId: Long)
+data class LifeDayRead(
+    val dayLabel: String
+)
 
 @Serializable
-data class LifeEditRoute(val itemId: Long)
-
-@Serializable
-data object LifeFocusRoute
-
-@Serializable
-data object LifeHabitRoute
-
-@Serializable
-data object LifeMoodRoute
-
-@Serializable
-data object LifeJournalRoute
-
-@Serializable
-data object LifeTodoRoute
-
-@Serializable
-data object LifeReportRoute
-
-@Serializable
-data object LifeAchievementRoute
-
-@Serializable
-data object LifeTemplateManageRoute
-
-@Serializable
-data object LifeTemplateCreateRoute
-
-@Serializable
-data object LifeStatsRoute
-
-@Serializable
-data class LifeCategoryDetailRoute(val category: String)
+data object LifeStats

@@ -24,7 +24,6 @@ class HabitCheckInReceiver : BroadcastReceiver() {
     @InstallIn(SingletonComponent::class)
     interface CheckInEntryPoint {
         fun goalRepository(): GoalRepository
-        fun goalCheckInDao(): com.palmnote.data.db.dao.GoalCheckInDao
     }
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -42,13 +41,13 @@ class HabitCheckInReceiver : BroadcastReceiver() {
                 val dayStart = today.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
                 val dayEnd = today.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
-                val dao = entryPoint.goalCheckInDao()
-                if (dao.getTodayCheckIn(goalId, dayStart, dayEnd) == null) {
-                    val repository = entryPoint.goalRepository()
-                    repository.insertCheckIn(GoalCheckIn(goalId = goalId, date = dayStart))
-                    repository.incrementGoalProgress(goalId)
-                }
+                val repository = entryPoint.goalRepository()
+                // 仓库层 insertCheckIn 已在事务内判重；返回 -1 表示当日已打过
+                val checkInId = repository.insertCheckIn(GoalCheckIn(goalId = goalId, date = dayStart))
+                if (checkInId > 0) repository.incrementGoalProgress(goalId)
                 HabitWidgetProvider.requestUpdateAll(context)
+                // Dashboard 小组件展示目标完成率，打卡后需同步刷新，否则要等到下一轮轮询才更新
+                WidgetUpdateHelper.refreshDashboardWidgets()
             } catch (e: Exception) {
                 AppLogger.e("HabitCheckInReceiver", "Widget check-in failed", e)
             } finally {

@@ -17,8 +17,10 @@ import com.palmnote.domain.util.DateUtils
 import com.palmnote.feature.vault.VaultRepository
 import com.palmnote.ui.theme.AppIcon
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import com.palmnote.domain.util.AppLogger
 
@@ -31,11 +33,8 @@ data class DashboardState(
     val monthlyIncome: Long = 0,
     val budget: Budget? = null,
     val budgetReminderEnabled: Boolean = true,
-    val goalCount: Int = 0,
-    val completedGoalCount: Int = 0,
     val anniversaryCount: Int = 0,
     val upcomingAnniversaries: List<Anniversary> = emptyList(),
-    val recentGoals: List<Goal> = emptyList(),
     val assetDistribution: List<CategoryCount> = emptyList(),
     val vaultCount: Int = 0,
     val habitTotal: Int = 0,
@@ -65,12 +64,14 @@ class DashboardViewModel @Inject constructor(
     private val vaultRepository: VaultRepository,
     private val walletRepository: WalletRepository,
     private val lifeItemRepository: LifeItemRepository,
-    private val cachedCategoryConfigs: @JvmSuppressWildcards StateFlow<List<CategoryConfig>>
+    private val cachedCategoryConfigs: @JvmSuppressWildcards StateFlow<List<CategoryConfig>>,
+    private val templateRepository: LifeTemplateRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(DashboardState())
     val state: StateFlow<DashboardState> = _state.asStateFlow()
 
+    private val _itemTemplateIcons = MutableStateFlow<Map<Long, String>>(emptyMap())
     private val _cardConfigs = MutableStateFlow(DashboardCardConfig.defaults)
     val cardConfigs: StateFlow<List<DashboardCardConfig>> = _cardConfigs.asStateFlow()
 
@@ -102,6 +103,11 @@ class DashboardViewModel @Inject constructor(
     init {
         loadDashboardData()
         loadBudgetReminder()
+        viewModelScope.launch {
+            templateRepository.getAllTemplates().collect { tpls ->
+                _itemTemplateIcons.value = tpls.associate { it.id to it.icon }
+            }
+        }
         loadCardConfigs()
         loadVaultData()
         loadDashboardMessageMode()
@@ -117,7 +123,8 @@ class DashboardViewModel @Inject constructor(
 
     private fun loadCardConfigs() {
         viewModelScope.launch {
-            preferencesManager.dashboardCardConfigs.first().let { configs ->
+            // collect 而非 first()：外部修改卡片配置时保持同步
+            preferencesManager.dashboardCardConfigs.collect { configs ->
                 _cardConfigs.value = configs
             }
         }
@@ -192,8 +199,10 @@ class DashboardViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val today = DateUtils.getTodayStart()
-                goalRepository.insertCheckIn(com.palmnote.data.db.entity.GoalCheckIn(goalId = goalId, date = today))
-                goalRepository.incrementGoalProgress(goalId)
+                val already = goalRepository.getTodayCheckedGoalIds(today, today + DateUtils.MILLIS_PER_DAY).first()
+                if (goalId in already) return@launch  // 快速连点/重复回调会导致当日重复计数
+                val checkInId = goalRepository.insertCheckIn(com.palmnote.data.db.entity.GoalCheckIn(goalId = goalId, date = today))
+                if (checkInId > 0) goalRepository.incrementGoalProgress(goalId)
             } catch (e: Exception) {
                 AppLogger.e("DashboardVM", "checkInHabit failed", e)
             }
@@ -219,11 +228,8 @@ class DashboardViewModel @Inject constructor(
                         monthlyExpense = c.billData.first,
                         monthlyIncome = c.billData.second,
                         budget = c.budget,
-                        goalCount = c.gaData.goalCount,
-                        completedGoalCount = c.gaData.completedGoalCount,
                         anniversaryCount = c.gaData.anniversaryCount,
                         upcomingAnniversaries = c.gaData.anniversaries.sortedBy { it.daysUntil }.take(3),
-                        recentGoals = c.gaData.goals.take(3),
                         assetDistribution = c.assetData.third,
                         habitTotal = c.habitData.total,
                         habitChecked = c.habitData.checked,
@@ -234,7 +240,25 @@ class DashboardViewModel @Inject constructor(
         }
     }
 
-    private fun buildDashboardFlow(): Flow<Pair<CoreData, List<SubscriptionDueItem>>> {
+    /** 跨天信号：每次进入新的一天发一枚，让月度/今日维度的数据在午夜后自动重算。 */
+    private fun dayTickFlow(): Flow<Unit> = flow {
+        while (currentCoroutineContext().isActive) {
+            emit(Unit)
+            val now = java.util.Calendar.getInstance()
+            val next = (now.clone() as java.util.Calendar).apply {
+                add(java.util.Calendar.DAY_OF_YEAR, 1)
+                set(java.util.Calendar.HOUR_OF_DAY, 0)
+                set(java.util.Calendar.MINUTE, 0)
+                set(java.util.Calendar.SECOND, 0)
+                set(java.util.Calendar.MILLISECOND, 0)
+            }
+            delay((next.timeInMillis - System.currentTimeMillis()).coerceAtLeast(1000L))
+        }
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    private fun buildDashboardFlow(): Flow<Pair<CoreData, List<SubscriptionDueItem>>> = dayTickFlow().flatMapLatest {
+        // 月/今日的边界此前在 VM 创建时算死，跨天后预算/今日打卡一直是旧值
         val currentYearMonth = DateUtils.getCurrentYearMonth()
         val todayStart = DateUtils.getTodayStart()
         val tomorrowStart = todayStart + DateUtils.MILLIS_PER_DAY
@@ -252,15 +276,23 @@ class DashboardViewModel @Inject constructor(
         ) { expense, income ->
             Pair(expense ?: 0L, income ?: 0L)
         }
-        val gaFlow = combine(
-            goalRepository.getNonHabitGoalCount(),
-            goalRepository.getCompletedNonHabitGoalCount(),
-            anniversaryRepository.getAnniversaryCount(),
-            anniversaryRepository.getAllAnniversaries(),
-            goalRepository.getRecentGoals()
-        ) { goalCount, completedCount, annivCount, anniversaries, goals ->
-            GoalAnnivData(goalCount, completedCount, annivCount, anniversaries, goals)
-        }
+        // 纪念日数据源 = 生日/纪念日 LifeItem（生活页创建）∪ 旧版 anniversary 表（CSV 导入兼容）
+        val gaFlow = lifeItemRepository.getAnniversaryLikeItems()
+            .combine(anniversaryRepository.getAllAnniversaries()) { items, legacy ->
+                val today = java.time.LocalDate.now()
+                val mapped = items.map { item ->
+                    val tplIcon = _itemTemplateIcons.value[item.templateId]
+                    val date = item.dueDate ?: 0L
+                    Anniversary(
+                        id = -item.id - 1_000_000L,
+                        title = item.title,
+                        solarDate = date,
+                        type = if (tplIcon == "cake") "BIRTHDAY" else "CUSTOM"
+                    )
+                }
+                legacy + mapped
+            }
+            .map { all -> GoalAnnivData(all.size, all) }
         val habitFlow = combine(
             goalRepository.getHabitGoals(),
             goalRepository.getTodayCheckedGoalIds(todayStart, tomorrowStart)
@@ -279,8 +311,9 @@ class DashboardViewModel @Inject constructor(
         val core = combine(assetFlow, billFlow, gaFlow, budgetFlow, habitFlow) { assetData, billData, gaData, budget, habitData ->
             CoreData(assetData, billData, gaData, budget, habitData)
         }
-        return combine(core, subFlow) { c, subs -> c to subs }
+        combine(core, subFlow) { c, subs -> c to subs }
     }
+
     private fun loadVaultData() {
         viewModelScope.launch {
             // 仅统计条数，不预载条目明文元数据（title/username）到内存，保护隐私
@@ -294,11 +327,8 @@ class DashboardViewModel @Inject constructor(
 }
 
 private data class GoalAnnivData(
-    val goalCount: Int,
-    val completedGoalCount: Int,
     val anniversaryCount: Int,
-    val anniversaries: List<Anniversary>,
-    val goals: List<Goal>
+    val anniversaries: List<Anniversary>
 )
 
 private data class HabitData(

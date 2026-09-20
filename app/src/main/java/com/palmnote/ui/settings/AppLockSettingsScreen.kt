@@ -7,12 +7,17 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.PhoneAndroid
+import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -26,6 +31,10 @@ import com.palmnote.ui.components.AppDialog
 import com.palmnote.ui.components.CapsuleSwitch
 import com.palmnote.ui.components.CompactTopAppBar
 import com.palmnote.ui.components.ModuleCard
+import com.palmnote.ui.components.SectionHeader
+import com.palmnote.ui.components.ChoiceDialog
+import com.palmnote.ui.components.SettingRowContent
+import com.palmnote.ui.components.SettingRow
 import com.palmnote.ui.lock.ChangePinDialog
 import com.palmnote.ui.lock.DEFAULT_PIN_LENGTH
 import com.palmnote.ui.lock.PinDotsDisplay
@@ -258,7 +267,7 @@ private fun AppLockSettingsList(
                     text = stringResource(R.string.app_lock_security_hint),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                    modifier = Modifier.padding(vertical = 8.dp)
                 )
             }
 
@@ -355,35 +364,22 @@ private fun AutoLockModeDialog(
     onSelect: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
+    data class ModeOption(val mode: String, val titleRes: Int, val hintRes: Int, val icon: ImageVector, val tint: Color)
+
     val modes = listOf(
-        Triple(
-            PreferencesManager.AUTO_LOCK_MODE_SYSTEM,
-            R.string.app_lock_auto_lock_system,
-            R.string.app_lock_auto_lock_system_hint
-        ),
-        Triple(
-            PreferencesManager.AUTO_LOCK_MODE_IMMEDIATE,
-            R.string.app_lock_auto_lock_immediate,
-            R.string.app_lock_auto_lock_immediate_hint
-        ),
-        Triple(
-            PreferencesManager.AUTO_LOCK_MODE_TIMEOUT,
-            R.string.app_lock_auto_lock_timeout,
-            R.string.app_lock_auto_lock_timeout_hint
-        )
+        ModeOption(PreferencesManager.AUTO_LOCK_MODE_SYSTEM, R.string.app_lock_auto_lock_system, R.string.app_lock_auto_lock_system_hint, Icons.Outlined.PhoneAndroid, InfoBlue),
+        ModeOption(PreferencesManager.AUTO_LOCK_MODE_IMMEDIATE, R.string.app_lock_auto_lock_immediate, R.string.app_lock_auto_lock_immediate_hint, Icons.Outlined.Bolt, AccentOrange),
+        ModeOption(PreferencesManager.AUTO_LOCK_MODE_TIMEOUT, R.string.app_lock_auto_lock_timeout, R.string.app_lock_auto_lock_timeout_hint, Icons.Outlined.Timer, ModuleSettings)
     )
-    AppDialog(
-        title = { Text(stringResource(R.string.app_lock_auto_lock)) },
-        text = {
-            Column(Modifier.padding(vertical = 8.dp)) {
-                modes.forEach { (mode, title, hint) ->
-                    AutoLockModeOption(currentMode, mode, title, hint) {
-                        onSelect(mode)
-                    }
-                }
-            }
-        },
-        onDismissRequest = onDismiss
+    ChoiceDialog(
+        title = stringResource(R.string.app_lock_auto_lock),
+        options = modes,
+        selected = modes.firstOrNull { it.mode == currentMode } ?: modes[0],
+        optionLabel = { stringResource(it.titleRes) },
+        optionIcon = { it.icon },
+        optionTint = { it.tint },
+        onSelect = { onSelect(it.mode) },
+        onDismiss = onDismiss
     )
 }
 
@@ -393,30 +389,16 @@ private fun AutoLockTimeoutDialog(
     onSelect: (Int) -> Unit,
     onDismiss: () -> Unit
 ) {
-    AppDialog(
-        title = { Text(stringResource(R.string.app_lock_auto_lock_timeout_duration), fontWeight = FontWeight.Bold) },
-        text = {
-            Column(Modifier.padding(vertical = 8.dp)) {
-                listOf(1, 5, 15, 30).forEach { minutes ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onSelect(minutes) }
-                            .padding(vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(Modifier.weight(1f)) {
-                            Text(
-                                text = stringResource(R.string.app_lock_auto_lock_minutes, minutes),
-                                style = MaterialTheme.typography.bodyLarge
-                            )
-                        }
-                        RadioButton(selected = currentMinutes == minutes, onClick = null)
-                    }
-                }
-            }
-        },
-        onDismissRequest = onDismiss
+    val fallbackTint = MaterialTheme.colorScheme.primary
+    ChoiceDialog(
+        title = stringResource(R.string.app_lock_auto_lock_timeout_duration),
+        options = listOf(1, 5, 15, 30),
+        selected = currentMinutes,
+        optionLabel = { stringResource(R.string.app_lock_auto_lock_minutes, it) },
+        optionIcon = { Icons.Outlined.Schedule },
+        optionTint = { AccentOrange },
+        onSelect = { onSelect(it) },
+        onDismiss = onDismiss
     )
 }
 
@@ -509,28 +491,6 @@ private fun SetupPinDialog(
 }
 
 @Composable
-private fun AutoLockModeOption(
-    currentMode: String,
-    mode: String,
-    titleRes: Int,
-    hintRes: Int,
-    onSelect: (String) -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onSelect(mode) }
-            .padding(vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column(Modifier.weight(1f)) {
-            Text(stringResource(titleRes), style = MaterialTheme.typography.bodyLarge)
-            Text(stringResource(hintRes), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        RadioButton(selected = currentMode == mode, onClick = { onSelect(mode) })
-    }
-}
-
 private fun autoLockModeLabel(mode: String, context: android.content.Context): String = when (mode) {
     PreferencesManager.AUTO_LOCK_MODE_IMMEDIATE -> context.getString(R.string.app_lock_auto_lock_immediate)
     PreferencesManager.AUTO_LOCK_MODE_TIMEOUT -> context.getString(R.string.app_lock_auto_lock_timeout)

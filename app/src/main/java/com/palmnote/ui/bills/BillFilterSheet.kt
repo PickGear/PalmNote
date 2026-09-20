@@ -39,8 +39,12 @@ fun BillFilterSheet(
     var selectedType by remember { mutableStateOf(currentFilter.type) }
     val context = LocalContext.current
 
-    // 切换类型时重置分类选择（避免跨类型残留导致空结果）
-    LaunchedEffect(selectedType) { selectedCategory = null }
+    // 切换类型时重置分类选择（避免跨类型残留导致空结果）。
+    // 首帧不能重置：否则带着分类筛选重新打开面板时筛选被静默清掉
+    val initialType = remember { selectedType }
+    LaunchedEffect(selectedType) {
+        if (selectedType != initialType) selectedCategory = null
+    }
 
     AppBottomSheet(onDismissRequest = onDismiss) {
         Column(modifier = Modifier.fillMaxWidth()) {

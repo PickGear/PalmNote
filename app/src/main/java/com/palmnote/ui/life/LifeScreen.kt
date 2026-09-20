@@ -1,775 +1,878 @@
 package com.palmnote.ui.life
 
+import android.widget.Toast
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.*
-import androidx.compose.material.icons.automirrored.outlined.EventNote
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.*
+import androidx.compose.material.icons.outlined.GridView
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.*
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.RoundRect
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import com.palmnote.app.R
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.activity.compose.BackHandler
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.hilt.navigation.compose.hiltViewModel
-import com.palmnote.data.db.entity.LifeItem
-import com.palmnote.data.db.entity.LifeTemplate
-import com.palmnote.data.db.entity.getDisplayDescription
+import com.palmnote.app.R
 import com.palmnote.ui.components.CompactTopAppBar
-import com.palmnote.ui.components.LifeScreenSkeleton
+import androidx.activity.compose.BackHandler
 import com.palmnote.ui.components.ModuleSearchBar
-import com.palmnote.ui.components.AppBottomSheet
-import com.palmnote.ui.components.toComposeColor
-import com.palmnote.ui.life.common.LifeSearchContent
-import com.palmnote.ui.life.common.SearchViewModel
-import com.palmnote.ui.life.common.WeeklyCalendar
-import com.palmnote.ui.life.common.displayName
-import com.palmnote.ui.life.common.getTodoPriority
-import com.palmnote.ui.theme.*
-import com.palmnote.ui.theme.PalmNoteTheme
-
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import com.palmnote.data.datastore.dataStore
-import androidx.compose.ui.platform.LocalContext
-import java.time.Instant
+import com.palmnote.ui.theme.ModuleLife
+import com.palmnote.ui.theme.Warning
 import java.time.LocalDate
-import java.time.ZoneId
+import java.time.YearMonth
+import java.util.*
+import kotlinx.coroutines.delay
 
-@Suppress("LongParameterList", "LongMethod", "CyclomaticComplexMethod")
-@OptIn(ExperimentalMaterial3Api::class)
+/** 格子档位（§4.1 五档）。 */
+private enum class LifeSpan { XS, S, M, XL, L }
+
+private val LifeSpan.spanCols: Int
+    get() = when (this) {
+        LifeSpan.XS -> 1
+        LifeSpan.S -> 2
+        LifeSpan.M -> 2
+        LifeSpan.XL -> 3
+        LifeSpan.L -> 3
+    }
+
+private val LifeSpan.cardHeight: Dp
+    get() = when (this) {
+        LifeSpan.XS -> 104.dp
+        LifeSpan.S -> 104.dp
+        LifeSpan.L -> 36.dp
+        LifeSpan.M -> 216.dp
+        LifeSpan.XL -> 216.dp
+    }
+
+private enum class LifeCardKind { TODO, NUMBER, PROGRESS, TEXT, INVITE }
+
+private data class LifeSampleCard(
+    val key: String,
+    val title: String,
+    val icon: ImageVector,
+    val iconKey: String,
+    val accentHex: String,
+    val span: LifeSpan,
+    val kind: LifeCardKind,
+    val protagonist: Boolean = false,
+    val primary: String = "",
+    val secondary: String = "",
+    val progress: Float? = null,
+    val warning: Boolean = false
+)
+
+private data class FabIntent(
+    val label: String,
+    val icon: ImageVector,
+    val iconKey: String,
+    val colorHex: String
+)
+
+/** 虚线描边（§4.3 邀请条）。 */
+private fun Modifier.dashedBorder(
+    strokeWidth: Dp,
+    color: Color,
+    cornerRadius: Dp
+): Modifier = this.drawWithContent {
+    drawContent()
+    val sw = strokeWidth.toPx()
+    val r = cornerRadius.toPx()
+    val path = Path().apply {
+        addRoundRect(RoundRect(0f, 0f, size.width, size.height, CornerRadius(r)))
+    }
+    drawPath(
+        path, color,
+        style = Stroke(sw, pathEffect = PathEffect.dashPathEffect(floatArrayOf(7f, 7f), 0f))
+    )
+}
+
+private fun lifeIdentityColor(hex: String): Color = Color(android.graphics.Color.parseColor(hex))
+
 @Composable
 fun LifeScreen(
-    onNavigateToItem: (Long) -> Unit = {},
-    onNavigateToCreate: (Long) -> Unit = {},
-    onNavigateToFocus: () -> Unit = {},
-    onNavigateToHabit: () -> Unit = {},
-    onNavigateToMood: () -> Unit = {},
-    onNavigateToJournal: () -> Unit = {},
-    onNavigateToReport: () -> Unit = {},
-    onNavigateToManage: () -> Unit = {},
-    onNavigateToTodo: () -> Unit = {},
-    onNavigateToStats: () -> Unit = {},
-    onNavigateToCategory: (String) -> Unit = {},
-    viewModel: LifeViewModel = hiltViewModel()
+    onOpenDetail: (title: String, iconKey: String, accentHex: String, heroLabel: String, heroValue: String) -> Unit,
+    onOpenList: (title: String, subtitle: String) -> Unit,
+    onOpenDay: (dayLabel: String) -> Unit,
+    onCrossTab: (Any) -> Unit,
+    onOpenStats: () -> Unit,
+    defaultView: String = LifeViewKey.TODAY,
+    onSetDefaultView: (String) -> Unit = {}
 ) {
-    val state by viewModel.uiState.collectAsStateWithLifecycle()
-    val searchViewModel: SearchViewModel = hiltViewModel()
-    val searchState by searchViewModel.uiState.collectAsStateWithLifecycle()
-    val calendarExpanded by viewModel.calendarExpanded.collectAsStateWithLifecycle()
-    val selectedDate by viewModel.selectedDate.collectAsStateWithLifecycle()
+    var view by remember { mutableStateOf(lifeViewOf(defaultView)) }
+    // 默认页由 DataStore 异步载入（或长按改默认后回填），视图跟随落位
+    LaunchedEffect(defaultView) { view = lifeViewOf(defaultView) }
+    var selectedDay by remember { mutableStateOf<Int?>(null) }
+    var fabPanelOpen by remember { mutableStateOf(false) }
     var showSearch by remember { mutableStateOf(false) }
-    BackHandler(enabled = showSearch) {
-        showSearch = false
-        searchViewModel.onQueryChange("")
-    }
-    var showFuncPage by remember { mutableStateOf(false) }
-    val snackbarHostState = remember { SnackbarHostState() }
+    var searchQuery by remember { mutableStateOf("") }
+    val openSearch = { showSearch = true }
+    val closeSearch = { showSearch = false; searchQuery = "" }
+    BackHandler(enabled = showSearch) { closeSearch() }
 
+    // 左上角标题即视图切换器：点击循环「生活→日历→全部」，长按震动并把当前视图设为默认页
+    val context = LocalContext.current
+    val haptic = LocalHapticFeedback.current
+    val cycleView = {
+        selectedDay = null
+        view = view.next
+    }
+    val setDefaultView = {
+        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+        onSetDefaultView(view.prefKey)
+        Toast.makeText(context, R.string.life_view_default_set, Toast.LENGTH_SHORT).show()
+    }
+
+    // 页面指示器：平时隐藏，切换视图（及首次进入，兼当首次引导）时浮现 2 秒后淡出
+    var indicatorVisible by remember { mutableStateOf(true) }
+    LaunchedEffect(view, showSearch) {
+        if (showSearch) {
+            indicatorVisible = false
+        } else {
+            indicatorVisible = true
+            delay(2000)
+            indicatorVisible = false
+        }
+    }
+
+    // 用 Scaffold 包裹：FAB 放回 floatingActionButton 槽（与其他主页面、旧版位置一致）。
+    // 顶栏高度与记账/资产/主页一致（同一 CompactTopAppBar：statusBars + 内容行，M3 源码确认
+    // topBar 存在时 innerPadding.top = topBarHeight，不叠加 statusBars）。
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
-            contentWindowInsets = ScaffoldDefaults.contentWindowInsets
-                .exclude(WindowInsets.navigationBars),
-            snackbarHost = { SnackbarHost(snackbarHostState, modifier = Modifier.navigationBarsPadding().padding(bottom = 60.dp)) },
+            contentWindowInsets = ScaffoldDefaults.contentWindowInsets.exclude(WindowInsets.navigationBars),
             topBar = {
-                CompactTopAppBar(
-                    title = {
-                        if (showSearch) {
-                            ModuleSearchBar(
-                                query = searchState.query,
-                                onQueryChange = searchViewModel::onQueryChange,
-                                onSearch = { searchViewModel.saveQuery() },
-                                onClear = { searchViewModel.onQueryChange("") },
-                                placeholder = stringResource(R.string.search),
-                                autoFocus = true,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        } else {
-                            Text(
-                                stringResource(R.string.life_title),
-                                style = MaterialTheme.typography.displaySmall,
-                                fontWeight = FontWeight.Bold,
-                                color = ModuleLife
-                            )
-                        }
-                    },
-                    actions = {
-                        if (showSearch) {
-                            TextButton(
-                                onClick = { showSearch = false; searchViewModel.onQueryChange("") },
-                                modifier = Modifier.padding(end = 4.dp)
-                            ) {
-                                Text(stringResource(R.string.cancel), style = MaterialTheme.typography.bodyMedium)
-                            }
-                        } else {
-                            IconButton(onClick = onNavigateToStats) {
-                                Icon(
-                                    Icons.Outlined.BarChart,
-                                    stringResource(R.string.life_home_stats),
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            IconButton(onClick = { showSearch = true }) {
-                                Icon(
-                                    Icons.Outlined.Search,
-                                    stringResource(R.string.search),
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            IconButton(onClick = onNavigateToManage) {
-                                Icon(
-                                    Icons.Outlined.Dashboard,
-                                    stringResource(R.string.life_template_manage),
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                    }
+                LifeTopBar(
+                    showSearch = showSearch,
+                    query = searchQuery,
+                    onQueryChange = { searchQuery = it },
+                    onClear = { searchQuery = "" },
+                    onCancelSearch = closeSearch,
+                    onOpenStats = onOpenStats,
+                    onOpenSearch = openSearch,
+                    onOpenManage = { onOpenList("模板管理", "生活模板与卡片") },
+                    view = view,
+                    onCycleView = cycleView,
+                    onLongPressTitle = setDefaultView
                 )
             },
-            containerColor = MaterialTheme.colorScheme.background,
             floatingActionButton = {
-                if (!state.isLoading) {
-                    ExtendedFloatingActionButton(
-                        onClick = { showFuncPage = true },
-                        containerColor = MaterialTheme.colorScheme.secondary,
-                        contentColor = Color.White,
-                        shape = MaterialTheme.shapes.large,
-                        icon = { Icon(Icons.Filled.Add, contentDescription = null) },
-                        text = { Text(stringResource(R.string.life_new_create), fontWeight = FontWeight.Medium) }
-                    )
-                }
+                LifeFab(open = fabPanelOpen, onToggle = { fabPanelOpen = it })
             }
         ) { innerPadding ->
-            if (state.isLoading) { Box(Modifier.fillMaxSize().padding(innerPadding)) { LifeScreenSkeleton() }; return@Scaffold }
-            if (showSearch) {
-                LifeSearchContent(
-                    state = searchState,
-                    viewModel = searchViewModel,
-                    onItemClick = onNavigateToItem,
-                    onTemplateClick = onNavigateToCreate,
-                    modifier = Modifier.fillMaxSize().padding(innerPadding).padding(horizontal = 16.dp)
-                )
-            } else {
-                LifeContent(
-                    innerPadding = innerPadding, state = state,
-                    onTodayTodosClick = onNavigateToTodo, onRetry = { viewModel.retry() },
-                    snackbarHostState = snackbarHostState, onCategoryClick = onNavigateToCategory,
-                    calendarExpanded = calendarExpanded, selectedDate = selectedDate,
-                    onSelectDate = viewModel::setSelectedDate, onCalendarExpandedChange = viewModel::setCalendarExpanded,
-                    onItemClick = onNavigateToItem,
-                    onToggleItem = viewModel::toggleItemCompleted,
-                    onCreateClick = { showFuncPage = true }
-                )
+            Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+                if (showSearch) {
+                    // 页内搜索（§旧版：ModuleSearchBar 浮层 + LifeSearchContent，不跳 App 全局搜索）
+                    LifeSearchContent(
+                        query = searchQuery,
+                        onOpenDetail = onOpenDetail
+                    )
+                } else {
+                    // 顶栏下直接铺内容（与其他主页面间距一致）
+                    Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
+                        when (view) {
+                            LifeView.TODAY -> GridBoard(
+                                modifier = Modifier.fillMaxSize(),
+                                onOpenDetail = onOpenDetail,
+                                onOpenList = onOpenList
+                            )
+                            LifeView.CALENDAR -> MonthCalendar(
+                                modifier = Modifier.fillMaxSize(),
+                                selectedDay = selectedDay,
+                                onSelectDay = { selectedDay = it },
+                                onOpenDay = onOpenDay
+                            )
+                            LifeView.ALL -> AllFlow(
+                                modifier = Modifier.fillMaxSize(),
+                                onOpenDetail = onOpenDetail
+                            )
+                        }
+
+                        // 视图指示器（底部中间悬浮药丸）：切换/首次进入时浮现、2 秒后淡出。
+                        // 放底部中间的原因：顶部是主角卡（不能挡），底部多为滚动收尾空白；
+                        // 短暂切换反馈的惯例位置也是底部中间（snackbar 位）。FAB 在右下，中心不冲突。
+                        // 显式调顶层 AnimatedVisibility：处于 Column 作用域内会被误解析成 ColumnScope 扩展。
+                        androidx.compose.animation.AnimatedVisibility(
+                            visible = indicatorVisible,
+                            enter = fadeIn(tween(200)),
+                            exit = fadeOut(tween(500)),
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .padding(bottom = 24.dp)
+                        ) {
+                            LifeViewIndicator(
+                                current = view,
+                                onSelect = {
+                                    selectedDay = null
+                                    view = it
+                                }
+                            )
+                        }
+                    }
+                }
             }
         }
 
-        if (showFuncPage) {
-            FunctionSheet(
-                templates = state.templates,
-                planTemplates = state.planTemplates,
-                timeTemplates = state.timeTemplates,
-                recordTemplates = state.recordTemplates,
-                onDismiss = { showFuncPage = false },
-                onTemplateClick = { showFuncPage = false;
-                    val tpl = state.templates.find { t -> t.id == it }
-                    if (tpl != null) {
-                        if (!tpl.isBuiltin && !tpl.isSpecial) {
-                            onNavigateToCreate(it)
-                        } else {
-                            when (tpl.icon) {
-                                "calendar_month" -> onNavigateToHabit()
-                                "book" -> onNavigateToJournal()
-                                "mood" -> onNavigateToMood()
-                                "timer" -> onNavigateToFocus()
-                                "BarChart", "assessment" -> onNavigateToReport()
-                                else -> onNavigateToCreate(it)
-                            }
-                        }
-                    }
-                },
-                onNavigateToCreate = onNavigateToCreate,
-                onNavigateToFocus = onNavigateToFocus,
-                onNavigateToHabit = onNavigateToHabit,
-                onNavigateToMood = onNavigateToMood,
-                onNavigateToJournal = onNavigateToJournal,
-                onNavigateToReport = onNavigateToReport
-            )
-        }
+        // 底部面板（窗口级 ModalBottomSheet，盖住底部导航栏）；FAB 本体已进 Scaffold 槽，
+        // 弹窗打开时被遮罩盖住属标准行为，关时立即可见（无 AnimatedVisibility，不再短暂消失）。
+        FabPanel(
+            open = fabPanelOpen,
+            onToggle = { fabPanelOpen = it },
+            onIntent = { intent ->
+                fabPanelOpen = false
+                onOpenDetail(intent.label, intent.iconKey, intent.colorHex, intent.label, "")
+            }
+        )
     }
 }
 
-@Suppress("LongMethod", "CyclomaticComplexMethod")
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+private enum class LifeView { TODAY, CALENDAR, ALL }
+
+/** 视图持久化 key（与 PreferencesManager.LIFE_HOME_VIEW 一致）。 */
+internal object LifeViewKey {
+    const val TODAY = "today"
+    const val CALENDAR = "calendar"
+    const val ALL = "all"
+}
+
+/** 存储值 → 视图（未知值回退今天）。 */
+private fun lifeViewOf(key: String): LifeView = when (key) {
+    LifeViewKey.CALENDAR -> LifeView.CALENDAR
+    LifeViewKey.ALL -> LifeView.ALL
+    else -> LifeView.TODAY
+}
+
+/** 点击标题的循环顺序：生活(今天) → 日历 → 全部 → 生活(今天)。 */
+private val LifeView.next: LifeView
+    get() = when (this) {
+        LifeView.TODAY -> LifeView.CALENDAR
+        LifeView.CALENDAR -> LifeView.ALL
+        LifeView.ALL -> LifeView.TODAY
+    }
+
+/** 标题文字：今天视图沿用模块名「生活」，其余显示视图名。 */
+private val LifeView.titleRes: Int
+    get() = when (this) {
+        LifeView.TODAY -> R.string.nav_life
+        LifeView.CALENDAR -> R.string.life_view_calendar
+        LifeView.ALL -> R.string.life_view_board
+    }
+
+/** 视图 → 持久化 key。 */
+private val LifeView.prefKey: String
+    get() = when (this) {
+        LifeView.TODAY -> LifeViewKey.TODAY
+        LifeView.CALENDAR -> LifeViewKey.CALENDAR
+        LifeView.ALL -> LifeViewKey.ALL
+    }
+
 @Composable
-private fun FunctionSheet(
-    templates: List<LifeTemplate>,
-    planTemplates: List<LifeTemplate>,
-    timeTemplates: List<LifeTemplate>,
-    recordTemplates: List<LifeTemplate>,
-    onDismiss: () -> Unit,
-    onTemplateClick: (Long) -> Unit,
-    onNavigateToCreate: (Long) -> Unit = {},
-    onNavigateToFocus: () -> Unit = {},
-    onNavigateToHabit: () -> Unit = {},
-    onNavigateToMood: () -> Unit = {},
-    onNavigateToJournal: () -> Unit = {},
-    onNavigateToReport: () -> Unit = {}
+private fun LifeTopBar(
+    showSearch: Boolean,
+    query: String,
+    onQueryChange: (String) -> Unit,
+    onClear: () -> Unit,
+    onCancelSearch: () -> Unit,
+    onOpenStats: () -> Unit,
+    onOpenSearch: () -> Unit,
+    onOpenManage: () -> Unit,
+    view: LifeView,
+    onCycleView: () -> Unit,
+    onLongPressTitle: () -> Unit
 ) {
-    AppBottomSheet(
-        onDismissRequest = onDismiss
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(max = 600.dp)
-        ) {
-            Text(stringResource(R.string.life_select_type_to_create), fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
-            Spacer(modifier = Modifier.height(12.dp))
-
-            val planCategory = stringResource(R.string.life_category_plan)
-            val timeCategory = stringResource(R.string.life_category_time)
-            val recordCategory = stringResource(R.string.life_category_record)
-            val customCategories = templates
-                .map { it.category }
-                .distinct()
-                .filter { it != planCategory && it != timeCategory && it != recordCategory }
-            val allCategories = buildList {
-                add(planCategory)
-                add(timeCategory)
-                add(recordCategory)
-                addAll(customCategories)
-            }
-            val activeCategories = allCategories.filter { cat ->
-                when (cat) {
-                    planCategory -> planTemplates.isNotEmpty()
-                    timeCategory -> timeTemplates.isNotEmpty()
-                    recordCategory -> recordTemplates.isNotEmpty()
-                    else -> templates.any { it.category == cat }
-                }
-            }
-            var selectedCategory by rememberSaveable { mutableStateOf<String?>(null) }
-
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                FilterChip(
-                    selected = selectedCategory == null,
-                    onClick = { selectedCategory = null },
-                    label = { Text(stringResource(R.string.life_category_filter_all), fontSize = 13.sp) }
+    CompactTopAppBar(
+        title = {
+            if (showSearch) {
+                ModuleSearchBar(
+                    query = query,
+                    onQueryChange = onQueryChange,
+                    onClear = onClear,
+                    placeholder = stringResource(R.string.search),
+                    autoFocus = true,
+                    modifier = Modifier.fillMaxWidth()
                 )
-                activeCategories.forEach { cat ->
-                    val label = when (cat) {
-                        planCategory -> stringResource(R.string.life_category_goal)
-                        timeCategory -> stringResource(R.string.life_category_memorial)
-                        recordCategory -> stringResource(R.string.life_category_record_display)
-                        else -> cat
-                    }
-                    FilterChip(
-                        selected = selectedCategory == cat,
-                        onClick = { selectedCategory = cat },
-                        label = { Text(label, fontSize = 13.sp) }
+            } else {
+                // 标题即视图切换器：点击循环视图，长按把当前视图设为默认页
+                //（视图指示器为底部中间的悬浮药丸，见 LifeScreen 内容区）
+                Text(
+                    stringResource(view.titleRes),
+                    style = MaterialTheme.typography.displaySmall,
+                    fontWeight = FontWeight.Bold,
+                    color = ModuleLife,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .combinedClickable(onClick = onCycleView, onLongClick = onLongPressTitle)
+                )
+            }
+        },
+        actions = {
+            if (showSearch) {
+                TextButton(onClick = onCancelSearch, modifier = Modifier.padding(end = 4.dp)) {
+                    Text(stringResource(R.string.cancel), style = MaterialTheme.typography.bodyMedium)
+                }
+            } else {
+                IconButton(onClick = onOpenStats) {
+                    Icon(
+                        Icons.Outlined.BarChart,
+                        stringResource(R.string.life_home_stats),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                IconButton(onClick = onOpenSearch) {
+                    Icon(
+                        Icons.Outlined.Search,
+                        stringResource(R.string.search),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                IconButton(onClick = onOpenManage) {
+                    Icon(
+                        Icons.Outlined.GridView,
+                        stringResource(R.string.life_template_manage),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
-            Spacer(modifier = Modifier.height(12.dp))
-
-            LazyColumn(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                val shown = selectedCategory?.let { cat ->
-                    when (cat) {
-                        planCategory -> planTemplates
-                        timeCategory -> timeTemplates
-                        recordCategory -> recordTemplates
-                        else -> templates.filter { it.category == cat }
-                    }
-                } ?: templates
-                if (shown.isEmpty()) {
-                    item {
-                        Text(
-                            stringResource(R.string.life_empty_here),
-                            fontSize = 13.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(vertical = 16.dp)
-                        )
-                    }
-                }
-                items(shown, key = { it.id }) { tpl ->
-                    TemplateCard(tpl, onTemplateClick)
-                }
-            }
         }
-    }
+    )
 }
 
 @Composable
-private fun TemplateCard(tpl: LifeTemplate, onTemplateClick: (Long) -> Unit) {
-    val tplColor = tpl.color.toComposeColor(ModuleLife)
-    Card(
-        modifier = Modifier.fillMaxWidth().clickable { onTemplateClick(tpl.id) },
-        shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+private fun LifeViewIndicator(current: LifeView, onSelect: (LifeView) -> Unit) {
+    // 三视图指示器（底部中间悬浮药丸）：当前视图圆点放大 + 主题色，其余灰点；可点直达。
+    // 药丸底 + 描边 + 阴影保证浮在卡片内容上时依然清晰。
+    // iPhone 风格扁胶囊：高度压到 28dp（20dp 圆点热区 + 上下各 4dp），端部全圆。
+    // 不用 shadowElevation：Android 的 elevation 投影不随透明度淡出，消失动画时
+    // 本体已渐隐而阴影仍全浓，看起来像"下边被遮挡"；改用描边 + surface 底区分背景。
+    Surface(
+        color = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(percent = 50),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Row(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(2.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .background(tplColor.copy(alpha = 0.12f), RoundedCornerShape(12.dp)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(iconFromName(tpl.icon), null, tint = tplColor, modifier = Modifier.size(24.dp))
-            }
-            Spacer(modifier = Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(tpl.displayName(), fontWeight = FontWeight.Medium, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(tpl.getDisplayDescription(LocalContext.current), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            }
-            Icon(Icons.Default.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
-        }
-    }
-}
-
-@Suppress("LongParameterList", "LongMethod", "CyclomaticComplexMethod")
-@Composable
-private fun LifeContent(
-    innerPadding: PaddingValues, state: LifeUiState,
-    onTodayTodosClick: () -> Unit, onRetry: () -> Unit,
-    snackbarHostState: SnackbarHostState, onCategoryClick: (String) -> Unit,
-    calendarExpanded: Boolean, selectedDate: LocalDate,
-    onSelectDate: (LocalDate) -> Unit, onCalendarExpandedChange: (Boolean) -> Unit,
-    onItemClick: (Long) -> Unit,
-    onToggleItem: (LifeItem) -> Unit = {},
-    onCreateClick: () -> Unit = {}
-) {
-    val visibleConfigs = state.cardConfigs.filter { it.visible }
-    Box(modifier = Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.TopCenter) {
-        Column(modifier = Modifier.verticalScroll(rememberScrollState()).widthIn(max = 600.dp)) {
-            if (state.error != null) {
-                Card(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(top = 8.dp), shape = MaterialTheme.shapes.large, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)) {
-                    Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            Icons.Default.Warning,
-                            null,
-                            tint = MaterialTheme.colorScheme.onErrorContainer,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(state.error ?: "", fontSize = 13.sp, color = MaterialTheme.colorScheme.onErrorContainer, modifier = Modifier.weight(1f))
-                        TextButton(onClick = onRetry) { Text(stringResource(R.string.life_screen_retry), color = MaterialTheme.colorScheme.onErrorContainer) }
-                    }
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-            Spacer(modifier = Modifier.height(4.dp))
-            visibleConfigs.forEachIndexed { index, config ->
-                key(config.type) {
-                    val cardModifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                        .padding(bottom = 12.dp)
-                    Box(modifier = Modifier.fillMaxWidth()) {
-                        FadeUp(delay = index * 50, modifier = Modifier.fillMaxWidth()) {
-                            when (config.type) {
-                                LifeHomeCardType.CATEGORY -> CategoryHomeCard(
-                                    state = state,
-                                    modifier = cardModifier,
-                                    onCategoryClick = onCategoryClick
-                                )
-                                LifeHomeCardType.TODAY_BOARD -> TodayBoardHomeCard(
-                                    state = state,
-                                    modifier = cardModifier,
-                                    selectedDate = selectedDate,
-                                    expanded = calendarExpanded,
-                                    onSelectDate = onSelectDate,
-                                    onExpandedChange = onCalendarExpandedChange,
-                                    onItemClick = onItemClick,
-                                    onToggleItem = onToggleItem
-                                )
-                                LifeHomeCardType.TODO -> TodoHomeCard(
-                                    state = state,
-                                    modifier = cardModifier,
-                                    onViewAll = onTodayTodosClick,
-                                    onItemClick = onItemClick,
-                                    onToggleItem = onToggleItem,
-                                    snackbarHostState = snackbarHostState
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-            if (visibleConfigs.isEmpty()) {
-                Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(Icons.Default.AutoStories, null, tint = ModuleLife.copy(alpha = 0.3f), modifier = Modifier.size(56.dp))
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(stringResource(R.string.life_empty_here), fontSize = 16.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(stringResource(R.string.life_empty_hint), fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f))
-                        Spacer(modifier = Modifier.height(20.dp))
-                        Button(
-                            onClick = { onCreateClick() },
-                            colors = ButtonDefaults.buttonColors(containerColor = ModuleLife),
-                            shape = MaterialTheme.shapes.medium
-                        ) {
-                            Icon(Icons.Default.Add, null, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(stringResource(R.string.life_new_create), fontWeight = FontWeight.Medium)
-                        }
-                    }
-                }
-            }
-            Spacer(modifier = Modifier.height(80.dp))
-        }
-    }
-}
-
-@Composable
-private fun FadeUp(delay: Int = 0, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
-    var visible by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) { delay(delay.toLong()); visible = true }
-    val alpha by animateFloatAsState(targetValue = if (visible) 1f else 0f, animationSpec = tween(250, easing = FastOutSlowInEasing))
-    val offset by animateDpAsState(targetValue = if (visible) 0.dp else 12.dp, animationSpec = tween(250, easing = FastOutSlowInEasing))
-    Box(modifier = modifier.alpha(alpha).offset(y = offset)) { content() }
-}
-
-@Composable
-private fun HomeCardTitle(text: String, modifier: Modifier = Modifier) {
-    Text(
-        text,
-        style = MaterialTheme.typography.titleMedium,
-        fontWeight = FontWeight.SemiBold,
-        color = MaterialTheme.colorScheme.onSurface,
-        modifier = modifier
-    )
-}
-
-@Composable
-private fun CategoryHomeCard(state: LifeUiState, modifier: Modifier = Modifier, onCategoryClick: (String) -> Unit = {}) {
-    val planCategory = stringResource(R.string.life_category_plan)
-    val timeCategory = stringResource(R.string.life_category_time)
-    val recordCategory = stringResource(R.string.life_category_record)
-    val planTplIds = state.planTemplates.map { it.id }.toSet()
-    val timeTplIds = state.timeTemplates.map { it.id }.toSet()
-    val recordTplIds = state.recordTemplates.map { it.id }.toSet()
-    val planTotal = state.planTemplates.sumOf { state.templatePreviewItems[it.id]?.size ?: 0 }
-    val timeTotal = state.timeTemplates.sumOf { state.templatePreviewItems[it.id]?.size ?: 0 }
-    val recordTotal = state.recordTemplates.sumOf { state.templatePreviewItems[it.id]?.size ?: 0 }
-    val planToday = state.scheduledItems.count { it.templateId in planTplIds }
-    val timeToday = state.scheduledItems.count { it.templateId in timeTplIds }
-    val recordToday = state.scheduledItems.count { it.templateId in recordTplIds }
-    Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Box(modifier = Modifier.weight(1f)) {
-            CategoryMiniCard(
-                title = stringResource(R.string.life_category_goal),
-                icon = Icons.Default.Star,
-                color = LifePlan,
-                total = planTotal,
-                today = planToday,
-                onClick = { onCategoryClick(planCategory) }
-            )
-        }
-        Box(modifier = Modifier.weight(1f)) {
-            CategoryMiniCard(
-                title = stringResource(R.string.life_category_memorial),
-                icon = Icons.Default.CalendarMonth,
-                color = LifeTime,
-                total = timeTotal,
-                today = timeToday,
-                onClick = { onCategoryClick(timeCategory) }
-            )
-        }
-        Box(modifier = Modifier.weight(1f)) {
-            CategoryMiniCard(
-                title = stringResource(R.string.life_category_record_display),
-                icon = Icons.Default.AutoStories,
-                color = LifeRecord,
-                total = recordTotal,
-                today = recordToday,
-                onClick = { onCategoryClick(recordCategory) }
-            )
-        }
-    }
-}
-
-@Composable
-private fun CategoryMiniCard(title: String, icon: androidx.compose.ui.graphics.vector.ImageVector, color: Color, total: Int, today: Int, onClick: () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth().clip(MaterialTheme.shapes.large).clickable(onClick = onClick),
-        shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-    ) {
-        Column(modifier = Modifier.padding(14.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            LifeView.entries.forEach { v ->
+                val selected = v == current
                 Box(
-                    modifier = Modifier.size(24.dp).background(color.copy(alpha = 0.12f), RoundedCornerShape(7.dp)),
+                    modifier = Modifier
+                        .size(20.dp)
+                        .clip(CircleShape)
+                        .clickable { onSelect(v) },
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(icon, null, tint = color, modifier = Modifier.size(15.dp))
+                    Box(
+                        modifier = Modifier
+                            .size(if (selected) 8.dp else 6.dp)
+                            .clip(CircleShape)
+                            .background(if (selected) ModuleLife else MaterialTheme.colorScheme.outlineVariant)
+                    )
                 }
-                Spacer(modifier = Modifier.width(6.dp))
-                Text(title, fontSize = 13.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
-            Spacer(modifier = Modifier.height(8.dp))
-            Text("$total", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = color)
-            Text(
-                stringResource(R.string.life_home_today_added, today),
-                fontSize = 10.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
         }
     }
 }
 
 @Composable
-private fun TodayBoardHomeCard(state: LifeUiState, modifier: Modifier = Modifier, selectedDate: LocalDate = LocalDate.now(), expanded: Boolean = false, onSelectDate: (LocalDate) -> Unit = {}, onExpandedChange: (Boolean) -> Unit = {}, onItemClick: (Long) -> Unit = {}, onToggleItem: (LifeItem) -> Unit = {}) {
-    Card(
-        modifier = modifier.clip(MaterialTheme.shapes.large),
-        shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-    ) {
-        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-            val isToday = selectedDate == LocalDate.now()
-            HomeCardTitle(
-                if (isToday) stringResource(R.string.life_home_today_board)
-                else stringResource(R.string.life_home_board_selected, selectedDate.monthValue, selectedDate.dayOfMonth)
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            WeeklyCalendar(
-                selectedDate = selectedDate,
-                expanded = expanded,
-                markedDates = state.markedDates,
-                onSelectDate = onSelectDate,
-                onExpandedChange = onExpandedChange
-            )
-            Spacer(modifier = Modifier.height(10.dp))
-            TimeSlots(state = state, onItemClick = onItemClick, onToggleItem = onToggleItem)
-        }
-    }
-}
-
-@Suppress("LongMethod")
-@Composable
-private fun TimeSlots(state: LifeUiState, onItemClick: (Long) -> Unit = {}, onToggleItem: (LifeItem) -> Unit = {}) {
-    val slots = listOf(
-        stringResource(R.string.life_home_slot_morning),
-        stringResource(R.string.life_home_slot_forenoon),
-        stringResource(R.string.life_home_slot_afternoon),
-        stringResource(R.string.life_home_slot_evening),
-        stringResource(R.string.life_home_slot_allday)
+private fun LifeSearchContent(
+    query: String,
+    onOpenDetail: (title: String, iconKey: String, accentHex: String, heroLabel: String, heroValue: String) -> Unit
+) {
+    // 第一阶段：页内搜索静态骨架（无业务逻辑 / 后端），仅演示搜索框与结果布局
+    val samples = listOf(
+        Triple("写日记", "book", "#7E57C2"),
+        Triple("今日待办", "checklist", "#5C6BC0"),
+        Triple("健身打卡", "fitness_center", "#FF7043")
     )
-    val items = state.boardItems
-    val morning = items.filter { val t = it.dueTime; t != null && t < 9 * 60 }
-    val forenoon = items.filter { val t = it.dueTime; t != null && t in (9 * 60) until (12 * 60) }
-    val afternoon = items.filter { val t = it.dueTime; t != null && t in (12 * 60) until (18 * 60) }
-    val evening = items.filter { val t = it.dueTime; t != null && t >= 18 * 60 }
-    val allDay = items.filter { it.dueTime == null }
-    val buckets = listOf(morning, forenoon, afternoon, evening, allDay)
-    if (items.isEmpty()) {
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(vertical = 14.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Icon(
-                Icons.Outlined.EventBusy,
-                null,
-                tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f),
-                modifier = Modifier.size(28.dp)
-            )
-            Spacer(modifier = Modifier.height(6.dp))
+    Column(
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp)
+    ) {
+        if (query.isBlank()) {
+            Spacer(Modifier.height(48.dp))
             Text(
-                stringResource(R.string.life_board_empty),
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                "搜索生活记录、模板、日记…",
+                fontSize = 14.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center
             )
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                stringResource(R.string.life_board_empty_hint),
-                fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-            )
-        }
-        return
-    }
-    buckets.forEachIndexed { i, bucket ->
-        if (bucket.isNotEmpty()) {
-            Text(slots[i], fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
-            bucket.forEach { item ->
+        } else {
+            samples.forEach { (title, iconKey, colorHex) ->
+                val color = runCatching { Color(android.graphics.Color.parseColor(colorHex)) }.getOrNull() ?: ModuleLife
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 3.dp)
-                        .clip(MaterialTheme.shapes.small)
-                        .clickable { onItemClick(item.id) }
-                        .padding(horizontal = 6.dp),
+                        .clip(RoundedCornerShape(12.dp))
+                        .clickable { onOpenDetail(title, iconKey, colorHex, title, "") }
+                        .padding(horizontal = 12.dp, vertical = 14.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        if (item.status == "COMPLETED") Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
-                        stringResource(R.string.life_item_toggle_complete),
-                        tint = if (item.status == "COMPLETED") MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.outline,
-                        modifier = Modifier
-                            .size(22.dp)
-                            .clip(MaterialTheme.shapes.small)
-                            .clickable { onToggleItem(item) }
-                            .padding(2.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(item.title, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-                    val dueTime = item.dueTime
-                    if (dueTime != null) {
-                        Text(
-                            "${dueTime / 60}:${(dueTime % 60).toString().padStart(2, '0')}",
-                            fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                    Surface(color = color.copy(alpha = 0.14f), shape = CircleShape, modifier = Modifier.size(40.dp)) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(iconFor(iconKey), null, tint = color, modifier = Modifier.size(22.dp))
+                        }
                     }
+                    Spacer(Modifier.width(12.dp))
+                    Text(title, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
                 }
+                Spacer(Modifier.height(6.dp))
             }
         }
     }
 }
 
-@Suppress("LongMethod")
+// ───────────────────────── 今天：格子板 ─────────────────────────
+
 @Composable
-private fun TodoHomeCard(state: LifeUiState, modifier: Modifier = Modifier, onViewAll: () -> Unit, onItemClick: (Long) -> Unit = {}, onToggleItem: (LifeItem) -> Unit = {}, snackbarHostState: SnackbarHostState? = null) {
-    val todayStart = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-    val overdueCount = state.todoItems.count { val d = it.dueDate; d != null && d < todayStart }
-    val shown = state.todoItems.take(4)
-    val coroutineScope = rememberCoroutineScope()
-    val context = androidx.compose.ui.platform.LocalContext.current
+private fun GridBoard(
+    modifier: Modifier,
+    onOpenDetail: (title: String, iconKey: String, accentHex: String, heroLabel: String, heroValue: String) -> Unit,
+    onOpenList: (title: String, subtitle: String) -> Unit
+) {
+    val cards = remember {
+        listOf(
+            LifeSampleCard("todo", "今天要做什么", Icons.Filled.CheckBox, "checklist", "#5C6BC0", LifeSpan.M, LifeCardKind.TODO, protagonist = true,
+                primary = "3 项待办", secondary = "买菜 · 回邮件 · 取快递"),
+            LifeSampleCard("savings", "存钱计划", Icons.Filled.Savings, "savings", "#EC407A", LifeSpan.XS, LifeCardKind.PROGRESS,
+                primary = "¥6,800", secondary = "目标 ¥10,000", progress = 0.68f),
+            LifeSampleCard("checkin", "打卡", Icons.Filled.CheckCircle, "calendar_month", "#3F51B5", LifeSpan.XS, LifeCardKind.PROGRESS,
+                primary = "18 天", secondary = "连续打卡", progress = 0.8f),
+            LifeSampleCard("countdown", "倒计时", Icons.Filled.HourglassBottom, "timer_off", "#FFCA28", LifeSpan.XS, LifeCardKind.NUMBER,
+                primary = "12 天", secondary = "距旅行"),
+            LifeSampleCard("anniversary", "纪念日", Icons.Filled.Cake, "cake", "#F06292", LifeSpan.XS, LifeCardKind.NUMBER,
+                primary = "还有 3 天", secondary = "结婚纪念日", warning = true),
+            LifeSampleCard("focus", "专注", Icons.Filled.Timer, "timer", "#00ACC1", LifeSpan.XS, LifeCardKind.NUMBER,
+                primary = "42 分钟", secondary = "今日专注"),
+            LifeSampleCard("record", "今天记了什么", Icons.Filled.EventNote, "book", "#7E57C2", LifeSpan.S, LifeCardKind.TEXT,
+                primary = "下午去了健身房", secondary = "身体记录 · 14:30"),
+            LifeSampleCard("mood", "今天心情", Icons.Filled.SentimentSatisfied, "mood", "#FFA726", LifeSpan.S, LifeCardKind.TEXT,
+                primary = "不错", secondary = "平稳的一天"),
+            LifeSampleCard("invite", "还没写日记", Icons.Filled.EditNote, "", "#000000", LifeSpan.L, LifeCardKind.INVITE,
+                primary = "记一条 →", secondary = "")
+        )
+    }
+
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(3),
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(7.dp),
+        horizontalArrangement = Arrangement.spacedBy(7.dp),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp)
+    ) {
+        items(cards, key = { it.key }, span = { GridItemSpan(it.span.spanCols) }) { card ->
+            Box(Modifier.height(card.span.cardHeight)) {
+                GridCard(card = card, onClick = {
+                    if (card.kind == LifeCardKind.INVITE) {
+                        onOpenDetail("写日记", "book", "#7E57C2", "日记", "记一笔")
+                    } else if (card.span == LifeSpan.M || card.span == LifeSpan.XL) {
+                        onOpenDetail(card.title, card.iconKey, card.accentHex, card.secondary, card.primary)
+                    } else {
+                        onOpenList(card.title, card.secondary)
+                    }
+                })
+            }
+        }
+        item(span = { GridItemSpan(3) }) { Spacer(Modifier.height(72.dp)) }
+    }
+}
+
+@Composable
+private fun GridCard(card: LifeSampleCard, onClick: () -> Unit) {
+    val accent = lifeIdentityColor(card.accentHex)
+
+    if (card.kind == LifeCardKind.INVITE) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .dashedBorder(1.dp, MaterialTheme.colorScheme.outlineVariant, 16.dp)
+                .clip(MaterialTheme.shapes.large)
+                .clickable { onClick() }
+                .padding(horizontal = 14.dp),
+            contentAlignment = Alignment.CenterStart
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(card.title, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(Modifier.width(4.dp))
+                Text(card.primary, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = ModuleLife)
+            }
+        }
+        return
+    }
+
     Card(
-        modifier = modifier.clip(MaterialTheme.shapes.large),
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        modifier = Modifier
+            .fillMaxSize()
+            .clickable { onClick() }
     ) {
-        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+        Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                HomeCardTitle(
-                    stringResource(R.string.life_home_todo),
+                Icon(card.icon, null, tint = accent, modifier = Modifier.size(15.dp))
+                Spacer(Modifier.width(5.dp))
+                Text(
+                    card.title, fontSize = 12.sp, fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f)
                 )
-                if (overdueCount > 0) {
-                    Text(
-                        stringResource(R.string.life_home_todo_overdue, overdueCount),
-                        fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
-                Text(
-                    stringResource(R.string.life_home_todo_total, state.todoItems.size),
-                    fontSize = 11.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
-            if (shown.isEmpty()) {
-                Column(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 14.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Icon(
-                        Icons.AutoMirrored.Outlined.EventNote,
-                        null,
-                        tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f),
-                        modifier = Modifier.size(28.dp)
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(
-                        stringResource(R.string.life_home_todo_empty),
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        stringResource(R.string.life_home_todo_empty_hint),
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                    )
+            Spacer(Modifier.height(6.dp))
+            when (card.kind) {
+                LifeCardKind.NUMBER -> {
+                    Text(card.primary, fontSize = 20.sp, fontWeight = FontWeight.Bold,
+                        color = if (card.warning) Warning else MaterialTheme.colorScheme.onSurface)
+                    Text(card.secondary, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
                 }
-            } else {
-                shown.forEach { item ->
-                    val priority = getTodoPriority(item)
-                    val dotColor = when (priority) {
-                        "HIGH_URGENT", "HIGH" -> ExpenseRed
-                        "URGENT" -> AccentOrange
-                        else -> MaterialTheme.colorScheme.outline
-                    }
-                    val relLabel = when {
-                        item.dueDate == null -> stringResource(R.string.life_home_todo_no_date)
-                        item.dueDate!! < todayStart -> {
-                            val days = ((todayStart - item.dueDate!!) / 86400000L).toInt()
-                            stringResource(R.string.life_home_todo_overdue_days, days)
+                LifeCardKind.PROGRESS -> {
+                    Text(card.primary, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                    Spacer(Modifier.height(6.dp))
+                    LinearProgressIndicator(
+                        progress = { card.progress ?: 0f },
+                        modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)),
+                        color = accent, trackColor = accent.copy(alpha = 0.15f)
+                    )
+                    Text(card.secondary, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+                }
+                LifeCardKind.TEXT -> {
+                    Text(card.primary, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    Text(card.secondary, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+                }
+                LifeCardKind.TODO -> {
+                    // 待办清单：可就地勾选。Phase 1 为静态页，勾选只改本地状态（不落库），
+                    // 真实读写等数据层接入后再替换。
+                    val todos = remember(card.key) {
+                        mutableStateListOf<Pair<String, Boolean>>().apply {
+                            card.secondary.split(" · ").filter { it.isNotBlank() }.forEach { add(it to false) }
                         }
-                        else -> {
-                            val due = Instant.ofEpochMilli(item.dueDate!!).atZone(ZoneId.systemDefault()).toLocalDate()
-                            stringResource(R.string.life_home_todo_due, due.monthValue, due.dayOfMonth)
-                        }
                     }
-                    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp).clip(MaterialTheme.shapes.small).clickable { onItemClick(item.id) }.padding(horizontal = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            Icons.Default.RadioButtonUnchecked,
-                            stringResource(R.string.life_item_toggle_complete),
-                            tint = MaterialTheme.colorScheme.outline,
+                    todos.take(3).forEachIndexed { index, item ->
+                        val done = item.second
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
-                                .size(22.dp)
-                                .clip(MaterialTheme.shapes.small)
-                                .clickable {
-                                    onToggleItem(item)
-                                    coroutineScope.launch {
-                                        val message = if (item.status == "COMPLETED") {
-                                            context.getString(R.string.life_item_uncompleted)
-                                        } else {
-                                            context.getString(R.string.life_item_completed)
-                                        }
-                                        snackbarHostState?.showSnackbar(message, duration = SnackbarDuration.Short)
-                                    }
-                                }
-                                .padding(2.dp)
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(6.dp))
+                                .clickable { todos[index] = item.first to !done }
+                                .padding(vertical = 3.dp)
+                        ) {
+                            Icon(
+                                if (done) Icons.Filled.CheckCircle else Icons.Filled.RadioButtonUnchecked,
+                                contentDescription = null,
+                                tint = if (done) accent else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(Modifier.width(7.dp))
+                            Text(
+                                item.first,
+                                fontSize = 13.sp,
+                                color = if (done) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+                                textDecoration = if (done) TextDecoration.LineThrough else null,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                    if (todos.size > 3) {
+                        Text(
+                            stringResource(R.string.life_hero_more_items, todos.size - 3),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = ModuleLife,
+                            modifier = Modifier.padding(top = 2.dp)
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Box(modifier = Modifier.size(8.dp).clip(RoundedCornerShape(4.dp)).background(dotColor))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(item.title, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-                        Text(relLabel, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
-                if (state.todoItems.size > 4) {
-                    TextButton(onClick = onViewAll, modifier = Modifier.align(Alignment.End)) {
-                        Text(stringResource(R.string.life_home_todo_view_all), fontSize = 12.sp)
-                    }
-                }
+                else -> Unit
             }
         }
     }
 }
 
-@Preview(showBackground = true, showSystemUi = true)
+// ───────────────────────── 日历：月格 ─────────────────────────
+
 @Composable
-private fun LifeScreenPreview() { PalmNoteTheme { LifeScreen() } }
+private fun MonthCalendar(
+    modifier: Modifier,
+    selectedDay: Int?,
+    onSelectDay: (Int) -> Unit,
+    onOpenDay: (String) -> Unit
+) {
+    val ym = remember { YearMonth.now() }
+    val days = ym.lengthOfMonth()
+    val leading = (ym.atDay(1).dayOfWeek.value - 1).coerceAtLeast(0)
+    val today = LocalDate.now().dayOfMonth
+
+    val density = remember {
+        mapOf(3 to 3, 4 to 5, 5 to 9, 6 to 2, 10 to 6, 11 to 4, 12 to 2, 15 to 7, 16 to 3, 18 to 1, 19 to 5, 20 to 2, 22 to 4, 25 to 8, 26 to 3, 28 to 1)
+    }
+    val dots = remember {
+        mapOf(4 to listOf(Color(0xFF50C890), Color(0xFF7C8CF0)), 5 to listOf(Color(0xFFF07070)),
+            10 to listOf(Color(0xFF50C890), Color(0xFF7C8CF0), Color(0xFFF07070)), 19 to listOf(Color(0xFF50C890)), 25 to listOf(Color(0xFF7C8CF0), Color(0xFFF07070)))
+    }
+    val monthTotal = 42
+
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(7),
+        modifier = modifier,
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp)
+    ) {
+        item(span = { GridItemSpan(7) }) {
+            Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text("${ym.year} 年 ${ym.monthValue} 月", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                Spacer(Modifier.weight(1f))
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(22.dp))
+                Spacer(Modifier.width(8.dp))
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(22.dp))
+            }
+        }
+        item(span = { GridItemSpan(7) }) {
+            Row(Modifier.fillMaxWidth().padding(bottom = 4.dp)) {
+                listOf("一", "二", "三", "四", "五", "六", "日").forEach {
+                    Text(it, modifier = Modifier.weight(1f), textAlign = TextAlign.Center, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
+        items(List(leading) { null } + (1..days).toList()) { day ->
+            Box(
+                modifier = Modifier
+                    .aspectRatio(1f)
+                    .padding(2.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .then(
+                        if (day == null) Modifier else Modifier
+                            .background(cellTint(density[day] ?: 0))
+                            .then(if (day == selectedDay || day == today) Modifier.border(1.5.dp, ModuleLife, RoundedCornerShape(8.dp)) else Modifier)
+                            .clickable { onSelectDay(day); onOpenDay("${ym.monthValue}月${day}日") }
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                if (day != null) {
+                    Text("$day", fontSize = 12.sp, color = if (day == today) ModuleLife else MaterialTheme.colorScheme.onSurface)
+                    val d = dots[day]
+                    if (!d.isNullOrEmpty()) {
+                        Row(modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 4.dp)) {
+                            d.take(3).forEach { c ->
+                                Box(Modifier.size(4.dp).clip(CircleShape).background(c))
+                                Spacer(Modifier.width(2.dp))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        item(span = { GridItemSpan(7) }) {
+            Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text("本月 $monthTotal 条", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(Modifier.weight(1f))
+                Text("点一天看那天 →", fontSize = 12.sp, color = ModuleLife)
+            }
+        }
+        item(span = { GridItemSpan(7) }) { Spacer(Modifier.height(72.dp)) }
+    }
+}
+
+@Composable
+private fun cellTint(count: Int): Color {
+    val alpha = when {
+        count <= 0 -> 0f
+        count <= 2 -> 0.22f
+        count <= 4 -> 0.42f
+        count <= 7 -> 0.62f
+        else -> 0.80f
+    }
+    return ModuleLife.copy(alpha = alpha)
+}
+
+// ───────────────────────── 全部：内容流 ─────────────────────────
+
+@Composable
+private fun AllFlow(
+    modifier: Modifier,
+    onOpenDetail: (title: String, iconKey: String, accentHex: String, heroLabel: String, heroValue: String) -> Unit
+) {
+    var chip by remember { mutableStateOf(0) }
+    val chips = listOf("全部", "记录", "计划", "目标", "纪念")
+    val items = remember {
+        listOf(
+            FlowItem("购物清单", "shopping_cart", "#FF7043", "¥1,280", "3 件商品 · 今天"),
+            FlowItem("晨跑", "fitness_center", "#00897B", "5.2 km", "身体记录 · 07:10"),
+            FlowItem("读书笔记", "menu_book", "#26A69A", "第 42 页", "远方与成长 · 昨天"),
+            FlowItem("旅行计划", "flight", "#66BB6A", "12 天", "距出发"),
+            FlowItem("周报", "BarChart", "#42A5F5", "本周概览", "系统 · 周一")
+        )
+    }
+
+    LazyColumn(
+        modifier = modifier,
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        item {
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    chips.forEachIndexed { i, c ->
+                        val sel = i == chip
+                        Surface(color = if (sel) ModuleLife else MaterialTheme.colorScheme.surfaceVariant, shape = RoundedCornerShape(14.dp), modifier = Modifier.clickable { chip = i }) {
+                            Text(c, fontSize = 12.sp, color = if (sel) Color.White else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp))
+                        }
+                    }
+                }
+                Spacer(Modifier.weight(1f))
+            }
+        }
+        items(items, key = { it.title }) { it ->
+            FlowCard(it) { onOpenDetail(it.title, it.iconKey, it.accentHex, it.sub, it.primary) }
+        }
+        item { Spacer(Modifier.height(72.dp)) }
+    }
+}
+
+private data class FlowItem(val title: String, val iconKey: String, val accentHex: String, val primary: String, val sub: String)
+
+@Composable
+private fun FlowCard(item: FlowItem, onClick: () -> Unit) {
+    val accent = lifeIdentityColor(item.accentHex)
+    Surface(
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        modifier = Modifier.fillMaxWidth().clip(MaterialTheme.shapes.large).clickable { onClick() }
+    ) {
+        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Surface(color = accent.copy(alpha = 0.12f), shape = RoundedCornerShape(12.dp), modifier = Modifier.size(44.dp)) {
+                Icon(iconFor(item.iconKey), null, tint = accent, modifier = Modifier.size(22.dp).wrapContentSize())
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(item.title, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
+                Text(item.sub, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Text(item.primary, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+        }
+    }
+}
+
+internal fun iconFor(key: String): ImageVector = when (key) {
+    "checklist", "note_add" -> Icons.Filled.CheckBox
+    "savings" -> Icons.Filled.Savings
+    "calendar_month" -> Icons.Filled.CalendarMonth
+    "timer_off", "timer" -> Icons.Filled.Timer
+    "cake" -> Icons.Filled.Cake
+    "book", "mood" -> Icons.Filled.Book
+    "shopping_cart" -> Icons.Filled.ShoppingCart
+    "fitness_center" -> Icons.Filled.FitnessCenter
+    "menu_book" -> Icons.Filled.MenuBook
+    "flight" -> Icons.Filled.Flight
+    "BarChart" -> Icons.Filled.BarChart
+    else -> Icons.Filled.Circle
+}
+
+// ───────────────────────── FAB + 长按面板（§7.1） ─────────────────────────
+
+// FAB 本体：56dp 圆 + ModuleLife（旧版样式），由 LifeScreen 的 Scaffold.floatingActionButton 槽承载，
+// 位置与其他主页面、旧版一致。单击切换面板、长按直接打开面板（沿用此前用户决定）。
+@Composable
+private fun LifeFab(
+    open: Boolean,
+    onToggle: (Boolean) -> Unit
+) {
+    Surface(
+        color = ModuleLife, shape = CircleShape, shadowElevation = 4.dp,
+        modifier = Modifier
+            .size(56.dp)
+            .combinedClickable(onClick = { onToggle(!open) }, onLongClick = { onToggle(true) })
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(Icons.Filled.Add, null, tint = Color.White, modifier = Modifier.size(26.dp))
+        }
+    }
+}
+
+// 底部面板（窗口级 ModalBottomSheet，盖住底部导航栏）
+@Composable
+@OptIn(ExperimentalMaterial3Api::class)
+private fun FabPanel(
+    open: Boolean,
+    onToggle: (Boolean) -> Unit,
+    onIntent: (FabIntent) -> Unit
+) {
+    if (!open) return
+    val intents = listOf(
+        FabIntent("心情", Icons.Filled.SentimentSatisfied, "mood", "#FFCA28"),
+        FabIntent("日记", Icons.Filled.Book, "book", "#AB47BC"),
+        FabIntent("打卡", Icons.Filled.CheckCircle, "checklist", "#FF7043"),
+        FabIntent("专注", Icons.Filled.Timer, "timer", "#00ACC1"),
+        FabIntent("待办", Icons.Filled.CheckBox, "checklist", "#5C6BC0"),
+        FabIntent("计划", Icons.Filled.Event, "calendar_month", "#EC407A"),
+        FabIntent("纪念日", Icons.Filled.Cake, "cake", "#F07070"),
+        FabIntent("订阅", Icons.Filled.Subscriptions, "subscriptions", "#66BB6A")
+    )
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ModalBottomSheet(
+        onDismissRequest = { onToggle(false) },
+        sheetState = sheetState,
+        containerColor = MaterialTheme.colorScheme.surface,
+        dragHandle = { BottomSheetDefaults.DragHandle() }
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(20.dp)
+                .navigationBarsPadding()
+                .padding(bottom = 12.dp)
+        ) {
+            Text("记录什么", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+            Spacer(Modifier.height(16.dp))
+            intents.chunked(4).forEach { row ->
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                    row.forEach { intent -> FabIntentButton(intent) { onIntent(intent) } }
+                }
+                Spacer(Modifier.height(14.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun FabIntentButton(intent: FabIntent, onClick: () -> Unit) {
+    val color = lifeIdentityColor(intent.colorHex)
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.clickable { onClick() }) {
+        Surface(color = color.copy(alpha = 0.14f), shape = CircleShape, modifier = Modifier.size(48.dp)) {
+            Icon(intent.icon, null, tint = color, modifier = Modifier.size(24.dp).wrapContentSize())
+        }
+        Spacer(Modifier.height(5.dp))
+        Text(intent.label, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}

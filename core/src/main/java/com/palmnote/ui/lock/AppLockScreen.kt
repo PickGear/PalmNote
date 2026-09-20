@@ -19,6 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.palmnote.R
 import com.palmnote.data.lock.AppLockManager
+import com.palmnote.ui.components.NoDialogWindowAnimation
 import com.palmnote.ui.theme.*
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
@@ -32,10 +33,11 @@ fun AppLockScreen(
     isSetupMode: Boolean = false
 ) {
     val lockState by appLockManager.lockState.collectAsStateWithLifecycle()
-    var pin by rememberSaveable { mutableStateOf("") }
+    // PIN 缓冲不用 rememberSaveable：半输入的 PIN 会随实例状态写盘/可被读取，锁定界面不应持久化敏感值
+    var pin by remember { mutableStateOf("") }
     var error by rememberSaveable { mutableStateOf("") }
-    var confirmPin by rememberSaveable { mutableStateOf("") }
-    var isConfirming by rememberSaveable { mutableStateOf(false) }
+    var confirmPin by remember { mutableStateOf("") }
+    var isConfirming by remember { mutableStateOf(false) }  // 与 PIN 缓冲同步不持久化：恢复出 true+空缓冲必然误判一次
     var lockoutRemaining by rememberSaveable { mutableLongStateOf(appLockManager.getLockoutRemainingMs()) }
     var showForgotConfirm by rememberSaveable { mutableStateOf(false) }
     var shakeTrigger by remember { mutableIntStateOf(0) }
@@ -44,6 +46,10 @@ fun AppLockScreen(
     var isVerifying by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    // 版本号：library 模块拿不到 BuildConfig.VERSION_NAME，经 PackageManager 读取（b01ed54 删除了硬编码 app_version 字符串）
+    val appVersion = remember {
+        runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull() ?: ""
+    }
 
     val pinSuccessText = stringResource(R.string.app_lock_pin_success)
     val pinMismatchText = stringResource(R.string.app_lock_pin_mismatch)
@@ -261,7 +267,7 @@ fun AppLockScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
         Text(
-            text = stringResource(R.string.app_version),
+            text = appVersion,
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.outline
         )
@@ -271,7 +277,10 @@ fun AppLockScreen(
         AlertDialog(
             onDismissRequest = { showForgotConfirm = false },
             title = { Text(stringResource(R.string.app_lock_forgot_pin), fontWeight = FontWeight.Bold) },
-            text = { Text(stringResource(R.string.app_lock_forgot_pin_confirm_lock)) },
+            text = {
+                NoDialogWindowAnimation()
+                Text(stringResource(R.string.app_lock_forgot_pin_confirm_lock))
+            },
             confirmButton = {
                 TextButton(onClick = {
                     showForgotConfirm = false

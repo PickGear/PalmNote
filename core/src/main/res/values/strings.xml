@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_version">v1.3.0</string>
     <string name="asset_warranty_expired">过保</string>
     <string name="settings_cancel">取消</string>
     <string name="save">保存</string>
@@ -193,7 +192,7 @@
     <string name="time_today">今天 %s</string>
     <string name="time_yesterday">昨天 %s</string>
     <string name="currency_symbol">¥</string>
-    <string name="app_lock_forgot_pin_confirm_lock">忘记PIN码后无法找回，只能清除本地数据来重置。这将删除所有账单、生活记录和设置等本地数据，且不可逆。确定继续吗？</string>
+    <string name="app_lock_forgot_pin_confirm_lock">忘记PIN码后无法找回，只能清除本地数据来重置。这将删除所有账单、生活记录和设置等本地数据，且不可逆；密码本受其独立主密码保护，不会被删除。确定继续吗？</string>
     <string name="app_lock_forgot_pin_action_lock">清除并重置</string>
     <string name="app_lock_locked_out">尝试次数过多，请稍后再试</string>
     <string name="notification_channel_life">生活动态</string>

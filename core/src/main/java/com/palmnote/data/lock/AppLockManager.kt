@@ -54,6 +54,7 @@ class AppLockManager(
         prefsName = "app_lock_prefs",
         keyFailedAttempts = KEY_FAILED_ATTEMPTS,
         keyLockoutUntil = KEY_LOCKOUT_UNTIL,
+        keyOffenseCount = KEY_LOCKOUT_OFFENSES,
     )
 
     init {
@@ -156,6 +157,23 @@ class AppLockManager(
         // 4. 删除外置备份（含 DB 快照 + DataStore，可能包含旧 PIN/锁标志）
         File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), "PalmNote")
             .listFiles()?.forEach { it.delete() }
+        // 4b. 内置自动备份目录（filesDir/PalmNote）同样含 DB 快照 + DataStore，必须一并清除，
+        //     否则销毁数据后仍可通过恢复备份还原出旧 PIN/锁状态
+        File(context.filesDir, "PalmNote").listFiles()?.forEach { it.delete() }
+        // 4c. 用户自选的备份位置（SAF 文件夹）同样含 DB 快照 + 锁偏好，尽力清除。
+        //     授权被吊销/目录不可达时无法删除——这是"数据在用户自己的文件夹里"的天然限制，
+        //     只能依赖用户手动删除。
+        runCatching {
+            context.getSharedPreferences("backup_prefs", Context.MODE_PRIVATE)
+                .getString("backup_location_uri", null)
+                ?.let { android.net.Uri.parse(it) }
+                ?.let { uri ->
+                    androidx.documentfile.provider.DocumentFile.fromTreeUri(context, uri)
+                        ?.listFiles()
+                        ?.filter { it.isFile && it.name?.startsWith("palmnote_") == true }
+                        ?.forEach { runCatching { it.delete() } }
+                }
+        }
     }
 
     fun lock() {
@@ -271,5 +289,6 @@ class AppLockManager(
         private const val PBKDF2_PREFIX = "pbkdf2:"
         private const val KEY_FAILED_ATTEMPTS = "failed_attempts"
         private const val KEY_LOCKOUT_UNTIL = "lockout_until"
+        private const val KEY_LOCKOUT_OFFENSES = "lockout_offenses"
     }
 }

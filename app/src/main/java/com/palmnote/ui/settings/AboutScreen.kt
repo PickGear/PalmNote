@@ -1,33 +1,65 @@
 package com.palmnote.ui.settings
 
+import android.content.Intent
+import android.net.Uri
+import android.widget.Toast
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.palmnote.app.BuildConfig
 import com.palmnote.app.R
 import com.palmnote.ui.components.*
+import com.palmnote.ui.components.SettingsMenuItem
 import com.palmnote.ui.theme.*
 
+/** 反馈与项目主页地址（Intent 交给系统浏览器打开，本应用无需联网权限）。 */
+private const val FEEDBACK_ISSUES_URL = "https://github.com/PickGear/PalmNote/issues"
+private const val PROJECT_REPO_URL = "https://github.com/PickGear/PalmNote"
+
+/**
+ * 关于页：三段式——项目身份 → 参与和了解 → 法律信息。
+ *
+ * 设计原则与「数据与备份」一致：卡片内用 [SettingsMenuItem] 统一行样式；
+ * 不再铺陈功能清单/技术栈等自我介绍（功能用户已经天天在用，技术栈是开发者的事，
+ * 感兴趣的人点「项目源码」自然看得到）。
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AboutScreen(
     onNavigateBack: () -> Unit = {},
     onNavigateToPrivacy: () -> Unit = {},
-    onNavigateToTerms: () -> Unit = {}
+    onNavigateToTerms: () -> Unit = {},
+    onNavigateToLicense: () -> Unit = {},
+    onNavigateToVersionHistory: () -> Unit = {}
 ) {
+    val context = LocalContext.current
+
+    fun openInBrowser(url: String) {
+        runCatching {
+            context.startActivity(
+                Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            )
+        }.onFailure {
+            Toast.makeText(context, context.getString(R.string.about_feedback_failed), Toast.LENGTH_SHORT).show()
+        }
+    }
+
     Scaffold(
         topBar = {
             CompactTopAppBar(
@@ -45,160 +77,146 @@ fun AboutScreen(
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
                 .padding(padding),
-            contentPadding = PaddingValues(16.dp),
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // ── 项目身份：图标 + 名称 + 版本 + 一句话介绍 ──
             item {
-                Spacer(modifier = Modifier.height(32.dp))
-
-                Box(
-                    modifier = Modifier
-                        .size(80.dp)
-                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f), MaterialTheme.shapes.extraLarge),
-                    contentAlignment = Alignment.Center
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(top = 24.dp, bottom = 8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Icon(
-                        Icons.Filled.Inventory2,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(40.dp)
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text(
-                    text = stringResource(R.string.app_name),
-                    style = MaterialTheme.typography.headlineLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-
-                Text(
-                    text = stringResource(R.string.about_subtitle),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = stringResource(R.string.app_version),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            item {
-                ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
+                    Box(
+                        modifier = Modifier
+                            .size(80.dp)
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f), MaterialTheme.shapes.extraLarge),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Filled.Inventory2,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(40.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(14.dp))
                     Text(
-                        text = stringResource(R.string.about_description),
-                        style = MaterialTheme.typography.titleMedium,
+                        text = stringResource(R.string.app_name),
+                        style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
+                        color = MaterialTheme.colorScheme.primary
                     )
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = BuildConfig.VERSION_NAME,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
                     Text(
                         text = stringResource(R.string.about_description_detail),
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.padding(horizontal = 24.dp)
                     )
                 }
             }
 
+            // ── 参与和了解：版本历史 / 项目源码 / 问题反馈 ──
             item {
                 ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
-                    Text(
-                        text = stringResource(R.string.about_features),
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold
+                    SettingsMenuItem(
+                        icon = Icons.Outlined.History,
+                        title = stringResource(R.string.about_version_history),
+                        subtitle = stringResource(R.string.about_version_history_desc),
+                        tint = InfoBlue,
+                        onClick = onNavigateToVersionHistory
                     )
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    val features = listOf(
-                        stringResource(R.string.about_feature_asset),
-                        stringResource(R.string.about_feature_bill),
-                        stringResource(R.string.about_feature_goal),
-                        stringResource(R.string.about_feature_anniversary),
-                        stringResource(R.string.about_feature_moment)
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 12.dp))
+                    SettingsMenuItem(
+                        icon = Icons.Outlined.Code,
+                        title = stringResource(R.string.about_project_source),
+                        subtitle = stringResource(R.string.about_project_source_desc),
+                        tint = StatusActive,
+                        onClick = { openInBrowser(PROJECT_REPO_URL) }
                     )
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 12.dp))
+                    SettingsMenuItem(
+                        icon = Icons.Outlined.Feedback,
+                        title = stringResource(R.string.about_feedback),
+                        subtitle = stringResource(R.string.about_feedback_desc),
+                        tint = Amber,
+                        onClick = { openInBrowser(FEEDBACK_ISSUES_URL) }
+                    )
+                }
+            }
 
-                    features.forEach { feature ->
-                        Row(
-                            modifier = Modifier.padding(vertical = 4.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(
-                                Icons.Filled.CheckCircle,
-                                contentDescription = null,
-                                tint = StatusActive,
-                                modifier = Modifier.size(18.dp)
+            // ── 法律信息：隐私 / 条款 / 开源许可 ──
+            item {
+                ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
+                    SettingsMenuItem(
+                        icon = Icons.Outlined.PrivacyTip,
+                        title = stringResource(R.string.about_privacy_policy),
+                        subtitle = stringResource(R.string.about_privacy_desc),
+                        tint = ErrorLight,
+                        onClick = onNavigateToPrivacy
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 12.dp))
+                    SettingsMenuItem(
+                        icon = Icons.Outlined.Gavel,
+                        title = stringResource(R.string.about_terms_of_service),
+                        subtitle = stringResource(R.string.about_terms_desc),
+                        tint = ErrorLight,
+                        onClick = onNavigateToTerms
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 12.dp))
+                    SettingsMenuItem(
+                        icon = Icons.Outlined.Description,
+                        title = stringResource(R.string.about_open_source_license),
+                        subtitle = stringResource(R.string.about_license_desc),
+                        tint = StatusActive,
+                        onClick = onNavigateToLicense
+                    )
+                }
+            }
+
+            // ── 开源与致谢：GPL-3.0 一句话说明 + 致谢脚注 ──
+            item {
+                ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
+                    Row(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Icon(
+                            Icons.Outlined.VolunteerActivism,
+                            contentDescription = null,
+                            tint = ModuleLife,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Column {
+                            Text(
+                                text = stringResource(R.string.about_open_source_note),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface
                             )
-                            Text(feature, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Kotlin · Jetpack Compose · Room · SQLCipher · PaddleOCR",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
                     }
                 }
             }
 
             item {
-                ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
-                    Text(
-                        text = stringResource(R.string.about_tech_stack),
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Kotlin · Jetpack Compose · Room · Navigation",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-
-            item {
-                ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
-                    Text(
-                        text = stringResource(R.string.about_legal),
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth().clickable { onNavigateToPrivacy() },
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(stringResource(R.string.about_privacy_policy), style = MaterialTheme.typography.bodyMedium)
-                        Icon(Icons.Default.ChevronRight, null, modifier = Modifier.size(20.dp))
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    HorizontalDivider()
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth().clickable { onNavigateToTerms() },
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(stringResource(R.string.about_terms_of_service), style = MaterialTheme.typography.bodyMedium)
-                        Icon(Icons.Default.ChevronRight, null, modifier = Modifier.size(20.dp))
-                    }
-                }
-            }
-
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = stringResource(R.string.about_made_with),
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(24.dp))
             }
         }
     }
@@ -209,7 +227,7 @@ fun AboutScreen(
 fun PrivacyPolicyScreen(
     onNavigateBack: () -> Unit = {}
 ) {
-    val context = androidx.compose.ui.platform.LocalContext.current
+    val context = LocalContext.current
     val isZh = context.resources.configuration.locales[0].language == "zh"
     val lines = getPrivacyPolicyLines(isZh)
     Scaffold(
@@ -251,7 +269,7 @@ fun PrivacyPolicyScreen(
 fun TermsOfServiceScreen(
     onNavigateBack: () -> Unit = {}
 ) {
-    val context = androidx.compose.ui.platform.LocalContext.current
+    val context = LocalContext.current
     val isZh = context.resources.configuration.locales[0].language == "zh"
     val lines = getTermsOfServiceLines(isZh)
     Scaffold(
@@ -315,8 +333,8 @@ fun getTermsOfServiceLines(isZh: Boolean = true): List<String> {
 internal val privacyPolicyLinesZh = """
 隐私政策
 
-最后更新日期：2026年7月6日
-生效日期：2026年7月6日
+最后更新日期：2026年9月17日
+生效日期：2026年9月17日
 应用名称：PalmNote（掌记）
 开发者：个人开发者
 
@@ -325,7 +343,7 @@ PalmNote（以下简称"本应用"）非常重视用户的隐私保护。本隐�
 一、信息收集
 
 1.1 本应用不主动收集任何个人信息
-本应用采用纯本地存储架构，所有数据仅存储在您的设备本地，不会上传至任何服务器或第三方服务。
+本应用采用纯本地存储架构，所有数据仅存储在您的设备本地，不会上传至任何服务器或第三方服务。本应用未声明任何网络权限（INTERNET），在系统层面即无法连接网络。
 
 1.2 本应用不收集的数据类型
 - 设备标识符（IMEI、Android ID、序列号等）
@@ -338,11 +356,12 @@ PalmNote（以下简称"本应用"）非常重视用户的隐私保护。本隐�
 1.3 您主动提供的信息
 仅当您主动使用以下功能时，本应用会处理相应数据：
 - 拍照附件：调用系统相机，图片仅存储在应用私有目录
+- OCR 拍照识别：调用系统相机拍摄或选取账单图片，识别过程完全在本机（离线模型）完成，图片不会离开您的设备
 - 应用锁：生物识别数据仅用于本地验证，不会被存储或传输
 - 日历同步：仅写入系统日历，不读取其他日历数据
 
-1.4 第三方SDK清单
-本应用不集成任何第三方SDK、广告SDK或数据分析SDK。
+1.4 第三方SDK说明
+本应用不集成任何联网、广告、统计分析类第三方SDK；所集成的第三方开源库均在本机运行，不收集、不上传任何数据，完整清单见「开源许可」。
 
 二、信息存储与安全
 
@@ -350,7 +369,7 @@ PalmNote（以下简称"本应用"）非常重视用户的隐私保护。本隐�
 所有数据存储在应用私有目录（/data/data/com.palmnote/），受Android系统沙箱保护，其他应用无法直接访问。
 
 2.2 存储加密
-- 数据库文件：存储在应用私有目录，受系统保护
+- 数据库文件：使用 SQLCipher（AES-256）全库加密，密钥仅存于本机
 - 备份文件：支持AES-GCM加密，密钥由用户设定
 - 应用锁：PIN 密码经加盐哈希处理后存储
 
@@ -361,7 +380,7 @@ PalmNote（以下简称"本应用"）非常重视用户的隐私保护。本隐�
 
 三、信息共享
 
-本应用不会与任何第三方共享、出售或交换您的个人信息。本应用不包含任何第三方SDK、广告SDK或分析工具。
+本应用不会与任何第三方共享、出售或交换您的个人信息。本应用不集成任何第三方广告或统计分析 SDK。
 
 四、用户权利
 
@@ -413,8 +432,8 @@ PalmNote（以下简称"本应用"）非常重视用户的隐私保护。本隐�
 internal val privacyPolicyLinesEn = """
 Privacy Policy
 
-Last updated: July 6, 2026
-Effective date: July 6, 2026
+Last updated: September 17, 2026
+Effective date: September 17, 2026
 App name: PalmNote
 Developer: Independent Developer
 
@@ -423,7 +442,7 @@ PalmNote (hereinafter referred to as "the App") values user privacy protection. 
 1. Information Collection
 
 1.1 The App Does Not Actively Collect Personal Information
-The App uses a pure local storage architecture. All data is stored only on your device and is not uploaded to any server or third-party service.
+The App uses a pure local storage architecture. All data is stored only on your device and is not uploaded to any server or third-party service. The App declares no network permissions (INTERNET) and is technically incapable of connecting to the internet.
 
 1.2 Types of Data Not Collected
 - Device identifiers (IMEI, Android ID, serial numbers, etc.)
@@ -436,11 +455,13 @@ The App uses a pure local storage architecture. All data is stored only on your 
 1.3 Information You Provide
 The App only processes data when you actively use the following features:
 - Photo attachments: Uses the system camera; images are stored only in the app's private directory
+- OCR recognition: Captures or picks bill images via the system camera; recognition runs entirely on-device with an offline model, and images never leave your device
 - App lock: Biometric data is used only for local verification and is not stored or transmitted
 - Calendar sync: Only writes to the system calendar and does not read other calendar data
 
 1.4 Third-Party SDKs
-The App does not integrate any third-party SDKs, advertising SDKs, or analytics SDKs.
+The App integrates no networked, advertising, or analytics SDKs.
+Its open-source libraries run on-device and never collect or upload data; see "Open Source License" for the full list.
 
 2. Information Storage and Security
 
@@ -448,7 +469,7 @@ The App does not integrate any third-party SDKs, advertising SDKs, or analytics 
 All data is stored in the app's private directory (/data/data/com.palmnote/), protected by Android's sandbox system. Other apps cannot directly access it.
 
 2.2 Storage Encryption
-- Database files: Stored in the app's private directory, protected by the system
+- Database files: Fully encrypted with SQLCipher (AES-256); keys are kept only on the device
 - Backup files: Support AES-GCM encryption with user-defined keys
 - App lock: PIN passwords are stored as salted hashes
 
@@ -459,7 +480,7 @@ All data is stored in the app's private directory (/data/data/com.palmnote/), pr
 
 3. Information Sharing
 
-The App does not share, sell, or exchange your personal information with any third party. The App does not contain any third-party SDKs, advertising SDKs, or analytics tools.
+The App does not share, sell, or exchange your personal information with any third party. It integrates no ad or analytics SDKs.
 
 4. User Rights
 
@@ -511,8 +532,8 @@ If you have any questions, suggestions, or concerns about this Privacy Policy, p
 internal val termsOfServiceLinesZh = """
 用户服务协议
 
-最后更新日期：2026年7月6日
-生效日期：2026年7月6日
+最后更新日期：2026年9月17日
+生效日期：2026年9月17日
 应用名称：PalmNote（掌记）
 开发者：个人开发者
 
@@ -527,13 +548,13 @@ internal val termsOfServiceLinesZh = """
 本应用为免费开源软件，基于GNU通用公共许可证v3.0（GPL-3.0）发布。您可自由使用、修改和分发本软件，但需遵守GPL-3.0许可证条款。
 
 1.3 使用方式
-本应用采用纯本地存储架构，无需注册账号，无需联网即可使用。
+本应用采用纯本地存储架构，无需注册账号，无需联网即可使用。本应用未声明网络权限（INTERNET），在系统层面即无法连接网络。
 
 1.4 账号说明
 本应用不提供账号注册、登录服务。所有数据存储在您的设备本地，不与任何云端账号关联。您应自行负责设备安全和数据备份。
 
 1.5 服务可用性
-本应用为离线应用，不依赖网络服务。开发者不承诺应用的持续可用性，但会尽力维护应用的正常运行。如因系统升级等原因需要暂停服务，开发者将提前通知。
+本应用为离线应用，不依赖网络服务。开发者不承诺应用的持续可用性，但会尽力维护应用的正常运行。应用更新通过 GitHub 发布，是否更新由您自行决定。
 
 二、用户权利与义务
 
@@ -616,8 +637,8 @@ internal val termsOfServiceLinesZh = """
 internal val termsOfServiceLinesEn = """
 Terms of Service
 
-Last updated: July 6, 2026
-Effective date: July 6, 2026
+Last updated: September 17, 2026
+Effective date: September 17, 2026
 App name: PalmNote
 Developer: Independent Developer
 
@@ -632,13 +653,13 @@ The App is a local life recording tool that provides features such as bookkeepin
 The App is free open source software released under the GNU General Public License v3.0 (GPL-3.0). You may freely use, modify, and distribute this software, but must comply with GPL-3.0 license terms.
 
 1.3 Usage
-The App uses a pure local storage architecture. No account registration is required, and no internet connection is needed to use it.
+The App uses a pure local storage architecture. No account registration is required, and no internet connection is needed to use it. The App declares no network permissions (INTERNET) and is technically incapable of connecting to the internet.
 
 1.4 Account Description
 The App does not provide account registration or login services. All data is stored locally on your device and is not associated with any cloud account. You are responsible for device security and data backup.
 
 1.5 Service Availability
-The App is an offline application that does not depend on network services. The developer does not guarantee continuous availability but will do their best to maintain normal operation. If service needs to be suspended due to system upgrades or other reasons, the developer will provide advance notice.
+The App is an offline application that does not depend on network services. The developer does not guarantee continuous availability but will do their best to maintain normal operation. App updates are published via GitHub, and whether to update is entirely up to you.
 
 2. User Rights and Obligations
 

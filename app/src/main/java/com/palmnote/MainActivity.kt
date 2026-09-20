@@ -2,6 +2,7 @@ package com.palmnote
 
 import android.os.Bundle
 import android.content.Intent
+import androidx.annotation.StringRes
 import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.compose.setContent
 import android.Manifest
@@ -11,11 +12,13 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.EnterTransition
@@ -35,10 +38,12 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
@@ -52,9 +57,9 @@ import com.palmnote.data.lock.AppLockManager
 import com.palmnote.ui.lock.AppLockScreen
 import com.palmnote.ui.lock.AppLockState
 import com.palmnote.ui.navigation.PalmNoteNavHost
+import com.palmnote.ui.onboarding.OnboardingScreen
 import com.palmnote.ui.theme.PalmNoteTheme
 import com.palmnote.ui.theme.WallpaperBackground
-import com.palmnote.ui.theme.ModuleHome
 import androidx.compose.ui.res.stringResource
 import com.palmnote.app.R
 import dagger.hilt.android.AndroidEntryPoint
@@ -197,6 +202,7 @@ class MainActivity : AppCompatActivity() {
             }
             val lockState by appLockManager.lockState.collectAsStateWithLifecycle()
             val privacyAgreed by preferencesManager.privacyAgreed.collectAsStateWithLifecycle(initialValue = null)
+            val onboardingCompleted by preferencesManager.onboardingCompleted.collectAsStateWithLifecycle(initialValue = null)
             val showPrivacyDialog = privacyAgreed == false
             val scope = rememberCoroutineScope()
 
@@ -228,128 +234,183 @@ class MainActivity : AppCompatActivity() {
                         var showTerms by rememberSaveable { mutableStateOf(false) }
 
                         Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .systemBarsPadding()
-                                    .verticalScroll(rememberScrollState())
-                                    .padding(horizontal = 24.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Spacer(Modifier.height(48.dp))
-
+                            Box(modifier = Modifier.fillMaxSize()) {
+                                // 顶部随主题色渐晕：整页铺满（含状态栏），颜色随用户所选主题色变化
                                 Box(
                                     modifier = Modifier
-                                        .size(72.dp)
-                                        .clip(CircleShape)
-                                        .background(ModuleHome),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        painter = painterResource(id = R.drawable.ic_launcher_foreground_bw),
-                                        contentDescription = null,
-                                        modifier = Modifier.size(56.dp),
-                                        tint = Color.White
-                                    )
-                                }
-
-                                Spacer(Modifier.height(20.dp))
-
-                                Text(
-                                    stringResource(R.string.app_name),
-                                    style = MaterialTheme.typography.headlineMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onBackground
+                                        .fillMaxSize()
+                                        .background(
+                                            Brush.verticalGradient(
+                                                0f to MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
+                                                0.45f to MaterialTheme.colorScheme.background.copy(alpha = 0f)
+                                            )
+                                        )
                                 )
 
-                                Spacer(Modifier.height(24.dp))
-
-                                Text(
-                                    stringResource(R.string.privacy_dialog_title),
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onBackground
-                                )
-
-                                Spacer(Modifier.height(12.dp))
-
-                                Text(
-                                    stringResource(R.string.privacy_dialog_text),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    textAlign = TextAlign.Start
-                                )
-
-                                Spacer(Modifier.height(24.dp))
-
-                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-
-                                Spacer(Modifier.height(20.dp))
-
-                                Text(
-                                    stringResource(R.string.privacy_dialog_view_links),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    textAlign = TextAlign.Start
-                                )
-
-                                Spacer(Modifier.height(8.dp))
-
-                                OutlinedButton(
-                                    onClick = { showPolicy = true },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Icon(Icons.Outlined.Security, contentDescription = null, modifier = Modifier.size(18.dp))
-                                    Spacer(Modifier.width(8.dp))
-                                    Text(stringResource(R.string.about_privacy_policy))
-                                }
-
-                                Spacer(Modifier.height(8.dp))
-
-                                OutlinedButton(
-                                    onClick = { showTerms = true },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Icon(Icons.Outlined.Description, contentDescription = null, modifier = Modifier.size(18.dp))
-                                    Spacer(Modifier.width(8.dp))
-                                    Text(stringResource(R.string.about_terms_of_service))
-                                }
-
-                                Spacer(Modifier.height(8.dp))
-
-                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-
-                                Spacer(Modifier.height(24.dp))
-
-                                Button(
-                                    onClick = {
-                                        scope.launch { preferencesManager.setPrivacyAgreed(true) }
-                                    },
+                                // 可滚动内容：铺满整屏，从固定底栏下方穿过
+                                Column(
                                     modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(50.dp),
-                                    shape = MaterialTheme.shapes.medium
+                                        .fillMaxSize()
+                                        .verticalScroll(rememberScrollState())
+                                        .statusBarsPadding()
+                                        .padding(horizontal = 20.dp)
+                                        .padding(bottom = 172.dp)
+                                        .navigationBarsPadding()
                                 ) {
+                                    Spacer(Modifier.height(20.dp))
+
+                                    // 品牌行：方形圆角底 + 白色图形 + 拉丁品牌名
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(36.dp)
+                                                .clip(RoundedCornerShape(10.dp))
+                                                .background(MaterialTheme.colorScheme.primary),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                painter = painterResource(id = R.drawable.ic_launcher_foreground_bw),
+                                                contentDescription = null,
+                                                // 该 vector 的 viewport 为 108dp、图形仅占居中的 36/108，故容器须取 66dp
+                                                // 才等于 22dp 视觉图形；容器大于底框（36dp），必须用 requiredSize
+                                                // 才不会被父级约束钳到 36dp（那样图形只剩 12dp）
+                                                modifier = Modifier.requiredSize(66.dp),
+                                                tint = Color.White
+                                            )
+                                        }
+
+                                        Spacer(Modifier.width(12.dp))
+
+                                        Text(
+                                            stringResource(R.string.privacy_brand_latin),
+                                            fontSize = 16.sp,
+                                            lineHeight = 22.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onBackground
+                                        )
+                                    }
+
+                                    Spacer(Modifier.height(28.dp))
+
                                     Text(
-                                        stringResource(R.string.privacy_dialog_agree),
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 16.sp
+                                        stringResource(R.string.privacy_eyebrow),
+                                        fontSize = 12.sp,
+                                        lineHeight = 16.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = MaterialTheme.colorScheme.primary
                                     )
-                                }
 
-                                Spacer(Modifier.height(12.dp))
+                                    Spacer(Modifier.height(8.dp))
 
-                                TextButton(
-                                    onClick = { finishAffinity() },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
                                     Text(
-                                        stringResource(R.string.privacy_dialog_disagree),
+                                        stringResource(R.string.privacy_dialog_title),
+                                        fontSize = 24.sp,
+                                        lineHeight = 32.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onBackground
+                                    )
+
+                                    Spacer(Modifier.height(10.dp))
+
+                                    Text(
+                                        stringResource(R.string.privacy_dialog_text),
+                                        fontSize = 14.sp,
+                                        lineHeight = 21.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+
+                                    Spacer(Modifier.height(24.dp))
+
+                                    PrivacyPointsCards()
+
+                                    Spacer(Modifier.height(16.dp))
+
+                                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                        PrivacyDocButton(
+                                            icon = Icons.Outlined.Security,
+                                            label = stringResource(R.string.about_privacy_policy),
+                                            modifier = Modifier.weight(1f),
+                                            onClick = { showPolicy = true }
+                                        )
+                                        PrivacyDocButton(
+                                            icon = Icons.Outlined.Description,
+                                            label = stringResource(R.string.about_terms_of_service),
+                                            modifier = Modifier.weight(1f),
+                                            onClick = { showTerms = true }
+                                        )
+                                    }
+
+                                    Spacer(Modifier.height(14.dp))
+
+                                    Text(
+                                        stringResource(R.string.privacy_consent_note),
+                                        fontSize = 12.sp,
+                                        lineHeight = 17.sp,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
 
-                                Spacer(Modifier.height(24.dp))
+                                // 固定底栏：16dp 渐隐（透明 → 背景色）+ 不透明操作区。
+                                // 渐隐条必须与不透明区是兄弟节点——否则渐隐的下半段压在自身底色上，等于没做。
+                                Column(
+                                    modifier = Modifier
+                                        .align(Alignment.BottomCenter)
+                                        .fillMaxWidth()
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(16.dp)
+                                            .background(
+                                                Brush.verticalGradient(
+                                                    listOf(
+                                                        MaterialTheme.colorScheme.background.copy(alpha = 0f),
+                                                        MaterialTheme.colorScheme.background
+                                                    )
+                                                )
+                                            )
+                                    )
+
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            // 背景须在 navigationBarsPadding 之前，才能盖满导航栏安全区
+                                            .background(MaterialTheme.colorScheme.background)
+                                            .navigationBarsPadding()
+                                            .padding(20.dp)
+                                    ) {
+                                        Button(
+                                            onClick = {
+                                                scope.launch { preferencesManager.setPrivacyAgreed(true) }
+                                            },
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(52.dp),
+                                            shape = RoundedCornerShape(26.dp)
+                                        ) {
+                                            Text(
+                                                stringResource(R.string.privacy_dialog_agree),
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 16.sp
+                                            )
+                                        }
+
+                                        Spacer(Modifier.height(8.dp))
+
+                                        TextButton(
+                                            onClick = { finishAffinity() },
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(48.dp)
+                                        ) {
+                                            Text(
+                                                stringResource(R.string.privacy_dialog_disagree),
+                                                fontSize = 14.sp,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
+                                }
                             }
                         }
 
@@ -368,6 +429,12 @@ class MainActivity : AppCompatActivity() {
                                 onBack = { showTerms = false }
                             )
                         }
+                    } else if (onboardingCompleted == null) {
+                        // Still loading onboarding state - show nothing
+                    } else if (onboardingCompleted == false) {
+                        OnboardingScreen(
+                            onFinish = { scope.launch { preferencesManager.setOnboardingCompleted(true) } }
+                        )
                     } else {
                         if (Build.VERSION.SDK_INT >= 33) {
                             val notificationPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
@@ -484,5 +551,115 @@ private fun FullDocumentOverlay(title: String, lines: List<String>, onBack: () -
                 Spacer(Modifier.height(32.dp))
             }
         }
+    }
+}
+
+/** 隐私页三要点：一条数据的图标 + 标题 + 说明。 */
+private data class PrivacyPoint(
+    val icon: ImageVector,
+    @StringRes val titleRes: Int,
+    @StringRes val bodyRes: Int
+)
+
+/**
+ * 隐私页的三点承诺卡片：不联网 / 不上传 / 只在本机。
+ * 三张独立白卡（20dp 圆角 + 1dp 细描边 + 无投影），与全 App 的卡片语言一致。
+ */
+@Composable
+private fun PrivacyPointsCards() {
+    val points = listOf(
+        PrivacyPoint(
+            icon = Icons.Outlined.WifiOff,
+            titleRes = R.string.privacy_point_offline_title,
+            bodyRes = R.string.privacy_point_offline_body
+        ),
+        PrivacyPoint(
+            icon = Icons.Outlined.CloudOff,
+            titleRes = R.string.privacy_point_no_upload_title,
+            bodyRes = R.string.privacy_point_no_upload_body
+        ),
+        PrivacyPoint(
+            icon = Icons.Outlined.PhoneAndroid,
+            titleRes = R.string.privacy_point_local_title,
+            bodyRes = R.string.privacy_point_local_body
+        )
+    )
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        points.forEach { point ->
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                color = MaterialTheme.colorScheme.surface,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+            ) {
+                Row(
+                    modifier = Modifier.padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primary),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = point.icon,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(19.dp)
+                        )
+                    }
+
+                    Spacer(Modifier.width(12.dp))
+
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(3.dp)
+                    ) {
+                        Text(
+                            text = stringResource(point.titleRes),
+                            fontSize = 14.sp,
+                            lineHeight = 19.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = stringResource(point.bodyRes),
+                            fontSize = 12.sp,
+                            lineHeight = 16.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** 隐私页的条款入口按钮：44dp 胶囊描边 + 图标 + 13sp 文字，两个并排各占半宽。 */
+@Composable
+private fun PrivacyDocButton(
+    icon: ImageVector,
+    label: String,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    OutlinedButton(
+        onClick = onClick,
+        modifier = modifier.height(44.dp),
+        shape = RoundedCornerShape(22.dp),
+        contentPadding = PaddingValues(horizontal = 6.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+    ) {
+        Icon(icon, contentDescription = null, modifier = Modifier.size(17.dp))
+        Spacer(Modifier.width(8.dp))
+        Text(
+            text = label,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Medium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }

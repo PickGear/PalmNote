@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 安全漏洞报告
+    url: https://github.com/PickGear/PalmNote/blob/main/SECURITY.md
+    about: 请勿通过公开 Issue 报告安全漏洞，请按 SECURITY.md 的指引私下报告。
+  - name: 使用疑问
+    url: https://github.com/PickGear/PalmNote/blob/main/README.md
+    about: 先阅读 README 与文档，多数使用问题可以就地解决。

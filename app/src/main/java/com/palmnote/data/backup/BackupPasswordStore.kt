@@ -14,15 +14,15 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * 备份密码的本地记忆（默认不启用）。
+ * 备份密码的本地记忆。
  *
- * 只有用户在备份页显式打开"记住密码"后才写入。密码经 Android Keystore 中的
- * AES-256-GCM 密钥包裹后存于 SharedPreferences —— **明文不落盘**，因此不会削弱
- * "导出包必须加密"这条底线：拿到 prefs 文件也解不开包。
+ * 用户在备份页设置「备份密码」后写入。密码经 Android Keystore 中的 AES-256-GCM
+ * 密钥包裹后存于 SharedPreferences —— **明文不落盘**，拿到 prefs 文件也解不开包。
+ * 手动备份、自动备份、「备份到文件夹」共用这一份：设了 → 全部加密（含便携密钥，
+ * 可换机恢复）；清掉 → 全部明文。
  *
- * 包裹绑定当前设备的 Keystore：换机或卸载重装后自动失效（解不开即视为未记住），
- * 此时需要重新输入密码。这与备份自身的可移植性无关 —— 备份包内的密钥由
- * 用户在导出时设置的密码保护，不依赖本机。
+ * 包裹绑定当前设备的 Keystore：换机或卸载重装后自动失效（解不开即视为未设置），
+ * 此时自动备份退回明文，恢复加密包需重新输入密码。
  */
 @Singleton
 class BackupPasswordStore @Inject constructor(@ApplicationContext context: Context) {

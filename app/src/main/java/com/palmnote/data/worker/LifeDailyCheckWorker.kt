@@ -69,6 +69,7 @@ class LifeDailyCheckWorker @AssistedInject constructor(
             checkSubscriptionBilling()
             if (overBudget()) return Result.success()
             tryGenerateWeeklyReport()
+        tryGenerateMonthlyReport()
             Result.success()
         } catch (e: Exception) {
             if (runAttemptCount < 3) Result.retry() else Result.failure()
@@ -261,6 +262,20 @@ class LifeDailyCheckWorker @AssistedInject constructor(
         }
     }
 
+    private suspend fun tryGenerateMonthlyReport() {
+        val today = LocalDate.now()
+        if (today.dayOfMonth != 1) return
+        val zone = zone
+        val monthStart = today.minusMonths(1).withDayOfMonth(1).atStartOfDay(zone).toInstant().toEpochMilli()
+        val monthEnd = today.withDayOfMonth(1).atStartOfDay(zone).toInstant().toEpochMilli()
+        val existing = reportRepo.getReport("MONTHLY", monthStart)
+        if (existing != null) return
+        val focusMinutes = try {
+            focusRepo.getTodayTotalMinutes(monthStart, monthEnd)
+        } catch (_: Exception) { 0 }
+        reportRepo.insertReport(LifeReport(type = "MONTHLY", periodStart = monthStart, periodEnd = monthEnd, reportData = """{"focusMinutes":$focusMinutes}"""))
+    }
+
     private suspend fun tryGenerateWeeklyReport() {
         val today = LocalDate.now()
         if (today.dayOfWeek != DayOfWeek.MONDAY) return
@@ -273,4 +288,10 @@ class LifeDailyCheckWorker @AssistedInject constructor(
         } catch (_: Exception) { 0 }
         reportRepo.insertReport(LifeReport(type = "WEEKLY", periodStart = weekStart, periodEnd = weekEnd, reportData = """{"focusMinutes":$focusMinutes}"""))
     }
+
+    companion object {
+        /** 唯一任务名：调度（PalmNoteApp）与恢复前取消（BackupViewModel）共用 */
+        const val UNIQUE_WORK_NAME = "life_daily_check"
+    }
 }
+

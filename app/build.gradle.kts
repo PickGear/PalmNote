@@ -37,8 +37,11 @@ android {
         // targetSdk 34：自用侧载，禁用 Android 15+ 强制 predictive back，恢复传统返回动画；
         // compileSdk 保持 36 不损失编译能力。上 Play 时需升回 35+。
         targetSdk = 34
-        versionCode = 4
-        versionName = "1.3.0"
+        versionCode = 5
+        versionName = libs.versions.palmnote.get()
+        // 版本号单一事实来源：resValue 生成 app_version 字符串资源，
+        // 供 AboutScreen / AppLockScreen 的 stringResource(R.string.app_version) 使用。
+        resValue("string", "app_version", "v${libs.versions.palmnote.get()}")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -139,6 +142,11 @@ android {
             assets.srcDirs("$projectDir/schemas", "$rootDir/core/schemas")
         }
     }
+    // 仅保留中英文本地化资源：剥离 AppCompat/Compose 等库携带的其余 ~80 个语言包
+    androidResources {
+        localeFilters += listOf("zh", "en")
+    }
+
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"

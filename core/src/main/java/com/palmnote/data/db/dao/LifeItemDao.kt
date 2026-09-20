@@ -5,6 +5,12 @@ import androidx.sqlite.db.SimpleSQLiteQuery
 import com.palmnote.data.db.entity.LifeItem
 import kotlinx.coroutines.flow.Flow
 
+/** 月历密度行（v4 §五：按天条数，口径 = COALESCE(dueDate, createdAt)）。 */
+data class LifeDayCount(val day: String, val cnt: Int)
+
+/** 月历分类小点行（v4 §五：格内 ≤3 个分类色小点）。 */
+data class LifeDayCategoryCount(val day: String, val category: String, val cnt: Int)
+
 @Dao
 interface LifeItemDao {
     @Query("SELECT * FROM life_items ORDER BY updatedAt DESC")
@@ -106,30 +112,35 @@ interface LifeItemDao {
     suspend fun deleteAll()
 
     // ---- v8 执行列查询（今日看板 / 待办补集 / 计划子任务 / 逾期）----
+    // ⚠️ 定案 31：全出口关闭——过滤下沉到查询端（INNER JOIN life_templates AND lt.isHidden = 0），
+    // 消费端不再各自过滤；新增出口必须同样下沉，禁止只做消费端过滤（假修）。
 
-    /** 今日看板聚合：dueDate 落在 [start, end) 内的条目（不含归档）。 */
+    /** 今日看板聚合：dueDate 落在 [start, end) 内的条目（不含归档、不含已关闭模板）。 */
     @Query("""
-        SELECT * FROM life_items
-        WHERE dueDate >= :start AND dueDate < :end AND status != 'ARCHIVED'
-        ORDER BY dueTime ASC, sortOrder ASC, createdAt DESC
+        SELECT li.* FROM life_items li
+        INNER JOIN life_templates lt ON li.templateId = lt.id AND lt.isHidden = 0
+        WHERE li.dueDate >= :start AND li.dueDate < :end AND li.status != 'ARCHIVED'
+        ORDER BY li.dueTime ASC, li.sortOrder ASC, li.createdAt DESC
     """)
     fun getScheduledBetween(start: Long, end: Long): Flow<List<LifeItem>>
 
-    /** 周历标记点：范围内 distinct 的 dueDate（毫秒，不含归档）。 */
+    /** 周历标记点：范围内 distinct 的 dueDate（毫秒，不含归档、不含已关闭模板）。 */
     @Query("""
-        SELECT DISTINCT dueDate FROM life_items
-        WHERE dueDate IS NOT NULL AND dueDate >= :start AND dueDate < :end
-        AND status != 'ARCHIVED'
+        SELECT DISTINCT li.dueDate FROM life_items li
+        INNER JOIN life_templates lt ON li.templateId = lt.id AND lt.isHidden = 0
+        WHERE li.dueDate IS NOT NULL AND li.dueDate >= :start AND li.dueDate < :end
+        AND li.status != 'ARCHIVED'
     """)
     fun getDistinctDueDatesBetween(start: Long, end: Long): Flow<List<Long>>
 
     /** 待办卡补集：待办模板、非今日（逾期/未来/无日期）、未完成、非子任务。 */
     @Query("""
-        SELECT * FROM life_items
-        WHERE templateId = :todoTemplateId AND parentId IS NULL
-        AND status != 'COMPLETED' AND status != 'ARCHIVED'
-        AND (dueDate IS NULL OR dueDate < :todayStart OR dueDate >= :todayEnd)
-        ORDER BY dueDate ASC, sortOrder ASC, createdAt DESC
+        SELECT li.* FROM life_items li
+        INNER JOIN life_templates lt ON li.templateId = lt.id AND lt.isHidden = 0
+        WHERE li.templateId = :todoTemplateId AND li.parentId IS NULL
+        AND li.status != 'COMPLETED' AND li.status != 'ARCHIVED'
+        AND (li.dueDate IS NULL OR li.dueDate < :todayStart OR li.dueDate >= :todayEnd)
+        ORDER BY li.dueDate ASC, li.sortOrder ASC, li.createdAt DESC
     """)
     fun getTodoComplement(todayStart: Long, todayEnd: Long, todoTemplateId: Long): Flow<List<LifeItem>>
 
@@ -137,12 +148,47 @@ interface LifeItemDao {
     @Query("SELECT * FROM life_items WHERE parentId = :parentId ORDER BY sortOrder ASC, createdAt DESC")
     fun getSubtasks(parentId: Long): Flow<List<LifeItem>>
 
-    /** 逾期反馈：dueDate < now 且未完成。 */
+    /** 纪念日类条目（生日/纪念日模板创建），供仪表盘纪念日卡与日历同步使用。 */
     @Query("""
-        SELECT * FROM life_items
-        WHERE dueDate IS NOT NULL AND dueDate < :now
-        AND status != 'COMPLETED' AND status != 'ARCHIVED'
-        ORDER BY dueDate ASC
+        SELECT li.* FROM life_items li
+        INNER JOIN life_templates lt ON li.templateId = lt.id
+        WHERE lt.icon IN ('cake', 'celebration')
+        AND lt.isHidden = 0
+        AND li.status != 'ARCHIVED'
+        ORDER BY li.dueDate ASC
+    """)
+    fun getAnniversaryLikeItems(): Flow<List<LifeItem>>
+
+    /** 逾期反馈：dueDate < now 且未完成（不含已关闭模板）。 */
+    @Query("""
+        SELECT li.* FROM life_items li
+        INNER JOIN life_templates lt ON li.templateId = lt.id AND lt.isHidden = 0
+        WHERE li.dueDate IS NOT NULL AND li.dueDate < :now
+        AND li.status != 'COMPLETED' AND li.status != 'ARCHIVED'
+        ORDER BY li.dueDate ASC
     """)
     fun getOverdue(now: Long): Flow<List<LifeItem>>
+
+    /** 月历密度（v4 §五）：按天条数，口径 COALESCE(dueDate, createdAt)，'localtime' 防跨时区漂移。 */
+    @Query("""
+        SELECT date(COALESCE(li.dueDate, li.createdAt) / 1000, 'unixepoch', 'localtime') AS day, COUNT(*) AS cnt
+        FROM life_items li
+        INNER JOIN life_templates lt ON li.templateId = lt.id AND lt.isHidden = 0
+        WHERE COALESCE(li.dueDate, li.createdAt) >= :start AND COALESCE(li.dueDate, li.createdAt) < :end
+        AND li.status != 'ARCHIVED'
+        GROUP BY day
+    """)
+    fun getDayCountsBetween(start: Long, end: Long): Flow<List<LifeDayCount>>
+
+    /** 月历分类小点：按天 × 模板分类计数（消费端每天最多取 3 类）。 */
+    @Query("""
+        SELECT date(COALESCE(li.dueDate, li.createdAt) / 1000, 'unixepoch', 'localtime') AS day,
+               lt.category AS category, COUNT(*) AS cnt
+        FROM life_items li
+        INNER JOIN life_templates lt ON li.templateId = lt.id AND lt.isHidden = 0
+        WHERE COALESCE(li.dueDate, li.createdAt) >= :start AND COALESCE(li.dueDate, li.createdAt) < :end
+        AND li.status != 'ARCHIVED'
+        GROUP BY day, category
+    """)
+    fun getDayCategoryCountsBetween(start: Long, end: Long): Flow<List<LifeDayCategoryCount>>
 }
