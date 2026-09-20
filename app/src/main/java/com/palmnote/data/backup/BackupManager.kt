@@ -21,9 +21,13 @@ class BackupManager(
     private val dbKeyStore: DbKeyStore? = null
 ) {
 
+    /** 校验和缓存：按 (文件名, 大小, mtime) 记忆，避免每次刷新备份列表都全量重哈希大文件。 */
+    private data class ChecksumEntry(val length: Long, val lastModified: Long, val checksum: String)
+    private val checksumCache = java.util.concurrent.ConcurrentHashMap<String, ChecksumEntry>()
+
     companion object {
-        private const val BACKUP_DIR = "PalmNote"
-        private const val BACKUP_EXTENSION = ".palmnote"
+        /** 本机备份目录名（位于 filesDir 下）；调度器据此判断是否已有自动备份。 */
+        const val BACKUP_DIR_NAME = "PalmNote"
         /** 旧版加密备份 MAGIC（无版本字段） */
         private const val MAGIC = "PNBK"
         /** 新版加密备份 MAGIC */
@@ -34,8 +38,10 @@ class BackupManager(
         private const val LOCK_PREFS_NAME = "app_lock_prefs"
         /** 备份所需最小可用空间（50MB） */
         private const val MIN_FREE_SPACE = 50L * 1024 * 1024
-        /** 自动备份保留份数 */
+        /** 本机备份（自动 + 手动）默认保留份数 */
         private const val DEFAULT_KEEP_BACKUPS = 7
+        /** 恢复前快照默认保留份数：独立计量，不与自动备份抢同一个名额窗口 */
+        private const val DEFAULT_KEEP_SNAPSHOTS = 3
         /** 便携数据库密钥条目：ZIP 内存放 Base64 原始 db_key，用于跨设备/重装恢复。
          *  **仅写入加密备份**——该条目若与 SQLCipher 密文同处一个未加密的包里，等于把钥匙和保险箱
          *  一起交出去；明文备份不含本条目，故只能在原设备恢复。见 [includePortableKeyInBackup]。 */
@@ -51,7 +57,7 @@ class BackupManager(
         // 获取备份存储目录：统一使用应用内部存储，其他应用无法读取。
         // 旧版本使用应用专属外部存储，在 Android 10 及以下可被文件管理器读取，明文备份会经此目录外泄。
         private fun getBackupDir(context: Context): File {
-            val dir = File(context.filesDir, BACKUP_DIR)
+            val dir = File(context.filesDir, BACKUP_DIR_NAME)
             if (!dir.exists()) dir.mkdirs()
             return dir
         }
@@ -63,7 +69,7 @@ class BackupManager(
         fun migrateLegacyExternalBackups(context: Context) {
             try {
                 val legacyDir = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
-                    ?.let { File(it, BACKUP_DIR) } ?: return
+                    ?.let { File(it, BACKUP_DIR_NAME) } ?: return
                 if (!legacyDir.exists()) return
                 val targetDir = getBackupDir(context)
                 legacyDir.listFiles()?.forEach { file ->
@@ -80,17 +86,39 @@ class BackupManager(
     }
 
     /**
-     * 计算需要清理的旧备份（按最近修改时间排序，保留最新的 [keep] 份）。
-     * 纯函数便于单元测试；权限校验/IO 由调用方负责。
+     * 计算需要清理的旧备份。纯函数便于单元测试；权限校验/IO 由调用方负责。
+     *
+     * 两个池子分开数：
+     * - **可轮转池**（自动备份 / 手动备份 / 旧版遗留）：保留最新 [keep] 份；
+     * - **快照池**（恢复前快照）：保留最新 [snapshotKeep] 份。
+     *
+     * 分开的原因：恢复前快照是「恢复失败后把数据找回来」的唯一退路，却和每天新增一份的
+     * 自动备份共用同一个名额窗口。混在一起算，用户只要连续几天不清库或反复恢复，
+     * 这份救命的快照就会被挤出窗口删掉——而那正是最需要它的时刻。
      */
-    internal fun selectBackupsToPrune(files: List<File>, keep: Int = DEFAULT_KEEP_BACKUPS): List<File> =
-        files.sortedByDescending { it.lastModified() }.drop(keep.coerceAtLeast(0))
+    internal fun selectBackupsToPrune(
+        files: List<File>,
+        keep: Int = DEFAULT_KEEP_BACKUPS,
+        snapshotKeep: Int = DEFAULT_KEEP_SNAPSHOTS
+    ): List<File> {
+        val (snapshots, rotatable) = files.partition {
+            BackupKind.fromFileName(it.name) == BackupKind.SNAPSHOT
+        }
+        fun expired(pool: List<File>, limit: Int): List<File> =
+            pool.sortedByDescending { it.lastModified() }.drop(limit.coerceAtLeast(0))
+        return expired(rotatable, keep) + expired(snapshots, snapshotKeep)
+    }
 
-    // 创建备份：打包 DB 一致快照 + 图片 + DataStore + 应用锁 SharedPreferences 为 ZIP，支持可选加密
-    fun createBackup(context: Context, db: AppDatabase, password: String? = null): File {
+    // 创建备份：打包 DB 一致快照 + 图片 + DataStore + 应用锁 SharedPreferences 为 ZIP，支持可选加密。
+    // [kind] 决定文件名里的身份段 —— 它同时决定这份包是否参与轮转、以及界面上如何标识它。
+    fun createBackup(
+        context: Context,
+        db: AppDatabase,
+        password: String? = null,
+        kind: BackupKind = BackupKind.MANUAL
+    ): File {
         val timestamp = System.currentTimeMillis()
-        val fileName = "palmnote_backup_${timestamp}$BACKUP_EXTENSION"
-        val backupFile = File(getBackupDir(context), fileName)
+        val backupFile = File(getBackupDir(context), BackupKind.fileNameOf(kind, timestamp))
 
         // 低存储预检：可用空间不足时提前失败，避免写一半
         val usable = getBackupDir(context).usableSpace
@@ -237,7 +265,20 @@ class BackupManager(
             if (busy != 0) return false
             val dbFile = context.getDatabasePath(AppDatabase.DATABASE_NAME)
             if (!dbFile.exists()) return false
-            dbFile.copyTo(target, overwrite = true)
+            // 持排他事务复制：checkpoint 与复制之间若有并发写入/自动 checkpoint，
+            // 主库页可能在复制中途被改写，产生撕裂快照；事务内复制可阻塞本进程其他写入
+            val sqlDb = db.openHelper.writableDatabase
+            sqlDb.beginTransaction()
+            try {
+                // TRUNCATE checkpoint 后 -wal 应为 0 字节；此时若非空说明 checkpoint 与
+                // 开事务之间有并发提交，主库文件是过时快照 → 回退到 db+wal+shm 打包路径
+                val wal = File(dbFile.path + "-wal")
+                if (wal.exists() && wal.length() > 0) return false
+                dbFile.copyTo(target, overwrite = true)
+                sqlDb.setTransactionSuccessful()
+            } finally {
+                sqlDb.endTransaction()
+            }
             true
         } catch (_: Exception) {
             false
@@ -533,9 +574,9 @@ class BackupManager(
         }
     }
 
-    // 恢复前自动备份
+    // 恢复前自动备份。用 SNAPSHOT 身份：它不参与自动轮转，用户也不该在"整理备份"时误删它
     fun createPreRestoreBackup(context: Context, db: AppDatabase): File {
-        return createBackup(context, db, null)
+        return createBackup(context, db, null, BackupKind.SNAPSHOT)
     }
 
     // 列出所有备份文件（IO：文件扫描 + SHA-256 校验和计算）
@@ -546,29 +587,47 @@ class BackupManager(
                 BackupInfo(
                     fileName = file.name,
                     filePath = file.absolutePath,
-                    date = file.lastModified(),
+                    // 部分文件系统（恢复/迁移后）不保留修改时间，回退到文件名内嵌的创建时间
+                    date = file.lastModified().takeIf { it > 0L }
+                        ?: BackupKind.timestampFromFileName(file.name),
                     size = file.length(),
-                    checksum = calculateChecksum(file)
+                    checksum = cachedChecksum(file),
+                    kind = BackupKind.fromFileName(file.name)
                 )
             }
             ?.sortedByDescending { it.date }
             ?: emptyList()
     }
 
-    // 删除备份文件
-    fun deleteBackup(file: File) {
-        if (file.exists()) file.delete()
-    }
+    /** 删除备份文件；返回是否删除成功（文件本就不存在视为成功，无需删除）。 */
+    fun deleteBackup(file: File): Boolean =
+        !file.exists() || runCatching { file.delete() }.getOrDefault(false)
 
-    // 清理旧备份：删除超过保留份数（默认 7）的最旧备份
-    suspend fun cleanupOldBackups(context: Context, keep: Int = DEFAULT_KEEP_BACKUPS) = withContext(Dispatchers.IO) {
+    // 清理旧备份：可轮转池保留 [keep] 份、快照池保留 [snapshotKeep] 份，其余删除
+    suspend fun cleanupOldBackups(
+        context: Context,
+        keep: Int = DEFAULT_KEEP_BACKUPS,
+        snapshotKeep: Int = DEFAULT_KEEP_SNAPSHOTS
+    ) = withContext(Dispatchers.IO) {
         val files: List<File> = getBackupDir(context).listFiles()
             ?.filter { it.isFile && it.extension == "palmnote" }
             ?: emptyList()
-        selectBackupsToPrune(files, keep).forEach { file ->
+        selectBackupsToPrune(files, keep, snapshotKeep).forEach { file ->
             if (file.exists() && !file.delete()) {
                 android.util.Log.w(TAG, "cleanupOldBackups: failed to delete ${file.name}")
             }
+        }
+    }
+
+    /** 优先命中缓存；文件未变（大小+mtime 均一致）时直接返回上次结果。 */
+    private suspend fun cachedChecksum(file: File): String {
+        checksumCache[file.name]?.let { cached ->
+            if (cached.length == file.length() && cached.lastModified == file.lastModified()) {
+                return cached.checksum
+            }
+        }
+        return calculateChecksum(file).also {
+            checksumCache[file.name] = ChecksumEntry(file.length(), file.lastModified(), it)
         }
     }
 

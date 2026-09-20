@@ -20,5 +20,7 @@ Thumbs.db
 *.jks
 *.keystore
 .mimosa/
+.zcode/
+.zcodeignore
 .workbuddy/
 docs/widget-polish-log.md

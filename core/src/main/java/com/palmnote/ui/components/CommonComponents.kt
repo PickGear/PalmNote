@@ -61,6 +61,14 @@ val CATEGORY_COLOR_OPTIONS = listOf(
 fun ModuleCard(
     modifier: Modifier = Modifier,
     tint: Color = MaterialTheme.colorScheme.surface,
+    /**
+     * 卡片内容内边距，默认 12dp。
+     *
+     * **单行卡**（卡里只挂一行，如「示例数据」下的演示开关）可传
+     * `PaddingValues(horizontal = 12.dp)` 把**上下**内边距去掉：12dp×2 只包着那一行时，
+     * 整卡会比多行卡里的单行（12dp 落在整卡两端、每行看不到）明显高一截。
+     */
+    contentPadding: PaddingValues = PaddingValues(12.dp),
     content: @Composable ColumnScope.() -> Unit
 ) {
     Card(
@@ -71,7 +79,7 @@ fun ModuleCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(
-            modifier = Modifier.padding(12.dp),
+            modifier = Modifier.padding(contentPadding),
             content = content
         )
     }
@@ -385,6 +393,8 @@ fun AppDialog(
         onDismissRequest = { visible = false; onDismissRequest() },
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
+        // 必须在 Dialog 内容内调用，LocalView 才会解析到弹窗自身的 decor view
+        NoDialogWindowAnimation()
         AnimatedVisibility(
             visible = visible,
             enter = scaleIn(spring(dampingRatio = 0.8f, stiffness = 300f)) + fadeIn(tween(150)),
@@ -936,7 +946,10 @@ fun DatePickerField(
             colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.background),
             confirmButton = { TextButton(onClick = { datePickerState.selectedDateMillis?.let { onDateSelected(it) }; showDatePicker = false }) { Text(stringResource(R.string.confirm), fontWeight = FontWeight.Bold) } },
             dismissButton = { TextButton(onClick = { showDatePicker = false }) { Text(stringResource(R.string.cancel), fontWeight = FontWeight.Bold) } }
-        ) { DatePicker(state = datePickerState, colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.background)) }
+        ) {
+            NoDialogWindowAnimation()
+            DatePicker(state = datePickerState, colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.background))
+        }
     }
 }
 

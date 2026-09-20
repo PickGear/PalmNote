@@ -74,6 +74,7 @@ import com.palmnote.feature.vault.VaultLockManager.LockState
 import com.palmnote.ui.components.AppDialog
 import com.palmnote.ui.components.ModuleCard
 import com.palmnote.ui.components.SecondaryTopAppBar
+import com.palmnote.ui.components.SectionHeader
 import com.palmnote.ui.theme.vaultTint
 import kotlinx.coroutines.launch
 

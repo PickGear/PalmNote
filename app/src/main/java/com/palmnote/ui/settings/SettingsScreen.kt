@@ -26,61 +26,18 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.palmnote.ui.components.AppDialog
+import com.palmnote.ui.components.SettingsMenuItem
 import com.palmnote.ui.components.CompactTopAppBar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.palmnote.app.BuildConfig
 import com.palmnote.app.R
 import com.palmnote.ui.theme.*
 import java.io.File
 import coil3.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
 
-
-@Composable
-fun SettingsMenuItem(icon: ImageVector, title: String, subtitle: String, tint: Color = MaterialTheme.colorScheme.primary, onClick: () -> Unit) {
-    Row(modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 10.dp, horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-        Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(tint.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) {
-            Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(20.dp))
-        }
-        Column(modifier = Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.bodyLarge)
-            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
-        }
-        Icon(Icons.Filled.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-    }
-}
-
-@Composable
-fun SectionHeader(title: String, icon: ImageVector = Icons.Filled.Settings, color: Color = MaterialTheme.colorScheme.onSurfaceVariant) {
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp)) {
-        Box(modifier = Modifier.size(20.dp).background(color.copy(alpha = 0.12f), MaterialTheme.shapes.small), contentAlignment = Alignment.Center) {
-            Icon(icon, null, tint = color, modifier = Modifier.size(14.dp))
-        }
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(text = title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
-    }
-}
-
-@Composable
-fun RowScope.SettingRowContent(title: String, subtitle: String? = null, value: String? = null, showChevron: Boolean = false) {
-    Column(modifier = Modifier.weight(1f)) {
-        Text(title, style = MaterialTheme.typography.bodyLarge)
-        if (subtitle != null) Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
-    }
-    if (value != null || showChevron) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            if (value != null) Text(value, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            if (showChevron) Icon(Icons.Filled.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-    }
-}
-
-@Composable
-fun SettingRow(clickable: (() -> Unit)? = null, content: @Composable RowScope.() -> Unit) {
-    val mod = if (clickable != null) Modifier.fillMaxWidth().clip(MaterialTheme.shapes.medium).clickable(onClick = clickable) else Modifier.fillMaxWidth()
-    Row(modifier = mod.padding(vertical = 12.dp, horizontal = 16.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically, content = content)
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -100,7 +57,7 @@ fun SettingsScreen(
     Scaffold(
         topBar = {
             CompactTopAppBar(
-                title = { Text(stringResource(R.string.settings_title), style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold, color = ModuleSettings) },
+                title = stringResource(R.string.settings_title),
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.settings_navigate_back))
@@ -114,7 +71,7 @@ fun SettingsScreen(
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
                 .padding(innerPadding),
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             item {
@@ -122,7 +79,9 @@ fun SettingsScreen(
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = MaterialTheme.shapes.large,
-                    color = MaterialTheme.colorScheme.surface
+                    color = MaterialTheme.colorScheme.surface,
+                    shadowElevation = 0.dp,
+                    tonalElevation = 0.dp
                 ) {
                     Column(modifier = Modifier.padding(20.dp)) {
                         Row(
@@ -190,24 +149,28 @@ fun SettingsScreen(
                     color = MaterialTheme.colorScheme.surface
                 ) {
                     Column {
-                        SettingsRowItem(icon = Icons.Outlined.Palette, title = stringResource(R.string.settings_appearance), subtitle = stringResource(R.string.settings_appearance_subtitle), tint = LifePlan, onClick = onNavigateToGeneral)
-                        HorizontalDivider(modifier = Modifier.padding(horizontal = 56.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-                        SettingsRowItem(icon = Icons.Outlined.Notifications, title = stringResource(R.string.settings_reminder), subtitle = stringResource(R.string.settings_reminder_subtitle), tint = AccentOrange, onClick = onNavigateToReminder)
-                        HorizontalDivider(modifier = Modifier.padding(horizontal = 56.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-                        SettingsRowItem(icon = Icons.Outlined.Category, title = stringResource(R.string.settings_category_manage), subtitle = stringResource(R.string.settings_category_manage_subtitle), tint = InfoBlue, onClick = onNavigateToManageCategory)
-                        HorizontalDivider(modifier = Modifier.padding(horizontal = 56.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-                        SettingsRowItem(icon = Icons.Outlined.Storage, title = stringResource(R.string.settings_data), subtitle = stringResource(R.string.settings_data_subtitle), tint = LifeRecord, onClick = onNavigateToDataStorage)
-                        HorizontalDivider(modifier = Modifier.padding(horizontal = 56.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-                        SettingsRowItem(icon = Icons.Outlined.Lock, title = stringResource(R.string.settings_security), subtitle = if (state.appLockEnabled) stringResource(R.string.settings_security_subtitle_on) else stringResource(R.string.settings_security_subtitle), tint = ModuleSettings, onClick = onNavigateToAppLock)
-                        HorizontalDivider(modifier = Modifier.padding(horizontal = 56.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-                        SettingsRowItem(icon = Icons.Outlined.Info, title = stringResource(R.string.settings_about_app), subtitle = stringResource(R.string.settings_about_version), tint = MaterialTheme.colorScheme.primary, onClick = onNavigateToAbout)
+                        SettingsMenuItem(icon = Icons.Outlined.Palette, title = stringResource(R.string.settings_appearance), subtitle = stringResource(R.string.settings_appearance_subtitle), tint = LifePlan, onClick = onNavigateToGeneral)
+                        HorizontalDivider(modifier = Modifier.padding(horizontal = 52.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                        SettingsMenuItem(icon = Icons.Outlined.Notifications, title = stringResource(R.string.settings_reminder), subtitle = stringResource(R.string.settings_reminder_subtitle), tint = AccentOrange, onClick = onNavigateToReminder)
+                        HorizontalDivider(modifier = Modifier.padding(horizontal = 52.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                        SettingsMenuItem(icon = Icons.Outlined.Category, title = stringResource(R.string.settings_category_manage), subtitle = stringResource(R.string.settings_category_manage_subtitle), tint = InfoBlue, onClick = onNavigateToManageCategory)
+                        HorizontalDivider(modifier = Modifier.padding(horizontal = 52.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                        SettingsMenuItem(icon = Icons.Outlined.Storage, title = stringResource(R.string.settings_data), subtitle = stringResource(R.string.settings_data_subtitle), tint = LifeRecord, onClick = onNavigateToDataStorage)
+                        HorizontalDivider(modifier = Modifier.padding(horizontal = 52.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                        SettingsMenuItem(icon = Icons.Outlined.Lock, title = stringResource(R.string.settings_security), subtitle = if (state.appLockEnabled) stringResource(R.string.settings_security_subtitle_on) else stringResource(R.string.settings_security_subtitle), tint = ModuleSettings, onClick = onNavigateToAppLock)
+                        HorizontalDivider(modifier = Modifier.padding(horizontal = 52.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                        SettingsMenuItem(
+                            icon = Icons.Outlined.Info,
+                            title = stringResource(R.string.settings_about_app),
+                            subtitle = stringResource(R.string.settings_about_version, BuildConfig.VERSION_NAME),
+                            tint = MaterialTheme.colorScheme.primary,
+                            onClick = onNavigateToAbout
+                        )
                     }
                 }
             }
 
             item { Spacer(Modifier.height(24.dp)) }
-
-            item { Spacer(Modifier.height(8.dp)) }
         }
     }
 
@@ -316,24 +279,6 @@ fun SettingsScreen(
                 TextButton(onClick = { showProfileEdit = false }) { Text(stringResource(R.string.cancel), fontWeight = FontWeight.Bold) }
             }
         )
-    }
-}
-
-@Composable
-private fun SettingsRowItem(icon: ImageVector, title: String, subtitle: String, tint: Color, onClick: () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 14.dp, horizontal = 16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(tint.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) {
-            Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(20.dp))
-        }
-        Column(modifier = Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.bodyLarge)
-            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        }
-        Icon(Icons.Filled.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
     }
 }
 

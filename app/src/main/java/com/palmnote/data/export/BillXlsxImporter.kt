@@ -19,7 +19,7 @@ class BillXlsxImporter {
     fun parse(context: Context, uri: Uri): List<ParsedBill> {
         return try {
             val bytes = context.contentResolver.openInputStream(uri)?.use { readAllBytes(it) } ?: return emptyList()
-            parseZipBytes(bytes, StringBuilder()).second
+            parseZipBytes(bytes, StringBuilder(), null).second
         } catch (_: Exception) { emptyList() }
     }
 
@@ -27,9 +27,14 @@ class BillXlsxImporter {
         return parseBytesWithFormat(bytes, diag).second
     }
 
-    /** 解析并附带识别账单品牌（微信/支付宝），供导入预览显示格式标签与支付方式归属 */
-    fun parseBytesWithFormat(bytes: ByteArray, diag: StringBuilder): Pair<BillCsvImporter.CsvFormat, List<ParsedBill>> {
-        return try { parseZipBytes(bytes, diag) } catch (e: Exception) {
+    /** 解析并附带识别账单品牌（微信/支付宝），供导入预览显示格式标签与支付方式归属。
+     *  [fails] 非空时收集被丢弃的行（原始文本 + 原因），供结果页统计与失败导出 */
+    fun parseBytesWithFormat(
+        bytes: ByteArray,
+        diag: StringBuilder,
+        fails: MutableList<ImportFailure>? = null
+    ): Pair<BillCsvImporter.CsvFormat, List<ParsedBill>> {
+        return try { parseZipBytes(bytes, diag, fails) } catch (e: Exception) {
             diag.append("异常: ${e.message}\n")
             BillCsvImporter.CsvFormat.UNKNOWN to emptyList()
         }
@@ -45,13 +50,20 @@ class BillXlsxImporter {
         return buf.toByteArray()
     }
 
-    private fun parseZipBytes(bytes: ByteArray, diag: StringBuilder): Pair<BillCsvImporter.CsvFormat, List<ParsedBill>> {
+    private fun parseZipBytes(
+        bytes: ByteArray,
+        diag: StringBuilder,
+        fails: MutableList<ImportFailure>?
+    ): Pair<BillCsvImporter.CsvFormat, List<ParsedBill>> {
         val rows = readSheetRows(bytes, diag)
         if (rows.isEmpty()) return BillCsvImporter.CsvFormat.UNKNOWN to emptyList()
 
         val layout = detectSheetLayout(rows, diag) ?: return BillCsvImporter.CsvFormat.UNKNOWN to emptyList()
         val bills = rows.drop(layout.headerRowIdx + 1).mapNotNull { cols ->
-            try { parseDataRow(cols, layout) } catch (_: Exception) { null }
+            try { parseDataRow(cols, layout, fails) } catch (_: Exception) {
+                fails?.add(ImportFailure(cols.joinToString(","), ImportFailureReason.UNPARSEABLE))
+                null
+            }
         }
         diag.append("有效记录: ${bills.size}条\n")
         if (bills.isEmpty()) {
@@ -125,17 +137,29 @@ class BillXlsxImporter {
         )
     }
 
-    private fun parseDataRow(cols: List<String>, layout: SheetLayout): ParsedBill? {
+    private fun parseDataRow(cols: List<String>, layout: SheetLayout, fails: MutableList<ImportFailure>?): ParsedBill? {
         // 状态过滤已移除（issue#1：白名单遗漏"已存入零钱"等真实状态导致大面积丢行），
         // 全部行进入预览由用户勾选
-        val date = parseXlsxDate(normalizeTime(cellOf(cols, layout.dateIdx))) ?: return null
-        val amount = Money.parse(cleanAmountText(cellOf(cols, layout.amountIdx)))?.cents ?: return null
-        val merchant = cellOf(cols, layout.merchantIdx)
+        val date = parseXlsxDate(normalizeTime(cellOf(cols, layout.dateIdx)))
+        if (date == null) {
+            fails?.add(ImportFailure(cols.joinToString(","), ImportFailureReason.MISSING_DATE))
+            return null
+        }
+        val amount = Money.parse(cleanAmountText(cellOf(cols, layout.amountIdx)))?.cents
+        if (amount == null) {
+            fails?.add(ImportFailure(cols.joinToString(","), ImportFailureReason.MISSING_AMOUNT))
+            return null
+        }
         val typeStr = cellOf(cols, layout.typeIdx)
-        val method = cellOf(cols, layout.methodIdx)
+        val method = cellOrEmpty(cols, layout.methodIdx)
+        // 微信导出用 "/" 表示空字段：merchant 优先「交易对方」，为空则退「商品」
+        val merchant = cellOrEmpty(cols, layout.merchantIdx).ifEmpty { cellOrEmpty(cols, layout.goodsIdx) }
         // 备注常为空，商品名承载消费内容（分类推断的重要信号），回退后再参与推断
-        val noteOrGoods = cellOf(cols, layout.noteIdx).ifEmpty { cellOf(cols, layout.goodsIdx) }
-        val isIncome = cellOf(cols, layout.ieIdx).contains("收入")
+        val noteOrGoods = cellOrEmpty(cols, layout.noteIdx).ifEmpty { cellOrEmpty(cols, layout.goodsIdx) }
+        val ieText = cellOf(cols, layout.ieIdx)
+        val isIncome = ieText.contains("收入")
+        // 微信不用「不计收支」四字，用 收/支 == "/" 表示该笔不进收支（零钱提现/零钱通转出等）→ 默认不勾选
+        val defaultSelected = ieText.isNotBlank() && ieText != "/" && !ieText.contains("不计收支")
 
         return ParsedBill(
             date = date,
@@ -147,18 +171,23 @@ class BillXlsxImporter {
             ),
             merchant = merchant,
             note = noteOrGoods.ifEmpty { typeStr },
-            // 支付宝表头无支付方式列，按品牌归属而非落到 OTHER
+            // 支付宝表头无支付方式列按品牌归属；微信「支付方式」为 "/" 时回退 WECHAT（本账单本身即微信支付）
             paymentMethod = if (layout.format == BillCsvImporter.CsvFormat.ALIPAY) {
                 "ALIPAY"
             } else {
-                BillCsvImporter.mapPaymentMethod(method)
+                BillCsvImporter.mapPaymentMethod(method).takeIf { it != "OTHER" } ?: "WECHAT"
             },
             // 交易单号是最可靠去重键（此前 xlsx 不读该列，只能靠属性匹配去重）
-            transactionId = cellOf(cols, layout.txIdIdx)
+            transactionId = cellOf(cols, layout.txIdIdx),
+            defaultSelected = defaultSelected
         )
     }
 
     private fun cellOf(cols: List<String>, idx: Int?): String = idx?.let { cols.getOrNull(it)?.trim() } ?: ""
+
+    /** 微信导出用 "/" 表示空字段（实测 备注46行、商品24行、交易对方3行、支付方式20行）。当普通字符串处理会让卡片标题/备注显示成 "/" */
+    private fun cellOrEmpty(cols: List<String>, idx: Int?): String =
+        cellOf(cols, idx).let { if (it == "/" || it == "-" || it == "—") "" else it }
 
     private fun normalizeTime(timeStr: String): String = timeStr.replace("T", " ").replace("Z", "")
 
@@ -269,15 +298,15 @@ class BillXlsxImporter {
 
     private fun parseXlsxDate(timeStr: String): Long? {
         val clean = timeStr.trim()
+        // ⚠️ 顺序：微信导出的「交易时间」是 Excel 序列号，必须**先**判序列号。
+        // 若先跑字符串模式，10 个模式会各抛一次 ParseException（实测），每条日期行 = 10 次异常构造 + 10 条 warning 日志
+        clean.toDoubleOrNull()?.let { if (it > 30000 && it < 80000) return excelSerialToMillis(it) }
         for (pat in listOf(
             "yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd HH:mm", "yyyy/MM/dd HH:mm:ss", "yyyy/MM/dd HH:mm",
             "yyyy/M/d HH:mm:ss", "yyyy/M/d HH:mm", "yyyy-MM-dd", "yyyy/MM/dd", "yyyy/M/d", "yyyy年M月d日"
         )) {
-            try { return SimpleDateFormat(pat, Locale.getDefault()).parse(clean)?.time } catch (e: Exception) { AppLogger.w("XlsxImport", "parseXlsxDate failed for pattern: $pat", e) }
-        }
-        val num = clean.toDoubleOrNull()
-        if (num != null && num > 30000 && num < 80000) {
-            return excelSerialToMillis(num)
+            // ?.let { return it.time }：parse 返回 null 时继续试下一个模式（不能直接 return null）
+            try { SimpleDateFormat(pat, Locale.getDefault()).parse(clean)?.let { return it.time } } catch (_: Exception) { /* 试下一个模式 */ }
         }
         return null
     }

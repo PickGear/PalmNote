@@ -5,8 +5,10 @@ import android.content.ContentValues
 import android.content.Context
 import android.provider.CalendarContract
 import com.palmnote.app.R
+import com.palmnote.data.db.dao.LIFE_DEMO_META
 import com.palmnote.data.db.entity.Anniversary
 import com.palmnote.domain.repository.AnniversaryRepository
+import com.palmnote.domain.util.DateUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
@@ -15,7 +17,8 @@ import java.util.TimeZone
 
 class CalendarSyncManager(
     private val context: Context,
-    private val anniversaryRepository: AnniversaryRepository
+    private val anniversaryRepository: AnniversaryRepository,
+    private val lifeItemRepository: com.palmnote.domain.repository.LifeItemRepository
 ) {
     companion object {
         const val CALENDAR_ACCOUNT = "com.palmnote.sync"
@@ -67,7 +70,25 @@ class CalendarSyncManager(
         try {
             val calendarId = getOrCreateCalendarId() ?: return@withContext Result.failure(Exception(context.getString(R.string.calendar_sync_error_create_failed)))
             val resolver = context.contentResolver
-            val anniversaries = anniversaryRepository.getAllAnniversaries().first().filter { it.isYearly }
+            // 数据源 = 旧版 anniversary 表（CSV 导入）∪ 生日/纪念日 LifeItem（生活页创建）
+            val legacy = anniversaryRepository.getAllAnniversaries().first().filter { it.isYearly }
+            // 固定 includeDemo=false：示例属于演示，**不应写进系统日历**（同步只同步用户自己的）。
+            val lifeItems = lifeItemRepository.getAnniversaryLikeItems(includeDemo = false, LIFE_DEMO_META).first()
+                .mapNotNull { item ->
+                    // 日期口径与仪表盘纪念日卡一致：优先执行列 dueDate，缺失时回落到 fieldsData。
+                    // 仍然取不到就**跳过该条**——绝不能 `?: 0L`，否则会把 1970-01-01 写进系统日历
+                    //（同「拿 0 冒充日期」缺陷类，见 DateUtils.parseDateValueOrNull 注释）。
+                    val date = item.dueDate ?: DateUtils.dateFromFieldsDataOrNull(item.fieldsData)
+                        ?: return@mapNotNull null
+                    Anniversary(
+                        id = -item.id - 1_000_000L,
+                        title = item.title,
+                        solarDate = date,
+                        type = "CUSTOM",
+                        isYearly = true
+                    )
+                }
+            val anniversaries = legacy + lifeItems
 
             deleteExistingEvents(resolver, calendarId)
             var count = 0

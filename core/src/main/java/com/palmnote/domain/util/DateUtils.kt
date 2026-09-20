@@ -3,6 +3,9 @@ package com.palmnote.domain.util
 import android.content.Context
 import androidx.core.os.LocaleListCompat
 import com.palmnote.R
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
@@ -52,6 +55,40 @@ object DateUtils {
 
     fun isPlausibleMillis(millis: Long): Boolean =
         millis in MIN_PLAUSIBLE_MILLIS..MAX_PLAUSIBLE_MILLIS
+
+    /**
+     * 把「日期原始值」统一解析成毫秒：既接受**毫秒数**（规范存储形态），也接受 `yyyy-MM-dd` 文本
+     * （演示种子与手写 JSON 的写法）。两者都不是 → **null**。
+     *
+     * 关键规矩：**解析不出来就返回 null，绝不用 0 冒充日期**。`0` 会被当成 1970-01-01，
+     * 于是界面上出现「01月01日 / 已过 20716 天」这类假数据（总纲 §13 A 档同一缺陷类）。
+     */
+    fun parseDateValueOrNull(raw: String?): Long? {
+        if (raw.isNullOrBlank()) return null
+        raw.toLongOrNull()?.let { return if (isPlausibleMillis(it)) it else null }
+        return try {
+            LocalDate.parse(raw).atStartOfDay(zone).toInstant().toEpochMilli()
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    /**
+     * 从条目的 `fieldsData`（JSON）里取出「这条记录是哪天」的毫秒值；取不到返回 **null**。
+     *
+     * 为什么不按固定 key 取：各模板的日期字段 key 并不统一（`date` / `start_date` / `targetDate` …），
+     * 而调用方只关心「这条记录的日子是哪天」，所以逐个值去试 [parseDateValueOrNull]，
+     * 取第一个能解析出日期的即可（该方法自带毫秒合理区间过滤，`{"price":15}` 这类数值不会被误判成日期）。
+     *
+     * **绝不用 0 冒充日期**：解析不出来就返回 null，由调用方决定「不展示 / 不同步」，
+     * 否则 0 会被当成 1970-01-01（总纲 §13 A 档同一缺陷类）。
+     */
+    fun dateFromFieldsDataOrNull(fieldsData: String): Long? = try {
+        val obj = Json.decodeFromString<JsonObject>(fieldsData)
+        obj.values.firstNotNullOfOrNull { (it as? JsonPrimitive)?.content?.let { raw -> parseDateValueOrNull(raw) } }
+    } catch (_: Exception) {
+        null
+    }
 
     private fun millisToLocalDateTime(millis: Long): LocalDateTime =
         Instant.ofEpochMilli(millis).atZone(zone).toLocalDateTime()

@@ -48,9 +48,9 @@ import com.palmnote.ui.lock.PinKeyboard
 import com.palmnote.ui.lock.PinVerifyDialog
 import com.palmnote.ui.lock.showBiometricPrompt
 import com.palmnote.ui.lock.DEFAULT_PIN_LENGTH
-import com.palmnote.ui.settings.SectionHeader
-import com.palmnote.ui.settings.SettingRow
-import com.palmnote.ui.settings.SettingRowContent
+import com.palmnote.ui.components.SectionHeader
+import com.palmnote.ui.components.SettingRow
+import com.palmnote.ui.components.SettingRowContent
 import com.palmnote.ui.theme.vaultTint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch

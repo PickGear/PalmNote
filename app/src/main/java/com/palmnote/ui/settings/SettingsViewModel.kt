@@ -13,7 +13,9 @@ import androidx.lifecycle.viewModelScope
 import com.palmnote.app.R
 import com.palmnote.data.datastore.PreferencesManager
 import com.palmnote.data.AppIconManager
+import com.palmnote.data.LifeDemoSeeder
 import com.palmnote.data.export.CsvDataExporter
+import com.palmnote.data.export.ExportScope
 import com.palmnote.data.lock.AppLockManager
 import com.palmnote.domain.repository.*
 import com.palmnote.data.sync.CalendarSyncManager
@@ -36,6 +38,8 @@ data class SettingsState(
     val defaultBillType: BillType = BillType.EXPENSE,
     val budgetReminderEnabled: Boolean = true,
     val calendarSyncEnabled: Boolean = false,
+    /** 演示模式（生活页按设计稿铺示例数据）；**默认开启**。 */
+    val demoModeEnabled: Boolean = true,
     val defaultStartPage: String = "dashboard",
     val language: String = "SYSTEM",
     val assetCount: Int = 0,
@@ -79,7 +83,8 @@ class SettingsViewModel @Inject constructor(
     private val goalRepository: GoalRepository,
     private val momentRepository: MomentRepository,
     private val anniversaryRepository: AnniversaryRepository,
-    val appLockManager: AppLockManager
+    val appLockManager: AppLockManager,
+    private val demoSeeder: LifeDemoSeeder
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(SettingsState())
@@ -125,7 +130,8 @@ class SettingsViewModel @Inject constructor(
                 goalRepository.getGoalCount(),
                 momentRepository.getMomentCount(),
                 anniversaryRepository.getAnniversaryCount(),
-                preferencesManager.autoLockTimeoutMinutes
+                preferencesManager.autoLockTimeoutMinutes,
+                preferencesManager.lifeDemoMode
             ) { args ->
                 val i = { idx: Int -> args.getOrNull(idx) }
                 _state.update { current ->
@@ -162,7 +168,8 @@ class SettingsViewModel @Inject constructor(
                         goalCount = (i(29) as? Int) ?: 0,
                         momentCount = (i(30) as? Int) ?: 0,
                         anniversaryCount = (i(31) as? Int) ?: 0,
-                        autoLockTimeoutMinutes = (i(32) as? Int) ?: 5
+                        autoLockTimeoutMinutes = (i(32) as? Int) ?: 5,
+                        demoModeEnabled = (i(33) as? Boolean) ?: true
                     )
                 }
             }.catch { AppLogger.w("SettingsVM", "Settings flow failed", it) }.collect()
@@ -179,6 +186,28 @@ class SettingsViewModel @Inject constructor(
 
     fun setBudgetReminderEnabled(enabled: Boolean) {
         viewModelScope.launch { preferencesManager.setBudgetReminderEnabled(enabled) }
+    }
+
+    /**
+     * 演示模式开关。
+     *
+     * **必须在这里立即增删示例数据**，不能只依赖生活页的 ViewModel：
+     * 用户在设置里关掉后可能直接退出、不再回生活页，而备份是整库拷贝，
+     * 只要示例行还在库里就会被打包进去 —— 那就违背了「关闭后不能导出」。
+     */
+    fun setDemoModeEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            // 先把开关落库（播种策略里要读它判断开/关），再交给 seeder ——
+            // 「什么时候播种/清理」的策略集中在 LifeDemoSeeder，避免各处各写一套。
+            preferencesManager.setLifeDemoMode(enabled)
+            if (enabled) {
+                // 开启 = 载入 / 重置：未播种或示例内容版本落后才重建（编辑过、删过的都会复原）。
+                demoSeeder.ensureSeeded(preferencesManager)
+            } else {
+                // 关闭 = 移除：页面与备份里都不再出现
+                demoSeeder.clearAll(preferencesManager)
+            }
+        }
     }
 
     fun setCalendarSyncEnabled(enabled: Boolean) {
@@ -319,9 +348,9 @@ class SettingsViewModel @Inject constructor(
     fun setProfileAvatar(avatar: String) { viewModelScope.launch { preferencesManager.setProfileAvatar(avatar) } }
     fun setProfileAvatarPath(path: String) { viewModelScope.launch { preferencesManager.setProfileAvatarPath(path) } }
 
-    fun exportData(uri: Uri) {
+    fun exportData(uri: Uri, scope: ExportScope = ExportScope.ALL) {
         viewModelScope.launch {
-            csvDataExporter.exportToUri(uri).onSuccess { msg ->
+            csvDataExporter.exportToUri(uri, scope).onSuccess { msg ->
                 _state.value = _state.value.copy(resultMessage = msg)
             }.onFailure { e ->
                 _state.value = _state.value.copy(resultMessage = context.getString(R.string.settings_export_failed, e.message ?: ""))
@@ -329,16 +358,6 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun importData(uri: Uri) {
-        viewModelScope.launch {
-            csvDataExporter.importFromUri(uri).onSuccess { count ->
-                val msg = if (count > 0) context.getString(R.string.settings_import_success, count) else context.getString(R.string.settings_import_no_data)
-                _state.value = _state.value.copy(resultMessage = msg)
-            }.onFailure { e ->
-                _state.value = _state.value.copy(resultMessage = context.getString(R.string.settings_import_failed, e.message ?: ""))
-            }
-        }
-    }
 
     fun clearCache(@ApplicationContext context: Context) {
         viewModelScope.launch {

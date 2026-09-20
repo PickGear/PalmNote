@@ -5,21 +5,35 @@ import android.net.Uri
 import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.work.WorkManager
 import com.palmnote.app.R
+import com.palmnote.data.backup.AutoBackupScheduler
 import com.palmnote.data.backup.BackupInfo
+import com.palmnote.data.backup.BackupKind
 import com.palmnote.data.backup.BackupManager
 import com.palmnote.data.backup.BackupPasswordStore
 import com.palmnote.data.backup.BackupState
+import com.palmnote.data.datastore.PreferencesManager
 import com.palmnote.data.db.AppDatabase
 import com.palmnote.data.db.DbKeyStore
+import com.palmnote.PalmNoteApp
+import com.palmnote.data.worker.AutoBackupWorker
+import com.palmnote.data.worker.LifeDailyCheckWorker
 import com.palmnote.feature.vault.VaultDatabase
+import com.palmnote.ui.widget.WidgetUpdateHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -32,12 +46,18 @@ class BackupViewModel @Inject constructor(
     private val db: AppDatabase,
     dbKeyStore: DbKeyStore,
     private val vaultDb: VaultDatabase,
-    private val passwordStore: BackupPasswordStore
+    private val passwordStore: BackupPasswordStore,
+    private val preferencesManager: PreferencesManager,
+    private val autoBackupScheduler: AutoBackupScheduler
 ) : ViewModel() {
 
     private val backupManager = BackupManager(dbKeyStore)
 
     companion object {
+        /** 恢复成功标记：供重启后的 Application 补发 Widget 刷新（恢复期间广播被抑制） */
+        private const val RESTORE_FLAGS_PREFS = "restore_flags"
+        private const val KEY_JUST_RESTORED = "just_restored"
+
         /** 导出备份的密码最小长度：导出文件会离开应用沙箱，过短密码等于没有保护。 */
         const val MIN_PASSWORD_LENGTH = 6
 
@@ -48,49 +68,109 @@ class BackupViewModel @Inject constructor(
     }
 
     /** 用户所选备份文件夹内的一条备份（SAF 来源）。 */
-    data class FolderBackup(val name: String, val uri: Uri, val date: Long, val size: Long)
+    data class FolderBackup(
+        val name: String,
+        val uri: Uri,
+        val date: Long,
+        val size: Long,
+        /** 由文件名解析的身份；用于在列表里标出「可换机 / 旧版」。 */
+        val kind: BackupKind = BackupKind.LEGACY
+    )
+
+    /**
+     * 自动备份的可配置项 + 最近一次失败信息。
+     *
+     * 把"失败"作为一等公民收进设置模型：系统级 Auto Backup 已关闭（`allowBackup="false"`），
+     * 自动备份是用户唯一的数据退路，静默失败等于没有退路。
+     */
+    data class AutoBackupSettings(
+        // 与 DataStore 默认值一致：自动备份默认关闭，避免首帧闪现"已开启"
+        val enabled: Boolean = false,
+        val intervalDays: Int = PreferencesManager.DEFAULT_AUTO_BACKUP_INTERVAL_DAYS,
+        val keepCount: Int = PreferencesManager.DEFAULT_AUTO_BACKUP_KEEP_COUNT,
+        val lastErrorAt: Long = 0L,
+        val lastErrorMsg: String = ""
+    )
 
     private val _backupState = MutableStateFlow<BackupState>(BackupState.Idle)
     val backupState: StateFlow<BackupState> = _backupState
 
-    private val _password = MutableStateFlow<String?>(null)
-    val password: StateFlow<String?> = _password
+    /**
+     * 备份密码是否已设置。
+     *
+     * 密码是**全局唯一**的备份密码：手动备份、自动备份、「备份到文件夹」共用同一份，
+     * 设了就全部加密（PNB2 + 便携密钥，可换机恢复），没设就全部明文（PNB3，仅本机可恢复）。
+     * 密码经 [BackupPasswordStore] 由 Keystore 包裹落盘，因此自动备份也能在无人输入时加密。
+     */
+    private val _backupPasswordSet = MutableStateFlow(passwordStore.load() != null)
+    val backupPasswordSet: StateFlow<Boolean> = _backupPasswordSet
 
-    /** 「记住密码」：开启后导出用的密码经本机 Keystore 包裹保存，下次进入自动预填。 */
-    private val _rememberPassword = MutableStateFlow(false)
-    val rememberPassword: StateFlow<Boolean> = _rememberPassword
-
-    init {
-        // 仅当用户此前主动开启过才预填；换机/卸载重装后本机解不开（load 返回 null）→ 自动回到空白
-        passwordStore.load()?.let { remembered ->
-            _password.value = remembered
-            _rememberPassword.value = true
-        }
+    private val autoBackupConfig: Flow<AutoBackupSettings> = combine(
+        preferencesManager.autoBackupEnabled,
+        preferencesManager.autoBackupIntervalDays,
+        preferencesManager.autoBackupKeepCount
+    ) { enabled, intervalDays, keepCount ->
+        AutoBackupSettings(
+            enabled = enabled,
+            intervalDays = intervalDays,
+            keepCount = keepCount
+        )
     }
 
-    fun setPassword(password: String?) {
-        _password.value = password
+    val autoBackupSettings: StateFlow<AutoBackupSettings> = combine(
+        autoBackupConfig,
+        preferencesManager.autoBackupLastErrorAt,
+        preferencesManager.autoBackupLastErrorMsg
+    ) { settings, lastErrorAt, lastErrorMsg ->
+        settings.copy(lastErrorAt = lastErrorAt, lastErrorMsg = lastErrorMsg)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AutoBackupSettings())
+
+    /** 设置或清除备份密码；空/空白 = 清除（之后所有备份都是明文）。 */
+    fun setBackupPassword(password: String?) {
+        passwordStore.save(password?.takeIf { it.isNotBlank() })
+        _backupPasswordSet.value = passwordStore.load() != null
     }
 
-    fun setRememberPassword(enabled: Boolean) {
-        _rememberPassword.value = enabled
-        if (enabled) {
-            _password.value?.let { passwordStore.save(it) }
-        } else {
-            passwordStore.clear()
+    /** 对话框预填用：读当前已保存的备份密码（Keystore 解不开时为 null）。 */
+    fun loadBackupPassword(): String? = passwordStore.load()
+
+    // ========== 自动备份设置 ==========
+    // 每项改完立刻重建任务：偏好写进 DataStore 后若不 sync，用户要等到下次冷启动才生效，
+    // 而"我明明关了它却还在备份"是最容易被察觉、也最伤信任的一类不一致。
+
+    fun setAutoBackupEnabled(enabled: Boolean) = updateAutoBackupSettings {
+        preferencesManager.setAutoBackupEnabled(enabled)
+    }
+
+    fun setAutoBackupIntervalDays(days: Int) = updateAutoBackupSettings {
+        preferencesManager.setAutoBackupIntervalDays(days)
+    }
+
+    fun setAutoBackupKeepCount(count: Int) = updateAutoBackupSettings {
+        preferencesManager.setAutoBackupKeepCount(count)
+    }
+
+    /** 用户看过失败原因后确认，清掉告警，避免旧错误长期挂在健康度卡片上。 */
+    fun dismissAutoBackupError() {
+        viewModelScope.launch { preferencesManager.clearAutoBackupError() }
+    }
+
+    private fun updateAutoBackupSettings(update: suspend () -> Unit) {
+        viewModelScope.launch {
+            update()
+            autoBackupScheduler.sync()
         }
     }
 
     /**
      * Create backup and copy to user-chosen SAF folder.
+     *
+     * 密码与「立即备份」/自动备份共用同一份备份密码设置：设了就加密（含便携密钥，
+     * 新手机可恢复），没设就明文（仅本机可恢复）。不再强制密码——加不加密由用户在
+     * 「备份密码」一行里统一决定。
      */
-    fun createBackupToFolder(folderUri: Uri) {
-        // 导出的备份会离开应用沙箱（网盘/微信/U 盘），必须加密：无密码时包内照片、设置均为明文
-        val password = _password.value
-        if (password.isNullOrBlank() || password.length < MIN_PASSWORD_LENGTH) {
-            _backupState.value = BackupState.Error(context.getString(R.string.backup_error_export_needs_password))
-            return
-        }
+    fun createBackupToFolder(folderUri: Uri, kind: BackupKind = BackupKind.PORTABLE) {
+        val password = passwordStore.load()
         viewModelScope.launch {
             flow {
                 emit(BackupState.Progress(0))
@@ -99,15 +179,13 @@ class BackupViewModel @Inject constructor(
                     // 打包前先对密码本库做 WAL checkpoint，保证快照一致
                     checkpointVaultWal()
                     // 1. Create backup in app cache
-                    val created = backupManager.createBackup(context, db, password)
+                    val created = backupManager.createBackup(context, db, password, kind)
                     tempFile = created
                     emit(BackupState.Progress(80))
 
                     // 2. Copy to user-chosen folder via SAF
                     val targetUri = writeBackupToFolder(folderUri, created)
                     emit(BackupState.Progress(100))
-                    // 导出成功后再记住，避免密码错/导出失败也留下记忆
-                    if (_rememberPassword.value) passwordStore.save(password)
                     emit(BackupState.Success(targetUri.toString()))
                 } catch (e: Exception) {
                     emit(BackupState.Error(e.message ?: context.getString(R.string.backup_error_export_failed)))
@@ -148,6 +226,46 @@ class BackupViewModel @Inject constructor(
     /** 导出失败的统一出口；返回 [Nothing]，可直接用在 `?:` 右侧或作为分支的最后一句话。 */
     private fun exportFailed(): Nothing =
         throw IOException(context.getString(R.string.backup_error_export_failed))
+
+    /**
+     * 手动创建一份**本机**备份。
+     *
+     * 与自动备份、「备份到文件夹」共用同一份备份密码设置：设了密码则加密，
+     * 没设则明文。本机备份不离开应用沙箱，明文也不外泄。
+     */
+    fun createLocalBackup() {
+        viewModelScope.launch {
+            _backupState.value = BackupState.Progress(0)
+            try {
+                val password = passwordStore.load()
+                val file = withContext(Dispatchers.IO) {
+                    checkpointVaultWal()
+                    backupManager.createBackup(context, db, password, BackupKind.MANUAL).also {
+                        // 手动备份也受保留份数约束，否则它会绕过自动备份的轮转无限堆积
+                        backupManager.cleanupOldBackups(
+                            context,
+                            keep = preferencesManager.autoBackupKeepCount.first()
+                        )
+                    }
+                }
+                _backupState.value = BackupState.Success(file.absolutePath)
+            } catch (e: Exception) {
+                _backupState.value = BackupState.Error(
+                    e.message ?: context.getString(R.string.backup_error_create_failed)
+                )
+            }
+        }
+    }
+
+    /** 删除本机内部存储中的一份备份；返回是否真的删掉了（删除是破坏性操作，失败要让界面说得出话）。 */
+    suspend fun deleteLocalBackup(filePath: String): Boolean = withContext(Dispatchers.IO) {
+        backupManager.deleteBackup(File(filePath))
+    }
+
+    /** 删除备份文件夹（SAF）里的一份备份；返回是否删除成功。 */
+    suspend fun deleteFolderBackup(uri: Uri): Boolean = withContext(Dispatchers.IO) {
+        runCatching { DocumentFile.fromSingleUri(context, uri)?.delete() == true }.getOrDefault(false)
+    }
 
     /**
      * Restore backup from a user-chosen SAF file URI.
@@ -216,14 +334,51 @@ class BackupViewModel @Inject constructor(
         }
     }
 
-    /** 恢复公共流程：恢复前快照 → 关库 → 覆盖恢复 → 重开库（失败也重开，避免后续操作崩溃）。 */
+    /**
+     * 恢复公共流程：恢复前快照 → 封堵并发窗口 → 关库 → 覆盖恢复 → 重开库（失败也重开）。
+     *
+     * 恢复把数据库文件原地替换，窗口期内任何并发数据库访问（自动备份 Worker、
+     * 日常检查 Worker、Widget 更新）都会把恢复写坏——三类来源全部封死：
+     * 1. 取消 WorkManager 任务（成功重启后 Application.onCreate 会重新注册，无后遗症）
+     * 2. 抑制 Widget 刷新广播（WidgetUpdateHelper.restoring）
+     * 3. UI 层全屏阻断对话框（BackupScreen），用户无法触发任何导航/点击
+     */
     private suspend fun performRestore(sourceFile: File, password: String?) {
-        backupManager.createPreRestoreBackup(context, db)
-        closeDatabases()
+        // 封堵必须先于恢复前快照：快照本身也要复制数据库文件，同样怕并发写
+        runCatching {
+            val wm = WorkManager.getInstance(context)
+            wm.cancelUniqueWork(AutoBackupScheduler.UNIQUE_WORK_NAME)
+            wm.cancelUniqueWork(AutoBackupScheduler.INITIAL_WORK_NAME)
+            wm.cancelUniqueWork(LifeDailyCheckWorker.UNIQUE_WORK_NAME)
+            // cancel 是异步的：正在 RUNNING 的自动备份 Worker 可能仍在复制库文件，
+            // 等它退出（最多 3s）再做快照/替换，避免边备份边恢复
+            repeat(30) {
+                val running = wm.getWorkInfosForUniqueWork(AutoBackupScheduler.UNIQUE_WORK_NAME).get()
+                    .orEmpty().any { it.state == androidx.work.WorkInfo.State.RUNNING }
+                if (!running) return@runCatching
+                kotlinx.coroutines.delay(100)
+            }
+        }
+        WidgetUpdateHelper.setRestoring(true)
         try {
-            backupManager.restoreBackup(context, sourceFile, password)
+            backupManager.createPreRestoreBackup(context, db)
+            closeDatabases()
+            try {
+                backupManager.restoreBackup(context, sourceFile, password)
+                // 成功标记：重启后 Application 补一次全量 Widget 刷新（恢复期间广播被抑制）
+                context.getSharedPreferences(RESTORE_FLAGS_PREFS, Context.MODE_PRIVATE)
+                    .edit().putBoolean(KEY_JUST_RESTORED, true).commit()
+            } finally {
+                reopenDatabases()
+            }
+        } catch (e: Exception) {
+            // 失败路径不会重启进程，被取消的后台任务必须立即重建，
+            // 否则自动备份/每日检查静默停摆直到下次启动
+            runCatching { autoBackupScheduler.sync() }
+            runCatching { (context.applicationContext as? PalmNoteApp)?.scheduleDailyCheck() }
+            throw e
         } finally {
-            reopenDatabases()
+            WidgetUpdateHelper.setRestoring(false)
         }
     }
 
@@ -249,17 +404,46 @@ class BackupViewModel @Inject constructor(
         try { vaultDb.openHelper.writableDatabase } catch (_: Exception) {}
     }
 
-    // ========== 备份目录持久化（SAF tree URI） ==========
+    // ========== 备份位置（SAF tree URI；空 = 应用私有目录） ==========
 
     private val backupPrefs = context.getSharedPreferences("backup_prefs", Context.MODE_PRIVATE)
 
-    /** 创建备份成功后记录用户选择的目录，恢复时直接列出该目录内备份 */
-    fun saveBackupDir(uri: Uri) {
-        backupPrefs.edit().putString("backup_dir_uri", uri.toString()).apply()
+    /** 备份位置：[folderUri] 为空 = 应用私有目录（默认）。[chosen] = 用户是否已做过首次选择。 */
+    data class BackupLocation(val chosen: Boolean, val folderUri: String?)
+
+    private val _backupLocation = MutableStateFlow(readBackupLocation())
+    val backupLocation: StateFlow<BackupLocation> = _backupLocation.asStateFlow()
+
+    private fun readBackupLocation(): BackupLocation {
+        // 旧版本「导出到文件夹」记录直接升级为备份位置（用户显式选过）
+        val uri = backupPrefs.getString("backup_location_uri", null)
+            ?: backupPrefs.getString("backup_dir_uri", null)
+        return BackupLocation(
+            chosen = backupPrefs.getBoolean("backup_location_chosen", false) || uri != null,
+            folderUri = uri
+        )
+    }
+
+    /** 保存备份位置；[folderUri] 为 null 表示应用私有目录。此后手动/自动备份都写到这里。 */
+    fun saveBackupLocation(folderUri: String?) {
+        backupPrefs.edit()
+            .putBoolean("backup_location_chosen", true)
+            .putString("backup_location_uri", folderUri)
+            .apply()
+        _backupLocation.value = BackupLocation(chosen = true, folderUri = folderUri)
+    }
+
+    /** 立即备份：写到「备份位置」指向的目录（从未选择过 = 本机内部存储）。 */
+    fun createBackupNow() {
+        val uri = _backupLocation.value.folderUri
+        if (uri != null) createBackupToFolder(Uri.parse(uri))
+        else createLocalBackup()
     }
 
     fun getBackupDir(): Uri? {
-        val s = backupPrefs.getString("backup_dir_uri", null) ?: return null
+        // 新键 backup_location_uri 由「备份位置」写入；旧键 backup_dir_uri 是历史「导出到文件夹」
+        val s = backupPrefs.getString("backup_location_uri", null)
+            ?: backupPrefs.getString("backup_dir_uri", null) ?: return null
         return runCatching { Uri.parse(s) }.getOrNull()
     }
 
@@ -283,14 +467,14 @@ class BackupViewModel @Inject constructor(
                         uri = file.uri,
                         // 部分 DocumentsProvider 不返回 lastModified，回退到文件名内嵌的时间戳
                         date = file.lastModified().takeIf { it > 0L } ?: timestampFromName(name),
-                        size = file.length()
+                        size = file.length(),
+                        kind = BackupKind.fromFileName(name)
                     )
                 }
                 .sortedByDescending { it.date }
         }.getOrDefault(emptyList())
     }
 
-    /** 备份文件名形如 `palmnote_backup_<epochMillis>.palmnote`，从中取回创建时间。 */
-    private fun timestampFromName(name: String): Long =
-        Regex("""palmnote_backup_(\d+)""").find(name)?.groupValues?.get(1)?.toLongOrNull() ?: 0L
+    /** 备份文件名形如 `palmnote_<kind>_<epochMillis>.palmnote`，从中取回创建时间。 */
+    private fun timestampFromName(name: String): Long = BackupKind.timestampFromFileName(name)
 }

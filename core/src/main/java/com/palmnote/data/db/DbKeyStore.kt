@@ -64,12 +64,14 @@ class DbKeyStore @Inject constructor(@ApplicationContext context: Context) {
     }
 
     /** 导入跨设备恢复的原始 db_key：用当前设备 Keystore 重新包裹后覆盖存储。
-     *  仅在恢复备份前确认本地密钥不可用时调用；调用后所有加密库将用该密钥打开。 */
+     *  仅在恢复备份前确认本地密钥不可用时调用；调用后所有加密库将用该密钥打开。
+     *  用 commit() 同步落盘：恢复流程导入密钥后立即重开数据库，
+     *  若用 apply() 异步写盘，进程在写入前被杀会导致密钥丢失、已替换的库永久无法解密。 */
     fun importRawKey(rawKey: ByteArray) {
         require(rawKey.size == KEY_SIZE) { "db key 必须为 $KEY_SIZE 字节" }
         prefs.edit()
             .putString(KEY_NAME, Base64.encodeToString(encrypt(rawKey), Base64.NO_WRAP))
-            .apply()
+            .commit()
     }
 
     private fun getOrCreateKeystoreKey(): SecretKey {

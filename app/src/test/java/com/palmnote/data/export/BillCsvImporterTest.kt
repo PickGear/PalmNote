@@ -2,6 +2,7 @@ package com.palmnote.data.export
 
 import com.palmnote.data.export.BillCsvImporter.CsvFormat
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Test
 
 class BillCsvImporterTest {
@@ -258,6 +259,165 @@ class BillCsvImporterTest {
         assertEquals("通勤", bills[0].note)
         assertEquals("INCOME", bills[1].type)
         assertEquals(850000L, bills[1].amount)
+    }
+
+    // ── 批15/16：支付宝「分类标签」映射（真机实测：该表头无交易对方列 + 复合分类 → 全部要复核） ──
+
+    private val legacyAlipayHeader = "记录时间,交易分类,商品说明,收/支,金额,备注,账户"
+
+    @Test
+    fun `alipay composite category labels map to canonical categories`() {
+        // 标签别名表全部条目（批16 从自由文本分类器搬到 BillCsvImporter 标签别名表）
+        val cases = mapOf(
+            "餐饮美食" to "餐饮",
+            "食品酒饮" to "餐饮",
+            "交通出行" to "交通",
+            "日用百货" to "购物",
+            "服饰装扮" to "购物",
+            "生活日用" to "购物",
+            "居家物业" to "居住",
+            "住房物业" to "居住",
+            "医疗保健" to "医疗",
+            "数码电器" to "数码",
+            "休闲玩乐" to "娱乐",
+            "文化休闲" to "娱乐",
+            "运动户外" to "运动",
+            "母婴亲子" to "母婴",
+            "酒店旅行" to "旅游",
+            "投资理财" to "投资"
+        )
+        for ((raw, expected) in cases) {
+            val row = "2026-07-21 20:15:00,$raw,消费,支出,25.00,备注,余额宝"
+            val bills = importer.parseFromLines(listOf(legacyAlipayHeader, row), CsvFormat.ALIPAY)
+            assertEquals(1, bills.size)
+            assertEquals("category for $raw", expected, bills[0].category)
+        }
+    }
+
+    @Test
+    fun `alipay composite category never regresses to 其他`() {
+        // 反回归：修复前这些复合分类全部落到"其他"，用户真机上报"全部要复核"
+        for (raw in listOf("餐饮美食", "交通出行", "服饰装扮", "医疗保健", "住房物业")) {
+            val row = "2026-07-21 20:15:00,$raw,消费,支出,25.00,备注,余额宝"
+            val bills = importer.parseFromLines(listOf(legacyAlipayHeader, row), CsvFormat.ALIPAY)
+            assertEquals(1, bills.size)
+            assertNotEquals("category for $raw", "其他", bills[0].category)
+        }
+    }
+
+    @Test
+    fun `alipay single-word category still maps via table`() {
+        // 词表精确命中路径（无回归）
+        val row = "2026-07-21 20:15:00,餐饮,午餐,支出,25.00,工作餐,余额宝"
+        val bills = importer.parseFromLines(listOf(legacyAlipayHeader, row), CsvFormat.ALIPAY)
+        assertEquals(1, bills.size)
+        assertEquals("餐饮", bills[0].category)
+    }
+
+    @Test
+    fun `alipay amount with full-width comma thousands separator parses`() {
+        // 真机实测：金额列会用全角逗号做千分位（1，234.56）；旧清洗只删半角逗号 → 该行被丢
+        val row = "2026-07-26 10:00:00,购物,手机,支出,\"1，234.56\",备注,余额宝"
+        val bills = importer.parseFromLines(listOf(legacyAlipayHeader, row), CsvFormat.ALIPAY)
+        assertEquals(1, bills.size)
+        assertEquals(123456L, bills[0].amount)
+    }
+
+    // ── 批16：分类「是否已明确」（categoryResolved） ──
+
+    @Test
+    fun `alipay explicit 其他 label is resolved`() {
+        val row = "2026-07-27 10:00:00,其他,消费,支出,10.00,备注,余额宝"
+        val bills = importer.parseFromLines(listOf(legacyAlipayHeader, row), CsvFormat.ALIPAY)
+        assertEquals(1, bills.size)
+        assertEquals("其他", bills[0].category)
+        assertEquals(true, bills[0].categoryResolved)
+    }
+
+    @Test
+    fun `alipay unknown label falls back to 其他 and is unresolved`() {
+        for (raw in listOf("生意", "借还款")) {
+            val row = "2026-07-28 10:00:00,$raw,进货,支出,10.00,备注,余额宝"
+            val bills = importer.parseFromLines(listOf(legacyAlipayHeader, row), CsvFormat.ALIPAY)
+            assertEquals(1, bills.size)
+            assertEquals("其他", bills[0].category)
+            assertEquals("resolved for $raw", false, bills[0].categoryResolved)
+        }
+    }
+
+    // ── 批16：真机移动端导出表头（无"交易对方/商品说明"列；抬头多行；仅用表头，数据行自造） ──
+
+    private val mobileAlipayHeader = "记录时间,分类,收支类型,金额,备注,账户,来源,标签,"
+
+    @Test
+    fun `mobile alipay header with preamble lines is detected and parsed`() {
+        val lines = listOf(
+            "支付宝账单：",
+            "1.本次账单内容可证明支出、收入等各项金额",
+            mobileAlipayHeader,
+            "2026-09-17 13:59:31,餐饮,支出,29.94,午餐,余额宝,账单同步,,",
+            "2026-09-17 13:59:32,交通,支出,5.00,地铁,余额宝,账单同步,,"
+        )
+        assertEquals(CsvFormat.ALIPAY, importer.detectFormat(lines))
+        val bills = importer.parseFromLines(lines, CsvFormat.ALIPAY)
+        assertEquals(2, bills.size)
+        val bill = bills[0]
+        assertEquals("2026-09-17 13:59:31".ts(), bill.date)
+        assertEquals("EXPENSE", bill.type)
+        assertEquals(2994L, bill.amount)
+        assertEquals("餐饮", bill.category)
+        assertEquals("午餐", bill.note)
+        assertEquals("ALIPAY", bill.paymentMethod)
+        assertEquals(true, bill.categoryResolved)
+    }
+
+    @Test
+    fun `mobile alipay without counterparty column falls back merchant to note`() {
+        // 手机导出无"交易对方/商品说明/商品名称"列 → merchant 用「备注」兜底（实测备注多为商户名）
+        val lines = listOf(
+            mobileAlipayHeader,
+            "2026-09-17 13:59:31,餐饮,支出,29.94,午餐,余额宝,账单同步,,"
+        )
+        val bills = importer.parseFromLines(lines, CsvFormat.ALIPAY)
+        assertEquals(1, bills.size)
+        assertEquals("午餐", bills[0].merchant)
+        assertEquals("午餐", bills[0].note)
+    }
+
+    @Test
+    fun `alipay with counterparty column keeps counterparty not note`() {
+        // 反向用例：有「交易对方」时 merchant 仍取它，不被备注覆盖
+        val header = "记录时间,交易对方,分类,收支类型,金额,备注,账户"
+        val row = "2026-09-17 13:59:31,星巴克,餐饮,支出,29.94,拿铁,余额宝"
+        val bills = importer.parseFromLines(listOf(header, row), CsvFormat.ALIPAY)
+        assertEquals(1, bills.size)
+        assertEquals("星巴克", bills[0].merchant)
+        assertEquals("拿铁", bills[0].note)
+    }
+
+    @Test
+    fun `mobile alipay income row parses as INCOME`() {
+        val lines = listOf(
+            mobileAlipayHeader,
+            "2026-09-17 14:00:00,退款,收入,50.00,退款到账,余额宝,账单同步,,"
+        )
+        val bills = importer.parseFromLines(lines, CsvFormat.ALIPAY)
+        assertEquals(1, bills.size)
+        assertEquals("INCOME", bills[0].type)
+        assertEquals("退款", bills[0].category)
+    }
+
+    @Test
+    fun `mobile alipay 不计收支 row keeps current EXPENSE semantics`() {
+        // 按现有实现断言（isIncome = ieType.contains("收入") → false → EXPENSE）；语义是否有待用户决定，勿擅改
+        val lines = listOf(
+            mobileAlipayHeader,
+            "2026-09-17 14:01:00,转账,不计收支,100.00,转出,余额宝,账单同步,,"
+        )
+        val bills = importer.parseFromLines(lines, CsvFormat.ALIPAY)
+        assertEquals(1, bills.size)
+        assertEquals("EXPENSE", bills[0].type)
+        assertEquals("其他", bills[0].category)
     }
 }
 

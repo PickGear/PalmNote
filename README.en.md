@@ -65,7 +65,7 @@ See [CHANGELOG.md](CHANGELOG.md).
 - Multi-ledger, multi-wallet management
 - Income/expense categories, budget settings, monthly/yearly reports
 - Calendar view, advanced filtering
-- CSV/XLSX import, OCR recognition
+- CSV/XLSX import (encrypted Alipay ZIP supported), OCR recognition
 - Home screen widget
 
 ### 🌿 Life Module
@@ -172,6 +172,30 @@ git clone https://github.com/PickGear/PalmNote.git
 - [Privacy Policy](docs/privacy/privacy-en.md)
 - [Terms of Service](docs/terms/terms-en.md)
 
+## Permissions
+
+PalmNote follows the principle of least privilege. The complete list:
+
+| Permission | Purpose |
+| --- | --- |
+| Internet | **Not requested** — explicitly removed in the manifest via `tools:node="remove"`; the permission does not exist at the OS level |
+| Notifications (Android 13+) | Life-planning reminders only; asked once on first entry to the main screen, declining affects nothing else |
+| Calendar read/write | Requested only when you enable Calendar Sync, for writing to-dos/anniversaries into the system calendar |
+| Exact alarms | Reminder punctuality only; the system settings page opens when needed |
+| Run at startup | Restores scheduled reminders after a reboot; collects no data |
+
+Import/export of bills, backups and crash logs all go through the system file picker (SAF) — **no storage permission needed**; photo-based bill recognition uses the system photo picker — **no camera permission needed**.
+
+## Known Limitations
+
+PalmNote is fully local, and the following limitations are the direct cost of its zero-network design:
+
+- **This device is the only copy**: records cannot be recovered after uninstalling or clearing data — there is no cloud.
+- **Backups are up to you**: no automatic backup; export an encrypted backup regularly from Settings → Data & Storage.
+- **The master password cannot be recovered**: it protects both the vault and encrypted backups; if forgotten, no one can restore them.
+- **No in-app updates**: download new versions from [Releases](https://github.com/PickGear/PalmNote/releases) and install over the old one.
+- **Recognition, not guessing**: complex sources such as bill screenshots may be partially recognized; the import page marks items for review instead of silently filling in guesses.
+
 ## Contributing
 
 - Report bugs or request features → [Issues](https://github.com/PickGear/PalmNote/issues)
@@ -186,7 +210,7 @@ This project is licensed under the [GPL-3.0](LICENSE) license. Copyright and lic
 
 ## Disclaimer
 
-PalmNote is not affiliated with, endorsed by, or associated with WeChat, Alipay, or any other third-party service provider. Importing third-party bill files (CSV/XLSX) is provided solely for local format compatibility with the user's own data; names such as "WeChat" and "Alipay" are used descriptively only, and the relevant trademarks belong to their respective owners. Bill parsing is performed entirely on-device — no network access, no data upload.
+PalmNote is not affiliated with, endorsed by, or associated with WeChat, Alipay, or any other third-party service provider. Importing third-party bill files (CSV/XLSX/encrypted ZIP) is provided solely for local format compatibility with the user's own data; names such as "WeChat" and "Alipay" are used descriptively only, and the relevant trademarks belong to their respective owners. Bill parsing is performed entirely on-device — no network access, no data upload.
 
 ## Contact
 

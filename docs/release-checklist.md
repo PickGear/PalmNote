@@ -11,9 +11,17 @@
 ## 一、版本号
 
 - [ ] `app/build.gradle.kts` 的 `versionCode` 已递增（单调递增，禁止回退，上架场景尤其重要）
-- [ ] `versionName` 与本次发布的语义化版本一致（如 `1.4.0`）
-- [ ] `app/src/main/res/values*/strings.xml` 的 `app_version` 显示文案与 `versionName` 一致
+- [ ] `gradle/libs.versions.toml` 的 `palmnote` 键与本次发布的语义化版本一致（如 `1.4.0`）——这是唯一手改点，`versionName` 与 `resValue` 生成的 `app_version` 都由它派生
+- [ ] `versionName` 与 Git tag 一致（`app/build.gradle.kts` 只写 `libs.versions.palmnote.get()`，不要手改）
+- [ ] `settings_about_version` 为格式串（`版本 %1$s`），版本值由 `BuildConfig.VERSION_NAME` 填充，**不再**写死在 `strings.xml`
 - [ ] 输出的 APK 文件名符合 `PalmNote-<version>.apk`（`app/build.gradle.kts` 的 `outputFileName` 自动生成）
+
+### 随包分发的发布元数据（三份资产/文档要同步）
+
+- [ ] `CHANGELOG.md` 已更新：`[Unreleased]` 收成 `[<version>] - <日期>`，新条目按 Added/Changed/Fixed/Security 分类
+- [ ] **应用内版本历史资产已重新生成**：`app/src/main/assets/changelog.txt` 必须与 `CHANGELOG.md` 同步（含新版本号与日期）。`ChangelogAssetTest` 会校验当前版本号同时出现在两者中，忘记同步即单测变红
+- [ ] `NOTICE` 与 `app/src/main/assets/NOTICE.txt` 保持**逐字节一致**（`NoticeConsistencyTest` 校验）；依赖有升级时两份都要改
+- [ ] `LICENSE` 与 `app/src/main/assets/LICENSE.txt` 逐字节一致（GPL-3.0 全文，`static_gate.py` 校验 sha256）
 
 ## 二、签名配置
 
@@ -91,7 +99,8 @@ apksigner verify --print-certs app/build/outputs/apk/release/PalmNote-<ver>.apk
 
 | 清单项 | CI（.github/workflows/ci.yml） | 本地必查 |
 |---|---|---|
-| 版本号 | 部分（无自动校验） | ✅ |
+| 版本号 | ✅ `ChangelogAssetTest` / `NoticeConsistencyTest`（testDebugUnitTest 卡版本号与资产同步）；`versionCode` 递增仍需人工核对 | ✅ |
+| 随包发布元数据 | ✅ `ChangelogAssetTest`（changelog.txt ↔ CHANGELOG.md）、`NoticeConsistencyTest`（NOTICE 双份 + LicenseScreen 清单） | ✅ |
 | 签名 | ❌（CI 无密钥） | ✅ |
 | Build Types | ✅ assembleRelease 冒烟 | ✅ |
 | ProGuard/R8 | 部分（build 触发） | ✅ mapping 归档 |

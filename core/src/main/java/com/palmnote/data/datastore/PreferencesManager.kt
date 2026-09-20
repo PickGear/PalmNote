@@ -6,7 +6,6 @@ import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
 import com.palmnote.domain.model.AutoLockMode
 import com.palmnote.ui.dashboard.DashboardCardConfig
-import com.palmnote.ui.life.LifeHomeCardConfig
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
@@ -39,9 +38,12 @@ class PreferencesManager @Inject constructor(
         val BUDGET_REMINDER_ENABLED = booleanPreferencesKey("budget_reminder_enabled")
         val ASSET_VIEW_MODE = booleanPreferencesKey("asset_view_mode")
         val DASHBOARD_CARD_CONFIGS = stringPreferencesKey("dashboard_card_configs")
-        val LIFE_HOME_CARD_CONFIGS = stringPreferencesKey("life_home_card_configs")
-        val LIFE_CALENDAR_EXPANDED = booleanPreferencesKey("life_calendar_expanded")
+        val LIFE_DEMO_MODE = booleanPreferencesKey("life_demo_mode")
+        val LIFE_DEMO_HINT_SHOWN = booleanPreferencesKey("life_demo_hint_shown")
+        val LIFE_DEMO_SEEDED = booleanPreferencesKey("life_demo_seeded")
+        val LIFE_DEMO_SEED_VERSION = intPreferencesKey("life_demo_seed_version")
         val LIFE_CALENDAR_SELECTED_DATE = longPreferencesKey("life_calendar_selected_date")
+        val LIFE_CALENDAR_WEEK_MODE = booleanPreferencesKey("life_calendar_week_mode")
         val CALENDAR_SYNC_ENABLED = booleanPreferencesKey("calendar_sync_enabled")
         val DEFAULT_START_PAGE = stringPreferencesKey("default_start_page")
         val LANGUAGE = stringPreferencesKey("language")
@@ -57,6 +59,7 @@ class PreferencesManager @Inject constructor(
         val BILL_REMINDER_MINUTE = intPreferencesKey("bill_reminder_minute")
         val BIOMETRIC_ENABLED = booleanPreferencesKey("biometric_enabled")
         val PRIVACY_AGREED = booleanPreferencesKey("privacy_agreed")
+        val ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
         val LIFE_PLAN_EXPANDED = booleanPreferencesKey("life_plan_expanded")
         val LIFE_TIME_EXPANDED = booleanPreferencesKey("life_time_expanded")
         val LIFE_RECORD_EXPANDED = booleanPreferencesKey("life_record_expanded")
@@ -88,6 +91,11 @@ class PreferencesManager @Inject constructor(
         val WALLPAPER_CUSTOM_COLOR = stringPreferencesKey("wallpaper_custom_color")
         val DASHBOARD_MESSAGE_MODE = booleanPreferencesKey("dashboard_message_mode")
         val DASHBOARD_MESSAGE_LAST_DATE = stringPreferencesKey("dashboard_message_last_date")
+        val AUTO_BACKUP_ENABLED = booleanPreferencesKey("auto_backup_enabled")
+        val AUTO_BACKUP_INTERVAL_DAYS = intPreferencesKey("auto_backup_interval_days")
+        val AUTO_BACKUP_KEEP_COUNT = intPreferencesKey("auto_backup_keep_count")
+        val AUTO_BACKUP_LAST_ERROR_AT = longPreferencesKey("auto_backup_last_error_at")
+        val AUTO_BACKUP_LAST_ERROR_MSG = stringPreferencesKey("auto_backup_last_error_msg")
 
         const val AUTO_LOCK_MODE_IMMEDIATE = "immediate"
         const val AUTO_LOCK_MODE_SYSTEM = "system"
@@ -106,6 +114,16 @@ class PreferencesManager @Inject constructor(
         const val DEFAULT_WALLPAPER_BLUR = 0f
         const val DEFAULT_WALLPAPER_OPACITY = 1f
         const val DEFAULT_WALLPAPER_CUSTOM_COLOR = "#FFFFFF"
+
+        // ========== 自动备份 ==========
+        const val DEFAULT_AUTO_BACKUP_INTERVAL_DAYS = 1
+        const val DEFAULT_AUTO_BACKUP_KEEP_COUNT = 7
+        /** 频率上界：超过一周的间隔在"记录类 App"场景里已失去备份意义，且容易被用户误设。 */
+        const val MAX_AUTO_BACKUP_INTERVAL_DAYS = 7
+        /** 频率可选项（天）。 */
+        val AUTO_BACKUP_INTERVAL_OPTIONS = listOf(1, 3, 7)
+        /** 本机备份保留份数可选项。份数越多占用越大，交给用户按存储情况决定。 */
+        val AUTO_BACKUP_KEEP_OPTIONS = listOf(3, 7, 15, 30)
     }
 
     val themeMode: Flow<String> = prefsFlow.map { it[THEME_MODE] ?: "SYSTEM" }
@@ -156,6 +174,45 @@ class PreferencesManager @Inject constructor(
     suspend fun setDashboardMessageLastDate(date: String) { context.dataStore.edit { it[DASHBOARD_MESSAGE_LAST_DATE] = date } }
     fun getDashboardMessageModeSync(): Boolean = prefsState.value[DASHBOARD_MESSAGE_MODE] ?: false
 
+    // ========== 自动备份 ==========
+    // 系统级 Auto Backup 已关闭（AndroidManifest: allowBackup="false"，因包内密码本密钥不可外流），
+    // 因此 App 内备份是用户唯一的数据退路：它必须可开关、可调节奏、可看到结果，不能是黑盒。
+
+    // 默认关闭：备份位置/密码是用户自己的决定，静默开启会让人以为"没开过也就无所谓"
+    val autoBackupEnabled: Flow<Boolean> = prefsFlow.map { it[AUTO_BACKUP_ENABLED] ?: false }
+    val autoBackupIntervalDays: Flow<Int> =
+        prefsFlow.map { it[AUTO_BACKUP_INTERVAL_DAYS] ?: DEFAULT_AUTO_BACKUP_INTERVAL_DAYS }
+    val autoBackupKeepCount: Flow<Int> =
+        prefsFlow.map { it[AUTO_BACKUP_KEEP_COUNT] ?: DEFAULT_AUTO_BACKUP_KEEP_COUNT }
+    /** 最近一次自动备份失败的时间戳（0 = 无失败记录）。 */
+    val autoBackupLastErrorAt: Flow<Long> = prefsFlow.map { it[AUTO_BACKUP_LAST_ERROR_AT] ?: 0L }
+    val autoBackupLastErrorMsg: Flow<String> = prefsFlow.map { it[AUTO_BACKUP_LAST_ERROR_MSG] ?: "" }
+
+    suspend fun setAutoBackupEnabled(enabled: Boolean) { context.dataStore.edit { it[AUTO_BACKUP_ENABLED] = enabled } }
+
+    suspend fun setAutoBackupIntervalDays(days: Int) {
+        context.dataStore.edit { it[AUTO_BACKUP_INTERVAL_DAYS] = days.coerceIn(1, MAX_AUTO_BACKUP_INTERVAL_DAYS) }
+    }
+
+    suspend fun setAutoBackupKeepCount(count: Int) {
+        context.dataStore.edit { it[AUTO_BACKUP_KEEP_COUNT] = count.coerceAtLeast(1) }
+    }
+
+    /** 记录自动备份失败；成功后由 [clearAutoBackupError] 清除，避免旧错误长期挂在健康度卡片上。 */
+    suspend fun recordAutoBackupError(message: String, at: Long = System.currentTimeMillis()) {
+        context.dataStore.edit {
+            it[AUTO_BACKUP_LAST_ERROR_AT] = at
+            it[AUTO_BACKUP_LAST_ERROR_MSG] = message
+        }
+    }
+
+    suspend fun clearAutoBackupError() {
+        context.dataStore.edit {
+            it[AUTO_BACKUP_LAST_ERROR_AT] = 0L
+            it[AUTO_BACKUP_LAST_ERROR_MSG] = ""
+        }
+    }
+
     val defaultStartPage: Flow<String> = prefsFlow.map { it[DEFAULT_START_PAGE] ?: "dashboard" }
 
     suspend fun setDefaultStartPage(route: String) { context.dataStore.edit { it[DEFAULT_START_PAGE] = route } }
@@ -181,31 +238,56 @@ class PreferencesManager @Inject constructor(
         context.dataStore.edit { it[DASHBOARD_CARD_CONFIGS] = DashboardCardConfig.toJson(configs) }
     }
 
-    val lifeHomeCardConfigs: Flow<List<LifeHomeCardConfig>> = prefsFlow.map { prefs ->
-        val json = prefs[LIFE_HOME_CARD_CONFIGS]
-        if (json == null) {
-            LifeHomeCardConfig.defaults
-        } else {
-            val stored = LifeHomeCardConfig.fromJson(json)
-            val storedTypes = stored.map { it.type }.toSet()
-            stored + LifeHomeCardConfig.defaults.filter { it.type !in storedTypes }
-        }
+    /** 演示模式：开启时生活页使用按设计稿铺好的模拟数据（供截图/演示）；**默认开启**。 */
+    val lifeDemoMode: Flow<Boolean> = prefsFlow.map { it[LIFE_DEMO_MODE] ?: true }
+
+    suspend fun setLifeDemoMode(enabled: Boolean) {
+        context.dataStore.edit { it[LIFE_DEMO_MODE] = enabled }
     }
 
-    suspend fun saveLifeHomeCardConfigs(configs: List<LifeHomeCardConfig>) {
-        context.dataStore.edit { it[LIFE_HOME_CARD_CONFIGS] = LifeHomeCardConfig.toJson(configs) }
+    /** 首次进入演示模式时的一次性说明是否已看过（用户定：默认开启，但要提醒）。 */
+    val lifeDemoHintShown: Flow<Boolean> = prefsFlow.map { it[LIFE_DEMO_HINT_SHOWN] ?: false }
+
+    suspend fun setLifeDemoHintShown(shown: Boolean) {
+        context.dataStore.edit { it[LIFE_DEMO_HINT_SHOWN] = shown }
     }
 
-    val lifeCalendarExpanded: Flow<Boolean> = prefsFlow.map { it[LIFE_CALENDAR_EXPANDED] ?: false }
+    /**
+     * 示例数据当前是否已播种。
+     * 关闭演示模式时置 false ⟹ **下次开启会重建**（用户定：关掉再开等于是重置，
+     * 编辑过或删过的示例都会复原）。
+     */
+    val lifeDemoSeeded: Flow<Boolean> = prefsFlow.map { it[LIFE_DEMO_SEEDED] ?: false }
 
-    suspend fun setLifeCalendarExpanded(expanded: Boolean) {
-        context.dataStore.edit { it[LIFE_CALENDAR_EXPANDED] = expanded }
+    suspend fun setLifeDemoSeeded(seeded: Boolean) {
+        context.dataStore.edit { it[LIFE_DEMO_SEEDED] = seeded }
+    }
+
+    /**
+     * 已播种示例内容的**版本号**（默认 0 = 从未按版本号播种）。
+     *
+     * 示例内容（`LifeDemoData`）是**真实写进库的行**，改动代码不会自动改写库里已有的行。
+     * 所以每次改示例条目/标题就把 `LifeDemoSeeder.SEED_VERSION` +1：启动或开启演示时
+     * 若发现库内版本落后，就**自动重播种** —— 否则改示例只对全新用户生效，
+     * 老用户看不到任何变化（只能手动关/开演示模式来重置）。
+     */
+    val lifeDemoSeedVersion: Flow<Int> = prefsFlow.map { it[LIFE_DEMO_SEED_VERSION] ?: 0 }
+
+    suspend fun setLifeDemoSeedVersion(version: Int) {
+        context.dataStore.edit { it[LIFE_DEMO_SEED_VERSION] = version }
     }
 
     val lifeCalendarSelectedDate: Flow<Long> = prefsFlow.map { it[LIFE_CALENDAR_SELECTED_DATE] ?: java.time.LocalDate.now().toEpochDay() }
 
     suspend fun setLifeCalendarSelectedDate(epochDay: Long) {
         context.dataStore.edit { it[LIFE_CALENDAR_SELECTED_DATE] = epochDay }
+    }
+
+    /** 看板日历视图模式：true（默认）= 周视图，false = 月视图。跨启动保持上次选择。 */
+    val lifeCalendarWeekMode: Flow<Boolean> = prefsFlow.map { it[LIFE_CALENDAR_WEEK_MODE] ?: true }
+
+    suspend fun setLifeCalendarWeekMode(week: Boolean) {
+        context.dataStore.edit { it[LIFE_CALENDAR_WEEK_MODE] = week }
     }
 
     fun isAppLockEnabled(): Boolean = prefsState.value[APP_LOCK_ENABLED] ?: false
@@ -275,6 +357,10 @@ class PreferencesManager @Inject constructor(
     val privacyAgreed: Flow<Boolean> = prefsFlow.map { it[PRIVACY_AGREED] ?: false }
 
     suspend fun setPrivacyAgreed(agreed: Boolean) { context.dataStore.edit { it[PRIVACY_AGREED] = agreed } }
+
+    val onboardingCompleted: Flow<Boolean> = prefsFlow.map { it[ONBOARDING_COMPLETED] ?: false }
+
+    suspend fun setOnboardingCompleted(completed: Boolean) { context.dataStore.edit { it[ONBOARDING_COMPLETED] = completed } }
 
     val lifePlanExpanded: Flow<Boolean> = prefsFlow.map { it[LIFE_PLAN_EXPANDED] ?: true }
     val lifeTimeExpanded: Flow<Boolean> = prefsFlow.map { it[LIFE_TIME_EXPANDED] ?: true }
@@ -436,16 +522,15 @@ class PreferencesManager @Inject constructor(
     suspend fun addRecentSearch(query: String) {
         val text = query.trim()
         if (text.isEmpty()) return
-        val current = recentSearchesMap()
-        val updated = (listOf(text) + current.filter { !it.equals(text, ignoreCase = true) }).take(8)
-        context.dataStore.edit { it[RECENT_SEARCHES] = kotlinx.serialization.json.Json.encodeToString(updated) }
-    }
-
-    private fun recentSearchesMap(): List<String> {
-        val raw = prefsState.value[RECENT_SEARCHES]
-        if (raw.isNullOrBlank()) return emptyList()
-        return try {
-            kotlinx.serialization.json.Json.decodeFromString<List<String>>(raw)
-        } catch (_: Exception) { emptyList() }
+        // 在 edit 事务内基于最新快照变换，避免并发读-改-写丢词条
+        context.dataStore.edit { prefs ->
+            val current = prefs[RECENT_SEARCHES]?.let { raw ->
+                try {
+                    kotlinx.serialization.json.Json.decodeFromString<List<String>>(raw)
+                } catch (_: Exception) { emptyList() }
+            } ?: emptyList()
+            val updated = (listOf(text) + current.filter { !it.equals(text, ignoreCase = true) }).take(8)
+            prefs[RECENT_SEARCHES] = kotlinx.serialization.json.Json.encodeToString(updated)
+        }
     }
 }
