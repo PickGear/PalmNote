@@ -16,6 +16,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -227,8 +228,7 @@ fun AboutScreen(
 fun PrivacyPolicyScreen(
     onNavigateBack: () -> Unit = {}
 ) {
-    val context = LocalContext.current
-    val isZh = context.resources.configuration.locales[0].language == "zh"
+    val isZh = LocalConfiguration.current.locales[0].language == "zh"
     val lines = getPrivacyPolicyLines(isZh)
     Scaffold(
         topBar = {
@@ -269,8 +269,7 @@ fun PrivacyPolicyScreen(
 fun TermsOfServiceScreen(
     onNavigateBack: () -> Unit = {}
 ) {
-    val context = LocalContext.current
-    val isZh = context.resources.configuration.locales[0].language == "zh"
+    val isZh = LocalConfiguration.current.locales[0].language == "zh"
     val lines = getTermsOfServiceLines(isZh)
     Scaffold(
         topBar = {

@@ -1627,7 +1627,7 @@
     <string name="life_detail_streak_longest">Longest streak</string>
     <string name="life_stats_heat_title">Last 16 weeks</string>
     <string name="life_calendar_month">%1$d/%2$d</string>
-    <string name="life_calendar_day_items">%2$d %1$s · %3$d items</string>
+    <string name="life_calendar_day_items">%1$d/%2$d · %3$d items</string>
     <string name="life_calendar_month_count">%1$d this month · Tap a day to review →</string>
     <string name="life_view_board">All</string>
     <string name="life_view_grid">Today</string>

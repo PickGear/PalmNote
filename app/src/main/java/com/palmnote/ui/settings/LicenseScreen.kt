@@ -3,6 +3,7 @@ package com.palmnote.ui.settings
 import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import com.palmnote.app.R
@@ -59,7 +60,7 @@ fun LicenseScreen(
     onNavigateBack: () -> Unit = {}
 ) {
     val context = LocalContext.current
-    val isZh = context.resources.configuration.locales[0].language == "zh"
+    val isZh = LocalConfiguration.current.locales[0].language == "zh"
     val gplLines = remember { loadLicenseText(context) }
     val noticeText = remember { loadNoticeText(context) }
     val loadFailed = stringResource(R.string.license_load_failed)
