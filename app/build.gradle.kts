@@ -256,6 +256,6 @@ dependencies {
     // Android instrumentation tests
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.espresso.core)
-    androidTestImplementation("androidx.benchmark:benchmark-macro-junit4:1.3.1")
+    androidTestImplementation("androidx.benchmark:benchmark-macro-junit4:1.5.0")
     androidTestImplementation("androidx.test:core:1.7.0")
 }

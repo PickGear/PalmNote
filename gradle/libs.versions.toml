@@ -3,9 +3,9 @@ agp = "8.13.2"
 palmnote = "1.4.0"
 kotlin = "2.2.21"
 ksp = "2.2.21-2.0.5"
-room = "2.7.2"
-navigation = "2.8.5"
-compose-bom = "2025.06.01"
+room = "2.8.5"
+navigation = "2.10.1"
+compose-bom = "2026.09.00"
 coil = "3.3.0"
 datastore = "1.1.1"
 sqlcipher = "4.17.0"
@@ -107,6 +107,6 @@ kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
-baselineProfiles = { id = "androidx.baselineprofile", version = "1.4.1" }
+baselineProfiles = { id = "androidx.baselineprofile", version = "1.5.0" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
