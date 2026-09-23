@@ -37,6 +37,7 @@ android {
         // targetSdk 34：自用侧载，禁用 Android 15+ 强制 predictive back，恢复传统返回动画；
         // compileSdk 保持 36 不损失编译能力。上 Play 时需升回 35+。
         targetSdk = 34
+        // versionCode 单调递增：1.4.0 尚未发布，沿用 5（与 docs/DEVELOPMENT.md §3.4 表一致）。
         versionCode = 5
         versionName = libs.versions.palmnote.get()
         // 版本号单一事实来源：resValue 生成 app_version 字符串资源，

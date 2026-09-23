@@ -9,7 +9,7 @@
 - Android Studio Ladybug (2024.2+) or later
 - JDK 17
 - compileSdk 36 / targetSdk 34 / minSdk 26
-- Kotlin 2.2.20
+- Kotlin 2.2.21
 
 ## 代码规范 / Code Style
 

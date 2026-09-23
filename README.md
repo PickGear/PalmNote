@@ -3,7 +3,7 @@
 > **中文** | [English](README.en.md)
 
 [![License](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
-![Kotlin](https://img.shields.io/badge/Kotlin-2.2.20-purple.svg)
+![Kotlin](https://img.shields.io/badge/Kotlin-2.2.21-purple.svg)
 ![API](https://img.shields.io/badge/minSdk-26-brightgreen.svg)
 ![API](https://img.shields.io/badge/targetSdk-34-orange.svg)
 [![Release](https://img.shields.io/github/v/release/PickGear/PalmNote)](https://github.com/PickGear/PalmNote/releases)
@@ -93,7 +93,7 @@
 
 | 层 | 方案 |
 |---|------|
-| 语言 | Kotlin 2.2.20 |
+| 语言 | Kotlin 2.2.21 |
 | UI | Jetpack Compose + Material 3 |
 | 数据库 | Room 2.7.2 |
 | 偏好存储 | DataStore |

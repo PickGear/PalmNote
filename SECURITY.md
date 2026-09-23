@@ -7,9 +7,9 @@ PalmNote is a fully local application — it does not connect to any network or 
 
 | 版本 / Version | 支持状态 / Supported |
 |---------------|-------------------|
+| 1.4.x | ✅ |
 | 1.3.x | ✅ |
-| 1.2.x | ✅ |
-| < 1.2 | ❌ |
+| < 1.3 | ❌ |
 
 ## 报告漏洞 / Reporting a Vulnerability
 
