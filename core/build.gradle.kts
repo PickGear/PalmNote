@@ -48,7 +48,8 @@ android {
 
 detekt {
     config.setFrom("$rootDir/config/detekt/detekt.yml")
-    baseline = file("$rootDir/config/detekt/baseline.xml")
+    // 独立 baseline：app/core 不共用文件，避免各自 detektBaseline 互相覆盖条目。
+    baseline = file("$rootDir/config/detekt/baseline-core.xml")
     buildUponDefaultConfig = true
     allRules = false
 }

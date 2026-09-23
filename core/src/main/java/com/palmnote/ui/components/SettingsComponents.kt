@@ -41,8 +41,24 @@ import com.palmnote.R
  */
 
 @Composable
-fun SettingsMenuItem(icon: ImageVector, title: String, subtitle: String, tint: Color = MaterialTheme.colorScheme.primary, onClick: () -> Unit) {
-    Row(modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 10.dp, horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+fun SettingsMenuItem(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    tint: Color = MaterialTheme.colorScheme.primary,
+    /**
+     * 点击整行的动作。**不传 = 整行不可点**（没有涟漪，按下也不会在整行铺 state layer）。
+     * 开关型条目只让控件可点：既保住卡片底色，也不让「点哪里都能切换」。既有调用点都传了 onClick，行为不变。
+     */
+    onClick: (() -> Unit)? = null,
+    /**
+     * 行尾内容。**不传 = 右箭头**（既有调用点行为不变）；
+     * 传 `CapsuleSwitch` 之类即可让「开关型」设置项与其它行保持同一套视觉。
+     */
+    trailing: @Composable (() -> Unit)? = null
+) {
+    val rowModifier = if (onClick != null) Modifier.fillMaxWidth().clickable(onClick = onClick) else Modifier.fillMaxWidth()
+    Row(modifier = rowModifier.padding(vertical = 10.dp, horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(tint.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) {
             Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(20.dp))
         }
@@ -50,7 +66,7 @@ fun SettingsMenuItem(icon: ImageVector, title: String, subtitle: String, tint: C
             Text(title, style = MaterialTheme.typography.bodyLarge)
             Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
-        Icon(Icons.Filled.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (trailing != null) trailing() else Icon(Icons.Filled.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 

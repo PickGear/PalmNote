@@ -42,7 +42,8 @@ interface LifeItemRepository {
 
     /** 计划页子任务。 */
     fun getSubtasks(parentId: Long): Flow<List<LifeItem>>
-    fun getAnniversaryLikeItems(): Flow<List<LifeItem>>
+    /** 纪念日类条目（演示感知·互斥）：includeDemo=true 只看示例，false 只看用户自己的。 */
+    fun getAnniversaryLikeItems(includeDemo: Boolean, demoMeta: String): Flow<List<LifeItem>>
 
     /** 逾期反馈。 */
     fun getOverdue(now: Long): Flow<List<LifeItem>>

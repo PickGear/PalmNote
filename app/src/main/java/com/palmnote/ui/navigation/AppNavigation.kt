@@ -671,8 +671,6 @@ private fun MainTabs(
 
             composable<TabLife> {
                 LifeNavHost(
-                    tabNavController = tabNavController,
-                    appNavController = appNavController,
                     onChildNavigated = { lifeChildAtHome = it }
                 )
             }

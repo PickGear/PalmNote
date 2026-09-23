@@ -37,7 +37,6 @@ fun DataClearScreen(
     val clearContext = LocalContext.current
     val clearState by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
 
     // 清除结果反馈：成功提示 + 失败可感知；失败留在本页让用户可以重试
     LaunchedEffect(clearState.success, clearState.error) {

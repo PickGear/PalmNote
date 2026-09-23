@@ -1313,7 +1313,7 @@ private fun ErrorContent(error: String, diagnostic: String = "", onRetry: () -> 
  * 信息结构（自上而下）：
  *  (a) 三态筛选条「待复核 | 全部 N | 已跳过 M」：默认停在「待复核」；筛选只影响展示，不影响勾选/导入；
  *  (b) 「待复核」档：头区（待确认条数 + 原因摘要）+ 待复核卡（商户 / 金额 + 橙色虚线 + 理由行），
- *      点金额·商户就地改、点卡体标记已确认；无待复核项时退回全量明细（与批13 一致）；
+ *      点金额·商户就地改、点卡体标记已确认；无待复核项时一行空态文案（明细只在「全部」档显示）；
  *  (c) 「全部」/「已跳过」档：分别渲染全量明细 / 未勾选明细；「已跳过」为空时一行空态文案；
  *  (d) 「存入 账本 / 账户 · 更改」行：点开 [ImportSettingSheet]；
  *  (e) 底部主按钮「确认 n 笔，导入全部 N 笔」。
@@ -1385,7 +1385,7 @@ private fun FilePreviewContent(
 
 /**
  * 文件页主区按筛选档渲染（ColumnScope：由内部分支各自吃掉 weight(1f)，保证每档恰好一个 weight，避免冲突）：
- * - REVIEW：分拣台（头区 + 待复核卡）；无待复核时退回全量明细（与批13 一致）。
+ * - REVIEW：分拣台（头区 + 待复核卡）；无待复核时一行空态文案（不退回全量明细）。
  * - ALL：全量明细列表。
  * - SKIPPED：未勾选明细；为空时一行空态文案 + 撑底 Spacer。
  */
@@ -1420,7 +1420,13 @@ private fun ColumnScope.FileFilteredBody(
                     modifier = Modifier.weight(1f)
                 )
             } else {
-                FileBillList(remember(state.parsed) { state.parsed.indices.toList() }, state, viewModel, onEdit = onEditBill, modifier = Modifier.weight(1f))
+                Text(
+                    text = stringResource(R.string.bill_import_no_review),
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+                )
+                Spacer(modifier = Modifier.weight(1f))
             }
         }
         ReviewFilter.ALL -> FileBillList(
@@ -2708,7 +2714,14 @@ private fun OcrPreviewContent(state: BillImportState, viewModel: BillImportViewM
     var showSettings by remember { mutableStateOf(false) }
     Column(modifier = Modifier.fillMaxSize()) {
         if (isMulti) {
-            OcrMultiReview(state, viewModel, context, onOpenSettings = { showSettings = true }, onEdit = { editingIndex = it })
+            OcrMultiReview(
+                state,
+                viewModel,
+                context,
+                onOpenSettings = { showSettings = true },
+                onEdit = { editingIndex = it },
+                onZoom = { showZoom = true }
+            )
         } else {
             // weight(1f)：把自滚动表单压在底部按钮行之内，避免按钮被挤出屏幕
             OcrSingleEditor(
@@ -2752,14 +2765,15 @@ private fun OcrPreviewContent(state: BillImportState, viewModel: BillImportViewM
     OcrEditSheetHost(editingIndex, state, viewModel, onDismiss = { editingIndex = null })
 }
 
-/** OCR 多笔校对：去向摘要 → 统计条 → 筛选 → 明细列表（weight(1f) 吃掉剩余高度） */
+/** OCR 多笔校对：原图入口窄行 → 去向摘要 → 统计条 → 筛选 → 明细列表（weight(1f) 吃掉剩余高度） */
 @Composable
 private fun OcrMultiReview(
     state: BillImportState,
     viewModel: BillImportViewModel,
     context: android.content.Context,
     onOpenSettings: () -> Unit,
-    onEdit: (Int) -> Unit
+    onEdit: (Int) -> Unit,
+    onZoom: () -> Unit
 ) {
     val expenseSum = remember(state.ocrResults, state.ocrSelectedIndices) {
         state.ocrResults.filterIndexed { i, _ -> i in state.ocrSelectedIndices }
@@ -2785,6 +2799,14 @@ private fun OcrMultiReview(
     }
     Column(modifier = Modifier.fillMaxSize()) {
         Spacer(modifier = Modifier.height(8.dp))
+        // 多笔页与单笔共用同一原图 URI / ZoomableImageDialog，仅此前未接 onZoom；
+        // 多笔不写 ocrDate，中间文案改用「截图」避免误显示「未识别」
+        OcrThumbnailRow(
+            state = state,
+            onZoom = onZoom,
+            subtitle = stringResource(R.string.bill_import_screenshot),
+            modifier = Modifier.padding(horizontal = 16.dp)
+        )
         ImportSettingSummary(state, context, onClick = onOpenSettings)
         Spacer(modifier = Modifier.height(ImportCardGap))
         ImportStatBar(state.ocrSelectedIndices.size, state.ocrResults.size, expenseSum, incomeSum)
@@ -2845,9 +2867,14 @@ private fun OcrEditSheetHost(index: Int?, state: BillImportState, viewModel: Bil
     )
 }
 
-/** 单笔识别的图片入口窄行（高 44dp）：28dp 缩略图 + 日期 + 右侧「查看原图 ›」；整行可点放大 */
+/** 识别结果的图片入口窄行（高 44dp）：28dp 缩略图 + [subtitle]（缺省用 ocrDate） + 右侧「查看原图 ›」；整行可点放大（单笔/多笔共用） */
 @Composable
-private fun OcrThumbnailRow(state: BillImportState, onZoom: () -> Unit, modifier: Modifier = Modifier) {
+private fun OcrThumbnailRow(
+    state: BillImportState,
+    onZoom: () -> Unit,
+    modifier: Modifier = Modifier,
+    subtitle: String? = null
+) {
     if (state.ocrImageUri == null) return
     Row(
         modifier = modifier
@@ -2865,7 +2892,7 @@ private fun OcrThumbnailRow(state: BillImportState, onZoom: () -> Unit, modifier
         )
         Spacer(modifier = Modifier.width(8.dp))
         Text(
-            state.ocrDate.ifBlank { stringResource(R.string.bill_import_unrecognized) },
+            subtitle ?: state.ocrDate.ifBlank { stringResource(R.string.bill_import_unrecognized) },
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurface,
             maxLines = 1,

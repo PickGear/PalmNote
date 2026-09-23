@@ -6,6 +6,7 @@ import androidx.compose.runtime.Stable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.palmnote.data.db.dao.CategoryCount
+import com.palmnote.data.db.dao.LIFE_DEMO_META
 import com.palmnote.data.db.entity.Anniversary
 import com.palmnote.data.db.entity.Budget
 import com.palmnote.data.db.entity.Goal
@@ -52,6 +53,7 @@ data class HabitTodayRow(
     val isCheckedToday: Boolean
 )
 
+@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 @HiltViewModel
 @Suppress("LongParameterList")
 class DashboardViewModel @Inject constructor(
@@ -277,20 +279,32 @@ class DashboardViewModel @Inject constructor(
             Pair(expense ?: 0L, income ?: 0L)
         }
         // 纪念日数据源 = 生日/纪念日 LifeItem（生活页创建）∪ 旧版 anniversary 表（CSV 导入兼容）
-        val gaFlow = lifeItemRepository.getAnniversaryLikeItems()
-            .combine(anniversaryRepository.getAllAnniversaries()) { items, legacy ->
-                val today = java.time.LocalDate.now()
-                val mapped = items.map { item ->
-                    val tplIcon = _itemTemplateIcons.value[item.templateId]
-                    val date = item.dueDate ?: 0L
-                    Anniversary(
-                        id = -item.id - 1_000_000L,
-                        title = item.title,
-                        solarDate = date,
-                        type = if (tplIcon == "cake") "BIRTHDAY" else "CUSTOM"
-                    )
-                }
-                legacy + mapped
+        // 演示感知（**互斥**）：演示开启 = **只看示例**（用户自己的条目与旧版导入的纪念日都不参与）；
+        // 关闭 = 只看用户自己的（示例行已在关闭时物理删除）。
+        val gaFlow = preferencesManager.lifeDemoMode
+            .flatMapLatest { includeDemo ->
+                lifeItemRepository.getAnniversaryLikeItems(includeDemo, LIFE_DEMO_META)
+                    .combine(anniversaryRepository.getAllAnniversaries()) { items, legacy ->
+                        val mapped = items.mapNotNull { item ->
+                            val tplIcon = _itemTemplateIcons.value[item.templateId]
+                            // dueDate（执行列）可能为空：它是 v8 才补上的查询索引，演示种子与存量行未必回填。
+                            // 此时回落到 fieldsData 这个「展示唯一信源」再取一次；仍然取不到就**整条不发出去**。
+                            // 绝不能写成 `item.dueDate ?: 0L` —— 0 会被当成 1970-01-01，
+                            // 于是卡片上出现「01月01日 / 已过 20716 天」（总纲 §13 A 档同一缺陷类）。
+                            val date = item.dueDate ?: DateUtils.dateFromFieldsDataOrNull(item.fieldsData)
+                                ?: return@mapNotNull null
+                            Anniversary(
+                                id = -item.id - 1_000_000L,
+                                title = item.title,
+                                solarDate = date,
+                                // 生日 / 纪念日都是**按年复现**的日子，用户要看的是「还有几天」。
+                                // 用 COUNT_UP 会拿一个未来日期去算天数差，得负数 —— 生活页样板卡也是「还有 N 天」。
+                                displayMode = "COUNT_DOWN",
+                                type = if (tplIcon == "cake") "BIRTHDAY" else "CUSTOM"
+                            )
+                        }
+                        if (includeDemo) mapped else legacy + mapped
+                    }
             }
             .map { all -> GoalAnnivData(all.size, all) }
         val habitFlow = combine(

@@ -39,7 +39,6 @@ class HabitCheckInReceiver : BroadcastReceiver() {
                 )
                 val today = LocalDate.now()
                 val dayStart = today.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-                val dayEnd = today.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
                 val repository = entryPoint.goalRepository()
                 // 仓库层 insertCheckIn 已在事务内判重；返回 -1 表示当日已打过

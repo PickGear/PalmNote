@@ -27,7 +27,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.palmnote.ui.components.AppDialog
 import com.palmnote.ui.components.SettingsMenuItem
-import com.palmnote.ui.components.CapsuleSwitch
 import com.palmnote.ui.components.CompactTopAppBar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -80,7 +79,9 @@ fun SettingsScreen(
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = MaterialTheme.shapes.large,
-                    color = MaterialTheme.colorScheme.surface
+                    color = MaterialTheme.colorScheme.surface,
+                    shadowElevation = 0.dp,
+                    tonalElevation = 0.dp
                 ) {
                     Column(modifier = Modifier.padding(20.dp)) {
                         Row(

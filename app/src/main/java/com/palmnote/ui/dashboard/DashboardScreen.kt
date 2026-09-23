@@ -47,7 +47,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -91,11 +90,9 @@ fun DashboardScreen(
     val profileAvatarPath by viewModel.profileAvatarPath.collectAsStateWithLifecycle()
 
     val hapticFeedback = LocalHapticFeedback.current
-    val spacingPx = with(LocalDensity.current) { 16.dp.toPx() }
     val itemHeights = remember { mutableStateMapOf<CardType, Int>() }
     val context = androidx.compose.ui.platform.LocalContext.current
     val greeting = remember { getGreeting(context) }
-    val weekDay = remember { getWeekDay(context) }
 
     val dashboardMessages = remember {
         listOf(

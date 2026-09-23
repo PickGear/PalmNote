@@ -5,10 +5,13 @@ import com.palmnote.data.db.entity.LifeTemplate
 import com.palmnote.domain.repository.LifeTemplateRepository
 import com.palmnote.ui.theme.lifeTemplateIdentityHex
 import android.content.SharedPreferences
+import androidx.room.withTransaction
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
 import io.mockk.verify
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
@@ -16,8 +19,10 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Test
 
 /**
@@ -26,15 +31,36 @@ import org.junit.Test
  */
 class LifeDataSeederTest {
 
+    /**
+     * Room 2.7 的 `withTransaction` 会把块投递到 RoomDatabase 自己的事务 Dispatcher 上执行；
+     * relaxed mock 的 AppDatabase 交出的 Dispatcher 永远不消费任务，runBlocking 会死等。
+     * 这里静态 stub 掉扩展，让块在调用线程同步跑完（seedIfEmpty 的断言不依赖真实事务）。
+     */
+    @Before
+    fun stubRoomTransaction() {
+        mockkStatic("androidx.room.RoomDatabaseKt")
+        coEvery {
+            any<AppDatabase>().withTransaction(any<suspend () -> Any?>())
+        } coAnswers {
+            secondArg<suspend () -> Any?>().invoke()
+        }
+    }
+
+    @After
+    fun unstubRoomTransaction() {
+        unmockkStatic("androidx.room.RoomDatabaseKt")
+    }
+
     private fun seeder() = LifeDataSeeder(
         mockk<LifeTemplateRepository>(relaxed = true),
         mockk<AppDatabase>(relaxed = true)
     )
 
     @Test
-    fun `lifeTemplateSeeds contains all 16 builtin templates`() {
+    fun `lifeTemplateSeeds contains all 17 builtin templates`() {
         val seeds = seeder().lifeTemplateSeeds
-        assertEquals(16, seeds.size)
+        // 17 = 18 个内置模板 − 1 个退役（「周报月报」，v1.27 → 报告改由统计页承担）
+        assertEquals(17, seeds.size)
     }
 
     @Test
@@ -74,7 +100,8 @@ class LifeDataSeederTest {
     @Test
     fun `system templates are marked special`() {
         val seeds = seeder().lifeTemplateSeeds
-        assertEquals(listOf("BarChart", "timer"), seeds.filter { it.isSpecial }.map { it.icon }.sorted())
+        // 仅「专注」是系统型；「周报月报」已退役、不再是模板（v1.27）
+        assertEquals(listOf("timer"), seeds.filter { it.isSpecial }.map { it.icon }.sorted())
     }
 
     @Test
@@ -165,8 +192,9 @@ class LifeDataSeederTest {
         seeder.seedIfEmpty()
         // 本次不更新模板（无法区分旧种子与用户自定义）……
         coVerify(exactly = 0) { repo.updateTemplate(any()) }
-        // ……但必须写入基线，未来的种子变更才有"用户没改过"的判定依据
-        verify(exactly = 1) { prefs.edit() }
+        // ……但必须写入基线，未来的种子变更才有"用户没改过"的判定依据。
+        // （recordSeedVersion 也会调一次 edit()，故不能对 edit 本身断言 exactly = 1）
+        verify { prefs.edit().putString("fields_config:subscriptions", "[]") }
     }
 
     @Test

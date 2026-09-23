@@ -7,6 +7,7 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.palmnote.data.LifeDataSeeder
+import com.palmnote.data.LifeDemoSeeder
 import com.palmnote.data.db.AppDatabase
 import com.palmnote.data.datastore.PreferencesManager
 import com.palmnote.data.AppIconManager
@@ -38,6 +39,7 @@ class PalmNoteApp : Application(), Configuration.Provider {
     @Inject lateinit var walletRepository: WalletRepository
     @Inject lateinit var accountBookRepository: AccountBookRepository
     @Inject lateinit var lifeDataSeeder: LifeDataSeeder
+    @Inject lateinit var lifeDemoSeeder: LifeDemoSeeder
     @Inject lateinit var database: AppDatabase
     @Inject lateinit var workerFactory: HiltWorkerFactory
     @Inject lateinit var autoBackupScheduler: AutoBackupScheduler
@@ -96,6 +98,9 @@ class PalmNoteApp : Application(), Configuration.Provider {
             // 旧版本把备份写在应用专属外部存储（可被文件管理器读取），迁移到内部存储后旧文件不再外露
             BackupManager.migrateLegacyExternalBackups(this@PalmNoteApp)
             lifeDataSeeder.seedIfEmpty()
+            // 演示数据同样在**启动时**保证最新：模板播完后调用；改过示例内容（SEED_VERSION +1）
+            // 即自动重播种，不必等用户进生活页、也不必手动开关演示模式。
+            lifeDemoSeeder.ensureSeeded(preferencesManager)
             // 恢复备份成功后进程重启：恢复窗口内的 Widget 广播被抑制过，
             // 这里补一次全量刷新，让桌面小组件立即显示恢复后的数据
             val justRestored = getSharedPreferences("restore_flags", MODE_PRIVATE)

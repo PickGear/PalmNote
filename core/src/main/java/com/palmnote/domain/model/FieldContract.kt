@@ -309,6 +309,16 @@ object CompoundPayload {
 /** CHECKLIST 载荷：`{"v":1,"items":[{"text":"...","done":false}]}`。 */
 data class ChecklistRow(val text: String, val done: Boolean)
 
+/**
+ * 复合字段（清单/表格）读取：生产写入是 JSON **字符串原语**，演示/历史数据可能是**嵌套对象** ——
+ * 两种都认（只认原语会把演示清单读成 0/0）。
+ */
+fun compoundRawOf(el: kotlinx.serialization.json.JsonElement?): String? = when (el) {
+    is JsonPrimitive -> el.contentOrNull?.takeIf { it.isNotBlank() }
+    is kotlinx.serialization.json.JsonObject, is kotlinx.serialization.json.JsonArray -> el.toString()
+    else -> null
+}
+
 fun parseChecklist(raw: String?): List<ChecklistRow> {
     val obj = CompoundPayload.unwrap(raw) ?: return emptyList()
     val arr = obj["items"] as? kotlinx.serialization.json.JsonArray ?: return emptyList()

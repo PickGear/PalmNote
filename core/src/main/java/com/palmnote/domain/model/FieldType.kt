@@ -43,6 +43,8 @@ data class FieldConfig(
     val showInCard: Boolean = false,
     val showInList: Boolean = false,
     val showAsProgress: Boolean = false,
+    /** 停用字段（§4.1：内置模板有数据的字段不能删，只能停用；历史数据保留，不再渲染）。 */
+    val disabled: Boolean = false,
     val progressStyle: String? = null,
     val progressTargetKey: String = "",
     val sortOrder: Int = 0

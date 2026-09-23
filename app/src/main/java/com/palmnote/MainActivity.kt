@@ -203,7 +203,6 @@ class MainActivity : AppCompatActivity() {
             val lockState by appLockManager.lockState.collectAsStateWithLifecycle()
             val privacyAgreed by preferencesManager.privacyAgreed.collectAsStateWithLifecycle(initialValue = null)
             val onboardingCompleted by preferencesManager.onboardingCompleted.collectAsStateWithLifecycle(initialValue = null)
-            val showPrivacyDialog = privacyAgreed == false
             val scope = rememberCoroutineScope()
 
             // 应用锁启用时禁止截图/录屏，防止最近任务缩略图泄露财务数据；

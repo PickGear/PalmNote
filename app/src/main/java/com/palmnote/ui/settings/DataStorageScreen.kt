@@ -151,6 +151,32 @@ fun DataStorageScreen(
                     )
                 }
             }
+
+            // ── 示例数据：演示模式开关（载入/移除一套示例记录；关闭即物理移除，不再进页面与备份。当前为生活页示例，后续按此扩展到记账/资产）──
+            item { SectionHeader(stringResource(R.string.settings_demo_section), Icons.Outlined.AutoAwesome, ModuleLife) }
+            item {
+                // 单行卡：去掉上下内边距，整卡高度与多行卡里的单行一致（否则 12dp×2 只包这一行，会比别行显高）。
+                ModuleCard(
+                    tint = MaterialTheme.colorScheme.surface,
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = PaddingValues(horizontal = 12.dp)
+                ) {
+                    SettingsMenuItem(
+                        icon = Icons.Outlined.AutoAwesome,
+                        title = stringResource(R.string.settings_demo_mode),
+                        subtitle = stringResource(R.string.settings_demo_mode_subtitle),
+                        tint = ModuleLife,
+                        // 不传 onClick：整行不可点，只有右侧开关响应（避免整卡出现按下态）。
+                        trailing = {
+                            CapsuleSwitch(
+                                checked = state.demoModeEnabled,
+                                onCheckedChange = { viewModel.setDemoModeEnabled(it) },
+                                checkedTrackColor = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    )
+                }
+            }
         }
     }
 

@@ -25,12 +25,28 @@
 
 ## 一、色彩
 
-### 1.1 亮色主题
+### 1.1 主题系统与亮色主题
+
+品牌主色由**主题包系统**驱动（`ThemePackages`），用户可在设置页切换：
+
+| 主题包 id | Light primary | Dark primary |
+|-----------|---------------|--------------|
+| **cyan（默认）** | **`#0891B2`** | **`#22D3EE`** |
+| green | `#2D4A3E` | `#7BC4A0` |
+| blue | `#1565C0` | `#64B5F6` |
+| purple | `#6A1B9A` | `#BA68C8` |
+| orange | `#E65100` | `#FF8A65` |
+| red | `#C62828` | `#EF5350` |
+| teal | `#00695C` | `#4DB6AC` |
+| pink | `#AD1457` | `#F06292` |
+
+`primaryContainer = lightPrimary.copy(alpha = 0.12f)`，`onPrimaryContainer = lightPrimary`。
+自定义 HEX 色值以 `#` 前缀存储，暗色侧自动提亮 1.3 倍。
+
+固定中性 token（不随主题包变化）：
 
 | Token | 色值 | Material3 通道 |
 |-------|------|---------------|
-| PrimaryGreen | `#2D4A3E` | primary |
-| PrimaryGreenLight | `#4A7A5E` | primaryContainer |
 | AccentOrange | `#FF8C42` | secondary |
 | StatusActive / Success | `#34A853` | tertiary |
 | Warning | `#FFBD44` | 自定义（`ColorScheme.warning()`） |
@@ -44,9 +60,10 @@
 
 ### 1.2 暗色主题
 
+`primary` 取所选主题包的 `darkPrimary`（见 1.1 表）。其余固定：
+
 | Token | 色值 | Material3 通道 |
 |-------|------|---------------|
-| DarkPrimary | `#7BC4A0` | primary |
 | DarkSecondary | `#F0A060` | secondary |
 | DarkSuccess | `#66D98D` | tertiary |
 | DarkWarning | `#E8B94A` | 自定义 |
@@ -60,9 +77,20 @@
 
 ### 1.3 模块色调
 
+模块品牌色常量（图标底色、选中态等）：
+
+| 常量 | 色值 | 模块 |
+|------|------|------|
+| ModuleHome | `#0891B2` | 首页（与默认主题包一致） |
+| ModuleItem | `#2A6BAB` | 物品 |
+| ModuleBill | `#A67A00` | 账单 |
+| ModuleLife | `#C2185B` | 生活 |
+| ModuleSettings | `#607D8B` | 设置 |
+
+页面浅色容器色调：
+
 | 模块 | Light 色值 | Dark 色值 | tint 函数 |
 |------|-----------|----------|----------|
-| 首页 Dashboard | `#E8F5E9` | `#1B2E1B` | — |
 | 资产 Asset | `#E8EFF5` | `#1A2A36` | `assetTint()` |
 | 账单 Bill | `#FFF8EE` | `#2E261A` | `billTint()` |
 | 目标 Goal | `#EAF4EC` | `#1A2E20` | `goalTint()` |
@@ -85,6 +113,7 @@
 
 | 名称 | 色值 | 用途 |
 |------|------|------|
+| ModuleHome / ModuleItem / ModuleBill / ModuleLife / ModuleSettings | 见 1.3 | 各模块品牌色 |
 | InfoBlue | `#4285F4` | 资产模块蓝色、设置项图标 |
 | ModuleLife | `#C2185B` | 生活模块、设置项图标 |
 | StatusLost | `#FF6B6B` | 状态丢失 |
@@ -96,7 +125,7 @@
 
 ### 1.6 Switch 颜色
 
-全局 `LocalSwitchColor` 提供，默认 `PrimaryGreen`，用户可在设置页自定义 HEX 色值。
+`CapsuleSwitch` 的 `checkedTrackColor` 默认取 `MaterialTheme.colorScheme.primary`（随主题包），调用方可显式覆盖。
 
 ### 1.7 `[Life]` 生活模块色彩体系
 
@@ -106,13 +135,13 @@
 
 | 预置分类 | Light 色值 | Dark 色值 | tint 函数 | 说明 |
 |---------|-----------|----------|----------|------|
-| 🎯 目标 | `#EDE7F6` | `#1A1530` | `lifePlanTint()` | 靛蓝基调，有完成状态的追踪 |
-| 📅 纪念 | `#FFEBEE` | `#301A1A` | `lifeTimeTint()` | 珊瑚红基调，锚定在日期上 |
-| 📓 记录 | `#E8F5E9` | `#1A3020` | `lifeRecordTint()` | 翡翠绿基调，持续累积的日志 |
+| 🎯 计划 | `#E8F0FC` | `#121E33` | `lifePlanTint()` | 亮蓝基调：蓝图、秩序、远见 |
+| 📅 时间 | `#F3EAF9` | `#231830` | `lifeTimeTint()` | 亮紫偏品红基调：时光、节奏、永恒 |
+| 📓 记录 | `#E6F5EF` | `#132822` | `lifeRecordTint()` | 亮绿基调：记忆、档案、积累 |
 
 > **判定规则：** 每条模板仅唯一命中一个分类。
-> - **目标**：有明确完成状态的模板（存款/学习/待办/旅行/阅读/购物）
-> - **纪念**：锚定在一个日期上的模板（生日/纪念日/倒计时/正数日）
+> - **计划**：有明确完成状态的模板（存款/学习/待办/旅行/阅读/购物）
+> - **时间**：锚定在一个日期上的模板（生日/纪念日/倒计时/正数日）
 > - **记录**：持续累积、无自然终态的模板（日记/心情/打卡/订阅/报告）
 >
 > 用户创建自定义模板时可自由选择任一分类，也可新增自定义分类。
@@ -259,8 +288,9 @@ val lifeColorPalette = listOf(
 
 **应用启动图标为项目原创矢量设计**（`res/drawable/ic_launcher_foreground.xml`），非第三方素材：
 
-- 前景：手写 pathData 的账单/列表线条图形，深绿色 `#2D4A3E`
-- 背景：纯色 `#FFFFFF`（`ic_launcher_background.xml`）
+- 前景/背景配对变体：cyan-white（**默认**，`ic_launcher_background_cyan` + 白色前景）、
+  绿白、黑白、白黑四种风格，由 `AppIconManager` 通过 activity-alias 切换，
+  用户可在「通用设置 → 应用图标」选择
 - 自适应图标（`mipmap-anydpi-v26`），无位图素材、无外部下载资源，不存在版权/授权问题
 
 （注：`AppIcon` 枚举基于 AndroidX `material-icons-extended` 的 Material Symbols 线性图标，Apache 2.0，用于应用内 UI，与启动图标无关。）
@@ -291,8 +321,8 @@ val lifeColorPalette = listOf(
 
 | AppIcon 枚举名 | 用途 |
 |---------------|------|
-| `Assignment` | 预置分类：「目标」图标 |
-| `CalendarMonth` | 预置分类：「纪念」图标 |
+| `Assignment` | 预置分类：「计划」图标 |
+| `CalendarMonth` | 预置分类：「时间」图标 |
 | `AutoStories` | 预置分类：「记录」图标 |
 
 **预设模板图标：**
@@ -312,7 +342,7 @@ val lifeColorPalette = listOf(
 | `CheckCircle` | 打卡记录 |
 | `Timer` | 专注记录 |
 | `Autorenew` | 订阅记录 |
-| `BarChart` | 周报月报 |
+| `BarChart` | 统计与报告（v1.27：原「周报月报」模板已退役，报告归**统计页**；此图标现为统计页入口；v1.34：生活页内统计入口 = 「全部」视图搜索条右侧按钮，页内不再占顶栏图标） |
 
 **心情模块图标：**
 
@@ -603,7 +633,8 @@ Card(
 | 日记 | `AutoStories` | 还没有日记 | 写下今天发生的事 |
 | 专注记录 | `Timer` | 暂无专注记录 | 开始一段专注时光 |
 | 订阅记录 | `Autorenew` | 暂无订阅记录 | 管理你的订阅服务 |
-| 周报月报 | `BarChart` | 暂无报告数据 | 积累数据后自动生成报告 |
+
+> **v1.27 移除**：「周报月报」不再是模板（报告归统计页），此表原有的那一行已删除。
 
 ### 6.11 Tab
 
@@ -624,7 +655,7 @@ Card(
 
 | Tab | 路由 | 选中色 | 图标大小 |
 |-----|------|--------|----------|
-| 首页 | `dashboard` | PrimaryGreenLight `#4A7A5E` | 26dp |
+| 首页 | `dashboard` | ModuleHome `#0891B2` | 26dp |
 | 物品 | `asset` | InfoBlue `#4285F4` | 22dp |
 | 账本 | `bill` | AccentOrange `#FF8C42` | 24dp |
 | 生活 | `life` | ModuleLife `#C2185B` | 24dp |
@@ -675,7 +706,7 @@ Card(
 |------|-----|
 | 轨道尺寸 | 46×26dp |
 | 滑块尺寸 | 20dp 圆形 |
-| 选中色 | `LocalSwitchColor.current`（默认 PrimaryGreen，用户可自定义 HEX） |
+| 选中色 | `colorScheme.primary`（随主题包，调用方可覆盖） |
 | 未选中色 | `surfaceVariant` |
 
 ### 6.15 设置页组件
@@ -1082,7 +1113,7 @@ items(list)  // 改为 items(list, key = { it.id })
 ### 13.2 颜色引用
 
 ```kotlin
-MaterialTheme.colorScheme.primary          // 品牌主色 PrimaryGreen
+MaterialTheme.colorScheme.primary          // 品牌主色（主题包，默认 cyan #0891B2）
 MaterialTheme.colorScheme.secondary        // AccentOrange
 MaterialTheme.colorScheme.tertiary         // Success/完成态
 MaterialTheme.colorScheme.error            // 错误/删除
@@ -1099,9 +1130,9 @@ LocalSwitchColor.current                   // 开关选中色
 
 ```kotlin
 // 预置分类色（val 属性，非 composable）
-LifePlan = Color(0xFF7C8CF0)       // 预置分类「目标」
-LifeTime = Color(0xFFF07070)       // 预置分类「纪念」
-LifeRecord = Color(0xFF50C890)     // 预置分类「记录」
+LifePlan = Color(0xFF2B6FE0)       // 预置分类「计划」（亮蓝）
+LifeTime = Color(0xFF9A4FD0)       // 预置分类「时间」（亮紫偏品红）
+LifeRecord = Color(0xFF1FA870)     // 预置分类「记录」（亮绿）
 
 // 预设模板色（val 属性）
 LifeSaving = Color(0xFFEC407A)       // 存钱计划
@@ -1180,7 +1211,7 @@ LifeMoodAngry = Color(0xFFE53935)   // 生气
 
 ### 15.1 生活主页（LifeScreen）
 
-> **⚠️ 本节为动态分类重构（v4.6 设计蓝图）的目标形态，尚未实施。** 当前实现为硬编码三分类（`PLAN`/`TIME`/`RECORD`），按模板 `category` 值分组渲染，无 `life_categories` 表、无动态分类区。详见 15.4 节规划标注。
+> **⚠️ 本节为动态分类重构（v4.6 设计蓝图）的目标形态，尚未实施。** 当前实现为硬编码三分类（`计划`/`时间`/`记录`），按模板 `category` 值分组渲染，无 `life_categories` 表、无动态分类区。详见 15.4 节规划标注。
 
 ```
 LifeScreen（动态 Section 渲染）
@@ -1367,7 +1398,7 @@ data class FieldConfig(
 
 ### 15.4 动态分类系统
 
-> **⚠️ 规划中（未实现）**：本小节为分类系统重构的设计蓝图，尚未实施。**当前实现**：`LifeTemplate.category` 保持 `String`（值域 `PLAN`/`TIME`/`RECORD` 等），LifeScreen 按既有硬编码三分类分组，无 `life_categories` 表、无 `categoryId` FK、无分类管理 UI。是否实施待后续版本评估（v4.6 变更记录仅供参考）。
+> **⚠️ 规划中（未实现）**：本小节为分类系统重构的设计蓝图，尚未实施。**当前实现**：`LifeTemplate.category` 保持 `String`（值域 `计划`/`时间`/`记录` 等），LifeScreen 按既有硬编码三分类分组，无 `life_categories` 表、无 `categoryId` FK、无分类管理 UI。是否实施待后续版本评估（v4.6 变更记录仅供参考）。
 
 #### 15.4.1 设计目标
 
@@ -1392,7 +1423,7 @@ data class LifeCategory(
 | 变更 | 旧 | 新 |
 |------|----|----|
 | 分类引用 | `category: String` | `categoryId: Long`（FK → life_categories.id） |
-| 默认值 | `"PLAN"`、`"TIME"`、`"RECORD"` | `1`（目标）、`2`（纪念）、`3`（记录） |
+| 默认值 | `"计划"`、`"时间"`、`"记录"` | `1`（目标）、`2`（纪念）、`3`（记录） |
 
 #### 15.4.3 预置数据
 

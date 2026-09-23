@@ -1,13 +1,11 @@
 package com.palmnote.ui.settings
 
-import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.palmnote.data.export.CsvDataExporter
 import com.palmnote.data.export.ImportReport
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -24,7 +22,6 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class ImportViewModel @Inject constructor(
-    @ApplicationContext private val context: Context,
     private val csvDataExporter: CsvDataExporter
 ) : ViewModel() {
 

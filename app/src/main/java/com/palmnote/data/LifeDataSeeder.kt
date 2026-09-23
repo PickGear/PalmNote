@@ -10,7 +10,8 @@ import kotlinx.coroutines.flow.first
 /**
  * 生活模板种子（P2，§五 / §7.3）。
  * 种子版本 2（2026-09-20）：16 个内置模板按 §5.0 表重写字段配置 + 新增「身体记录」「物品维护」2 个（定案 25）。
- * 铁律：不删除任何模板行；已有字段不改 key / type；重写只做「配置变更 + 纯新增」（§5.0）。
+ * 铁律：**不删除任何模板行**（唯一例外见 [removeRetiredBuiltinTemplates]：只退役**系统型**模板、
+ * 且该模板下**无任何用户记录**）；已有字段不改 key / type；重写只做「配置变更 + 纯新增」（§5.0）。
  * 投递红线：用户改过的模板（customizedTemplateIds 显式声明 或 current != lastSynced 隐式判定）绝不被覆盖。
  */
 class LifeDataSeeder(
@@ -23,6 +24,12 @@ class LifeDataSeeder(
         const val SEED_VERSION = 2
         private const val KEY_SEED_VERSION = "life_seed_version"
         private const val KEY_CUSTOMIZED = "customized_template_ids"
+
+        /**
+         * 已退役的内置模板（按 icon 识别身份）：不再播种，并在存量安装上清理。
+         * 目前仅 `BarChart`（周报月报，v1.27 退役 → 报告改由统计页承担）。
+         */
+        private val RETIRED_BUILTIN_ICONS = setOf("BarChart")
     }
 
     /** 显式「已被用户编辑」的内置模板 id 集合（§7.3：与 lastSynced 隐式判定双保险）。 */
@@ -67,6 +74,7 @@ class LifeDataSeeder(
             recordSeedVersion()
         } else {
             // 版本升级新增的内置模板：存量安装按 icon 补插（如「专注」/「身体记录」/「物品维护」）
+            removeRetiredBuiltinTemplates()
             ensureBuiltinTemplatesExist()
             refreshBuiltinFieldsConfigs()
             syncBuiltinStaticProps()
@@ -90,6 +98,28 @@ class LifeDataSeeder(
         appDatabase.withTransaction {
             missing.forEach { templateRepo.insertTemplate(it) }
         }
+    }
+
+    /**
+     * 退役内置模板（v1.27）：把**已从种子中移除**的系统型模板行从库里清掉。
+     *
+     * ⚠️ 这是本仓库**第一次删除内置模板行** —— 原铁律是「不删除任何模板行」（见类注释），
+     * 此处属**用户明确要求的撤销**（2026-09-22：「周报月报应该放在统计里面」）。
+     * 为守住铁律的**本意**（保护用户数据），这里加一道闸：**该模板下只要还有用户自己的记录就不删**，
+     * 宁可留一个不再展示的行，也不制造孤儿记录。
+     *
+     * 幂等：退役列表为空或无匹配行即无动作，重复启动安全。
+     */
+    private suspend fun removeRetiredBuiltinTemplates() {
+        val existing = templateRepo.getAllTemplates().first()
+        existing
+            .filter { it.isBuiltin && it.icon in RETIRED_BUILTIN_ICONS }
+            .forEach { stored ->
+                val userItems = appDatabase.lifeItemDao().countUserItemsByTemplate(stored.id)
+                if (userItems == 0) {
+                    templateRepo.deleteTemplateCascade(stored.id)
+                }
+            }
     }
 
     /**
@@ -227,8 +257,10 @@ class LifeDataSeeder(
             """[{"key":"price","label":"扣费金额","type":"NUMBER","required":false,"unit":"元","showInCard":true,"sortOrder":1},{"key":"billingCycle","label":"扣费周期","type":"SELECT","required":true,"options":["monthly","quarterly","yearly"],"showInCard":true,"sortOrder":2},{"key":"billingDay","label":"扣费日","type":"NUMBER","required":false,"unit":"号","showInCard":false,"sortOrder":3},{"key":"nextBilling","label":"下次扣费","type":"DATE","required":false,"showInCard":true,"sortOrder":4},{"key":"daysToBilling","label":"距扣费","type":"ELAPSED","options":["nextBilling"],"showInCard":true,"sortOrder":5},{"key":"url","label":"管理链接","type":"URL","showInCard":false,"sortOrder":6}]""",
             """["card","list"]""", flowJson("PAUSED" to "已暂停", "ARCHIVED" to "已归档"),
             """{"allowCrossLink":true,"targetTypes":["BILL"]}"""),
-        // ── 15 周报月报（系统型，保持无字段）──
-        buildTemplate("周报月报", "记录", "BarChart", "自动聚合生活数据生成报告", 12, "[]", """["STATS"]""", "{}", "{}", isSpecial = true),
+        // ── 15 周报月报 → **已退役（v1.27）**：报告不是模板，改由**统计页**承担 ──
+        //    用户 2026-09-22 定：它没有「手」（无字段）、没有新建入口、本体就是聚合结果，
+        //    放在模板列表里既无处可进也无人可配。存量行由 removeRetiredBuiltinTemplates() 清理。
+        //    ⚠️ 编号 15 就此空出，不重排后续编号（避免与 §5.0 表的历史编号打架）。
         // ── 16 专注（系统型，保持无字段）──
         buildTemplate("专注", "记录", "timer", "番茄钟专注计时", 11, "[]", """["card","list"]""", "{}", "{}", isSpecial = true),
         // ── 17 身体记录（新增 A，§5.3；定案 25）：体重步进 + 睡眠 + BMI 派生 ──

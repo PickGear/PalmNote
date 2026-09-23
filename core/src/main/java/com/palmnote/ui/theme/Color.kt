@@ -97,9 +97,10 @@ val ModuleSettings = Color(0xFF607D8B)
 val ModuleItem = Color(0xFF2A6BAB)
 
 // ----- Life Module Category Colors -----
-val LifePlan = Color(0xFF7C8CF0)
-val LifeTime = Color(0xFFF07070)
-val LifeRecord = Color(0xFF50C890)
+// 蓝 / 紫 / 绿三色系，主色提亮增艳；浅辅助底见 design-spec §1.7.1。
+val LifePlan = Color(0xFF2B6FE0)    // 亮蓝：计划/蓝图
+val LifeTime = Color(0xFF9A4FD0)    // 亮紫（偏品红，小圆点上与蓝更易区分）
+val LifeRecord = Color(0xFF1FA870)  // 亮绿：记录/档案
 
 // ----- Life Module Preset Template Colors -----
 /**
@@ -209,11 +210,11 @@ fun momentTint() = if (LocalIsDarkTheme.current) MomentTintDark else MomentTint
 
 // ----- Life Module Tint Colors -----
 @Composable
-fun lifePlanTint() = if (LocalIsDarkTheme.current) Color(0xFF1A1530) else Color(0xFFEDE7F6)
+fun lifePlanTint() = if (LocalIsDarkTheme.current) Color(0xFF121E33) else Color(0xFFE8F0FC)
 @Composable
-fun lifeTimeTint() = if (LocalIsDarkTheme.current) Color(0xFF301A1A) else Color(0xFFFFEBEE)
+fun lifeTimeTint() = if (LocalIsDarkTheme.current) Color(0xFF231830) else Color(0xFFF3EAF9)
 @Composable
-fun lifeRecordTint() = if (LocalIsDarkTheme.current) Color(0xFF1A3020) else Color(0xFFE8F5E9)
+fun lifeRecordTint() = if (LocalIsDarkTheme.current) Color(0xFF132822) else Color(0xFFE6F5EF)
 
 // ----- Vault Module Tint Colors (密码本) -----
 @Composable

@@ -6,8 +6,6 @@ import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
 import com.palmnote.domain.model.AutoLockMode
 import com.palmnote.ui.dashboard.DashboardCardConfig
-import com.palmnote.ui.life.LifeHomeCardConfig
-import com.palmnote.ui.life.LifeHomeLayoutPreset
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
@@ -40,12 +38,12 @@ class PreferencesManager @Inject constructor(
         val BUDGET_REMINDER_ENABLED = booleanPreferencesKey("budget_reminder_enabled")
         val ASSET_VIEW_MODE = booleanPreferencesKey("asset_view_mode")
         val DASHBOARD_CARD_CONFIGS = stringPreferencesKey("dashboard_card_configs")
-        val LIFE_HOME_CARD_CONFIGS = stringPreferencesKey("life_home_card_configs")
-        val LIFE_HOME_VIEW = stringPreferencesKey("life_home_view")
-        val LIFE_LAST_TEMPLATE = longPreferencesKey("life_last_template_id")
-        val LIFE_LAYOUT_PRESETS = stringPreferencesKey("life_layout_presets")
-        val LIFE_CALENDAR_EXPANDED = booleanPreferencesKey("life_calendar_expanded")
+        val LIFE_DEMO_MODE = booleanPreferencesKey("life_demo_mode")
+        val LIFE_DEMO_HINT_SHOWN = booleanPreferencesKey("life_demo_hint_shown")
+        val LIFE_DEMO_SEEDED = booleanPreferencesKey("life_demo_seeded")
+        val LIFE_DEMO_SEED_VERSION = intPreferencesKey("life_demo_seed_version")
         val LIFE_CALENDAR_SELECTED_DATE = longPreferencesKey("life_calendar_selected_date")
+        val LIFE_CALENDAR_WEEK_MODE = booleanPreferencesKey("life_calendar_week_mode")
         val CALENDAR_SYNC_ENABLED = booleanPreferencesKey("calendar_sync_enabled")
         val DEFAULT_START_PAGE = stringPreferencesKey("default_start_page")
         val LANGUAGE = stringPreferencesKey("language")
@@ -240,61 +238,56 @@ class PreferencesManager @Inject constructor(
         context.dataStore.edit { it[DASHBOARD_CARD_CONFIGS] = DashboardCardConfig.toJson(configs) }
     }
 
+    /** 演示模式：开启时生活页使用按设计稿铺好的模拟数据（供截图/演示）；**默认开启**。 */
+    val lifeDemoMode: Flow<Boolean> = prefsFlow.map { it[LIFE_DEMO_MODE] ?: true }
 
-    val lifeHomeCardConfigs: Flow<List<LifeHomeCardConfig>> = prefsFlow.map { prefs ->
-        val json = prefs[LIFE_HOME_CARD_CONFIGS]
-        if (json == null) {
-            LifeHomeLayoutPreset.builtinDefault.configs
-        } else {
-            // 兼容：P5 之前存的 JSON 无 span 字段（全 "S" 默认），按内置默认布局补档位
-            val stored = if (json.contains("\"span\"")) LifeHomeCardConfig.fromJson(json)
-            else LifeHomeCardConfig.fromJson(json).map { old ->
-                val withSpan = LifeHomeLayoutPreset.builtinDefault.configs.firstOrNull { it.type == old.type }
-                old.copy(span = withSpan?.span ?: old.span)
-            }
-            val storedTypes = stored.map { it.type }.toSet()
-            stored + LifeHomeLayoutPreset.builtinDefault.configs.filter { it.type !in storedTypes }
-        }
+    suspend fun setLifeDemoMode(enabled: Boolean) {
+        context.dataStore.edit { it[LIFE_DEMO_MODE] = enabled }
     }
 
-    suspend fun saveLifeHomeCardConfigs(configs: List<LifeHomeCardConfig>) {
-        context.dataStore.edit { it[LIFE_HOME_CARD_CONFIGS] = LifeHomeCardConfig.toJson(configs) }
+    /** 首次进入演示模式时的一次性说明是否已看过（用户定：默认开启，但要提醒）。 */
+    val lifeDemoHintShown: Flow<Boolean> = prefsFlow.map { it[LIFE_DEMO_HINT_SHOWN] ?: false }
+
+    suspend fun setLifeDemoHintShown(shown: Boolean) {
+        context.dataStore.edit { it[LIFE_DEMO_HINT_SHOWN] = shown }
     }
 
-    /** 首页视图（v4 §三 三视图）：today 今天 / calendar 月历 / all 全部，默认今天。 */
-    val lifeHomeView: Flow<String> = prefsFlow.map { it[LIFE_HOME_VIEW] ?: "today" }
+    /**
+     * 示例数据当前是否已播种。
+     * 关闭演示模式时置 false ⟹ **下次开启会重建**（用户定：关掉再开等于是重置，
+     * 编辑过或删过的示例都会复原）。
+     */
+    val lifeDemoSeeded: Flow<Boolean> = prefsFlow.map { it[LIFE_DEMO_SEEDED] ?: false }
 
-    /** FAB 单击直进的上次模板（v4 §7.1）；null = 尚未选择过，单击打开选择面板。 */
-    val lifeLastTemplateId: Flow<Long?> = prefsFlow.map { it[LIFE_LAST_TEMPLATE] }
-
-    suspend fun setLifeLastTemplateId(id: Long) {
-        context.dataStore.edit { it[LIFE_LAST_TEMPLATE] = id }
+    suspend fun setLifeDemoSeeded(seeded: Boolean) {
+        context.dataStore.edit { it[LIFE_DEMO_SEEDED] = seeded }
     }
 
-    suspend fun setLifeHomeView(view: String) {
-        context.dataStore.edit { it[LIFE_HOME_VIEW] = view }
-    }
+    /**
+     * 已播种示例内容的**版本号**（默认 0 = 从未按版本号播种）。
+     *
+     * 示例内容（`LifeDemoData`）是**真实写进库的行**，改动代码不会自动改写库里已有的行。
+     * 所以每次改示例条目/标题就把 `LifeDemoSeeder.SEED_VERSION` +1：启动或开启演示时
+     * 若发现库内版本落后，就**自动重播种** —— 否则改示例只对全新用户生效，
+     * 老用户看不到任何变化（只能手动关/开演示模式来重置）。
+     */
+    val lifeDemoSeedVersion: Flow<Int> = prefsFlow.map { it[LIFE_DEMO_SEED_VERSION] ?: 0 }
 
-    /** 布局预设（§4.4）：默认只读 + 自定义最多 3。 */
-    val lifeLayoutPresets: Flow<List<LifeHomeLayoutPreset>> = prefsFlow.map { prefs ->
-        val custom = LifeHomeLayoutPreset.decode(prefs[LIFE_LAYOUT_PRESETS])
-        listOf(LifeHomeLayoutPreset.builtinDefault) + custom.take(3)
-    }
-
-    suspend fun saveCustomLayoutPresets(custom: List<LifeHomeLayoutPreset>) {
-        context.dataStore.edit { it[LIFE_LAYOUT_PRESETS] = LifeHomeLayoutPreset.encode(custom.take(3)) }
-    }
-
-    val lifeCalendarExpanded: Flow<Boolean> = prefsFlow.map { it[LIFE_CALENDAR_EXPANDED] ?: false }
-
-    suspend fun setLifeCalendarExpanded(expanded: Boolean) {
-        context.dataStore.edit { it[LIFE_CALENDAR_EXPANDED] = expanded }
+    suspend fun setLifeDemoSeedVersion(version: Int) {
+        context.dataStore.edit { it[LIFE_DEMO_SEED_VERSION] = version }
     }
 
     val lifeCalendarSelectedDate: Flow<Long> = prefsFlow.map { it[LIFE_CALENDAR_SELECTED_DATE] ?: java.time.LocalDate.now().toEpochDay() }
 
     suspend fun setLifeCalendarSelectedDate(epochDay: Long) {
         context.dataStore.edit { it[LIFE_CALENDAR_SELECTED_DATE] = epochDay }
+    }
+
+    /** 看板日历视图模式：true（默认）= 周视图，false = 月视图。跨启动保持上次选择。 */
+    val lifeCalendarWeekMode: Flow<Boolean> = prefsFlow.map { it[LIFE_CALENDAR_WEEK_MODE] ?: true }
+
+    suspend fun setLifeCalendarWeekMode(week: Boolean) {
+        context.dataStore.edit { it[LIFE_CALENDAR_WEEK_MODE] = week }
     }
 
     fun isAppLockEnabled(): Boolean = prefsState.value[APP_LOCK_ENABLED] ?: false

@@ -225,18 +225,31 @@ v1.4.0            # 正式发布
 | 1.1.0 | 2 |
 | 1.2.0 | 3 |
 | 1.3.0 | 4 |
-| 1.3.1 | 5 |
-| 2.0.0 | 6 |
+| 1.4.0 | 5 |
+
+> ⚠️ 上表是**已发布版本的历史记录**，不是「下一个版本该填几」的预测值——新增版本时在末尾**追加**一行。
+> `versionCode` 必须**单调递增**，禁止回退，也禁止重用已用过的值（上架场景尤其重要）。
+> 当前值一律以 `app/build.gradle.kts` 的 `versionCode` 为准。
 
 ### 3.5 版本号更新位置
 
-发布新版本时，需要同步更新以下位置：
+版本号已做**单一事实来源**收敛：唯一需要手改的只有 `gradle/libs.versions.toml` 的 `palmnote` 键，
+其余位置由 Gradle 在构建期自动派生。
 
 ```
-app/build.gradle.kts        → versionName + versionCode
-CHANGELOG.md                 → 添加版本条目
-README.md                    → 如果有版本相关描述
+gradle/libs.versions.toml   → [versions] palmnote = "X.Y.Z"   ← 唯一手改点
+app/build.gradle.kts        → versionName = libs.versions.palmnote.get()
+                              versionCode = N（仍需手动 +1，见 3.4）
+                              resValue("string","app_version","v${libs.versions.palmnote.get()}")
+core/build.gradle.kts       → resValue("string","app_version",...)（core 的 R 独立，需各自声明）
+CHANGELOG.md                → 添加版本条目
+README.md                   → 如果有版本相关描述
 ```
+
+> `app_version` 字符串**不再**写在 `strings.xml` 里，而由 `resValue` 编译期注入。
+> 因 AGP 的非传递 R（non-transitive R），app 与 core 各自引用 `R.string.app_version`，
+> 所以两处 `build.gradle.kts` 都要有 `resValue`。`settings_about_version` 是格式串
+> （`版本 %1$s`），在 `SettingsScreen.kt` 用 `BuildConfig.VERSION_NAME` 填充。
 
 ---
 
@@ -394,7 +407,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### 发布前
 - [ ] 功能开发完成，所有 PR 已合并
 - [ ] CHANGELOG.md 已更新：[Unreleased] 内容移至新版本，填上日期
-- [ ] 版本号已更新：app/build.gradle.kts 中 versionName 和 versionCode
+- [ ] 应用内版本历史资产已同步：`app/src/main/assets/changelog.txt` 随 CHANGELOG.md 一并更新（ChangelogAssetTest 校验）
+- [ ] 版本号已更新：`gradle/libs.versions.toml` 的 `palmnote` 键 + `app/build.gradle.kts` 的 `versionCode`
 - [ ] 全量测试通过：./gradlew testDebugUnitTest
 - [ ] Lint 通过：./gradlew lintDebug
 - [ ] Release 构建成功：./gradlew assembleRelease
@@ -1811,10 +1825,14 @@ Google Play 要求声明数据收集行为。PalmNote 作为纯本地应用：
 
 ```bash
 # 1. 升级版本号
+# gradle/libs.versions.toml
+[versions]
+palmnote = "X.Y.Z"        # 唯一手改点：versionName / app_version 都由它派生
+
 # app/build.gradle.kts
 defaultConfig {
-    versionCode = previousVersionCode + 1
-    versionName = "X.Y.Z"
+    versionCode = previousVersionCode + 1   # 仍需手动递增
+    versionName = libs.versions.palmnote.get()
 }
 
 # 2. 构建 AAB
@@ -1886,7 +1904,7 @@ class PalmNoteApp : Application() {
 // ✅ 正确：只上报必要信息
 crashReporter.setExtra("screen", "vault_list")
 crashReporter.setExtra("db_version", "7")
-crashReporter.setExtra("app_version", "1.3.0")
+crashReporter.setExtra("app_version", BuildConfig.VERSION_NAME)  // 版本号取自单一来源，不要手写死值
 
 // ❌ 错误：上报敏感数据
 crashReporter.setExtra("user_pin", pin)           // 不要
@@ -3175,7 +3193,7 @@ androidx 分组的 PR 会稳定失败（报错来自 `checkDebugAarMetadata`，�
 - [ ] 无遗留的 TODO/FIXME（或已记录到 Issue）
 
 ## 2. 版本号
-- [ ] app/build.gradle.kts: versionName = "X.Y.Z"
+- [ ] gradle/libs.versions.toml: palmnote = "X.Y.Z"（唯一手改点）
 - [ ] app/build.gradle.kts: versionCode = N（递增）
 
 ## 3. Changelog

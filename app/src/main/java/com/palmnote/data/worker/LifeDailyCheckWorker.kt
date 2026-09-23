@@ -105,7 +105,7 @@ class LifeDailyCheckWorker @AssistedInject constructor(
 
     private suspend fun checkCountUpMilestones() {
         val today = LocalDate.now()
-        val tpls = templateRepo.getAllTemplates().first().filter { it.name == "\u6B63\u6570\u65E5" }
+        val tpls = templateRepo.getAllVisibleTemplates().first().filter { it.name == "\u6B63\u6570\u65E5" }
         val milestoneDays = listOf(100L, 200L, 365L, 500L, 750L, 1000L)
         tpls.forEach { tpl ->
             itemRepo.getActiveItemsByTemplate(tpl.id, 200).first().forEach { item ->
@@ -133,7 +133,7 @@ class LifeDailyCheckWorker @AssistedInject constructor(
     private suspend fun checkCountdownExpiry() {
         val today = LocalDate.now()
         val advanceDays = pm.birthdayReminderAdvanceDays.first()
-        val tpls = templateRepo.getAllTemplates().first().filter { it.name.contains("\u5012\u8BA1\u65F6") }
+        val tpls = templateRepo.getAllVisibleTemplates().first().filter { it.name.contains("\u5012\u8BA1\u65F6") }
         tpls.forEach { tpl ->
             itemRepo.getActiveItemsByTemplate(tpl.id, 200).first().forEach { item ->
                 try {
@@ -166,7 +166,7 @@ class LifeDailyCheckWorker @AssistedInject constructor(
     private suspend fun checkBirthdayReminders() {
         val today = LocalDate.now()
         val advanceDays = pm.birthdayReminderAdvanceDays.first()
-        val tpls = templateRepo.getAllTemplates().first().filter { it.name.contains("\u751F\u65E5") }
+        val tpls = templateRepo.getAllVisibleTemplates().first().filter { it.name.contains("\u751F\u65E5") }
         tpls.forEach { tpl ->
             itemRepo.getActiveItemsByTemplate(tpl.id, 200).first().forEach { item ->
                 try {
@@ -194,7 +194,7 @@ class LifeDailyCheckWorker @AssistedInject constructor(
     private suspend fun checkAnniversaryReminders() {
         val today = LocalDate.now()
         val advanceDays = pm.anniversaryReminderAdvanceDays.first()
-        val tpls = templateRepo.getAllTemplates().first().filter { it.name.contains("\u7EAA\u5FF5\u65E5") }
+        val tpls = templateRepo.getAllVisibleTemplates().first().filter { it.name.contains("\u7EAA\u5FF5\u65E5") }
         tpls.forEach { tpl ->
             itemRepo.getActiveItemsByTemplate(tpl.id, 200).first().forEach { item ->
                 try {
@@ -221,7 +221,7 @@ class LifeDailyCheckWorker @AssistedInject constructor(
 
     private suspend fun checkSubscriptionBilling() {
         val today = LocalDate.now()
-        val tpls = templateRepo.getAllTemplates().first().filter { it.name.contains(BuiltinTemplates.SUBSCRIPTION_KEYWORD) }
+        val tpls = templateRepo.getAllVisibleTemplates().first().filter { it.name.contains(BuiltinTemplates.SUBSCRIPTION_KEYWORD) }
         for (tpl in tpls) {
             for (item in itemRepo.getActiveItemsByTemplate(tpl.id, 200).first()) {
                 try {

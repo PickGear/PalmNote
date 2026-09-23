@@ -389,7 +389,6 @@ private fun AutoLockTimeoutDialog(
     onSelect: (Int) -> Unit,
     onDismiss: () -> Unit
 ) {
-    val fallbackTint = MaterialTheme.colorScheme.primary
     ChoiceDialog(
         title = stringResource(R.string.app_lock_auto_lock_timeout_duration),
         options = listOf(1, 5, 15, 30),

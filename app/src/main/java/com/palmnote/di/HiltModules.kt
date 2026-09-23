@@ -342,8 +342,8 @@ object RepositoryModule {
         LifeMomentRepositoryImpl(dao)
 
     @Provides @Singleton
-    fun provideLifeTemplateRepository(dao: LifeTemplateDao): LifeTemplateRepository =
-        LifeTemplateRepositoryImpl(dao)
+    fun provideLifeTemplateRepository(dao: LifeTemplateDao, itemDao: LifeItemDao): LifeTemplateRepository =
+        LifeTemplateRepositoryImpl(dao, itemDao)
 
     @Provides @Singleton
     fun provideLifeItemRepository(

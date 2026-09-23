@@ -1,130 +1,256 @@
 package com.palmnote.ui.life
 
-import androidx.compose.foundation.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
+import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.palmnote.ui.theme.ModuleLife
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.palmnote.app.R
+import com.palmnote.ui.components.AppDialog
+import com.palmnote.ui.theme.Spacing
+import com.palmnote.ui.theme.BigCardShape
 
 /**
- * 详情页静态骨架（对齐 21 张详情 SVG 四段骨架：英雄区 / 主指标 / 结构区 / 时间关联）。
- * 第一阶段不含业务逻辑，字段与数值均为示例。
+ * 详情页（总纲 §14）：**四段骨架** —— ① 英雄区 / ② 主指标行 / ③ 结构区 / ④ 时间与关联。
+ *
+ * 取代旧实现的三处病（§14.1）：自绘进度环（第七套外观）、按 fixed key 猜 `cur`/`tot`、
+ * 空值字段整条消失。现在：进度走形态族、取值全经 `FieldConfig`（契约）、空值照常占位。
+ * 内容全部来自数据库（`LifeItem` + `LifeTemplate`），**没有写在界面上的假数据**。
  */
 @Composable
 fun LifeDetailScreen(
-    title: String,
-    iconKey: String,
-    accentHex: String,
-    heroLabel: String,
-    heroValue: String,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    viewModel: LifeDetailViewModel = hiltViewModel()
 ) {
-    val accent = runCatching { Color(android.graphics.Color.parseColor(accentHex)) }.getOrNull() ?: ModuleLife
-    Column(modifier = Modifier.fillMaxSize().statusBarsPadding().verticalScroll(rememberScrollState())) {
-        // 顶栏（返回）
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = MaterialTheme.colorScheme.onSurface)
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    var menuOpen by remember { mutableStateOf(false) }
+    var confirmDelete by remember { mutableStateOf(false) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .statusBarsPadding()
+    ) {
+        val ready = state as? DetailUiState.Ready
+        DetailHeader(
+            title = ready?.ui?.ctx?.item?.title.orEmpty(),
+            accent = ready?.ui?.ctx?.accent,
+            menuOpen = menuOpen,
+            onMenuOpenChange = { menuOpen = it },
+            onBack = onBack,
+            onDelete = { confirmDelete = true }
+        )
+
+        when (val s = state) {
+            DetailUiState.Loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
             }
-            Text(title, fontSize = 17.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+            DetailUiState.NotFound -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text(
+                    stringResource(R.string.life_detail_not_found),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            is DetailUiState.Ready -> DetailBody(
+                ui = s.ui,
+                onToggleChecklist = { key, index -> viewModel.toggleChecklist(key, index) },
+                onToggleCheckIn = { viewModel.toggleCheckIn() },
+                onFocusSessionSaved = { viewModel.saveFocusSession(it) }
+            )
         }
-        Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-            // 英雄区
-            Surface(
-                color = accent.copy(alpha = 0.10f),
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Surface(color = accent.copy(alpha = 0.18f), shape = RoundedCornerShape(14.dp), modifier = Modifier.size(52.dp)) {
-                        Icon(iconFor(iconKey), null, tint = accent, modifier = Modifier.size(26.dp).wrapContentSize())
-                    }
-                    Spacer(Modifier.width(14.dp))
-                    Column {
-                        Text(title, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                        if (heroLabel.isNotEmpty()) {
-                            Text(heroLabel, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                    }
-                }
-            }
-            Spacer(Modifier.height(12.dp))
-            // 主指标
-            Surface(
-                color = MaterialTheme.colorScheme.surface,
-                shape = RoundedCornerShape(16.dp),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text("主指标", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Spacer(Modifier.height(6.dp))
-                    if (heroValue.isNotEmpty()) {
-                        Text(heroValue, fontSize = 28.sp, fontWeight = FontWeight.Bold, color = accent)
-                    } else {
-                        Text("—", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                    }
-                    Spacer(Modifier.height(10.dp))
-                    LinearProgressIndicator(
-                        progress = { 0.68f },
-                        modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)),
-                        color = accent,
-                        trackColor = accent.copy(alpha = 0.15f)
+    }
+
+    if (confirmDelete) {
+        AppDialog(
+            onDismissRequest = { confirmDelete = false },
+            title = { Text(stringResource(R.string.life_detail_delete_title), fontWeight = FontWeight.Bold) },
+            text = { Text(stringResource(R.string.life_detail_delete_message)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmDelete = false
+                    viewModel.delete(onBack)
+                }) {
+                    Text(
+                        stringResource(R.string.life_detail_delete_confirm),
+                        color = MaterialTheme.colorScheme.error,
+                        fontWeight = FontWeight.Bold
                     )
                 }
-            }
-            Spacer(Modifier.height(12.dp))
-            // 结构区
-            Surface(
-                color = MaterialTheme.colorScheme.surface,
-                shape = RoundedCornerShape(16.dp),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text("结构区", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Spacer(Modifier.height(8.dp))
-                    listOf("字段一" to "示例值", "字段二" to "示例值", "字段三" to "示例值").forEach { (k, v) ->
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(k, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
-                            Text(v, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
-                        }
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
-                    }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmDelete = false }) {
+                    Text(stringResource(R.string.settings_cancel))
                 }
             }
-            Spacer(Modifier.height(12.dp))
-            // 时间关联
-            Surface(
-                color = MaterialTheme.colorScheme.surface,
-                shape = RoundedCornerShape(16.dp),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.Schedule, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(10.dp))
-                    Text("创建于 今天 14:30", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
-                }
-            }
-            Spacer(Modifier.height(16.dp))
+        )
+    }
+}
+
+@Composable
+private fun DetailHeader(
+    title: String,
+    accent: Color?,
+    menuOpen: Boolean,
+    onMenuOpenChange: (Boolean) -> Unit,
+    onBack: () -> Unit,
+    onDelete: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(Spacing.xxl)
+            .padding(horizontal = Spacing.xxs),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconButton(onClick = onBack) {
+            Icon(
+                Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = stringResource(R.string.settings_navigate_back),
+                tint = MaterialTheme.colorScheme.onSurface
+            )
         }
+        Text(
+            title,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f)
+        )
+        if (accent != null) {
+            // 身份色圆点：识别（不承担判断语义，§14.12(7) 第 4 条）
+            Box(
+                modifier = Modifier
+                    .padding(end = Spacing.xxs)
+                    .size(9.dp)
+                    .clip(CircleShape)
+                    .background(accent)
+            )
+        }
+        Box {
+            IconButton(onClick = { onMenuOpenChange(true) }) {
+                Icon(
+                    Icons.Filled.MoreHoriz,
+                    contentDescription = stringResource(R.string.life_detail_more),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            DropdownMenu(expanded = menuOpen, onDismissRequest = { onMenuOpenChange(false) }) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.life_detail_delete_confirm)) },
+                    onClick = {
+                        onMenuOpenChange(false)
+                        onDelete()
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun DetailBody(
+    ui: DetailUi,
+    onToggleChecklist: (String, Int) -> Unit,
+    onToggleCheckIn: () -> Unit,
+    onFocusSessionSaved: (Long) -> Unit
+) {
+    val ctx = ui.ctx
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 14.dp)
+    ) {
+        // ① 英雄区（卡圆角 16，§14.12(2)）
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, BigCardShape),
+            shape = BigCardShape,
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 0.dp
+        ) {
+            LifeHero(ctx = ctx, onToggleChecklist = onToggleChecklist, onSaveFocus = onFocusSessionSaved)
+        }
+
+        // ①→② 间距 12；② 只在英雄区不是指标型时出现
+        if (ui.metrics.isNotEmpty()) {
+            Spacer(Modifier.height(Spacing.sm))
+            MetricRow(ui.metrics)
+        }
+
+        // 打卡模板：③ 结构区之前放「今日打卡」按钮（dtl_11 §14.12(5)）
+        if (ctx.template.icon == "calendar_month") {
+            Spacer(Modifier.height(Spacing.sm))
+            CheckInTodayButton(done = ui.checkInTodayDone, onClick = onToggleCheckIn, accent = ctx.accent)
+        }
+
+        // ③ 结构区：每组一张卡，组间 14
+        ui.groups.forEach { group ->
+            Spacer(Modifier.height(14.dp))
+            StructureGroupBlock(group = group, accent = ctx.accent)
+        }
+
+        // ④ 时间与关联
+        Spacer(Modifier.height(20.dp))
+        TimeFooter(createdAt = ctx.item.createdAt, updatedAt = ctx.item.updatedAt)
+        Spacer(Modifier.height(Spacing.lg))
+    }
+}
+
+/** 打卡「今日打卡」按钮（dtl_11）：今天已打 → 静态「今天已打卡 ✓」，不可再点。 */
+@Composable
+private fun CheckInTodayButton(done: Boolean, onClick: () -> Unit, accent: Color) {
+    Button(
+        onClick = onClick,
+        enabled = !done,
+        modifier = Modifier.fillMaxWidth().height(44.dp),
+        shape = BigCardShape,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = if (done) MaterialTheme.colorScheme.surfaceVariant else accent,
+            contentColor = if (done) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onPrimary,
+            disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+            disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    ) {
+        Text(
+            if (done) stringResource(R.string.life_detail_checkin_done) else stringResource(R.string.life_detail_checkin_today),
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.SemiBold
+        )
     }
 }

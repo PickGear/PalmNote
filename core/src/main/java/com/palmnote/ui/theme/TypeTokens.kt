@@ -25,4 +25,24 @@ object TypeScale {
     val labelL: TextUnit = 14.sp
     val labelM: TextUnit = 12.sp
     val labelS: TextUnit = 10.sp
+
+    // ───────── 设计稿实测档（`.workbuddy/audit/dtl_*.svg`，2026-09-22）─────────
+    // 上面的五级是全 App 通用档；下面这些是**详情页设计稿里逐张量出来的值**，
+    // 不在五级全集里（15 / 13 / 12.5 / 11 / 10.5 / 9.5）。
+    // 依据「规范文字与设计稿冲突时**以设计稿为准**」，这里按实测值补档，
+    // 仍然走令牌（不写 `fontSize =` 字面量），避免各处各写一套。
+    /** 天数巨字（P2 天数型英雄区，设计稿 dtl_07「87」实测）——**全 App 唯一一处 44sp**。 */
+    val dayHero: TextUnit = 44.sp
+    /** ② 指标行的值（15sp / 700）。 */
+    val metricValue: TextUnit = 15.sp
+    /** 巨字右侧的单位（「/ ¥300,000」13sp）。 */
+    val heroUnit: TextUnit = 13.sp
+    /** ③ 结构区的正文与表格右值（12.5sp）。 */
+    val bodyRead: TextUnit = 12.5.sp
+    /** 英雄区左右小注（11sp）。 */
+    val note: TextUnit = 11.sp
+    /** 端标 chip 文字（10.5sp）。 */
+    val chip: TextUnit = 10.5.sp
+    /** ④ 页脚（9.5sp，最小一档）。 */
+    val footer: TextUnit = 9.5.sp
 }

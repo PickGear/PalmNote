@@ -9,7 +9,9 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 # Preview size (3x density, medium-ish)
 W, H = 720, 480
 
-# Colors
+# Colors — 小组件强调色跟随用户所选主题；预览使用默认 cyan 主题包 (#0891B2/#22D3EE)
+ACCENT1 = (8, 145, 178)
+ACCENT2 = (34, 211, 238)
 GLASS_BG = (255, 255, 255, 230)
 BORDER_COLOR = (48, 0, 0, 0)
 TEXT_DARK = (26, 26, 26)
@@ -18,31 +20,31 @@ TEXT_LIGHT = (170, 170, 170)
 
 WIDGETS = {
     "bill": {
-        "accent1": (220, 80, 60), "accent2": (240, 120, 80),
+        "accent1": ACCENT1, "accent2": ACCENT2,
         "label": "账单概览", "data": "¥1,280", "sub": "本月支出", "bottom": "8月31日 · 已记录15笔",
     },
     "todo": {
-        "accent1": (76, 175, 80), "accent2": (129, 199, 132),
+        "accent1": ACCENT1, "accent2": ACCENT2,
         "label": "待办事项", "data": "3/5", "sub": "已完成", "bottom": "还剩2项未完成",
     },
     "counter": {
-        "accent1": (255, 152, 0), "accent2": (255, 183, 77),
+        "accent1": ACCENT1, "accent2": ACCENT2,
         "label": "生命倒计时", "data": "28,473", "sub": "已度过天数", "bottom": "进度 78%",
     },
     "asset": {
-        "accent1": (63, 81, 181), "accent2": (121, 134, 203),
+        "accent1": ACCENT1, "accent2": ACCENT2,
         "label": "资产总览", "data": "¥128.5K", "sub": "总资产", "bottom": "3项持有中",
     },
     "vault": {
-        "accent1": (156, 39, 176), "accent2": (186, 104, 200),
+        "accent1": ACCENT1, "accent2": ACCENT2,
         "label": "文件保险库", "data": "12", "sub": "份文件", "bottom": "最近30天保存5份",
     },
     "quick_bill": {
-        "accent1": (0, 150, 136), "accent2": (77, 182, 172),
+        "accent1": ACCENT1, "accent2": ACCENT2,
         "label": "快捷记账", "data": "午餐 ¥25.00", "sub": "餐饮 · 今天", "bottom": "今日已记3笔",
     },
     "dashboard": {
-        "accent1": (33, 150, 243), "accent2": (100, 181, 246),
+        "accent1": ACCENT1, "accent2": ACCENT2,
         "label": "数据看板", "data": "本月 ¥1,280", "sub": "支出概况", "bottom": "资产 ¥128.5K",
     },
 }
