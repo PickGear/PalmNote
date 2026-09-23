@@ -345,10 +345,6 @@
     <string name="life_data_temp_unavailable">Focus data temporarily unavailable, pull to refresh</string>
     <!-- Life Screen -->
     <string name="life_screen_retry">Retry</string>
-    <string name="life_empty_sample_title">See what PalmNote can do</string>
-    <string name="life_empty_sample_subtitle">Your life page is still empty. Load a set of sample records to see how others use PalmNote to plan their life — or start with your very first one.</string>
-    <string name="life_empty_load_sample">Load sample data</string>
-    <string name="life_empty_create_first">Start with your own</string>
     <string name="life_search_recent">Recent searches</string>
     <string name="life_search_no_result">No results found</string>
     <string name="life_search_items">Items</string>

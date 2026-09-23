@@ -52,7 +52,6 @@ fun LifeNavHost(
             val lifeVm: LifeHomeViewModel = hiltViewModel()
             val calendarVm: LifeCalendarViewModel = hiltViewModel()
             val demoHintVisible by lifeVm.demoHintVisible.collectAsStateWithLifecycle()
-            val hasContent by calendarVm.hasContent.collectAsStateWithLifecycle()
             val boardRows by calendarVm.boardRows.collectAsStateWithLifecycle()
             val calendarDayMap by calendarVm.calendarDayMap.collectAsStateWithLifecycle()
             val allTemplatesClosed by calendarVm.allTemplatesClosed.collectAsStateWithLifecycle()
@@ -71,8 +70,6 @@ fun LifeNavHost(
                 onCreateRecord = { iconKey -> navController.navigate(LifeCreateRecord(templateIconKey = iconKey)) },
                 demoHintVisible = demoHintVisible,
                 onDismissDemoHint = { lifeVm.dismissDemoHint() },
-                hasContent = hasContent,
-                onLoadDemo = { calendarVm.enableDemoData() },
                 allTemplatesClosed = allTemplatesClosed,
                 boardRows = boardRows,
                 calendarDayMap = calendarDayMap,

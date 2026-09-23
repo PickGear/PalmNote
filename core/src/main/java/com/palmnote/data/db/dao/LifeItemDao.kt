@@ -51,9 +51,6 @@ interface LifeItemDao {
     @Query("SELECT COUNT(*) FROM life_items WHERE templateId = :templateId AND (meta IS NULL OR meta <> :demoMeta)")
     suspend fun countUserItemsByTemplate(templateId: Long, demoMeta: String = LIFE_DEMO_META): Int
 
-    @Query("SELECT COUNT(*) FROM life_items WHERE 1=1")
-    fun getTotalItemCount(): Flow<Int>
-
     @Query("SELECT * FROM life_items ORDER BY updatedAt DESC LIMIT :limit OFFSET :offset")
     suspend fun getAllItemsPaged(offset: Int, limit: Int): List<LifeItem>
 

@@ -28,7 +28,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -36,7 +35,6 @@ import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.automirrored.outlined.EventNote
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.AutoStories
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Book
@@ -64,8 +62,6 @@ import androidx.compose.material.icons.outlined.EventBusy
 import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.School
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -150,10 +146,6 @@ fun LifeScreen(
     onCreateRecord: (templateIconKey: String) -> Unit,
     demoHintVisible: Boolean = false,
     onDismissDemoHint: () -> Unit = {},
-    /** 生活页是否已有内容（演示开启 或 真实条目数 > 0）。为空时显示空状态引导卡。 */
-    hasContent: Boolean = true,
-    /** 空状态卡「加载示例数据」：开启演示＝重新播种示例记录。 */
-    onLoadDemo: () -> Unit = {},
     /** 所有模板都被关闭：显示轻量空态 + 「去模板管理」。 */
     allTemplatesClosed: Boolean = false,
     /** 全量条目行（条目 + 模板元数据；演示感知已下沉到查询端）。 */
@@ -231,12 +223,6 @@ fun LifeScreen(
                 )
                 allTemplatesClosed -> Box(Modifier.fillMaxSize().padding(innerPadding)) {
                     AllTemplatesClosedState(onOpenManage = onOpenManageTemplates)
-                }
-                !hasContent -> Box(Modifier.fillMaxSize().padding(innerPadding)) {
-                    LifeEmptyState(
-                        onLoadDemo = onLoadDemo,
-                        onCreateFirst = { fabSheetOpen = true }
-                    )
                 }
                 else -> HomeContent(
                     innerPadding = innerPadding,
@@ -1223,67 +1209,6 @@ private fun HomeCardTitle(text: String, modifier: Modifier = Modifier) {
 }
 
 // ───────────────────────── 空状态 ─────────────────────────
-
-/**
- * 生活页空状态卡：生活页还没有内容时显示。
- * 主按钮「加载示例数据」＝开启演示；次链接「自己创建一个」＝打开创建面板。
- */
-@Composable
-private fun LifeEmptyState(
-    onLoadDemo: () -> Unit,
-    onCreateFirst: () -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = Spacing.xl, vertical = Spacing.lg),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Surface(
-            color = ModuleLife.copy(alpha = 0.12f),
-            shape = CircleShape,
-            modifier = Modifier.size(72.dp)
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    Icons.Filled.AutoAwesome,
-                    contentDescription = null,
-                    tint = ModuleLife,
-                    modifier = Modifier.size(34.dp)
-                )
-            }
-        }
-        Spacer(Modifier.height(20.dp))
-        Text(
-            stringResource(R.string.life_empty_sample_title),
-            fontSize = TypeScale.headlineS,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface,
-            textAlign = TextAlign.Center
-        )
-        Spacer(Modifier.height(Spacing.xs))
-        Text(
-            stringResource(R.string.life_empty_sample_subtitle),
-            fontSize = TypeScale.bodyM,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-            lineHeight = 20.sp
-        )
-        Spacer(Modifier.height(Spacing.lg))
-        Button(
-            onClick = onLoadDemo,
-            colors = ButtonDefaults.buttonColors(containerColor = ModuleLife)
-        ) {
-            Text(stringResource(R.string.life_empty_load_sample))
-        }
-        Spacer(Modifier.height(Spacing.xxs))
-        TextButton(onClick = onCreateFirst) {
-            Text(stringResource(R.string.life_empty_create_first), color = ModuleLife)
-        }
-    }
-}
 
 /**
  * 「所有模板都已关闭」轻量空态：用户主动关掉了全部模板，

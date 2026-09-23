@@ -13,7 +13,6 @@ interface LifeItemRepository {
     fun getItemByIdFlow(id: Long): Flow<LifeItem?>
     fun getActiveItemsByTemplate(templateId: Long, limit: Int): Flow<List<LifeItem>>
     fun getItemCountByTemplate(templateId: Long): Flow<Int>
-    fun getTotalItemCount(): Flow<Int>
     fun getPagedItemsByTemplate(templateId: Long): Flow<PagingData<LifeItem>>
     fun getPagedAllItems(): Flow<PagingData<LifeItem>>
     suspend fun search(query: String): List<LifeItem>

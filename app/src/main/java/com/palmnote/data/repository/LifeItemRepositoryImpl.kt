@@ -45,7 +45,6 @@ class LifeItemRepositoryImpl @Inject constructor(
     override fun getActiveItemsByTemplate(templateId: Long, limit: Int): Flow<List<LifeItem>> =
         dao.getActiveItemsByTemplate(templateId, limit)
     override fun getItemCountByTemplate(templateId: Long): Flow<Int> = dao.getItemCountByTemplate(templateId)
-    override fun getTotalItemCount(): Flow<Int> = dao.getTotalItemCount()
     override fun getPagedItemsByTemplate(templateId: Long): Flow<PagingData<LifeItem>> =
         Pager(PagingConfig(pageSize = 20)) { LifeItemPagingSource(dao, templateId) }.flow
     override fun getPagedAllItems(): Flow<PagingData<LifeItem>> =

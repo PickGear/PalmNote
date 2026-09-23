@@ -60,17 +60,6 @@ class LifeCalendarViewModel @Inject constructor(
     }
 
     /**
-     * 生活页「是否已有内容」：**演示模式开启**或**真实条目数 > 0** 即视为有内容。
-     *
-     * 用于驱动生活页首屏空状态（首次为空时显示「加载示例数据」入口，而不是把示例埋进设置页）。
-     * - 演示开启：直接算「有内容」，避免启动补种完成前空状态闪一下；
-     * - 演示关闭：靠真实条目数判断（关闭时示例行已被物理删除，[getTotalItemCount] 此时即真实条数）。
-     */
-    val hasContent: StateFlow<Boolean> =
-        combine(preferences.lifeDemoMode, lifeItemDao.getTotalItemCount()) { demo, count -> demo || count > 0 }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
-
-    /**
      * 首页三卡 / 页内搜索的数据源：**条目 + 模板元数据**，演示感知（**互斥**）。
      * 卡片计数、逾期、待办补集、周历标记点都从这份全量行派生，避免多条重复 SQL。
      */
@@ -229,10 +218,5 @@ class LifeCalendarViewModel @Inject constructor(
     /** 看板左滑删除（确认弹窗通过后才调用）。 */
     fun deleteItem(itemId: Long) {
         viewModelScope.launch { lifeItemDao.deleteItemCascade(itemId) }
-    }
-
-    /** 从生活页空状态卡「加载示例数据」按钮调用：开启演示＝重新播种。 */
-    fun enableDemoData() {
-        viewModelScope.launch { preferences.setLifeDemoMode(true) }
     }
 }

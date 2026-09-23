@@ -344,10 +344,6 @@
     <string name="life_data_temp_unavailable">专注数据暂时无法加载，可下拉刷新重试</string>
     <!-- Life Screen -->
     <string name="life_screen_retry">重试</string>
-    <string name="life_empty_sample_title">先看看掌记能记什么</string>
-    <string name="life_empty_sample_subtitle">生活页现在还空着。载入一套示例记录，看看别人是怎么用掌记安排生活的；或者，从你自己的第一条开始。</string>
-    <string name="life_empty_load_sample">加载示例数据</string>
-    <string name="life_empty_create_first">自己创建一个</string>
     <string name="life_search_recent">最近搜索</string>
     <string name="life_search_no_result">未找到相关内容</string>
     <string name="life_search_items">条目</string>
