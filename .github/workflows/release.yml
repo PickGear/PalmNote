@@ -21,7 +21,7 @@ jobs:
   quality:
     name: Quality (lint, detekt, unit tests)
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v7
 
@@ -58,17 +58,24 @@ jobs:
       # 签名密钥注入：配置 RELEASE_JKS_BASE64（base64 编码的 release.jks）与
       # RELEASE_STORE_PASSWORD / RELEASE_KEY_ALIAS / RELEASE_KEY_PASSWORD secrets 后自动签名；
       # 未配置时退化为 unsigned 冒烟构建（可从仓库外手动补签）。
+      # secrets 走 env 注入（不内联进脚本正文）；local.properties 用逐行 echo 写入，
+      # 避免 run:| 缩进导致 heredoc 终止符 EOF 对不上而语法报错。
       - name: Inject release signing config
         shell: bash
+        env:
+          RELEASE_JKS_BASE64: ${{ secrets.RELEASE_JKS_BASE64 }}
+          RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
         run: |
-          if [ -n "${{ secrets.RELEASE_JKS_BASE64 }}" ]; then
-            echo "${{ secrets.RELEASE_JKS_BASE64 }}" | base64 -d > release.jks
-            cat >> local.properties <<EOF
-            RELEASE_STORE_FILE=release.jks
-            RELEASE_STORE_PASSWORD=${{ secrets.RELEASE_STORE_PASSWORD }}
-            RELEASE_KEY_ALIAS=${{ secrets.RELEASE_KEY_ALIAS }}
-            RELEASE_KEY_PASSWORD=${{ secrets.RELEASE_KEY_PASSWORD }}
-            EOF
+          if [ -n "$RELEASE_JKS_BASE64" ]; then
+            echo "$RELEASE_JKS_BASE64" | base64 -d > release.jks
+            {
+              echo "RELEASE_STORE_FILE=release.jks"
+              echo "RELEASE_STORE_PASSWORD=$RELEASE_STORE_PASSWORD"
+              echo "RELEASE_KEY_ALIAS=$RELEASE_KEY_ALIAS"
+              echo "RELEASE_KEY_PASSWORD=$RELEASE_KEY_PASSWORD"
+            } >> local.properties
             echo "::notice::Release signing configured from secrets."
           else
             echo "::warning::No RELEASE_JKS_BASE64 secret; building unsigned APK."

@@ -51,8 +51,10 @@ an individual is officially representing the community in public spaces.
 ## Enforcement
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported to the community leaders responsible for enforcement at
-GitHub Issues. All complaints will be reviewed and investigated promptly and
+reported to the community leaders responsible for enforcement via GitHub
+Private Vulnerability Reporting
+(https://github.com/PickGear/PalmNote/security/advisories/new) — not in
+public Issues. All complaints will be reviewed and investigated promptly and
 fairly.
 
 ## Attribution
