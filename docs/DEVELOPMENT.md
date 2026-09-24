@@ -2601,8 +2601,7 @@ Thumbs.db
 
 # === 建议新增 ===
 
-# ZCode/Mimosa 工具状态（已生效，见根 .gitignore）
-.mimosa/
+# 本地工具状态目录（见根 .gitignore）
 
 # Google Services（如果接入 Firebase）
 google-services.json
@@ -3078,7 +3077,7 @@ androidx 批量升级会稳定失败（报错来自 `checkDebugAarMetadata`，�
 
 - [ ] `git status` 工作树干净（全部提交，或明确说明遗留原因）
 - [ ] 构建通过（不允许留红）
-- [ ] 无工具状态/临时文件被纳入版本库（`.mimosa/` 等）
+- [ ] 无本地工具状态/临时文件被纳入版本库
 
 ---
 
