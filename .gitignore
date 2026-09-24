@@ -27,4 +27,6 @@ Thumbs.db
 .zcode/
 .zcodeignore
 .workbuddy/
-docs/widget-polish-log.md
+/docs/life-*.md
+/docs/*-plan.md
+/docs/*-log.md
