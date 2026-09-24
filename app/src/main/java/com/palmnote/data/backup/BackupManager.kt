@@ -28,20 +28,27 @@ class BackupManager(
     companion object {
         /** 本机备份目录名（位于 filesDir 下）；调度器据此判断是否已有自动备份。 */
         const val BACKUP_DIR_NAME = "PalmNote"
+
         /** 旧版加密备份 MAGIC（无版本字段） */
         private const val MAGIC = "PNBK"
+
         /** 新版加密备份 MAGIC */
         private const val MAGIC_ENCRYPTED_V2 = "PNB2"
+
         /** 新版明文备份 MAGIC（ZIP + SHA-256 校验） */
         private const val MAGIC_PLAIN_V3 = "PNB3"
         private const val HASH_SIZE = 32
         private const val LOCK_PREFS_NAME = "app_lock_prefs"
+
         /** 备份所需最小可用空间（50MB） */
         private const val MIN_FREE_SPACE = 50L * 1024 * 1024
+
         /** 本机备份（自动 + 手动）默认保留份数 */
         private const val DEFAULT_KEEP_BACKUPS = 7
+
         /** 恢复前快照默认保留份数：独立计量，不与自动备份抢同一个名额窗口 */
         private const val DEFAULT_KEEP_SNAPSHOTS = 3
+
         /** 便携数据库密钥条目：ZIP 内存放 Base64 原始 db_key，用于跨设备/重装恢复。
          *  **仅写入加密备份**——该条目若与 SQLCipher 密文同处一个未加密的包里，等于把钥匙和保险箱
          *  一起交出去；明文备份不含本条目，故只能在原设备恢复。见 [includePortableKeyInBackup]。 */
@@ -104,8 +111,7 @@ class BackupManager(
         val (snapshots, rotatable) = files.partition {
             BackupKind.fromFileName(it.name) == BackupKind.SNAPSHOT
         }
-        fun expired(pool: List<File>, limit: Int): List<File> =
-            pool.sortedByDescending { it.lastModified() }.drop(limit.coerceAtLeast(0))
+        fun expired(pool: List<File>, limit: Int): List<File> = pool.sortedByDescending { it.lastModified() }.drop(limit.coerceAtLeast(0))
         return expired(rotatable, keep) + expired(snapshots, snapshotKeep)
     }
 
@@ -184,13 +190,13 @@ class BackupManager(
         hasSnapshot: Boolean,
         includePortableKey: Boolean
     ) {
-        addMainDbToZip(context, zipOut, snapshot, hasSnapshot)                                  // 1. 主库
-        addVaultDbToZip(context, zipOut)                                                       // 2. 密码本库
-        addDirectoryToZip(zipOut, File(context.filesDir, "datastore"), "prefs")                // 3. DataStore
-        addDirectoryToZip(zipOut, File(context.filesDir, "images"), "images")                  // 4. 图片
-        addDirectoryToZip(zipOut, File(context.filesDir, "vault_avatars"), "vault-images")     // 5. 密码本图片
-        addSharedPrefsToZip(context, zipOut)                                                   // 6/7. 应用锁 + db_key
-        if (includePortableKey) addPortableKeyEntry(zipOut)                                    // 8. 便携密钥
+        addMainDbToZip(context, zipOut, snapshot, hasSnapshot) // 1. 主库
+        addVaultDbToZip(context, zipOut) // 2. 密码本库
+        addDirectoryToZip(zipOut, File(context.filesDir, "datastore"), "prefs") // 3. DataStore
+        addDirectoryToZip(zipOut, File(context.filesDir, "images"), "images") // 4. 图片
+        addDirectoryToZip(zipOut, File(context.filesDir, "vault_avatars"), "vault-images") // 5. 密码本图片
+        addSharedPrefsToZip(context, zipOut) // 6/7. 应用锁 + db_key
+        if (includePortableKey) addPortableKeyEntry(zipOut) // 8. 便携密钥
     }
 
     /** 打包主库：优先用 WAL checkpoint 后的一致快照，checkpoint 未完成时回退为 db + wal + shm 三件套。 */
@@ -339,13 +345,13 @@ class BackupManager(
         }
     }
 
-    private fun readMagic(backupFile: File): String {
-        return try {
-            FileInputStream(backupFile).use { fis ->
-                val magic = ByteArray(4)
-                if (fis.read(magic) != 4) "" else String(magic)
-            }
-        } catch (_: Exception) { "" }
+    private fun readMagic(backupFile: File): String = try {
+        FileInputStream(backupFile).use { fis ->
+            val magic = ByteArray(4)
+            if (fis.read(magic) != 4) "" else String(magic)
+        }
+    } catch (_: Exception) {
+        ""
     }
 
     /** 提取 PNB3 明文 ZIP 并验证末尾 SHA-256 校验和 */
@@ -356,7 +362,8 @@ class BackupManager(
         if (zipLen <= 0) throw IllegalArgumentException("备份文件损坏")
         val digest = java.security.MessageDigest.getInstance("SHA-256")
         FileInputStream(backupFile).use { fis ->
-            val magic = ByteArray(4); fis.read(magic)
+            val magic = ByteArray(4)
+            fis.read(magic)
             FileOutputStream(tempZip).use { fos ->
                 val buf = ByteArray(8192)
                 var remaining = zipLen
@@ -378,8 +385,10 @@ class BackupManager(
 
     private fun decryptToTemp(backupFile: File, password: String, tempZip: File, iterations: Int) {
         FileInputStream(backupFile).use { fis ->
-            val magic = ByteArray(4); fis.read(magic)
-            val salt = ByteArray(16); fis.read(salt)
+            val magic = ByteArray(4)
+            fis.read(magic)
+            val salt = ByteArray(16)
+            fis.read(salt)
             val key = CryptoUtils.deriveKey(password, salt, iterations)
             FileOutputStream(tempZip).use { fos -> CryptoUtils.decryptStream(fis, fos, key) }
         }
@@ -583,9 +592,7 @@ class BackupManager(
     }
 
     // 恢复前自动备份。用 SNAPSHOT 身份：它不参与自动轮转，用户也不该在"整理备份"时误删它
-    fun createPreRestoreBackup(context: Context, db: AppDatabase): File {
-        return createBackup(context, db, null, BackupKind.SNAPSHOT)
-    }
+    fun createPreRestoreBackup(context: Context, db: AppDatabase): File = createBackup(context, db, null, BackupKind.SNAPSHOT)
 
     // 列出所有备份文件（IO：文件扫描 + SHA-256 校验和计算）
     suspend fun listBackups(context: Context): List<BackupInfo> = withContext(Dispatchers.IO) {
@@ -608,8 +615,7 @@ class BackupManager(
     }
 
     /** 删除备份文件；返回是否删除成功（文件本就不存在视为成功，无需删除）。 */
-    fun deleteBackup(file: File): Boolean =
-        !file.exists() || runCatching { file.delete() }.getOrDefault(false)
+    fun deleteBackup(file: File): Boolean = !file.exists() || runCatching { file.delete() }.getOrDefault(false)
 
     // 清理旧备份：可轮转池保留 [keep] 份、快照池保留 [snapshotKeep] 份，其余删除
     suspend fun cleanupOldBackups(

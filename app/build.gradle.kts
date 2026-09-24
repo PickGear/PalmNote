@@ -9,20 +9,21 @@ plugins {
     alias(libs.plugins.hilt)
 }
 
-val localProps = run {
-    val map = mutableMapOf<String, String>()
-    val f = rootProject.file("local.properties")
-    if (f.exists()) {
-        f.readLines().forEach { line ->
-            val trimmed = line.trim()
-            if (trimmed.isNotEmpty() && !trimmed.startsWith("#")) {
-                val eq = trimmed.indexOf('=')
-                if (eq > 0) map[trimmed.substring(0, eq).trim()] = trimmed.substring(eq + 1).trim()
+val localProps =
+    run {
+        val map = mutableMapOf<String, String>()
+        val f = rootProject.file("local.properties")
+        if (f.exists()) {
+            f.readLines().forEach { line ->
+                val trimmed = line.trim()
+                if (trimmed.isNotEmpty() && !trimmed.startsWith("#")) {
+                    val eq = trimmed.indexOf('=')
+                    if (eq > 0) map[trimmed.substring(0, eq).trim()] = trimmed.substring(eq + 1).trim()
+                }
             }
         }
+        map
     }
-    map
-}
 
 // 密钥文件不存在时（如 CI 检出）退化为 unsigned 冒烟构建
 val releaseStoreFile = file("../${localProps["RELEASE_STORE_FILE"] ?: "release.jks"}")
@@ -73,7 +74,7 @@ android {
             isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                "proguard-rules.pro",
             )
 
             // CI 无密钥时保持 unsigned 冒烟构建
@@ -116,7 +117,7 @@ android {
             freeCompilerArgs.addAll(
                 "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api",
                 "-opt-in=androidx.compose.foundation.ExperimentalFoundationApi",
-                "-Xjvm-default=all"
+                "-Xjvm-default=all",
             )
         }
     }
@@ -180,7 +181,7 @@ dependencies {
     // Compose
     implementation(libs.compose.ui)
     implementation(libs.compose.ui.graphics)
-    implementation("androidx.compose.material3:material3-window-size-class")
+    implementation(libs.compose.window.size)
     implementation(libs.compose.ui.tooling.preview)
     implementation(libs.compose.material3)
     implementation(libs.compose.material.icons.extended)
@@ -212,8 +213,8 @@ dependencies {
     implementation(project(":ppocr-sdk"))
 
     // Paging3
-    implementation("androidx.paging:paging-runtime-ktx:3.3.4")
-    implementation("androidx.paging:paging-compose:3.3.4")
+    implementation(libs.paging.runtime.ktx)
+    implementation(libs.paging.compose)
 
     // WorkManager
     implementation(libs.work.runtime.ktx)
@@ -227,12 +228,12 @@ dependencies {
     // Core
     implementation(libs.core.ktx)
     implementation(libs.appcompat)
-    implementation("androidx.documentfile:documentfile:1.1.0")
+    implementation(libs.documentfile)
     implementation(libs.lifecycle.runtime.ktx)
     implementation(libs.lifecycle.process)
 
     // Biometric
-    implementation("androidx.biometric:biometric:1.1.0")
+    implementation(libs.biometric)
 
     // Hilt
     implementation(libs.hilt.android)
@@ -252,11 +253,11 @@ dependencies {
     testImplementation(libs.turbine)
     testImplementation(libs.room.testing)
     testImplementation(libs.robolectric)
-    testImplementation("androidx.test:monitor:1.7.2")
+    testImplementation(libs.androidx.test.monitor)
 
     // Android instrumentation tests
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.espresso.core)
-    androidTestImplementation("androidx.benchmark:benchmark-macro-junit4:1.3.1")
-    androidTestImplementation("androidx.test:core:1.7.0")
+    androidTestImplementation(libs.benchmark.macro.junit4)
+    androidTestImplementation(libs.androidx.test.core)
 }
