@@ -1,18 +1,18 @@
 package com.palmnote.ui.life
 
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -45,6 +45,7 @@ import com.palmnote.app.R
 import com.palmnote.ui.theme.LifePlan
 import com.palmnote.ui.theme.LifeRecord
 import com.palmnote.ui.theme.LifeTime
+import com.palmnote.ui.theme.LocalIsDarkTheme
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.temporal.ChronoUnit
@@ -148,6 +149,7 @@ fun LifeMonthCalendar(
         BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
             // 格子边长由可用宽度推出（7 列 + 6 个列间距）→ 行数由「落定月」决定的高度（格 + 行间距）。
             val cell = (maxWidth - GRID_GAP * (COLUMNS - 1)) / COLUMNS
+
             // 滑动中相邻两页同时可见：若落定月行数少于滑入月（如 9 月 5 行 → 8 月 6 行），
             // 固定按落定页取高会把滑入月的末行裁掉半截。故滑动中高度取落定页及左右相邻页的
             // 最大行数（宁可短暂多留白也不裁字），落定后收回到该月实际行数，animateDpAsState 平滑过渡。
@@ -250,7 +252,7 @@ private fun ModeToggle(weekMode: Boolean, onToggleMode: (Boolean) -> Unit) {
     Row(
         modifier = Modifier
             .clip(CircleShape)
-            .background(TOGGLE_TRACK_BG)
+            .background(MaterialTheme.colorScheme.surfaceVariant)
             .padding(1.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -288,7 +290,7 @@ private fun ModeToggleOption(
             label,
             fontSize = 12.sp,
             fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
-            color = if (selected) MaterialTheme.colorScheme.onPrimary else TOGGLE_TEXT
+            color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }
@@ -303,7 +305,7 @@ private fun WeekdayHeader() {
             Text(
                 label,
                 fontSize = 10.sp,
-                color = WEEKDAY_TEXT,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.weight(1f),
                 textAlign = TextAlign.Center
             )
@@ -416,16 +418,17 @@ private fun MonthDayCell(
     val level = heatLevel(info?.count ?: 0)
     val bg = heatBackground(level)
     val textColor = when {
-        !inMonth -> OTHER_TEXT
+        !inMonth -> MaterialTheme.colorScheme.outline
         level >= 3 -> Color.White
-        else -> DAY_TEXT
+        else -> MaterialTheme.colorScheme.onSurface
     }
     // 框的取舍（用户反馈：选中环必须统一粗细）：
     // - 选中（含今天）→ 统一 1dp 主色细环，今天不再加粗（设计稿 3dp 环与其他选中日不一致）；
     // - 今天未被选中 → 同样细，但透明度降到 0.28，只作「今天在哪」的定位提示，不与选中框争焦点。
+    val ringColor = MaterialTheme.colorScheme.primary
     val border = when {
-        isSelected -> BorderStroke(SELECT_RING_WIDTH, TODAY_RING)
-        isToday -> BorderStroke(SELECT_RING_WIDTH, TODAY_RING.copy(alpha = TODAY_HINT_ALPHA))
+        isSelected -> BorderStroke(SELECT_RING_WIDTH, ringColor)
+        isToday -> BorderStroke(SELECT_RING_WIDTH, ringColor.copy(alpha = TODAY_HINT_ALPHA))
         else -> null
     }
     val shape = RoundedCornerShape(DAY_CELL_RADIUS)
@@ -468,8 +471,7 @@ private fun MonthDayCell(
 }
 
 /** 该日期所在周的第一天（周一），周视图以它为锚。 */
-private fun startOfWeek(date: LocalDate): LocalDate =
-    date.minusDays(((date.dayOfWeek.value + 6) % 7).toLong())
+private fun startOfWeek(date: LocalDate): LocalDate = date.minusDays(((date.dayOfWeek.value + 6) % 7).toLong())
 
 /**
  * 周视图某周的「锚定月」：优先选中日所在月（选了 10.1 就显示 10 月），
@@ -503,12 +505,17 @@ private fun heatLevel(count: Int): Int = when {
     else -> 4
 }
 
-private fun heatBackground(level: Int): Color = when (level) {
-    0 -> Color.Transparent
-    1 -> PINK1
-    2 -> PINK2
-    3 -> PINK3
-    else -> PINK4
+/** 热力底色的明暗两档：浅色为设计稿粉阶，深色改用低明度暖紫红，保证数字仍可读。 */
+@Composable
+private fun heatBackground(level: Int): Color {
+    val dark = LocalIsDarkTheme.current
+    return when (level) {
+        0 -> Color.Transparent
+        1 -> if (dark) Color(0xFF33202A) else Color(0xFFFCE4EC)
+        2 -> if (dark) Color(0xFF4A2A39) else Color(0xFFF8CDDB)
+        3 -> if (dark) Color(0xFF7E3652) else Color(0xFFF48FB1)
+        else -> if (dark) Color(0xFFB23A63) else Color(0xFFEC407A)
+    }
 }
 
 private fun categoryDotColor(category: String): Color = when (category) {
@@ -518,17 +525,7 @@ private fun categoryDotColor(category: String): Color = when (category) {
     else -> LifePlan
 }
 
-// ── A 版设计稿配色（doubao_html 今日看板日历优化）──
-private val PINK1 = Color(0xFFFCE4EC)
-private val PINK2 = Color(0xFFF8CDDB)
-private val PINK3 = Color(0xFFF48FB1)
-private val PINK4 = Color(0xFFEC407A)
-private val TODAY_RING = Color(0xFFD81B60)
-private val DAY_TEXT = Color(0xFF444444)
-private val OTHER_TEXT = Color(0xFFC2C2C2)
-private val WEEKDAY_TEXT = Color(0xFF9CA3AF)
-private val TOGGLE_TRACK_BG = Color(0xFFF3F4F6)
-private val TOGGLE_TEXT = Color(0xFF6B7280)
+// ── 配色已全部改走 MaterialTheme / LocalIsDarkTheme（见 heatBackground / MonthDayCell）──
 
 /** 网格列数（周一至周日）。 */
 private const val COLUMNS = 7

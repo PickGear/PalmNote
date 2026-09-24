@@ -19,11 +19,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AutoStories
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.FolderOff
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.AutoStories
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -66,7 +66,6 @@ import com.palmnote.domain.repository.LifeTemplateRepository
 import com.palmnote.ui.components.AppBottomSheet
 import com.palmnote.ui.components.SecondaryTopAppBar
 import com.palmnote.ui.theme.ModuleLife
-import com.palmnote.ui.theme.iconFromName
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -333,7 +332,7 @@ private fun CategoryItemRow(
                 modifier = Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(ModuleLife.copy(alpha = 0.12f)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(iconFromName(tpl.icon), null, tint = ModuleLife, modifier = Modifier.size(20.dp))
+                Icon(iconFor(tpl.icon), null, tint = ModuleLife, modifier = Modifier.size(20.dp))
             }
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
@@ -383,7 +382,7 @@ private fun TemplatePickerSheet(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
             ) {
                 Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(iconFromName(tpl.icon), null, tint = ModuleLife, modifier = Modifier.size(22.dp))
+                    Icon(iconFor(tpl.icon), null, tint = ModuleLife, modifier = Modifier.size(22.dp))
                     Spacer(modifier = Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(tpl.getDisplayName(context), fontWeight = FontWeight.Medium, fontSize = 14.sp)

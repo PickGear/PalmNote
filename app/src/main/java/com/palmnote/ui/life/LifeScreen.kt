@@ -60,8 +60,8 @@ import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.EventBusy
 import androidx.compose.material.icons.outlined.GridView
-import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.School
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -84,8 +84,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -131,7 +131,7 @@ private const val CAT_PLAN = "计划"
 private const val CAT_TIME = "时间"
 private const val CAT_RECORD = "记录"
 
-private fun lifeIdentityColor(hex: String): Color = Color(android.graphics.Color.parseColor(hex))
+private fun lifeIdentityColor(hex: String): Color = runCatching { Color(android.graphics.Color.parseColor(hex)) }.getOrDefault(Color.Gray)
 
 @Suppress("LongParameterList", "LongMethod")
 @Composable
@@ -360,10 +360,14 @@ private fun LifeSearchContent(
     modifier: Modifier = Modifier
 ) {
     val filtered = remember(rows, query) {
-        if (query.isBlank()) emptyList()
-        else rows.filter { r ->
-            r.title.contains(query, true) || r.templateName.contains(query, true) ||
-                r.fieldsData.contains(query, true)
+        if (query.isBlank()) {
+            emptyList()
+        } else {
+            rows.filter { r ->
+                r.title.contains(query, true) ||
+                    r.templateName.contains(query, true) ||
+                    r.fieldsData.contains(query, true)
+            }
         }
     }
     if (query.isBlank() || filtered.isEmpty()) {
@@ -639,8 +643,11 @@ private fun TodayBoardHomeCard(
     ) {
         Column(modifier = Modifier.padding(24.dp)) {
             val isToday = selectedDate == LocalDate.now()
-            val boardTitle = if (isToday) stringResource(R.string.life_home_today_board)
-            else stringResource(R.string.life_home_board_selected, selectedDate.monthValue, selectedDate.dayOfMonth)
+            val boardTitle = if (isToday) {
+                stringResource(R.string.life_home_today_board)
+            } else {
+                stringResource(R.string.life_home_board_selected, selectedDate.monthValue, selectedDate.dayOfMonth)
+            }
             LifeMonthCalendar(
                 title = boardTitle,
                 selectedDate = selectedDate,
@@ -741,8 +748,11 @@ private fun SwipeCompleteConfirmDialog(toCompleted: Boolean, onConfirm: () -> Un
         title = {
             Text(
                 stringResource(
-                    if (toCompleted) R.string.life_board_swipe_complete_title
-                    else R.string.life_board_swipe_uncomplete_title
+                    if (toCompleted) {
+                        R.string.life_board_swipe_complete_title
+                    } else {
+                        R.string.life_board_swipe_uncomplete_title
+                    }
                 ),
                 fontWeight = FontWeight.Bold
             )
@@ -750,8 +760,11 @@ private fun SwipeCompleteConfirmDialog(toCompleted: Boolean, onConfirm: () -> Un
         text = {
             Text(
                 stringResource(
-                    if (toCompleted) R.string.life_board_swipe_complete_message
-                    else R.string.life_board_swipe_uncomplete_message
+                    if (toCompleted) {
+                        R.string.life_board_swipe_complete_message
+                    } else {
+                        R.string.life_board_swipe_uncomplete_message
+                    }
                 )
             )
         },
@@ -759,8 +772,11 @@ private fun SwipeCompleteConfirmDialog(toCompleted: Boolean, onConfirm: () -> Un
             TextButton(onClick = onConfirm) {
                 Text(
                     stringResource(
-                        if (toCompleted) R.string.life_board_swipe_complete_confirm
-                        else R.string.life_board_swipe_uncomplete_confirm
+                        if (toCompleted) {
+                            R.string.life_board_swipe_complete_confirm
+                        } else {
+                            R.string.life_board_swipe_uncomplete_confirm
+                        }
                     ),
                     fontWeight = FontWeight.Bold
                 )
@@ -908,8 +924,11 @@ private fun DayAgendaEmpty() {
 @Composable
 private fun DayAgendaHeader(selectedDate: LocalDate) {
     val isToday = selectedDate == LocalDate.now()
-    val title = if (isToday) stringResource(R.string.life_board_agenda_today)
-    else stringResource(R.string.life_board_agenda_on)
+    val title = if (isToday) {
+        stringResource(R.string.life_board_agenda_today)
+    } else {
+        stringResource(R.string.life_board_agenda_on)
+    }
     val weekday = stringResource(weekdayShortRes(selectedDate.dayOfWeek))
     val datePart = stringResource(
         R.string.life_board_agenda_date,
@@ -960,10 +979,12 @@ private fun SwipeTaskRow(
         confirmValueChange = { value ->
             when (value) {
                 SwipeToDismissBoxValue.EndToStart -> {
-                    onDelete(); false
+                    onDelete()
+                    false
                 }
                 SwipeToDismissBoxValue.StartToEnd -> {
-                    onComplete(); false
+                    onComplete()
+                    false
                 }
                 SwipeToDismissBoxValue.Settled -> true
             }
@@ -995,8 +1016,11 @@ private fun SwipeTaskBackground(direction: SwipeToDismissBoxValue) {
         modifier = Modifier
             .fillMaxSize()
             .background(
-                if (deleting) MaterialTheme.colorScheme.errorContainer
-                else MaterialTheme.colorScheme.tertiaryContainer
+                if (deleting) {
+                    MaterialTheme.colorScheme.errorContainer
+                } else {
+                    MaterialTheme.colorScheme.tertiaryContainer
+                }
             )
             .padding(horizontal = 16.dp),
         contentAlignment = if (deleting) Alignment.CenterEnd else Alignment.CenterStart
@@ -1004,11 +1028,17 @@ private fun SwipeTaskBackground(direction: SwipeToDismissBoxValue) {
         Icon(
             if (deleting) Icons.Outlined.Delete else Icons.Outlined.CheckCircle,
             stringResource(
-                if (deleting) R.string.life_detail_delete_confirm
-                else R.string.life_item_toggle_complete
+                if (deleting) {
+                    R.string.life_detail_delete_confirm
+                } else {
+                    R.string.life_item_toggle_complete
+                }
             ),
-            tint = if (deleting) MaterialTheme.colorScheme.onErrorContainer
-            else MaterialTheme.colorScheme.onTertiaryContainer
+            tint = if (deleting) {
+                MaterialTheme.colorScheme.onErrorContainer
+            } else {
+                MaterialTheme.colorScheme.onTertiaryContainer
+            }
         )
     }
 }
@@ -1284,8 +1314,11 @@ private fun FabSheet(
             // 数据变化后选中分类可能消失 ⟹ 收敛回「全部」
             val effectiveCategory = selectedCategory?.takeIf { it in categories }
             val shown = remember(creatable, effectiveCategory) {
-                if (effectiveCategory == null) creatable
-                else creatable.filter { it.category == effectiveCategory }
+                if (effectiveCategory == null) {
+                    creatable
+                } else {
+                    creatable.filter { it.category == effectiveCategory }
+                }
             }
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
