@@ -19,6 +19,10 @@ Thumbs.db
 *.aab
 *.jks
 *.keystore
+*.p12
+*.pfx
+*.pem
+*.key
 .mimosa/
 .zcode/
 .zcodeignore

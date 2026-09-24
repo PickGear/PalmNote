@@ -727,8 +727,8 @@ env:
 
 #### 工具链升级策略
 
-当前基线（`gradle/libs.versions.toml`）：AGP `8.13.2` / Gradle `8.13` / Kotlin `2.2.20` /
-KSP `2.2.20-2.0.2` / compileSdk `36` / targetSdk `34`。
+当前基线（`gradle/libs.versions.toml`）：AGP `8.13.2` / Gradle `8.14.5` / Kotlin `2.2.21` /
+KSP `2.2.21-2.0.5` / compileSdk `36` / targetSdk `34`。
 
 AGP、Gradle、Kotlin(KGP)、KSP 是**同一个整体**：其中任一跨大版本，其余必须配套迁移。
 因此这类升级一律按**独立项目**处理，不混入日常提交。
@@ -737,7 +737,7 @@ AGP、Gradle、Kotlin(KGP)、KSP 是**同一个整体**：其中任一跨大版�
 
 | # | 条件 | 说明 |
 |---|------|------|
-| 1 | 有明确驱动 | Play 上架要求 / 依赖安全事件 / 需要只有新工具链才提供的 API。**"Dependabot 提了 PR"不算驱动** |
+| 1 | 有明确驱动 | Play 上架要求 / 依赖安全事件 / 需要只有新工具链才提供的 API。**"依赖升级提醒"不算驱动** |
 | 2 | 关键插件已有稳定版支持 | 尤其 detekt：`1.23.8` 的官方支持矩阵只测到 Gradle 8.12.1，而 `2.0` 至今仍是 alpha，且改了插件 ID 与规则集键名 |
 | 3 | detekt 基线条目数不增加 | `grep -c "<ID>" config/detekt/baseline.xml` ≤ 1824 |
 
@@ -746,17 +746,18 @@ AGP、Gradle、Kotlin(KGP)、KSP 是**同一个整体**：其中任一跨大版�
 注意 AGP `9.0.x` 最高只支持 API `36.1`，够不到 compileSdk 37 —— 所以**不存在"便宜的部分迁移"**，
 要么整体做，要么不做。执行前先建独立分支 `chore/toolchain-agp9`，不要直接改 main。
 
-**配套的 Dependabot 冻结**：条件 1 不成立期间，`.github/dependabot.yml` 里的 `ignore` 块会挡掉
-① AGP / Gradle wrapper 的大版本（工具链升级由明确驱动触发，不接受机器人驱动）、
+**配套的依赖冻结（手动升级时遵守）**：条件 1 不成立期间，以下依赖**不要主动升级**
+（原 Dependabot `ignore` 名单，配置已随 `8dea450` 移除，约束本身仍有效）：
+
+① AGP / Gradle wrapper 的大版本（工具链升级由明确驱动触发）、
 ② 要求 compileSdk 37 / AGP 9.x 的依赖、③ 与 Kotlin 编译器强耦合的 Kotlin 生态、
 ④ 引用了 AGP 9 独有 API 的 Gradle 插件（如 Hilt）、
 ⑤ 会把 compose 栈顶过 `compose-bom 2025.06.01` 钉定值（compose-ui `1.8.3`）的依赖
 （已实测 coil、paging 两条不同路径，与同样被冻结在 `1.7.8` 的
-`material-icons-extended` 冲突），避免产生永久红灯的 PR。
-冻结只拦大版本/受门槛版本，**补丁级更新仍会正常提 PR**。
+`material-icons-extended` 冲突）。
+冻结只拦大版本/受门槛版本，补丁级更新可酌情升。
 
-**工具链迁移完成时必须删除该 `ignore` 块**，否则会静默冻结这些依赖的更新。
-冻结名单、版本下界的取值依据与 `versions` 的写法坑，见 §24.9。
+**工具链迁移完成时重新评估上述冻结名单**。版本下界的取值依据与写法坑，见 §24.9。
 
 ### 11.2 detekt 规则
 
@@ -1376,7 +1377,7 @@ if (releaseStoreFile.exists()) {
 ```toml
 # gradle/libs.versions.toml
 [versions]
-kotlin = "2.2.20"
+kotlin = "2.2.21"
 room = "2.7.2"
 compose-bom = "2024.12.01"
 hilt = "2.51.1"
@@ -1652,7 +1653,7 @@ adb shell dumpsys meminfo com.palmnote
 | JDK | 17 | 编译目标 |
 | Gradle | 通过 wrapper | 不需要全局安装 |
 | Android SDK | compileSdk 36 | 通过 SDK Manager 安装 |
-| Kotlin | 2.2.20 | 通过 Gradle 管理 |
+| Kotlin | 2.2.21 | 通过 Gradle 管理 |
 
 ### 19.2 快速开始
 
@@ -2559,7 +2560,7 @@ cat .github/workflows/release.yml
 
 ### 第三步：GitHub 配置
 - [ ] 签名密钥已配置为 GitHub Secrets
-- [ ] Dependabot alerts 已开启
+- [ ] Dependabot alerts 已开启（仅安全告警；版本更新 PR 通道已于 `8dea450` 移除）
 - [ ] 仓库描述/About 无个人信息
 - [ ] Topics 标签已设置（android, kotlin, jetpack-compose 等）
 
@@ -2896,128 +2897,29 @@ This product is licensed under the GNU General Public License v3.0.
 - Copyright: 6tail
 ```
 
-### 24.9 依赖漏洞扫描
+### 24.9 依赖漏洞扫描与升级约束
 
 ```bash
-# 使用 OWASP Dependency-Check（可选）
+# 本地可选：OWASP Dependency-Check
 ./gradlew dependencyCheckAnalyze
 
-# 或使用 GitHub Dependabot（推荐）
-# 在仓库 Settings → Code security and analysis → Dependabot alerts 开启
+# 仓库侧：Settings → Code security and analysis → Dependabot alerts（仅安全告警，不开版本更新 PR）
 ```
 
-#### Dependabot 配置
+> **历史说明**：本项目曾配置 `.github/dependabot.yml` 自动开版本升级 PR，因长期红灯
+> 已于 `8dea450 chore(ci): remove Dependabot configuration` 移除。依赖升级改为**人工按需**
+> 执行；下列约束在手动升级时仍然适用。
 
-创建 `.github/dependabot.yml`：
+#### 手动升级时必须遵守的约束
 
-```yaml
-version: 2
-updates:
-  - package-ecosystem: "gradle"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-    open-pull-requests-limit: 5
-    reviewers:
-      - "PickGear"
-    labels:
-      - "dependencies"
-    commit-message:
-      prefix: "chore(deps)"
-    # 新版本发布满 7 天才提 PR；仅影响版本更新，安全更新不受影响
-    cooldown:
-      default-days: 7
-    # 分组目的：一个分组 = 一个 PR。命中多个分组时取声明顺序中的
-    # 第一个，故"兜底分组"必须放在最后
-    groups:
-      # 构建工具链单独成组：Gradle wrapper 与 AGP 必须同步迁移，
-      # 且大版本升级只能人工执行，不能与运行时依赖挤在一个 PR 里
-      build-toolchain:
-        patterns:
-          - "gradle-wrapper"
-          - "com.android.application"
-          - "com.android.library"
-      androidx:
-        patterns:
-          - "androidx.*"
-      kotlin:
-        patterns:
-          - "org.jetbrains.kotlin*"
-          - "com.google.devtools.ksp*"
-      other:
-        patterns:
-          - "*"
-
-    # 冻结名单：工具链升级前不提 PR（解禁条件见 §11.1）
-    ignore:
-      # 构建工具链大版本（AGP / Gradle wrapper）由明确驱动触发人工迁移，
-      # 不接受 Dependabot 驱动；只拦 9.x，8.x 补丁/次要版本仍正常提 PR
-      - dependency-name: "com.android.application"
-        versions: ["[9.0.0,)"]
-      - dependency-name: "com.android.library"
-        versions: ["[9.0.0,)"]
-      - dependency-name: "gradle-wrapper"
-        versions: ["[9.0.0,)"]
-      - dependency-name: "androidx.core:core"
-        versions: ["[1.19.0,)"] # 1.18.0 → minCompileSdk 36；1.19.0 → 37（minAgp 9.1.0）
-      - dependency-name: "androidx.core:core-ktx"
-        versions: ["[1.19.0,)"]
-      # 必须写 androidx.hilt:* 而不能只写 hilt-navigation-compose：版本目录里
-      # hilt-work / hilt-compiler 与它共用同一个版本引用，只冻一个时另外两个
-      # 仍判定为可升级，会把共享引用整体抬到 1.4.0 —— 冻结规则静默失效。
-      - dependency-name: "androidx.hilt:*"
-        versions: ["[1.4.0,)"] # 1.3.0 → minCompileSdk 35；1.4.0 → 37（minAgp 9.1.0）
-      - dependency-name: "net.zetetic:sqlcipher-android"
-        versions: ["[4.18.0,)"] # 4.17.0 无门槛；4.18.0 → 37
-      - dependency-name: "io.coil-kt.coil3:coil*"
-        versions: ["[3.4.0,)"] # 3.4.0 起把 compose-ui 抬过 BOM 钉定的 1.8.3：3.4.0 触发新 lint 规则，3.5.0 触发 KSP MissingType
-      - dependency-name: "androidx.paging:*"
-        versions: ["[3.4.0,)"] # 3.4.0 起硬依赖 compose.ui 1.10.0（BOM 钉定 1.8.3）→ lint 一次报 57 error
-      - dependency-name: "com.google.dagger*"
-        versions: ["[2.59,)"] # 2.59 起引用 AGP 9 独有 API；插件与库版本须一致
-      - dependency-name: "org.opencv:opencv"
-        versions: ["[5.0.0,)"] # 4 → 5 跨大版本，API 不兼容，须人工迁移
-      - dependency-name: "org.jetbrains.kotlin*"
-        update-types: ["version-update:semver-minor", "version-update:semver-major"]
-      - dependency-name: "com.google.devtools.ksp*"
-        versions: ["[2.3.0,)"] # KSP 版本号不是标准 semver，用 Maven 范围更可靠
-
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-    open-pull-requests-limit: 5
-    reviewers:
-      - "PickGear"
-    labels:
-      - "dependencies"
-    commit-message:
-      prefix: "chore(ci)"
-    cooldown:
-      default-days: 7
-    groups:
-      actions:
-        patterns:
-          - "*"
-```
-
-**为什么必须配 `groups`**：Dependabot 的默认行为是"每个依赖开一个 PR（并附一条同名分支）"。
-若只给部分依赖配了分组，未被任何分组命中的依赖仍会各自单开 —— 这正是本项目首次
-启用时一次冒出 9 个 PR 的原因。加一个 `patterns: ["*"]` 的兜底分组，即可把所有零散
-依赖并成一个 PR。
-
-**分组只解决"数量"，不解决"能不能合并"**：Dependabot 按包名分组，并不知道依赖之间
+**分组只解决"数量"，不解决"能不能合并"**（历史教训）：按包名分组的批量升级 PR 并不知道依赖之间
 的真实兼容约束。典型的两类：① `compileSdk` 低于新版本 androidx 所要求的版本时，
-androidx 分组的 PR 会稳定失败（报错来自 `checkDebugAarMetadata`，属配置阶段，构建
+androidx 批量升级会稳定失败（报错来自 `checkDebugAarMetadata`，属配置阶段，构建
 日志里不会出现编译错误）；② `androidx.hilt` 与 `dagger/hilt` 存在配套版本关系，
-分属两个分组时会互相掣肘。遇到这类情况不要反复调分组，应把它当作一次工具链/SDK
-升级任务统一处理。
+分开升级会互相掣肘。遇到这类情况不要反复调批次，应把它当作一次工具链/SDK
+升级任务统一处理（见 §11.1）。
 
-**为什么用 `ignore` 而不是反复调分组**：分组只能改变"一个 PR 里装几样东西"，
-不能阻止"装进来的东西构建不过"。`ignore` 才是在源头掐掉这条 PR 的唯一手段。
-本项目在工具链冻结期间（见 §11.1）用 `ignore` 挡住四类依赖：
+本项目在工具链冻结期间（见 §11.1）**不要主动升级**以下四类依赖：
 
 - **编译门槛型**：新版本在 AAR 里声明了 `minCompileSdk` / `minAgpVersion`，高于本项目当前值。
   取版本下界的办法是直接读目标版本 AAR 内的 `META-INF/com/android/build/gradle/aar-metadata.properties`：
@@ -3040,13 +2942,13 @@ androidx 分组的 PR 会稳定失败（报错来自 `checkDebugAarMetadata`，�
   建一个只应用 `com.android.application` + 目标插件的空工程，逐个版本跑
   `./gradlew help`，看是否抛 `only compatible with Android Gradle plugin` 或
   `NoClassDefFoundError`。插件与其配套库的版本必须一致（Hilt 插件与 `hilt-android`），
-  所以要用 `com.google.dagger*` 这种通配整族冻结，不能只冻插件。
+  升级时必须整族一起升，不能只升插件。
 
 - **编译器生态型**：Kotlin 生态（KGP / Compose 编译器 / serialization 插件 / `kotlinx-*` 运行时）
-  的版本互相耦合，Dependabot 无法把它们配套升对。两个具体原因：
-  ① KSP 版本号内嵌 Kotlin 版本（`2.2.20-2.0.2`），与 Kotlin 必须严格对应；
+  的版本互相耦合，无法独立升级。两个具体原因：
+  ① KSP 版本号内嵌 Kotlin 版本（如 `2.2.21-2.0.5`），与 Kotlin 必须严格对应；
   ② 用被冻结的 Kotlin 编译器去读"更高版本 Kotlin 编译出的"元数据会直接报错。
-  因此这一族整体按 minor/major 冻结，只放行 patch。
+  因此这一族必须成套升级，只可打 patch。
 
 - **Compose 栈越界型**（最隐蔽的一类）：`androidx.compose.material:material-icons-extended`
   （`AppIcon` 枚举的 120 个图标全部来自它）已被 Google **冻结在 1.7.8**，
@@ -3094,22 +2996,19 @@ androidx 分组的 PR 会稳定失败（报错来自 `checkDebugAarMetadata`，�
   元数据依赖，会让人误判成"这个库很安全"（`paging-compose` 根 POM 只写 runtime 1.9.0，
   而真正生效的 `-android` 产物写的是 ui 1.10.0）。
 
-**三个写法坑**：
+**两个写法坑**（若将来重新引入自动化升级工具时适用）：
 
-1. **`versions` 必须用 Maven 范围语法**。Gradle 属 Maven 生态，范围要写 `["[1.19.0,)"]`；
+1. **版本范围必须用 Maven 范围语法**。Gradle 属 Maven 生态，范围要写 `["[1.19.0,)"]`；
    写成 `[">= 1.19.0"]` 不会报错，但规则**静默失效** —— 属于最难发现的一类配置错误。
-2. **`update-types` 依赖 semver 解析**。`2.2.20-2.0.2` 不是合法 semver，用 `update-types`
-   拦不住它，所以 KSP 用 `versions` 范围，Kotlin 生态用 `update-types`。
-3. **版本目录里共享 `version.ref` 时，`dependency-name` 必须覆盖共用该引用的全部依赖**。
+2. **共享 `version.ref` 的依赖必须整组处理**。
    例：`libs.versions.toml` 中 `hilt-work` / `hilt-compiler` 与 `hilt-navigation-compose`
-   共用同一个版本引用，只冻结 `androidx.hilt:hilt-navigation-compose` 时，另外两个仍被判定为
-   可升级，Dependabot 会把共享引用整体抬到 `1.4.0` —— **PR 照旧出现、照旧必红，冻结静默失效**。
-   正确写法是用通配覆盖整族：`androidx.hilt:*`。
-   排查手法：把 `libs.versions.toml` 里所有 `version.ref` 相同的依赖分组，逐个核对是否都被
-   某条 `ignore` 规则命中。
+   共用同一个版本引用，只升/只冻其中一个时，另外两个仍会被判定为可升级，
+   工具会把共享引用整体抬升 —— **规则静默失效**。
+   正确做法是用通配覆盖整族：`androidx.hilt:*`。
+   排查手法：把 `libs.versions.toml` 里所有 `version.ref` 相同的依赖分组，逐个核对。
 
-**注意**：`ignore` 只作用于**版本更新**；仓库设置里的 **Dependabot 安全更新是独立通道**，
-仍然会照常开 PR。所以冻结不会拖慢 CVE 修复。
+**安全更新通道**：仓库设置里的 **Dependabot security updates / alerts** 与版本更新无关，
+仍可用于 CVE 告警（见上方 checklist），不受 `8dea450` 影响。
 
 ### 24.10 发布后监控
 

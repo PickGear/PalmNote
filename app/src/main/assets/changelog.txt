@@ -4,7 +4,7 @@ PalmNote 版本历史 / Version History
 以下为各已发布版本的更新记录（最新版本在最前）。
 Release history of PalmNote (newest version first).
 
-1.4.0 (2026-09-17)
+1.4.0 (2026-09-19)
 ------------------
 
 新增
