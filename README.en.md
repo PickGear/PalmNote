@@ -11,7 +11,7 @@
 
 > **⚠️ Disclaimer:** PalmNote is under active development. You may encounter bugs or incomplete features. Feedback and contributions are welcome!
 
-A fully local-first life tracking app that combines expense tracking, asset management, life planning, and a password vault into one. No registration required — your data is stored locally, all features work offline.
+A local-first life tracking app that combines expense tracking, asset management, life planning, and a password vault into one. No registration required — your data is stored locally, all features work offline.
 
 ## Screenshots
 
@@ -54,6 +54,7 @@ See [CHANGELOG.md](CHANGELOG.md).
 - Net worth, monthly income/expense overview
 - Budget reminders, goal progress, anniversary countdowns
 - Drag-and-drop card reordering, show/hide customization
+- First-run onboarding (feature tour + data-safety notice)
 
 ### 📦 Asset Management
 - Item logging, categorization, status tracking (owned/idle/sold/lost/retired)
@@ -66,13 +67,20 @@ See [CHANGELOG.md](CHANGELOG.md).
 - Income/expense categories, budget settings, monthly/yearly reports
 - Calendar view, advanced filtering
 - CSV/XLSX import (encrypted Alipay ZIP supported), OCR recognition
+- Redesigned import page ("sorting desk") surfacing items that need review, with one-tap undo
 - Home screen widget
 
 ### 🌿 Life Module
 - **Plans**: Savings goals, shopping lists, travel plans, reading lists, study plans, to-do tasks
 - **Time**: Countdowns, day counters, birthdays, anniversaries
-- **Records**: Habit tracking (heatmap), mood journal (calendar + trend chart), diary, focus timer, subscription management, weekly/monthly reports
+- **Records**: Habit tracking (heatmap), mood journal (calendar + trend chart), diary, focus timer, subscription management
 - **Cross-module**: Custom templates, cross-module linking, achievement badges
+
+### 🎨 Theme & Appearance
+- Multiple theme color packs + custom colors
+- 6 gradient wallpapers, plus custom image wallpapers (adjustable blur/opacity)
+- Optional teal-and-white app icon
+- Home-screen widgets share a unified rounded-card design, adapt to dark mode, and follow the theme accent
 
 ### 🔑 Password Vault
 - Fully offline password manager: title / username / password / URL / notes / category
@@ -130,7 +138,7 @@ core/                      # Core library module (namespace: com.palmnote)
 │   ├── di/                # Hilt injection (@Qualifier, etc.)
 │   └── ui/                # Shared UI: components/theme/lock/notification/widget
 ├── src/main/res/          # Core resources (strings/theme)
-└── schemas/               # AppDatabase Room schema (v1-v7)
+└── schemas/               # AppDatabase Room schema (v1-v9)
 
 app/                       # Application module (namespace: com.palmnote.app)
 ├── src/main/java/com/palmnote/
@@ -191,7 +199,7 @@ Import/export of bills, backups and crash logs all go through the system file pi
 PalmNote is fully local, and the following limitations are the direct cost of its zero-network design:
 
 - **This device is the only copy**: records cannot be recovered after uninstalling or clearing data — there is no cloud.
-- **Backups are up to you**: no automatic backup; export an encrypted backup regularly from Settings → Data & Storage.
+- **Backups are up to you**: automatic backup is built in (off by default; enable it in Settings → Data & Backup) alongside manual backup. The backup location is configurable (e.g. a cloud-sync folder). Please confirm backup status regularly.
 - **The master password cannot be recovered**: it protects both the vault and encrypted backups; if forgotten, no one can restore them.
 - **No in-app updates**: download new versions from [Releases](https://github.com/PickGear/PalmNote/releases) and install over the old one.
 - **Recognition, not guessing**: complex sources such as bill screenshots may be partially recognized; the import page marks items for review instead of silently filling in guesses.
