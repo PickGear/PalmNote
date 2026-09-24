@@ -1,0 +1,26 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>ComplexCondition:PolygonUnclip.kt$PolygonUnclip$!area.isFinite() || !perimeter.isFinite() || area &lt;= EPS || perimeter &lt;= EPS</ID>
+    <ID>CyclomaticComplexMethod:DBPostProcessor.kt$DBPostProcessor$fun process( pred: FloatArray, predShape: LongArray, thresh: Float, boxThresh: Float, unclipRatio: Float, maxCandidates: Int, useDilation: Boolean, scoreMode: String, boxType: String, originalH: Int, originalW: Int, ): List&lt;OCRBox&gt;</ID>
+    <ID>LongMethod:DBPostProcessor.kt$DBPostProcessor$fun process( pred: FloatArray, predShape: LongArray, thresh: Float, boxThresh: Float, unclipRatio: Float, maxCandidates: Int, useDilation: Boolean, scoreMode: String, boxType: String, originalH: Int, originalW: Int, ): List&lt;OCRBox&gt;</ID>
+    <ID>LongMethod:OCREngine.kt$OCREngine$private fun run(srcMat: org.opencv.core.Mat): OCREngineResult</ID>
+    <ID>LongMethod:RecPreprocessor.kt$RecPreprocessor$fun preprocessBatch(crops: List&lt;Mat&gt;): RecPreprocessResult</ID>
+    <ID>LongParameterList:DBPostProcessor.kt$DBPostProcessor$( pred: FloatArray, predShape: LongArray, thresh: Float, boxThresh: Float, unclipRatio: Float, maxCandidates: Int, useDilation: Boolean, scoreMode: String, boxType: String, originalH: Int, originalW: Int, )</ID>
+    <ID>LoopWithTooManyJumpStatements:DBPostProcessor.kt$DBPostProcessor$for</ID>
+    <ID>LoopWithTooManyJumpStatements:ModelConfig.kt$ModelConfig.Companion$while</ID>
+    <ID>NestedBlockDepth:CTCDecoder.kt$CTCDecoder$fun decode(output: FloatArray, shape: LongArray, characterList: List&lt;String&gt;): List&lt;Pair&lt;String, Float&gt;&gt;</ID>
+    <ID>NestedBlockDepth:DBPostProcessor.kt$DBPostProcessor$fun process( pred: FloatArray, predShape: LongArray, thresh: Float, boxThresh: Float, unclipRatio: Float, maxCandidates: Int, useDilation: Boolean, scoreMode: String, boxType: String, originalH: Int, originalW: Int, ): List&lt;OCRBox&gt;</ID>
+    <ID>NestedBlockDepth:OCREngine.kt$OCREngine$private fun run(srcMat: org.opencv.core.Mat): OCREngineResult</ID>
+    <ID>ReturnCount:PolygonUnclip.kt$PolygonUnclip$fun unclip(points: List&lt;Point&gt;, unclipRatio: Float): List&lt;Point&gt;</ID>
+    <ID>SpreadOperator:BitmapUtils.kt$BitmapUtils$(*imageBytes)</ID>
+    <ID>SpreadOperator:DBPostProcessor.kt$DBPostProcessor$(*contour.toArray())</ID>
+    <ID>ThrowsCount:ModelConfig.kt$ModelConfig.Companion$fun parse(context: Context, assetPath: String): ModelConfig</ID>
+    <ID>ThrowsCount:ModelConfig.kt$ModelConfig.Companion$private fun extractCharacterDict(content: String, assetPath: String): List&lt;String&gt;</ID>
+    <ID>ThrowsCount:ORTSessionManager.kt$ORTSessionManager$fun loadModels(detAssetPath: String, recAssetPath: String)</ID>
+    <ID>ThrowsCount:ORTSessionManager.kt$ORTSessionManager$private fun runSession( ortEnv: OrtEnvironment, session: OrtSession, inputName: String, input: FloatArray, shape: LongArray, modelName: String, ): Pair&lt;FloatArray, LongArray&gt;</ID>
+    <ID>TooGenericExceptionThrown:ORTSessionManager.kt$ORTSessionManager$throw Exception("Output is not an ONNX tensor")</ID>
+    <ID>UnusedParameter:OpenCVUtils.kt$OpenCVUtils$context: Context</ID>
+  </CurrentIssues>
+</SmellBaseline>

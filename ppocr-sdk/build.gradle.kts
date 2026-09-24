@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.detekt)
 }
 
 android {
@@ -33,4 +34,13 @@ dependencies {
     implementation(libs.opencv.android)
     implementation(libs.coroutines.android)
     implementation(libs.core.ktx)
+}
+
+// detekt：与 app/core 同一套规则与配置。本模块为 PaddleOCR PP-OCRv6 的本地化移植，
+// 存在大量第三方算法样板，故用独立 baseline 冻结存量问题，只对新增代码把关。
+detekt {
+    config.setFrom("$rootDir/config/detekt/detekt.yml")
+    baseline = file("$rootDir/config/detekt/baseline-ppocr.xml")
+    buildUponDefaultConfig = true
+    allRules = false
 }

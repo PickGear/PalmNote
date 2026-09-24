@@ -29,7 +29,7 @@ android {
             freeCompilerArgs.addAll(
                 "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api",
                 "-opt-in=androidx.compose.foundation.ExperimentalFoundationApi",
-                "-Xjvm-default=all"
+                "-Xjvm-default=all",
             )
         }
     }
@@ -86,19 +86,19 @@ dependencies {
 
     // Core
     implementation(libs.core.ktx)
-    implementation("androidx.documentfile:documentfile:1.1.0")
+    implementation(libs.documentfile)
     implementation(libs.appcompat)
     implementation(libs.lifecycle.runtime.ktx)
 
     // Biometric
-    implementation("androidx.biometric:biometric:1.1.0")
+    implementation(libs.biometric)
 
     // Lunar
     implementation(libs.lunar.java)
 
     // Paging
-    implementation("androidx.paging:paging-runtime-ktx:3.3.4")
-    implementation("androidx.paging:paging-compose:3.3.4")
+    implementation(libs.paging.runtime.ktx)
+    implementation(libs.paging.compose)
 
     // Coil 3.x
     implementation(libs.coil.compose)
