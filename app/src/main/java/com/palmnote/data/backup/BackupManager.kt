@@ -555,7 +555,11 @@ class BackupManager(
         for (file in backedUpFiles) {
             val backupFile = File(dirs.rollbackDir, file.name)
             if (backupFile.exists()) {
-                try { backupFile.copyTo(file, overwrite = true) } catch (_: Exception) {}
+                try {
+                    backupFile.copyTo(file, overwrite = true)
+                } catch (e: Exception) {
+                    android.util.Log.w(TAG, "rollbackRestore: 回滚 ${file.name} 失败，数据可能不一致", e)
+                }
             }
         }
         for (dir in dirs.all()) {
@@ -569,7 +573,11 @@ class BackupManager(
             val isResidue = file.name.endsWith("-wal") || file.name.endsWith("-shm")
             val wasBackedUp = backedUpFiles.any { it.canonicalPath == file.canonicalPath }
             if (isResidue && !wasBackedUp) {
-                try { file.delete() } catch (_: Exception) {}
+                try {
+                    file.delete()
+                } catch (e: Exception) {
+                    android.util.Log.w(TAG, "deleteWalResidue: 删除 ${file.name} 失败", e)
+                }
             }
         }
     }
