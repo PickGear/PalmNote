@@ -37,7 +37,8 @@ android {
         // targetSdk 34：自用侧载，禁用 Android 15+ 强制 predictive back，恢复传统返回动画；
         // compileSdk 保持 36 不损失编译能力。上 Play 时需升回 35+。
         targetSdk = 34
-        versionCode = 5
+        // versionCode 单调递增：5 曾用于未发布的本地 1.4.0 构建；beta 起用 6，正式 1.4.0 将用 7。
+        versionCode = 6
         versionName = libs.versions.palmnote.get()
         // 版本号单一事实来源：resValue 生成 app_version 字符串资源，
         // 供 AboutScreen / AppLockScreen 的 stringResource(R.string.app_version) 使用。

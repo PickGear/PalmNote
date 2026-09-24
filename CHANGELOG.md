@@ -6,7 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
-## [1.4.0] - 2026-09-19
+## [1.4.0-beta.1] - 2026-09-24
+
+> ⚠️ **Beta 预览**：生活页重构与桌面小组件尚未完成，相关功能可能不稳定或不可用。正式版 1.4.0 待完成后另行发布。
 
 ### Added
 - 全部桌面小组件焕新：统一圆角卡片设计，新增「今日打卡」「快捷入口」2 个组件

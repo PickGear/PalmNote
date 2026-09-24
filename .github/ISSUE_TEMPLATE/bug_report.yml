@@ -12,6 +12,7 @@ body:
       label: 应用版本
       description: 可在「设置 → 关于」中查看
       options:
+        - 1.4.0-beta.1
         - 1.4.0
         - 1.3.0
         - 1.2.0
