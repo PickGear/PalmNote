@@ -11,14 +11,14 @@
 
 > **⚠️ Disclaimer:** PalmNote is under active development. You may encounter bugs or incomplete features. Feedback and contributions are welcome!
 
-A local-first life tracking app that combines expense tracking, asset management, life planning, and a password vault into one. No registration required — your data is stored locally, all features work offline.
+A local-first life tracking app that combines expense tracking, item management, life planning, and a password vault into one. No registration required — your data is stored locally, all features work offline.
 
 ## Screenshots
 
 <table>
   <tr>
     <td align="center"><b>Dashboard</b></td>
-    <td align="center"><b>Assets</b></td>
+    <td align="center"><b>Items</b></td>
     <td align="center"><b>Bills</b></td>
   </tr>
   <tr>
@@ -56,7 +56,7 @@ See [CHANGELOG.md](CHANGELOG.md).
 - Drag-and-drop card reordering, show/hide customization
 - First-run onboarding (feature tour + data-safety notice)
 
-### 📦 Asset Management
+### 📦 Item Management
 - Item logging, categorization, status tracking (owned/idle/sold/lost/retired)
 - Usage records, daily average cost calculation
 - Warranty/insurance/maintenance reminders
