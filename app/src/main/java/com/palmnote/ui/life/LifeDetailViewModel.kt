@@ -263,7 +263,7 @@ object DetailAssembler {
 
     /**
      * 已被 ① 英雄区消费的字段 key —— 避免同一个值在页面上出现两次。
-     * 逐模板标定（与 `.workbuddy/audit/gen_detail_svg.py` 的 16 张设计稿一一对应）。
+     * 逐模板标定（与 16 张设计稿一一对应）。
      */
     private fun consumedKeys(ctx: DetailCtx): Set<String> = when (ctx.template.icon) {
         "savings" -> setOf("targetAmount", "currentAmount", "remain")

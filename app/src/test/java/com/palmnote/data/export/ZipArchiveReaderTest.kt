@@ -10,7 +10,7 @@ import java.util.Base64
 /**
  * [ZipArchiveReader] 的端到端测试。
  *
- * 夹具并非手写魔法数：由 `.workbuddy/audit/make_zip_fixtures.py` 里的 ZipCrypto 写入器生成，并**已用
+ * 夹具并非手写魔法数：由 Python 脚本里的 ZipCrypto 写入器生成，并**已用
  * CPython 标准库 `zipfile` 反向读取校验**（`ZipFile.read(name, pwd=b"123456")` 通过、错密码抛 `RuntimeError`）。
  * 之所以用 Python 生成：ZipCrypto 写入在 JVM 侧无现成实现；若用 Kotlin 自写「写入器 + 读取器」会自证循环，
  * 独立实现（CPython）反向读取才能真正校验字节流是否标准。
