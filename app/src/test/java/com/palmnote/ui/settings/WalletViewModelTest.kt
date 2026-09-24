@@ -36,8 +36,8 @@ class WalletViewModelTest {
     @After
     fun tearDown() {
         // ViewModel 持有 stateIn(viewModelScope, WhileSubscribed(5000)) 的分享协程。
-        // 若测试结束时不取消，订阅取消后残留的 5 秒延迟任务会泄漏到下一个测试，
-        // 表现为偶发的 UncaughtExceptionsBeforeTest。
+        // 必须与各测试的 runTest 共用 testDispatcher.scheduler：否则 runTest 结束时
+        // Main 调度器上残留的 5 秒延迟任务会漏到下一测，表现为 UncaughtExceptionsBeforeTest。
         if (::viewModel.isInitialized) {
             viewModel.viewModelScope.cancel()
             testDispatcher.scheduler.advanceUntilIdle()
@@ -47,8 +47,12 @@ class WalletViewModelTest {
 
     private fun createViewModel(): WalletViewModel = WalletViewModel(walletRepository)
 
+    /** 全部测试共用 Main 的 scheduler，避免双调度器把协程残留给下一测。 */
+    private fun runTestOnMain(block: suspend kotlinx.coroutines.test.TestScope.() -> Unit) =
+        runTest(testDispatcher.scheduler, testBody = block)
+
     @Test
-    fun `wallets exposes repository data`() = runTest {
+    fun `wallets exposes repository data`() = runTestOnMain {
         val wallets = listOf(
             Wallet(id = 1, name = "现金", type = "CASH"),
             Wallet(id = 2, name = "微信", type = "E_WALLET")
@@ -67,7 +71,7 @@ class WalletViewModelTest {
     }
 
     @Test
-    fun `wallets emits updated list after add`() = runTest {
+    fun `wallets emits updated list after add`() = runTestOnMain {
         val walletFlow = MutableStateFlow(emptyList<Wallet>())
         coEvery { walletRepository.getAllWallets() } returns walletFlow
         coEvery { walletRepository.getTotalBalance() } returns MutableStateFlow(null)
@@ -85,7 +89,7 @@ class WalletViewModelTest {
     }
 
     @Test
-    fun `totalBalance exposes repository data`() = runTest {
+    fun `totalBalance exposes repository data`() = runTestOnMain {
         coEvery { walletRepository.getAllWallets() } returns MutableStateFlow(emptyList())
         coEvery { walletRepository.getTotalBalance() } returns MutableStateFlow(250000L)
 
@@ -100,7 +104,7 @@ class WalletViewModelTest {
     }
 
     @Test
-    fun `addWallet inserts wallet via repository`() = runTest {
+    fun `addWallet inserts wallet via repository`() = runTestOnMain {
         coEvery { walletRepository.getAllWallets() } returns MutableStateFlow(emptyList())
         coEvery { walletRepository.getTotalBalance() } returns MutableStateFlow(null)
 
@@ -114,7 +118,7 @@ class WalletViewModelTest {
     }
 
     @Test
-    fun `deleteWallet soft-deletes via repository`() = runTest {
+    fun `deleteWallet soft-deletes via repository`() = runTestOnMain {
         coEvery { walletRepository.getAllWallets() } returns MutableStateFlow(emptyList())
         coEvery { walletRepository.getTotalBalance() } returns MutableStateFlow(null)
 
@@ -127,7 +131,7 @@ class WalletViewModelTest {
     }
 
     @Test
-    fun `setDefault delegates to repository`() = runTest {
+    fun `setDefault delegates to repository`() = runTestOnMain {
         coEvery { walletRepository.getAllWallets() } returns MutableStateFlow(emptyList())
         coEvery { walletRepository.getTotalBalance() } returns MutableStateFlow(null)
 
@@ -140,7 +144,7 @@ class WalletViewModelTest {
     }
 
     @Test
-    fun `updateWallet updates with new timestamp`() = runTest {
+    fun `updateWallet updates with new timestamp`() = runTestOnMain {
         coEvery { walletRepository.getAllWallets() } returns MutableStateFlow(emptyList())
         coEvery { walletRepository.getTotalBalance() } returns MutableStateFlow(null)
 
