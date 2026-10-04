@@ -66,10 +66,7 @@ fun LifeMonthlyReviewScreen(
     viewModel: LifeMonthlyReviewViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
     val graphicsLayer = rememberGraphicsLayer()
-    val shareLabel = stringResource(R.string.life_review_share)
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -93,31 +90,10 @@ fun LifeMonthlyReviewScreen(
                     }
                 },
                 actions = {
-                    if (state.loaded && state.totalCount > 0) {
-                        IconButton(onClick = {
-                            scope.launch {
-                                val result = runCatching {
-                                    val bitmap = graphicsLayer.toImageBitmap().asAndroidBitmap()
-                                    val fileName = lifeShareFileName("review", System.currentTimeMillis())
-                                    val file = withContext(Dispatchers.IO) { saveSharePng(context, bitmap, fileName) }
-                                    sharePng(context, file)
-                                }
-                                Toast.makeText(
-                                    context,
-                                    context.getString(
-                                        if (result.isSuccess) R.string.life_review_shared else R.string.life_review_share_failed
-                                    ),
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                        }) {
-                            Icon(
-                                Icons.AutoMirrored.Filled.Send,
-                                shareLabel,
-                                tint = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-                    }
+                    ReviewShareAction(
+                        enabled = state.loaded && state.totalCount > 0,
+                        graphicsLayer = graphicsLayer
+                    )
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
@@ -127,6 +103,34 @@ fun LifeMonthlyReviewScreen(
             ReviewModeSwitch(state.mode, viewModel::setMode)
             ReviewBody(state, graphicsLayer)
         }
+    }
+}
+
+/** 右上「分享」：把页面录进 [graphicsLayer] 导出 PNG 长图并调起系统分享（无内容时不显示）。 */
+@Composable
+private fun ReviewShareAction(enabled: Boolean, graphicsLayer: GraphicsLayer) {
+    if (!enabled) return
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val shareLabel = stringResource(R.string.life_review_share)
+    IconButton(onClick = {
+        scope.launch {
+            val result = runCatching {
+                val bitmap = graphicsLayer.toImageBitmap().asAndroidBitmap()
+                val fileName = lifeShareFileName("review", System.currentTimeMillis())
+                val file = withContext(Dispatchers.IO) { saveSharePng(context, bitmap, fileName) }
+                sharePng(context, file)
+            }
+            Toast.makeText(
+                context,
+                context.getString(
+                    if (result.isSuccess) R.string.life_review_shared else R.string.life_review_share_failed
+                ),
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }) {
+        Icon(Icons.AutoMirrored.Filled.Send, shareLabel)
     }
 }
 

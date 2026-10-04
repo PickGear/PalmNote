@@ -215,12 +215,6 @@ private val safetyPoints = listOf(
 fun OnboardingScreen(
     onFinish: (demoEnabled: Boolean) -> Unit
 ) {
-    // 示例数据选择（**最后一页**）：默认「载入」——与产品默认（演示模式开）一致；
-    // 放在最后 = 决策出现在「开始使用」的时点，安全须知回归纯信息页。
-    // 选择在「开始使用」时统一落库并播种/清理，中途横滑回本页可反悔。
-    //
-    // 主题色 / 深浅色**不在引导里**（用户 2026-10-05 定：引导页太多，外观进设置改即可）：
-    // 首启不再让用户做外观决策，引导保持「介绍功能 + 安全须知 + 要不要示例」三段。
     var demoEnabled by rememberSaveable { mutableStateOf(true) }
     val pageCount = modulePages.size + 3
     val pagerState = rememberPagerState(pageCount = { pageCount })
@@ -228,37 +222,19 @@ fun OnboardingScreen(
     val isLastPage = pagerState.currentPage == pageCount - 1
     val background = MaterialTheme.colorScheme.background
     val primary = MaterialTheme.colorScheme.primary
-
-    // 页面强调色：欢迎页用主色，安全页用专属绿，模块页用对应模块主题色。
-    // （调用 @Composable 的 pageTint，故自身也须标记 @Composable）
-    @Composable
-    fun accentFor(page: Int): Color = when {
-        page <= 0 -> primary
-        page == pageCount - 2 -> SafetyGreen
-        // 示例数据页用**主题主色**：它是 app 级设置页，不属于任何模块
-        page >= pageCount - 1 -> primary
-        else -> pageTint(modulePages[page - 1])
-    }
-
-    // 整页随页色：以强调色的低透明度铺满；翻页时在相邻两页间线性插值，全屏平滑过渡。
-    @Composable
-    fun washFor(page: Int): Color = when {
-        page <= 0 -> background
-        else -> lerp(background, accentFor(page), 0.10f)
-    }
-
     val fraction = pagerState.currentPageOffsetFraction
     val neighbor = pagerState.currentPage + if (fraction > 0f) 1 else -1
     val blend = abs(fraction)
+    // 整页随页色：以强调色的低透明度铺满；翻页时在相邻两页间线性插值，全屏平滑过渡。
     val wash = lerp(
-        washFor(pagerState.currentPage),
-        washFor(neighbor.coerceIn(0, pageCount - 1)),
+        onboardingWashFor(pagerState.currentPage, pageCount, primary, background),
+        onboardingWashFor(neighbor.coerceIn(0, pageCount - 1), pageCount, primary, background),
         blend
     )
     // 按钮/页点随页强调色，与所在页面的模块色统一
     val accent = lerp(
-        accentFor(pagerState.currentPage),
-        accentFor(neighbor.coerceIn(0, pageCount - 1)),
+        onboardingAccentFor(pagerState.currentPage, pageCount, primary),
+        onboardingAccentFor(neighbor.coerceIn(0, pageCount - 1), pageCount, primary),
         blend
     )
 
@@ -278,83 +254,127 @@ fun OnboardingScreen(
                     .fillMaxWidth()
                     .weight(1f)
             ) { page ->
-                when {
-                    page == 0 -> OnboardingWelcomePage()
-                    page <= modulePages.size -> OnboardingModulePageContent(modulePages[page - 1])
-                    page == pageCount - 2 -> OnboardingSafetyPage()
-                    else -> OnboardingDemoPage(
-                        selected = demoEnabled,
-                        onSelect = { demoEnabled = it }
-                    )
-                }
+                OnboardingPageContent(
+                    page = page,
+                    pageCount = pageCount,
+                    demoSelected = demoEnabled,
+                    onDemoSelect = { demoEnabled = it }
+                )
             }
 
-            OnboardingDots(pageCount = pageCount, currentPage = pagerState.currentPage, activeColor = accent)
-
-            Spacer(Modifier.height(24.dp))
-
-            Button(
-                onClick = {
-                    if (isLastPage) {
-                        onFinish(demoEnabled)
-                    } else {
-                        scope.launch {
-                            pagerState.animateScrollToPage(pagerState.currentPage + 1)
-                        }
-                    }
+            OnboardingBottomBar(
+                pageCount = pageCount,
+                currentPage = pagerState.currentPage,
+                isLastPage = isLastPage,
+                accent = accent,
+                onNext = {
+                    scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) }
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp)
-                    .height(50.dp),
-                shape = MaterialTheme.shapes.medium,
-                // 文字色用 onPrimary（浅色=白、深色=黑），而不是写死白或按亮度反色：
-                // 深色模式下 8 个主题色里 7 个是**亮色**（绿/蓝/紫/橙/红/青绿/粉），
-                // 白字只有 2.0~3.6:1（读不出来），黑字是 5.9~11.6:1；
-                // 模块色与安全绿是不随主题变化的深色，两种字色都 ≥3.3:1。
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = accent,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
-                )
-            ) {
-                Text(
-                    text = stringResource(
-                        if (isLastPage) R.string.onboarding_start else R.string.onboarding_next
-                    ),
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
-                )
-            }
-
-            Spacer(Modifier.height(12.dp))
-
-            if (!isLastPage) {
-                TextButton(
-                    onClick = { onFinish(demoEnabled) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp)
-                ) {
-                    Text(
-                        text = stringResource(R.string.onboarding_skip),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            } else {
-                // 占位与「跳过」按钮同高：渲染同款空 TextButton（不可点、无内容），
-                // 保证「开始使用」主按钮的垂直位置与其他页完全一致，不受组件度量影响
-                TextButton(
-                    onClick = {},
-                    enabled = false,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp)
-                ) {}
-            }
-
-            Spacer(Modifier.height(24.dp))
+                onFinish = { onFinish(demoEnabled) }
+            )
         }
     }
+}
+
+/** 单页内容路由：欢迎 → 4 个模块 → 安全须知 → 示例数据（每页一个决策，见文件头说明）。 */
+@Composable
+private fun OnboardingPageContent(
+    page: Int,
+    pageCount: Int,
+    demoSelected: Boolean,
+    onDemoSelect: (Boolean) -> Unit
+) {
+    when {
+        page == 0 -> OnboardingWelcomePage()
+        page <= modulePages.size -> OnboardingModulePageContent(modulePages[page - 1])
+        page == pageCount - 2 -> OnboardingSafetyPage()
+        else -> OnboardingDemoPage(selected = demoSelected, onSelect = onDemoSelect)
+    }
+}
+
+/**
+ * 页面强调色：欢迎页与设置页用主题主色，安全页用专属绿，模块页用对应模块主题色。
+ *
+ * 放在顶层而不是主 Composable 的局部函数：主函数要待在 detekt 的行数/复杂度阈值内。
+ * （内部调用 @Composable 的 [pageTint]，故自身也须标记 @Composable）
+ */
+@Composable
+private fun onboardingAccentFor(page: Int, pageCount: Int, primary: Color): Color = when {
+    page <= 0 -> primary
+    page == pageCount - 2 -> SafetyGreen
+    // 示例数据页用**主题主色**：它是 app 级设置页，不属于任何模块
+    page >= pageCount - 1 -> primary
+    else -> pageTint(modulePages[page - 1])
+}
+
+/** 整页随页色：以强调色的低透明度铺满（欢迎页保持纯背景色）。 */
+@Composable
+private fun onboardingWashFor(page: Int, pageCount: Int, primary: Color, background: Color): Color =
+    if (page <= 0) background else lerp(background, onboardingAccentFor(page, pageCount, primary), 0.10f)
+
+/**
+ * 底部操作区：页点指示器 + 主按钮（下一步 / 开始使用）+ 跳过（最后一页渲染同款空占位）。
+ *
+ * 独立成函数有两个理由：主 Composable 因此保持在 detekt 的行数/复杂度阈值内；
+ * 「最后一页用空占位保持主按钮位置一致」这条约定也只在这一个地方说明。
+ */
+@Composable
+private fun OnboardingBottomBar(
+    pageCount: Int,
+    currentPage: Int,
+    isLastPage: Boolean,
+    accent: Color,
+    onNext: () -> Unit,
+    onFinish: () -> Unit
+) {
+    OnboardingDots(pageCount = pageCount, currentPage = currentPage, activeColor = accent)
+
+    Spacer(Modifier.height(24.dp))
+
+    Button(
+        onClick = { if (isLastPage) onFinish() else onNext() },
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp)
+            .height(50.dp),
+        shape = MaterialTheme.shapes.medium,
+        // 文字色用 onPrimary（浅色=白、深色=黑），而不是写死白或按亮度反色：
+        // 深色模式下 8 个主题色里 7 个是**亮色**（绿/蓝/紫/橙/红/青绿/粉），
+        // 白字只有 2.0~3.6:1（读不出来），黑字是 5.9~11.6:1；
+        // 模块色与安全绿是不随主题变化的深色，两种字色都 ≥3.3:1。
+        colors = ButtonDefaults.buttonColors(
+            containerColor = accent,
+            contentColor = MaterialTheme.colorScheme.onPrimary
+        )
+    ) {
+        Text(
+            text = stringResource(
+                if (isLastPage) R.string.onboarding_start else R.string.onboarding_next
+            ),
+            fontWeight = FontWeight.Bold,
+            fontSize = 16.sp
+        )
+    }
+
+    Spacer(Modifier.height(12.dp))
+
+    TextButton(
+        onClick = { if (!isLastPage) onFinish() },
+        enabled = !isLastPage,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp)
+    ) {
+        // 最后一页渲染空占位：与「跳过」同高，保证「开始使用」的垂直位置与其他页一致
+        if (!isLastPage) {
+            Text(
+                text = stringResource(R.string.onboarding_skip),
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+
+    Spacer(Modifier.height(24.dp))
 }
 
 /**

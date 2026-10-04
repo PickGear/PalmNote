@@ -105,18 +105,7 @@ fun LifeStatsScreen(
                 .padding(horizontal = Spacing.md)
         ) {
             Spacer(Modifier.height(Spacing.xs))
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), modifier = Modifier.fillMaxWidth()) {
-                StatsCard(stringResource(R.string.life_stats_today_todo), ui.todoToday.toString(), Icons.Filled.Checklist, LifePlan, Modifier.weight(1f))
-                StatsCard(stringResource(R.string.life_stats_habit_rate), stringResource(R.string.life_stats_percent, ui.habitRatePercent), Icons.Filled.LocalFireDepartment, LifeRecord, Modifier.weight(1f))
-            }
-            Spacer(Modifier.height(Spacing.sm))
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), modifier = Modifier.fillMaxWidth()) {
-                StatsCard(stringResource(R.string.life_stats_focus_minutes), stringResource(R.string.life_stats_minutes, ui.focusMinutesToday), Icons.Filled.Timer, LifeTime, Modifier.weight(1f))
-                StatsCard(stringResource(R.string.life_stats_max_streak), pluralStringResource(
-                    R.plurals.life_stats_days, ui.maxStreak, ui.maxStreak
-                ), Icons.Filled.LocalFireDepartment, LifePlan, Modifier.weight(1f))
-            }
-            Spacer(Modifier.height(Spacing.md))
+            MetricsGrid(ui)
             // 月度回顾入口（叙事页）：上月总结在回顾页，本页仍是进行时仪表。
             MonthlyReviewEntryCard(onOpen = onOpenMonthlyReview)
             Spacer(Modifier.height(Spacing.sm))
@@ -133,6 +122,37 @@ fun LifeStatsScreen(
             Spacer(Modifier.height(Spacing.xl))
         }
     }
+}
+
+/** 四张指标卡（2×2）：结构一致、天然等高；独立成函数也让主函数保持在 detekt 的 60 行内。 */
+@Composable
+private fun MetricsGrid(ui: LifeStatsUi) {
+    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), modifier = Modifier.fillMaxWidth()) {
+        StatsCard(
+            stringResource(R.string.life_stats_today_todo),
+            ui.todoToday.toString(),
+            Icons.Filled.Checklist, LifePlan, Modifier.weight(1f)
+        )
+        StatsCard(
+            stringResource(R.string.life_stats_habit_rate),
+            stringResource(R.string.life_stats_percent, ui.habitRatePercent),
+            Icons.Filled.LocalFireDepartment, LifeRecord, Modifier.weight(1f)
+        )
+    }
+    Spacer(Modifier.height(Spacing.sm))
+    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), modifier = Modifier.fillMaxWidth()) {
+        StatsCard(
+            stringResource(R.string.life_stats_focus_minutes),
+            stringResource(R.string.life_stats_minutes, ui.focusMinutesToday),
+            Icons.Filled.Timer, LifeTime, Modifier.weight(1f)
+        )
+        StatsCard(
+            stringResource(R.string.life_stats_max_streak),
+            pluralStringResource(R.plurals.life_stats_days, ui.maxStreak, ui.maxStreak),
+            Icons.Filled.LocalFireDepartment, LifePlan, Modifier.weight(1f)
+        )
+    }
+    Spacer(Modifier.height(Spacing.md))
 }
 
 /**
