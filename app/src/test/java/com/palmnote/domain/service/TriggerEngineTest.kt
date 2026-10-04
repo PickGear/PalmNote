@@ -60,8 +60,7 @@ class TriggerEngineTest {
         unmockkAll()
     }
 
-    private fun createEngine(scope: kotlinx.coroutines.CoroutineScope) =
-        TriggerEngine(context, itemRepoProvider, crossLinkRepo, scope)
+    private fun createEngine(scope: kotlinx.coroutines.CoroutineScope) = TriggerEngine(context, itemRepoProvider, crossLinkRepo, scope)
 
     @Test
     fun `deposit made meeting target updates status to completed`() = runTest {
@@ -73,11 +72,17 @@ class TriggerEngineTest {
     }
 
     @Test
-    fun `deposit made meeting target does not create self link`() = runTest {
+    fun `deposit made meeting target completes without the phantom asset link`() = runTest {
         coEvery { itemRepo.updateStatus(any(), any()) } just runs
+        coEvery { crossLinkRepo.createLink(any()) } returns 1L
         val item = lifeItem(fieldsData = """{"targetAmount":"10000","currentAmount":"10000"}""")
         createEngine(this).evaluate(TriggerEvent.DEPOSIT_MADE, item)
         advanceUntilIdle()
+        coVerify { itemRepo.updateStatus(1, "COMPLETED") }
+        // 这条规则**不该**建关联。旧实现里那条 `CreateAutoLink(ASSET, targetId = item.id)`
+        // 拿「条目 id」当「资产 id」，会造出指向**不存在资产**的幽灵关联（详情页关联计数凭空 +1）；
+        // 而引擎的自关联守卫只拦 `EntityType.ITEM`，拦不住它。
+        // 旧测试恰好用 item#1 / asset#1 的同号数据把这个 bug 固化了下来，现已改为断言正确行为。
         coVerify(exactly = 0) { crossLinkRepo.createLink(any()) }
     }
 
@@ -123,6 +128,7 @@ class TriggerEngineTest {
         advanceUntilIdle()
         verify { NotificationHelper.show(any(), "trigger_1", "状态已更新", "状态更新") }
     }
+
     @Test
     fun `item status changed non completed no action`() = runTest {
         val item = lifeItem(status = "ACTIVE")
@@ -133,11 +139,15 @@ class TriggerEngineTest {
     }
 
     @Test
-    fun `item created rule does not create self link`() = runTest {
+    fun `item created has no rule left (was a no-op)`() = runTest {
+        coEvery { crossLinkRepo.createLink(any()) } returns 1L
         val item = lifeItem()
         createEngine(this).evaluate(TriggerEvent.ITEM_CREATED, item)
         advanceUntilIdle()
+        // 该规则原本就是空转（引擎对 ITEM 自关联有守卫），已于 2026-10-01 删除。
+        // 这里守住"删干净了"：即使事件被接上，也不会有任何动作。
         coVerify(exactly = 0) { crossLinkRepo.createLink(any()) }
+        coVerify(exactly = 0) { itemRepo.updateStatus(any(), any()) }
     }
 
     @Test

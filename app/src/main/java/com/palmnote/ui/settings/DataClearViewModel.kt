@@ -7,6 +7,7 @@ import android.content.Context
 import com.palmnote.domain.util.AppLogger
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.palmnote.data.datastore.PreferencesManager
 import com.palmnote.data.db.AppDatabase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,7 +31,8 @@ data class DataClearUiState(
 @HiltViewModel
 class DataClearViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val db: AppDatabase
+    private val db: AppDatabase,
+    private val preferences: PreferencesManager
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(DataClearUiState())
@@ -64,10 +66,24 @@ class DataClearViewModel @Inject constructor(
         db.lifeReportDao().deleteAll()
         db.lifeMomentDao().deleteAll()
         clearImagesDir()
+        resetLifeDemoSeed()
     }
 
     fun clearAll() = launchClear {
         db.clearAllTables(); clearImagesDir(); clearVaultAvatarsDir()
+        resetLifeDemoSeed()
+    }
+
+    /**
+     * 清掉演示播种标记。
+     *
+     * 标记在 DataStore、示例行在 Room——清表不会带走标记。不归零的话，演示模式下
+     * [com.palmnote.data.LifeDemoSeeder.ensureSeeded] 会认为示例已就绪而拒绝重建，
+     * 生活页从此永久空白。这是「清完数据生活页变空壳」的根因。
+     */
+    private suspend fun resetLifeDemoSeed() {
+        preferences.setLifeDemoSeeded(false)
+        preferences.setLifeDemoSeedVersion(0)
     }
 
     private fun launchClear(block: suspend () -> Unit) {

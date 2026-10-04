@@ -1,6 +1,7 @@
 ﻿package com.palmnote.data.db.entity
 
 import android.content.Context
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
@@ -68,7 +69,14 @@ data class Asset(
     val soldChannel: String? = null,
     val soldToWhom: String? = null, // 售出给谁
     val sortOrder: Int = 0,
+    /**
+     * 演示数据标记（v14）：示例账本 / 示例钱包 / 示例账单 / 示例物品。
+     * 演示模式关闭时按此列整批物理删除；CSV 导出排除（示例不进「我的数据」）。
+     */
+    @ColumnInfo(defaultValue = "0")
+    val isDemo: Boolean = false,
     val createdAt: Long = System.currentTimeMillis(),
+
     val updatedAt: Long = System.currentTimeMillis()
 ) {
     val isWarrantyValid: Boolean

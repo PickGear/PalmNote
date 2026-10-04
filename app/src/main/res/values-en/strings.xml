@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">PalmNote</string>
     <!-- Bottom Navigation -->
     <string name="nav_dashboard">Home</string>
@@ -8,13 +8,10 @@
     <string name="nav_life">Life</string>
     <!-- Asset -->
     <string name="asset_add">Add Asset</string>
-    <string name="asset_edit">Edit Asset</string>
-    <string name="asset_detail">Asset Detail</string>
     <string name="asset_name">Item Name</string>
     <string name="asset_category">Category</string>
     <string name="asset_price">Purchase Price</string>
     <string name="asset_location">Storage Location</string>
-    <string name="asset_warranty">Warranty Date</string>
     <string name="asset_status">Status</string>
     <string name="asset_description">Notes</string>
     <string name="asset_cost_mode">Cost Calculation Method</string>
@@ -24,8 +21,11 @@
     <string name="asset_held">Held</string>
     <string name="asset_away">Away</string>
     <string name="asset_removed">Removed</string>
-    <string name="asset_clear">Clear</string>
-    <string name="asset_count">%d items</string>
+    <!-- 计数文案：数量为 1 时英文要用单数（%d items → 1 item），故用 plurals。 -->
+    <plurals name="asset_count">
+        <item quantity="one">%d item</item>
+        <item quantity="other">%d items</item>
+    </plurals>
     <string name="asset_status_filter">Status</string>
     <string name="asset_maintenance_complete_confirm">Complete this maintenance?</string>
     <string name="asset_restore_confirm">Restore to held status?</string>
@@ -44,9 +44,17 @@
     <string name="asset_try_other_keywords">Try other keywords</string>
     <string name="asset_add_first_item">Tap the button to add your first item</string>
     <string name="asset_back_to_top">Back to Top</string>
-    <string name="asset_days_used">Used for %d days</string>
+    <!-- 计数文案：数量为 1 时英文要用单数（%d items → 1 item），故用 plurals。 -->
+    <plurals name="asset_days_used">
+        <item quantity="one">Used for %d day</item>
+        <item quantity="other">Used for %d days</item>
+    </plurals>
     <string name="asset_warranty_valid">Warranty</string>
-    <string name="asset_used_days">Used %d days</string>
+    <!-- 计数文案：数量为 1 时英文要用单数（%d items → 1 item），故用 plurals。 -->
+    <plurals name="asset_used_days">
+        <item quantity="one">Used %d day</item>
+        <item quantity="other">Used %d days</item>
+    </plurals>
     <string name="asset_cost_per_use_price">Per Use ¥%s</string>
     <string name="asset_cost_per_use_none">Per Use -</string>
     <string name="asset_cost_daily_price">Daily ¥%s</string>
@@ -68,7 +76,6 @@
     <string name="bill_category">Category</string>
     <string name="bill_date">Date</string>
     <string name="bill_note">Notes</string>
-    <string name="bill_budget">Budget Management</string>
     <string name="bill_switch_book">Switch Book</string>
     <string name="bill_book_list">Book List</string>
     <string name="bill_default">Default</string>
@@ -82,7 +89,11 @@
     <string name="bill_expand">Expand</string>
     <string name="bill_all">All</string>
     <string name="bill_detail">Details</string>
-    <string name="bill_count">%d entries</string>
+    <!-- 计数文案：数量为 1 时英文要用单数（%d items → 1 item），故用 plurals。 -->
+    <plurals name="bill_count">
+        <item quantity="one">%d entry</item>
+        <item quantity="other">%d entries</item>
+    </plurals>
     <string name="bill_no_records">No Records</string>
     <string name="bill_start_recording">Tap the button to start recording</string>
     <string name="bill_reimbursable">Reimbursable</string>
@@ -97,10 +108,6 @@
     <string name="settings_theme_dark">Dark Mode</string>
     <string name="settings_general">General</string>
     <string name="settings_data">Data &amp; Backup</string>
-    <string name="settings_about">About</string>
-    <string name="settings_export">Export Data</string>
-    <string name="settings_recycle">Recycle Bin</string>
-    <string name="settings_category">Category Management</string>
     <string name="settings_items">Items</string>
     <string name="settings_goals">Goals</string>
     <string name="settings_anniversaries">Anniversaries</string>
@@ -119,12 +126,33 @@
     <string name="settings_default_bill_type">Default Bill Type</string>
     <string name="settings_budget_reminder">Budget Reminder</string>
     <string name="settings_calendar_sync">Sync Anniversaries to Calendar</string>
-    <string name="life_demo_hint_title">These are sample records</string>
-    <string name="life_demo_hint_message">The Life page is in demo mode, showing a set of sample records as a reference for what you can record. They behave exactly like your own: you can open, edit or delete them, and they are included in backups and exports. If you don\'t need them, turn off "Demo Mode" in Settings — the samples will then be removed, so they won\'t appear on any page or in backups. Turning it back on generates a fresh set.</string>
-    <string name="life_demo_hint_ack">Got it</string>
     <string name="settings_demo_mode">Demo Mode</string>
-    <string name="settings_demo_mode_subtitle">Loads a set of sample records</string>
-    <string name="settings_demo_section">Sample Data</string>
+    <string name="settings_demo_mode_subtitle">Loads a set of sample records; turning it on again resets them</string>
+    <string tools:ignore="PluralsCandidate" name="settings_demo_cleared">Removed %1$d sample records · kept %2$d you created</string>
+    <string name="settings_demo_clear_prompt_title">Turn off demo mode</string>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="settings_demo_clear_prompt_body">
+        <item quantity="one">You created %1$d record in demo mode. Keep them as your own?</item>
+        <item quantity="other">You created %1$d records in demo mode. Keep them as your own?</item>
+    </plurals>
+    <string name="settings_demo_clear_keep">Keep</string>
+    <string name="settings_demo_clear_discard">Delete all</string>
+    <string name="life_swipe_tip">Tip: swipe right to complete, left to delete</string>
+    <string name="life_tip_dismiss">Don\'t show again</string>
+    <string name="life_demo_banner">Demo mode · showing sample data; turn off in Settings</string>
+    <string name="life_demo_banner_life_tab">Demo mode · this page shows samples only; your records return when you turn it off</string>
+
+    <string name="settings_demo_section">Sample data</string>
+    <string name="settings_bill_section">Bills</string>
+    <string name="onboarding_demo_section">Sample data</string>
+    <string name="onboarding_demo_hint">Not sure? Load the samples and look around — you can turn them off later</string>
+    <string name="onboarding_demo_opt_on_title">Load sample data</string>
+    <string name="onboarding_demo_opt_on_body">A set of sample life records to help you explore</string>
+    <string name="onboarding_demo_opt_off_title">Start empty</string>
+    <string name="onboarding_demo_opt_off_body">No samples — everything will be created by you</string>
+    <string name="onboarding_demo_footnote">Samples can be viewed, edited and deleted. Turn them off in Settings → Data &amp; Backup → Sample data; that removes them completely.</string>
+    <string name="settings_life_category_compact">Compact category chips</string>
+    <string name="settings_life_category_compact_subtitle">Show life home categories as one pill row, leaving more room for today</string>
     <string name="settings_calendar_sync_subtitle">Sync anniversaries to system calendar</string>
     <string name="settings_app_lock">App Lock</string>
     <string name="settings_app_lock_subtitle">Protect privacy, verify on startup</string>
@@ -151,9 +179,7 @@
     <string name="settings_category_manage_subtitle">Manage item and bill categories</string>
     <string name="settings_recycle_bin">Recycle Bin</string>
     <string name="settings_recycle_bin_subtitle">View deleted records</string>
-    <string name="settings_export_data">Export Data</string>
     <string name="settings_export_file_suffix">_data.zip</string>
-    <string name="settings_import_data">Import Data</string>
     <string name="settings_data_backup">Backup &amp; Restore</string>
     <string name="settings_data_backup_subtitle">Backups on device or in a folder; switch phones or rollback</string>
     <string name="settings_data_exchange">Import &amp; Export</string>
@@ -170,19 +196,17 @@
     <string name="data_exchange_scope_life_desc">Includes goals · check-ins · anniversaries · moments · tags</string>
     <string name="data_exchange_export_action">Export CSV</string>
     <string name="data_exchange_export_footnote">Not encrypted. Vault is never exported; to-dos, mood, focus and achievements are not supported yet</string>
-    <string name="data_exchange_portable_desc">Save to any folder; set a backup password to restore on a new phone</string>
-    <string name="data_exchange_import_desc">Duplicate CSV rows are skipped; existing data is never overwritten</string>
-    <string name="data_exchange_file_is_package">This is a backup package. Restore it on the Backup &amp; Restore page</string>
-    <string name="data_exchange_import_action">Import from file</string>
     <string name="settings_clear_data">Clear Data</string>
     <string name="settings_clear_data_subtitle">Delete personal data, not recoverable</string>
     <string name="settings_clear_cache">Clear Cache</string>
     <string name="settings_clear_cache_subtitle">Clean temporary cache files, safe operation</string>
     <string name="settings_about_app">About</string>
     <string name="settings_about_version">Version %1$s</string>
-    <string name="settings_days">%d days</string>
-    <string name="settings_custom_color">Custom Color</string>
-    <string name="settings_hex_color">HEX Color</string>
+    <!-- 计数文案：数量为 1 时英文要用单数（%d items → 1 item），故用 plurals。 -->
+    <plurals name="settings_days">
+        <item quantity="one">%d day</item>
+        <item quantity="other">%d days</item>
+    </plurals>
     <string name="settings_select_start_page">Default Start Page</string>
     <string name="settings_select_bill_type">Default Bill Type</string>
     <string name="settings_select_dark_mode">Dark Mode</string>
@@ -192,7 +216,11 @@
     <string name="settings_clear_cache_confirm">Clear image cache and temporary files? Your personal data will not be affected.</string>
     <string name="settings_clear_cache_action">Clear</string>
     <string name="settings_crash_log">Crash Logs</string>
-    <string name="settings_crash_log_subtitle">%1$d files · %2$d KB</string>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="settings_crash_log_subtitle">
+        <item quantity="one">%1$d file · %2$d KB</item>
+        <item quantity="other">%1$d files · %2$d KB</item>
+    </plurals>
     <string name="settings_crash_log_note">Crash logs help diagnose issues. They are redacted and contain no passwords or other sensitive data.</string>
     <string name="settings_crash_log_export">Export / Share</string>
     <string name="settings_crash_log_clear">Clear</string>
@@ -218,7 +246,6 @@
     <string name="empty_title">No Data</string>
     <string name="done">Done</string>
     <string name="back">Back</string>
-    <string name="create_new">Create</string>
     <string name="backup_show_password">Show password</string>
     <string name="backup_hide_password">Hide password</string>
     <string name="bill_import_error_too_large">File too large to import (max 30MB)</string>
@@ -244,6 +271,7 @@
     <!-- Dashboard Module -->
     <string name="dashboard_card_manage">Card Management</string>
     <string name="dashboard_net_worth">Net Worth</string>
+    <string name="dashboard_demo_included">includes samples</string>
     <string name="dashboard_monthly_expense">Monthly Expense</string>
     <string name="dashboard_monthly_income">Monthly Income</string>
     <string name="dashboard_monthly_balance">Monthly Balance %s</string>
@@ -254,12 +282,17 @@
     <string name="dashboard_quick_anniversary">Anniversary</string>
     <string name="dashboard_budget_alert">Budget Alert</string>
     <string name="dashboard_budget_alert_message">Monthly expense ¥%.2f exceeds 80%% of budget</string>
-    <string name="dashboard_goal_progress">Goal Progress</string>
-    <string name="dashboard_goals_completed">%1$d/%2$d completed</string>
-    <string name="dashboard_no_goals">No goals, tap to add</string>
     <string name="dashboard_today">Today</string>
-    <string name="dashboard_days_until">%d days left</string>
-    <string name="dashboard_days_passed">%d days passed</string>
+    <!-- 计数文案：数量为 1 时英文要用单数（%d items → 1 item），故用 plurals。 -->
+    <plurals name="dashboard_days_until">
+        <item quantity="one">%d day left</item>
+        <item quantity="other">%d days left</item>
+    </plurals>
+    <!-- 计数文案：数量为 1 时英文要用单数（%d items → 1 item），故用 plurals。 -->
+    <plurals name="dashboard_days_passed">
+        <item quantity="one">%d day passed</item>
+        <item quantity="other">%d days passed</item>
+    </plurals>
     <string name="dashboard_no_anniversaries">No anniversaries, tap to add</string>
     <string name="dashboard_asset_distribution">Asset Distribution</string>
     <plurals name="dashboard_items_count">
@@ -267,7 +300,11 @@
         <item quantity="other">%d items</item>
     </plurals>
     <string name="dashboard_recorded">Recorded</string>
-    <string name="dashboard_items_recorded">%d items</string>
+    <!-- 计数文案：数量为 1 时英文要用单数（%d items → 1 item），故用 plurals。 -->
+    <plurals name="dashboard_items_recorded">
+        <item quantity="one">%d item</item>
+        <item quantity="other">%d items</item>
+    </plurals>
     <string name="dashboard_card_habit_today">Today\'s Check-in</string>
     <string name="dashboard_card_subscription">Subscription Alerts</string>
     <string name="dashboard_habit_today_title">Today\'s Check-in</string>
@@ -278,16 +315,13 @@
     <string name="dashboard_habit_period_weekly">Weekly</string>
     <string name="dashboard_habit_period_monthly">Monthly</string>
     <string name="dashboard_habit_go_all">Check in all</string>
-    <string name="dashboard_habit_no_data">No habits to check in</string>
-    <string name="dashboard_subscription_due_count">%1$d due</string>
+    <string tools:ignore="PluralsCandidate" name="dashboard_subscription_due_count">%1$d due</string>
     <string name="dashboard_subscription_price">¥%1$s</string>
-    <string name="dashboard_subscription_hint">%1$d billings within 7 days</string>
-    <string name="dashboard_goals_view_all">View all goals</string>
-    <string name="dashboard_anniversaries_more">%1$d more · View all</string>
+    <string tools:ignore="PluralsCandidate" name="dashboard_subscription_hint">%1$d billings within 7 days</string>
+    <string tools:ignore="PluralsCandidate" name="dashboard_anniversaries_more">%1$d more · View all</string>
     <string name="dashboard_card_net_worth">Net Worth</string>
     <string name="dashboard_card_quick_actions">Quick Actions</string>
     <string name="dashboard_card_budget_alert">Budget Alert</string>
-    <string name="dashboard_card_goals">Goal Progress</string>
     <string name="dashboard_card_anniversaries">Anniversaries</string>
     <string name="dashboard_card_asset_distribution">Asset Distribution</string>
     <string name="dashboard_card_today">Today</string>
@@ -334,213 +368,26 @@
     <string name="quote_12">Good start half the battle</string>
     <!-- Life Module -->
     <string name="life_title">Life</string>
-    <string name="life_mood">Mood</string>
-    <!-- Life Module - Additional -->
-    <string name="life_error_load_failed">Load failed</string>
-    <string name="life_error_save_failed">Save failed</string>
-    <string name="life_error_delete_failed">Delete failed</string>
-    <string name="life_error_create_failed">Create failed</string>
-    <string name="life_error_checkin_failed">Check-in failed</string>
     <string name="life_data_load_error">Data loading error, please try again later</string>
-    <string name="life_data_temp_unavailable">Focus data temporarily unavailable, pull to refresh</string>
     <!-- Life Screen -->
     <string name="life_screen_retry">Retry</string>
-    <string name="life_search_recent">Recent searches</string>
     <string name="life_search_no_result">No results found</string>
-    <string name="life_search_items">Items</string>
-    <string name="life_search_templates">Templates</string>
-    <string name="life_search_empty_hint">Enter keywords to search items and templates</string>
-    <string name="life_plan_no_subtasks">No subtasks yet. Tap "Add subtask" to begin.</string>
-    <string name="life_plan_archived">Archived</string>
-    <string name="life_plan_overdue_banner">Past end %1$s · %2$d%% done (incomplete)</string>
-    <string name="life_plan_remaining">Remaining:</string>
-    <string name="life_plan_times">%1$s \u00D7%2$d</string>
-    <string name="life_plan_archive">Archive</string>
-    <string name="life_plan_mark_done">Mark done</string>
-    <string name="life_plan_all_done">All subtasks done · %1$d%% completion</string>
-    <string name="life_plan_streak">%1$d-day streak</string>
-    <string name="life_plan_today_progress">Today %1$d/%2$d</string>
-    <string name="life_plan_done_overall">%1$d%% done</string>
-    <string name="life_plan_ended">Ended</string>
-    <string name="life_plan_in_progress">In progress</string>
-    <string name="life_plan_group_daily">Daily</string>
-    <string name="life_plan_group_weekly">Weekly</string>
-    <string name="life_plan_group_monthly">Monthly</string>
-    <string name="life_plan_group_milestone">Milestones</string>
-    <string name="life_plan_every_week">Weekly \u00B7 %1$s</string>
-    <string name="life_plan_every_month">Monthly \u00B7 day %1$d</string>
-    <string name="life_plan_due">Due %1$s</string>
-    <string name="life_plan_done">Done</string>
-    <string name="life_plan_day_view">Day view</string>
-    <string name="life_plan_today">today</string>
-    <string name="life_plan_add_subtask">Add subtask</string>
-    <string name="life_plan_edit">Edit</string>
-    <string name="life_plan_subtask_label">Subtask title</string>
-    <string name="life_plan_milestone_on">Due %1$d/%2$d</string>
-    <string name="life_plan_pick_date">Pick a date</string>
-    <string name="life_plan_add">Add</string>
-    <string name="life_section_title_plan">Plans</string>
-    <string name="life_section_title_time">Time</string>
-    <string name="life_section_title_record">Records</string>
-    <string name="life_section_title_custom">Custom</string>
     <!-- Life Screen - Create Type Selector -->
-    <string name="life_select_type_to_create">Select type to create</string>
-    <string name="life_type_saving">Savings Plan</string>
-    <string name="life_type_shopping">Shopping Plan</string>
-    <string name="life_type_todo">To-Do</string>
-    <string name="life_type_travel">Travel Plan</string>
-    <string name="life_type_reading">Reading</string>
-    <string name="life_type_study">Study Plan</string>
-    <string name="life_type_countdown">Countdown</string>
-    <string name="life_type_countup">Count Up</string>
-    <string name="life_type_birthday">Birthday</string>
-    <string name="life_type_anniversary">Anniversary</string>
-    <string name="life_type_habit">Habit</string>
-    <string name="life_type_mood">Mood</string>
-    <string name="life_type_journal">Journal</string>
-    <string name="life_type_subscription">Subscription</string>
-    <string name="life_type_report">Report</string>
+    <string name="life_select_type_to_create">New record</string>
     <string name="life_template_manage">Template Management</string>
-    <!-- Life - Common Actions -->
-    <string name="life_cancel">Cancel</string>
     <string name="life_back">Back</string>
     <string name="life_new_create">New</string>
     <string name="life_discard">Discard</string>
-    <!-- Life - Detail Screens -->
-    <string name="life_confirm_delete_record">Confirm delete this record?</string>
-    <string name="life_confirm_discard">Discard changes?</string>
-    <string name="life_confirm_discard_hint">You have unsaved changes that will be lost.</string>
-    <string name="life_continue_editing">Continue Editing</string>
-    <string name="life_edit_title">Edit %s</string>
-    <string name="life_create_title">New %s</string>
-    <string name="life_input_title">Enter title</string>
-    <string name="life_item_detail_delete_confirm">Delete?</string>
-    <string name="life_item_detail_delete_hint">You can find it in the recycle bin after deletion</string>
-    <string name="life_item_detail_title">Detail</string>
-    <string name="life_confirm_delete_countup">Delete this count up?</string>
-    <string name="life_confirm_delete_habit">Delete this habit?</string>
-    <string name="life_countdown_title">Countdown</string>
-    <string name="life_confirm_delete_countdown">Delete this countdown?</string>
-    <string name="life_empty_countdown">No countdowns yet</string>
-    <string name="life_empty_countdown_subtitle">Tap + in the top right to create your first countdown</string>
-    <string name="life_empty_countdown_action">New Countdown</string>
-    <string name="life_countdown_expired">Expired</string>
-    <string name="life_countdown_day">days</string>
-    <string name="life_countdown_expired_text">Expired · %s</string>
-    <string name="life_countdown_active_text">%s · Tap to view</string>
-    <string name="life_anniversary_title">Anniversary</string>
-    <string name="life_confirm_delete_anniversary">Delete this anniversary?</string>
-    <string name="life_empty_anniversary">No anniversaries yet</string>
-    <string name="life_empty_anniversary_subtitle">Tap + in the top right to record your important anniversaries</string>
-    <string name="life_empty_anniversary_action">New Anniversary</string>
-    <string name="life_anniversary_days_ago">%d days ago</string>
-    <string name="life_date_not_set">No date</string>
-    <string name="life_birthday_title">Birthday</string>
-    <string name="life_confirm_delete_birthday">Delete this birthday?</string>
-    <string name="life_empty_birthday">No birthdays yet</string>
-    <string name="life_empty_birthday_subtitle">Tap + in the top right to add birthdays</string>
-    <string name="life_empty_birthday_action">Add Birthday</string>
-    <string name="life_birthday_days_after">days left</string>
-    <string name="life_birthday_last_gift">Last gift: %s</string>
-    <string name="life_empty_todo_subtitle">Tap + in the top right to add a to-do</string>
-    <string name="life_empty_subscription_subtitle">Tap + in the top right to add a subscription</string>
-    <string name="life_empty_travel_subtitle">Tap + in the top right to plan your trip</string>
-    <string name="life_empty_shopping_subtitle">Tap + in the top right to add a shopping plan</string>
-    <string name="life_empty_reading_subtitle">Tap + in the top right to start your reading journey</string>
-    <string name="life_empty_study_subtitle">Tap + in the top right to create your first study plan</string>
-    <string name="life_journal_title">Journal</string>
-    <string name="life_journal_write">Write Journal</string>
-    <string name="life_journal_empty_first">Record your first journal entry</string>
-    <string name="life_journal_empty_hint">Everyday moments are worth recording</string>
-    <string name="life_journal_write_one">Write one</string>
-    <string name="life_achievement_title">Achievements</string>
-    <string name="life_achievement_unlocked">Unlocked</string>
-    <string name="life_achievement_locked">Locked</string>
-    <string name="life_achievement_close">Close</string>
-    <string name="life_achievement_unlocked_on">Unlocked on %s</string>
-    <string name="life_factor_analysis">Triggers</string>
-    <string name="life_factor_analysis_count">%d times</string>
-    <!-- Life - Habit -->
-    <string name="life_habit_checkin">Check in</string>
-    <string name="life_habit_checked">Checked</string>
-    <string name="life_habit_month_rate">Monthly Rate</string>
-    <string name="life_habit_streak">%d days</string>
-    <string name="life_habit_streak_label">Consecutive Days</string>
-    <string name="life_habit_total_checkins">%d times</string>
-    <string name="life_habit_total_label">Total Check-ins</string>
-    <string name="life_habit_heatmap">Check-in Heatmap</string>
-    <string name="life_habit_name">Habit Name</string>
-    <string name="life_habit_category">Category</string>
-    <string name="life_habit_category_daily">Daily Habit</string>
-    <string name="life_habit_category_fitness">Fitness</string>
-    <string name="life_habit_category_reading">Reading &amp; Study</string>
-    <string name="life_habit_frequency">Frequency</string>
-    <string name="life_habit_frequency_daily">Daily</string>
-    <string name="life_habit_frequency_weekly">Weekly</string>
-    <string name="life_habit_frequency_monthly">Monthly</string>
-    <string name="life_habit_weekly_target">Weekly Target</string>
     <string name="life_habit_less">Less</string>
     <string name="life_habit_more">More</string>
-    <string name="life_habit_filter_stats">Stats</string>
     <string name="life_habit_filter_timeline">Timeline</string>
-    <string name="life_habit_achievement">Achievements</string>
-    <string name="life_habit_new">New Habit</string>
-    <string name="life_habit_create_btn">Create</string>
-    <!-- Life - CountUp -->
-    <string name="life_countup_title">Count Up</string>
-    <string name="life_countup_days">%d days</string>
-    <string name="life_countup_milestone">%d days to reach</string>
     <!-- Life - Shopping Kanban -->
     <!-- Life - Subscription -->
     <!-- Life - Travel -->
     <!-- Life - Todo -->
-    <!-- Life - Report -->
-    <string name="life_report_tab_weekly">Weekly</string>
-    <string name="life_report_tab_monthly">Monthly</string>
-    <!-- Life - Focus -->
-    <string name="life_focus_giveup">Give Up</string>
-    <string name="life_focus_giveup_confirm">Confirm give up?</string>
-    <string name="life_focus_giveup_hint">Current focus progress will be lost</string>
-    <string name="life_focus_continue">Continue Focus</string>
-    <string name="life_focus_title">Focus</string>
-    <string name="life_focus_stats">Stats</string>
-    <string name="life_focus_today">Today\'s Focus</string>
-    <string name="life_focus_today_minutes">Total %d minutes</string>
-    <string name="life_focus_today_summary">Today %1$d minutes, total %2$d minutes</string>
-    <string name="life_focus_pause">Pause</string>
-    <string name="life_focus_start">Start</string>
-    <string name="life_focus_complete">Complete</string>
-    <!-- Life - Mood -->
-    <string name="life_mood_save">Save</string>
-    <string name="life_mood_happy">Happy</string>
-    <string name="life_mood_normal">Calm</string>
-    <string name="life_mood_upset">Down</string>
-    <string name="life_mood_sad">Sad</string>
-    <string name="life_mood_angry">Angry</string>
-    <string name="life_mood_question">How are you feeling?</string>
-    <string name="life_mood_edit">Edit Mood Record</string>
-    <string name="life_mood_factors">Triggers</string>
-    <string name="life_mood_factor_work">Work</string>
-    <string name="life_mood_factor_health">Health</string>
-    <string name="life_mood_factor_family">Family</string>
-    <string name="life_mood_factor_finance">Finance</string>
-    <string name="life_mood_factor_weather">Weather</string>
-    <string name="life_mood_factor_social">Social</string>
-    <string name="life_mood_content_hint">Write something... (optional)</string>
     <!-- Life - Journal -->
-    <!-- Life - Deposit Sheet -->
-    <string name="life_deposit_title">Deposit</string>
-    <string name="life_deposit_save">Save</string>
-    <!-- Life - Delete Confirm -->
-    <string name="life_delete_confirm_default">Confirm delete this record?</string>
     <!-- Life - Dynamic Form -->
     <!-- Life - Item Detail -->
-    <!-- Life - Template Create -->
-    <string name="life_template_save_error">Save failed, content saved to draft</string>
-    <!-- Life - Create Item Warning -->
-    <string name="life_item_limit_reached">Limit reached (10,000 records), please archive or delete old items</string>
-    <string name="life_item_limit_warning">Approaching limit (%d/10,000), consider archiving</string>
-    <string name="life_item_limit_info">This template has %d records, consider archiving old items</string>
     <!-- Life - Accu Days related -->
     <!-- Bill Import Errors -->
     <string name="bill_import_error_read_file">Unable to read file</string>
@@ -551,90 +398,36 @@
     <string name="bill_import_error_ocr_invalid">No valid transactions recognized</string>
     <string name="bill_import_error_ocr_failed">Recognition failed: %s</string>
     <string name="bill_import_error_invalid_amount">Please enter a valid amount</string>
-    <!-- Widget -->
-    <string name="widget_app_name">PalmNote</string>
-    <string name="widget_monthly_expense">Monthly Expense</string>
-    <string name="widget_monthly_income">Monthly Income</string>
-    <string name="widget_today_expense">Today Expense</string>
-    <string name="widget_today_income">Today Income</string>
-    <string name="widget_bill_count">Bills</string>
-    <string name="widget_recent_bills">Recent Bills</string>
     <string name="widget_bill_desc">Bill Overview Widget - Monthly income and expense overview</string>
     <string name="widget_todo_title">Todo List</string>
-    <string name="widget_today_todo">Today\'s Todo</string>
     <string name="widget_overdue">Overdue</string>
     <string name="widget_completed">Completed</string>
-    <string name="widget_todo_unit">items</string>
-    <string name="widget_todo_list_label">Todo List</string>
     <string name="widget_todo_desc">Life Todo Widget - Today\'s todo and overdue reminders</string>
     <string name="widget_counter_title">Life Counter</string>
-    <string name="widget_days_left">left</string>
-    <string name="widget_countdown">Countdown</string>
-    <string name="widget_birthday">Birthday</string>
-    <string name="widget_anniversary">Anniversary</string>
     <string name="widget_upcoming_events">Upcoming</string>
     <string name="widget_counter_desc">Life Counter Widget - Countdown, birthday, anniversary</string>
-    <string name="widget_no_countdown">No countdown</string>
     <string name="widget_asset_title">Assets</string>
-    <string name="widget_asset_total">Total Assets</string>
-    <string name="widget_asset_value">Total Value</string>
     <string name="widget_asset_held">In Use</string>
-    <string name="widget_asset_warranty">Warranty</string>
-    <string name="widget_asset_maintenance">Maintenance</string>
-    <string name="widget_asset_categories">Categories</string>
     <string name="widget_asset_desc">Asset Widget - Asset statistics and category distribution</string>
     <string name="widget_vault_title">Vault</string>
     <string name="widget_vault_entries">entries</string>
     <string name="widget_vault_hint">Tap to open vault</string>
     <string name="widget_vault_desc">Vault Widget - Password entry count</string>
     <string name="widget_dashboard_title">Overview</string>
-    <string name="widget_dashboard_goals">Goals</string>
-    <string name="widget_dashboard_todos">Todos</string>
-    <string name="widget_dashboard_habits">Habits</string>
-    <string name="widget_dashboard_anniversaries">Events</string>
-    <string name="widget_dashboard_quick_actions">Quick Actions</string>
-    <string name="widget_action_bill">New Bill</string>
-    <string name="widget_action_asset">Asset</string>
-    <string name="widget_action_todo">Todo</string>
     <string name="widget_dashboard_desc">Dashboard Widget - Overview of all modules</string>
     <string name="widget_quick_bill_title">Quick Bill</string>
-    <string name="widget_add_expense">Add Expense</string>
-    <string name="widget_add_income">Add Income</string>
     <string name="widget_quick_bill_desc">Quick Bill Widget - One-tap quick bill entry</string>
-    <string name="widget_life_todo">Life Todo</string>
-    <string name="widget_today_count">Today</string>
-    <string name="widget_overdue_count">Overdue</string>
-    <string name="widget_completed_count">Completed</string>
-    <string name="widget_todo_list">Todo List</string>
-    <string name="widget_life_counter">Life Counter</string>
-    <string name="widget_countdown_label">Countdown</string>
-    <string name="widget_birthday_label">Birthday</string>
-    <string name="widget_anniversary_label">Anniversary</string>
-    <string name="widget_counter_list">Upcoming</string>
-    <string name="widget_asset_overview">Assets</string>
-    <string name="widget_asset_label">Assets</string>
-    <string name="widget_asset_category">Categories</string>
     <string name="widget_goals_label">Goals</string>
     <string name="widget_todos_label">Todos</string>
-    <string name="widget_habits_label">Habits</string>
-    <string name="widget_vault_label">Vault</string>
-    <string name="widget_quick_bill">Quick Bill</string>
     <string name="widget_add_bill">Add Bill</string>
-    <string name="widget_add_bill_hint">Tap to add</string>
-    <string name="widget_vault_recent">Recent</string>
     <string name="widget_vault_empty">No entries</string>
     <string name="widget_bill_empty">No bills yet</string>
-    <string name="widget_bill_overview">Bill Overview</string>
     <string name="widget_todo_empty">All clear!</string>
     <string name="widget_counter_empty">No events</string>
     <string name="widget_asset_empty">No items</string>
     <string name="widget_budget_remaining">Budget Left</string>
     <string name="widget_net_income">Net Income</string>
-    <string name="widget_today_remaining">Today Remaining</string>
     <string name="widget_days_label">days</string>
-    <string name="widget_month_format">%d/</string>
-    <string name="widget_this_month">This Month</string>
-    <string name="widget_days_elapsed">Elapsed %1$d / %2$d days</string>
     <string name="widget_status_held">Held</string>
     <string name="widget_status_away">Lent out</string>
     <string name="widget_status_removed">Removed</string>
@@ -649,12 +442,16 @@
     <string name="widget_budget_used_format">Budget %1$d%% used</string>
     <string name="widget_budget_top_format">%1$s budget %2$d%% used</string>
     <string name="widget_month_balance_format">Balance %1$s</string>
-    <string name="widget_todo_remaining_format">%1$d pending</string>
-    <string name="widget_todo_footer_format">%1$d today · %2$d to go</string>
+    <string tools:ignore="PluralsCandidate" name="widget_todo_remaining_format">%1$d pending</string>
+    <string tools:ignore="PluralsCandidate" name="widget_todo_footer_format">%1$d today · %2$d to go</string>
     <string name="widget_goal_all_done">All done</string>
     <string name="widget_no_goals">No goals</string>
     <string name="widget_no_anniversary">No anniversaries</string>
-    <string name="widget_days_remaining_format">%1$d days left</string>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="widget_days_remaining_format">
+        <item quantity="one">%1$d day left</item>
+        <item quantity="other">%1$d days left</item>
+    </plurals>
     <string name="widget_budget_used_format_preview">Dining budget 82% used</string>
     <string name="widget_preview_todo_1">Buy accessories</string>
     <string name="widget_preview_todo_2">Inventory check</string>
@@ -680,9 +477,13 @@
     <string name="widget_shortcuts_desc">Shortcuts Widget - One-tap access to key features</string>
     <string name="widget_days_unit">days</string>
     <string name="widget_tomorrow">tomorrow</string>
-    <string name="widget_days_later">%d days</string>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="widget_days_later">
+        <item quantity="one">%d day</item>
+        <item quantity="other">%d days</item>
+    </plurals>
     <!-- Bill Import Diagnostics -->
-    <string name="bill_import_diag_file_size">File size: %d bytes</string>
+    <string tools:ignore="PluralsCandidate" name="bill_import_diag_file_size">File size: %d bytes</string>
     <string name="bill_import_diag_format">Format: %s</string>
     <string name="bill_import_diag_records">Parsed records: %d</string>
     <string name="bill_import_diag_lines">Text lines: %d</string>
@@ -731,15 +532,31 @@
     <string name="asset_depreciation">Depreciation</string>
     <string name="asset_warranty_info">Warranty Info</string>
     <string name="asset_warranty_expiry_format">Expires: %s</string>
-    <string name="asset_warranty_remaining_days">%d days left</string>
-    <string name="asset_warranty_expired_days">Expired %d days ago</string>
+    <!-- 计数文案：数量为 1 时英文要用单数（%d items → 1 item），故用 plurals。 -->
+    <plurals name="asset_warranty_remaining_days">
+        <item quantity="one">%d day left</item>
+        <item quantity="other">%d days left</item>
+    </plurals>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="asset_warranty_expired_days">
+        <item quantity="one">Expired %d day ago</item>
+        <item quantity="other">Expired %d days ago</item>
+    </plurals>
     <string name="asset_maintenance_info">Maintenance Info</string>
     <string name="asset_maintenance_interval">Maintenance Interval</string>
     <string name="asset_maintenance_interval_hint">Interval (days)</string>
     <string name="asset_last_maintenance_format">Last maintenance: %s</string>
-    <string name="asset_maintenance_cycle_format">Maintenance cycle: %d days</string>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="asset_maintenance_cycle_format">
+        <item quantity="one">Maintenance cycle: %d day</item>
+        <item quantity="other">Maintenance cycle: %d days</item>
+    </plurals>
     <string name="asset_maintenance_needed">Maintenance Due</string>
-    <string name="asset_days_later_format">in %d days</string>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="asset_days_later_format">
+        <item quantity="one">in %d day</item>
+        <item quantity="other">in %d days</item>
+    </plurals>
     <string name="asset_maintenance_expired">Expired</string>
     <string name="asset_complete_maintenance">Complete Maintenance</string>
     <string name="asset_insurance_info">Insurance Info</string>
@@ -771,12 +588,20 @@
     <string name="asset_linked_bill">Linked Bill</string>
     <string name="asset_linked_moment">Linked Moment</string>
     <string name="asset_usage_records">Usage Records</string>
-    <string name="asset_usage_count_format">%d uses</string>
+    <!-- 计数文案：数量为 1 时英文要用单数（%d items → 1 item），故用 plurals。 -->
+    <plurals name="asset_usage_count_format">
+        <item quantity="one">%d use</item>
+        <item quantity="other">%d uses</item>
+    </plurals>
     <string name="asset_record_usage">Record Use</string>
     <string name="asset_no_usage_records">No usage records</string>
     <string name="asset_click_to_record_usage">Tap the button above to record usage</string>
     <string name="asset_collapse">Collapse</string>
-    <string name="asset_expand_all_format">Show all %d records</string>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="asset_expand_all_format">
+        <item quantity="one">Show all %d record</item>
+        <item quantity="other">Show all %d records</item>
+    </plurals>
     <string name="asset_status_change">Status Change</string>
     <string name="asset_status_held">Held</string>
     <string name="asset_status_away">Away</string>
@@ -810,13 +635,11 @@
     <string name="asset_dialog_delete_title">Delete Item</string>
     <string name="asset_dialog_delete_confirm">Delete \"%s\"? It can be restored from the recycle bin.</string>
     <string name="asset_edit_usage_record">Edit Usage Record</string>
-    <string name="asset_close">Close</string>
     <!-- Asset Categories -->
     <!-- Add Asset Screen -->
     <string name="asset_add_title">Add Item</string>
     <string name="asset_edit_title">Edit Item</string>
     <string name="asset_image_section">Item Images</string>
-    <string name="asset_remove_image">Remove</string>
     <string name="asset_image_hint">First image is the cover, up to 4 images</string>
     <string name="asset_input_name_hint">Enter item name</string>
     <string name="asset_custom_acquisition">Custom acquisition</string>
@@ -849,7 +672,6 @@
     <string name="backup_error_corrupted">Backup file is corrupted or empty</string>
     <string name="backup_error_cross_device">This backup cannot be restored on this device: it lacks the key required for cross-device restore (usually an unencrypted backup, or one created by an older version). Restore it on the original device, or set a password and create a new backup before switching phones</string>
     <string name="backup_error_create_failed">Backup failed</string>
-    <string name="backup_error_restore_failed">Restore failed</string>
     <!-- Calendar Sync -->
     <string name="calendar_sync_name">PalmNote</string>
     <string name="calendar_sync_display_name">PalmNote Sync</string>
@@ -859,11 +681,6 @@
     <string name="calendar_event_person_format">Person: %s</string>
     <!-- Field Validation -->
     <!-- Date Format -->
-    <!-- Currency Format -->
-    <!-- App Lock -->
-    <string name="app_lock_change_pin">Change PIN</string>
-    <string name="app_lock_forgot_pin_confirm">Clear PIN code? This will remove app lock protection.</string>
-    <string name="app_lock_forgot_pin_action">Clear</string>
     <string name="app_lock_pin_changed">PIN changed successfully</string>
     <!-- Notifications -->
     <string name="notification_daily_title">Daily Reminder</string>
@@ -873,20 +690,28 @@
     <string name="notification_birthday_title">Birthday Reminder</string>
     <string name="notification_birthday_message">"%s"\'s birthday is coming!</string>
     <string name="notification_anniversary_title">Anniversary Reminder</string>
-    <string name="notification_anniversary_message">"%1$s" %2$d anniversary is approaching</string>
+    <string tools:ignore="PluralsCandidate" name="notification_anniversary_message">"%1$s" %2$d anniversary is approaching</string>
     <string name="notification_countdown_today_title">Countdown Complete</string>
     <string name="notification_countdown_today_message">"%s" is today!</string>
+    <string name="notification_action_complete">Mark done</string>
     <string name="notification_countdown_soon_title">Countdown Ending Soon</string>
-    <string name="notification_countdown_soon_message">"%1$s" has %2$d days left</string>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="notification_countdown_soon_message">
+        <item quantity="one">"%1$s" has %2$d day left</item>
+        <item quantity="other">"%1$s" has %2$d days left</item>
+    </plurals>
     <string name="notification_milestone_title">Count Up Milestone</string>
-    <string name="notification_milestone_message">You\'ve kept "%1$s" going for %2$d days!</string>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="notification_milestone_message">
+        <item quantity="one">You\'ve kept "%1$s" going for %2$d day!</item>
+        <item quantity="other">You\'ve kept "%1$s" going for %2$d days!</item>
+    </plurals>
     <string name="notification_subscription_title">Subscription Billing Reminder</string>
     <string name="notification_subscription_message">"%1$s" billing today: %2$s</string>
     <!-- Notification Channels -->
     <!-- About Screen -->
     <string name="about_title">About</string>
-    <string name="about_subtitle">PalmNote</string>
-    <string name="about_description_detail">PalmNote is an elegant personal life management app that helps you track assets, manage bills, set goals, record anniversaries and life moments.</string>
+    <string name="about_description_detail">PalmNote is a local-first life tracking app — expenses, items, life plans and a password vault, all stored on your phone.</string>
     <string name="about_privacy_policy">Privacy Policy</string>
     <string name="about_terms_of_service">Terms of Service</string>
     <string name="about_made_with">Made with Love</string>
@@ -895,11 +720,14 @@
     <string name="about_open_source_license">Open Source License</string>
     <string name="license_load_failed">Failed to load license text</string>
     <string name="about_version_history">Version History</string>
-    <string name="about_feedback">Send Feedback</string>
     <string name="about_feedback_failed">No app available to open the link</string>
     <string name="version_history_load_failed">Failed to load version history</string>
     <string name="version_history_current">Current version</string>
-    <string name="version_history_item_count">%1$d updates</string>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="version_history_item_count">
+        <item quantity="one">%1$d update</item>
+        <item quantity="other">%1$d updates</item>
+    </plurals>
     <!-- Onboarding -->
     <string name="onboarding_title">Welcome to PalmNote</string>
     <string name="onboarding_subtitle">A quick tour first, then a few things about data safety</string>
@@ -927,7 +755,7 @@
     <string name="onboarding_local_title">Your Data Stays on This Phone</string>
     <string name="onboarding_local_body">No network, no collection, no upload — the app declares no network permission.</string>
     <string name="onboarding_pin_title">A Forgotten Master Password Cannot Be Recovered</string>
-    <string name="onboarding_pin_body">It protects your vault and encrypted backups and is stored only on this device. Please remember it.</string>
+    <string name="onboarding_pin_body">It protects your vault only; encrypted backups use a separate backup password you set. Both live only on this device, so please remember them.</string>
     <string name="onboarding_uninstall_title">Uninstalling or Clearing Data Erases Everything</string>
     <string name="onboarding_uninstall_body">This device holds the only copy — there is no cloud to restore from.</string>
     <string name="onboarding_backup_title">Backups Are Up to You</string>
@@ -950,7 +778,11 @@
     <string name="app_lock_auto_lock_timeout_hint">Lock after timeout or screen lock</string>
     <string name="app_lock_auto_lock_changed">Auto-lock mode updated</string>
     <string name="app_lock_auto_lock_timeout_duration">Timeout duration</string>
-    <string name="app_lock_auto_lock_minutes">%1$d minutes</string>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="app_lock_auto_lock_minutes">
+        <item quantity="one">%1$d minute</item>
+        <item quantity="other">%1$d minutes</item>
+    </plurals>
     <string name="app_lock_auto_lock_timeout_value">Timeout lock (%1$d min)</string>
     <string name="app_lock_change_pin_title">Change PIN</string>
     <string name="app_lock_change_pin_subtitle">Change app lock password</string>
@@ -974,13 +806,11 @@
     <string name="bill_sub_category">Sub Category</string>
     <string name="bill_location">Location</string>
     <string name="bill_tags">Tags</string>
-    <string name="bill_attachments">Attachments</string>
     <string name="bill_image_section">Images</string>
     <string name="bill_image_hint">Add receipt or invoice photos, up to 4</string>
     <string name="bill_reimbursement_status">Reimbursement Status</string>
     <string name="bill_reimbursed">Reimbursed</string>
     <string name="bill_pending_reimbursement">Pending</string>
-    <string name="bill_record_id">Record ID</string>
     <string name="bill_created_at">Created At</string>
     <string name="bill_updated_at">Updated At</string>
     <!-- Bill Import -->
@@ -990,9 +820,6 @@
     <string name="bill_import_parsing">Parsing…</string>
     <string name="bill_import_importing">Importing…</string>
     <string name="bill_import_failed">Import Failed</string>
-    <string name="bill_import_select_method">Select Import Method</string>
-    <string name="bill_import_file_desc">Import WeChat/Alipay bill files (CSV/XLSX)</string>
-    <string name="bill_import_image_desc">Take or select transaction screenshots for auto recognition</string>
     <string name="bill_import_hero_title">Add External Bill Statements</string>
     <string name="bill_import_hero_desc">Import a file or recognize images; entries are organized automatically</string>
     <string name="bill_import_file_desc_short">Batch import WeChat/Alipay CSV</string>
@@ -1014,52 +841,33 @@
     <string name="bill_import_tutorial_note">No need to unzip the attachment — select the archive itself. If it asks for a password, just enter it.</string>
     <string name="bill_import_tutorial_ack">Got it</string>
     <string name="bill_import_duplicate_existing">Already imported</string>
-    <string name="bill_import_summary">%1$d records · %2$d selected</string>
     <string name="bill_import_unrecognized">Unrecognized</string>
     <string name="bill_import_source_file">File</string>
-    <string name="bill_import_source_image">Image</string>
     <string name="bill_import_expense_sum">Expense total</string>
     <string name="bill_import_income_sum">Income total</string>
     <string name="bill_import_preview_source">Source</string>
-    <string name="bill_import_image_preview_title">Original image preview</string>
     <string name="bill_import_view_original">Tap to view original</string>
     <string name="bill_import_ocr_details">View recognition details</string>
     <string name="bill_import_complete">Import Complete</string>
-    <string name="bill_import_success_count">Successfully imported %d bills</string>
     <string name="bill_import_continue">Continue Import</string>
     <string name="bill_import_reselect">Reselect</string>
-    <string name="bill_import_select_all">Select All</string>
     <string name="bill_import_select_none">Deselect All</string>
     <string name="bill_import_wechat_bill">WeChat Bill</string>
     <string name="bill_import_alipay_bill">Alipay Bill</string>
-    <string name="bill_import_selected_count">Import %d bills</string>
-    <string name="bill_import_ocr_recognized">Recognized %1$d transactions, %2$d selected</string>
-    <string name="bill_import_ocr_tap_zoom">Tap image to zoom in</string>
-    <string name="bill_import_ocr_no_date">Date not recognized, will be saved as today</string>
-    <string name="bill_import_ocr_edit">Edit</string>
     <string name="bill_import_ocr_edit_title">Edit Recognition Result</string>
-    <string name="bill_import_ocr_result">Recognition Result</string>
     <string name="bill_import_amount">Amount</string>
     <string name="bill_import_merchant">Merchant</string>
     <string name="bill_import_date">Date</string>
-    <string name="bill_import_category">Category</string>
     <string name="bill_import_note">Note</string>
     <string name="bill_import_edit_bill">Edit Bill</string>
     <string name="bill_import_amount_invalid">Enter an amount greater than 0</string>
-    <string name="bill_import_hide_raw">Hide Original Text</string>
-    <string name="bill_import_show_raw">View Original Text</string>
     <string name="bill_import_save">Save Bill</string>
     <string name="bill_import_batch_save">Batch Save (%d)</string>
     <string name="bill_import_unknown_file">Unknown File</string>
     <string name="bill_import_screenshot">Screenshot</string>
-    <string name="bill_import_total_records">Total %d records</string>
-    <string name="bill_import_selected_records">%d selected</string>
     <string name="bill_import_selected">Selected</string>
     <string name="bill_import_change">Change</string>
-    <string name="bill_import_result_imported">Imported %1$d</string>
-    <string name="bill_import_result_skipped">Skipped %1$d</string>
-    <string name="bill_import_result_failed">Failed %1$d</string>
-    <string name="bill_import_export_failures">View &amp; export %1$d failed</string>
+    <string tools:ignore="PluralsCandidate" name="bill_import_export_failures">View &amp; export %1$d failed</string>
     <string name="bill_import_failed_csv_name">palmnote_import_failed.csv</string>
     <string name="bill_import_failed_export_ok">Failed records exported. Fix and re-import them.</string>
     <string name="bill_import_failed_export_error">Export failed, please retry</string>
@@ -1078,7 +886,11 @@
     <string name="bill_import_result_imported_label">Imported</string>
     <string name="bill_import_result_skipped_label">Skipped</string>
     <string name="bill_import_result_failed_label">Failed</string>
-    <string name="bill_import_result_total_subtitle">%1$d records processed</string>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="bill_import_result_total_subtitle">
+        <item quantity="one">%1$d record processed</item>
+        <item quantity="other">%1$d records processed</item>
+    </plurals>
     <string name="bill_import_review_line">To review · %1$s</string>
     <string name="bill_import_confidence_legend_title">Field confidence</string>
     <string name="bill_import_confidence_high">Reliably read</string>
@@ -1087,15 +899,15 @@
     <!-- Sorting station (file import result page) -->
     <string name="bill_import_confirm_title">Confirm Import</string>
     <string name="bill_import_confirm_all">Confirm All</string>
-    <string name="bill_import_review_headline">%1$d need your review</string>
-    <string name="bill_import_review_subtitle">%1$s · %2$d more ready</string>
-    <string name="bill_import_review_all_ready">%1$d ready to import</string>
+    <string tools:ignore="PluralsCandidate" name="bill_import_review_headline">%1$d need your review</string>
+    <string tools:ignore="PluralsCandidate" name="bill_import_review_subtitle">%1$s · %2$d more ready</string>
+    <string tools:ignore="PluralsCandidate" name="bill_import_review_all_ready">%1$d ready to import</string>
     <string name="bill_import_review_hint_amount">Low confidence · tap amount to edit</string>
     <string name="bill_import_review_hint_date">Missing date · tap card to confirm</string>
     <string name="bill_import_review_hint_merchant">Merchant incomplete · tap name to edit</string>
     <string name="bill_import_review_hint_category">Category unrecognized · tap category to edit</string>
     <string name="bill_import_category_entry">Category: %1$s</string>
-    <string name="bill_import_review_more">%1$d more to review · View all</string>
+    <string tools:ignore="PluralsCandidate" name="bill_import_review_more">%1$d more to review · View all</string>
     <string name="bill_import_filter_all_count">All %1$d</string>
     <string name="bill_import_filter_skipped">Skipped %1$d</string>
     <string name="bill_import_no_skipped">No skipped bills</string>
@@ -1130,7 +942,11 @@
     <string name="report_total_expense">Total Expense</string>
     <string name="report_total_income">Total Income</string>
     <string name="report_daily_avg">Daily Avg %s</string>
-    <string name="report_count_format">%d transactions</string>
+    <!-- 计数文案：数量为 1 时英文要用单数（%d items → 1 item），故用 plurals。 -->
+    <plurals name="report_count_format">
+        <item quantity="one">%d transaction</item>
+        <item quantity="other">%d transactions</item>
+    </plurals>
     <string name="report_other">Other</string>
     <string name="report_no_records">No records this month</string>
     <string name="report_category_ranking">Category Ranking</string>
@@ -1143,7 +959,11 @@
     <string name="account_book_manage_title">Book Management</string>
     <string name="account_book_add">Add Book</string>
     <string name="account_book_my_books">My Books</string>
-    <string name="account_book_count_format">%d books</string>
+    <!-- 计数文案：数量为 1 时英文要用单数（%d items → 1 item），故用 plurals。 -->
+    <plurals name="account_book_count_format">
+        <item quantity="one">%d book</item>
+        <item quantity="other">%d books</item>
+    </plurals>
     <string name="account_book_empty">No Books</string>
     <string name="account_book_empty_hint">Tap the button to add a book</string>
     <string name="account_book_delete_title">Delete Book</string>
@@ -1225,7 +1045,11 @@
     <string name="wallet_title">Account Management</string>
     <string name="wallet_add">Add Account</string>
     <string name="wallet_total_assets">Total Assets</string>
-    <string name="wallet_count_format">%d accounts</string>
+    <!-- 计数文案：数量为 1 时英文要用单数（%d items → 1 item），故用 plurals。 -->
+    <plurals name="wallet_count_format">
+        <item quantity="one">%d account</item>
+        <item quantity="other">%d accounts</item>
+    </plurals>
     <string name="wallet_empty">No Accounts</string>
     <string name="wallet_empty_hint">Tap the button to add an account</string>
     <string name="wallet_delete_title">Delete Account</string>
@@ -1311,7 +1135,6 @@
     <string name="backup_password">Enter password</string>
     <string name="backup_backing_up">Backing up…</string>
     <string name="backup_restore_title">Restore</string>
-    <string name="backup_restore_hint">Restoring replaces current data; a snapshot is saved first</string>
     <string name="backup_restore_from_file">Restore from file</string>
     <string name="backup_restore_from_file_desc">Supports encrypted and plain backup packages</string>
     <string name="backup_file_not_package">Not a backup file. Import CSV data on the Export &amp; Import page</string>
@@ -1330,22 +1153,32 @@
     <string name="backup_auto_interval">Frequency</string>
     <string name="backup_auto_off">Off</string>
     <string name="backup_auto_daily">Daily</string>
-    <string name="backup_auto_interval_option">Every %1$d days</string>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="backup_auto_interval_option">
+        <item quantity="one">Every %1$d day</item>
+        <item quantity="other">Every %1$d days</item>
+    </plurals>
     <string name="backup_auto_keep">Copies kept</string>
-    <string name="backup_auto_keep_option">%1$d copies</string>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="backup_auto_keep_option">
+        <item quantity="one">%1$d copy</item>
+        <item quantity="other">%1$d copies</item>
+    </plurals>
 
     <!-- Backup health -->
     <string name="backup_health_last_success">Last backup: %1$s</string>
     <string name="backup_health_never">No backup yet</string>
-    <string name="backup_health_stale">No new backup for %1$d days</string>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="backup_health_stale">
+        <item quantity="one">No new backup for %1$d day</item>
+        <item quantity="other">No new backup for %1$d days</item>
+    </plurals>
     <string name="backup_health_failed">Last automatic backup failed: %1$s</string>
     <string name="backup_health_failed_unknown">Last automatic backup failed</string>
     <string name="backup_health_dismiss">Got it</string>
-    <string name="backup_health_counts">%1$d total</string>
+    <string tools:ignore="PluralsCandidate" name="backup_health_counts">%1$d total</string>
     <string name="backup_health_counts_size">%1$d · %2$s</string>
 
-    <!-- Create and delete -->
-    <string name="backup_create_export">Export to folder</string>
     <string name="backup_existing">Existing backups</string>
     <string name="backup_delete">Delete</string>
     <string name="backup_delete_title">Delete this backup?</string>
@@ -1361,50 +1194,15 @@
     <!-- Field Components -->
     <!-- Asset Tags -->
     <!-- Settings Messages -->
-    <string name="settings_sync_success">Synced %d anniversaries to system calendar</string>
+    <string tools:ignore="PluralsCandidate" name="settings_sync_success">Synced %d anniversaries to system calendar</string>
     <string name="settings_sync_failed">Sync failed: %s</string>
     <string name="settings_sync_cleared">Calendar sync cleared</string>
     <string name="settings_export_failed">Export failed: %s</string>
-    <string name="settings_import_success">Import successful, %d records total</string>
-    <string name="settings_import_no_data">No importable data found</string>
-    <string name="settings_import_failed">Import failed: %s</string>
-    <string name="settings_import_success_with_skipped">Import complete: %1$d added, %2$d duplicates skipped</string>
-    <string name="settings_import_all_skipped">%d records already exist; nothing was overwritten</string>
-    <string name="settings_import_balance_recalculated">%d wallet balances recalculated from bills</string>
     <string name="settings_cache_cleared">Cache cleared</string>
     <string name="settings_cache_clear_failed">Clear failed: %s</string>
     <string name="settings_appearance_subtitle">Theme, language, accent color</string>
     <string name="settings_reminder_subtitle">Daily, bill, birthday reminders</string>
     <string name="settings_data_subtitle">Backup, export &amp; import, storage cleanup</string>
-    <string name="life_empty_habit_start">Start checking in</string>
-    <string name="life_empty_habit_hint">Build good habits</string>
-    <string name="life_empty_countup">No count-up yet</string>
-    <string name="life_empty_countup_subtitle">Record memorable days</string>
-    <string name="life_empty_countup_action">Create count-up</string>
-    <!-- Life - Template Empty States -->
-    <string name="life_empty_saving_title">No saving plans yet</string>
-    <string name="life_empty_saving_subtitle">Set a goal and start saving</string>
-    <string name="life_empty_shopping_title">Wishlist is empty</string>
-    <string name="life_empty_travel_title">No travel plans yet</string>
-    <string name="life_empty_reading_title">Bookshelf is empty</string>
-    <string name="life_empty_study_title">No study plans yet</string>
-    <string name="life_empty_todo_title">No to-do items</string>
-    <string name="life_empty_countup_title">No count up yet</string>
-    <string name="life_empty_countdown_title">No countdowns yet</string>
-    <string name="life_empty_birthday_title">No birthdays yet</string>
-    <string name="life_empty_anniversary_title">No anniversaries yet</string>
-    <string name="life_empty_subscription_title">No subscriptions yet</string>
-    <string name="life_empty_habit_title">Start your first habit</string>
-    <string name="life_empty_habit_subtitle">Choose a habit and check in daily</string>
-    <string name="life_empty_mood_title">No mood recorded today</string>
-    <string name="life_empty_mood_subtitle">Record how you feel right now</string>
-    <string name="life_empty_journal_title">No journal yet</string>
-    <string name="life_empty_journal_subtitle">Write about what happened today</string>
-    <string name="life_empty_report_title">No report data yet</string>
-    <string name="life_empty_report_subtitle">Reports are generated automatically as data accumulates</string>
-    <string name="life_empty_default_title">No data</string>
-    <string name="life_empty_default_subtitle">Tap + to add</string>
-    <string name="life_habit_times">times</string>
     <string name="settings_notification_permission_title">Enable Notification Permission</string>
     <string name="settings_notification_permission_text">Notification permission is required for timely reminders. We won\'t send spam.</string>
     <string name="settings_notification_permission_allow">Allow</string>
@@ -1424,20 +1222,7 @@
     <string name="privacy_consent_note">Tap the buttons above to read the full terms. By continuing, you agree that you have read and accepted the User Agreement and Privacy Policy.</string>
     <string name="privacy_dialog_agree">Agree and start</string>
     <string name="privacy_dialog_disagree">Disagree</string>
-    <string name="field_select_time">Select Time</string>
-    <string name="field_enabled">Enabled</string>
-    <string name="field_disabled">Disabled</string>
-    <string name="field_option">Option %s</string>
-    <string name="field_url_placeholder">https://</string>
-    <string name="field_email_placeholder">example@email.com</string>
-    <string name="field_phone_placeholder">Phone Number</string>
-    <string name="field_color_placeholder">#HEX</string>
-    <string name="field_image_placeholder">Enter image URL or path</string>
-    <string name="field_image_helper">Supports local paths and web URLs</string>
-    <string name="field_location_placeholder">Enter location name or address</string>
-    <string name="field_duration_format">HH:mm</string>
     <string name="life_preset">Preset</string>
-    <string name="life_create_template">Create Template</string>
     <!-- Trigger Engine Notifications -->
     <!-- Default Goal Categories -->
     <string name="goal_category_fitness">Fitness</string>
@@ -1482,65 +1267,23 @@
     <string name="tag_default_finance">Finance</string>
     <string name="tag_default_shopping">Shopping</string>
     <string name="tag_default_gift">Gift</string>
-    <!-- TimeAgo & Relative Time -->
-    <string name="time_hours_ago">%d hr ago</string>
-    <string name="time_days_ago">%d days ago</string>
-    <string name="time_weeks_ago">%d weeks ago</string>
-    <string name="time_months_ago">%d months ago</string>
-    <string name="time_years_ago">%d years ago</string>
-    <!-- Life Cards -->
-    <string name="life_card_status_completed">Completed</string>
-    <string name="life_card_status_archived">Archived</string>
-    <string name="life_card_status_ongoing">Ongoing</string>
     <string name="life_card_today">Today</string>
-    <string name="life_card_expired_prefix">Expired</string>
-    <string name="life_card_expired_overflow">999+</string>
-    <string name="life_card_tap_to_view">Tap to view</string>
-    <string name="life_card_more_events">(and %d more)</string>
     <string name="life_card_days_unit">days</string>
-    <!-- Life Item Detail -->
-    <string name="life_item_more">More</string>
-    <string name="life_item_delete">Delete</string>
-    <string name="life_item_data_not_found">Data not found</string>
-    <string name="life_item_updated_to">Updated to \"%s\"</string>
-    <string name="life_item_progress">Progress</string>
-    <string name="life_item_notes">Notes</string>
-    <string name="life_item_linked_data">Linked Data</string>
-    <string name="life_item_link_count">%d items</string>
-    <string name="life_item_no_links">No linked data</string>
-    <string name="life_item_add_link_hint">Tap to link a bill or asset</string>
-    <string name="life_item_time">Time</string>
-    <string name="life_item_created_at">Created %s</string>
-    <string name="life_item_updated_at">Updated %s</string>
-    <string name="life_item_deposit">Deposit</string>
-    <string name="life_item_archived_hint">Item archived, find it in Recycle Bin</string>
-    <string name="life_item_archive">Archive</string>
-    <!-- Life Dynamic Form -->
-    <string name="life_form_save_failed">Save failed, please try again</string>
-    <string name="life_form_save_success">Saved</string>
-    <string name="life_form_saved">Saved</string>
-    <string name="life_form_save_changes">Save Changes</string>
-    <string name="life_form_save">Save</string>
-    <string name="life_form_missing_required">Still needed: %s</string>
-    <string name="life_form_missing_sep">, </string>
-    <!-- Life Link Selector -->
-    <string name="life_link_title">Linked Data</string>
-    <string name="life_link_bills">Bills</string>
-    <string name="life_link_no_bills">No bills</string>
-    <string name="life_link_bill_format">Bill #%d</string>
-    <string name="life_link_assets">Assets</string>
-    <string name="life_link_no_assets">No assets</string>
-    <!-- Mood Trend Chart -->
-    <string name="life_mood_monthly_distribution">Monthly Mood Distribution</string>
-    <!-- Life Focus Preview -->
-    <string name="life_focus_preview_today">Today %d min</string>
     <!-- Life Template Field Labels -->
     <!-- Life Template Field Units -->
     <!-- Life Template Status Labels -->
     <!-- CSV Export/Import -->
     <string name="export_error_create_file">Unable to create file</string>
-    <string name="export_success">Export successful, %d records total</string>
-    <string name="export_success_images">Export successful, %1$d records total, including %2$d images</string>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="export_success">
+        <item quantity="one">Export successful, %d record total</item>
+        <item quantity="other">Export successful, %d records total</item>
+    </plurals>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="export_success_images">
+        <item quantity="one">Export successful, %1$d record total, including %2$d images</item>
+        <item quantity="other">Export successful, %1$d records total, including %2$d images</item>
+    </plurals>
     <string name="export_error_io">Export failed: %s</string>
     <string name="export_error_serialization">Export data serialization failed: %s</string>
     <string name="export_error_unknown">Unknown export error: %s</string>
@@ -1549,15 +1292,6 @@
     <string name="import_error_parse">Import data parse failed: %s</string>
     <string name="import_error_unknown">Unknown import error: %s</string>
     <!-- Shopping Plan -->
-    <!-- Report -->
-    <string name="life_report_title">Weekly &amp; Monthly Report</string>
-    <string name="life_report_empty">No reports yet</string>
-    <string name="life_report_empty_subtitle">Reports are auto-generated after using the app for a while</string>
-    <!-- Mood Record -->
-    <string name="life_mood_record">Mood Record</string>
-    <string name="life_mood_record_action">Record Mood</string>
-    <string name="life_mood_empty">No mood records yet</string>
-    <string name="life_mood_empty_subtitle">Tap + in the top right to record your first mood</string>
     <!-- Template Creation -->
     <string name="life_template_new">New Template</string>
     <string name="life_template_edit">Edit template</string>
@@ -1569,7 +1303,6 @@
     <string name="life_template_desc">Description (optional)</string>
     <string name="life_template_select_icon">Select Icon</string>
     <string name="life_template_select_color">Select Color</string>
-    <string name="life_template_category_selected">Selected: %1$s</string>
     <string name="life_template_field_text">Text</string>
     <string name="life_template_field_number">Number</string>
     <string name="life_template_field_date">Date</string>
@@ -1579,10 +1312,7 @@
     <string name="life_template_field_datetime">Date &amp; Time</string>
     <string name="life_template_field_rich_text">Rich Text</string>
     <string name="life_template_field_file">Attachment</string>
-    <string name="life_template_field_index">Field %d</string>
     <string name="life_template_field_name">Field Name</string>
-    <string name="life_template_field_type">Field Type</string>
-    <string name="life_template_field_required">Required</string>
     <string name="life_template_field_show_in_card">Show in card</string>
     <string name="life_template_field_show_as_progress">Progress ring</string>
     <string name="life_template_field_unit">Unit</string>
@@ -1590,69 +1320,80 @@
     <string name="life_template_field_max">Max</string>
     <string name="life_template_field_progress_style">Progress style</string>
     <string name="life_template_progress_auto">Auto</string>
-    <string name="life_template_progress_linear">Linear</string>
-    <string name="life_template_progress_ring">Ring</string>
     <string name="life_template_field_options_hint">Options (comma-separated)</string>
-    <string name="life_template_field_image">Image (coming later)</string>
+    <string name="life_template_field_image">Image</string>
     <string name="life_template_add_field">Add Field</string>
     <!-- P1-c: seven hands and detail skeleton -->
     <string name="life_stepper_minus">Decrease</string>
+    <string name="life_inline_edit_hint">Tap the value to edit</string>
+    <string name="life_inline_need_number">Enter a number</string>
+    <string name="life_inline_over_max">Max %1$s</string>
+    <string name="life_inline_under_min">Min %1$s</string>
     <string name="life_stepper_plus">Increase</string>
     <string name="life_row_add">Add row</string>
     <string name="life_row_remove">Remove row</string>
-    <string name="life_checklist_add_hint">Add item…</string>
-    <string name="life_table_col_name">Item</string>
-    <string name="life_table_col_price">Price</string>
-    <string name="life_table_col_qty">Qty</string>
-    <string name="life_table_add_row">Add row</string>
-    <string name="life_table_more_rows">%d rows total</string>
-    <string name="life_table_total">Total</string>
-    <string name="life_range_start">Start date</string>
-    <string name="life_range_end">End date</string>
-    <string name="life_range_days">%1$d days</string>
-    <string name="life_range_display">%1$s → %2$s · %3$d days</string>
-    <string name="life_person_add_hint">Add person…</string>
-    <string name="life_person_more">+%1$d</string>
-    <string name="life_map_add_point">Add place…</string>
-    <string name="life_map_points">%1$d places</string>
+    <string tools:ignore="PluralsCandidate" name="life_map_points">%1$d places</string>
     <string name="life_map_import_track">Import track (GPX / KML)</string>
-    <string name="life_map_import_failed">Could not parse a track from this file</string>
-    <string name="life_field_auto_calc">%1$s (calculated automatically)</string>
-    <string name="life_cycle_monthly">Monthly</string>
-    <string name="life_cycle_yearly">Yearly</string>
-    <string name="life_cycle_weekly">Weekly</string>
     <string name="life_detail_group_compound">Details &amp; lists</string>
     <string name="life_detail_group_media">Media &amp; space</string>
     <string name="life_detail_group_numeric">Numbers</string>
     <string name="life_detail_group_choice">Choices</string>
     <string name="life_detail_group_text">Text</string>
     <string name="life_detail_group_derived">Calculated</string>
+    <string name="life_detail_group_itinerary">Itinerary</string>
+    <string name="life_detail_group_companions_budget">Companions &amp; budget</string>
+    <string name="life_detail_group_album">Album</string>
     <string name="life_detail_remain">%1$s to go</string>
-    <string name="life_detail_streak_longest">Longest streak</string>
+    <string name="life_detail_streak_longest">Longest %1$s</string>
     <!-- Detail page (four-section skeleton §14) -->
     <string name="life_detail_no_value">Nothing yet</string>
     <string name="life_detail_more">More</string>
     <string name="life_detail_not_found">This record no longer exists</string>
     <string name="life_detail_time_footer">Updated %1$s · Created %2$s</string>
+    <string tools:ignore="PluralsCandidate" name="life_detail_relation_bills">%1$d linked bills</string>
+    <string tools:ignore="PluralsCandidate" name="life_detail_relation_notes">%1$d linked notes</string>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="life_detail_timeline_photos">
+        <item quantity="one">%1$d photo</item>
+        <item quantity="other">%1$d photos</item>
+    </plurals>
+    <string name="life_detail_timeline_no_photo">No photos</string>
     <string name="life_metric_daily">Daily avg</string>
+    <string name="life_metric_month">This month</string>
+    <string name="life_metric_longest">Longest</string>
+    <string name="life_metric_today">Today</string>
+    <string name="life_metric_week">This week</string>
+    <string name="life_metric_streak">Streak</string>
+    <string name="life_metric_photos">Photos</string>
+    <string name="life_metric_month_pieces">%1$s entries</string>
+    <string name="life_metric_streak_days">%1$s days</string>
+    <string name="life_metric_photos_count">%1$s photos</string>
+    <string name="life_metric_count_times">%1$s times</string>
+    <string name="life_metric_monthly_expense">Monthly spend</string>
+    <string name="life_metric_yearly_expense">Yearly spend</string>
     <string name="life_metric_kept">Days kept</string>
     <string name="life_metric_bought">Bought</string>
-    <string name="life_metric_done">Done</string>
     <string name="life_metric_left">Left</string>
     <string name="life_metric_total">Total</string>
     <string name="life_metric_itinerary">Stops</string>
+    <string name="life_metric_companions">With</string>
+    <string name="life_metric_budget">Budget</string>
+    <string name="life_metric_overdue">Overdue</string>
+    <string name="life_metric_done_this_week">Done this week</string>
+    <string name="life_metric_total_duration">Total time</string>
+    <string name="life_metric_month_average">Monthly avg</string>
     <string name="life_detail_delete_title">Delete this record?</string>
     <string name="life_detail_delete_message">This cannot be undone.</string>
     <string name="life_detail_delete_confirm">Delete</string>
     <string name="life_detail_achieved">Goal reached</string>
-    <string name="life_detail_days_to_charge">Renews in %1$d days</string>
+    <string tools:ignore="PluralsCandidate" name="life_detail_days_to_charge">Renews in %1$d days</string>
     <string name="life_detail_note_saved_pct">Saved %1$d%%</string>
     <string name="life_detail_note_spent_pct">Spent %1$d%%</string>
     <string name="life_detail_note_done_pct">Done %1$d%%</string>
     <string name="life_detail_note_target_days">Target %1$s days</string>
     <string name="life_detail_note_target_date">Target %1$s</string>
     <string name="life_detail_note_next_billing">Next %1$s</string>
-    <string name="life_detail_note_categories">%1$d categories</string>
+    <string tools:ignore="PluralsCandidate" name="life_detail_note_categories">%1$d categories</string>
     <string name="life_detail_label_budget">Budget %1$s</string>
     <string name="life_detail_unit_spent">Spent</string>
     <string name="life_detail_cycle_monthly">Monthly</string>
@@ -1677,62 +1418,23 @@
     <string name="life_detail_timer_resume">Resume</string>
     <string name="life_detail_timer_stop">Stop</string>
     <string name="life_detail_timer_saved">Recorded %1$s</string>
-    <string name="life_detail_route_points">%1$d stops</string>
+    <string tools:ignore="PluralsCandidate" name="life_detail_route_points">%1$d stops</string>
     <string name="life_route_disclaimer">Schematic only · not a geographic basemap · no territorial features rendered</string>
+    <string name="life_route_legend_track">Recorded track</string>
+    <string name="life_route_legend_plan">Planned route</string>
+    <string name="life_route_start">Start</string>
+    <string name="life_route_end">End</string>
+    <string name="life_route_scale_km">1 km (reference)</string>
+    <string name="life_route_scale_500m">500 m (reference)</string>
     <string name="life_detail_heat_checkin">This month</string>
     <string name="life_detail_heat_mood">Mood this month</string>
+    <string name="life_detail_focus_sessions">Today\'s sessions</string>
+    <string name="life_detail_focus_week">This week · Daily duration</string>
+    <string name="life_detail_focus_minutes">%1$d min</string>
     <string name="life_stats_heat_title">Last 16 weeks</string>
-    <string name="life_calendar_month">%1$d/%2$d</string>
-    <string name="life_calendar_day_items">%1$d/%2$d · %3$d items</string>
-    <string name="life_calendar_month_count">%1$d this month · Tap a day to review →</string>
-    <string name="life_view_board">All</string>
-    <string name="life_view_grid">Today</string>
-    <string name="life_view_calendar">Calendar</string>
-    <string name="life_view_default_set">Set as default page</string>
     <string name="life_all_search_hint">Search items / notes / field values</string>
-    <string name="life_top_date">%1$d/%2$d</string>
-    <string name="life_top_streak">%1$d-day streak</string>
-    <string name="life_top_birthday_soon">Birthday in %1$d days</string>
-    <string name="life_top_subscription_due">Subscription bills in %1$d days</string>
-    <string name="life_grid_more_items">%1$d more</string>
-    <string name="life_invite_action">Add one →</string>
-    <string name="life_invite_record">Nothing recorded yet</string>
-    <string name="life_invite_plan">Nothing planned yet</string>
-    <string name="life_invite_time">No milestones yet</string>
-    <string name="life_hero_morning_title">What to do today</string>
-    <string name="life_hero_afternoon_title">What was recorded today</string>
-    <string name="life_hero_evening_title">How was today</string>
-    <string name="life_hero_no_todo">No plans for today yet</string>
-    <string name="life_hero_no_records">No records today yet</string>
-    <string name="life_hero_more_items">%1$d more →</string>
-    <string name="life_hero_summary">%1$d records</string>
-    <string name="life_hero_focus">Focused %1$d min</string>
-    <string name="life_hero_completed">%1$d/%2$d done</string>
-    <string name="life_hero_all_done">All done today</string>
-    <string name="life_mini_checkin">Check-in</string>
-    <string name="life_mini_savings">Savings</string>
-    <string name="life_mini_mood">Mood</string>
-    <string name="life_mini_mood_action">Log →</string>
-    <string name="life_mini_countdown">Countdown</string>
-    <string name="life_calendar_add_for_day">Add a record for this day</string>
-    <string name="life_layout_edit">Layout</string>
-    <string name="life_layout_presets">Layout presets</string>
-    <string name="life_layout_budget_exceeded">Grid exceeds the one-screen budget (≤12 units, ≤2 large cards). Reduce some spans.</string>
-    <string name="life_layout_preset_default">Default</string>
-    <string name="life_grid_unit_hint">%1$d units</string>
-    <string name="life_album_title">Album</string>
-    <string name="life_album_empty">No photos yet. Add an image field in your records.</string>
-    <string name="life_album_view_item">Open item</string>
+    <string tools:ignore="PluralsCandidate" name="life_hero_completed">%1$d/%2$d done</string>
 
-    <string-array name="life_calendar_weekdays">
-        <item>Su</item>
-        <item>Mo</item>
-        <item>Tu</item>
-        <item>We</item>
-        <item>Th</item>
-        <item>Fr</item>
-        <item>Sa</item>
-    </string-array>
     <string name="life_template_restore_factory">Restore preset</string>
     <string name="life_template_restore_factory_hint">This template will return to its factory preset; future updates will apply to it again. Existing records are not affected.</string>
     <string name="life_field_type_video">Video</string>
@@ -1750,11 +1452,10 @@
     <string name="life_progress_form_ring">Thick ring</string>
     <string name="life_progress_form_capsule">Thick capsule</string>
     <string name="life_progress_form_thin_track">Thin track</string>
+    <string name="life_progress_form_thin_ring">Thin ring</string>
     <string name="life_progress_form_segmented_ring">Segmented ring</string>
     <string name="life_progress_form_segmented_bar">Segmented bar</string>
-    <string name="life_progress_target">Progress denominator</string>
-    <string name="life_progress_target_none">Auto (use max)</string>
-    <string name="life_template_field_step">Step</string>
+    <string name="life_progress_form_beaded_ring">Beaded ring</string>
     <!-- Category Settings -->
     <string name="cat_preset_section">Preset Categories</string>
     <string name="cat_custom_section">Custom Categories</string>
@@ -1780,11 +1481,6 @@
     <string name="transfer_from_required">Please select the source account</string>
     <string name="transfer_to_required">Please select the destination account</string>
     <string name="budget_invalid_amount">Enter a valid amount</string>
-    <string name="back_to_top">Back to top</string>
-    <string name="countdown_clear_expired_title">Clear expired countdowns</string>
-    <string name="countdown_clear_expired_confirm">Clear expired countdowns?</string>
-    <string name="countdown_clear_expired_success">Cleared %d expired countdowns</string>
-    <string name="app_lock_biometric_verify_fail">Biometric verification failed</string>
     <string name="app_lock_biometric_enable_verify_title">Verify PIN to enable biometrics</string>
     <string name="app_lock_biometric_enabled_toast">Biometric unlock enabled</string>
     <string name="app_lock_disabled_toast">App lock disabled</string>
@@ -1796,20 +1492,6 @@
     <string name="category_adj_new">creating category</string>
     <string name="category_adj_preset">preset categories</string>
     <string name="category_confirm_action">Confirm %1$s</string>
-    <string name="life_entity_item">Item</string>
-    <string name="life_entity_note">Note</string>
-    <string name="life_entity_todo">Todo</string>
-    <string name="life_entity_moment">Moment</string>
-    <string name="life_entity_mood">Mood</string>
-    <string name="life_entity_focus">Focus</string>
-    <string name="life_entity_report">Report</string>
-    <string name="life_entity_plan">Plan</string>
-    <string name="life_entity_reading">Reading</string>
-    <string name="life_entity_anniversary">Anniversary</string>
-    <string name="life_entity_goal">Goal</string>
-    <string name="life_entity_bill">Bill</string>
-    <string name="life_entity_asset">Asset</string>
-    <string name="life_template_field_image_coming_soon">(Coming soon)</string>
     <string name="life_template_preview">Preview</string>
     <string name="life_template_preview_card">Card</string>
     <string name="life_template_preview_detail">Detail</string>
@@ -1828,9 +1510,17 @@
     <string name="life_template_progress_hint">Only what can be computed appears; what cannot is omitted (not greyed out)</string>
     <string name="life_template_progress_ring_hint">Ring family auto-switches to horizontal on the card flow (no error, no block)</string>
     <string name="life_template_delete">Delete template</string>
-    <string name="category_count_bills">%1$d bills</string>
-    <string name="category_count_both">%1$d bills, %2$d items</string>
-    <string name="category_count_items">%1$d items</string>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="category_count_bills">
+        <item quantity="one">%1$d bill</item>
+        <item quantity="other">%1$d bills</item>
+    </plurals>
+    <string tools:ignore="PluralsCandidate" name="category_count_both">%1$d bills, %2$d items</string>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="category_count_items">
+        <item quantity="one">%1$d item</item>
+        <item quantity="other">%1$d items</item>
+    </plurals>
     <string name="category_delete_all">Delete all</string>
     <string name="category_delete_all_desc">Delete category and all related records</string>
     <string name="category_delete_related_hint">Deleting a category also deletes all its records. This cannot be undone.</string>
@@ -1861,7 +1551,11 @@
     <string name="vault_setup_hint_1">Set a unique 6-digit PIN</string>
     <string name="vault_setup_hint_2">Re-enter to confirm</string>
     <string name="vault_locked_out_hint">Too many attempts. Please try again later.</string>
-    <string name="vault_locked_out">Locked. Retry in %1$d seconds.</string>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="vault_locked_out">
+        <item quantity="one">Locked. Retry in %1$d second.</item>
+        <item quantity="other">Locked. Retry in %1$d seconds.</item>
+    </plurals>
     <string name="vault_locked_out_short">Too many attempts. Please try again later.</string>
     <string name="vault_pin_wrong">Wrong password</string>
     <string name="vault_bio_failed">Biometric key has expired. Re-enable it in vault settings.</string>
@@ -1898,7 +1592,6 @@
     <string name="vault_field_password">Password</string>
     <string name="vault_field_url">Website</string>
     <string name="vault_field_notes">Notes</string>
-    <string name="vault_field_category">Category: %1$s</string>
     <string name="vault_field_category_input">Category</string>
     <string name="vault_toggle_visibility">Show/hide password</string>
     <string name="vault_edit_title">Edit entry</string>
@@ -1912,7 +1605,7 @@
     <string name="vault_error_save_failed">Save failed. Please try again.</string>
     <string name="vault_generator_title">Password generator</string>
     <string name="vault_generator_empty">Select at least one character type</string>
-    <string name="vault_generator_strength">Strength: %1$s (~%2$d bits)</string>
+    <string tools:ignore="PluralsCandidate" name="vault_generator_strength">Strength: %1$s (~%2$d bits)</string>
     <string name="vault_generator_length">Length</string>
     <string name="vault_generator_uppercase">Uppercase</string>
     <string name="vault_generator_lowercase">Lowercase</string>
@@ -1926,18 +1619,25 @@
     <string name="vault_strength_very_strong">Very strong</string>
     <string name="vault_edit_password_strength">Password strength: %1$s</string>
     <string name="dashboard_card_vault">Password Vault</string>
-    <string name="vault_card_count">%1$d entries</string>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="vault_card_count">
+        <item quantity="one">%1$d entry</item>
+        <item quantity="other">%1$d entries</item>
+    </plurals>
     <string name="vault_card_empty_subtitle">No entries yet</string>
     <string name="vault_card_empty">Tap to add your first entry</string>
     <string name="vault_card_privacy_hint">Entry titles hidden for privacy, tap to view</string>
-    <string name="vault_card_more">View all →</string>
     <string name="vault_settings_clipboard">Clipboard auto-clear</string>
     <string name="vault_settings_section_general">General</string>
     <string name="vault_settings_section_security">Security</string>
     <string name="vault_settings_hint">Tip: your master password encrypts vault data; keep it safe. If you forget it, you can reset the vault (all entries will be cleared).</string>
     <string name="vault_settings_clipboard_value">Current: %1$d s</string>
     <string name="vault_settings_clipboard_never">Never</string>
-    <string name="vault_settings_clipboard_option">%1$d seconds</string>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="vault_settings_clipboard_option">
+        <item quantity="one">%1$d second</item>
+        <item quantity="other">%1$d seconds</item>
+    </plurals>
     <string name="vault_settings_clipboard_selected">Current</string>
     <string name="vault_settings_require_auth">Auto-lock on background</string>
     <string name="vault_settings_require_auth_hint">Locks after switching to background; re-enter to verify master password</string>
@@ -1950,7 +1650,6 @@
     <string name="vault_bio_setup_title">Verify fingerprint to enable biometrics</string>
     <string name="vault_bio_setup_subtitle">Unlock the vault quickly with fingerprint once enabled</string>
     <string name="vault_bio_enable_failed">Failed to enable biometrics, please retry</string>
-    <string name="vault_bio_upgrade_hint">Setting a master password is required to enable biometrics</string>
     <string name="vault_settings_change_pin">Change master PIN</string>
     <string name="vault_settings_change_pin_hint">Update the vault unlock PIN</string>
     <string name="vault_settings_reset">Reset vault</string>
@@ -1995,9 +1694,9 @@
     <string name="common_previous_month">Previous Month</string>
     <string name="confirm">Confirm</string>
     <string name="currency_symbol">¥</string>
-    <string name="date_format_display">MMM dd</string>
+    <string tools:ignore="UnusedResources" name="date_format_display">MMM dd</string>
     <string name="date_format_display_month">MMM yyyy</string>
-    <string name="date_format_display_year">yyyy/MM/dd</string>
+    <string tools:ignore="UnusedResources" name="date_format_display_year">yyyy/MM/dd</string>
     <string name="date_weekday_short_fri">Fri</string>
     <string name="date_weekday_short_mon">Mon</string>
     <string name="date_weekday_short_sat">Sat</string>
@@ -2008,11 +1707,11 @@
     <string name="delete">Delete</string>
     <string name="field_decrease">Decrease</string>
     <string name="field_increase">Increase</string>
-    <string name="field_select_date">Select Date</string>
+    <string tools:ignore="UnusedResources" name="field_select_date">Select Date</string>
     <string name="save">Save</string>
     <string name="settings_cancel">Cancel</string>
-    <string name="time_just_now">Just now</string>
-    <string name="time_minutes_ago">%d min ago</string>
+    <string tools:ignore="UnusedResources" name="time_just_now">Just now</string>
+    <string tools:ignore="UnusedResources" name="time_minutes_ago">%d min ago</string>
     <string name="wallet_type_alipay">Alipay</string>
     <string name="wallet_type_bank_card">Bank Card</string>
     <string name="wallet_type_cash">Cash</string>
@@ -2023,49 +1722,51 @@
     <string name="wallet_type_other">Other</string>
     <string name="wallet_type_top_up">Top-up</string>
     <string name="wallet_type_wechat">WeChat</string>
-    <string name="field_select_datetime">Select date &amp; time</string>
-    <string name="field_file_placeholder">Choose a file</string>
-    <string name="field_file_helper">Pick a document from the device</string>
-    <string name="field_clear">Clear</string>
     <string name="life_category_plan">Plans</string>
     <string name="life_category_time">Time</string>
     <string name="life_category_record">Records</string>
-    <string name="life_category_work">Work</string>
-    <string name="life_category_study">Study</string>
-    <string name="life_category_health">Health</string>
-    <string name="life_category_family">Family</string>
-    <string name="life_category_mood">Mood</string>
-    <string name="life_category_journal">Journal</string>
-    <string name="life_category_checkin">Check-in</string>
-    <string name="life_category_focus">Focus</string>
-    <string name="life_category_todo">To-do</string>
-    <string name="life_category_anniversary">Anniversary</string>
-    <string name="life_category_subscription">Subscription</string>
     <string name="life_home_stats">Statistics</string>
     <string name="life_stats_today_todo">Today\'s To-dos</string>
     <string name="life_stats_habit_rate">Habit Rate</string>
-    <string name="life_stats_focus_minutes">Focus Minutes</string>
+    <string name="life_stats_focus_minutes">Today\'s Focus</string>
+    <string name="life_stats_minutes">%1$d min</string>
     <string name="life_stats_max_streak">Best Streak</string>
     <string name="life_stats_week_chart_title">Last 7 days board</string>
     <string name="life_stats_category_share">This week by category</string>
     <string name="life_stats_compare_title">vs last week</string>
     <string name="life_stats_records">Records</string>
     <string name="life_stats_records_count">%1$d</string>
-    <string name="life_stats_days">%1$d days</string>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="life_stats_days">
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
+    </plurals>
     <string name="life_stats_percent">%1$d%%</string>
-    <string name="life_stats_empty">No data yet</string>
-    <string name="life_category_detail_count">%1$d items</string>
-    <string name="life_category_detail_week_new">+%1$d this week</string>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="life_category_detail_count">
+        <item quantity="one">%1$d item</item>
+        <item quantity="other">%1$d items</item>
+    </plurals>
+    <string tools:ignore="PluralsCandidate" name="life_category_detail_week_new">+%1$d this week</string>
+    <string tools:ignore="PluralsCandidate" name="life_category_detail_due_today">%1$d due today</string>
+    <string tools:ignore="PluralsCandidate" name="life_category_detail_overdue">%1$d overdue</string>
+    <string tools:ignore="PluralsCandidate" name="life_category_detail_done_count">%1$d completed</string>
     <string name="life_category_detail_empty">No templates in this category yet, create one in template management</string>
-    <string name="life_category_filter_daily">Daily</string>
-    <string name="life_category_filter_weekly">Weekly</string>
-    <string name="life_category_filter_monthly">Monthly</string>
+    <string name="life_category_detail_go_manage">Create in template library</string>
+    <string name="life_meta_overdue_days">Overdue by %1$d d</string>
+    <string name="life_meta_days_ago">%1$dd ago</string>
+    <string name="life_meta_due_today_time">Today %1$s</string>
+    <string name="life_meta_repeat_yearly">Yearly</string>
+    <string name="life_quick_action_complete">Mark as completed</string>
+    <string name="life_quick_action_reopen">Mark as not completed</string>
+    <string name="life_quick_action_reschedule">Push to today</string>
+    <string name="life_quick_action_delete">Delete</string>
     <string name="life_category_filter_all">All</string>
     <string name="life_category_pick_template">Pick a template</string>
     <string name="life_category_new_item">New Item</string>
     <string name="life_template_category">Category</string>
     <string name="life_template_category_custom">Custom</string>
-    <string name="life_template_category_custom_hint">Enter a custom category</string>
+    <string name="life_template_category_unsupported">“%1$s” is no longer a supported category (only Plans / Time / Records); saving will move it to Plans</string>
     <string name="life_template_field_time">Time</string>
     <string name="life_template_field_boolean">Switch</string>
     <string name="life_template_field_multi_select">Multi-select</string>
@@ -2078,8 +1779,7 @@
     <string name="life_template_field_color">Color</string>
     <string name="life_template_field_location">Location</string>
     <string name="life_template_field_duration">Duration</string>
-    <string name="life_card_days_left">%1$d days left</string>
-    <string name="life_card_expired_days">%1$d days overdue</string>
+    <string name="life_card_elapsed_today">Today</string>
     <string name="life_weekly_calendar_month_header">%1$d/%2$d</string>
     <string name="life_calendar_view_week">W</string>
     <string name="life_calendar_view_month">M</string>
@@ -2090,22 +1790,21 @@
     <string name="life_board_agenda_today">Today\'s plan</string>
     <string name="life_board_agenda_on">Plan</string>
     <string name="life_board_agenda_date">%1$d/%2$d %3$s</string>
+    <string tools:ignore="PluralsCandidate" name="life_board_agenda_progress">%1$d/%2$d done</string>
+    <string name="life_board_all_done_title">All done 🎉</string>
+    <string tools:ignore="PluralsCandidate" name="life_board_all_done_hint">All %1$d scheduled items are completed</string>
+    <string name="life_board_all_done_view">View all %1$d</string>
+    <string name="life_board_tomorrow_with">Tomorrow: %1$d · %2$s</string>
+    <string name="life_board_tomorrow_none">Nothing tomorrow · %1$s</string>
     <string name="life_board_empty">No items for this day</string>
     <string name="life_board_empty_hint">Add an item from a template</string>
-    <string name="life_home_today_added">+%1$d today</string>
-    <string name="life_home_todo">Todo</string>
-    <string name="life_home_todo_overdue">%1$d overdue</string>
-    <string name="life_home_todo_total">%1$d total</string>
-    <string name="life_home_todo_empty">No backlog yet</string>
-    <string name="life_home_todo_empty_hint">Tap ＋ to note it down</string>
-    <string name="life_home_todo_no_date">No date</string>
-    <string name="life_home_todo_overdue_days">Overdue by %1$d days</string>
-    <string name="life_home_todo_due">%1$d/%2$d</string>
-    <string name="life_home_drag_hint">Drag to reorder</string>
+    <string name="life_home_today_count">Today: %1$d</string>
+    <string name="life_home_todo">To schedule</string>
+    <string tools:ignore="PluralsCandidate" name="life_home_todo_total">%1$d total</string>
+    <string name="life_home_todo_empty">Nothing to schedule</string>
+    <string name="life_home_todo_empty_hint">Note it down, schedule it later</string>
+    <string name="life_home_todo_view_all_brief">View all %1$d</string>
     <string name="life_item_toggle_complete">Toggle completion</string>
-    <string name="life_item_uncompleted">Marked as uncompleted</string>
-    <string name="life_item_completed">Marked as completed</string>
-    <string name="life_home_todo_view_all">View all todos</string>
     <string name="settings_app_icon">App Icon</string>
     <string name="settings_app_icon_subtitle">Switch launcher icon style</string>
     <string name="settings_select_app_icon">Select App Icon</string>
@@ -2140,15 +1839,12 @@
     <string name="wallpaper_done">Done</string>
     <string name="wallpaper_preset">Preset</string>
     <string name="wallpaper_from_gallery">From Gallery</string>
-    <string name="dashboard_card_net_worth_color">Card Color</string>
     <string name="import_pick_file">Choose a file to import</string>
     <string name="import_pick_file_hint">Supports full data packages (ZIP) exported by this app, auto-detected</string>
-    <string name="import_from_ocr">Scan a bill screenshot</string>
-    <string name="import_from_ocr_desc">Take a photo or pick a screenshot, amounts recognized automatically</string>
     <string name="import_help_title">About importing</string>
     <string name="import_help_body">Full-data imports are deduplicated by business key — duplicates are skipped, existing data is never overwritten. Full backup files go to "Backup &amp; Restore"; WeChat/Alipay bills go to the "Bills" tab</string>
     <string name="import_full_done_title">Import complete</string>
-    <string name="import_full_done_body">%1$d added, %2$d duplicates skipped</string>
+    <string tools:ignore="PluralsCandidate" name="import_full_done_body">%1$d added, %2$d duplicates skipped</string>
     <string name="import_full_running">Importing</string>
     <string name="import_full_running_detail">Merging data, please wait</string>
     <string name="import_is_package_title">This is a full backup file</string>
@@ -2172,60 +1868,240 @@
     <string name="import_bill_file_title">This is a bill file</string>
     <string name="import_bill_file_body">For WeChat/Alipay bills, generic CSV, Excel and screenshot recognition, use the import entry at the top of the "Bills" tab. This page only imports full app-data packages.</string>
     <string name="import_error_too_large">File too large to import (limit ~300MB)</string>
-    <string name="import_full_done_wallets">Recalculated %1$d wallet balance(s)</string>
+    <string tools:ignore="PluralsCandidate" name="import_full_done_wallets">Recalculated %1$d wallet balance(s)</string>
     <string name="backup_file_is_data">This is a data file — import it via "Data &amp; Backup → Import/Export"</string>
     <string name="about_version_history_desc">See what each version brings</string>
     <string name="about_project_source">Source code</string>
     <string name="about_project_source_desc">GPL-3.0 open source, all code on GitHub</string>
-    <string name="about_feedback_desc">Report issues, suggest ideas, or contribute</string>
+    <string name="about_feedback_github_title">GitHub Issues</string>
+    <string name="about_feedback_desc">Bugs, ideas; searchable, kept on record</string>
+    <string name="about_group_title">QQ group</string>
+    <string name="about_group_desc">Chat, feedback and suggestions</string>
+    <string name="about_group_sheet_desc">Chat, share feedback and ideas — just jump in.</string>
+    <string name="about_group_copied">Group number copied</string>
+    <string name="about_group_number_label">Group number</string>
+    <string name="about_group_copy">Copy group number</string>
+    <string name="about_group_open">Open in QQ</string>
+    <string name="about_group_open_failed">QQ not found — group number copied, you can add it manually</string>
     <string name="about_privacy_desc">How your data is protected: local-only, no network permission</string>
     <string name="about_terms_desc">Please read before using the app</string>
     <string name="about_license_desc">Open-source components used by this app</string>
     <string name="about_open_source_note">PalmNote is open source under GPL-3.0. Thanks to all open-source contributors.</string>
     <string name="wallet_default_set">Set as default wallet</string>
-    <string name="life_form_due_date">Schedule date</string>
-    <string name="life_form_due_time">Schedule time</string>
-    <string name="life_form_today">Today</string>
-    <string name="life_form_tomorrow">Tomorrow</string>
-    <string name="life_form_yesterday">Yesterday</string>
-    <string name="life_form_pick_date">Pick date</string>
-    <string name="life_form_pick_time">Pick time</string>
     <string name="life_form_clear">Clear</string>
-    <string name="life_form_priority">Priority</string>
-    <string name="life_priority_high">High</string>
-    <string name="life_priority_medium">Medium</string>
-    <string name="life_priority_low">Low</string>
-    <string name="life_priority_none">None</string>
     <string name="life_board_overdue">Overdue</string>
-    <string name="life_board_reschedule">Today</string>
+    <string name="life_board_overdue_empty">Nothing overdue</string>
+    <string name="life_board_reschedule">Postpone</string>
     <string name="life_board_swipe_complete_title">Mark as complete?</string>
     <string name="life_board_swipe_complete_message">You can undo this from the detail page.</string>
     <string name="life_board_swipe_complete_confirm">Complete</string>
     <string name="life_board_swipe_uncomplete_title">Remove completion?</string>
     <string name="life_board_swipe_uncomplete_message">This will mark it as not done.</string>
     <string name="life_board_swipe_uncomplete_confirm">Mark not done</string>
-    <string name="life_focus_entry_desc">Pomodoro-style focus timer with session tracking</string>
     <string name="life_template_manage_hint">Turning off silences the template\'s home card, create entry and daily reminders; turning off Todo also empties "Today" list. Existing records are kept.</string>
     <string name="life_template_hide">Hide template</string>
     <string name="life_template_restore">Restore</string>
     <!-- Template management (mockups ed_10 / ed_11, §4.8) -->
     <string name="life_template_disabled">Off</string>
     <string name="life_template_disable">Turn off template</string>
-    <string name="life_template_builtin">Built-in</string>
-    <string name="life_template_group_count">%1$d · %2$d off</string>
-    <string name="life_template_field_count">%1$d fields · %2$d on card</string>
+    <string tools:ignore="PluralsCandidate" name="life_template_group_count">%1$d · %2$d off</string>
+    <string tools:ignore="PluralsCandidate" name="life_template_field_count">%1$d fields · %2$d on card</string>
     <string name="life_template_closed_sub">Off · hidden from pages and reminders</string>
-    <string name="life_template_closed_kept">Off · %1$d records kept</string>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="life_template_closed_kept">
+        <item quantity="one">Off · %1$d record kept</item>
+        <item quantity="other">Off · %1$d records kept</item>
+    </plurals>
     <string name="life_template_close_title">Turn off “%1$s”?</string>
-    <string name="life_template_close_body">%1$d records won\'t be deleted; you will see them again when you turn it back on.</string>
+    <string tools:ignore="PluralsCandidate" name="life_template_close_body">%1$d records won\'t be deleted; you will see them again when you turn it back on.</string>
     <string name="life_template_close_scope">It will no longer appear on the life page, in search, widgets or reminders.</string>
     <string name="life_template_manage_sub">Grouped by area of life</string>
     <string name="life_template_all_closed">All templates are turned off</string>
     <string name="life_template_go_manage">Manage templates</string>
     <string name="life_template_delete_confirm_title">Delete template</string>
     <string name="life_template_delete_confirm_body">This is a custom template. Deleting it also deletes all records created with it. This cannot be undone.</string>
-    <string name="life_journal_edit">Edit journal</string>
-    <string name="life_mood_title_edit">Mood entry</string>
-    <string name="life_report_focus_total">Total focus %1$d min</string>
-    <string name="life_type_focus">Focus</string>
-</resources>
+    <string name="life_template_save_as_new">Save as new template</string>
+    <string name="life_template_copy_suffix">copy</string>
+    <string name="life_discard_changes_title">Discard changes?</string>
+    <string name="life_discard_changes_body">Unsaved changes will be lost.</string>
+    <string name="life_template_block_text_budget">Text fields exceed the card budget of %1$d (currently %2$d)</string>
+    <string name="life_template_block_text_budget_suggest">Suggestion: turn secondary text into tags or options</string>
+    <string name="life_template_block_required">Required field “%1$s” has no default value — it can’t be left blank</string>
+    <string name="life_template_block_required_suggest">Suggestion: set a default value or make the field optional</string>
+    <string name="life_template_block_derived">\"%1$s\" is not configured and cannot be computed</string>
+    <string name="life_template_block_derived_suggest">Suggestion: pick its source field under \"Source fields\"; for a formula, fill in the expression</string>
+    <string name="life_template_field_ref_empty">No eligible fields yet — add a number or date field first</string>
+    <string name="life_tpl_last_today">Last logged: today</string>
+    <string tools:ignore="PluralsCandidate" name="life_tpl_last_days">Last logged: %1$d days ago</string>
+    <string name="life_tpl_last_short_never">Never</string>
+    <string name="life_tpl_last_short_today">Today</string>
+    <string name="life_tpl_last_short_days">%1$dd ago</string>
+    <string name="life_tpl_search_hint">Search templates</string>
+    <string name="life_template_repeat_section">Repeat</string>
+    <string name="life_template_repeat_yearly">Repeat yearly</string>
+    <string name="life_template_repeat_yearly_hint">For birthdays and anniversaries: "days left" counts to the next occurrence instead of stopping at that date. Lunar birthdays are converted back from the lunar date.</string>
+    <string tools:ignore="PluralsCandidate" name="life_record_disabled_fields">%1$d more field(s) are disabled — restore them from template management</string>
+    <string name="life_share_sheet_title">Share card</string>
+    <string name="life_share_action">Share</string>
+    <string name="life_share_ready">Image ready — pick an app</string>
+    <string name="life_share_failed">Couldn\'t create the share image</string>
+    <string name="life_share_footer">Logged with PalmNote</string>
+    <string name="life_template_advisory_contrast">Card color contrast may be too low (a darker shade works better)</string>
+    <string name="life_quick_add_hint">Quick add, e.g. 3pm tomorrow: meeting</string>
+    <string name="life_quick_add_send">Add</string>
+    <string name="life_quick_add_done">Added: %1$s</string>
+    <string name="life_quick_add_demo_suffix"> (demo mode is on; turn it off to see your entry)</string>
+    <string name="life_quick_add_close_demo">Turn off demo</string>
+    <string name="life_quick_add_no_template">No to-do template available for quick add</string>
+    <string name="life_quick_add_go_manage">Manage templates</string>
+    <string name="life_quick_add_undo">Undo</string>
+    <string name="life_quick_add_when_date">%1$d/%2$d</string>
+    <!-- 生活页**紧凑胶囊**右端的计数。**英文只给数字**：三张胶囊平分一屏宽，每张内宽约 95dp，
+         扣掉图标与间距只剩约 69dp ——「Records」+「Today: 12」约 96dp，横排必然截掉一头
+         （历史症状：先挤成 "PlansToday 0"，后截成 "P…"）。别"顺手补全"成 "Today: %1$d"，
+         那会把版式重新撑破；中文宽度够，仍是「今日 N」。
+         宽屏大卡（CategoryMiniCard）另用 `life_home_today_count`，那里放得下完整文案。 -->
+    <string name="life_home_chip_today">%1$d</string>
+    <string name="life_home_overdue_reschedule_all">Postpone all</string>
+    <string tools:ignore="PluralsCandidate" name="life_board_completed_collapsed">▸ %1$d completed</string>
+    <string tools:ignore="PluralsCandidate" name="life_board_completed_expanded">▾ %1$d completed</string>
+    <string name="life_on_this_day_brief">🕰 On this day · %1$d ▸</string>
+    <string name="life_unsched_schedule">Schedule</string>
+    <string name="life_review_mode_month">Month</string>
+    <string name="life_review_mode_year">Year</string>
+    <string name="life_review_share">Share review image</string>
+    <string name="life_review_shared">Review image ready, choose a target</string>
+    <string name="life_review_share_failed">Failed to create review image</string>
+    <string name="life_on_this_day">On this day</string>
+    <string name="life_review_title">Monthly review</string>
+    <string name="life_review_month">%1$d-%2$d</string>
+    <string name="life_review_records">records</string>
+    <string tools:ignore="PluralsCandidate" name="life_review_active_days">Logged %1$d of %2$d days</string>
+    <string name="life_review_top">Most logged</string>
+    <string name="life_review_mood">Mood mix</string>
+    <string name="life_review_empty">No records last month</string>
+    <string name="life_review_empty_hint">What you log will show up in the next review</string>
+    <string name="life_review_entry">Last month in review</string>
+    <string name="life_review_entry_hint">See what you logged last month</string>
+    <string name="life_milestone_title">Goal reached!</string>
+    <string name="life_milestone_days">%1$d-day check-in streak</string>
+    <string name="life_detail_stat_checkin">Check-in stats</string>
+    <string name="life_detail_stat_week">Last 7 days</string>
+    <string name="life_detail_stat_month">This month</string>
+    <string name="life_detail_stat_total">All time</string>
+    <string name="life_template_reminder_section">Reminder</string>
+    <string name="life_template_reminder_toggle">Due-date reminder</string>
+    <string name="life_template_reminder_kind">Reminder type</string>
+    <string name="life_template_reminder_kind_title">Choose a reminder type</string>
+    <string name="life_template_reminder_date">Date field</string>
+    <string name="life_template_reminder_date_title">Choose a date field</string>
+    <string name="life_template_reminder_date_unset">Not set</string>
+    <string name="life_template_reminder_date_empty">This template has no date field yet — add one in the field list first</string>
+    <string name="life_template_reminder_no_date">Reminder is on, but its date field is unavailable — add a date field or pick another type, otherwise no reminder will fire</string>
+    <string name="life_reminder_kind_milestone">Milestone</string>
+    <string name="life_reminder_kind_milestone_hint">Reminds at every 100 / 200 / 365… day mark</string>
+    <string name="life_reminder_kind_countdown">Countdown</string>
+    <string name="life_reminder_kind_countdown_hint">Reminds on the due date and as it approaches</string>
+    <string name="life_reminder_kind_birthday">Birthday</string>
+    <string name="life_reminder_kind_birthday_hint">Reminds before the birthday each year</string>
+    <string name="life_reminder_kind_anniversary">Anniversary</string>
+    <string name="life_reminder_kind_anniversary_hint">Reminds before the anniversary each year</string>
+    <string name="life_reminder_kind_subscription">Subscription billing</string>
+    <string name="life_reminder_kind_subscription_hint">Reminds on the billing day (de-duplicated by billing cycle)</string>
+    <string name="life_record_edit_title">Edit record</string>
+    <string name="life_record_new_title">New record</string>
+    <string name="life_record_importing">Importing…</string>
+    <string name="life_record_today">Today</string>
+    <string name="life_record_tomorrow">Tomorrow</string>
+    <string name="life_record_weekend">Weekend</string>
+    <string name="life_record_now">Now</string>
+    <string name="life_record_add_item">Add item</string>
+    <string name="life_record_delete_item">Delete item</string>
+    <string tools:ignore="PluralsCandidate" name="life_map_track_stats">%1$d track points · %2$s · ascent %3$d m</string>
+    <string name="life_detail_pages_left">%1$s pages left</string>
+    <string name="life_hero_remaining">%1$d to do</string>
+    <string name="life_hero_done_group">Done · %1$d</string>
+    <string name="life_dayread_title">%1$d/%2$d</string>
+    <string tools:ignore="PluralsCandidate" name="life_dayread_count">%1$d records this day</string>
+    <string name="life_dayread_empty">Nothing recorded on this day</string>
+    <string name="life_dayread_empty_hint">Long-press another day on the calendar to look around</string>
+    <string name="life_demo_badge">Demo</string>
+    <string name="life_template_untitled">Untitled template</string>
+    <string name="life_record_error_template_not_found">Template not found</string>
+    <string name="life_record_error_read_file">Unable to read the file</string>
+    <string name="life_record_error_required">Please fill in “%1$s”</string>
+    <string name="life_record_error_save_failed">Save failed</string>
+    <string tools:ignore="PluralsCandidate" name="life_record_track_imported">Imported %1$d track points</string>
+    <string name="life_track_error_empty">No usable track points in the file</string>
+    <string name="life_track_error_unsupported_kml">KML with external overlays or network links is not supported</string>
+    <string name="life_track_error_parse">The track file format could not be parsed</string>
+    <string name="life_track_error_invalid_points">Track points are invalid</string>
+    <string name="life_detail_show_all">Show all %1$d</string>
+    <string name="life_detail_show_less">Show less</string>
+    <string tools:ignore="PluralsCandidate" name="life_calendar_day_desc">%3$d records on %1$d/%2$d</string>
+    <string name="life_stats_empty_title">No records yet</string>
+    <string name="life_stats_empty_hint">Log something in Life and these charts will start growing</string>
+    <string tools:ignore="PluralsCandidate" name="life_board_overdue_total">%1$d overdue</string>
+    <string tools:ignore="PluralsCandidate" name="life_route_board_desc">Route map with %1$d stops</string>
+    <!-- Template editor v1.41 redesign (iOS grouped) -->
+    <string tools:ignore="PluralsCandidate" name="life_template_edit_field_count">%1$d active · %2$d total</string>
+    <string name="life_template_no_fields">No fields yet</string>
+    <string name="life_template_no_fields_hint">A template needs at least one field before you can add records</string>
+    <string name="life_template_block_name_required">Template name cannot be empty</string>
+    <string name="life_template_desc_hint">A short note shown in the template list</string>
+    <string name="life_template_field_edit">Edit field</string>
+    <string name="life_template_field_basic">Basics</string>
+    <string name="life_template_field_default">Default value</string>
+    <string name="life_template_field_default_hint">Starting value for new records</string>
+    <string name="life_template_field_options">Options</string>
+    <string name="life_template_field_range">Value range</string>
+    <string name="life_template_field_display">Display</string>
+    <string name="life_template_field_progress">Progress</string>
+    <string name="life_template_field_progress_target">Target</string>
+    <string name="life_template_field_progress_target_hint">Which field counts as full; leave unset to use this field\'s max</string>
+    <string name="life_template_field_progress_target_none">Use max value</string>
+    <string name="life_template_field_derived_ref">Source fields</string>
+    <string name="life_template_field_ref_hint">The value is computed from these fields; once set, it shows up on cards and the detail page</string>
+    <string name="life_template_field_ref_minuend">Minuend field</string>
+    <string name="life_template_field_ref_subtrahend">Subtrahend field (optional)</string>
+    <string name="life_template_field_ref_date">Date field</string>
+    <string name="life_template_field_ref_none">Not selected</string>
+    <string name="life_template_field_formula">Formula</string>
+    <string name="life_template_field_derived_auto">Counted automatically; no source needed</string>
+    <string name="life_template_field_derived_missing">Not configured</string>
+    <string tools:ignore="PluralsCandidate" name="life_template_field_library_result">%1$d field types</string>
+    <string name="life_template_field_library_empty">No matching fields</string>
+    <string name="life_field_hint_number">Any number, for counting or stats</string>
+    <string name="life_field_hint_currency">Amount with a currency sign</string>
+    <string name="life_field_hint_percent">Percentage from 0 to 100</string>
+    <string name="life_field_hint_slider">Drag within a given range</string>
+    <string name="life_field_hint_duration">A span of time, e.g. 45 min</string>
+    <string name="life_field_hint_rating">1–5 star rating</string>
+    <string name="life_field_hint_boolean">On / off</string>
+    <string name="life_field_hint_select">Pick one from a list</string>
+    <string name="life_field_hint_multi_select">Pick several at once</string>
+    <string name="life_field_hint_tag">Free-form tags, multiple allowed</string>
+    <string name="life_field_hint_color">A single colour</string>
+    <string name="life_field_hint_date">A date</string>
+    <string name="life_field_hint_time">A time</string>
+    <string name="life_field_hint_datetime">Date and time</string>
+    <string name="life_field_hint_location">A place</string>
+    <string name="life_field_hint_image">One or more images</string>
+    <string name="life_field_hint_video">A video clip</string>
+    <string name="life_field_hint_audio">A voice note</string>
+    <string name="life_field_hint_file">Any attachment</string>
+    <string name="life_field_hint_map">A route or place, shown on a map</string>
+    <string name="life_field_hint_text">Multi-line long text</string>
+    <string name="life_field_hint_short_text">Single-line short text</string>
+    <string name="life_field_hint_rich_text">Rich text with bold and lists</string>
+    <string name="life_field_hint_url">A web link</string>
+    <string name="life_field_hint_email">Email address</string>
+    <string name="life_field_hint_phone">Phone number</string>
+    <string name="life_field_hint_checklist">A set of checkable items</string>
+    <string name="life_field_hint_table">A detail table with addable rows</string>
+    <string name="life_field_hint_range">Pick a value between two bounds</string>
+    <string name="life_field_hint_person">One or more contacts</string>
+    <string name="life_field_hint_formula">Computed from other fields, read-only; needs an expression (field keys with + − × ÷)</string>
+    <string name="life_field_hint_remaining">Target minus current, read-only; pick the minuend / subtrahend fields</string>
+    <string name="life_field_hint_streak">Consecutive days, counted automatically (no source needed)</string>
+    <string name="life_field_hint_elapsed">Days since or until a date; pick a date field</string></resources>

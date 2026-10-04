@@ -85,6 +85,7 @@ fun DashboardScreen(
     val allConfigs by viewModel.cardConfigs.collectAsStateWithLifecycle()
     val presetCategoryOverrides by viewModel.presetCategoryOverrides.collectAsStateWithLifecycle()
     val categoryConfigs by viewModel.categoryConfigs.collectAsStateWithLifecycle()
+    val demoModeOn by viewModel.demoModeOn.collectAsStateWithLifecycle()
     val profileNickname by viewModel.profileNickname.collectAsStateWithLifecycle()
     val profileAvatar by viewModel.profileAvatar.collectAsStateWithLifecycle()
     val profileAvatarPath by viewModel.profileAvatarPath.collectAsStateWithLifecycle()
@@ -402,7 +403,8 @@ fun DashboardScreen(
                                     onHabitCheckIn = { viewModel.checkInHabit(it) },
                                     presetCategoryOverrides = presetCategoryOverrides,
                                     categoryConfigs = categoryConfigs,
-                                    cardConfigs = allConfigs
+                                    cardConfigs = allConfigs,
+                                    demoModeOn = demoModeOn
                                 )
                             }
                         }
@@ -438,7 +440,8 @@ fun DashboardScreen(
                             onHabitCheckIn = { viewModel.checkInHabit(it) },
                             presetCategoryOverrides = presetCategoryOverrides,
                             categoryConfigs = categoryConfigs,
-                            cardConfigs = allConfigs
+                            cardConfigs = allConfigs,
+                            demoModeOn = demoModeOn
                         )
                     }
                 }

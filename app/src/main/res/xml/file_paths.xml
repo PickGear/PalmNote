@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
     <files-path name="images" path="images/" />
+    <!--
+      分享图（记录图卡 / 月度回顾）的落点：一次性产物放 cache。
+      此前月度回顾把 PNG 写到 getExternalFilesDir()/reviews —— 那个目录不在任何已配置的根里，
+      FileProvider.getUriForFile 必然抛异常，分享一直失败（且失败原因被 runCatching 吞掉）。
+    -->
+    <cache-path name="share" path="share/" />
 </paths>

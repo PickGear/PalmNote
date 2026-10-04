@@ -33,7 +33,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
-import javax.inject.Qualifier
 import javax.inject.Singleton
 
 @Module
@@ -159,7 +158,12 @@ object DatabaseModule {
                 ),
                 com.palmnote.data.db.migration.MIGRATION_6_7,
                 com.palmnote.data.db.migration.MIGRATION_7_8,
-                com.palmnote.data.db.migration.MIGRATION_8_9
+                com.palmnote.data.db.migration.MIGRATION_8_9,
+                com.palmnote.data.db.migration.MIGRATION_9_10,
+                com.palmnote.data.db.migration.MIGRATION_10_11,
+                com.palmnote.data.db.migration.MIGRATION_11_12,
+                com.palmnote.data.db.migration.MIGRATION_12_13,
+                com.palmnote.data.db.migration.MIGRATION_13_14
             )
             .addCallback(object : androidx.room.RoomDatabase.Callback() {
                 override fun onCreate(db: SupportSQLiteDatabase) {
@@ -350,9 +354,11 @@ object RepositoryModule {
         dao: LifeItemDao,
         fieldValueDao: FieldValueDao,
         appDatabase: AppDatabase,
-        templateRepo: LifeTemplateRepository
+        templateRepo: LifeTemplateRepository,
+        preferences: PreferencesManager,
+        eventBus: com.palmnote.domain.event.EventBus
     ): LifeItemRepository =
-        LifeItemRepositoryImpl(dao, fieldValueDao, appDatabase, templateRepo)
+        LifeItemRepositoryImpl(dao, fieldValueDao, appDatabase, templateRepo, preferences, eventBus)
 
     @Provides @Singleton
     fun provideCrossLinkRepository(dao: CrossLinkDao): CrossLinkRepository =

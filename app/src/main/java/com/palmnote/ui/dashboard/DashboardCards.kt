@@ -57,11 +57,13 @@ internal fun DashboardCardContent(
     onHabitCheckIn: (Long) -> Unit = {},
     presetCategoryOverrides: Map<String, String>,
     categoryConfigs: List<com.palmnote.data.db.entity.CategoryConfig>,
-    cardConfigs: List<DashboardCardConfig> = emptyList()
+    cardConfigs: List<DashboardCardConfig> = emptyList(),
+    /** 演示模式开启中：净资产等含示例的数字需要标注（「含示例数据」）。 */
+    demoModeOn: Boolean = false
 ) {
     val netWorthColor = cardConfigs.find { it.type == CardType.NET_WORTH }?.customColor?.toComposeColor() ?: ModuleHome
     when (type) {
-        CardType.NET_WORTH -> NetWorthCard(state, cardColor = netWorthColor, onNavigateToBill)
+        CardType.NET_WORTH -> NetWorthCard(state, cardColor = netWorthColor, onNavigateToBill, demoModeOn)
         CardType.QUICK_ACTIONS -> QuickActionsCard(onNavigateToAddBill, onNavigateToAddAsset, onNavigateToLife)
         CardType.BUDGET_ALERT -> BudgetAlertCard(state, onNavigateToBill)
         CardType.ANNIVERSARIES -> AnniversariesCard(state, onNavigateToLife)
@@ -104,7 +106,9 @@ internal fun VaultCard(state: DashboardState, onNavigateToVault: () -> Unit) {
                     Column {
                         Text(stringResource(R.string.dashboard_card_vault), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         Text(
-                            text = if (state.vaultCount > 0) stringResource(R.string.vault_card_count, state.vaultCount) else stringResource(R.string.vault_card_empty_subtitle),
+                            text = if (state.vaultCount > 0) pluralStringResource(
+                                R.plurals.vault_card_count, state.vaultCount, state.vaultCount
+                            ) else stringResource(R.string.vault_card_empty_subtitle),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -128,7 +132,12 @@ internal fun VaultCard(state: DashboardState, onNavigateToVault: () -> Unit) {
 }
 @Composable
 @Suppress("LongMethod")
-internal fun NetWorthCard(state: DashboardState, cardColor: Color = ModuleHome, onNavigateToBill: () -> Unit) {
+internal fun NetWorthCard(
+    state: DashboardState,
+    cardColor: Color = ModuleHome,
+    onNavigateToBill: () -> Unit,
+    demoModeOn: Boolean = false
+) {
     val context = androidx.compose.ui.platform.LocalContext.current
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -153,12 +162,29 @@ internal fun NetWorthCard(state: DashboardState, cardColor: Color = ModuleHome, 
                     color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
                 )
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = CurrencyUtils.formatCompact(context, state.totalAssetValue.toMoney()),
-                    style = MaterialTheme.typography.displaySmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimary
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = CurrencyUtils.formatCompact(context, state.totalAssetValue.toMoney()),
+                        style = MaterialTheme.typography.displaySmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                    // 演示模式下资产/钱包含示例：必须标注，否则用户会把示例余额当成自己的
+                    if (demoModeOn) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = stringResource(R.string.dashboard_demo_included),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f),
+                            modifier = Modifier
+                                .background(
+                                    MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.18f),
+                                    androidx.compose.foundation.shape.RoundedCornerShape(50)
+                                )
+                                .padding(horizontal = 8.dp, vertical = 2.dp)
+                        )
+                    }
+                }
                 Spacer(modifier = Modifier.height(24.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -216,7 +242,9 @@ internal fun NetWorthCard(state: DashboardState, cardColor: Color = ModuleHome, 
                     ) {
                         Icon(Icons.Outlined.Inventory2, null, Modifier.size(14.dp), MaterialTheme.colorScheme.onPrimary)
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text(pluralStringResource(R.plurals.dashboard_items_count, state.activeAssetCount, state.activeAssetCount), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimary)
+                        Text(pluralStringResource(
+                            R.plurals.dashboard_items_count, state.activeAssetCount, state.activeAssetCount
+                        ), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimary)
                     }
                 }
                 JumpCapsule(
@@ -354,14 +382,14 @@ internal fun AnniversariesCard(state: DashboardState, onNavigateToLife: () -> Un
                             "COUNT_DOWN" -> if (daysUntil == 0) {
                                 stringResource(R.string.dashboard_today)
                             } else if (daysUntil > 0) {
-                                stringResource(R.string.dashboard_days_until, daysUntil)
+                                pluralStringResource(R.plurals.dashboard_days_until, daysUntil, daysUntil)
                             } else {
-                                stringResource(R.string.dashboard_days_passed, -daysUntil)
+                                pluralStringResource(R.plurals.dashboard_days_passed, -daysUntil, -daysUntil)
                             }
                             else -> if (first.daysSince == 0) {
                                 stringResource(R.string.dashboard_today)
                             } else {
-                                stringResource(R.string.dashboard_days_passed, first.daysSince)
+                                pluralStringResource(R.plurals.dashboard_days_passed, first.daysSince, first.daysSince)
                             }
                         },
                         color = when {
@@ -493,7 +521,9 @@ private fun LegendItem(
     ) {
         Box(Modifier.size(8.dp).clip(CircleShape).background(color))
         Text(getCategoryDisplayName(item.category, context, dashPresetVer), style = MaterialTheme.typography.bodySmall, maxLines = maxLines, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-        Text(pluralStringResource(R.plurals.dashboard_items_count, item.count, item.count), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Medium)
+        Text(pluralStringResource(
+            R.plurals.dashboard_items_count, item.count, item.count
+        ), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Medium)
     }
 }
 
@@ -696,7 +726,7 @@ private fun SubscriptionRow(sub: com.palmnote.domain.model.SubscriptionDueItem, 
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(
                 text = if (sub.daysLeft <= 0) stringResource(R.string.dashboard_today)
-                       else stringResource(R.string.dashboard_days_until, sub.daysLeft),
+                       else pluralStringResource(R.plurals.dashboard_days_until, sub.daysLeft, sub.daysLeft),
                 style = MaterialTheme.typography.labelSmall,
                 color = if (sub.daysLeft <= 0) com.palmnote.ui.theme.AccentOrange else com.palmnote.ui.theme.ModuleLife
             )
@@ -734,8 +764,9 @@ internal fun TodayCard(state: DashboardState, onNavigateToLife: () -> Unit) {
             }
             Column(horizontalAlignment = Alignment.End) {
                 Text(stringResource(R.string.dashboard_recorded), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                val recorded = state.activeAssetCount + state.anniversaryCount
                 Text(
-                    stringResource(R.string.dashboard_items_recorded, state.activeAssetCount + state.anniversaryCount),
+                    pluralStringResource(R.plurals.dashboard_items_recorded, recorded, recorded),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = StatusHeld

@@ -16,6 +16,7 @@ lifecycle = "2.8.7"
 coroutines = "1.10.2"
 onnxruntime = "1.29.0"
 opencv = "4.14.0"
+profileinstaller = "1.4.1"
 lunar = "1.7.7"
 kotlinx-serialization-json = "1.8.1"
 junit = "4.13.2"
@@ -44,6 +45,8 @@ compose-bom = { module = "androidx.compose:compose-bom", version.ref = "compose-
 compose-ui = { module = "androidx.compose.ui:ui" }
 compose-ui-graphics = { module = "androidx.compose.ui:ui-graphics" }
 compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
+compose-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4" }
+compose-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest" }
 compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
 compose-material3 = { module = "androidx.compose.material3:material3" }
 compose-material-icons-extended = { module = "androidx.compose.material:material-icons-extended" }
@@ -53,6 +56,7 @@ compose-foundation = { module = "androidx.compose.foundation:foundation" }
 compose-window-size = { module = "androidx.compose.material3:material3-window-size-class" }
 # AndroidX
 core-ktx = { module = "androidx.core:core-ktx", version.ref = "core-ktx" }
+profileinstaller = { module = "androidx.profileinstaller:profileinstaller", version.ref = "profileinstaller" }
 activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activity-compose" }
 appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
 documentfile = { module = "androidx.documentfile:documentfile", version.ref = "documentfile" }

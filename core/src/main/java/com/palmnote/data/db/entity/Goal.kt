@@ -45,6 +45,12 @@ data class Goal(
     val reminderTime: String = "", // "08:00" 格式
     val linkedAssetId: Long? = null, // 关联资产(如跑步→跑鞋)
     val isPublic: Boolean = false, // 是否公开展示
+    /**
+     * 演示数据标记（v14）：示例习惯 / 示例打卡记录。
+     * 演示模式关闭时按此列整批物理删除；CSV 导出排除。
+     */
+    @ColumnInfo(defaultValue = "0")
+    val isDemo: Boolean = false,
     val notes: String = "", // 进度笔记
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()
@@ -81,5 +87,11 @@ data class GoalCheckIn(
     val note: String = "",
     val mood: String = "", // GREAT, GOOD, OK, BAD
     val duration: Int = 0, // 用时(分钟)
+    /**
+     * 演示数据标记（v14）：示例打卡记录。
+     * 演示模式关闭时按此列整批物理删除；CSV 导出排除。
+     */
+    @ColumnInfo(defaultValue = "0")
+    val isDemo: Boolean = false,
     val createdAt: Long = System.currentTimeMillis()
 )

@@ -1,5 +1,6 @@
 package com.palmnote.data.db.entity
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.palmnote.domain.model.AssetStatus
@@ -58,7 +59,13 @@ data class AssetRecycleBin(
     val sortOrder: Int = 0,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis(),
-    val deletedAt: Long = System.currentTimeMillis()
+    val deletedAt: Long = System.currentTimeMillis(),
+    /**
+     * 演示数据标记（v14）：随原行进回收站。关演示时连同回收站一起清，
+     * 从回收站恢复也保留标记（不会混进真实数据）。
+     */
+    @ColumnInfo(defaultValue = "0")
+    val isDemo: Boolean = false,
 )
 
 fun Asset.toRecycleBin() = AssetRecycleBin(
@@ -81,7 +88,8 @@ fun Asset.toRecycleBin() = AssetRecycleBin(
     lostDate = lostDate, lostReason = lostReason,
     soldDate = soldDate, soldPrice = soldPrice, soldChannel = soldChannel,
     soldToWhom = soldToWhom, sortOrder = sortOrder,
-    createdAt = createdAt, updatedAt = updatedAt, deletedAt = System.currentTimeMillis()
+    createdAt = createdAt, updatedAt = updatedAt, deletedAt = System.currentTimeMillis(),
+    isDemo = isDemo
 )
 
 fun AssetRecycleBin.toAsset() = Asset(
@@ -104,5 +112,5 @@ fun AssetRecycleBin.toAsset() = Asset(
     lostDate = lostDate, lostReason = lostReason,
     soldDate = soldDate, soldPrice = soldPrice, soldChannel = soldChannel,
     soldToWhom = soldToWhom, sortOrder = sortOrder,
-    createdAt = createdAt, updatedAt = updatedAt
+    createdAt = createdAt, updatedAt = updatedAt, isDemo = isDemo
 )

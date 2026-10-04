@@ -15,17 +15,38 @@ enum class InputKind { TEXT_LINE, TEXT_MULTILINE, STEPPER, DRAG, TOGGLE, OPTION_
 
 /** 只读展示形态——不是文本（§3.5）。 */
 enum class DisplayKind {
-    TEXT, MONEY, NUMBER_UNIT, CHIP_LIST, STARS, SWATCH,
-    PROGRESS_BAR, RING,
-    CHECKLIST_VIEW, TABLE_VIEW, RANGE_VIEW, PERSON_STACK, MEDIA_GRID, MAP_VIEW, DERIVED_VALUE
+    TEXT,
+    MONEY,
+    NUMBER_UNIT,
+    CHIP_LIST,
+    STARS,
+    SWATCH,
+    PROGRESS_BAR,
+    RING,
+    CHECKLIST_VIEW,
+    TABLE_VIEW,
+    RANGE_VIEW,
+    PERSON_STACK,
+    MEDIA_GRID,
+    MAP_VIEW,
+    DERIVED_VALUE
 }
 
 /**
- * 进度形态（§3.5.1 两族 11 种；§十 定案 12：P1 落地 ③ 厚胶囊 / ⑥ 厚环 / ⑩ 分段齿环，
- * 列表卡一律横向薄档；⑦⑧⑨⑪ 及 ①②④⑤ 等数据依赖就绪后再开）。
+ * 进度形态（§3.5.1 两族 11 种；E04 定案：P1 可选 ③ 厚胶囊 / ⑥ 厚环闭环 /
+ * ⑨ 细环巨数 / ⑩ 分段齿环 / ⑪ 环上珠子）。
+ * THIN_TRACK / SEGMENTED_BAR 是列表卡投影，不作为选择器候选。
  * AUTO 不作为存储值出现——读取时已按语义解析为具体形态。
  */
-enum class ProgressForm { THICK_CAPSULE, THIN_TRACK, SEGMENTED_BAR, THICK_RING, SEGMENTED_RING }
+enum class ProgressForm {
+    THICK_CAPSULE,
+    THIN_TRACK,
+    SEGMENTED_BAR,
+    THICK_RING,
+    THIN_RING,
+    SEGMENTED_RING,
+    BEADED_RING
+}
 
 /** 可聚合函数（§3.5）；空集 = 不可聚合。 */
 enum class AggFn { SUM, AVG, MIN, MAX, COUNT, DISTRIBUTION }
@@ -55,21 +76,21 @@ data class FieldContract(
 ) {
     companion object {
         /** PERCENTAGE 并入 PERCENT；未知名一律回落 TEXT 契约（防御旧数据）。 */
-        fun normalize(name: String): FieldType =
-            FieldType.entries.firstOrNull { it.name == name }
-                ?: if (name == "PERCENTAGE") FieldType.PERCENT else FieldType.TEXT
+        fun normalize(name: String): FieldType = FieldType.entries.firstOrNull { it.name == name }
+            ?: if (name == "PERCENTAGE") FieldType.PERCENT else FieldType.TEXT
 
         /** 形态覆盖值解析：认不出的值回落 AUTO（§九 形态一致）。 */
-        fun parseProgressStyle(raw: String?): ProgressStyleSetting =
-            when (raw?.uppercase()) {
-                null, "" -> ProgressStyleSetting.AUTO
-                "THICK_CAPSULE" -> ProgressStyleSetting.FIXED(ProgressForm.THICK_CAPSULE)
-                "THIN_TRACK" -> ProgressStyleSetting.FIXED(ProgressForm.THIN_TRACK)
-                "SEGMENTED_BAR" -> ProgressStyleSetting.FIXED(ProgressForm.SEGMENTED_BAR)
-                "THICK_RING" -> ProgressStyleSetting.FIXED(ProgressForm.THICK_RING)
-                "SEGMENTED_RING" -> ProgressStyleSetting.FIXED(ProgressForm.SEGMENTED_RING)
-                else -> ProgressStyleSetting.AUTO
-            }
+        fun parseProgressStyle(raw: String?): ProgressStyleSetting = when (raw?.uppercase()) {
+            null, "" -> ProgressStyleSetting.AUTO
+            "THICK_CAPSULE" -> ProgressStyleSetting.FIXED(ProgressForm.THICK_CAPSULE)
+            "THIN_TRACK" -> ProgressStyleSetting.FIXED(ProgressForm.THIN_TRACK)
+            "SEGMENTED_BAR" -> ProgressStyleSetting.FIXED(ProgressForm.SEGMENTED_BAR)
+            "THICK_RING" -> ProgressStyleSetting.FIXED(ProgressForm.THICK_RING)
+            "THIN_RING" -> ProgressStyleSetting.FIXED(ProgressForm.THIN_RING)
+            "SEGMENTED_RING" -> ProgressStyleSetting.FIXED(ProgressForm.SEGMENTED_RING)
+            "BEADED_RING" -> ProgressStyleSetting.FIXED(ProgressForm.BEADED_RING)
+            else -> ProgressStyleSetting.AUTO
+        }
     }
 }
 
@@ -83,7 +104,7 @@ sealed interface ProgressStyleSetting {
  * 进度形态解析（§3.5.1 新规则 1）：同一字段在任何界面只有一种渲染。
  * 决定权在字段（progressStyle 覆盖 + 语义默认），不在卡片。
  * 语义默认表（§4.2 分配表的代码化，只覆盖高频；留空 = AUTO = 语义推荐值）：
- * - 单一目标（存钱 / 阅读 / 学习）→ ⑥ 厚环（重点卡）/ ③ 厚胶囊（列表投影）
+ * - 单一目标（存钱 / 阅读 / 学习）→ ③ 厚胶囊
  * - 可数（打卡 / 清单 x/y）→ ⑩ 分段齿环（重点卡）/ 分段条（列表投影）
  * - 区间（倒计时 / 纪念日）→ 天数型不走比例进度， heroes 直接巨字
  */
@@ -95,14 +116,16 @@ fun resolveProgressForm(config: FieldConfig): ProgressForm {
     val c = FieldContracts.of(config.type)
     return when {
         c.segmented || c.countable -> ProgressForm.SEGMENTED_RING
-        else -> ProgressForm.THICK_RING
+        else -> ProgressForm.THICK_CAPSULE
     }
 }
 
 /** 列表卡空间投影（§3.5.1 §五）：环 ≥130dp 放不进列表卡，圆环按同族语义投影为横向薄档。 */
 fun projectToListCard(form: ProgressForm): ProgressForm = when (form) {
     ProgressForm.THICK_RING -> ProgressForm.THICK_CAPSULE
+    ProgressForm.THIN_RING -> ProgressForm.THICK_CAPSULE
     ProgressForm.SEGMENTED_RING -> ProgressForm.SEGMENTED_BAR
+    ProgressForm.BEADED_RING -> ProgressForm.SEGMENTED_BAR
     else -> form
 }
 
@@ -119,10 +142,16 @@ data class ProgressValue(val current: Double?, val total: Double?, val fraction:
  */
 object FieldContracts {
     private fun c(
-        type: FieldType, group: FieldGroup, input: InputKind, display: DisplayKind,
-        agg: Set<AggFn> = emptySet(), defaultPolicy: DefaultPolicy = DefaultPolicy.NONE,
-        editorOnly: Boolean = false, progressCapable: Boolean = false,
-        countable: Boolean = false, segmented: Boolean = false
+        type: FieldType,
+        group: FieldGroup,
+        input: InputKind,
+        display: DisplayKind,
+        agg: Set<AggFn> = emptySet(),
+        defaultPolicy: DefaultPolicy = DefaultPolicy.NONE,
+        editorOnly: Boolean = false,
+        progressCapable: Boolean = false,
+        countable: Boolean = false,
+        segmented: Boolean = false
     ) = FieldContract(type, group, input, display, agg, defaultPolicy, editorOnly, progressCapable, countable, segmented)
 
     // 注册表：显式 34 条（PERCENTAGE 复用 PERCENT 槽）
@@ -136,37 +165,160 @@ object FieldContracts {
         put(FieldType.PHONE, c(FieldType.PHONE, FieldGroup.TEXTUAL, InputKind.TEXT_LINE, DisplayKind.TEXT))
         put(FieldType.FILE, c(FieldType.FILE, FieldGroup.MEDIA_SPACE, InputKind.MEDIA_PICK, DisplayKind.TEXT))
         // 数值
-        put(FieldType.NUMBER, c(FieldType.NUMBER, FieldGroup.NUMERIC, InputKind.STEPPER, DisplayKind.NUMBER_UNIT,
-            agg = setOf(AggFn.SUM, AggFn.AVG, AggFn.MIN, AggFn.MAX), defaultPolicy = DefaultPolicy.LAST_VALUE, progressCapable = true))
-        put(FieldType.CURRENCY, c(FieldType.CURRENCY, FieldGroup.NUMERIC, InputKind.STEPPER, DisplayKind.MONEY,
-            agg = setOf(AggFn.SUM, AggFn.AVG, AggFn.MIN, AggFn.MAX), defaultPolicy = DefaultPolicy.LAST_VALUE, progressCapable = true))
-        put(FieldType.PERCENT, c(FieldType.PERCENT, FieldGroup.NUMERIC, InputKind.DRAG, DisplayKind.PROGRESS_BAR,
-            agg = setOf(AggFn.AVG), progressCapable = true))
-        put(FieldType.PERCENTAGE, c(FieldType.PERCENTAGE, FieldGroup.NUMERIC, InputKind.DRAG, DisplayKind.PROGRESS_BAR,
-            agg = setOf(AggFn.AVG), progressCapable = true))
-        put(FieldType.SLIDER, c(FieldType.SLIDER, FieldGroup.NUMERIC, InputKind.DRAG, DisplayKind.NUMBER_UNIT,
-            agg = setOf(AggFn.AVG, AggFn.MIN, AggFn.MAX), defaultPolicy = DefaultPolicy.LAST_VALUE))
-        put(FieldType.DURATION, c(FieldType.DURATION, FieldGroup.NUMERIC, InputKind.STEPPER, DisplayKind.NUMBER_UNIT,
-            agg = setOf(AggFn.SUM, AggFn.AVG), defaultPolicy = DefaultPolicy.LAST_VALUE))
-        put(FieldType.RATING, c(FieldType.RATING, FieldGroup.CHOICE, InputKind.TOGGLE, DisplayKind.STARS,
-            agg = setOf(AggFn.AVG)))
-        put(FieldType.BOOLEAN, c(FieldType.BOOLEAN, FieldGroup.CHOICE, InputKind.TOGGLE, DisplayKind.SWATCH,
-            agg = setOf(AggFn.COUNT), defaultPolicy = DefaultPolicy.LAST_VALUE))
+        put(
+            FieldType.NUMBER,
+            c(
+                FieldType.NUMBER,
+                FieldGroup.NUMERIC,
+                InputKind.STEPPER,
+                DisplayKind.NUMBER_UNIT,
+                agg = setOf(AggFn.SUM, AggFn.AVG, AggFn.MIN, AggFn.MAX),
+                defaultPolicy = DefaultPolicy.LAST_VALUE,
+                progressCapable = true
+            )
+        )
+        put(
+            FieldType.CURRENCY,
+            c(
+                FieldType.CURRENCY,
+                FieldGroup.NUMERIC,
+                InputKind.STEPPER,
+                DisplayKind.MONEY,
+                agg = setOf(AggFn.SUM, AggFn.AVG, AggFn.MIN, AggFn.MAX),
+                defaultPolicy = DefaultPolicy.LAST_VALUE,
+                progressCapable = true
+            )
+        )
+        put(
+            FieldType.PERCENT,
+            c(
+                FieldType.PERCENT,
+                FieldGroup.NUMERIC,
+                InputKind.DRAG,
+                DisplayKind.PROGRESS_BAR,
+                agg = setOf(AggFn.AVG),
+                progressCapable = true
+            )
+        )
+        put(
+            FieldType.PERCENTAGE,
+            c(
+                FieldType.PERCENTAGE,
+                FieldGroup.NUMERIC,
+                InputKind.DRAG,
+                DisplayKind.PROGRESS_BAR,
+                agg = setOf(AggFn.AVG),
+                progressCapable = true
+            )
+        )
+        put(
+            FieldType.SLIDER,
+            c(
+                FieldType.SLIDER,
+                FieldGroup.NUMERIC,
+                InputKind.DRAG,
+                DisplayKind.NUMBER_UNIT,
+                agg = setOf(AggFn.AVG, AggFn.MIN, AggFn.MAX),
+                defaultPolicy = DefaultPolicy.LAST_VALUE
+            )
+        )
+        put(
+            FieldType.DURATION,
+            c(
+                FieldType.DURATION,
+                FieldGroup.NUMERIC,
+                InputKind.STEPPER,
+                DisplayKind.NUMBER_UNIT,
+                agg = setOf(AggFn.SUM, AggFn.AVG),
+                defaultPolicy = DefaultPolicy.LAST_VALUE
+            )
+        )
+        put(
+            FieldType.RATING,
+            c(
+                FieldType.RATING,
+                FieldGroup.CHOICE,
+                InputKind.TOGGLE,
+                DisplayKind.STARS,
+                agg = setOf(AggFn.AVG)
+            )
+        )
+        put(
+            FieldType.BOOLEAN,
+            c(
+                FieldType.BOOLEAN,
+                FieldGroup.CHOICE,
+                InputKind.TOGGLE,
+                DisplayKind.SWATCH,
+                agg = setOf(AggFn.COUNT),
+                defaultPolicy = DefaultPolicy.LAST_VALUE
+            )
+        )
         put(FieldType.COLOR, c(FieldType.COLOR, FieldGroup.CHOICE, InputKind.TOGGLE, DisplayKind.SWATCH))
         // 点选（选项）
-        put(FieldType.SELECT, c(FieldType.SELECT, FieldGroup.CHOICE, InputKind.OPTION_CHIPS, DisplayKind.CHIP_LIST,
-            agg = setOf(AggFn.COUNT, AggFn.DISTRIBUTION), defaultPolicy = DefaultPolicy.LAST_VALUE))
-        put(FieldType.MULTI_SELECT, c(FieldType.MULTI_SELECT, FieldGroup.CHOICE, InputKind.OPTION_CHIPS, DisplayKind.CHIP_LIST,
-            agg = setOf(AggFn.COUNT, AggFn.DISTRIBUTION), defaultPolicy = DefaultPolicy.LAST_VALUE))
-        put(FieldType.TAG, c(FieldType.TAG, FieldGroup.CHOICE, InputKind.OPTION_CHIPS, DisplayKind.CHIP_LIST,
-            agg = setOf(AggFn.COUNT)))
+        put(
+            FieldType.SELECT,
+            c(
+                FieldType.SELECT,
+                FieldGroup.CHOICE,
+                InputKind.OPTION_CHIPS,
+                DisplayKind.CHIP_LIST,
+                agg = setOf(AggFn.COUNT, AggFn.DISTRIBUTION),
+                defaultPolicy = DefaultPolicy.LAST_VALUE
+            )
+        )
+        put(
+            FieldType.MULTI_SELECT,
+            c(
+                FieldType.MULTI_SELECT,
+                FieldGroup.CHOICE,
+                InputKind.OPTION_CHIPS,
+                DisplayKind.CHIP_LIST,
+                agg = setOf(AggFn.COUNT, AggFn.DISTRIBUTION),
+                defaultPolicy = DefaultPolicy.LAST_VALUE
+            )
+        )
+        put(
+            FieldType.TAG,
+            c(
+                FieldType.TAG,
+                FieldGroup.CHOICE,
+                InputKind.OPTION_CHIPS,
+                DisplayKind.CHIP_LIST,
+                agg = setOf(AggFn.COUNT)
+            )
+        )
         // 点选（快捷）
-        put(FieldType.DATE, c(FieldType.DATE, FieldGroup.NUMERIC, InputKind.QUICK_PICK, DisplayKind.TEXT,
-            defaultPolicy = DefaultPolicy.TODAY))
-        put(FieldType.TIME, c(FieldType.TIME, FieldGroup.NUMERIC, InputKind.QUICK_PICK, DisplayKind.TEXT,
-            defaultPolicy = DefaultPolicy.CURRENT_TIME))
-        put(FieldType.DATETIME, c(FieldType.DATETIME, FieldGroup.NUMERIC, InputKind.QUICK_PICK, DisplayKind.TEXT,
-            defaultPolicy = DefaultPolicy.TODAY))
+        put(
+            FieldType.DATE,
+            c(
+                FieldType.DATE,
+                FieldGroup.NUMERIC,
+                InputKind.QUICK_PICK,
+                DisplayKind.TEXT,
+                defaultPolicy = DefaultPolicy.TODAY
+            )
+        )
+        put(
+            FieldType.TIME,
+            c(
+                FieldType.TIME,
+                FieldGroup.NUMERIC,
+                InputKind.QUICK_PICK,
+                DisplayKind.TEXT,
+                defaultPolicy = DefaultPolicy.CURRENT_TIME
+            )
+        )
+        put(
+            FieldType.DATETIME,
+            c(
+                FieldType.DATETIME,
+                FieldGroup.NUMERIC,
+                InputKind.QUICK_PICK,
+                DisplayKind.TEXT,
+                defaultPolicy = DefaultPolicy.TODAY
+            )
+        )
         // 媒体与空间
         put(FieldType.IMAGE, c(FieldType.IMAGE, FieldGroup.MEDIA_SPACE, InputKind.MEDIA_PICK, DisplayKind.MEDIA_GRID))
         put(FieldType.VIDEO, c(FieldType.VIDEO, FieldGroup.MEDIA_SPACE, InputKind.MEDIA_PICK, DisplayKind.MEDIA_GRID))
@@ -174,8 +326,18 @@ object FieldContracts {
         put(FieldType.LOCATION, c(FieldType.LOCATION, FieldGroup.MEDIA_SPACE, InputKind.TEXT_LINE, DisplayKind.TEXT))
         put(FieldType.MAP, c(FieldType.MAP, FieldGroup.MEDIA_SPACE, InputKind.MEDIA_PICK, DisplayKind.MAP_VIEW))
         // 复合 E 组
-        put(FieldType.CHECKLIST, c(FieldType.CHECKLIST, FieldGroup.COMPOUND, InputKind.OPTION_CHIPS, DisplayKind.CHECKLIST_VIEW,
-            countable = true, segmented = true))
+        put(
+            FieldType.CHECKLIST,
+            c(
+                FieldType.CHECKLIST,
+                FieldGroup.COMPOUND,
+                InputKind.OPTION_CHIPS,
+                DisplayKind.CHECKLIST_VIEW,
+                progressCapable = true,
+                countable = true,
+                segmented = true
+            )
+        )
         put(FieldType.TABLE, c(FieldType.TABLE, FieldGroup.COMPOUND, InputKind.OPTION_CHIPS, DisplayKind.TABLE_VIEW))
         put(FieldType.RANGE, c(FieldType.RANGE, FieldGroup.COMPOUND, InputKind.QUICK_PICK, DisplayKind.RANGE_VIEW))
         put(FieldType.PERSON, c(FieldType.PERSON, FieldGroup.COMPOUND, InputKind.OPTION_CHIPS, DisplayKind.PERSON_STACK))
@@ -183,7 +345,19 @@ object FieldContracts {
         put(FieldType.FORMULA, c(FieldType.FORMULA, FieldGroup.DERIVED, InputKind.NONE, DisplayKind.DERIVED_VALUE, editorOnly = true, progressCapable = true))
         put(FieldType.REMAINING, c(FieldType.REMAINING, FieldGroup.DERIVED, InputKind.NONE, DisplayKind.DERIVED_VALUE, editorOnly = true))
         put(FieldType.ELAPSED, c(FieldType.ELAPSED, FieldGroup.DERIVED, InputKind.NONE, DisplayKind.DERIVED_VALUE, editorOnly = true))
-        put(FieldType.STREAK, c(FieldType.STREAK, FieldGroup.DERIVED, InputKind.NONE, DisplayKind.DERIVED_VALUE, editorOnly = true, countable = true, segmented = true))
+        put(
+            FieldType.STREAK,
+            c(
+                FieldType.STREAK,
+                FieldGroup.DERIVED,
+                InputKind.NONE,
+                DisplayKind.DERIVED_VALUE,
+                editorOnly = true,
+                progressCapable = true,
+                countable = true,
+                segmented = true
+            )
+        )
     }
 
     /** 查表入口（§3.5：`FieldContracts.of(field.type)`）。 */
@@ -191,6 +365,23 @@ object FieldContracts {
 
     /** 字符串名（FieldDef 遗留 / JSON 直读）→ 契约。 */
     fun byName(name: String): FieldContract = of(FieldContract.normalize(name))
+
+    /**
+     * E04：只返回该字段真能渲染的进度形态；分段条是列表投影，不属于可选形态。
+     *
+     * 连续型数值（NUMBER / CURRENCY / ...）支持全部五种，清单与连击是离散项，只能用分段环。
+     */
+    fun selectableProgressForms(type: FieldType): List<ProgressForm> = when {
+        !of(type).progressCapable -> emptyList()
+        of(type).segmented -> listOf(ProgressForm.SEGMENTED_RING)
+        else -> listOf(
+            ProgressForm.THICK_CAPSULE,
+            ProgressForm.THICK_RING,
+            ProgressForm.THIN_RING,
+            ProgressForm.SEGMENTED_RING,
+            ProgressForm.BEADED_RING
+        )
+    }
 
     /** 断言：34 种类型 × 契约全穷举（§九「无 else 承载未实现类型」）。 */
     fun assertExhaustive(): Boolean = FieldType.entries.all { registry.containsKey(it) }
@@ -202,11 +393,19 @@ object FieldContracts {
 
 object DerivedEvaluator {
 
-    private fun num(obj: JsonObject, key: String): Double? =
-        (obj[key] as? JsonPrimitive)?.content?.toDoubleOrNull()
+    private fun num(obj: JsonObject, key: String): Double? = (obj[key] as? JsonPrimitive)?.content?.toDoubleOrNull()
 
-    private fun dateMs(obj: JsonObject, key: String): Long? =
-        (obj[key] as? JsonPrimitive)?.content?.toLongOrNull()
+    /**
+     * 取日期字段的毫秒值。
+     *
+     * **必须走 [com.palmnote.domain.util.DateUtils.parseDateValueOrNull]**，不能只 `toLongOrNull()`：
+     * 记录表单写进去的是 **ISO 字符串**（`DatePillRow` → `LocalDate.toString()`），
+     * 只认毫秒会让 ELAPSED（剩余 / 已过天数）对**用户手填的日期**永远算不出、静默消失
+     * ——与详情页 DATE 行曾经踩过的是同一个坑（见 `LifeDetailModel` 里 DATE 分支的注释）。
+     * 现在毫秒与 `yyyy-MM-dd` / `yyyy-MM-dd HH:mm` 三种写法都认。
+     */
+    private fun dateMs(obj: JsonObject, key: String): Long? = (obj[key] as? JsonPrimitive)?.content
+        ?.let { com.palmnote.domain.util.DateUtils.parseDateValueOrNull(it) }
 
     /**
      * FORMULA：同条记录内其他字段 + 四则运算。
@@ -240,54 +439,63 @@ object DerivedEvaluator {
     /** 极简四则求值（Shunting-yard，无函数无变量；算不上表达式时返回 null）。 */
     private fun evalArithmetic(expr: String): Double? {
         return try {
-        val tokens = Regex("\\d+\\.?\\d*|[+\\-*/()]").findAll(expr.replace(" ", "")).map { it.value }.toList()
-        if (tokens.isEmpty()) return null
-        val output = ArrayDeque<String>()
-        val ops = ArrayDeque<String>()
-        val prec = mapOf("+" to 1, "-" to 1, "*" to 2, "/" to 2)
-        var prev: String? = null
-        for (t in tokens) {
-            when {
-                t.toDoubleOrNull() != null -> output.addLast(t)
-                t == "(" -> ops.addLast(t)
-                t == ")" -> {
-                    while (ops.isNotEmpty() && ops.last() != "(") output.addLast(ops.removeLast())
-                    if (ops.isEmpty()) return null
-                    ops.removeLast()
-                }
-                else -> {
-                    // 一元负号：前一个 token 是运算符或开头
-                    if (t == "-" && (prev == null || prev in prec || prev == "(")) { output.addLast("0") }
-                    while (ops.isNotEmpty() && ops.last() != "(" && prec[ops.last()]!! >= prec[t]!!) {
-                        output.addLast(ops.removeLast())
+            val tokens = Regex("\\d+\\.?\\d*|[+\\-*/()]").findAll(expr.replace(" ", "")).map { it.value }.toList()
+            if (tokens.isEmpty()) return null
+            val output = ArrayDeque<String>()
+            val ops = ArrayDeque<String>()
+            val prec = mapOf("+" to 1, "-" to 1, "*" to 2, "/" to 2)
+            var prev: String? = null
+            for (t in tokens) {
+                when {
+                    t.toDoubleOrNull() != null -> output.addLast(t)
+                    t == "(" -> ops.addLast(t)
+                    t == ")" -> {
+                        while (ops.isNotEmpty() && ops.last() != "(") output.addLast(ops.removeLast())
+                        if (ops.isEmpty()) return null
+                        ops.removeLast()
                     }
-                    ops.addLast(t)
+                    else -> {
+                        // 一元负号：前一个 token 是运算符或开头
+                        if (t == "-" && (prev == null || prev in prec || prev == "(")) {
+                            output.addLast("0")
+                        }
+                        while (ops.isNotEmpty() && ops.last() != "(" && prec[ops.last()]!! >= prec[t]!!) {
+                            output.addLast(ops.removeLast())
+                        }
+                        ops.addLast(t)
+                    }
+                }
+                prev = t
+            }
+            while (ops.isNotEmpty()) {
+                val op = ops.removeLast()
+                if (op == "(") return null
+                output.addLast(op)
+            }
+            val stack = ArrayDeque<Double>()
+            for (t in output) {
+                when {
+                    t.toDoubleOrNull() != null -> stack.addLast(t.toDouble())
+                    else -> {
+                        if (stack.size < 2) return null
+                        val b = stack.removeLast()
+                        val a = stack.removeLast()
+                        stack.addLast(
+                            when (t) {
+                                "+" -> a + b
+                                "-" -> a - b
+                                "*" -> a * b
+                                "/" -> if (b == 0.0) return null else a / b
+                                else -> return null
+                            }
+                        )
+                    }
                 }
             }
-            prev = t
+            if (stack.size == 1) stack.removeLast() else null
+        } catch (_: Exception) {
+            null
         }
-        while (ops.isNotEmpty()) {
-            val op = ops.removeLast()
-            if (op == "(") return null
-            output.addLast(op)
-        }
-        val stack = ArrayDeque<Double>()
-        for (t in output) {
-            when {
-                t.toDoubleOrNull() != null -> stack.addLast(t.toDouble())
-                else -> {
-                    if (stack.size < 2) return null
-                    val b = stack.removeLast(); val a = stack.removeLast()
-                    stack.addLast(when (t) {
-                        "+" -> a + b; "-" -> a - b; "*" -> a * b
-                        "/" -> if (b == 0.0) return null else a / b
-                        else -> return null
-                    })
-                }
-            }
-        }
-        if (stack.size == 1) stack.removeLast() else null
-        } catch (_: Exception) { null }
     }
 }
 
@@ -302,7 +510,9 @@ object CompoundPayload {
         return try {
             val obj = kotlinx.serialization.json.Json.decodeFromString<JsonObject>(raw)
             obj
-        } catch (_: Exception) { null }
+        } catch (_: Exception) {
+            null
+        }
     }
 }
 
@@ -329,16 +539,23 @@ fun parseChecklist(raw: String?): List<ChecklistRow> {
     }
 }
 
-fun encodeChecklist(rows: List<ChecklistRow>): String = CompoundPayload.wrap(kotlinx.serialization.json.buildJsonObject {
-    put("items", kotlinx.serialization.json.buildJsonArray {
-        rows.forEach { add(kotlinx.serialization.json.buildJsonObject {
-            put("text", JsonPrimitive(it.text))
-            put("done", JsonPrimitive(it.done))
-        }) }
-    })
-}).toString()
+fun encodeChecklist(rows: List<ChecklistRow>): String {
+    val items = buildJsonArray {
+        for (row in rows) {
+            val item = buildJsonObject {
+                put("text", JsonPrimitive(row.text))
+                put("done", JsonPrimitive(row.done))
+            }
+            add(item)
+        }
+    }
+    val payload = buildJsonObject {
+        put("items", items)
+    }
+    return CompoundPayload.wrap(payload).toString()
+}
 
-/** TABLE 载荷：`{"v":1,"columns":[{"key","label","type"}],"rows":[[cell...]]}`；cell 为 JsonPrimitive 或 {"image":path}。 */
+/** TABLE 载荷：`{"v":1,"columns":[{"key","label","type"}],"rows":[[cell, ...]]}`；cell 为 JsonPrimitive 或 {"image":path}。 */
 data class TableColumn(val key: String, val label: String, val type: FieldType)
 data class TableModel(val columns: List<TableColumn>, val rows: List<List<String>>)
 
@@ -359,20 +576,30 @@ fun parseTable(raw: String?): TableModel {
     return TableModel(cols, rows)
 }
 
-fun encodeTable(model: TableModel): String = CompoundPayload.wrap(kotlinx.serialization.json.buildJsonObject {
-    put("columns", kotlinx.serialization.json.buildJsonArray {
-        model.columns.forEach { add(kotlinx.serialization.json.buildJsonObject {
-            put("key", JsonPrimitive(it.key))
-            put("label", JsonPrimitive(it.label))
-            put("type", JsonPrimitive(it.type.name))
-        }) }
-    })
-    put("rows", kotlinx.serialization.json.buildJsonArray {
-        model.rows.forEach { row -> add(kotlinx.serialization.json.buildJsonArray {
-            row.forEach { cell -> add(JsonPrimitive(cell)) }
-        }) }
-    })
-}).toString()
+fun encodeTable(model: TableModel): String {
+    val columns = buildJsonArray {
+        model.columns.forEach { column ->
+            add(
+                buildJsonObject {
+                    put("key", JsonPrimitive(column.key))
+                    put("label", JsonPrimitive(column.label))
+                    put("type", JsonPrimitive(column.type.name))
+                }
+            )
+        }
+    }
+    val rows = buildJsonArray {
+        model.rows.forEach { row ->
+            add(buildJsonArray { row.forEach { cell -> add(JsonPrimitive(cell)) } })
+        }
+    }
+    return CompoundPayload.wrap(
+        buildJsonObject {
+            put("columns", columns)
+            put("rows", rows)
+        }
+    ).toString()
+}
 
 /** RANGE 载荷：`{"v":1,"start":ms,"end":ms}`（或数值 start/end）。 */
 data class RangeModel(val start: String, val end: String)
@@ -384,10 +611,12 @@ fun parseRange(raw: String?): RangeModel? {
     return RangeModel(s, e)
 }
 
-fun encodeRange(r: RangeModel): String = CompoundPayload.wrap(kotlinx.serialization.json.buildJsonObject {
-    put("start", JsonPrimitive(r.start))
-    put("end", JsonPrimitive(r.end))
-}).toString()
+fun encodeRange(r: RangeModel): String = CompoundPayload.wrap(
+    buildJsonObject {
+        put("start", JsonPrimitive(r.start))
+        put("end", JsonPrimitive(r.end))
+    }
+).toString()
 
 /** MAP 载荷（§3.7）：route 路线点 + 可选 track 轨迹 + 可选 underlay 底图 + connect 连线开关。 */
 data class MapPoint(val name: String, val lat: Double? = null, val lng: Double? = null, val note: String = "")
@@ -417,9 +646,12 @@ fun parseMap(raw: String?): MapModel {
             val arr = p as? kotlinx.serialization.json.JsonArray ?: return@mapNotNull null
             val lat = arr.getOrNull(0)?.jsonPrimitive?.content?.toDoubleOrNull() ?: return@mapNotNull null
             val lng = arr.getOrNull(1)?.jsonPrimitive?.content?.toDoubleOrNull() ?: return@mapNotNull null
-            MapTrackPoint(lat, lng,
+            MapTrackPoint(
+                lat,
+                lng,
                 arr.getOrNull(2)?.jsonPrimitive?.content?.toDoubleOrNull(),
-                arr.getOrNull(3)?.jsonPrimitive?.content?.toLongOrNull())
+                arr.getOrNull(3)?.jsonPrimitive?.content?.toLongOrNull()
+            )
         } ?: emptyList()
         val stat = it["stat"] as? JsonObject
         MapTrack(
@@ -439,34 +671,57 @@ fun parseMap(raw: String?): MapModel {
 }
 
 /** MAP 全量载荷编码（route + connect + track + underlay）。 */
-fun encodeMapModel(model: MapModel): String = CompoundPayload.wrap(buildJsonObject {
-    put("route", buildJsonArray {
-        model.route.forEach { p -> add(buildJsonObject {
-            put("name", JsonPrimitive(p.name))
-            if (p.lat != null) put("lat", JsonPrimitive(p.lat))
-            if (p.lng != null) put("lng", JsonPrimitive(p.lng))
-            if (p.note.isNotBlank()) put("note", JsonPrimitive(p.note))
-        }) }
-    })
-    put("connect", JsonPrimitive(model.connect))
-    if (model.track != null) {
-        val t = model.track
-        put("track", buildJsonObject {
-            put("pts", buildJsonArray {
-                t.pts.take(300).forEach { p -> add(buildJsonArray {
-                    add(JsonPrimitive(p.lat)); add(JsonPrimitive(p.lng))
-                    if (p.ele != null) add(JsonPrimitive(p.ele))
-                    if (p.t != null) add(JsonPrimitive(p.t))
-                }) }
-            })
-            put("stat", buildJsonObject {
-                put("dist", JsonPrimitive(t.distM))
-                put("ascent", JsonPrimitive(t.ascentM))
-                put("descent", JsonPrimitive(t.descentM))
-                put("dur", JsonPrimitive(t.durSec))
-                put("n", JsonPrimitive(t.pts.size))
-            })
-        })
+fun encodeMapModel(model: MapModel): String = CompoundPayload.wrap(
+    buildJsonObject {
+        put(
+            "route",
+            buildJsonArray {
+                model.route.forEach { p ->
+                    add(
+                        buildJsonObject {
+                            put("name", JsonPrimitive(p.name))
+                            if (p.lat != null) put("lat", JsonPrimitive(p.lat))
+                            if (p.lng != null) put("lng", JsonPrimitive(p.lng))
+                            if (p.note.isNotBlank()) put("note", JsonPrimitive(p.note))
+                        }
+                    )
+                }
+            }
+        )
+        put("connect", JsonPrimitive(model.connect))
+        if (model.track != null) {
+            val t = model.track
+            put(
+                "track",
+                buildJsonObject {
+                    put(
+                        "pts",
+                        buildJsonArray {
+                            t.pts.take(300).forEach { p ->
+                                add(
+                                    buildJsonArray {
+                                        add(JsonPrimitive(p.lat))
+                                        add(JsonPrimitive(p.lng))
+                                        if (p.ele != null) add(JsonPrimitive(p.ele))
+                                        if (p.t != null) add(JsonPrimitive(p.t))
+                                    }
+                                )
+                            }
+                        }
+                    )
+                    put(
+                        "stat",
+                        buildJsonObject {
+                            put("dist", JsonPrimitive(t.distM))
+                            put("ascent", JsonPrimitive(t.ascentM))
+                            put("descent", JsonPrimitive(t.descentM))
+                            put("dur", JsonPrimitive(t.durSec))
+                            put("n", JsonPrimitive(t.pts.size))
+                        }
+                    )
+                }
+            )
+        }
+        if (model.underlay != null) put("underlay", JsonPrimitive(model.underlay))
     }
-    if (model.underlay != null) put("underlay", JsonPrimitive(model.underlay))
-}).toString()
+).toString()

@@ -81,6 +81,10 @@ class DashboardViewModel @Inject constructor(
         .map { it.filter { c -> c.visible } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DashboardCardConfig.defaults.filter { it.visible })
 
+    /** 演示模式开启中：净资产等「含示例」的数字需要标注，否则用户会把示例余额当成自己的。 */
+    val demoModeOn: StateFlow<Boolean> = preferencesManager.lifeDemoMode
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
     val presetCategoryOverrides: StateFlow<Map<String, String>> =
         preferencesManager.presetCategoryOverrides
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())

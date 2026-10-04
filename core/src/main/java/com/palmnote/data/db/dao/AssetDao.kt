@@ -160,6 +160,14 @@ interface AssetDao {
     @Query("SELECT COUNT(*) FROM assets WHERE category = :category")
     suspend fun countByCategory(category: String): Int
 
+
+    /** 演示数据清理（v14 isDemo 列）：演示模式关闭时物理删除示例行。 */
+    @Query("DELETE FROM assets WHERE isDemo = 1")
+    suspend fun clearDemoAssets()
+
+    /** 当前示例行数（关演示反馈 / 幂等判断用）。 */
+    @Query("SELECT COUNT(*) FROM assets WHERE isDemo = 1")
+    suspend fun countDemoAssets(): Int
 }
 
 data class CategoryCount(

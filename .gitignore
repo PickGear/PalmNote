@@ -12,7 +12,6 @@ release.jks
 app/build/
 *.log
 .kotlin/
-.opencode/
 Thumbs.db
 *.hprof
 *.apk
@@ -23,10 +22,3 @@ Thumbs.db
 *.pfx
 *.pem
 *.key
-.mimosa/
-.zcode/
-.zcodeignore
-.workbuddy/
-/docs/life-*.md
-/docs/*-plan.md
-/docs/*-log.md

@@ -45,4 +45,16 @@ interface AccountBookDao {
 
     @Query("DELETE FROM account_books WHERE id = :id")
     suspend fun deleteBook(id: Long)
+
+    /** 演示数据清理（v14 isDemo 列）：演示模式关闭时物理删除示例行。 */
+    @Query("DELETE FROM account_books WHERE isDemo = 1")
+    suspend fun clearDemoBooks()
+
+    /** 当前示例行数（关演示反馈 / 幂等判断用）。 */
+    @Query("SELECT COUNT(*) FROM account_books WHERE isDemo = 1")
+    suspend fun countDemoBooks(): Int
+
+    /** 演示期用户自建账单的毕业迁移目标：优先默认账本，其次最早的普通账本。 */
+    @Query("SELECT id FROM account_books WHERE isDemo = 0 ORDER BY isDefault DESC, sortOrder ASC LIMIT 1")
+    suspend fun firstRealBookId(): Long?
 }

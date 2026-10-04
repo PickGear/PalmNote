@@ -49,4 +49,23 @@ object StreakEngine {
     /** 'yyyy-MM-dd' 字符串集合（FieldValueDao.activeDays 直出）→ 引擎输入。 */
     fun compute(dayStrings: List<String>, today: LocalDate = LocalDate.now()): StreakResult =
         compute(dayStrings.mapNotNull { runCatching { LocalDate.parse(it) }.getOrNull() }.toSet(), today)
+
+    /**
+     * 近 [window] 天（含今天）的**一致性**：命中天数 / 窗口天数。
+     * 与连击互补——连击断一天就归零，一致性只是百分比微降，长期留存看它。
+     */
+    fun consistency(days: Set<LocalDate>, window: Int = 7, today: LocalDate = LocalDate.now()): ConsistencyResult {
+        val start = today.minusDays((window - 1).toLong())
+        val hits = days.count { !it.isBefore(start) && !it.isAfter(today) }
+        return ConsistencyResult(hits.coerceAtMost(window), window)
+    }
+
+    /** 'yyyy-MM-dd' 字符串集合（FieldValueDao.activeDays 直出）→ 一致性输入。 */
+    fun consistency(dayStrings: List<String>, window: Int = 7, today: LocalDate = LocalDate.now()): ConsistencyResult =
+        consistency(dayStrings.mapNotNull { runCatching { LocalDate.parse(it) }.getOrNull() }.toSet(), window, today)
+}
+
+/** 一致性求值结果：[percent] = hits / window。 */
+data class ConsistencyResult(val hits: Int, val window: Int) {
+    val percent: Int get() = if (window <= 0) 0 else hits * 100 / window
 }

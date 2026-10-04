@@ -50,6 +50,9 @@ class AssetWidgetProvider : AppWidgetProvider() {
 
     private fun updateWidgets(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
         val pendingResult = goAsync()
+        // onEnabled 未触发的路径（进程被杀后直接 onUpdate）没有缓存作用域：
+        // 用临时作用域并在收尾取消，避免孤儿 Job 泄漏（审计 #16）
+        val ownedScope = scope == null
         val coroutineScope = scope ?: CoroutineScope(Dispatchers.IO + SupervisorJob())
 
         coroutineScope.launch {
@@ -92,6 +95,7 @@ class AssetWidgetProvider : AppWidgetProvider() {
                 AppLogger.e("AssetWidgetProvider", "Widget update failed", e)
             } finally {
                 pendingResult.finish()
+                if (ownedScope) coroutineScope.cancel()
             }
         }
     }

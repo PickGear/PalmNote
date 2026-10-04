@@ -1,6 +1,5 @@
 package com.palmnote.domain.repository
 
-import androidx.paging.PagingData
 import com.palmnote.data.db.entity.LifeItem
 import com.palmnote.domain.model.SubscriptionDueItem
 import kotlinx.coroutines.flow.Flow
@@ -13,8 +12,6 @@ interface LifeItemRepository {
     fun getItemByIdFlow(id: Long): Flow<LifeItem?>
     fun getActiveItemsByTemplate(templateId: Long, limit: Int): Flow<List<LifeItem>>
     fun getItemCountByTemplate(templateId: Long): Flow<Int>
-    fun getPagedItemsByTemplate(templateId: Long): Flow<PagingData<LifeItem>>
-    fun getPagedAllItems(): Flow<PagingData<LifeItem>>
     suspend fun search(query: String): List<LifeItem>
     suspend fun insertItem(item: LifeItem): Long
     suspend fun updateItem(item: LifeItem)
@@ -43,9 +40,6 @@ interface LifeItemRepository {
     fun getSubtasks(parentId: Long): Flow<List<LifeItem>>
     /** 纪念日类条目（演示感知·互斥）：includeDemo=true 只看示例，false 只看用户自己的。 */
     fun getAnniversaryLikeItems(includeDemo: Boolean, demoMeta: String): Flow<List<LifeItem>>
-
-    /** 逾期反馈。 */
-    fun getOverdue(now: Long): Flow<List<LifeItem>>
 
     /** 全量搜索：标题 / 备注 / 字段值全文。 */
     fun searchItems(query: String): Flow<List<LifeItem>>

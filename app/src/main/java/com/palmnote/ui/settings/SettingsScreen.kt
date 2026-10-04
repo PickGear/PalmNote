@@ -132,10 +132,23 @@ fun SettingsScreen(
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                         Spacer(Modifier.height(12.dp))
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
-                            StatItemSmall(Icons.Outlined.Inventory2, "${state.assetCount}", stringResource(R.string.settings_items), InfoBlue)
-                            StatItemSmall(Icons.Outlined.Flag, "${state.goalCount}", stringResource(R.string.settings_goals), LifePlan)
-                            StatItemSmall(Icons.Outlined.FavoriteBorder, "${state.anniversaryCount}", stringResource(R.string.settings_anniversaries), AccentOrange)
-                            StatItemSmall(Icons.Outlined.AutoAwesome, "${state.momentCount}", stringResource(R.string.settings_moments), ModuleLife)
+                            // 统计条用设置页多巴胺装饰色（视觉节奏；归属语义见各模块页）
+                            StatItemSmall(
+                                Icons.Outlined.Inventory2, "${state.assetCount}",
+                                stringResource(R.string.settings_items), DopamineSky
+                            )
+                            StatItemSmall(
+                                Icons.Outlined.Flag, "${state.goalCount}",
+                                stringResource(R.string.settings_goals), DopamineCoral
+                            )
+                            StatItemSmall(
+                                Icons.Outlined.FavoriteBorder, "${state.anniversaryCount}",
+                                stringResource(R.string.settings_anniversaries), DopamineViolet
+                            )
+                            StatItemSmall(
+                                Icons.Outlined.AutoAwesome, "${state.momentCount}",
+                                stringResource(R.string.settings_moments), DopaminePink
+                            )
                         }
                     }
                 }
@@ -149,15 +162,50 @@ fun SettingsScreen(
                     color = MaterialTheme.colorScheme.surface
                 ) {
                     Column {
-                        SettingsMenuItem(icon = Icons.Outlined.Palette, title = stringResource(R.string.settings_appearance), subtitle = stringResource(R.string.settings_appearance_subtitle), tint = LifePlan, onClick = onNavigateToGeneral)
+                        // 设置项用多巴胺装饰色（每项一个稳定色，纯视觉节奏，不表达归属/状态）
+                        SettingsMenuItem(
+                            icon = Icons.Outlined.Palette,
+                            title = stringResource(R.string.settings_appearance),
+                            subtitle = stringResource(R.string.settings_appearance_subtitle),
+                            tint = DopamineCoral,
+                            onClick = onNavigateToGeneral
+                        )
                         HorizontalDivider(modifier = Modifier.padding(horizontal = 52.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-                        SettingsMenuItem(icon = Icons.Outlined.Notifications, title = stringResource(R.string.settings_reminder), subtitle = stringResource(R.string.settings_reminder_subtitle), tint = AccentOrange, onClick = onNavigateToReminder)
+                        SettingsMenuItem(
+                            icon = Icons.Outlined.Notifications,
+                            title = stringResource(R.string.settings_reminder),
+                            subtitle = stringResource(R.string.settings_reminder_subtitle),
+                            tint = DopamineAmber,
+                            onClick = onNavigateToReminder
+                        )
                         HorizontalDivider(modifier = Modifier.padding(horizontal = 52.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-                        SettingsMenuItem(icon = Icons.Outlined.Category, title = stringResource(R.string.settings_category_manage), subtitle = stringResource(R.string.settings_category_manage_subtitle), tint = InfoBlue, onClick = onNavigateToManageCategory)
+                        SettingsMenuItem(
+                            icon = Icons.Outlined.Category,
+                            title = stringResource(R.string.settings_category_manage),
+                            subtitle = stringResource(R.string.settings_category_manage_subtitle),
+                            tint = DopamineMint,
+                            onClick = onNavigateToManageCategory
+                        )
                         HorizontalDivider(modifier = Modifier.padding(horizontal = 52.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-                        SettingsMenuItem(icon = Icons.Outlined.Storage, title = stringResource(R.string.settings_data), subtitle = stringResource(R.string.settings_data_subtitle), tint = LifeRecord, onClick = onNavigateToDataStorage)
+                        SettingsMenuItem(
+                            icon = Icons.Outlined.Storage,
+                            title = stringResource(R.string.settings_data),
+                            subtitle = stringResource(R.string.settings_data_subtitle),
+                            tint = DopamineSky,
+                            onClick = onNavigateToDataStorage
+                        )
                         HorizontalDivider(modifier = Modifier.padding(horizontal = 52.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-                        SettingsMenuItem(icon = Icons.Outlined.Lock, title = stringResource(R.string.settings_security), subtitle = if (state.appLockEnabled) stringResource(R.string.settings_security_subtitle_on) else stringResource(R.string.settings_security_subtitle), tint = ModuleSettings, onClick = onNavigateToAppLock)
+                        SettingsMenuItem(
+                            icon = Icons.Outlined.Lock,
+                            title = stringResource(R.string.settings_security),
+                            subtitle = if (state.appLockEnabled) {
+                                stringResource(R.string.settings_security_subtitle_on)
+                            } else {
+                                stringResource(R.string.settings_security_subtitle)
+                            },
+                            tint = DopamineViolet,
+                            onClick = onNavigateToAppLock
+                        )
                         HorizontalDivider(modifier = Modifier.padding(horizontal = 52.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                         SettingsMenuItem(
                             icon = Icons.Outlined.Info,

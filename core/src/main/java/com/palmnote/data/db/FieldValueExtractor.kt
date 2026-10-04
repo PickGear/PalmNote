@@ -1,11 +1,10 @@
 package com.palmnote.data.db
 
 import com.palmnote.domain.model.FieldConfig
+import com.palmnote.domain.util.DateUtils
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonPrimitive
 
 /** 提取结果行（与 Room 实体解耦，迁移回填与双写共用）。 */
 data class FieldValueRow(
@@ -63,7 +62,11 @@ object FieldValueExtractor {
             val type = cfg.type.name
             when {
                 type in numericTypes -> primitive?.content?.toDoubleOrNull()?.let { rows.add(FieldValueRow(cfg.key, type, num = it)) }
-                type in dateTypes -> primitive?.content?.toLongOrNull()?.let { rows.add(FieldValueRow(cfg.key, type, dateMs = it)) }
+                // 同「毫秒 vs ISO」口径分裂：记录表单写的是 "yyyy-MM-dd"，
+                // 只按毫秒解析会静默丢掉日期列。field_values 目前没有读方（见审计 §7），
+                // 但口径错了，一旦接入读方就会立刻显形。
+                type in dateTypes -> DateUtils.parseDateValueOrNull(primitive?.content)
+                    ?.let { rows.add(FieldValueRow(cfg.key, type, dateMs = it)) }
                 type == "TIME" -> parseMinutes(primitive?.content)?.let { rows.add(FieldValueRow(cfg.key, type, num = it.toDouble())) }
                 type == "BOOLEAN" -> rows.add(FieldValueRow(cfg.key, type, num = if (primitive?.content == "true") 1.0 else 0.0))
                 type == "SELECT" || type == "TAG" -> rows.add(FieldValueRow(cfg.key, type, text = raw))
