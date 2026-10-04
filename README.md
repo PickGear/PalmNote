@@ -29,12 +29,12 @@
   <tr>
     <td align="center"><b>统计报表</b></td>
     <td align="center"><b>生活模块</b></td>
-    <td align="center"><b>设置</b></td>
+    <td align="center"><b>账单导入</b></td>
   </tr>
   <tr>
     <td><img src="screenshots/zh/bill_stats.jpg" width="240"></td>
     <td><img src="screenshots/zh/life.jpg" width="240"></td>
-    <td><img src="screenshots/zh/settings.jpg" width="240"></td>
+    <td><img src="screenshots/zh/bill_import.jpg" width="240"></td>
   </tr>
 </table>
 
@@ -71,9 +71,9 @@
 - 桌面小组件
 
 ### 🌿 生活模块
-- **计划类**：存钱计划、购物清单、旅行规划、阅读计划、学习计划、待办任务
-- **时间类**：倒计时、正数日、生日、纪念日
-- **记录类**：习惯打卡（热力图）、心情记录（日历+趋势图）、日记、专注计时、订阅管理
+- **计划类**（7）：存钱计划、购物计划、待办、旅行计划、阅读、学习计划、物品维护
+- **时间类**（4）：倒计时、正数日、生日、纪念日
+- **记录类**（6）：打卡（热力图）、心情（日历+趋势图）、日记、订阅记录、专注计时、身体记录
 - **通用能力**：自定义模板、跨模块关联、成就徽章
 
 ### 🎨 主题与外观
@@ -203,6 +203,7 @@ PalmNote 是纯本地应用，以下限制是"零联网"设计的直接代价，
 - **主密码无法找回**：密码本与加密备份都由主密码保护，忘记后任何人都无法恢复。
 - **无应用内更新**：新版本请到 [Releases](https://github.com/PickGear/PalmNote/releases) 下载覆盖安装。
 - **识别不猜测**：账单截图等复杂来源可能识别不全，导入页会明确标注待复核项，而不是静默填入猜测值。
+- **功能仍在完善中**：桌面小组件、生活页、其他模块与设置均未完全成型，部分场景尚不完整；基本功能闭环预计在 v1.5 版本完成。当前版本请以自用／尝鲜为主。
 
 ## 如何贡献
 
@@ -210,6 +211,7 @@ PalmNote 是纯本地应用，以下限制是"零联网"设计的直接代价，
 
 - 提交 Bug 或功能请求 → [Issues](https://github.com/PickGear/PalmNote/issues)
 - 提交代码 → [Pull Requests](https://github.com/PickGear/PalmNote/pulls)
+- 交流群（QQ）→ 1036958236（用法交流与建议；问题跟踪仍走 Issues，便于检索与留档）
 - 贡献指南 → [CONTRIBUTING.md](CONTRIBUTING.md)
 - 安全漏洞报告 → [SECURITY.md](SECURITY.md)
 - 社区行为准则 → [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)

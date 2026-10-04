@@ -29,12 +29,12 @@ A local-first life tracking app that combines expense tracking, item management,
   <tr>
     <td align="center"><b>Reports</b></td>
     <td align="center"><b>Life</b></td>
-    <td align="center"><b>Settings</b></td>
+    <td align="center"><b>Bill Import</b></td>
   </tr>
   <tr>
     <td><img src="screenshots/en/bill_stats.jpg" width="240"></td>
     <td><img src="screenshots/en/life.jpg" width="240"></td>
-    <td><img src="screenshots/en/settings.jpg" width="240"></td>
+    <td><img src="screenshots/en/bill_import.jpg" width="240"></td>
   </tr>
 </table>
 
@@ -203,6 +203,7 @@ PalmNote is fully local, and the following limitations are the direct cost of it
 - **The master password cannot be recovered**: it protects both the vault and encrypted backups; if forgotten, no one can restore them.
 - **No in-app updates**: download new versions from [Releases](https://github.com/PickGear/PalmNote/releases) and install over the old one.
 - **Recognition, not guessing**: complex sources such as bill screenshots may be partially recognized; the import page marks items for review instead of silently filling in guesses.
+- **Still a work in progress**: widgets, the Life module, other modules and Settings are not fully complete yet; a basic feature-complete state is expected in v1.5. Treat the current release as self-use / early-access.
 
 ## Contributing
 
