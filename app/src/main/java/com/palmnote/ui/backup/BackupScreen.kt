@@ -28,6 +28,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -306,8 +307,9 @@ fun BackupScreen(
                         SettingRow(clickable = { showKeepPicker = true }) {
                             SettingRowContent(
                                 title = stringResource(R.string.backup_auto_keep),
-                                value = stringResource(
-                                    R.string.backup_auto_keep_option,
+                                value = pluralStringResource(
+                                    R.plurals.backup_auto_keep_option,
+                                    autoBackupSettings.keepCount,
                                     autoBackupSettings.keepCount
                                 ),
                                 showChevron = true
@@ -461,7 +463,7 @@ fun BackupScreen(
             title = stringResource(R.string.backup_auto_keep),
             options = PreferencesManager.AUTO_BACKUP_KEEP_OPTIONS,
             selected = autoBackupSettings.keepCount,
-            optionLabel = { stringResource(R.string.backup_auto_keep_option, it) },
+            optionLabel = { pluralStringResource(R.plurals.backup_auto_keep_option, it, it) },
             optionIcon = { Icons.Outlined.Inventory2 },
             optionTint = { InfoBlue },
             onSelect = { viewModel.setAutoBackupKeepCount(it) },
@@ -773,7 +775,7 @@ private fun BackupStatusRow(
         if (isStale) {
             Spacer(modifier = Modifier.height(6.dp))
             Text(
-                text = stringResource(R.string.backup_health_stale, staleAfterDays),
+                text = pluralStringResource(R.plurals.backup_health_stale, staleAfterDays, staleAfterDays),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.error
             )
@@ -903,5 +905,5 @@ private fun formatWithSkeleton(date: Long, skeleton: String): String = SimpleDat
 private fun autoIntervalLabel(days: Int): String = when (days) {
     0 -> stringResource(R.string.backup_auto_off)
     1 -> stringResource(R.string.backup_auto_daily)
-    else -> stringResource(R.string.backup_auto_interval_option, days)
+    else -> pluralStringResource(R.plurals.backup_auto_interval_option, days, days)
 }

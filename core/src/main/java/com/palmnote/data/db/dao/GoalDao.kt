@@ -100,4 +100,12 @@ interface GoalDao {
     @Query("UPDATE goals SET currentCount = 0, currentPeriodStart = :periodStart, currentPeriodEnd = :periodEnd, updatedAt = :now WHERE id IN (:ids)")
     suspend fun batchResetPeriod(ids: List<Long>, periodStart: Long, periodEnd: Long, now: Long = System.currentTimeMillis())
 
+
+    /** 演示数据清理（v14 isDemo 列）：演示模式关闭时物理删除示例行。 */
+    @Query("DELETE FROM goals WHERE isDemo = 1")
+    suspend fun clearDemoGoals()
+
+    /** 当前示例行数（关演示反馈 / 幂等判断用）。 */
+    @Query("SELECT COUNT(*) FROM goals WHERE isDemo = 1")
+    suspend fun countDemoGoals(): Int
 }

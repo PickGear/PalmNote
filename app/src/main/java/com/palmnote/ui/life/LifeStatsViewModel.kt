@@ -8,12 +8,17 @@ import com.palmnote.data.db.dao.LifeDayCategoryCount
 import com.palmnote.data.db.dao.LifeDayCount
 import com.palmnote.data.db.dao.LifeItemDao
 import com.palmnote.data.db.dao.LifeTemplateDao
+import com.palmnote.domain.util.LifeTemplateKind
+import com.palmnote.domain.util.getKind
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.serialization.json.Json
@@ -49,6 +54,7 @@ private const val HEAT_WEEKS = 16
  * 且按模板可见性过滤（关闭的模板不进统计，§4.8(3) 的 11 出口之一）。
  */
 @HiltViewModel
+@OptIn(ExperimentalCoroutinesApi::class)
 class LifeStatsViewModel @Inject constructor(
     private val itemDao: LifeItemDao,
     private val templateDao: LifeTemplateDao,
@@ -71,11 +77,14 @@ class LifeStatsViewModel @Inject constructor(
             val gridStartMs = gridStart.atStartOfDay(zone).toInstant().toEpochMilli()
             val weekDays = weekDayKeys(weekStart)
             val prevWeekDays = weekDayKeys(weekStart.minusWeeks(1))
+            // 本周已过去的天数（周一 = 1，含今天）：完成率的分母不能恒按 7 算
+            val weekElapsedDays = today.dayOfWeek.value
 
-            templateDao.getAllTemplates().flatMapLatest { templates ->
-                val timerT = templates.firstOrNull { it.icon == "timer" }
-                val todoT = templates.firstOrNull { it.icon == "checklist" }
-                val checkinTs = templates.filter { it.icon == "calendar_month" }
+            templateDao.getAllVisibleTemplates().flatMapLatest { templates ->
+                // 语义身份走统一入口（原来是 icon 字面量比较，用户改图标就会漂移）
+                val timerT = templates.firstOrNull { it.getKind() == LifeTemplateKind.FOCUS }
+                val todoT = templates.firstOrNull { it.getKind() == LifeTemplateKind.TODO }
+                val checkinTs = templates.filter { it.getKind() == LifeTemplateKind.HABIT }
 
                 val focusFlow = if (timerT == null) {
                     flowOf(0)
@@ -88,7 +97,11 @@ class LifeStatsViewModel @Inject constructor(
                     flowOf(0)
                 } else {
                     itemDao.getUnfinishedCountByTemplate(
-                        todoT.id, todayStart, todayEnd, demo, LIFE_DEMO_META
+                        todoT.id,
+                        todayStart,
+                        todayEnd,
+                        demo,
+                        LIFE_DEMO_META
                     )
                 }
 
@@ -118,15 +131,22 @@ class LifeStatsViewModel @Inject constructor(
                 )
 
                 combine(
-                    focusFlow, todoFlow, checkinFlow, countsFlow, categoryFlow
+                    focusFlow,
+                    todoFlow,
+                    checkinFlow,
+                    countsFlow,
+                    categoryFlow
                 ) { focusMin, todo, checkinDays, counts, categories ->
                     val heat = buildHeatGrid(counts, gridStart, HEAT_WEEKS)
                     LifeStatsUi(
+                        loaded = true,
                         focusMinutesToday = focusMin,
-                        maxStreak = checkinDays.maxOfOrNull { computeCheckInStreak(it) } ?: 0,
+                        // 文案是「最长连胜」：必须取历史最长段，不能取当前连击（断卡后两者会分叉）
+                        maxStreak = checkinDays.maxOfOrNull { computeCheckInLongest(it) } ?: 0,
                         todoToday = todo,
-                        habitRatePercent = weeklyHabitRate(checkinDays, weekDays),
-                        habitRatePrevPercent = weeklyHabitRate(checkinDays, prevWeekDays),
+                        habitRatePercent = weeklyHabitRate(checkinDays, weekDays, weekElapsedDays),
+                        // 上一周是完整周，分母恒为 7
+                        habitRatePrevPercent = weeklyHabitRate(checkinDays, prevWeekDays, prevWeekDays.size),
                         recordsThisWeek = heat.lastOrNull()?.sum() ?: 0,
                         recordsPrevWeek = heat.getOrNull(HEAT_WEEKS - 2)?.sum() ?: 0,
                         categoryShare = buildCategoryShare(categories),
@@ -135,6 +155,9 @@ class LifeStatsViewModel @Inject constructor(
                 }
             }
         }
+        .catchLife("stats.state", LifeStatsUi())
+        // 这一条要做 16 周热力 + 连击 + 分类占比等聚合：放到 Default，别占主线程
+        .flowOn(Dispatchers.Default)
         .stateIn(
             viewModelScope,
             SharingStarted.WhileSubscribed(5_000),
@@ -142,14 +165,22 @@ class LifeStatsViewModel @Inject constructor(
         )
 
     /** 某一周（周一起始）的 7 个日期串，用于按周统计打卡完成率。 */
-    private fun weekDayKeys(weekStart: LocalDate): Set<String> =
-        (0L until 7L).map { weekStart.plusDays(it).toString() }.toSet()
+    private fun weekDayKeys(weekStart: LocalDate): Set<String> = (0L until 7L).map { weekStart.plusDays(it).toString() }.toSet()
 
-    /** 本周习惯完成率（%）：各打卡模板打卡天数之和 ÷ (7 × 打卡模板数)，四舍五入。 */
-    private fun weeklyHabitRate(checkinDays: List<List<String>>, weekDays: Set<String>): Int {
+    /**
+     * 习惯完成率（%）：各打卡模板的打卡天数之和 ÷ (计分天数 × 打卡模板数)，四舍五入。
+     *
+     * 分母用**已过去的天数**而不是恒定的 7：本周才过两天时按 7 算，用户把这两天都打满
+     * 也只显示 28%，看着像没完成，实际是分母算错了。上一周是完整周，传 7 即可。
+     */
+    private fun weeklyHabitRate(
+        checkinDays: List<List<String>>,
+        weekDays: Set<String>,
+        daysElapsed: Int
+    ): Int {
         if (checkinDays.isEmpty()) return 0
         val done = checkinDays.sumOf { list -> list.count { it in weekDays } }
-        val total = weekDays.size * checkinDays.size
+        val total = daysElapsed.coerceIn(0, weekDays.size) * checkinDays.size
         if (total <= 0) return 0
         return (done * 100.0 / total).roundToInt()
     }
@@ -185,6 +216,8 @@ class LifeStatsViewModel @Inject constructor(
 
 /** 统计页真实指标（默认全 0 = 无数据态）。 */
 data class LifeStatsUi(
+    /** 首批真实数据已到（此前全 0 默认值会先闪一帧假「无数据」）。 */
+    val loaded: Boolean = false,
     /** 今日专注分钟（专注模板会话 duration 求和，毫秒 / 60000）。 */
     val focusMinutesToday: Int = 0,
     /** 最长连胜（各打卡模板真实连击取最大）。 */

@@ -30,6 +30,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -145,7 +146,9 @@ fun VaultLockGate(
             if (displayError != null) {
                 Text(
                 text = when (displayError) {
-                    "locked_out" -> stringResource(R.string.vault_locked_out, lockoutSeconds)
+                    "locked_out" -> pluralStringResource(
+                        R.plurals.vault_locked_out, lockoutSeconds.toInt(), lockoutSeconds
+                    )
                     "bio_failed" -> stringResource(R.string.vault_bio_failed)
                     else -> stringResource(R.string.vault_pin_wrong)
                 },

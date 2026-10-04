@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="asset_warranty_expired">Expired</string>
     <string name="settings_cancel">Cancel</string>
     <string name="save">Save</string>
@@ -30,8 +30,8 @@
     <string name="asset_category_other">Other</string>
     <string name="asset_drag_to_reorder">Long press to drag</string>
     <string name="asset_upload">Upload</string>
-    <string name="date_format_display">MMM dd</string>
-    <string name="date_format_display_year">yyyy/MM/dd</string>
+    <string tools:ignore="UnusedResources" name="date_format_display">MMM dd</string>
+    <string tools:ignore="UnusedResources" name="date_format_display_year">yyyy/MM/dd</string>
     <string name="date_format_display_full">MMMM dd, yyyy</string>
     <string name="date_format_display_month">MMM yyyy</string>
     <string name="date_weekday_sunday">Sunday</string>
@@ -119,6 +119,12 @@
     <string name="template_subscription_desc">Manage your subscriptions</string>
     <string name="template_report_name">Report</string>
     <string name="template_report_desc">Auto-generate life data reports</string>
+    <string name="template_focus_name">Focus</string>
+    <string name="template_focus_desc">Pomodoro-style focus timer</string>
+    <string name="template_body_name">Body Log</string>
+    <string name="template_body_desc">Track weight, sleep and exercise</string>
+    <string name="template_maintenance_name">Maintenance</string>
+    <string name="template_maintenance_desc">Replacement reminders for consumables like filters and toothbrush heads</string>
     <string name="wallet_type_cash">Cash</string>
     <string name="wallet_type_wechat">WeChat</string>
     <string name="wallet_type_alipay">Alipay</string>
@@ -149,7 +155,7 @@
     <string name="icon_category_mood">Mood</string>
     <string name="icon_category_other">Other</string>
     <string name="field_input_hint">Type and press Enter to add</string>
-    <string name="field_select_date">Select Date</string>
+    <string tools:ignore="UnusedResources" name="field_select_date">Select Date</string>
     <string name="field_start">Start</string>
     <string name="field_end">End</string>
     <string name="field_decrease">Decrease</string>
@@ -187,8 +193,8 @@
     <string name="trigger_saving_goal_message">Congratulations on achieving your goal \"%s\"!</string>
     <string name="trigger_status_updated_title">Status Updated</string>
     <string name="trigger_status_updated_message">\"%s\" has been completed</string>
-    <string name="time_just_now">Just now</string>
-    <string name="time_minutes_ago">%d min ago</string>
+    <string tools:ignore="UnusedResources" name="time_just_now">Just now</string>
+    <string tools:ignore="UnusedResources" name="time_minutes_ago">%d min ago</string>
     <string name="time_today">Today %s</string>
     <string name="time_yesterday">Yesterday %s</string>
     <string name="currency_symbol">¥</string>

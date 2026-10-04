@@ -23,6 +23,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.core.app.ActivityCompat
 import android.app.Activity
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -80,7 +81,7 @@ fun ReminderSettingsScreen(
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            item { SectionHeader(stringResource(R.string.settings_reminder_daily_section), Icons.Outlined.Notifications, AccentOrange) }
+            item { SectionHeader(stringResource(R.string.settings_reminder_daily_section), Icons.Outlined.Notifications, DopamineAmber) }
             item {
                 ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
                     SettingRow {
@@ -137,14 +138,18 @@ fun ReminderSettingsScreen(
                 }
             }
 
-            item { SectionHeader(stringResource(R.string.settings_reminder_advance_section), Icons.Outlined.Event, LifePlan) }
+            item { SectionHeader(stringResource(R.string.settings_reminder_advance_section), Icons.Outlined.Event, DopamineSky) }
             item {
                 ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
                     SettingRow(clickable = { showBirthdayAdvancePicker = true }) {
                         SettingRowContent(
                             title = stringResource(R.string.settings_birthday_advance),
                             subtitle = stringResource(R.string.settings_birthday_advance_subtitle),
-                            value = stringResource(R.string.settings_days, state.birthdayReminderAdvanceDays),
+                            value = pluralStringResource(
+                                R.plurals.settings_days,
+                                state.birthdayReminderAdvanceDays,
+                                state.birthdayReminderAdvanceDays
+                            ),
                             showChevron = true
                         )
                     }
@@ -153,7 +158,11 @@ fun ReminderSettingsScreen(
                         SettingRowContent(
                             title = stringResource(R.string.settings_anniversary_advance),
                             subtitle = stringResource(R.string.settings_anniversary_advance_subtitle),
-                            value = stringResource(R.string.settings_days, state.anniversaryReminderAdvanceDays),
+                            value = pluralStringResource(
+                                R.plurals.settings_days,
+                                state.anniversaryReminderAdvanceDays,
+                                state.anniversaryReminderAdvanceDays
+                            ),
                             showChevron = true
                         )
                     }
@@ -204,7 +213,7 @@ fun ReminderSettingsScreen(
             title = stringResource(R.string.settings_birthday_advance_title),
             options = advanceDaysOptions,
             selected = state.birthdayReminderAdvanceDays,
-            optionLabel = { stringResource(R.string.settings_days, it) },
+            optionLabel = { pluralStringResource(R.plurals.settings_days, it, it) },
             optionIcon = { Icons.Outlined.Cake },
             optionTint = { AccentOrange },
             onSelect = { viewModel.setBirthdayReminderAdvanceDays(it) },
@@ -217,7 +226,7 @@ fun ReminderSettingsScreen(
             title = stringResource(R.string.settings_anniversary_advance_title),
             options = advanceDaysOptions,
             selected = state.anniversaryReminderAdvanceDays,
-            optionLabel = { stringResource(R.string.settings_days, it) },
+            optionLabel = { pluralStringResource(R.plurals.settings_days, it, it) },
             optionIcon = { Icons.Outlined.FavoriteBorder },
             optionTint = { ErrorLight },
             onSelect = { viewModel.setAnniversaryReminderAdvanceDays(it) },

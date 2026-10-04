@@ -15,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -285,7 +286,9 @@ private fun SummarySection(state: ReportState) {
             )
             if (state.data.billCount > 0) {
                 Text(
-                    text = stringResource(R.string.report_count_format, state.data.billCount),
+                    text = pluralStringResource(
+                        R.plurals.report_count_format, state.data.billCount, state.data.billCount
+                    ),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

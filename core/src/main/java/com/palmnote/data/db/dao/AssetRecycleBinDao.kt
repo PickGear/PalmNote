@@ -25,4 +25,12 @@ interface AssetRecycleBinDao {
 
     @Query("SELECT COUNT(*) FROM assets_recycle_bin")
     fun getCount(): Flow<Int>
+
+    /** 演示数据清理：只按标记（物品不挂在账本下，无级联）。 */
+    @Query("DELETE FROM assets_recycle_bin WHERE isDemo = 1")
+    suspend fun clearDemoAssets()
+
+    /** 当前示例行数（关演示反馈用）。 */
+    @Query("SELECT COUNT(*) FROM assets_recycle_bin WHERE isDemo = 1")
+    suspend fun countDemoAssets(): Int
 }

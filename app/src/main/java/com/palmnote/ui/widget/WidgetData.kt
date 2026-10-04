@@ -5,6 +5,8 @@ import com.palmnote.app.R
 import com.palmnote.data.db.dao.LifeItemDao
 import com.palmnote.data.db.dao.LifeTemplateDao
 import com.palmnote.data.db.entity.LifeItem
+import com.palmnote.domain.util.LifeTemplateKind
+import com.palmnote.domain.util.getKind
 import kotlinx.coroutines.flow.first
 import java.time.Instant
 import java.time.LocalDate
@@ -23,8 +25,10 @@ object WidgetData {
 
     fun readAccentTheme(context: Context, preferencesManager: com.palmnote.data.datastore.PreferencesManager): AccentTheme {
         val themeId = kotlinx.coroutines.runBlocking { preferencesManager.themeColor.first() }
-        val isNight = (context.resources.configuration.uiMode and
-            android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES
+        val isNight = (
+            context.resources.configuration.uiMode and
+                android.content.res.Configuration.UI_MODE_NIGHT_MASK
+            ) == android.content.res.Configuration.UI_MODE_NIGHT_YES
         val pkg = com.palmnote.ui.theme.ThemePackages.getById(themeId)
         val textArgb = if (isNight) pkg.darkPrimary else pkg.lightPrimary
         val circleRes = when (themeId) {
@@ -44,8 +48,10 @@ object WidgetData {
         return AccentTheme(textArgb.toArgb(), circleRes, pillRes)
     }
 
-    private fun androidx.compose.ui.graphics.Color.toArgb(): Int =
-        ((alpha * 255).toInt() shl 24) or ((red * 255).toInt() shl 16) or ((green * 255).toInt() shl 8) or (blue * 255).toInt()
+    private fun androidx.compose.ui.graphics.Color.toArgb(): Int = ((alpha * 255).toInt() shl 24) or
+        ((red * 255).toInt() shl 16) or
+        ((green * 255).toInt() shl 8) or
+        (blue * 255).toInt()
 
     // 金额紧凑显示：整数元不带小数（¥3200），非整元保留两位（¥32.50）
     fun formatMoneyShort(amount: Long): String {
@@ -53,7 +59,7 @@ object WidgetData {
         val abs = Math.abs(amount)
         val whole = abs / 100
         val cents = abs % 100
-        return if (cents == 0L) "${sign}¥$whole" else "${sign}¥$whole.${cents.toString().padStart(2, '0')}"
+        return if (cents == 0L) "$sign¥$whole" else "$sign¥$whole.${cents.toString().padStart(2, '0')}"
     }
 
     // 卡片场景的金额缩写：超过 6 位整数时万/千单位折叠，避免窄卡截断（zh 用万，其他用 k/M）
@@ -77,16 +83,24 @@ object WidgetData {
     }
 
     // 今天有待办的活跃条目（TodoWidget 与概览小组件共用）
-    suspend fun fetchTodayTodos(lifeItemDao: LifeItemDao, lifeTemplateDao: LifeTemplateDao): List<LifeItem> {
+    suspend fun fetchTodayTodos(
+        lifeItemDao: LifeItemDao,
+        lifeTemplateDao: LifeTemplateDao,
+        includeDemo: Boolean,
+        demoMeta: String
+    ): List<LifeItem> {
         val templates = lifeTemplateDao.getAllVisibleTemplates().first()
-        val todoTemplate = templates.firstOrNull { it.icon == "checklist" } ?: return emptyList()
+        val todoTemplate = templates.firstOrNull { it.getKind() == LifeTemplateKind.TODO } ?: return emptyList()
         val today = LocalDate.now()
         val todayStart = today.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
         val todayEnd = today.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-        return lifeItemDao.getItemsByTemplate(todoTemplate.id).first().filter { item ->
+        return lifeItemDao.getWidgetItemsByTemplate(todoTemplate.id, includeDemo, demoMeta).first().filter { item ->
             val due = item.dueDate
-            item.parentId == null && item.status != "ARCHIVED"
-                && due != null && due >= todayStart && due < todayEnd
+            item.parentId == null &&
+                item.status != "ARCHIVED" &&
+                due != null &&
+                due >= todayStart &&
+                due < todayEnd
         }
     }
 

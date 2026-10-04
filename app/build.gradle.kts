@@ -38,14 +38,22 @@ android {
         // targetSdk 34：自用侧载，禁用 Android 15+ 强制 predictive back，恢复传统返回动画；
         // compileSdk 保持 36 不损失编译能力。上 Play 时需升回 35+。
         targetSdk = 34
-        // versionCode 单调递增：1.4.0 尚未发布，沿用 5（与 docs/DEVELOPMENT.md §3.4 表一致）。
-        versionCode = 5
+        // versionCode 单调递增：1.4.0 正式发布取 6（旧设备上 code 5 的内测包可直接覆盖安装）
+        versionCode = 6
         versionName = libs.versions.palmnote.get()
-        // 版本号单一事实来源：resValue 生成 app_version 字符串资源，
-        // 供 AboutScreen / AppLockScreen 的 stringResource(R.string.app_version) 使用。
-        resValue("string", "app_version", "v${libs.versions.palmnote.get()}")
+        // 版本号的单一事实来源就是 `libs.versions.toml` 的 palmnote 键：
+        // 界面取 `BuildConfig.VERSION_NAME`（AboutScreen 就是这么读的）。
+        // 原先这里还 `resValue` 生成过一个 `app_version` 字符串资源，注释说给 About/AppLock 用，
+        // 但两处实际都用 BuildConfig —— 全仓无人引用，已删（lint 的 UnusedResources 也报过它）。
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        // README 截图专用：`-PhideDemoBanner=true` 打出的包会隐藏「示例模式」状态条
+        // （说明见 AppNavigation）。默认 false —— 发布包必须带状态条。
+        buildConfigField(
+            "boolean",
+            "HIDE_DEMO_BANNER",
+            (project.findProperty("hideDemoBanner") == "true").toString()
+        )
         vectorDrawables {
             useSupportLibrary = true
         }
@@ -227,6 +235,8 @@ dependencies {
 
     // Core
     implementation(libs.core.ktx)
+    // 侧载安装也能在运行期把 ART profile 写进 ReferenceProfile（安装期 dexopt 只吃 APK 内嵌 profile）
+    implementation(libs.profileinstaller)
     implementation(libs.appcompat)
     implementation(libs.documentfile)
     implementation(libs.lifecycle.runtime.ktx)
@@ -245,6 +255,8 @@ dependencies {
     // Debug
     debugImplementation(libs.compose.ui.tooling)
     debugImplementation(libs.compose.ui.tooling.preview)
+    // createComposeRule 在 Robolectric 单测里需要一个 ComponentActivity —— 由 ui-test-manifest 提供
+    debugImplementation(libs.compose.ui.test.manifest)
 
     // Unit tests
     testImplementation(libs.junit)
@@ -254,6 +266,8 @@ dependencies {
     testImplementation(libs.room.testing)
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.monitor)
+    // Compose 测量测试：详情页规格是"逐项像素"的，需要能真的量出来（首个用例：英雄区 110dp）
+    testImplementation(libs.compose.ui.test.junit4)
 
     // Android instrumentation tests
     androidTestImplementation(libs.androidx.junit)

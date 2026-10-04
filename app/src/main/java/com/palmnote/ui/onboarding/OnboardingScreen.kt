@@ -3,6 +3,7 @@ package com.palmnote.ui.onboarding
 import androidx.annotation.StringRes
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
@@ -29,7 +31,10 @@ import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Backup
 import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.Dataset
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.outlined.DeleteForever
+import androidx.compose.material.icons.outlined.EditNote
 import androidx.compose.material.icons.outlined.EnhancedEncryption
 import androidx.compose.material.icons.outlined.Favorite
 import androidx.compose.material.icons.outlined.FavoriteBorder
@@ -53,7 +58,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -73,6 +81,9 @@ import com.palmnote.ui.theme.ModuleItem
 import com.palmnote.ui.theme.ModuleLife
 import kotlin.math.abs
 import kotlinx.coroutines.launch
+import com.palmnote.ui.theme.ThemePackages
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 
 /**
  * 模块介绍页的一个功能点：文案 + 专属图标。
@@ -100,6 +111,7 @@ private fun pageTint(page: OnboardingModulePage): Color =
 
 /** 安全页专属绿：数据安全语义色，与主题主色（青）区分。 */
 private val SafetyGreen = Color(0xFF2E7D32)
+
 
 private val modulePages = listOf(
     OnboardingModulePage(
@@ -182,7 +194,10 @@ private val safetyPoints = listOf(
 )
 
 /**
- * 首次启动引导页：6 页横滑（HorizontalPager），以功能介绍为主、数据安全收尾。
+ * 首次启动引导页：7 页横滑（HorizontalPager），以功能介绍为主、数据安全收尾，
+ * 最后一页让用户决定要不要示例数据。
+ *
+ * 主题色 / 深浅色**不在引导里**（用户 2026-10-05 定：引导页太多，外观进「设置」改即可）。
  *
  * PalmNote 专属「便签纸」视觉语言：
  * - 整页随页色：当前页的主题色以低透明度铺满全屏（含状态栏与底部按钮区），
@@ -197,8 +212,17 @@ private val safetyPoints = listOf(
  * 结束引导统一走 [onFinish]，由调用方持久化"已看过引导"。
  */
 @Composable
-fun OnboardingScreen(onFinish: () -> Unit) {
-    val pageCount = modulePages.size + 2
+fun OnboardingScreen(
+    onFinish: (demoEnabled: Boolean) -> Unit
+) {
+    // 示例数据选择（**最后一页**）：默认「载入」——与产品默认（演示模式开）一致；
+    // 放在最后 = 决策出现在「开始使用」的时点，安全须知回归纯信息页。
+    // 选择在「开始使用」时统一落库并播种/清理，中途横滑回本页可反悔。
+    //
+    // 主题色 / 深浅色**不在引导里**（用户 2026-10-05 定：引导页太多，外观进设置改即可）：
+    // 首启不再让用户做外观决策，引导保持「介绍功能 + 安全须知 + 要不要示例」三段。
+    var demoEnabled by rememberSaveable { mutableStateOf(true) }
+    val pageCount = modulePages.size + 3
     val pagerState = rememberPagerState(pageCount = { pageCount })
     val scope = rememberCoroutineScope()
     val isLastPage = pagerState.currentPage == pageCount - 1
@@ -210,7 +234,9 @@ fun OnboardingScreen(onFinish: () -> Unit) {
     @Composable
     fun accentFor(page: Int): Color = when {
         page <= 0 -> primary
-        page >= pageCount - 1 -> SafetyGreen
+        page == pageCount - 2 -> SafetyGreen
+        // 示例数据页用**主题主色**：它是 app 级设置页，不属于任何模块
+        page >= pageCount - 1 -> primary
         else -> pageTint(modulePages[page - 1])
     }
 
@@ -255,7 +281,11 @@ fun OnboardingScreen(onFinish: () -> Unit) {
                 when {
                     page == 0 -> OnboardingWelcomePage()
                     page <= modulePages.size -> OnboardingModulePageContent(modulePages[page - 1])
-                    else -> OnboardingSafetyPage()
+                    page == pageCount - 2 -> OnboardingSafetyPage()
+                    else -> OnboardingDemoPage(
+                        selected = demoEnabled,
+                        onSelect = { demoEnabled = it }
+                    )
                 }
             }
 
@@ -266,7 +296,7 @@ fun OnboardingScreen(onFinish: () -> Unit) {
             Button(
                 onClick = {
                     if (isLastPage) {
-                        onFinish()
+                        onFinish(demoEnabled)
                     } else {
                         scope.launch {
                             pagerState.animateScrollToPage(pagerState.currentPage + 1)
@@ -278,7 +308,14 @@ fun OnboardingScreen(onFinish: () -> Unit) {
                     .padding(horizontal = 24.dp)
                     .height(50.dp),
                 shape = MaterialTheme.shapes.medium,
-                colors = ButtonDefaults.buttonColors(containerColor = accent, contentColor = Color.White)
+                // 文字色用 onPrimary（浅色=白、深色=黑），而不是写死白或按亮度反色：
+                // 深色模式下 8 个主题色里 7 个是**亮色**（绿/蓝/紫/橙/红/青绿/粉），
+                // 白字只有 2.0~3.6:1（读不出来），黑字是 5.9~11.6:1；
+                // 模块色与安全绿是不随主题变化的深色，两种字色都 ≥3.3:1。
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = accent,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
             ) {
                 Text(
                     text = stringResource(
@@ -293,7 +330,7 @@ fun OnboardingScreen(onFinish: () -> Unit) {
 
             if (!isLastPage) {
                 TextButton(
-                    onClick = onFinish,
+                    onClick = { onFinish(demoEnabled) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 24.dp)
@@ -316,6 +353,172 @@ fun OnboardingScreen(onFinish: () -> Unit) {
             }
 
             Spacer(Modifier.height(24.dp))
+        }
+    }
+}
+
+/**
+ * 示例数据页（**最后一页**，承载「开始使用」按钮）：说明演示模式 + 二选一。
+ * 对标 Notion/Moze/格志的「首启选择示例内容」惯例——选定后不再在功能页里事后弹窗。
+ */
+@Composable
+private fun OnboardingDemoPage(selected: Boolean, onSelect: (Boolean) -> Unit) {
+    val tint = MaterialTheme.colorScheme.primary
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = PagePaddingH, vertical = PagePaddingV)
+    ) {
+        OnboardingCornerIcon(tint = tint)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.Center
+        ) {
+            OnboardingPageHeader(
+                // 页头不用 AutoAwesome：那张「载入示例数据」卡已经是同一个星标，
+                // 一屏两个同一图标会让人以为是同一个东西。
+                icon = Icons.Outlined.Dataset,
+                tint = tint,
+                titleRes = R.string.onboarding_demo_section,
+                bodyRes = R.string.onboarding_demo_hint
+            )
+
+            Spacer(Modifier.height(20.dp))
+
+            DemoOptionCard(
+                selected = selected,
+                onClick = { onSelect(true) },
+                icon = Icons.Outlined.AutoAwesome,
+                titleRes = R.string.onboarding_demo_opt_on_title,
+                bodyRes = R.string.onboarding_demo_opt_on_body,
+                tint = tint
+            )
+            Spacer(Modifier.height(10.dp))
+            DemoOptionCard(
+                selected = !selected,
+                onClick = { onSelect(false) },
+                icon = Icons.Outlined.EditNote,
+                titleRes = R.string.onboarding_demo_opt_off_title,
+                bodyRes = R.string.onboarding_demo_opt_off_body,
+                tint = tint
+            )
+
+            Spacer(Modifier.height(16.dp))
+            Text(
+                text = stringResource(R.string.onboarding_demo_footnote),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+/** 设置类页头：图标 + 标题 + 正文（与模块介绍页同款左对齐版式）。
+ *
+ *  高度用 `heightIn(min = 84.dp)` 而非固定 84dp：模块页的简介都压在一行，
+ *  本页的说明文字可能折到两行，固定高度会把末行裁掉。
+ */
+@Composable
+private fun OnboardingPageHeader(
+    icon: ImageVector,
+    tint: Color,
+    @StringRes titleRes: Int,
+    @StringRes bodyRes: Int
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().heightIn(min = 84.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = tint,
+            modifier = Modifier.size(64.dp)
+        )
+        Spacer(Modifier.width(16.dp))
+        Column {
+            Text(
+                text = stringResource(titleRes),
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = stringResource(bodyRes),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+/** 示例数据二选一卡：选中态 = 主题色描边 + 徽标，未选中 = 描边虚化。
+ *
+ *  正文固定占两行（`minLines = 2`）：两张卡的标题/正文行数不同时，卡高会一高一矮，
+ *  并排看起来像「推荐哪张」的暗示；固定两行后两张卡严格等高。
+ */
+@Composable
+private fun DemoOptionCard(
+    selected: Boolean,
+    onClick: () -> Unit,
+    icon: ImageVector,
+    @StringRes titleRes: Int,
+    @StringRes bodyRes: Int,
+    tint: Color
+) {
+    Surface(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        color = if (selected) tint.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surface,
+        border = if (selected) BorderStroke(2.dp, tint) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(34.dp)
+                    .clip(CircleShape)
+                    .background(if (selected) tint else MaterialTheme.colorScheme.surfaceVariant),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    // 选中态的圆底是主题色（深色模式下是亮色），onPrimary 才读得出来
+                    tint = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(titleRes),
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    text = stringResource(bodyRes),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    minLines = 2
+                )
+            }
+            if (selected) {
+                Icon(
+                    imageVector = Icons.Filled.CheckCircle,
+                    contentDescription = null,
+                    tint = tint,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
         }
     }
 }
@@ -577,7 +780,9 @@ private fun FeatureCard(tint: Color, icon: ImageVector, @StringRes textRes: Int)
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = Color.White,
+                    // onPrimary：深色模式下密码本页的模块色是**浅紫**（#D0BCFF），
+                    // 写死白图标只有 1.6:1；模块色本身是深色，黑图标同样 ≥3.3:1。
+                    tint = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier.size(18.dp)
                 )
             }

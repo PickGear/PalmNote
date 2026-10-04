@@ -13,6 +13,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -107,14 +108,15 @@ fun DataStorageScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             // ── 备份与迁移：标题与「存储与清理」对仗，两组结构一致页面才有节奏 ──
-            item { SectionHeader(stringResource(R.string.settings_data_transfer), Icons.Outlined.Backup, ModuleLife) }
+            // 分区色用设置页多巴胺装饰色；「存储与清理」保留 Amber（语义色：提醒这是需要谨慎的操作）
+            item { SectionHeader(stringResource(R.string.settings_data_transfer), Icons.Outlined.Backup, DopamineSky) }
             item {
                 ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
                     SettingsMenuItem(
                         icon = Icons.Outlined.Backup,
                         title = stringResource(R.string.settings_data_backup),
                         subtitle = stringResource(R.string.settings_data_backup_subtitle),
-                        tint = ModuleLife,
+                        tint = DopamineSky,
                         onClick = onNavigateToBackup
                     )
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 12.dp))
@@ -122,8 +124,36 @@ fun DataStorageScreen(
                         icon = Icons.Outlined.ImportExport,
                         title = stringResource(R.string.settings_data_exchange),
                         subtitle = stringResource(R.string.settings_data_exchange_subtitle),
-                        tint = InfoBlue,
+                        tint = DopamineSky,
                         onClick = onNavigateToDataExchange
+                    )
+                }
+            }
+
+            // ── 示例数据：演示模式（示例记录的载入/移除，关闭即物理删除）。
+            // 它是 app 级的数据操作（影响生活/记账/物品/习惯四个模块），故与「数据」同域；
+            // 排序上置于「存储与清理」之前 —— 清理是危险操作，应排在最后。
+            item { SectionHeader(stringResource(R.string.settings_demo_section), Icons.Outlined.AutoAwesome, DopamineViolet) }
+            item {
+                // 单行卡：去掉上下内边距，整卡高度与多行卡里的单行一致（否则 12dp×2 只包这一行，会比别行显高）。
+                ModuleCard(
+                    tint = MaterialTheme.colorScheme.surface,
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = PaddingValues(horizontal = 12.dp)
+                ) {
+                    SettingsMenuItem(
+                        icon = Icons.Outlined.AutoAwesome,
+                        title = stringResource(R.string.settings_demo_mode),
+                        subtitle = stringResource(R.string.settings_demo_mode_subtitle),
+                        tint = DopamineViolet,
+                        // 不传 onClick：整行不可点，只有右侧开关响应（避免整卡出现按下态）。
+                        trailing = {
+                            CapsuleSwitch(
+                                checked = state.demoModeEnabled,
+                                onCheckedChange = { viewModel.setDemoModeEnabled(it) },
+                                checkedTrackColor = MaterialTheme.colorScheme.primary
+                            )
+                        }
                     )
                 }
             }
@@ -141,7 +171,12 @@ fun DataStorageScreen(
                     SettingsMenuItem(
                         icon = Icons.Outlined.BugReport,
                         title = stringResource(R.string.settings_crash_log),
-                        subtitle = stringResource(R.string.settings_crash_log_subtitle, crashLogCount, crashLogKb),
+                        subtitle = pluralStringResource(
+                            R.plurals.settings_crash_log_subtitle,
+                            crashLogCount,
+                            crashLogCount,
+                            crashLogKb
+                        ),
                         tint = ErrorLight,
                         onClick = {
                             crashLogCount = CrashLogStore.count(context)
@@ -152,32 +187,43 @@ fun DataStorageScreen(
                 }
             }
 
-            // ── 示例数据：演示模式开关（载入/移除一套示例记录；关闭即物理移除，不再进页面与备份。当前为生活页示例，后续按此扩展到记账/资产）──
-            item { SectionHeader(stringResource(R.string.settings_demo_section), Icons.Outlined.AutoAwesome, ModuleLife) }
-            item {
-                // 单行卡：去掉上下内边距，整卡高度与多行卡里的单行一致（否则 12dp×2 只包这一行，会比别行显高）。
-                ModuleCard(
-                    tint = MaterialTheme.colorScheme.surface,
-                    modifier = Modifier.fillMaxWidth(),
-                    contentPadding = PaddingValues(horizontal = 12.dp)
-                ) {
-                    SettingsMenuItem(
-                        icon = Icons.Outlined.AutoAwesome,
-                        title = stringResource(R.string.settings_demo_mode),
-                        subtitle = stringResource(R.string.settings_demo_mode_subtitle),
-                        tint = ModuleLife,
-                        // 不传 onClick：整行不可点，只有右侧开关响应（避免整卡出现按下态）。
-                        trailing = {
-                            CapsuleSwitch(
-                                checked = state.demoModeEnabled,
-                                onCheckedChange = { viewModel.setDemoModeEnabled(it) },
-                                checkedTrackColor = MaterialTheme.colorScheme.primary
-                            )
-                        }
+        }
+    }
+
+    // 「毕业询问」：演示期自建了记录时，关闭演示必须由用户决定这些记录的归宿
+    // （保留=迁入默认账本 / 一并删除）。不问就清，用户会以为自己的记录也没了。
+    state.demoClearPromptKept?.let { kept ->
+        AppDialog(
+            onDismissRequest = { viewModel.cancelDemoClearPrompt() },
+            title = {
+                Text(stringResource(R.string.settings_demo_clear_prompt_title), fontWeight = FontWeight.Bold)
+            },
+            text = {
+                Text(pluralStringResource(R.plurals.settings_demo_clear_prompt_body, kept, kept))
+            },
+            confirmButton = {
+                TextButton(onClick = { viewModel.resolveDemoClearPrompt(keep = false) }) {
+                    Text(
+                        stringResource(R.string.settings_demo_clear_discard),
+                        color = MaterialTheme.colorScheme.error,
+                        fontWeight = FontWeight.Bold
                     )
                 }
+            },
+            dismissButton = {
+                Row {
+                    TextButton(onClick = { viewModel.cancelDemoClearPrompt() }) {
+                        Text(stringResource(R.string.settings_cancel))
+                    }
+                    TextButton(onClick = { viewModel.resolveDemoClearPrompt(keep = true) }) {
+                        Text(
+                            stringResource(R.string.settings_demo_clear_keep),
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
             }
-        }
+        )
     }
 
     if (showClearCacheDialog) {
@@ -202,7 +248,14 @@ fun DataStorageScreen(
             title = { Text(stringResource(R.string.settings_crash_log), fontWeight = FontWeight.Bold) },
             text = {
                 Column {
-                    Text(stringResource(R.string.settings_crash_log_subtitle, crashLogCount, crashLogKb))
+                    Text(
+                        pluralStringResource(
+                            R.plurals.settings_crash_log_subtitle,
+                            crashLogCount,
+                            crashLogCount,
+                            crashLogKb
+                        )
+                    )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = stringResource(R.string.settings_crash_log_note),

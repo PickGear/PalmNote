@@ -46,6 +46,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -54,6 +55,12 @@ import com.palmnote.app.BuildConfig
 import com.palmnote.app.R
 import com.palmnote.ui.components.CompactTopAppBar
 import com.palmnote.ui.components.ModuleCard
+import com.palmnote.ui.theme.DopamineAmber
+import com.palmnote.ui.theme.DopamineCoral
+import com.palmnote.ui.theme.DopamineMint
+import com.palmnote.ui.theme.DopaminePink
+import com.palmnote.ui.theme.DopamineSky
+import com.palmnote.ui.theme.DopamineViolet
 
 /** 一个更新分区：如「新增 / 变更 / 修复 / 安全」及其条目列表。 */
 private data class ChangelogSection(val title: String, val items: List<String>)
@@ -66,19 +73,30 @@ private data class VersionEntry(val version: String, val date: String, val secti
 /** 版本头行：如「1.4.0 (2026-09-17)」。 */
 private val VERSION_HEADER = Regex("""^(\d+(?:\.\d+){1,2}) \((\d{4}-\d{2}-\d{2})\)\s*$""")
 
-/** 分区标签着色：语义色取中段亮度，深浅主题下都可读；未知分区回退中性灰。 */
+/** 语义色取中段亮度，深浅主题下都可读；**领域分组按多巴胺色轮转**（新增分区自动有色，不再一律灰）。 */
 private val SECTION_TINT_ADDED = Color(0xFF639922)
 private val SECTION_TINT_CHANGED = Color(0xFFBA7517)
 private val SECTION_TINT_FIXED = Color(0xFF378ADD)
 private val SECTION_TINT_SECURITY = Color(0xFFE24B4A)
 private val SECTION_TINT_OTHER = Color(0xFF888780)
 
-private fun sectionTint(title: String): Color = when (title) {
-    "新增" -> SECTION_TINT_ADDED
-    "变更" -> SECTION_TINT_CHANGED
-    "修复" -> SECTION_TINT_FIXED
-    "安全" -> SECTION_TINT_SECURITY
-    else -> SECTION_TINT_OTHER
+/** 领域分组（「生活模块全新改版」这类）的轮转色：与设置页装饰色同源。 */
+private val SECTION_TINT_CYCLE = listOf(DopamineCoral, DopamineAmber, DopamineMint, DopamineSky, DopamineViolet, DopaminePink)
+
+/**
+ * 分区标签着色：语义段（新增/变更/修复/安全）中英都认，用固定语义色；
+ * 「说明」保持中性（它是补充说明，不是变更类型）；其余领域分组按 [index] 轮转取色。
+ */
+internal fun sectionTint(title: String, index: Int): Color {
+    val t = title.trim()
+    return when {
+        t.startsWith("新增") || t.equals("Added", ignoreCase = true) -> SECTION_TINT_ADDED
+        t.startsWith("变更") || t.equals("Changed", ignoreCase = true) -> SECTION_TINT_CHANGED
+        t.startsWith("修复") || t.equals("Fixed", ignoreCase = true) -> SECTION_TINT_FIXED
+        t.startsWith("安全") || t.equals("Security", ignoreCase = true) -> SECTION_TINT_SECURITY
+        t.startsWith("说明") || t.equals("Notes", ignoreCase = true) -> SECTION_TINT_OTHER
+        else -> SECTION_TINT_CYCLE[index % SECTION_TINT_CYCLE.size]
+    }
 }
 
 /**
@@ -269,7 +287,9 @@ private fun TimelineVersionBlock(entry: VersionEntry, isCurrent: Boolean, defaul
                 Spacer(Modifier.weight(1f))
                 if (!expanded) {
                     Text(
-                        text = stringResource(R.string.version_history_item_count, entry.itemCount),
+                        text = pluralStringResource(
+                            R.plurals.version_history_item_count, entry.itemCount, entry.itemCount
+                        ),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -284,9 +304,9 @@ private fun TimelineVersionBlock(entry: VersionEntry, isCurrent: Boolean, defaul
 
             if (expanded) {
                 ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
-                    entry.sections.forEach { section ->
+                    entry.sections.forEachIndexed { index, section ->
                         Spacer(Modifier.height(10.dp))
-                        SectionChip(section.title)
+                        SectionChip(section.title, index)
                         Spacer(Modifier.height(6.dp))
                         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             section.items.forEach { item ->
@@ -296,7 +316,7 @@ private fun TimelineVersionBlock(entry: VersionEntry, isCurrent: Boolean, defaul
                                             .padding(top = 7.dp)
                                             .size(5.dp)
                                             .clip(CircleShape)
-                                            .background(sectionTint(section.title).copy(alpha = 0.7f))
+                                            .background(sectionTint(section.title, index).copy(alpha = 0.7f))
                                     )
                                     Spacer(Modifier.width(8.dp))
                                     Text(
@@ -315,10 +335,10 @@ private fun TimelineVersionBlock(entry: VersionEntry, isCurrent: Boolean, defaul
     }
 }
 
-/** 分区标签：语义色浅底胶囊（新增=绿 / 变更=琥珀 / 修复=蓝 / 安全=红）。 */
+/** 分区标签：语义色浅底胶囊（新增=绿 / 变更=琥珀 / 修复=蓝 / 安全=红 / 领域分组=多巴胺轮转）。 */
 @Composable
-private fun SectionChip(title: String) {
-    val tint = sectionTint(title)
+private fun SectionChip(title: String, index: Int) {
+    val tint = sectionTint(title, index)
     Surface(shape = RoundedCornerShape(8.dp), color = tint.copy(alpha = 0.15f)) {
         Text(
             text = title,

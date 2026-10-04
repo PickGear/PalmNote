@@ -39,6 +39,7 @@ class LifeDayReadViewModel @Inject constructor(
                 val (start, end) = dayRange(dateKey)
                 lifeItemDao.getItemsForDayDemoAware(start, end, includeDemo, LIFE_DEMO_META)
             }
+            .catchLife("dayRead.items", emptyList())
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     companion object {

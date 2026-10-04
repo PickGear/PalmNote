@@ -1,62 +1,73 @@
 package com.palmnote.data.repository
-import javax.inject.Inject
-
-import androidx.paging.Pager
-import androidx.paging.PagingConfig
-import androidx.paging.PagingData
 import androidx.room.withTransaction
 import com.palmnote.data.db.AppDatabase
 import com.palmnote.data.db.FieldValueExtractor
+import com.palmnote.data.datastore.PreferencesManager
 import com.palmnote.data.db.dao.FieldValueDao
+import com.palmnote.data.db.dao.LIFE_DEMO_META
 import com.palmnote.data.db.dao.LifeItemDao
-import com.palmnote.data.db.dao.LifeItemPagingSource
 import com.palmnote.data.db.entity.FieldValue
 import com.palmnote.data.db.entity.LifeItem
 import com.palmnote.domain.model.FieldConfig
 import com.palmnote.domain.model.FieldType
 import com.palmnote.domain.model.SubscriptionDueItem
 import com.palmnote.domain.repository.LifeItemRepository
+import com.palmnote.domain.event.DomainEvent
+import com.palmnote.domain.event.EventBus
 import com.palmnote.domain.repository.LifeTemplateRepository
 import com.palmnote.domain.util.AppLogger
 import com.palmnote.domain.util.BuiltinTemplates
 import com.palmnote.domain.util.DateUtils
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.jsonObject
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
+import javax.inject.Inject
+@OptIn(ExperimentalCoroutinesApi::class)
 class LifeItemRepositoryImpl @Inject constructor(
     private val dao: LifeItemDao,
     private val fieldValueDao: FieldValueDao,
     private val appDatabase: AppDatabase,
-    private val templateRepo: LifeTemplateRepository
+    private val templateRepo: LifeTemplateRepository,
+    private val preferences: PreferencesManager,
+    /** 存钱达标规则的事件源（见 [publishSavingDepositIfGrew]）。 */
+    private val eventBus: EventBus
 ) : LifeItemRepository {
     private val permissiveJson = Json { ignoreUnknownKeys = true }
-    override fun getAllItems(): Flow<List<LifeItem>> = dao.getAllItems()
-    override fun getItemsByTemplate(templateId: Long): Flow<List<LifeItem>> = dao.getItemsByTemplate(templateId)
-    override fun getItemsByTemplateAndStatus(templateId: Long, status: String): Flow<List<LifeItem>> =
-        dao.getItemsByTemplateAndStatus(templateId, status)
+    override fun getAllItems(): Flow<List<LifeItem>> = dao.getAllItemsIncludingHidden()
+    override fun getItemsByTemplate(templateId: Long): Flow<List<LifeItem>> = dao.getVisibleItemsByTemplate(templateId)
+    override fun getItemsByTemplateAndStatus(
+        templateId: Long,
+        status: String
+    ): Flow<List<LifeItem>> = dao.getVisibleItemsByTemplateAndStatus(templateId, status)
     override suspend fun getItemById(id: Long): LifeItem? = dao.getItemById(id)
     override fun getItemByIdFlow(id: Long): Flow<LifeItem?> = dao.getItemByIdFlow(id)
-    override fun getActiveItemsByTemplate(templateId: Long, limit: Int): Flow<List<LifeItem>> =
-        dao.getActiveItemsByTemplate(templateId, limit)
-    override fun getItemCountByTemplate(templateId: Long): Flow<Int> = dao.getItemCountByTemplate(templateId)
-    override fun getPagedItemsByTemplate(templateId: Long): Flow<PagingData<LifeItem>> =
-        Pager(PagingConfig(pageSize = 20)) { LifeItemPagingSource(dao, templateId) }.flow
-    override fun getPagedAllItems(): Flow<PagingData<LifeItem>> =
-        Pager(PagingConfig(pageSize = 20)) { LifeItemPagingSource(dao) }.flow
+    override fun getActiveItemsByTemplate(
+        templateId: Long,
+        limit: Int
+    ): Flow<List<LifeItem>> = preferences.lifeDemoMode.flatMapLatest { demo ->
+        dao.getVisibleActiveItemsByTemplate(templateId, demo, LIFE_DEMO_META, limit)
+    }
+    override fun getItemCountByTemplate(templateId: Long): Flow<Int> = dao.getVisibleItemCountByTemplate(templateId)
     override suspend fun search(query: String): List<LifeItem> = dao.search(query)
     override suspend fun insertItem(item: LifeItem): Long = try {
         val (dueDate, dueTime) = mirrorExecutionColumns(item.templateId, item.fieldsData)
         val resolvedDue = item.dueDate ?: dueDate ?: recordFallbackDueDate(item.templateId, item.createdAt)
         val id = appDatabase.withTransaction {
-            dao.insertItem(item.copy(dueDate = resolvedDue, dueTime = item.dueTime ?: dueTime))
+            val rowId = dao.insertItem(item.copy(dueDate = resolvedDue, dueTime = item.dueTime ?: dueTime))
+            // 双写（§7.1）必须与主写入**同事务**：分开写的话，两次提交之间进程被杀
+            // 就会留下「主表有行、统计表没有」的不一致快照。
+            syncFieldValues(rowId, item.templateId, item.fieldsData)
+            rowId
         }
-        syncFieldValues(id, item.templateId, item.fieldsData)
         id
     } catch (e: Exception) {
         AppLogger.e("LifeItemRepo", "insertItem failed", e)
@@ -84,8 +95,8 @@ class LifeItemRepositoryImpl @Inject constructor(
                 remindAt = item.remindAt,
                 meta = item.meta
             )
+            syncFieldValues(item.id, item.templateId, item.fieldsData)
         }
-        syncFieldValues(item.id, item.templateId, item.fieldsData)
     } catch (e: Exception) {
         AppLogger.e("LifeItemRepo", "updateItem failed", e)
         throw e
@@ -102,11 +113,40 @@ class LifeItemRepositoryImpl @Inject constructor(
         val (dueDate, dueTime) = mirrorExecutionColumns(templateId, fieldsData)
         val resolvedDue = dueDate ?: existing?.dueDate
             ?: recordFallbackDueDate(templateId, existing?.createdAt ?: 0L)
-        dao.updateFieldsDataWithSchedule(id, fieldsData, resolvedDue, dueTime ?: existing?.dueTime)
-        syncFieldValues(id, templateId, fieldsData)
+        appDatabase.withTransaction {
+            dao.updateFieldsDataWithSchedule(id, fieldsData, resolvedDue, dueTime ?: existing?.dueTime)
+            syncFieldValues(id, templateId, fieldsData)
+        }
+        publishSavingDepositIfGrew(id, templateId, existing?.fieldsData, fieldsData)
     } catch (e: Exception) {
         AppLogger.e("LifeItemRepo", "updateFieldsData failed", e)
         throw e
+    }
+
+    /**
+     * 进度**上涨**时发布 `SavingDeposit`（存钱达标规则的唯一事件源）。
+     *
+     * 为什么在这里：`updateFieldsData` 是"改一个字段值"的**唯一咽喉** ——
+     * 详情页的 ± / 点数值就地编辑 / 快捷编辑三条路径都经过它，放在上游任一处都会漏。
+     *
+     * 为什么只判"上涨"：规则自己会读条目判断是否达标（`targetAmount`/`currentAmount`），
+     * 这里只负责"发生了推进"；往下调进度不发布，避免误触发。
+     *
+     * 事件载荷的金额字段传 0：规则的判定与文案都用条目自身的数据（消费者会重读条目），
+     * 而金额键名随模板而异（`targetAmount`/`budget`…），在这里猜只会制造第二套口径。
+     */
+    private suspend fun publishSavingDepositIfGrew(
+        itemId: Long,
+        templateId: Long,
+        before: String?,
+        after: String
+    ) {
+        if (before == null || templateId <= 0L) return
+        val config = runCatching { templateRepo.getTemplateById(templateId)?.fieldsConfig }
+            .getOrNull() ?: return
+        if (!progressIncreased(config, before, after)) return
+        runCatching { eventBus.publish(DomainEvent.SavingDeposit(itemId, amount = 0L, total = 0L)) }
+            .onFailure { AppLogger.w("LifeItemRepo", "publish SavingDeposit failed", it) }
     }
 
     /**
@@ -136,26 +176,38 @@ class LifeItemRepositoryImpl @Inject constructor(
 
     override fun getSubscriptionsDueWithin(days: Int): Flow<List<SubscriptionDueItem>> = flow {
         val today = LocalDate.now(zone)
-        val tpls = templateRepo.getAllVisibleTemplates().first().filter { it.name.contains(BuiltinTemplates.SUBSCRIPTION_KEYWORD) }
+        val tpls = templateRepo.getAllVisibleTemplates().first()
+            .filter { it.name.contains(BuiltinTemplates.SUBSCRIPTION_KEYWORD) }
+        if (tpls.isEmpty()) {
+            emit(emptyList<SubscriptionDueItem>())
+            return@flow
+        }
+        // 一次查完（原来是按模板逐个查的 N+1），并且与其它出口同一套演示互斥口径：
+        // 原实现直接调 dao.getActiveItemsByTemplate（**没有**演示过滤），于是演示模式关掉后
+        // 示例订阅仍会列在「即将扣费」里，开着时反过来看不到真实订阅。
+        // 同时去掉了原先的 LIMIT 500 静默截断。
         val rows = mutableListOf<SubscriptionDueItem>()
-        for (tpl in tpls) {
-            dao.getActiveItemsByTemplate(tpl.id, 500).first().forEach { item ->
-                try {
-                    val obj = Json.decodeFromString<JsonObject>(item.fieldsData)
-                    val billingDay = (obj["billingDay"] as? JsonPrimitive)?.content?.toIntOrNull()
-                        ?: (obj["billing_day"] as? JsonPrimitive)?.content?.toIntOrNull()
-                    val lastBilled = (obj["lastBilledDate"] as? JsonPrimitive)?.content?.toLongOrNull()
-                    val cycle = (obj["billingCycle"] as? JsonPrimitive)?.content ?: "monthly"
-                    if (billingDay != null) {
-                        val nextDue = nextDueDate(billingDay, cycle, lastBilled, today)
-                        val daysLeft = ChronoUnit.DAYS.between(today, nextDue)
-                        if (daysLeft in 0..days.toLong()) {
-                            val price = (obj["price"] as? JsonPrimitive)?.content ?: ""
-                            rows.add(SubscriptionDueItem(item.id, item.title, price, daysLeft.toInt(), cycle))
-                        }
+        val items = dao.getActiveItemsByTemplateIds(
+            tpls.map { it.id },
+            preferences.lifeDemoMode.first(),
+            LIFE_DEMO_META
+        )
+        for (item in items) {
+            try {
+                val obj = Json.decodeFromString<JsonObject>(item.fieldsData)
+                val billingDay = (obj["billingDay"] as? JsonPrimitive)?.content?.toIntOrNull()
+                    ?: (obj["billing_day"] as? JsonPrimitive)?.content?.toIntOrNull()
+                val lastBilled = (obj["lastBilledDate"] as? JsonPrimitive)?.content?.toLongOrNull()
+                val cycle = (obj["billingCycle"] as? JsonPrimitive)?.content ?: "monthly"
+                if (billingDay != null) {
+                    val nextDue = nextDueDate(billingDay, cycle, lastBilled, today)
+                    val daysLeft = ChronoUnit.DAYS.between(today, nextDue)
+                    if (daysLeft in 0..days.toLong()) {
+                        val price = (obj["price"] as? JsonPrimitive)?.content ?: ""
+                        rows.add(SubscriptionDueItem(item.id, item.title, price, daysLeft.toInt(), cycle))
                     }
-                } catch (_: Exception) { }
-            }
+                }
+            } catch (_: Exception) { }
         }
         emit(rows.sortedBy { it.daysLeft }.take(3))
     }
@@ -171,7 +223,12 @@ class LifeItemRepositoryImpl @Inject constructor(
             val fields = templateFields(templateId)
             val dateKey = fields.firstOrNull { it.type.isDateLike() }?.key
             val timeKey = fields.firstOrNull { it.type == FieldType.TIME }?.key
-            val dueDate = dateKey?.let { (obj[it] as? JsonPrimitive)?.content?.toLongOrNull() }
+            // 必须用 parseDateValueOrNull：它同时接受毫秒与 "yyyy-MM-dd"。
+            // 这里原本是 content.toLongOrNull()，**只认毫秒**；而记录表单写的正是 ISO 字符串
+            // （DatePillRow → LocalDate.toString()），于是 dueDate 恒为 null。再叠加
+            // recordFallbackDueDate 的「模板自带 DATE 字段就不兜底」，结果是带日期字段的模板
+            // （生日/纪念日/订阅下次扣费/截止日）用表单创建的记录根本不上日历、不进今日、不算逾期。
+            val dueDate = dateKey?.let { DateUtils.parseDateValueOrNull((obj[it] as? JsonPrimitive)?.content) }
             val dueTime = timeKey?.let { parseTimeValue((obj[it] as? JsonPrimitive)?.content) }
             dueDate to dueTime
         } catch (_: Exception) {
@@ -253,24 +310,50 @@ class LifeItemRepositoryImpl @Inject constructor(
         throw e
     }
 
-    override fun getScheduledBetween(start: Long, end: Long): Flow<List<LifeItem>> =
-        dao.getScheduledBetween(start, end)
+    override fun getScheduledBetween(start: Long, end: Long): Flow<List<LifeItem>> = dao.getScheduledBetween(start, end)
 
-    override fun getDistinctDueDatesBetween(start: Long, end: Long): Flow<List<Long>> =
-        dao.getDistinctDueDatesBetween(start, end)
+    override fun getDistinctDueDatesBetween(start: Long, end: Long): Flow<List<Long>> = dao.getDistinctDueDatesBetween(start, end)
 
-    override fun getTodoComplement(todayStart: Long, todayEnd: Long, todoTemplateId: Long): Flow<List<LifeItem>> =
-        dao.getTodoComplement(todayStart, todayEnd, todoTemplateId)
+    override fun getTodoComplement(
+        todayStart: Long,
+        todayEnd: Long,
+        todoTemplateId: Long
+    ): Flow<List<LifeItem>> = dao.getTodoComplement(todayStart, todayEnd, todoTemplateId)
 
     override fun getSubtasks(parentId: Long): Flow<List<LifeItem>> = dao.getSubtasks(parentId)
 
-    override fun getAnniversaryLikeItems(includeDemo: Boolean, demoMeta: String): Flow<List<LifeItem>> =
-        dao.getAnniversaryLikeItems(includeDemo, demoMeta)
+    override fun getAnniversaryLikeItems(
+        includeDemo: Boolean,
+        demoMeta: String
+    ): Flow<List<LifeItem>> = dao.getAnniversaryLikeItems(includeDemo, demoMeta)
 
-    override fun getOverdue(now: Long): Flow<List<LifeItem>> = dao.getOverdue(now)
     override fun searchItems(query: String): Flow<List<LifeItem>> = dao.searchItems(query)
-    override fun getDayCountsBetween(start: Long, end: Long): Flow<List<com.palmnote.data.db.dao.LifeDayCount>> =
-        dao.getDayCountsBetween(start, end)
-    override fun getDayCategoryCountsBetween(start: Long, end: Long): Flow<List<com.palmnote.data.db.dao.LifeDayCategoryCount>> =
-        dao.getDayCategoryCountsBetween(start, end)
+    override fun getDayCountsBetween(
+        start: Long,
+        end: Long
+    ): Flow<List<com.palmnote.data.db.dao.LifeDayCount>> = dao.getDayCountsBetween(start, end)
+    override fun getDayCategoryCountsBetween(
+        start: Long,
+        end: Long
+    ): Flow<List<com.palmnote.data.db.dao.LifeDayCategoryCount>> = dao.getDayCategoryCountsBetween(start, end)
 }
+
+/**
+ * 进度是否**上涨**：只看模板里标了 `showAsProgress` 的那个字段
+ * （存钱是 `currentAmount`、购物是 `spent`、阅读是 `currentPage`…）。
+ *
+ * 抽成纯函数是因为它是**存钱达标提醒的触发闸门**：判错就会"该响不响"或"乱响"。
+ * 配置解析不出、字段缺失、非数值一律 false（宁可不提醒，也不误提醒）。
+ */
+internal fun progressIncreased(fieldsConfig: String, before: String, after: String): Boolean {
+    val configs = runCatching { Json.decodeFromString<List<FieldConfig>>(fieldsConfig) }.getOrNull()
+    val key = configs?.firstOrNull { it.showAsProgress && !it.disabled }?.key
+    val beforeValue = key?.let { numericFieldOrNull(before, it) }
+    val afterValue = key?.let { numericFieldOrNull(after, it) }
+    return beforeValue != null && afterValue != null && afterValue > beforeValue
+}
+
+private fun numericFieldOrNull(fieldsData: String, key: String): Double? =
+    runCatching {
+        (Json.parseToJsonElement(fieldsData).jsonObject[key] as? JsonPrimitive)?.content?.toDoubleOrNull()
+    }.getOrNull()

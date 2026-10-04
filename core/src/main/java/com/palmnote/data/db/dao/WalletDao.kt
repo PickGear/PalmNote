@@ -70,4 +70,12 @@ interface WalletDao {
 
     @Query("DELETE FROM wallets")
     suspend fun deleteAll()
+
+    /** 演示数据清理（v14 isDemo 列）：演示模式关闭时物理删除示例行。 */
+    @Query("DELETE FROM wallets WHERE isDemo = 1")
+    suspend fun clearDemoWallets()
+
+    /** 当前示例行数（关演示反馈 / 幂等判断用）。 */
+    @Query("SELECT COUNT(*) FROM wallets WHERE isDemo = 1")
+    suspend fun countDemoWallets(): Int
 }
