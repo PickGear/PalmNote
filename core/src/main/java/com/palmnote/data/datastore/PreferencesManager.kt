@@ -39,11 +39,25 @@ class PreferencesManager @Inject constructor(
         val ASSET_VIEW_MODE = booleanPreferencesKey("asset_view_mode")
         val DASHBOARD_CARD_CONFIGS = stringPreferencesKey("dashboard_card_configs")
         val LIFE_DEMO_MODE = booleanPreferencesKey("life_demo_mode")
-        val LIFE_DEMO_HINT_SHOWN = booleanPreferencesKey("life_demo_hint_shown")
+        val LIFE_LAST_TEMPLATE_ID = longPreferencesKey("life_last_template_id")
         val LIFE_DEMO_SEEDED = booleanPreferencesKey("life_demo_seeded")
         val LIFE_DEMO_SEED_VERSION = intPreferencesKey("life_demo_seed_version")
+        val WEALTH_DEMO_SEEDED = booleanPreferencesKey("wealth_demo_seeded")
+        val WEALTH_DEMO_SEED_VERSION = intPreferencesKey("wealth_demo_seed_version")
+        val HABIT_DEMO_SEEDED = booleanPreferencesKey("habit_demo_seeded")
+        val HABIT_DEMO_SEED_VERSION = intPreferencesKey("habit_demo_seed_version")
+        /**
+         * 播种演示数据时的应用**语言码**（`zh` / `en`）：演示内容是**存库的文案**，
+         * 切语言后要整批重播（见 DemoDataSeeder）。只记语言码不记完整 locale——
+         * 文案只分中英两套，记 `en-US` 会与 `en` 判成"语言变了"而白重播。
+         */
+        val DEMO_SEED_LANGUAGE = stringPreferencesKey("demo_seed_language")
+        val LIFE_FOCUS_TIMER_START_AT = longPreferencesKey("life_focus_timer_start_at")
+        val LIFE_FOCUS_TIMER_ACCUM_MS = longPreferencesKey("life_focus_timer_accum_ms")
         val LIFE_CALENDAR_SELECTED_DATE = longPreferencesKey("life_calendar_selected_date")
         val LIFE_CALENDAR_WEEK_MODE = booleanPreferencesKey("life_calendar_week_mode")
+        val LIFE_CATEGORY_COMPACT = booleanPreferencesKey("life_category_compact")
+        val DISMISSED_BANNER_IDS = stringSetPreferencesKey("dismissed_banner_ids")
         val CALENDAR_SYNC_ENABLED = booleanPreferencesKey("calendar_sync_enabled")
         val DEFAULT_START_PAGE = stringPreferencesKey("default_start_page")
         val LANGUAGE = stringPreferencesKey("language")
@@ -139,6 +153,19 @@ class PreferencesManager @Inject constructor(
     val calendarSyncEnabled: Flow<Boolean> = prefsFlow.map { it[CALENDAR_SYNC_ENABLED] ?: false }
 
     suspend fun setCalendarSyncEnabled(enabled: Boolean) { context.dataStore.edit { it[CALENDAR_SYNC_ENABLED] = enabled } }
+
+    // ── 专注计时持久化：离屏/杀进程后计时继续 ──
+    // startAt > 0 = 计时中；accumMs = 暂停前累计。elapsed = accumMs + (now - startAt)。
+    val lifeFocusTimerStartAt: Flow<Long> = prefsFlow.map { it[LIFE_FOCUS_TIMER_START_AT] ?: 0L }
+    val lifeFocusTimerAccumMs: Flow<Long> = prefsFlow.map { it[LIFE_FOCUS_TIMER_ACCUM_MS] ?: 0L }
+
+    suspend fun setFocusTimerRunning(startAt: Long) {
+        context.dataStore.edit { it[LIFE_FOCUS_TIMER_START_AT] = startAt }
+    }
+
+    suspend fun setFocusTimerAccum(accumMs: Long) {
+        context.dataStore.edit { it[LIFE_FOCUS_TIMER_ACCUM_MS] = accumMs }
+    }
 
     val themeColor: Flow<String> = prefsFlow.map { it[THEME_COLOR] ?: DEFAULT_THEME_COLOR }
 
@@ -245,13 +272,21 @@ class PreferencesManager @Inject constructor(
         context.dataStore.edit { it[LIFE_DEMO_MODE] = enabled }
     }
 
-    /** 首次进入演示模式时的一次性说明是否已看过（用户定：默认开启，但要提醒）。 */
-    val lifeDemoHintShown: Flow<Boolean> = prefsFlow.map { it[LIFE_DEMO_HINT_SHOWN] ?: false }
+    /**
+     * 上次从创建面板选择的模板 **id**（FAB 长按直达用）。
+     * 语义是「上次在创建面板选了谁」——高频用户八成的记录就一两个模板，
+     * 长按 FAB 省掉弹窗一层。未选过为空（长按退化为单击）。
+     *
+     * 存 id 而不是图标：图标是显示属性、会撞（自定义模板从内置图标里挑），
+     * 撞了以后「上次是谁」就认不出来（同 LifeRoute.LifeCreateRecord 的说明）。
+     */
+    val lifeLastTemplateId: Flow<Long?> = prefsFlow.map { it[LIFE_LAST_TEMPLATE_ID] }
 
-    suspend fun setLifeDemoHintShown(shown: Boolean) {
-        context.dataStore.edit { it[LIFE_DEMO_HINT_SHOWN] = shown }
+    suspend fun setLifeLastTemplateId(templateId: Long) {
+        context.dataStore.edit { it[LIFE_LAST_TEMPLATE_ID] = templateId }
     }
 
+    /** 首次进入演示模式时的一次性说明是否已看过（用户定：默认开启，但要提醒）。 */
     /**
      * 示例数据当前是否已播种。
      * 关闭演示模式时置 false ⟹ **下次开启会重建**（用户定：关掉再开等于是重置，
@@ -277,6 +312,39 @@ class PreferencesManager @Inject constructor(
         context.dataStore.edit { it[LIFE_DEMO_SEED_VERSION] = version }
     }
 
+    // ── 演示数据（记账 / 物品）：与生活页同款「已播种 + 版本」双条件 ──
+
+    val wealthDemoSeeded: Flow<Boolean> = prefsFlow.map { it[WEALTH_DEMO_SEEDED] ?: false }
+
+    suspend fun setWealthDemoSeeded(seeded: Boolean) {
+        context.dataStore.edit { it[WEALTH_DEMO_SEEDED] = seeded }
+    }
+
+    val wealthDemoSeedVersion: Flow<Int> = prefsFlow.map { it[WEALTH_DEMO_SEED_VERSION] ?: 0 }
+
+    suspend fun setWealthDemoSeedVersion(version: Int) {
+        context.dataStore.edit { it[WEALTH_DEMO_SEED_VERSION] = version }
+    }
+
+    val habitDemoSeeded: Flow<Boolean> = prefsFlow.map { it[HABIT_DEMO_SEEDED] ?: false }
+
+    suspend fun setHabitDemoSeeded(seeded: Boolean) {
+        context.dataStore.edit { it[HABIT_DEMO_SEEDED] = seeded }
+    }
+
+    val habitDemoSeedVersion: Flow<Int> = prefsFlow.map { it[HABIT_DEMO_SEED_VERSION] ?: 0 }
+
+    suspend fun setHabitDemoSeedVersion(version: Int) {
+        context.dataStore.edit { it[HABIT_DEMO_SEED_VERSION] = version }
+    }
+
+    /** 播种演示数据时的应用语言码（null = 尚未记录；null 也算"与当前语言不一致"，见 DemoDataSeeder）。 */
+    val demoSeedLanguage: Flow<String?> = prefsFlow.map { it[DEMO_SEED_LANGUAGE] }
+
+    suspend fun setDemoSeedLanguage(language: String) {
+        context.dataStore.edit { it[DEMO_SEED_LANGUAGE] = language }
+    }
+
     val lifeCalendarSelectedDate: Flow<Long> = prefsFlow.map { it[LIFE_CALENDAR_SELECTED_DATE] ?: java.time.LocalDate.now().toEpochDay() }
 
     suspend fun setLifeCalendarSelectedDate(epochDay: Long) {
@@ -288,6 +356,31 @@ class PreferencesManager @Inject constructor(
 
     suspend fun setLifeCalendarWeekMode(week: Boolean) {
         context.dataStore.edit { it[LIFE_CALENDAR_WEEK_MODE] = week }
+    }
+
+    /**
+     * 生活首页分类卡形态：true（默认）= 紧凑胶囊行（首屏让位给今日安排），
+     * false = 三张计数大卡。用户可在生活页设置弹层切换。
+     */
+    val lifeCategoryCompact: Flow<Boolean> = prefsFlow.map { it[LIFE_CATEGORY_COMPACT] ?: true }
+
+    suspend fun setLifeCategoryCompact(compact: Boolean) {
+        context.dataStore.edit { it[LIFE_CATEGORY_COMPACT] = compact }
+    }
+
+    /**
+     * **一次性提示的永久关闭集合**（按消息 id 记）。
+     *
+     * 统一原则：状态类提示不可关闭（状态就该可见）；教学类提示可永久关闭，
+     * 关闭状态必须持久化——"关掉下次又冒出来"是用户眼里的骚扰。
+     */
+    val dismissedBannerIds: Flow<Set<String>> =
+        prefsFlow.map { it[DISMISSED_BANNER_IDS] ?: emptySet() }
+
+    suspend fun dismissBanner(id: String) {
+        context.dataStore.edit { prefs ->
+            prefs[DISMISSED_BANNER_IDS] = (prefs[DISMISSED_BANNER_IDS] ?: emptySet()) + id
+        }
     }
 
     fun isAppLockEnabled(): Boolean = prefsState.value[APP_LOCK_ENABLED] ?: false

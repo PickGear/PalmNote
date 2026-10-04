@@ -18,6 +18,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import com.palmnote.ui.theme.AppIcon
 import androidx.compose.ui.text.font.FontWeight
@@ -103,7 +104,15 @@ fun AccountBookManageScreen(
                                 color = Color.White
                             )
                             Spacer(modifier = Modifier.height(8.dp))
-                            Text(stringResource(R.string.account_book_count_format, state.allAccountBooks.size), style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.7f))
+                            Text(
+                                text = pluralStringResource(
+                                    R.plurals.account_book_count_format,
+                                    state.allAccountBooks.size,
+                                    state.allAccountBooks.size
+                                ),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color.White.copy(alpha = 0.7f)
+                            )
                         }
                     }
                 }

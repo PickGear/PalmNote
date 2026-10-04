@@ -1,34 +1,55 @@
+@file:Suppress("TooManyFunctions")
+
 package com.palmnote.ui.life
 
+import android.content.Context
+import android.net.Uri
+import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.background
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.UploadFile
+import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.*
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.palmnote.domain.model.FieldConfig
-import com.palmnote.domain.model.FieldType
+import com.palmnote.app.R
+import com.palmnote.ui.components.AppDialog
+import com.palmnote.ui.components.SecondaryTopAppBar
 import com.palmnote.ui.theme.ModuleLife
 import com.palmnote.ui.theme.Spacing
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
-import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 @Composable
@@ -39,48 +60,78 @@ fun LifeCreateRecordScreen(
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
+    val context = LocalContext.current
+    val accent = runCatching { Color(android.graphics.Color.parseColor(state.templateColor)) }
+        .getOrDefault(ModuleLife)
+    var showDiscard by remember { mutableStateOf(false) }
+    var showPreview by remember { mutableStateOf(false) }
+    val requestBack = {
+        if (state.dirty && !state.saved) showDiscard = true else onBack()
+    }
+    BackHandler { requestBack() }
 
     LaunchedEffect(state.saved) {
         if (state.saved) onSaved()
     }
     LaunchedEffect(state.error) {
-        state.error?.let { snackbar.showSnackbar(it) }
+        state.error?.let {
+            snackbar.showSnackbar(it)
+            vm.consumeError()
+        }
+    }
+    // 轨迹导入结果反馈（此前 trackImportMessage 无人消费，导入成功无感知）
+    LaunchedEffect(state.trackImportTick) {
+        state.trackImportMessage?.let { snackbar.showSnackbar(it) }
     }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            TopAppBar(
+            // 二级页头统一（排版与其他生活二级页一致）；标题保留模板身份色圆标
+            SecondaryTopAppBar(
+                backgroundColor = Color.Transparent,
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                         Surface(
-                            color = runCatching { Color(android.graphics.Color.parseColor(state.templateColor)) }
-                                .getOrDefault(ModuleLife)
-                                .copy(alpha = 0.15f),
+                            color = accent.copy(alpha = 0.15f),
                             shape = CircleShape,
                             modifier = Modifier.size(32.dp)
                         ) {
                             Icon(
                                 iconFor(state.templateIcon),
                                 contentDescription = null,
-                                tint = runCatching { Color(android.graphics.Color.parseColor(state.templateColor)) }
-                                    .getOrDefault(ModuleLife),
+                                tint = accent,
                                 modifier = Modifier.padding(6.dp)
                             )
                         }
-                        Text(state.templateName.ifBlank { "新建记录" })
+                        Text(
+                            state.templateName.ifBlank {
+                                stringResource(if (state.isEdit) R.string.life_record_edit_title else R.string.life_record_new_title)
+                            },
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
                     }
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+                    IconButton(onClick = { requestBack() }) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.settings_navigate_back)
+                        )
                     }
                 },
                 actions = {
-                    TextButton(
-                        onClick = { vm.save() },
-                        enabled = !state.saving
-                    ) {
-                        Text("保存", fontWeight = FontWeight.Bold, color = ModuleLife)
+                    // 保存前看一眼：用**已经填进去的值**预览卡片与详情页（与模板编辑器共用同一份渲染）
+                    IconButton(onClick = { showPreview = true }) {
+                        Icon(
+                            Icons.Filled.Visibility,
+                            contentDescription = stringResource(R.string.life_template_preview),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
             )
@@ -96,394 +147,324 @@ fun LifeCreateRecordScreen(
             verticalArrangement = Arrangement.spacedBy(Spacing.sm)
         ) {
             Spacer(Modifier.height(Spacing.xs))
-            state.fields.forEach { cfg ->
-                FieldInput(
-                    config = cfg,
-                    value = state.values[cfg.key].orEmpty(),
-                    onValueChange = { vm.updateValue(cfg.key, it) }
-                )
+            Spacer(Modifier.height(Spacing.sm))
+            // 一字段一卡（Apple 内嵌分组式，与编辑器预览态/详情结构区同一卡片语言）
+            // iOS 分组表单：连续"图标+标签左/值右"的字段合并进一张卡，复合字段单独成卡
+            EmptyFormNotice(visible = state.fields.isEmpty())
+            val groups = remember(state.fields) { buildFieldGroups(state.fields) }
+            groups.forEach { group ->
+                val single = group.singleOrNull()
+                if (single != null && single.type !in INLINE_FORM_TYPES) {
+                    ComplexFieldCard(single, accent, state, vm, context)
+                } else {
+                    SimpleRowsCard(group, accent, state, vm)
+                }
             }
-            Spacer(Modifier.height(Spacing.xxl))
+            DisabledFieldsHint(state.disabledFieldCount)
+            Spacer(Modifier.height(Spacing.md))
+            // 底部全宽主按钮：与记账 AddBill 同形态（拇指可达）
+            Button(
+                onClick = { vm.save() },
+                // 判断在状态层（`CreateRecordUiState.canSave`）：没有字段时置灰，而不是"点了没反应"
+                enabled = state.canSave,
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = accent)
+            ) {
+                if (state.saving) {
+                    CircularProgressIndicator(Modifier.size(22.dp), Color.White, 2.dp)
+                } else {
+                    Text(
+                        stringResource(if (state.isEdit) R.string.save else R.string.save),
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
+            }
+            Spacer(Modifier.height(Spacing.md))
         }
+    }
+
+    if (showPreview) {
+        RecordPreviewSheet(
+            input = RecordPreviewInput(
+                name = state.templateName,
+                iconKey = state.templateIcon,
+                colorHex = state.templateColor,
+                fields = state.fields,
+                // 用**用户已经填进去的值**预览 —— 这正是"保存前看一眼"的意义所在
+                values = state.values,
+                // 「每年重复」的模板：预览与真实读数必须同口径（都按下一次周年滚动）
+                repeatYearly = state.templateRepeatYearly,
+                // 填写页本身就是「填写」态，不再提供那一档
+                withFillTab = false
+            ),
+            onDismiss = { showPreview = false }
+        )
+    }
+
+    if (showDiscard) {
+        AppDialog(
+            onDismissRequest = { showDiscard = false },
+            title = { Text(stringResource(R.string.life_discard_changes_title), fontWeight = FontWeight.Bold) },
+            text = { Text(stringResource(R.string.life_discard_changes_body)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDiscard = false
+                    onBack()
+                }) {
+                    Text(stringResource(R.string.life_discard), color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = { TextButton(onClick = { showDiscard = false }) { Text(stringResource(R.string.settings_cancel)) } }
+        )
     }
 }
 
-// ───────────────────────── 字段输入分发 ─────────────────────────
+/**
+ * 空表单提示：**说清"为什么没有字段"**，而不是让用户对着空白点保存 ——
+ * `save()` 会被 `fields.isEmpty()` 守卫静默拦掉，那样看起来就是"点了没反应"。
+ *
+ * 这条路径真实存在：模板加载失败、或模板本身一个字段都没有。
+ * 判断放在这里（而不是调用点）是为了不给 [LifeCreateRecordScreen] 增加分支 —— 它已顶到
+ * detekt 的圈复杂度阈值。
+ */
+@Composable
+private fun EmptyFormNotice(visible: Boolean) {
+    if (!visible) return
+    GroupCard {
+        Text(
+            stringResource(R.string.life_template_no_fields),
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            stringResource(R.string.life_template_no_fields_hint),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+/**
+ * 停用字段提示：停用的字段**不进表单**是对的（那是模板层的选择），
+ * 但"少了什么"得说一句 —— 否则用户只会觉得表单莫名其妙缺了东西。
+ */
+@Composable
+private fun DisabledFieldsHint(count: Int) {
+    if (count <= 0) return
+    Text(
+        stringResource(R.string.life_record_disabled_fields, count),
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.fillMaxWidth()
+    )
+}
+
+// ───────────────────────── 日期 / 时间选择器（M3，与记账页同一套视觉）─────────────────────────
 
 @Composable
-private fun FieldInput(
-    config: FieldConfig,
-    value: String,
-    onValueChange: (String) -> Unit
+/**
+ * 日期选择器。上方给**快捷项**（今天 / 明天 / 周末）—— todo / 计划类 app 的惯例：
+ * 八成的情况就落在这三天里，先给一排按钮，省掉在小日历里找格子。
+ *
+ * 表单的日期胶囊与详情页的「点值即改」共用这个弹窗，所以两处一起受益。
+ */
+internal fun LifeDatePickerDialog(initial: LocalDate?, onPick: (LocalDate) -> Unit, onDismiss: () -> Unit) {
+    // M3 DatePicker 的 selectedDateMillis 是 **UTC 零点**：直接除以当日毫秒数取 epochDay，避免时区偏移差一天
+    val state = rememberDatePickerState(
+        initialSelectedDateMillis = initial?.toEpochDay()?.times(86_400_000L)
+    )
+    val today = LocalDate.now()
+    DatePickerDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = {
+                state.selectedDateMillis?.let { LocalDate.ofEpochDay(it / 86_400_000L) }?.let(onPick)
+                onDismiss()
+            }) { Text(stringResource(R.string.confirm), fontWeight = FontWeight.Bold) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } }
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            QuickDatePick(stringResource(R.string.life_record_today), today, onPick, onDismiss)
+            QuickDatePick(stringResource(R.string.life_record_tomorrow), today.plusDays(1), onPick, onDismiss)
+            QuickDatePick(stringResource(R.string.life_record_weekend), upcomingWeekend(today), onPick, onDismiss)
+        }
+        DatePicker(state = state)
+    }
+}
+
+/** 快捷项点了就**直接确认**（不再要求再按一次「确定」）——「快捷」就得是一步。 */
+@Composable
+private fun QuickDatePick(
+    label: String,
+    date: LocalDate,
+    onPick: (LocalDate) -> Unit,
+    onDismiss: () -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                config.label,
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Medium,
-                modifier = Modifier.weight(1f)
-            )
-            if (config.required) {
-                Text(" *", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.titleSmall)
-            }
-            if (config.unit.isNotBlank()) {
-                Text(config.unit, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        }
-        when (config.type) {
-            // ── 文本（最后手段）──
-            FieldType.TEXT, FieldType.SHORT_TEXT, FieldType.RICH_TEXT ->
-                OutlinedTextField(
-                    value = value,
-                    onValueChange = onValueChange,
-                    placeholder = { Text(config.placeholder.ifBlank { "输入${config.label}" }) },
-                    modifier = Modifier.fillMaxWidth(),
-                    minLines = if (config.type == FieldType.RICH_TEXT) 3 else 1,
-                    maxLines = if (config.type == FieldType.RICH_TEXT) 8 else 3
-                )
-            // ── 步进数值（§3.2「能点就不要敲」）──
-            FieldType.NUMBER, FieldType.DURATION ->
-                StepperField(value = value, onValueChange = onValueChange, step = config.step ?: 1.0, unit = config.unit, min = config.min, max = config.max)
-            FieldType.CURRENCY ->
-                StepperField(value = value, onValueChange = onValueChange, step = config.step ?: 100.0, unit = "¥", isCurrency = true, min = config.min, max = config.max)
-            FieldType.SLIDER ->
-                StepperField(value = value, onValueChange = onValueChange, step = config.step ?: 1.0, unit = config.unit, min = config.min, max = config.max)
-            // ── 拖动 ──
-            FieldType.PERCENT, FieldType.PERCENTAGE ->
-                SliderField(value = value, onValueChange = onValueChange, range = 0f..100f)
-            // ── 点选-真实状态 ──
-            FieldType.RATING ->
-                RatingField(value = value, onValueChange = onValueChange)
-            FieldType.BOOLEAN ->
-                SwitchField(value = value, onValueChange = onValueChange, label = config.label)
-            // ── 点选-选项（capsule chips）──
-            FieldType.SELECT, FieldType.TAG ->
-                SingleChoiceField(options = config.options, value = value, onValueChange = onValueChange)
-            FieldType.MULTI_SELECT ->
-                MultiChoiceField(options = config.options, value = value, onValueChange = onValueChange)
-            // ── 点选-快捷（§3.2 quick chips）──
-            FieldType.DATE ->
-                DateQuickField(value = value, onValueChange = onValueChange)
-            FieldType.TIME ->
-                TimeQuickField(value = value, onValueChange = onValueChange)
-            FieldType.DATETIME ->
-                DateTimeQuickField(value = value, onValueChange = onValueChange)
-            // ── 文本变体 ──
-            FieldType.URL ->
-                OutlinedTextField(
-                    value = value, onValueChange = onValueChange,
-                    placeholder = { Text("https://") },
-                    modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri)
-                )
-            FieldType.EMAIL ->
-                OutlinedTextField(
-                    value = value, onValueChange = onValueChange,
-                    placeholder = { Text("email@example.com") },
-                    modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
-                )
-            FieldType.PHONE ->
-                OutlinedTextField(
-                    value = value, onValueChange = onValueChange,
-                    placeholder = { Text("手机号码") },
-                    modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
-                )
-            // ── 复合 ──
-            FieldType.CHECKLIST ->
-                ChecklistField(value = value, onValueChange = onValueChange)
-            // ── 兜底 ──
-            else ->
-                OutlinedTextField(
-                    value = value, onValueChange = onValueChange,
-                    placeholder = { Text(config.placeholder.ifBlank { "输入${config.label}" }) },
-                    modifier = Modifier.fillMaxWidth()
-                )
-        }
+    TextButton(onClick = {
+        onPick(date)
+        onDismiss()
+    }) {
+        Text(label, style = MaterialTheme.typography.bodyMedium)
     }
 }
 
-// ───────────────────────── Stepper（步进数值）─────────────────────────
+/**
+ * 「周末」= 即将到来的周六（今天就是周六则就是今天）。
+ * 用取模算，不引 `TemporalAdjusters`/`DayOfWeek` 之外的东西。
+ */
+internal fun upcomingWeekend(from: LocalDate): LocalDate {
+    val daysUntilSaturday = (DayOfWeek.SATURDAY.value - from.dayOfWeek.value + 7) % 7
+    return from.plusDays(daysUntilSaturday.toLong())
+}
 
 @Composable
-private fun StepperField(
+internal fun LifeTimePickerDialog(initial: LocalTime, onPick: (LocalTime) -> Unit, onDismiss: () -> Unit) {
+    val state = rememberTimePickerState(initialHour = initial.hour, initialMinute = initial.minute, is24Hour = true)
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = {
+                onPick(LocalTime.of(state.hour, state.minute))
+                onDismiss()
+            }) { Text(stringResource(R.string.confirm), fontWeight = FontWeight.Bold) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
+        text = { TimePicker(state = state) }
+    )
+}
+
+// ───────────────────────── 保留的共享控件（kit 引用）─────────────────────────
+
+@Suppress("LongParameterList")
+@Composable
+internal fun FormTextField(
     value: String,
     onValueChange: (String) -> Unit,
-    step: Double,
-    unit: String = "",
-    isCurrency: Boolean = false,
-    min: Double? = null,
-    max: Double? = null
+    placeholder: String,
+    modifier: Modifier = Modifier,
+    singleLine: Boolean = true,
+    minLines: Int = 1,
+    maxLines: Int = 3,
+    keyboardType: KeyboardType = KeyboardType.Text,
+    textStyle: TextStyle = MaterialTheme.typography.bodyLarge,
+    keyboardActions: KeyboardActions = KeyboardActions.Default,
+    trailing: @Composable (() -> Unit)? = null
 ) {
-    val current = value.toDoubleOrNull() ?: 0.0
-    val numStr = if (isCurrency) "¥${formatNum(current)}" else formatNum(current)
-    val display = if (unit.isNotBlank() && !isCurrency) "$numStr $unit" else numStr
-    val canDec = min == null || current - step >= min
-    val canInc = max == null || current + step <= max
-
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        IconButton(
-            onClick = { if (canDec) onValueChange(formatNum(current - step)) },
-            enabled = canDec,
-            modifier = Modifier.size(40.dp)
-        ) {
-            Icon(Icons.Filled.Remove, contentDescription = "减少", tint = if (canDec) ModuleLife else MaterialTheme.colorScheme.onSurfaceVariant)
+    BasicTextField(
+        value = value,
+        onValueChange = onValueChange,
+        modifier = modifier.fillMaxWidth(),
+        singleLine = singleLine,
+        minLines = minLines,
+        maxLines = maxLines,
+        keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+        keyboardActions = keyboardActions,
+        textStyle = textStyle.copy(color = MaterialTheme.colorScheme.onSurface),
+        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+        decorationBox = { inner ->
+            Row(
+                verticalAlignment = if (minLines > 1) Alignment.Top else Alignment.CenterVertically
+            ) {
+                Box(Modifier.weight(1f)) {
+                    if (value.isEmpty()) {
+                        Text(
+                            placeholder,
+                            style = textStyle,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                    inner()
+                }
+                if (trailing != null) {
+                    Spacer(Modifier.width(Spacing.xs))
+                    trailing()
+                }
+            }
         }
-        Text(
-            display,
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.weight(1f)
-        )
-        IconButton(
-            onClick = { if (canInc) onValueChange(formatNum(current + step)) },
-            enabled = canInc,
-            modifier = Modifier.size(40.dp)
-        ) {
-            Icon(Icons.Filled.Add, contentDescription = "增加", tint = if (canInc) ModuleLife else MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-    }
+    )
 }
 
-// Locale.US：数值锁 ASCII 小数点（德/法等 locale 会把 1.5 输出成 1,5，回填解析会炸）
-private fun formatNum(v: Double): String =
-    if (v == v.toLong().toDouble()) v.toLong().toString() else String.format(Locale.US, "%.1f", v)
-
-// ───────────────────────── Slider（拖动）─────────────────────────
-
 @Composable
-private fun SliderField(value: String, onValueChange: (String) -> Unit, range: ClosedFloatingPointRange<Float>) {
-    val numeric = value.toFloatOrNull() ?: 0f
-    Column {
-        Slider(
-            value = numeric.coerceIn(range.start, range.endInclusive),
-            onValueChange = { onValueChange(it.toInt().toString()) },
-            valueRange = range,
+internal fun MapImportField(
+    value: String,
+    importing: Boolean,
+    onImport: (Uri, String?) -> Unit
+) {
+    val context = LocalContext.current
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            val name = uri.lastPathSegment?.substringAfterLast('/')
+            onImport(uri, name)
+        }
+    }
+    val model = com.palmnote.domain.model.parseMap(value)
+    val track = model.track
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+        OutlinedButton(
+            onClick = {
+                launcher.launch(
+                    arrayOf(
+                        "application/gpx+xml",
+                        "application/vnd.google-earth.kml+xml",
+                        "application/xml",
+                        "text/xml",
+                        "*/*"
+                    )
+                )
+            },
+            enabled = !importing,
             modifier = Modifier.fillMaxWidth()
-        )
-        Text("${numeric.toInt()}%", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-    }
-}
-
-// ───────────────────────── Rating（星级）─────────────────────────
-
-@Composable
-private fun RatingField(value: String, onValueChange: (String) -> Unit) {
-    val rating = value.toIntOrNull() ?: 0
-    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
-        // for 而非 (1..5).forEach：range 上的 forEach 有装箱开销（detekt ForEachOnRange）
-        for (i in 1..5) {
-            TextButton(onClick = { onValueChange(i.toString()) }, contentPadding = PaddingValues(4.dp)) {
-                Text(
-                    if (i <= rating) "★" else "☆",
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = if (i <= rating) Color(0xFFFFCA28) else MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+        ) {
+            Icon(
+                if (importing) Icons.Filled.Map else Icons.Filled.UploadFile,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(Modifier.width(Spacing.xs))
+            Text(
+                if (importing) stringResource(R.string.life_record_importing) else stringResource(R.string.life_map_import_track),
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
+        if (track != null) {
+            Text(
+                stringResource(R.string.life_map_track_stats, track.pts.size, formatDistance(track.distM), track.ascentM.toInt()),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        } else if (value.isNotBlank()) {
+            Text(
+                stringResource(R.string.life_map_points, model.route.size),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
 
-// ───────────────────────── Switch（布尔）─────────────────────────
-
-@Composable
-private fun SwitchField(value: String, onValueChange: (String) -> Unit, label: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(label, style = MaterialTheme.typography.bodyLarge)
-        Switch(
-            checked = value.toBooleanStrictOrNull() ?: false,
-            onCheckedChange = { onValueChange(it.toString()) }
-        )
-    }
+private fun formatDistance(meters: Double): String = if (meters >= 1000) {
+    String.format(Locale.US, "%.2f km", meters / 1000.0)
+} else {
+    String.format(Locale.US, "%.0f m", meters)
 }
 
-// ───────────────────────── 选项 Chips ─────────────────────────
+internal fun formatNum(v: Double): String = if (v == v.toLong().toDouble()) v.toLong().toString() else String.format(Locale.US, "%.1f", v)
 
-@Composable
-private fun SingleChoiceField(options: List<String>, value: String, onValueChange: (String) -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
-        options.chunked(3).forEach { row ->
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-                row.forEach { opt ->
-                    FilterChip(
-                        selected = value == opt,
-                        onClick = { onValueChange(opt) },
-                        label = { Text(opt, style = MaterialTheme.typography.bodySmall) }
-                    )
-                }
-            }
-        }
-    }
+internal fun selectOptionLabel(context: Context, option: String): String = when (option) {
+    "monthly" -> context.getString(R.string.life_detail_cycle_monthly)
+    "quarterly" -> context.getString(R.string.life_detail_cycle_quarterly)
+    "yearly" -> context.getString(R.string.life_detail_cycle_yearly)
+    else -> option
 }
 
-@Composable
-private fun MultiChoiceField(options: List<String>, value: String, onValueChange: (String) -> Unit) {
-    val selected = remember(value) { value.split(",").map { it.trim() }.filter { it.isNotBlank() }.toMutableSet() }
-    Column(verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
-        options.chunked(3).forEach { row ->
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-                row.forEach { opt ->
-                    FilterChip(
-                        selected = opt in selected,
-                        onClick = {
-                            if (opt in selected) selected.remove(opt) else selected.add(opt)
-                            onValueChange(selected.joinToString(","))
-                        },
-                        label = { Text(opt, style = MaterialTheme.typography.bodySmall) }
-                    )
-                }
-            }
-        }
-    }
-}
-
-// ───────────────────────── DATE / TIME 快捷 Chips ─────────────────────────
-
-@Composable
-private fun DateQuickField(value: String, onValueChange: (String) -> Unit) {
-    val today = LocalDate.now()
-    val todayStr = today.toString()
-    val tomorrowStr = today.plusDays(1).toString()
-    val weekEndStr = today.with(java.time.DayOfWeek.SUNDAY).toString()
-    val monthEndStr = today.withDayOfMonth(today.lengthOfMonth()).toString()
-
-    val quickOptions = listOf(
-        "今天" to todayStr,
-        "明天" to tomorrowStr,
-        "周末" to weekEndStr,
-        "月末" to monthEndStr
-    )
-
-    Column(verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-            quickOptions.forEach { (label, dateStr) ->
-                FilterChip(
-                    selected = value == dateStr,
-                    onClick = { onValueChange(dateStr) },
-                    label = { Text(label, style = MaterialTheme.typography.bodySmall) }
-                )
-            }
-        }
-        OutlinedTextField(
-            value = value,
-            onValueChange = onValueChange,
-            placeholder = { Text("yyyy-MM-dd") },
-            modifier = Modifier.fillMaxWidth(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii),
-            singleLine = true
-        )
-    }
-}
-
-@Composable
-private fun TimeQuickField(value: String, onValueChange: (String) -> Unit) {
-    val now = LocalTime.now()
-    val morning = "08:00"
-    val noon = "12:00"
-    val afternoon = "14:00"
-    val evening = "18:00"
-    val night = "21:00"
-
-    val quickOptions = listOf(
-        "早上" to morning,
-        "中午" to noon,
-        "下午" to afternoon,
-        "傍晚" to evening,
-        "晚上" to night,
-        "现在" to now.format(DateTimeFormatter.ofPattern("HH:mm"))
-    )
-
-    Column(verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
-        quickOptions.chunked(3).forEach { row ->
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-                row.forEach { (label, timeStr) ->
-                    FilterChip(
-                        selected = value == timeStr,
-                        onClick = { onValueChange(timeStr) },
-                        label = { Text(label, style = MaterialTheme.typography.bodySmall) }
-                    )
-                }
-            }
-        }
-        OutlinedTextField(
-            value = value,
-            onValueChange = onValueChange,
-            placeholder = { Text("HH:mm") },
-            modifier = Modifier.fillMaxWidth(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii),
-            singleLine = true
-        )
-    }
-}
-
-@Composable
-private fun DateTimeQuickField(value: String, onValueChange: (String) -> Unit) {
-    val todayStr = LocalDate.now().toString()
-    val nowTime = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm"))
-
-    val quickOptions = listOf(
-        "今天此刻" to "$todayStr $nowTime",
-        "明天此刻" to "${LocalDate.now().plusDays(1)} $nowTime"
-    )
-
-    Column(verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-            quickOptions.forEach { (label, dtStr) ->
-                FilterChip(
-                    selected = value == dtStr,
-                    onClick = { onValueChange(dtStr) },
-                    label = { Text(label, style = MaterialTheme.typography.bodySmall) }
-                )
-            }
-        }
-        OutlinedTextField(
-            value = value,
-            onValueChange = onValueChange,
-            placeholder = { Text("yyyy-MM-dd HH:mm") },
-            modifier = Modifier.fillMaxWidth(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii),
-            singleLine = true
-        )
-    }
-}
-
-// ───────────────────────── Checklist（待办）─────────────────────────
-
-@Composable
-private fun ChecklistField(value: String, onValueChange: (String) -> Unit) {
-    val items = remember(value) { value.lines().filter { it.isNotBlank() }.toMutableStateList() }
-    var newItem by remember { mutableStateOf("") }
-    Column(verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
-        items.forEachIndexed { i, item ->
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                Checkbox(checked = false, onCheckedChange = null)
-                Text(item, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
-            }
-        }
-        OutlinedTextField(
-            value = newItem,
-            onValueChange = { newItem = it },
-            placeholder = { Text("添加项目") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            keyboardActions = KeyboardActions(onDone = {
-                if (newItem.isNotBlank()) {
-                    items.add(newItem)
-                    newItem = ""
-                    onValueChange(items.joinToString("\n"))
-                }
-            })
-        )
-    }
-}
+internal val WEATHER_EMOJI = mapOf("晴" to "☀️", "阴" to "☁️", "雨" to "🌧️", "雪" to "❄️")

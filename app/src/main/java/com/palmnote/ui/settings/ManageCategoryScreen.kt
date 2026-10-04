@@ -49,14 +49,33 @@ fun ManageCategoryScreen(
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            item { SectionHeader(stringResource(R.string.settings_account_category), Icons.Outlined.Category, InfoBlue) }
+            item { SectionHeader(stringResource(R.string.settings_account_category), Icons.Outlined.Category, DopamineSky) }
             item {
                 ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
-                    SettingsMenuItem(icon = Icons.Outlined.AccountBalanceWallet, title = stringResource(R.string.settings_wallet_manage), subtitle = stringResource(R.string.settings_wallet_manage_subtitle), tint = AccentOrange, onClick = onNavigateToWallet)
+                    // 设置页装饰色统一用多巴胺色（纯视觉节奏，不表达归属）
+                    SettingsMenuItem(
+                        icon = Icons.Outlined.AccountBalanceWallet,
+                        title = stringResource(R.string.settings_wallet_manage),
+                        subtitle = stringResource(R.string.settings_wallet_manage_subtitle),
+                        tint = DopamineAmber,
+                        onClick = onNavigateToWallet
+                    )
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 12.dp))
-                    SettingsMenuItem(icon = Icons.Outlined.Book, title = stringResource(R.string.settings_bill_manage), subtitle = stringResource(R.string.settings_bill_manage_subtitle), tint = MaterialTheme.colorScheme.primary, onClick = onNavigateToAccountBook)
+                    SettingsMenuItem(
+                        icon = Icons.Outlined.Book,
+                        title = stringResource(R.string.settings_bill_manage),
+                        subtitle = stringResource(R.string.settings_bill_manage_subtitle),
+                        tint = DopamineCoral,
+                        onClick = onNavigateToAccountBook
+                    )
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 12.dp))
-                    SettingsMenuItem(icon = Icons.Outlined.Category, title = stringResource(R.string.settings_category_manage), subtitle = stringResource(R.string.settings_category_manage_subtitle), tint = InfoBlue, onClick = onNavigateToCategory)
+                    SettingsMenuItem(
+                        icon = Icons.Outlined.Category,
+                        title = stringResource(R.string.settings_category_manage),
+                        subtitle = stringResource(R.string.settings_category_manage_subtitle),
+                        tint = DopamineSky,
+                        onClick = onNavigateToCategory
+                    )
                 }
             }
         }

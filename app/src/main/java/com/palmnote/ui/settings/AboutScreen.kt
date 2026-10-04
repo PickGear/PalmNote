@@ -1,5 +1,8 @@
 package com.palmnote.ui.settings
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
@@ -7,6 +10,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.*
@@ -16,8 +20,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -33,11 +41,19 @@ private const val FEEDBACK_ISSUES_URL = "https://github.com/PickGear/PalmNote/is
 private const val PROJECT_REPO_URL = "https://github.com/PickGear/PalmNote"
 
 /**
- * 关于页：三段式——项目身份 → 参与和了解 → 法律信息。
+ * 用户交流群（QQ）。与 GitHub Issues 同为反馈渠道：用法交流、反馈与建议都可以。
+ */
+private const val QQ_GROUP_NUMBER = "1036958236"
+
+/** 唤起 QQ 加群页（QQ 未安装时回退为复制群号）。 */
+private fun qqGroupJoinUri(): String =
+    "mqqapi://card/show_pslcard?src_type=internal&version=1&uin=$QQ_GROUP_NUMBER&card_type=group&source=qrcode"
+
+/**
+ * 关于页：品牌块 + 四张卡片（项目信息 / 反馈交流 / 法律信息 / 开源致谢），无分区标题、
+ * 全部一级条目（用户 2026-10-05 定：不分级；两个反馈渠道各占一行、点击直达）。
  *
- * 设计原则与「数据与备份」一致：卡片内用 [SettingsMenuItem] 统一行样式；
- * 不再铺陈功能清单/技术栈等自我介绍（功能用户已经天天在用，技术栈是开发者的事，
- * 感兴趣的人点「项目源码」自然看得到）。
+ * 卡片内用 [SettingsMenuItem] 统一行样式；页尾保留开源致谢与技术栈一行。
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -58,6 +74,29 @@ fun AboutScreen(
             )
         }.onFailure {
             Toast.makeText(context, context.getString(R.string.about_feedback_failed), Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    var showGroupSheet by remember { mutableStateOf(false) }
+
+    /** 复制群号：QQ 未安装 / 用户手动添加时都靠它（复制比记住一串数字现实）。 */
+    fun copyGroupNumber() {
+        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+        clipboard?.setPrimaryClip(ClipData.newPlainText("QQ group", QQ_GROUP_NUMBER))
+        Toast.makeText(context, context.getString(R.string.about_group_copied), Toast.LENGTH_SHORT).show()
+    }
+
+    /** 唤起 QQ 加群页；未装 QQ（或 scheme 被拦）退化为复制群号，别让用户点了没反应。 */
+    fun openQqGroup() {
+        val opened = runCatching {
+            context.startActivity(
+                Intent(Intent.ACTION_VIEW, Uri.parse(qqGroupJoinUri()))
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            )
+        }.isSuccess
+        if (!opened) {
+            copyGroupNumber()
+            Toast.makeText(context, context.getString(R.string.about_group_open_failed), Toast.LENGTH_LONG).show()
         }
     }
 
@@ -82,23 +121,30 @@ fun AboutScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // ── 项目身份：图标 + 名称 + 版本 + 一句话介绍 ──
+            // ── 项目身份：应用图标 + 名称 + 版本 + 一句话介绍 ──
             item {
                 Column(
                     modifier = Modifier.fillMaxWidth().padding(top = 24.dp, bottom = 8.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+                    // 应用图标：启动图标的图形（便签卡 + 三条线）+ 主题主色底（默认即启动图标的青）。
+                    // 尺寸按「正常 app 图标」给：72dp 底框 + 36dp 图形（图形占一半）——
+                    // 88dp/54dp 那版在 28sp 的应用名上方显得过重（用户指出不协调）。
                     Box(
                         modifier = Modifier
-                            .size(80.dp)
-                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f), MaterialTheme.shapes.extraLarge),
+                            .size(72.dp)
+                            .background(MaterialTheme.colorScheme.primary, MaterialTheme.shapes.large),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            Icons.Filled.Inventory2,
+                            painter = painterResource(id = R.drawable.ic_launcher_foreground_bw),
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(40.dp)
+                            // onPrimary 而不是写死白：深色模式下主题色是亮青，白图形会糊成一片
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                            // 该 vector 的 viewport 是 108dp、图形只占居中的 36dp，故容器须取 108dp
+                            // 才等于 36dp 视觉图形；大于底框必须用 requiredSize，
+                            // 否则会被父级约束钳到 72dp（图形只剩 24dp）
+                            modifier = Modifier.requiredSize(108.dp)
                         )
                     }
                     Spacer(modifier = Modifier.height(14.dp))
@@ -110,7 +156,7 @@ fun AboutScreen(
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = BuildConfig.VERSION_NAME,
+                        text = "v${BuildConfig.VERSION_NAME}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -125,14 +171,15 @@ fun AboutScreen(
                 }
             }
 
-            // ── 参与和了解：版本历史 / 项目源码 / 问题反馈 ──
+            // ── 项目信息：版本历史 / 项目源码（卡片之间的留白即分组，本页不设分区标题：
+            // 条目只有 7 行且标题自解释，加标题只多三行噪声；见 2026-10-05 与用户的对齐）──
             item {
                 ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
                     SettingsMenuItem(
                         icon = Icons.Outlined.History,
                         title = stringResource(R.string.about_version_history),
                         subtitle = stringResource(R.string.about_version_history_desc),
-                        tint = InfoBlue,
+                        tint = DopamineSky,
                         onClick = onNavigateToVersionHistory
                     )
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 12.dp))
@@ -143,13 +190,29 @@ fun AboutScreen(
                         tint = StatusActive,
                         onClick = { openInBrowser(PROJECT_REPO_URL) }
                     )
-                    HorizontalDivider(modifier = Modifier.padding(horizontal = 12.dp))
+                }
+            }
+
+            // ── 反馈交流：两个渠道各占一行、**直接是动作**（用户 2026-10-05 定：
+            // 关于页只要一级菜单，不套二级面板）；行标题即渠道名，副标题写各自适合什么。──
+            item {
+                ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
                     SettingsMenuItem(
                         icon = Icons.Outlined.Feedback,
-                        title = stringResource(R.string.about_feedback),
+                        title = stringResource(R.string.about_feedback_github_title),
                         subtitle = stringResource(R.string.about_feedback_desc),
-                        tint = Amber,
+                        // 琥珀 + 反馈气泡：上一行「项目源码」已经是 Code + 绿，同图标会同行撞车
+                        tint = DopamineAmber,
                         onClick = { openInBrowser(FEEDBACK_ISSUES_URL) }
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 12.dp))
+                    SettingsMenuItem(
+                        icon = Icons.Outlined.Groups,
+                        title = stringResource(R.string.about_group_title),
+                        subtitle = stringResource(R.string.about_group_desc),
+                        tint = DopamineMint,
+                        // 弹窗里给「跳转 / 复制」两个动作（用户定的），行本身不直接跳
+                        onClick = { showGroupSheet = true }
                     )
                 }
             }
@@ -220,6 +283,63 @@ fun AboutScreen(
                 Spacer(modifier = Modifier.height(24.dp))
             }
         }
+    }
+
+    if (showGroupSheet) {
+        QqGroupSheet(
+            onDismiss = { showGroupSheet = false },
+            onCopy = { copyGroupNumber() },
+            onOpenQq = { openQqGroup() }
+        )
+    }
+}
+
+/**
+ * QQ 群面板：群号 + 「跳转 / 复制」两个动作（用户定的：弹窗直选）。
+ * 不放隐私说明和「重要问题走 Issue」的引导 —— GitHub 行就在上面，说明文字用户已明确不需要。
+ */
+@Composable
+private fun QqGroupSheet(
+    onDismiss: () -> Unit,
+    onCopy: () -> Unit,
+    onOpenQq: () -> Unit
+) {
+    AppBottomSheet(onDismissRequest = onDismiss) {
+        Text(
+            stringResource(R.string.about_group_title),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            stringResource(R.string.about_group_sheet_desc),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(modifier = Modifier.height(6.dp))
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(
+                stringResource(R.string.about_group_number_label),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                QQ_GROUP_NUMBER,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Button(onClick = onOpenQq, modifier = Modifier.weight(1f)) {
+                Text(stringResource(R.string.about_group_open))
+            }
+            OutlinedButton(onClick = onCopy, modifier = Modifier.weight(1f)) {
+                Text(stringResource(R.string.about_group_copy))
+            }
+        }
+        Spacer(modifier = Modifier.height(8.dp))
     }
 }
 

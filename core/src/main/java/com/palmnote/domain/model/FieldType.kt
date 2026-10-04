@@ -35,12 +35,21 @@ data class FieldConfig(
     val defaultValue: String = "",
     val options: List<String> = emptyList(),
     val placeholder: String = "",
+    /**
+     * ⚠️ **目前无消费方**（2026-09-30 全仓审计：零引用，字段面板也不露出）。
+     * 保留键位是为了不改存储格式；真要启用得先定校验语法（正则？长度？）。
+     */
     val validation: String = "",
     val unit: String = "",
     val min: Double? = null,
     val max: Double? = null,
     val step: Double? = null,
     val showInCard: Boolean = false,
+    /**
+     * ⚠️ **目前无消费方**（只在"停用字段"时被置 false；字段面板无开关、渲染层不读）。
+     * 语义本应是「在完整清单/列表行里显示这个字段的值」，但那一行是固定 44dp 单行胶囊，
+     * 要接上得先重设计列表行 —— 别以为打开它就有效果。
+     */
     val showInList: Boolean = false,
     val showAsProgress: Boolean = false,
     /** 停用字段（§4.1：内置模板有数据的字段不能删，只能停用；历史数据保留，不再渲染）。 */

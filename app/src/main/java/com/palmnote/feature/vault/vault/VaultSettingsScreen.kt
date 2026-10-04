@@ -32,6 +32,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -487,7 +488,7 @@ private fun ClipboardSecondsDialog(
                             text = if (seconds <= 0) {
                                 stringResource(R.string.vault_settings_clipboard_never)
                             } else {
-                                stringResource(R.string.vault_settings_clipboard_option, seconds)
+                                pluralStringResource(R.plurals.vault_settings_clipboard_option, seconds, seconds)
                             },
                             style = MaterialTheme.typography.bodyLarge,
                             modifier = Modifier.weight(1f)

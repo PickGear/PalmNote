@@ -18,8 +18,10 @@ interface LifeTemplateDao {
     @Query("SELECT * FROM life_templates WHERE id = :id")
     suspend fun getTemplateById(id: Long): LifeTemplate?
 
-    @Query("SELECT * FROM life_templates WHERE icon = :icon AND isHidden = 0 LIMIT 1")
-    suspend fun getTemplateByIcon(icon: String): LifeTemplate?
+    // 原先这里有个 getTemplateByIcon(icon)：`WHERE icon = :icon LIMIT 1`。
+    // 图标是**显示**属性——用户能改，新建模板时也只能从内置那套图标里挑，所以自定义模板
+    // 和某个内置模板撞图标是常态；撞了以后按 icon 查会返回**另一个**模板
+    // （真机反馈「新建自定义模板不生效」即此）。创建记录页已改为按 id 取模板，方法随之删除。
 
     @Query("SELECT * FROM life_templates WHERE id = :id")
     fun getTemplateByIdFlow(id: Long): Flow<LifeTemplate?>

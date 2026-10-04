@@ -394,6 +394,22 @@ interface BillDao {
     @Query("SELECT COUNT(*) FROM bills WHERE accountBookId = :bookId")
     suspend fun countByBook(bookId: Long): Int
 
+
+    /** 演示数据清理（v14 isDemo 列）：演示模式关闭时物理删除示例行。 */
+    @Query("DELETE FROM bills WHERE isDemo = 1 OR accountBookId IN (SELECT id FROM account_books WHERE isDemo = 1)")
+    suspend fun clearDemoBills()
+
+    /** 当前示例行数（关演示反馈 / 幂等判断用）。 */
+    @Query("SELECT COUNT(*) FROM bills WHERE isDemo = 1")
+    suspend fun countDemoBills(): Int
+
+    /** 演示期用户在示例账本里自建的账单数（关演示「毕业询问」的保留规模）。 */
+    @Query("SELECT COUNT(*) FROM bills WHERE accountBookId IN (SELECT id FROM account_books WHERE isDemo = 1) AND isDemo = 0")
+    suspend fun countUserBillsInDemoBooks(): Int
+
+    /** 毕业：把示例账本里用户自建的账单迁到真实账本（关演示选「保留」时）。 */
+    @Query("UPDATE bills SET accountBookId = :targetBookId WHERE accountBookId IN (SELECT id FROM account_books WHERE isDemo = 1) AND isDemo = 0")
+    suspend fun graduateUserBillsFromDemoBooks(targetBookId: Long)
 }
 
 data class CategoryTotal(

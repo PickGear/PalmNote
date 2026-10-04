@@ -1,0 +1,72 @@
+演示图片版权清单（Wikimedia Commons，按各图许可协议使用）
+==============================================================
+
+以下演示照片均来自 Wikimedia Commons（自由版权图库）的真实照片：
+物品 10 张 + 生活场景 5 张（旅行风景 / 阳台的花 / 河边晚霞 / 生日花束 / 缓跑径）。
+CC-BY / CC-BY-SA 要求保留署名，故随源码存档此清单。
+
+demo_asset_camera.jpg
+  来源: https://commons.wikimedia.org/wiki/File:Fujifilm-X-T5.jpg
+  作者: Aps1729 · 许可: CC0 1.0
+
+demo_asset_headphone.jpg
+  来源: https://commons.wikimedia.org/wiki/File:AudioQuest_NightHawk_Carbon_headphones_(33582571334).jpg
+  许可: CC BY 2.0
+
+demo_asset_keyboard.jpg
+  来源: https://commons.wikimedia.org/wiki/File:Backlit_keyboard.jpg
+  许可: CC BY-SA 4.0（或更早版本同源协议）
+
+demo_asset_shoes.jpg
+  来源: https://commons.wikimedia.org/wiki/File:Asics_Gel-Cumulus_22.jpg
+  许可: CC BY-SA 4.0
+
+demo_asset_guitar.jpg
+  来源: https://commons.wikimedia.org/wiki/File:00_Walden_Acoustic_Guitar_D310e_01.jpg
+  许可: CC BY-SA 4.0
+
+demo_asset_kindle.jpg
+  来源: https://commons.wikimedia.org/wiki/File:2023_Amazon_Kindle_Paperwhite_(1).jpg
+  许可: CC BY-SA 4.0
+
+demo_asset_purifier.jpg
+  来源: https://commons.wikimedia.org/wiki/File:Air_Purifier_(Levoit_LV-H133)_(49317867758).jpg
+  许可: CC BY-SA 2.0
+
+demo_asset_yoga.jpg
+  来源: https://commons.wikimedia.org/wiki/File:Cotton_Yoga_Mats.png
+  许可: CC0 1.0
+
+demo_asset_chair.jpg
+  来源: https://commons.wikimedia.org/wiki/File:Ikea_MARKUS_Swivel_Chair_(19548745588).jpg
+  作者: Mack Male (Edmonton, AB, Canada) · 许可: CC BY-SA 2.0
+
+demo_asset_mouse.jpg
+  来源: https://commons.wikimedia.org/wiki/File:2023_Mysz_komputerowa_Logitech_G903_Lightspeed.jpg
+  许可: CC BY-SA 4.0
+
+demo_westlake.jpg（旅行 · 杭州 4 日）
+  来源: https://commons.wikimedia.org/wiki/File:West_Lake,_Xihu,_Hangzhou,_Zhejiang,_China_-_Flickr_-_Stuart_Smith..jpg
+  作者: Stuart Smith · 许可: CC BY-SA 2.0
+
+demo_flower.jpg（日记 · 阳台的花）
+  来源: https://commons.wikimedia.org/wiki/File:Balcony_garden_in_Vibble_Gotland_Sweden.jpg
+  作者: W.carter · 许可: CC BY-SA 4.0
+
+demo_sunset.jpg（日记 · 河边的晚霞）
+  来源: https://commons.wikimedia.org/wiki/File:Clouds_over_the_Xe_Don_River_with_boats_at_sunset_in_Pakse_Laos.jpg
+  作者: Basile Morin · 许可: CC BY-SA 4.0
+
+demo_gift.jpg（倒计时 · 妈妈生日）
+  来源: https://commons.wikimedia.org/wiki/File:A_Bouquet_of_flowers.jpg
+  作者: MeriPyaariPrakriti · 许可: CC0 1.0
+
+demo_run.jpg（正数日 · 戒烟）
+  来源: https://commons.wikimedia.org/wiki/File:Tsing_Yi_Northeast_Park,_Jogging_Trail_(Hong_Kong).jpg
+  作者: Mk2010 · 许可: CC BY-SA 3.0
+
+其余演示图为本项目自绘或程序生成，无第三方版权：
+- demo_cover.jpg（阅读 · 书封）——自绘设计稿；
+- demo_avatar.jpg（生日 · 人物头像）——自绘，避免使用真实人物照片；
+- demo_filter.jpg 及 4 张收据小票（demo_receipt_*.jpg）——自绘，
+  且金额、商户与对应账单严格一致（换成真实小票反而会与数据矛盾）。

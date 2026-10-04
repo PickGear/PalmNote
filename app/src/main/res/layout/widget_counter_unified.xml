@@ -149,4 +149,13 @@
             android:textColor="@color/widget_v2_text_tertiary" />
     </LinearLayout>
 
+    <!-- 大档（4×3）专用：多事件列表，与 widget_first_event 互斥显示（两者都占 weight=1） -->
+    <LinearLayout
+        android:id="@+id/widget_more_events"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:visibility="gone" />
+
 </LinearLayout>

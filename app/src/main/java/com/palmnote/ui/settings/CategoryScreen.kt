@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -349,8 +350,10 @@ fun CategoryScreen(
         if (showDeleteWarning) {
             val (billCount, assetCount) = counts
             val countText = when (state.currentType) {
-                "ASSET" -> stringResource(R.string.category_count_items, assetCount)
-                "BILL_EXPENSE", "BILL_INCOME" -> stringResource(R.string.category_count_bills, billCount)
+                "ASSET" -> pluralStringResource(R.plurals.category_count_items, assetCount, assetCount)
+                "BILL_EXPENSE", "BILL_INCOME" -> pluralStringResource(
+                    R.plurals.category_count_bills, billCount, billCount
+                )
                 else -> stringResource(R.string.category_count_both, billCount, assetCount)
             }
             AppDialog(
@@ -384,8 +387,10 @@ fun CategoryScreen(
         if (showMatchPrompt) {
             val (billCount, assetCount) = counts
             val countText = when (state.currentType) {
-                "ASSET" -> stringResource(R.string.category_count_items, assetCount)
-                "BILL_EXPENSE", "BILL_INCOME" -> stringResource(R.string.category_count_bills, billCount)
+                "ASSET" -> pluralStringResource(R.plurals.category_count_items, assetCount, assetCount)
+                "BILL_EXPENSE", "BILL_INCOME" -> pluralStringResource(
+                    R.plurals.category_count_bills, billCount, billCount
+                )
                 else -> stringResource(R.string.category_count_both, billCount, assetCount)
             }
             val isPreset = pendingPresetData != null

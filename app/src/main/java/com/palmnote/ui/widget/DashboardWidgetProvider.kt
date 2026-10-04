@@ -31,6 +31,7 @@ class DashboardWidgetProvider : AppWidgetProvider() {
         fun lifeItemDao(): com.palmnote.data.db.dao.LifeItemDao
         fun lifeTemplateDao(): com.palmnote.data.db.dao.LifeTemplateDao
         fun anniversaryDao(): com.palmnote.data.db.dao.AnniversaryDao
+        fun preferencesManager(): com.palmnote.data.datastore.PreferencesManager
     }
 
     private var scope: CoroutineScope? = null
@@ -61,6 +62,9 @@ class DashboardWidgetProvider : AppWidgetProvider() {
 
     private fun updateWidgets(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
         val pendingResult = goAsync()
+        // onEnabled 未触发的路径（进程被杀后直接 onUpdate）没有缓存作用域：
+        // 用临时作用域并在收尾取消，避免孤儿 Job 泄漏（审计 #16）
+        val ownedScope = scope == null
         val coroutineScope = scope ?: CoroutineScope(Dispatchers.IO + SupervisorJob())
 
         coroutineScope.launch {
@@ -89,6 +93,7 @@ class DashboardWidgetProvider : AppWidgetProvider() {
                 AppLogger.e("DashboardWidgetProvider", "Widget update failed", e)
             } finally {
                 pendingResult.finish()
+                if (ownedScope) coroutineScope.cancel()
             }
         }
     }
@@ -138,7 +143,12 @@ class DashboardWidgetProvider : AppWidgetProvider() {
             }
         }
 
-        val todos = WidgetData.fetchTodayTodos(entryPoint.lifeItemDao(), entryPoint.lifeTemplateDao())
+        val todos = WidgetData.fetchTodayTodos(
+            entryPoint.lifeItemDao(),
+            entryPoint.lifeTemplateDao(),
+            includeDemo = entryPoint.preferencesManager().lifeDemoMode.first(),
+            demoMeta = com.palmnote.data.db.dao.LIFE_DEMO_META
+        )
 
         val nextAnniversary = entryPoint.anniversaryDao().getAllAnniversaries().first()
             .mapNotNull { ann ->
@@ -187,7 +197,10 @@ class DashboardWidgetProvider : AppWidgetProvider() {
         return if (days == 0L) {
             context.getString(R.string.widget_today)
         } else {
-            context.getString(R.string.widget_days_remaining_format, days)
+            // 复数走 getQuantityString（quantity 要 Int，格式化参数仍用 Long）
+            context.resources.getQuantityString(
+                R.plurals.widget_days_remaining_format, days.toInt(), days
+            )
         }
     }
 }

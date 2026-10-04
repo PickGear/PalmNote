@@ -107,6 +107,25 @@ object ImportKeys {
         join("map", assetCategory, billCategory)
 
     /**
+     * 生活模板键：名称 + 分类。
+     *
+     * 用户心里的「同一个模板」是名字，不是 id（跨设备 id 毫无意义）。带上分类是为了
+     * 区分「视频」与「读书」这类同名不同类的模板，同时也让键与模板列表的分组方式一致。
+     */
+    fun lifeTemplate(name: String, category: String): String = join("lifetmpl", name, category)
+
+    /**
+     * 生活记录键：**所属模板（已解析到本机 id）** + 标题 + 创建时间。
+     *
+     * @param templateId 必须是**已解析到本机**的模板 id。否则跨设备合并时，
+     *                   同一条记录会因为「模板 id 不同」被判成两条而重复入库。
+     * @param createdAt  毫秒时间戳。导出按秒精度格式化，这里同样归一到秒：
+     *                   不归一的话「重新导入自己的导出」指纹对不上（与 [bill] 同理）。
+     */
+    fun lifeItem(templateId: Long?, title: String, createdAt: Long): String =
+        join("lifeitem", templateId, title, createdAt / 1000L * 1000L)
+
+    /**
      * 使用记录键：使用时间 + 备注。
      *
      * 调用方按「同一个物品」分组比较，因此键里不含 assetId。

@@ -10,10 +10,11 @@ import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
+import androidx.compose.foundation.lazy.staggeredgrid.items
+import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.animation.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ViewList
@@ -32,6 +33,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import com.palmnote.ui.theme.ModuleItem
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -48,6 +50,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.ui.platform.LocalContext
@@ -187,8 +190,8 @@ fun AssetScreen(
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = onNavigateToAdd,
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
+                containerColor = ModuleItem,
+                contentColor = Color.White,
                 shape = MaterialTheme.shapes.large,
                 icon = { Icon(Icons.Filled.Add, contentDescription = null) },
                 text = { Text(stringResource(R.string.asset_add), fontWeight = FontWeight.Medium) }
@@ -196,7 +199,8 @@ fun AssetScreen(
         }
     ) { padding ->
         val isGridView = state.isGridView
-        val listState = rememberLazyListState()
+        // 用**错落网格**的状态（瀑布流）而不是 LazyListState：见下方列表处的说明。
+        val listState = rememberLazyStaggeredGridState()
         var showScrollToTop by remember { mutableStateOf(false) }
         val scrolledPast by remember {
             derivedStateOf { listState.firstVisibleItemIndex > 1 || listState.firstVisibleItemScrollOffset > 100 }
@@ -247,7 +251,7 @@ fun AssetScreen(
                                 color = ModuleItem
                             )
                             Text(
-                                text = stringResource(R.string.asset_count, state.heldCount),
+                                text = pluralStringResource(R.plurals.asset_count, state.heldCount, state.heldCount),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -266,13 +270,15 @@ fun AssetScreen(
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = stringResource(R.string.asset_count, state.awayCount),
+                                text = pluralStringResource(R.plurals.asset_count, state.awayCount, state.awayCount),
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold,
                                 color = AccentOrange
                             )
                             Text(
-                                text = "${stringResource(R.string.asset_removed)} ${stringResource(R.string.asset_count, state.removedCount)}",
+                                text = stringResource(R.string.asset_removed) + " " + pluralStringResource(
+                                    R.plurals.asset_count, state.removedCount, state.removedCount
+                                ),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -537,7 +543,14 @@ fun AssetScreen(
             }
             }
 
-            LazyColumn(
+            // **错落网格（瀑布流）**：列表态 1 列 = 普通列表，网格态 2 列各自按内容高度堆叠。
+            //
+            // 为什么不是等高网格：标题长度天然不等（"Yoga mat" 一行 / "Levoit LV-H133" 两行），
+            // 等高只有两条路——**预留两行**（短名留一行空白，用户否掉）或**砍成一行**（长名被截，
+            // 用户也否掉）。错落是唯一既不空白也不截字的排法；代价是同一横排的
+            // 「日期 / 价格」不再横向对齐，这是瀑布流的固有取舍而不是缺陷。
+            LazyVerticalStaggeredGrid(
+                columns = StaggeredGridCells.Fixed(if (isGridView) 2 else 1),
                 state = listState,
                 modifier = Modifier
                     .weight(1f)
@@ -554,12 +567,14 @@ fun AssetScreen(
                         }
                     },
                 contentPadding = PaddingValues(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalItemSpacing = 8.dp,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
 
             // Asset List
             if (state.filteredAssets.isEmpty()) {
-                item {
+                // 占满整行：两列网格下空态只占半屏会很难看
+                item(span = StaggeredGridItemSpan.FullLine) {
                     EmptyState(
                         icon = Icons.Outlined.Inventory2,
                         title = if (state.searchQuery.isNotEmpty()) stringResource(R.string.asset_not_found) else stringResource(R.string.asset_no_items),
@@ -567,16 +582,15 @@ fun AssetScreen(
                         tint = InfoBlue
                     )
                 }
-            } else if (isGridView) {
-                val chunked = state.filteredAssets.chunked(2)
-                // key 取整行成员：只按首个 id 做 key，增删后行成员移位会导致状态错位复用
-                itemsIndexed(chunked, key = { i, row -> row.joinToString("-") { it.id.toString() }.ifEmpty { "row_$i" } }) { rowIdx, rowAssets ->
-                    Row(
+            } else {
+                items(state.filteredAssets, key = { it.id }) { asset ->
+                    val index = (assetIndexMap[asset.id] ?: 0) + 3
+                    AnimatedCard(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        index = index.coerceAtMost(10),
+                        instant = remember(asset.id) { listState.isScrollInProgress }
                     ) {
-                        rowAssets.forEach { asset ->
-                            AnimatedCard(Modifier.weight(1f), index = rowIdx + 3, instant = listState.isScrollInProgress) {
+                        if (isGridView) {
                             GridAssetCard(
                                 modifier = Modifier.fillMaxWidth(),
                                 asset = asset,
@@ -584,25 +598,19 @@ fun AssetScreen(
                                 presetOverrides = assetPresetOverrides,
                                 customItems = assetCustomItems
                             )
-                            }
+                        } else {
+                            EnhancedAssetCard(
+                                asset = asset,
+                                onClick = { onNavigateToDetail(asset.id) },
+                                presetOverrides = assetPresetOverrides,
+                                customItems = assetCustomItems
+                            )
                         }
-                        if (rowAssets.size < 2) Spacer(Modifier.weight(1f))
-                    }
-                }
-            } else {
-                items(state.filteredAssets, key = { it.id }) { asset ->
-                    AnimatedCard(index = ((assetIndexMap[asset.id] ?: 0) + 3).coerceAtMost(10), instant = remember(asset.id) { listState.isScrollInProgress }) {
-                        EnhancedAssetCard(
-                            asset = asset,
-                            onClick = { onNavigateToDetail(asset.id) },
-                            presetOverrides = assetPresetOverrides,
-                            customItems = assetCustomItems
-                        )
                     }
                 }
             }
 
-            item { Spacer(modifier = Modifier.height(80.dp)) }
+            item(span = StaggeredGridItemSpan.FullLine) { Spacer(modifier = Modifier.height(80.dp)) }
             }
             }
             val scope = rememberCoroutineScope()
@@ -706,33 +714,29 @@ fun EnhancedAssetCard(
 
             // Content
             Column(modifier = Modifier.weight(1f)) {
-                // Row 1: Name
+                // Row 1: Name —— **独占整行**且允许两行。
+                // 原先名称与「保修/持有中」两个标签挤在同一行，两列网格下名称只剩三四个字，
+                // 长名全被截成「罗技 G9…」「宜家 MA…」；标签移到下一行后名称有整行可用。
+                Text(
+                    text = asset.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(4.dp))
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = asset.name,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        if (asset.warrantyExpireDate != null) {
-                            StatusChip(
-                                text = asset.getWarrantyStatusText(context),
+                    if (asset.warrantyExpireDate != null) {
+                        StatusChip(
+                            text = asset.getWarrantyStatusText(context),
                             color = ModuleItem
-                            )
-                        }
-                        StatusChip(text = statusText, color = statusColor)
+                        )
                     }
+                    StatusChip(text = statusText, color = statusColor)
                 }
 
                 Spacer(modifier = Modifier.height(4.dp))
@@ -763,7 +767,7 @@ fun EnhancedAssetCard(
                     )
                     Spacer(modifier = Modifier.weight(1f))
                     Text(
-                        text = stringResource(R.string.asset_days_used, daysOwned),
+                        text = pluralStringResource(R.plurals.asset_days_used, daysOwned, daysOwned),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -843,8 +847,6 @@ fun GridAssetCard(
     val context = LocalContext.current
     val statusColor = getStatusColor(asset.status)
     val statusText = getStatusText(asset.status)
-    val acquisitionText = getAcquisitionText(asset.acquisitionType)
-    val acquisitionColor = getAcquisitionColor(asset.acquisitionType)
     val catInfo = remember(asset.category, presetOverrides, customItems) { getCategoryIcon(asset.category, customItems) }
     val daysOwned = DateUtils.getDaysSince(asset.effectiveDate).coerceAtLeast(1)
     val costText = getCostText(asset.costMode, asset.purchasePrice, asset.useCount, daysOwned)
@@ -891,12 +893,20 @@ fun GridAssetCard(
 
                 // Content
                 Column(modifier = Modifier.weight(1f)) {
+                    // 与列表卡同一处理：名称独占整行、允许两行。两列网格下名称只剩半宽，
+                    // 一行放不下长名，全被截成「IKEA MA…」「Logitech…」（真机截图 15-09-04）。
+                    //
+                    // minLines = 2：**固定两行高**。短名（Yoga mat）也占两行，
+                    // 否则同一行两张卡因为标题行数不同而高低不齐（真机截图 17:25 物品页）。
+                    // 与其上瀑布流（两列错落会打散「日期 / 价格」的横向对齐，用户扫视靠它），
+                    // 不如把结构钉死：标题 2 行 + 徽标 + 已用天数 + 分类/日均 + 日期/价格。
                     Text(
                         text = asset.name,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.fillMaxWidth()
                     )
 
                     Spacer(modifier = Modifier.height(2.dp))
@@ -955,7 +965,7 @@ fun GridAssetCard(
                             Spacer(modifier = Modifier.weight(1f))
                         }
                         Text(
-                            text = stringResource(R.string.asset_used_days, daysOwned),
+                            text = pluralStringResource(R.plurals.asset_used_days, daysOwned, daysOwned),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1
@@ -971,20 +981,15 @@ fun GridAssetCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Surface(
-                        shape = MaterialTheme.shapes.extraSmall,
-                        color = acquisitionColor.copy(alpha = 0.12f)
-                    ) {
-                        Text(
-                            text = acquisitionText,
-                            modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = acquisitionColor,
-                            fontWeight = FontWeight.Medium,
-                            maxLines = 1
-                        )
-                    }
+                Row(
+                    modifier = Modifier.weight(1f, fill = false),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // 网格卡不放「购买/赠与」那枚 chip：两列宽度下
+                    // 「Purchase + Furniture + Daily ¥2.1」在英文里必然有一个被截
+                    // （真机截图里是「Furni…」）。取舍标准是信息量——示例物品 10 件里 9 件都是
+                    // 「购买」，而分类各不相同，所以留分类、把获得方式让给列表卡与详情页。
                     Text(
                         text = getCategoryDisplayName(asset.category, context, presetOverrides),
                         style = MaterialTheme.typography.labelSmall,
@@ -993,6 +998,7 @@ fun GridAssetCard(
                         overflow = TextOverflow.Ellipsis
                     )
                 }
+                Spacer(Modifier.width(6.dp))
                 Text(
                     text = costText,
                     style = MaterialTheme.typography.labelSmall,

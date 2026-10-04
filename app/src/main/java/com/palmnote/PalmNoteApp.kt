@@ -7,7 +7,7 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.palmnote.data.LifeDataSeeder
-import com.palmnote.data.LifeDemoSeeder
+import com.palmnote.data.DemoDataSeeder
 import com.palmnote.data.db.AppDatabase
 import com.palmnote.data.datastore.PreferencesManager
 import com.palmnote.data.AppIconManager
@@ -39,10 +39,17 @@ class PalmNoteApp : Application(), Configuration.Provider {
     @Inject lateinit var walletRepository: WalletRepository
     @Inject lateinit var accountBookRepository: AccountBookRepository
     @Inject lateinit var lifeDataSeeder: LifeDataSeeder
-    @Inject lateinit var lifeDemoSeeder: LifeDemoSeeder
+    @Inject lateinit var demoDataSeeder: DemoDataSeeder
     @Inject lateinit var database: AppDatabase
     @Inject lateinit var workerFactory: HiltWorkerFactory
     @Inject lateinit var autoBackupScheduler: AutoBackupScheduler
+    /**
+     * 事件消费者（`TriggerEventConsumer` / `WidgetRefreshConsumer`）**必须被请求**才会启动 ——
+     * 它们是在 `EventStarter` 的 `init` 里订阅的，而 Hilt 只在有人注入时才构造 `@Singleton`。
+     * 此前没人注入它 → 整条事件链**静默失效**（连"存钱达标 → 完成 + 提醒"都是空转）。
+     * 这里只为触发构造，字段本身不使用；`EventStarterWiringTest` 会守住这条接线。
+     */
+    @Inject lateinit var eventStarter: com.palmnote.data.event.EventStarter
     @Inject @JvmSuppressWildcards lateinit var cachedCategoryConfigs: StateFlow<List<CategoryConfig>>
     @Inject @JvmSuppressWildcards lateinit var cachedWallets: StateFlow<List<Wallet>>
     @Inject @JvmSuppressWildcards lateinit var cachedAccountBooks: StateFlow<List<AccountBook>>
@@ -52,6 +59,12 @@ class PalmNoteApp : Application(), Configuration.Provider {
             private set
         var cachedStartPage: String = "dashboard"
         var pendingNavigation: String? = null
+
+        /** 小组件点事件 → 深链到该记录详情（MainActivity 写入，LifeNavHost 消费后清空）。 */
+        var pendingLifeDetailItemId: Long? = null
+
+        /** 小组件页脚 → 深链到完整清单（LifeFullListMode 的 route 值：AGENDA 等）。 */
+        var pendingLifeListMode: String? = null
 
         // 记一笔的来源账本：BillScreen FAB 设置，AddBill 的 resetForm 消费（跨 VM 实例传递，
         // 因为 BillScreen 与 AddBillScreen 的 BillViewModel 分属不同 backStackEntry）
@@ -89,6 +102,16 @@ class PalmNoteApp : Application(), Configuration.Provider {
         applicationScope.launch {
             // 异步读取启动页配置，避免在 Application.onCreate 主线程同步阻塞 DataStore
             cachedStartPage = preferencesManager.defaultStartPage.first()
+            // 点通知的默认入口：此前 show() 没有 contentIntent —— 提醒点下去什么都不发生。
+            // core 的 NotificationHelper 不认识 MainActivity，所以由 app 层注入一个「打开应用」。
+            com.palmnote.ui.notification.NotificationHelper.appEntryIntent = { ctx ->
+                android.app.PendingIntent.getActivity(
+                    ctx,
+                    7_400_001,
+                    android.content.Intent(ctx, MainActivity::class.java),
+                    android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+                )
+            }
             database.openHelper.writableDatabase
             walletRepository.initDefaultWallets()
             accountBookRepository.initDefaultBooks()
@@ -100,7 +123,7 @@ class PalmNoteApp : Application(), Configuration.Provider {
             lifeDataSeeder.seedIfEmpty()
             // 演示数据同样在**启动时**保证最新：模板播完后调用；改过示例内容（SEED_VERSION +1）
             // 即自动重播种，不必等用户进生活页、也不必手动开关演示模式。
-            lifeDemoSeeder.ensureSeeded(preferencesManager)
+            demoDataSeeder.ensureSeeded(preferencesManager)
             // 恢复备份成功后进程重启：恢复窗口内的 Widget 广播被抑制过，
             // 这里补一次全量刷新，让桌面小组件立即显示恢复后的数据
             val justRestored = getSharedPreferences("restore_flags", MODE_PRIVATE)

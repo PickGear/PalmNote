@@ -89,6 +89,23 @@ val DeepOrange = Color(0xFFFF6D00)
 val Amber = Color(0xFFFBBC04)
 val Brown = Color(0xFF795548)
 
+// ----- 设置页「多巴胺」装饰色 -----
+// 设置页的图标/分区标题按视觉节奏上色（活泼、多彩），**不是**归属语义——
+// 归属语义归模块色（见下方 Module*），数据身份归分类/模板色；这里只负责好看。
+// 用途固定：菜单项、分区标题、统计小图标；不要拿它们去表达任何状态或归属。
+//
+// 色阶刻意压在「既有强调色（S≈84%/L≈55%）与模块色（S≈70%/L≈40%）之间」（S≈76%/L≈54%）：
+// 初版用 500 级（S 91.7%/L 58.7%）在真机偏刺眼，按色相家族分别定亮度后收敛——
+// 暖色（珊瑚/琥珀/粉/紫）L≈54~58%，冷色（薄荷/天蓝）L≈45~52%，同族之间读起来才是一套。
+// 琥珀与薄荷再深一档：它们在浅色底（#F8F6F3）上原为 2.0:1，低于图标 3:1 的可读线；
+// 现取值两边都达标（浅色 3.6/3.8、深色 4.6/4.4）。
+val DopamineCoral = Color(0xFFE44444)
+val DopamineAmber = Color(0xFFB57C00)
+val DopamineMint = Color(0xFF0C9482)
+val DopamineSky = Color(0xFF289AE2)
+val DopamineViolet = Color(0xFF7D45E3)
+val DopaminePink = Color(0xFFE5437A)
+
 // ----- Module Theme Colors -----
 val ModuleHome = Color(0xFF0891B2)
 val ModuleBill = Color(0xFFA67A00)
@@ -195,6 +212,19 @@ val CatBrightPurple = Color(0xFFBA68C8)
 // ----- Gray Scale -----
 val Gray100 = Color(0xFFF5F5F5)
 val Gray400 = Color(0xFFBDBDBD)
+
+// ----- 堆叠占比条（§3.5.1「分类占比 · MULTI_SELECT + TAG 皮」）-----
+/**
+ * 占比段配色，**顺序取用**（设计稿 dtl_02「食品 42 / 日用 30 / 宠物 28」实测：
+ * 橙 → 琥珀 → 紫；dtl_15「餐饮 / 交通 / 购物 / 其他」再补一档天蓝）。
+ * 只做区分，不承担状态语义；超过 4 段循环复用。
+ */
+val SharePalette = listOf(
+    Color(0xFFFF7043),
+    Color(0xFFFFB300),
+    Color(0xFFAB47BC),
+    Color(0xFF29B6F6)
+)
 
 // ----- Composable helpers -----
 @Composable

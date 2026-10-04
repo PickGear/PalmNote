@@ -1,4 +1,4 @@
-﻿package com.palmnote.data.db
+package com.palmnote.data.db
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
@@ -17,7 +17,7 @@ import com.palmnote.data.db.entity.*
         LifeReport::class, TodoItem::class, LifeMoment::class, MoodDiary::class, FocusRecord::class,
         BillRecycleBin::class, AssetRecycleBin::class, FieldValue::class
     ],
-    version = 9,
+    version = 14,
     exportSchema = true
 )
 @TypeConverters(Converters::class)

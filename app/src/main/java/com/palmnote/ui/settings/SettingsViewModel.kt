@@ -13,7 +13,7 @@ import androidx.lifecycle.viewModelScope
 import com.palmnote.app.R
 import com.palmnote.data.datastore.PreferencesManager
 import com.palmnote.data.AppIconManager
-import com.palmnote.data.LifeDemoSeeder
+import com.palmnote.data.DemoDataSeeder
 import com.palmnote.data.export.CsvDataExporter
 import com.palmnote.data.export.ExportScope
 import com.palmnote.data.lock.AppLockManager
@@ -40,6 +40,8 @@ data class SettingsState(
     val calendarSyncEnabled: Boolean = false,
     /** 演示模式（生活页按设计稿铺示例数据）；**默认开启**。 */
     val demoModeEnabled: Boolean = true,
+    /** 非 null = 正在等待用户决定演示期自建记录的归宿（值 = 条数）。 */
+    val demoClearPromptKept: Int? = null,
     val defaultStartPage: String = "dashboard",
     val language: String = "SYSTEM",
     val assetCount: Int = 0,
@@ -84,11 +86,22 @@ class SettingsViewModel @Inject constructor(
     private val momentRepository: MomentRepository,
     private val anniversaryRepository: AnniversaryRepository,
     val appLockManager: AppLockManager,
-    private val demoSeeder: LifeDemoSeeder
+    private val demoSeeder: DemoDataSeeder
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(SettingsState())
     val state: StateFlow<SettingsState> = _state.asStateFlow()
+
+    /**
+     * 生活首页分类卡形态：true（默认）= 紧凑胶囊行，false = 三张计数大卡。
+     * 只影响生活页首页的视觉形态，属显示偏好（演示模式那个 app 级开关在「数据与备份 → 示例数据」）。
+     */
+    val categoryCompactEnabled: StateFlow<Boolean> = preferencesManager.lifeCategoryCompact
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
+
+    fun setCategoryCompact(enabled: Boolean) {
+        viewModelScope.launch { preferencesManager.setLifeCategoryCompact(enabled) }
+    }
 
     init {
         loadSettings()
@@ -195,19 +208,56 @@ class SettingsViewModel @Inject constructor(
      * 用户在设置里关掉后可能直接退出、不再回生活页，而备份是整库拷贝，
      * 只要示例行还在库里就会被打包进去 —— 那就违背了「关闭后不能导出」。
      */
+    /** 取消毕业询问：什么也不做，继续留在演示模式。 */
+    fun cancelDemoClearPrompt() {
+        _state.update { it.copy(demoClearPromptKept = null) }
+    }
+
+    /** 「毕业询问」的确认回调：keep = 保留自建记录（迁默认账本）还是一并删除。 */
+    fun resolveDemoClearPrompt(keep: Boolean) {
+        viewModelScope.launch {
+            val result = demoSeeder.clearAll(preferencesManager, keepUserCreated = keep)
+            _state.update { it.copy(demoClearPromptKept = null) }
+            preferencesManager.setLifeDemoMode(false)
+            com.palmnote.ui.widget.WidgetUpdateHelper.refreshAllWidgets()
+            _state.value = _state.value.copy(
+                resultMessage = context.getString(
+                    R.string.settings_demo_cleared, result.removed, result.kept
+                )
+            )
+        }
+    }
+
     fun setDemoModeEnabled(enabled: Boolean) {
         viewModelScope.launch {
-            // 先把开关落库（播种策略里要读它判断开/关），再交给 seeder ——
-            // 「什么时候播种/清理」的策略集中在 LifeDemoSeeder，避免各处各写一套。
-            preferencesManager.setLifeDemoMode(enabled)
             if (enabled) {
                 // 开启 = 载入 / 重置：未播种或示例内容版本落后才重建（编辑过、删过的都会复原）。
+                // 先把开关落库（播种策略里要读它判断开/关），再交给播种器。
+                preferencesManager.setLifeDemoMode(true)
                 demoSeeder.ensureSeeded(preferencesManager)
+                com.palmnote.ui.widget.WidgetUpdateHelper.refreshAllWidgets()
             } else {
-                // 关闭 = 移除：页面与备份里都不再出现
-                demoSeeder.clearAll(preferencesManager)
+                // 关闭 = 移除示例。先看演示期有没有用户自建的记录：
+                // 有 → 不静默清，弹「毕业询问」（保留=迁默认账本 / 一并删除），由用户定归宿；
+                // 此时**先不落库**——用户取消（继续留在演示模式）要能全身而退。
+                // 没有 → 直接清（一条都不留讨论的必要）。
+                val kept = demoSeeder.countUserCreatedInDemo(preferencesManager)
+                if (kept > 0) {
+                    _state.update { it.copy(demoClearPromptKept = kept) }
+                } else {
+                    // 先清后落库：落库瞬间生活页 VM 的收集器也会触发清理，
+                    // 若这里还没清完，收集器会按「保留」语义把要删的行毕业掉。
+                    demoSeeder.clearAll(preferencesManager, keepUserCreated = false)
+                    finishDemoDisable()
+                }
             }
         }
+    }
+
+    /** 关闭演示收尾：开关落库 + 小组件刷新（直清与毕业询问两条路径共用）。 */
+    private suspend fun finishDemoDisable() {
+        preferencesManager.setLifeDemoMode(false)
+        com.palmnote.ui.widget.WidgetUpdateHelper.refreshAllWidgets()
     }
 
     fun setCalendarSyncEnabled(enabled: Boolean) {
@@ -269,7 +319,14 @@ class SettingsViewModel @Inject constructor(
     fun setLanguage(lang: String) {
         viewModelScope.launch {
             preferencesManager.setLanguage(lang)
-            LanguageHelper.applyLanguage(lang)
+            // setApplicationLocales 要求主线程；它同步更新应用级 configuration，
+            // 因此紧接着读到的就是新语言（真读到旧值也不会写错数据，只是留到下次启动补上）。
+            withContext(Dispatchers.Main.immediate) { LanguageHelper.applyLanguage(lang) }
+            // 演示数据是**存库的文案**，语言一变就得按新语言重播，否则会出现
+            // 「界面已经是英文、示例内容还是中文」的中间态（真机截图暴露过：首页纪念日仍是「爸爸」）。
+            // 交给播种器在**应用级 scope** 上跑：切语言会重建 Activity、本 ViewModel 的作用域随即取消，
+            // 而重播是「先清后插」，被取消在中途会留下空的示例数据。
+            demoSeeder.onLanguageChanged(preferencesManager)
         }
     }
 

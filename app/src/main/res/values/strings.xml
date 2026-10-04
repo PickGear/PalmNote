@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">掌记</string>
     <!-- Bottom Navigation -->
     <string name="nav_dashboard">首页</string>
@@ -8,13 +8,10 @@
     <string name="nav_life">生活</string>
     <!-- Asset -->
     <string name="asset_add">添加物品</string>
-    <string name="asset_edit">编辑物品</string>
-    <string name="asset_detail">物品详情</string>
     <string name="asset_name">物品名称</string>
     <string name="asset_category">分类</string>
     <string name="asset_price">购买价格</string>
     <string name="asset_location">存放位置</string>
-    <string name="asset_warranty">保修日期</string>
     <string name="asset_status">状态</string>
     <string name="asset_description">备注</string>
     <string name="asset_cost_mode">成本计算方式</string>
@@ -24,8 +21,10 @@
     <string name="asset_held">持有中</string>
     <string name="asset_away">暂离中</string>
     <string name="asset_removed">已清出</string>
-    <string name="asset_clear">清除</string>
-    <string name="asset_count">%d 件</string>
+    <!-- 计数文案：数量为 1 时英文要用单数（%d items → 1 item），故用 plurals。 -->
+    <plurals name="asset_count">
+        <item quantity="other">%d 件</item>
+    </plurals>
     <string name="asset_status_filter">状态</string>
     <string name="asset_maintenance_complete_confirm">确认完成本次维护？</string>
     <string name="asset_restore_confirm">确认恢复为持有状态？</string>
@@ -44,9 +43,15 @@
     <string name="asset_try_other_keywords">试试其他关键词</string>
     <string name="asset_add_first_item">点击右下角按钮添加你的第一个物品</string>
     <string name="asset_back_to_top">返回顶部</string>
-    <string name="asset_days_used">已使用 %d天</string>
+    <!-- 计数文案：数量为 1 时英文要用单数（%d items → 1 item），故用 plurals。 -->
+    <plurals name="asset_days_used">
+        <item quantity="other">已使用 %d天</item>
+    </plurals>
     <string name="asset_warranty_valid">质保</string>
-    <string name="asset_used_days">已用%d天</string>
+    <!-- 计数文案：数量为 1 时英文要用单数（%d items → 1 item），故用 plurals。 -->
+    <plurals name="asset_used_days">
+        <item quantity="other">已用%d天</item>
+    </plurals>
     <string name="asset_cost_per_use_price">单次 ¥%s</string>
     <string name="asset_cost_per_use_none">单次 -</string>
     <string name="asset_cost_daily_price">日均 ¥%s</string>
@@ -68,7 +73,6 @@
     <string name="bill_category">分类</string>
     <string name="bill_date">日期</string>
     <string name="bill_note">备注</string>
-    <string name="bill_budget">预算管理</string>
     <string name="bill_switch_book">切换账本</string>
     <string name="bill_book_list">账本列表</string>
     <string name="bill_default">默认</string>
@@ -82,7 +86,10 @@
     <string name="bill_expand">展开</string>
     <string name="bill_all">全部</string>
     <string name="bill_detail">明细</string>
-    <string name="bill_count">%d 条</string>
+    <!-- 计数文案：数量为 1 时英文要用单数（%d items → 1 item），故用 plurals。 -->
+    <plurals name="bill_count">
+        <item quantity="other">%d 条</item>
+    </plurals>
     <string name="bill_no_records">暂无记录</string>
     <string name="bill_start_recording">点击右下角按钮开始记账</string>
     <string name="bill_reimbursable">可报销</string>
@@ -97,10 +104,6 @@
     <string name="settings_theme_dark">深色模式</string>
     <string name="settings_general">偏好设置</string>
     <string name="settings_data">数据与备份</string>
-    <string name="settings_about">关于</string>
-    <string name="settings_export">导出数据</string>
-    <string name="settings_recycle">回收站</string>
-    <string name="settings_category">分类管理</string>
     <string name="settings_items">物品</string>
     <string name="settings_goals">目标</string>
     <string name="settings_anniversaries">纪念日</string>
@@ -120,12 +123,33 @@
     <string name="settings_budget_reminder">预算提醒</string>
     <string name="settings_calendar_sync">同步纪念日到系统日历</string>
     <string name="settings_calendar_sync_subtitle">将纪念日同步到系统日历应用</string>
-    <string name="life_demo_hint_title">当前是示例记录</string>
-    <string name="life_demo_hint_message">生活页正处于演示模式，展示的是一套示例记录，供你参考「可以这样记」。它们和你自己记的内容一样：可以打开、编辑、删除，也会一起备份导出。不需要的话，到设置里关闭「演示模式」即可——关掉后示例记录会被移除，不再出现在页面和备份里；再次开启会重新生成一套。</string>
-    <string name="life_demo_hint_ack">知道了</string>
+    <string name="onboarding_demo_section">示例数据</string>
+    <string name="onboarding_demo_hint">不确定就先载入示例看看，随时可以关掉</string>
+    <string name="onboarding_demo_opt_on_title">载入示例数据</string>
+    <string name="onboarding_demo_opt_on_body">预置一套生活记录示例，帮你快速了解各功能</string>
+    <string name="onboarding_demo_opt_off_title">空白开始</string>
+    <string name="onboarding_demo_opt_off_body">不放示例，所有记录都由你自己创建</string>
+    <string name="onboarding_demo_footnote">示例记录可查看、编辑、删除；不想要时到「设置 → 数据与备份 → 示例数据」关掉即可彻底移除</string>
     <string name="settings_demo_mode">演示模式</string>
-    <string name="settings_demo_mode_subtitle">载入一套示例记录供参考</string>
+    <string name="settings_demo_mode_subtitle">载入一套示例记录供参考；再次开启会重置为初始示例</string>
+    <string tools:ignore="PluralsCandidate" name="settings_demo_cleared">已移除 %1$d 条示例记录，保留你创建的 %2$d 条</string>
+    <string name="settings_demo_clear_prompt_title">关闭演示模式</string>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="settings_demo_clear_prompt_body">
+        <item quantity="one">None</item>
+        <item quantity="other">演示期间你创建了 %1$d 条记录。这些是你自己的数据，要保留吗？</item>
+    </plurals>
+    <string name="settings_demo_clear_keep">保留</string>
+    <string name="settings_demo_clear_discard">一并删除</string>
+    <string name="life_swipe_tip">提示：右滑完成、左滑删除</string>
+    <string name="life_tip_dismiss">不再提示</string>
+    <string name="life_demo_banner">示例模式 · 展示的是预置示例数据，可在设置中关闭</string>
+    <string name="life_demo_banner_life_tab">示例模式 · 本页仅显示示例记录，你自己的记录在关闭演示后恢复</string>
+
     <string name="settings_demo_section">示例数据</string>
+    <string name="settings_bill_section">记账</string>
+    <string name="settings_life_category_compact">分类卡紧凑显示</string>
+    <string name="settings_life_category_compact_subtitle">生活首页分类卡一行显示，让首屏装下更多今日安排</string>
     <string name="settings_app_lock">应用锁</string>
     <string name="settings_app_lock_subtitle">保护隐私，启动时需要验证</string>
     <string name="settings_security">应用锁</string>
@@ -151,9 +175,7 @@
     <string name="settings_category_manage_subtitle">管理物品和账单分类</string>
     <string name="settings_recycle_bin">回收站</string>
     <string name="settings_recycle_bin_subtitle">查看已删除的记录</string>
-    <string name="settings_export_data">导出数据</string>
     <string name="settings_export_file_suffix">_数据.zip</string>
-    <string name="settings_import_data">导入数据</string>
     <string name="settings_data_backup">备份与恢复</string>
     <string name="settings_data_backup_subtitle">本机与文件夹备份，可换机或回退</string>
     <string name="settings_data_exchange">导入导出</string>
@@ -170,19 +192,16 @@
     <string name="data_exchange_scope_life_desc">含 目标 · 打卡 · 纪念日 · 瞬间 · 标签</string>
     <string name="data_exchange_export_action">导出 CSV</string>
     <string name="data_exchange_export_footnote">不加密；密码本永不导出，待办 · 心情 · 专注 · 成就暂不支持</string>
-    <string name="data_exchange_portable_desc">另存到任意文件夹；设置备份密码后可换机恢复</string>
-    <string name="data_exchange_import_desc">CSV 重复数据自动跳过，不覆盖已有数据</string>
-    <string name="data_exchange_file_is_package">这是备份包，请在「备份与恢复」页恢复</string>
-    <string name="data_exchange_import_action">从文件导入</string>
     <string name="settings_clear_data">清除数据</string>
     <string name="settings_clear_data_subtitle">删除个人数据，不可恢复</string>
     <string name="settings_clear_cache">清除缓存</string>
     <string name="settings_clear_cache_subtitle">清理临时缓存文件，安全操作</string>
     <string name="settings_about_app">关于</string>
     <string name="settings_about_version">版本 %1$s</string>
-    <string name="settings_days">%d 天</string>
-    <string name="settings_custom_color">自定义颜色</string>
-    <string name="settings_hex_color">HEX色值</string>
+    <!-- 计数文案：数量为 1 时英文要用单数（%d items → 1 item），故用 plurals。 -->
+    <plurals name="settings_days">
+        <item quantity="other">%d 天</item>
+    </plurals>
     <string name="settings_select_start_page">默认启动页</string>
     <string name="settings_select_bill_type">默认记账类型</string>
     <string name="settings_select_dark_mode">深色模式</string>
@@ -192,7 +211,11 @@
     <string name="settings_clear_cache_confirm">确定要清除图片缓存和临时文件吗？不会影响你的个人数据。</string>
     <string name="settings_clear_cache_action">清除</string>
     <string name="settings_crash_log">崩溃日志</string>
-    <string name="settings_crash_log_subtitle">共 %1$d 份 · %2$d KB</string>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="settings_crash_log_subtitle">
+        <item quantity="one">None</item>
+        <item quantity="other">共 %1$d 份 · %2$d KB</item>
+    </plurals>
     <string name="settings_crash_log_note">崩溃日志用于排查问题，内容已脱敏，不含密码等敏感信息。</string>
     <string name="settings_crash_log_export">导出/分享</string>
     <string name="settings_crash_log_clear">清空</string>
@@ -218,7 +241,6 @@
     <string name="empty_title">暂无数据</string>
     <string name="done">完成</string>
     <string name="back">返回</string>
-    <string name="create_new">新建</string>
     <string name="backup_show_password">显示密码</string>
     <string name="backup_hide_password">隐藏密码</string>
     <string name="bill_import_error_too_large">文件过大，无法导入（上限 30MB）</string>
@@ -244,6 +266,7 @@
     <!-- Dashboard Module -->
     <string name="dashboard_card_manage">卡片管理</string>
     <string name="dashboard_net_worth">净资产</string>
+    <string name="dashboard_demo_included">含示例数据</string>
     <string name="dashboard_monthly_expense">本月支出</string>
     <string name="dashboard_monthly_income">本月收入</string>
     <string name="dashboard_monthly_balance">本月结余 %s</string>
@@ -254,19 +277,25 @@
     <string name="dashboard_quick_anniversary">纪念日</string>
     <string name="dashboard_budget_alert">预算预警</string>
     <string name="dashboard_budget_alert_message">本月支出 ¥%.2f 已超过预算的80%%</string>
-    <string name="dashboard_goal_progress">目标进度</string>
-    <string name="dashboard_goals_completed">%1$d/%2$d 已完成</string>
-    <string name="dashboard_no_goals">暂无目标，点击添加</string>
     <string name="dashboard_today">今天</string>
-    <string name="dashboard_days_until">还有%d天</string>
-    <string name="dashboard_days_passed">已过%d天</string>
+    <!-- 计数文案：数量为 1 时英文要用单数（%d items → 1 item），故用 plurals。 -->
+    <plurals name="dashboard_days_until">
+        <item quantity="other">还有%d天</item>
+    </plurals>
+    <!-- 计数文案：数量为 1 时英文要用单数（%d items → 1 item），故用 plurals。 -->
+    <plurals name="dashboard_days_passed">
+        <item quantity="other">已过%d天</item>
+    </plurals>
     <string name="dashboard_no_anniversaries">暂无纪念日，点击添加</string>
     <string name="dashboard_asset_distribution">物品分布</string>
     <plurals name="dashboard_items_count">
         <item quantity="other">%d 件</item>
     </plurals>
     <string name="dashboard_recorded">已记录</string>
-    <string name="dashboard_items_recorded">%d 项</string>
+    <!-- 计数文案：数量为 1 时英文要用单数（%d items → 1 item），故用 plurals。 -->
+    <plurals name="dashboard_items_recorded">
+        <item quantity="other">%d 项</item>
+    </plurals>
     <string name="dashboard_card_habit_today">今日打卡</string>
     <string name="dashboard_card_subscription">订阅提醒</string>
     <string name="dashboard_habit_today_title">今日打卡</string>
@@ -277,16 +306,13 @@
     <string name="dashboard_habit_period_weekly">每周</string>
     <string name="dashboard_habit_period_monthly">每月</string>
     <string name="dashboard_habit_go_all">去打卡全部</string>
-    <string name="dashboard_habit_no_data">暂无待打卡习惯</string>
-    <string name="dashboard_subscription_due_count">%1$d 项到期</string>
+    <string tools:ignore="PluralsCandidate" name="dashboard_subscription_due_count">%1$d 项到期</string>
     <string name="dashboard_subscription_price">¥%1$s</string>
-    <string name="dashboard_subscription_hint">近 7 天内有 %1$d 项扣费</string>
-    <string name="dashboard_goals_view_all">查看全部目标</string>
-    <string name="dashboard_anniversaries_more">还有 %1$d 个纪念日 · 查看全部</string>
+    <string tools:ignore="PluralsCandidate" name="dashboard_subscription_hint">近 7 天内有 %1$d 项扣费</string>
+    <string tools:ignore="PluralsCandidate" name="dashboard_anniversaries_more">还有 %1$d 个纪念日 · 查看全部</string>
     <string name="dashboard_card_net_worth">净资产</string>
     <string name="dashboard_card_quick_actions">快捷操作</string>
     <string name="dashboard_card_budget_alert">预算预警</string>
-    <string name="dashboard_card_goals">目标进度</string>
     <string name="dashboard_card_anniversaries">纪念日</string>
     <string name="dashboard_card_asset_distribution">物品分布</string>
     <string name="dashboard_card_today">今日概览</string>
@@ -333,216 +359,25 @@
     <string name="quote_12">好的开始是成功一半</string>
     <!-- Life Module -->
     <string name="life_title">生活</string>
-    <string name="life_mood">心情记录</string>
-    <!-- Life Module - Additional -->
-    <string name="life_error_load_failed">加载失败</string>
-    <string name="life_error_save_failed">保存失败</string>
-    <string name="life_error_delete_failed">删除失败</string>
-    <string name="life_error_create_failed">创建失败</string>
-    <string name="life_error_checkin_failed">签到失败</string>
     <string name="life_data_load_error">数据加载异常，请稍后重试</string>
-    <string name="life_data_temp_unavailable">专注数据暂时无法加载，可下拉刷新重试</string>
     <!-- Life Screen -->
     <string name="life_screen_retry">重试</string>
-    <string name="life_search_recent">最近搜索</string>
     <string name="life_search_no_result">未找到相关内容</string>
-    <string name="life_search_items">条目</string>
-    <string name="life_search_templates">模板</string>
-    <string name="life_search_empty_hint">输入关键词搜索条目与模板</string>
-    <string name="life_plan_no_subtasks">暂无子任务，点击下方"新增子任务"开始</string>
-    <string name="life_plan_archived">已归档</string>
-    <string name="life_plan_overdue_banner">已过期末 %1$s · 完成 %2$d%%（未全勾）</string>
-    <string name="life_plan_remaining">剩余:</string>
-    <string name="life_plan_times">%1$s %2$d 次</string>
-    <string name="life_plan_archive">归档</string>
-    <string name="life_plan_mark_done">标记完成</string>
-    <string name="life_plan_all_done">所有子任务已完成 · 完成率 %1$d%%</string>
-    <string name="life_plan_streak">连胜 %1$d 天</string>
-    <string name="life_plan_today_progress">今日 %1$d/%2$d</string>
-    <string name="life_plan_done_overall">完成率 %1$d%%</string>
-    <string name="life_plan_ended">已结束</string>
-    <string name="life_plan_in_progress">进行中</string>
-    <string name="life_plan_group_daily">每日固定</string>
-    <string name="life_plan_group_weekly">每周</string>
-    <string name="life_plan_group_monthly">月度</string>
-    <string name="life_plan_group_milestone">里程碑</string>
-    <string name="life_plan_every_week">每周·%1$s</string>
-    <string name="life_plan_every_month">每月·%1$d号</string>
-    <string name="life_plan_due">due %1$s</string>
-    <string name="life_plan_done">已达成</string>
-    <string name="life_plan_day_view">按日视图</string>
-    <string name="life_plan_today">今天</string>
-    <string name="life_plan_add_subtask">新增子任务</string>
-    <string name="life_plan_edit">编辑</string>
-    <string name="life_plan_subtask_label">子任务标题</string>
-    <string name="life_plan_milestone_on">到期 %1$d月%2$d日</string>
-    <string name="life_plan_pick_date">选择日期</string>
-    <string name="life_plan_add">添加</string>
-    <string name="life_section_title_plan">计划</string>
-    <string name="life_section_title_time">时间</string>
-    <string name="life_section_title_record">记录</string>
-    <string name="life_section_title_custom">自定义</string>
     <!-- Life Screen - Create Type Selector -->
-    <string name="life_select_type_to_create">选择要创建的类型</string>
-    <string name="life_type_saving">存钱计划</string>
-    <string name="life_type_shopping">购物计划</string>
-    <string name="life_type_todo">待办</string>
-    <string name="life_type_travel">旅行计划</string>
-    <string name="life_type_reading">阅读</string>
-    <string name="life_type_study">学习计划</string>
-    <string name="life_type_countdown">倒计时</string>
-    <string name="life_type_countup">正数日</string>
-    <string name="life_type_birthday">生日</string>
-    <string name="life_type_anniversary">纪念日</string>
-    <string name="life_type_habit">打卡</string>
-    <string name="life_type_mood">心情</string>
-    <string name="life_type_journal">日记</string>
-    <string name="life_type_subscription">订阅记录</string>
-    <string name="life_type_report">周报月报</string>
+    <string name="life_select_type_to_create">新建记录</string>
     <string name="life_template_manage">模板管理</string>
-    <!-- Life - Common Actions -->
-    <string name="life_cancel">取消</string>
     <string name="life_back">返回</string>
     <string name="life_new_create">新建</string>
     <string name="life_discard">放弃</string>
-    <!-- Life - Detail Screens -->
-    <string name="life_confirm_delete_record">确认删除这条记录？</string>
-    <string name="life_confirm_discard">确定放弃修改？</string>
-    <string name="life_confirm_discard_hint">您有未保存的修改，放弃后将丢失。</string>
-    <string name="life_continue_editing">继续编辑</string>
-    <string name="life_edit_title">编辑 %s</string>
-    <string name="life_create_title">新建 %s</string>
-    <string name="life_input_title">输入标题</string>
-    <string name="life_item_detail_delete_confirm">确定删除？</string>
-    <string name="life_item_detail_delete_hint">删除后可在回收站找回</string>
-    <string name="life_item_detail_title">详情</string>
-    <string name="life_confirm_delete_countup">确认删除该正数日吗？</string>
-    <string name="life_confirm_delete_habit">确认删除该习惯吗？</string>
-    <string name="life_countdown_title">倒计时</string>
-    <string name="life_confirm_delete_countdown">确定删除该倒计时吗？</string>
-    <string name="life_empty_countdown">还没有倒计时</string>
-    <string name="life_empty_countdown_subtitle">点击右上角+创建你的第一个倒计时</string>
-    <string name="life_empty_countdown_action">新建倒计时</string>
-    <string name="life_countdown_expired">已过</string>
-    <string name="life_countdown_day">天</string>
-    <string name="life_countdown_expired_text">已到期 · %s</string>
-    <string name="life_countdown_active_text">%s · 点击查看</string>
-    <string name="life_anniversary_title">纪念日</string>
-    <string name="life_confirm_delete_anniversary">确定删除该纪念日吗？</string>
-    <string name="life_empty_anniversary">还没有纪念日</string>
-    <string name="life_empty_anniversary_subtitle">点击右上角+记录你的重要纪念日</string>
-    <string name="life_empty_anniversary_action">新建纪念日</string>
-    <string name="life_anniversary_days_ago">已 %d 天</string>
-    <string name="life_date_not_set">日期未填写</string>
-    <string name="life_birthday_title">生日</string>
-    <string name="life_confirm_delete_birthday">确定删除该生日记录吗？</string>
-    <string name="life_empty_birthday">还没有生日记录</string>
-    <string name="life_empty_birthday_subtitle">点击右上角+添加你重要人的生日</string>
-    <string name="life_empty_birthday_action">添加生日</string>
-    <string name="life_birthday_days_after">天后</string>
-    <string name="life_birthday_last_gift">去年送了：%s</string>
-    <string name="life_empty_todo_subtitle">点击右上角+添加待办事项</string>
-    <string name="life_empty_subscription_subtitle">点击右上角+添加订阅</string>
-    <string name="life_empty_travel_subtitle">点击右上角+开始规划你的旅行</string>
-    <string name="life_empty_shopping_subtitle">点击右上角+添加购物计划</string>
-    <string name="life_empty_reading_subtitle">点击右上角+开始你的阅读之旅</string>
-    <string name="life_empty_study_subtitle">点击右上角+创建你的第一个学习计划</string>
-    <string name="life_journal_title">日记</string>
-    <string name="life_journal_write">写日记</string>
-    <string name="life_journal_empty_first">记录你的第一篇日记</string>
-    <string name="life_journal_empty_hint">日常的点滴值得被记录</string>
-    <string name="life_journal_write_one">写一篇</string>
-    <string name="life_achievement_title">成就徽章</string>
-    <string name="life_achievement_unlocked">已解锁</string>
-    <string name="life_achievement_locked">未解锁</string>
-    <string name="life_achievement_close">关闭</string>
-    <string name="life_achievement_unlocked_on">解锁于 %s</string>
-    <string name="life_factor_analysis">触发因素</string>
-    <string name="life_factor_analysis_count">%d次</string>
-    <!-- Life - Habit -->
-    <string name="life_habit_checkin">打卡</string>
-    <string name="life_habit_checked">已打卡</string>
-    <string name="life_habit_month_rate">本月完成率</string>
-    <string name="life_habit_streak">%d天</string>
-    <string name="life_habit_streak_label">连续天数</string>
-    <string name="life_habit_total_checkins">%d次</string>
-    <string name="life_habit_total_label">累计打卡</string>
-    <string name="life_habit_heatmap">打卡热力图</string>
-    <string name="life_habit_name">习惯名称</string>
-    <string name="life_habit_category">分类</string>
-    <string name="life_habit_category_daily">日常习惯</string>
-    <string name="life_habit_category_fitness">运动健身</string>
-    <string name="life_habit_category_reading">阅读学习</string>
-    <string name="life_habit_frequency">频率</string>
-    <string name="life_habit_frequency_daily">每天</string>
-    <string name="life_habit_frequency_weekly">每周</string>
-    <string name="life_habit_frequency_monthly">每月</string>
-    <string name="life_habit_weekly_target">每周目标次数</string>
     <string name="life_habit_less">少</string>
     <string name="life_habit_more">多</string>
-    <string name="life_habit_filter_stats">统计</string>
     <string name="life_habit_filter_timeline">时间线</string>
-    <string name="life_habit_achievement">成就</string>
-    <string name="life_habit_new">新建习惯</string>
-    <string name="life_habit_create_btn">创建</string>
-    <!-- Life - CountUp -->
-    <string name="life_countup_title">正数日</string>
-    <string name="life_countup_days">%d 天</string>
-    <string name="life_countup_milestone">距离 %d 天达成</string>
     <!-- Life - Shopping Kanban -->
     <!-- Life - Subscription -->
     <!-- Life - Travel -->
-    <!-- Life - Todo -->
-    <!-- Life - Report -->
-    <string name="life_report_tab_weekly">周报</string>
-    <string name="life_report_tab_monthly">月报</string>
-    <string name="life_report_title">周报月报</string>
-    <string name="life_report_empty">还没有报告</string>
-    <string name="life_report_empty_subtitle">用了一段时间后将自动生成周报和月报</string>
-    <!-- Life - Focus -->
-    <string name="life_focus_giveup">放弃</string>
-    <string name="life_focus_giveup_confirm">确定放弃？</string>
-    <string name="life_focus_giveup_hint">当前的专注进度将丢失</string>
-    <string name="life_focus_continue">继续专注</string>
-    <string name="life_focus_title">专注</string>
-    <string name="life_focus_stats">统计</string>
-    <string name="life_focus_today">今日专注</string>
-    <string name="life_focus_today_minutes">累计 %d 分钟</string>
-    <string name="life_focus_today_summary">今日专注 %1$d 分钟，总计 %2$d 分钟</string>
-    <string name="life_focus_pause">暂停</string>
-    <string name="life_focus_start">开始</string>
-    <string name="life_focus_complete">完成</string>
-    <!-- Life - Mood -->
-    <string name="life_mood_save">保存</string>
-    <string name="life_mood_happy">开心</string>
-    <string name="life_mood_normal">平静</string>
-    <string name="life_mood_upset">低落</string>
-    <string name="life_mood_sad">难过</string>
-    <string name="life_mood_angry">愤怒</string>
-    <string name="life_mood_question">今天心情怎样？</string>
-    <string name="life_mood_edit">编辑心情记录</string>
-    <string name="life_mood_factors">触发因素</string>
-    <string name="life_mood_factor_work">工作</string>
-    <string name="life_mood_factor_health">健康</string>
-    <string name="life_mood_factor_family">家庭</string>
-    <string name="life_mood_factor_finance">财务</string>
-    <string name="life_mood_factor_weather">天气</string>
-    <string name="life_mood_factor_social">社交</string>
-    <string name="life_mood_content_hint">写点什么…（可选）</string>
-    <string name="life_mood_record">心情记录</string>
-    <string name="life_mood_record_action">记心情</string>
-    <string name="life_mood_empty">还没有心情记录</string>
-    <string name="life_mood_empty_subtitle">点击右上角+记录你的第一个心情</string>
     <!-- Life - Journal -->
-    <!-- Life - Deposit Sheet -->
-    <string name="life_deposit_title">存入一笔</string>
-    <string name="life_deposit_save">保存</string>
-    <!-- Life - Delete Confirm -->
-    <string name="life_delete_confirm_default">确定删除这条记录？</string>
     <!-- Life - Dynamic Form -->
     <!-- Life - Item Detail -->
-    <!-- Life - Template Create -->
-    <string name="life_template_save_error">保存失败，内容已暂存到草稿</string>
     <string name="life_template_new">新建模板</string>
     <string name="life_template_edit">编辑模板</string>
     <string name="life_template_customized">已自定义</string>
@@ -553,14 +388,10 @@
     <string name="life_template_desc">描述（可选）</string>
     <string name="life_template_select_icon">选择图标</string>
     <string name="life_template_select_color">选择颜色</string>
-    <string name="life_template_category_selected">已选：%1$s</string>
     <string name="life_template_field_text">文本</string>
     <string name="life_template_field_date">日期</string>
     <string name="life_template_field_select">单选</string>
-    <string name="life_template_field_index">字段 %d</string>
     <string name="life_template_field_name">字段名称</string>
-    <string name="life_template_field_type">字段类型</string>
-    <string name="life_template_field_required">必填</string>
     <string name="life_template_field_show_in_card">在卡片显示</string>
     <string name="life_template_field_show_as_progress">进度环</string>
     <string name="life_template_field_unit">单位</string>
@@ -568,69 +399,80 @@
     <string name="life_template_field_max">最大值</string>
     <string name="life_template_field_progress_style">进度形态</string>
     <string name="life_template_progress_auto">自动</string>
-    <string name="life_template_progress_linear">横向</string>
-    <string name="life_template_progress_ring">圆环</string>
     <string name="life_template_field_options_hint">选项（英文逗号分隔）</string>
-    <string name="life_template_field_image">图片（延后）</string>
+    <string name="life_template_field_image">图片</string>
     <string name="life_template_add_field">添加字段</string>
     <!-- P1-c：七种「手」与骨架 -->
     <string name="life_stepper_minus">减少</string>
+    <string name="life_inline_edit_hint">点数值可直接改</string>
+    <string name="life_inline_need_number">填一个数字</string>
+    <string name="life_inline_over_max">最多 %1$s</string>
+    <string name="life_inline_under_min">最少 %1$s</string>
     <string name="life_stepper_plus">增加</string>
     <string name="life_row_add">添加一行</string>
     <string name="life_row_remove">移除此行</string>
-    <string name="life_checklist_add_hint">添加子项…</string>
-    <string name="life_table_col_name">品名</string>
-    <string name="life_table_col_price">单价</string>
-    <string name="life_table_col_qty">数量</string>
-    <string name="life_table_add_row">添加一行</string>
-    <string name="life_table_more_rows">共 %d 行</string>
-    <string name="life_table_total">合计</string>
-    <string name="life_range_start">开始日期</string>
-    <string name="life_range_end">结束日期</string>
-    <string name="life_range_days">%1$d 天</string>
-    <string name="life_range_display">%1$s → %2$s · 共 %3$d 天</string>
-    <string name="life_person_add_hint">添加人物…</string>
-    <string name="life_person_more">+%1$d</string>
-    <string name="life_map_add_point">添加地点…</string>
-    <string name="life_map_points">%1$d 个地点</string>
+    <string tools:ignore="PluralsCandidate" name="life_map_points">%1$d 个地点</string>
     <string name="life_map_import_track">导入轨迹（GPX / KML）</string>
-    <string name="life_map_import_failed">未能从该文件解析出轨迹</string>
-    <string name="life_field_auto_calc">%1$s（自动计算，无需填写）</string>
-    <string name="life_cycle_monthly">每月</string>
-    <string name="life_cycle_yearly">每年</string>
-    <string name="life_cycle_weekly">每周</string>
     <string name="life_detail_group_compound">明细与清单</string>
     <string name="life_detail_group_media">媒体与空间</string>
     <string name="life_detail_group_numeric">数值</string>
     <string name="life_detail_group_choice">选择</string>
     <string name="life_detail_group_text">文本</string>
     <string name="life_detail_group_derived">自动计算</string>
+    <string name="life_detail_group_itinerary">行程</string>
+    <string name="life_detail_group_companions_budget">同行人与预算</string>
+    <string name="life_detail_group_album">相册</string>
     <string name="life_detail_remain">还差 %1$s</string>
-    <string name="life_detail_streak_longest">最长连续</string>
+    <string name="life_detail_streak_longest">最长 %1$s</string>
     <!-- 详情页（四段骨架 §14）：英雄区注脚 / 结构区 / 页脚 -->
     <string name="life_detail_no_value">暂无内容</string>
     <string name="life_detail_more">更多</string>
     <string name="life_detail_not_found">这条记录不存在或已删除</string>
     <string name="life_detail_time_footer">更新于 %1$s · 创建于 %2$s</string>
+    <string tools:ignore="PluralsCandidate" name="life_detail_relation_bills">关联 %1$d 笔</string>
+    <string tools:ignore="PluralsCandidate" name="life_detail_relation_notes">关联 %1$d 篇</string>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="life_detail_timeline_photos">
+        <item quantity="one">None</item>
+        <item quantity="other">配图 %1$d 张</item>
+    </plurals>
+    <string name="life_detail_timeline_no_photo">无图</string>
     <string name="life_metric_daily">日均</string>
+    <string name="life_metric_month">本月</string>
+    <string name="life_metric_longest">最长</string>
+    <string name="life_metric_today">今日</string>
+    <string name="life_metric_week">本周</string>
+    <string name="life_metric_streak">连续</string>
+    <string name="life_metric_photos">配图</string>
+    <string name="life_metric_month_pieces">%1$s 篇</string>
+    <string name="life_metric_streak_days">%1$s 天</string>
+    <string name="life_metric_photos_count">%1$s 张</string>
+    <string name="life_metric_count_times">%1$s 次</string>
+    <string name="life_metric_monthly_expense">月支出</string>
+    <string name="life_metric_yearly_expense">年支出</string>
     <string name="life_metric_kept">已坚持</string>
     <string name="life_metric_bought">已买</string>
-    <string name="life_metric_done">已完成</string>
     <string name="life_metric_left">剩余</string>
     <string name="life_metric_total">总数</string>
     <string name="life_metric_itinerary">行程</string>
+    <string name="life_metric_companions">同行</string>
+    <string name="life_metric_budget">预算</string>
+    <string name="life_metric_overdue">逾期</string>
+    <string name="life_metric_done_this_week">本周完成</string>
+    <string name="life_metric_total_duration">累计时长</string>
+    <string name="life_metric_month_average">本月平均</string>
     <string name="life_detail_delete_title">删除这条记录？</string>
     <string name="life_detail_delete_message">删除后无法恢复。</string>
     <string name="life_detail_delete_confirm">删除</string>
     <string name="life_detail_achieved">已达成</string>
-    <string name="life_detail_days_to_charge">还有 %1$d 天扣费</string>
+    <string tools:ignore="PluralsCandidate" name="life_detail_days_to_charge">还有 %1$d 天扣费</string>
     <string name="life_detail_note_saved_pct">已存 %1$d%%</string>
     <string name="life_detail_note_spent_pct">已花 %1$d%%</string>
     <string name="life_detail_note_done_pct">已完成 %1$d%%</string>
     <string name="life_detail_note_target_days">目标 %1$s 天</string>
     <string name="life_detail_note_target_date">目标日 %1$s</string>
     <string name="life_detail_note_next_billing">下次 %1$s</string>
-    <string name="life_detail_note_categories">%1$d 类</string>
+    <string tools:ignore="PluralsCandidate" name="life_detail_note_categories">%1$d 类</string>
     <string name="life_detail_label_budget">预算 %1$s</string>
     <string name="life_detail_unit_spent">已花</string>
     <string name="life_detail_cycle_monthly">月付</string>
@@ -655,62 +497,23 @@
     <string name="life_detail_timer_resume">继续</string>
     <string name="life_detail_timer_stop">结束</string>
     <string name="life_detail_timer_saved">已记录 %1$s</string>
-    <string name="life_detail_route_points">%1$d 个地点</string>
+    <string tools:ignore="PluralsCandidate" name="life_detail_route_points">%1$d 个地点</string>
     <string name="life_route_disclaimer">示意图 · 非地理底图 · 不渲染任何版图要素</string>
+    <string name="life_route_legend_track">实测轨迹</string>
+    <string name="life_route_legend_plan">计划路线</string>
+    <string name="life_route_start">起点</string>
+    <string name="life_route_end">终点</string>
+    <string name="life_route_scale_km">1 km（参考）</string>
+    <string name="life_route_scale_500m">500 m（参考）</string>
     <string name="life_detail_heat_checkin">本月打卡</string>
     <string name="life_detail_heat_mood">本月心情</string>
+    <string name="life_detail_focus_sessions">今日会话</string>
+    <string name="life_detail_focus_week">本周 · 每日时长</string>
+    <string name="life_detail_focus_minutes">%1$d 分</string>
     <string name="life_stats_heat_title">近 16 周记录热力</string>
-    <string name="life_calendar_month">%1$d 年 %2$d 月</string>
-    <string name="life_calendar_day_items">%1$d 月 %2$d 日 · %3$d 条</string>
-    <string name="life_calendar_month_count">本月 %1$d 条 · 点一天看那天 →</string>
-    <string name="life_view_board">全部</string>
-    <string name="life_view_grid">今天</string>
-    <string name="life_view_calendar">日历</string>
-    <string name="life_view_default_set">已设为默认页面</string>
     <string name="life_all_search_hint">搜索条目 / 备注 / 字段值</string>
-    <string name="life_top_date">%1$d月%2$d日</string>
-    <string name="life_top_streak">连续 %1$d 天</string>
-    <string name="life_top_birthday_soon">生日还有 %1$d 天</string>
-    <string name="life_top_subscription_due">订阅 %1$d 天后扣费</string>
-    <string name="life_grid_more_items">还有 %1$d 个</string>
-    <string name="life_invite_action">记一条 →</string>
-    <string name="life_invite_record">还没记一条</string>
-    <string name="life_invite_plan">还没安排今天</string>
-    <string name="life_invite_time">还没添加纪念</string>
-    <string name="life_hero_morning_title">今天要做什么</string>
-    <string name="life_hero_afternoon_title">今天记了什么</string>
-    <string name="life_hero_evening_title">今天怎么样</string>
-    <string name="life_hero_no_todo">今天还没有安排</string>
-    <string name="life_hero_no_records">今天还没有记录</string>
-    <string name="life_hero_more_items">还有 %1$d 条 →</string>
-    <string name="life_hero_summary">%1$d 条记录</string>
-    <string name="life_hero_focus">专注 %1$d 分</string>
-    <string name="life_hero_completed">%1$d/%2$d 已完成</string>
-    <string name="life_hero_all_done">今天已全部完成</string>
-    <string name="life_mini_checkin">打卡</string>
-    <string name="life_mini_savings">存钱</string>
-    <string name="life_mini_mood">心情</string>
-    <string name="life_mini_mood_action">记一笔→</string>
-    <string name="life_mini_countdown">纪念</string>
-    <string name="life_calendar_add_for_day">在这天补记一条</string>
-    <string name="life_layout_edit">布局</string>
-    <string name="life_layout_presets">布局预设</string>
-    <string name="life_layout_budget_exceeded">格子面积超出一屏预算（≤12 单元、大格 ≤2），请缩减档位</string>
-    <string name="life_layout_preset_default">默认</string>
-    <string name="life_grid_unit_hint">%1$d 单元</string>
-    <string name="life_album_title">相册</string>
-    <string name="life_album_empty">还没有照片，去记录里添加图片字段吧</string>
-    <string name="life_album_view_item">查看条目</string>
+    <string tools:ignore="PluralsCandidate" name="life_hero_completed">%1$d/%2$d 已完成</string>
 
-    <string-array name="life_calendar_weekdays">
-        <item>日</item>
-        <item>一</item>
-        <item>二</item>
-        <item>三</item>
-        <item>四</item>
-        <item>五</item>
-        <item>六</item>
-    </string-array>
     <string name="life_template_restore_factory">恢复出厂</string>
     <string name="life_template_restore_factory_hint">该模板将回到出厂预设，你之后对它做的修改会再次跟随版本更新；已创建的记录不会丢失。</string>
     <string name="life_field_type_video">视频</string>
@@ -728,28 +531,16 @@
     <string name="life_progress_form_ring">厚环</string>
     <string name="life_progress_form_capsule">厚胶囊</string>
     <string name="life_progress_form_thin_track">细轨</string>
+    <string name="life_progress_form_thin_ring">细环巨数</string>
     <string name="life_progress_form_segmented_ring">分段齿环</string>
     <string name="life_progress_form_segmented_bar">分段条</string>
-    <string name="life_progress_target">进度分母</string>
-    <string name="life_progress_target_none">自动（按最大值）</string>
-    <string name="life_template_field_step">步长</string>
+    <string name="life_progress_form_beaded_ring">环上珠子</string>
     <string name="life_category_plan">计划</string>
     <string name="life_category_time">时间</string>
     <string name="life_category_record">记录</string>
-    <string name="life_category_work">工作</string>
-    <string name="life_category_study">学习</string>
-    <string name="life_category_health">健康</string>
-    <string name="life_category_family">家庭</string>
-    <string name="life_category_mood">心情</string>
-    <string name="life_category_journal">日记</string>
-    <string name="life_category_checkin">打卡</string>
-    <string name="life_category_focus">专注</string>
-    <string name="life_category_todo">待办</string>
-    <string name="life_category_anniversary">纪念日</string>
-    <string name="life_category_subscription">订阅</string>
     <string name="life_template_category">所属分类</string>
     <string name="life_template_category_custom">自定义分类</string>
-    <string name="life_template_category_custom_hint">输入新分类，如：理财</string>
+    <string name="life_template_category_unsupported">当前分类「%1$s」已不在支持范围（只剩计划 / 时间 / 记录），保存后会归到「计划」</string>
     <string name="life_template_field_short_text">短文本</string>
     <string name="life_template_field_number">数字</string>
     <string name="life_template_field_currency">金额</string>
@@ -768,10 +559,6 @@
     <string name="life_template_field_duration">时长</string>
     <string name="life_template_field_rich_text">富文本</string>
     <string name="life_template_field_file">附件</string>
-    <!-- Life - Create Item Warning -->
-    <string name="life_item_limit_reached">已达上限（10,000 条），请归档或删除旧条目</string>
-    <string name="life_item_limit_warning">即将达到上限（%d/10,000），建议归档</string>
-    <string name="life_item_limit_info">该模板已有 %d 条数据，建议归档旧条目</string>
     <!-- Life - Accu Days related -->
     <!-- Bill Import Errors -->
     <string name="bill_import_error_read_file">无法读取文件</string>
@@ -782,90 +569,36 @@
     <string name="bill_import_error_ocr_invalid">未能识别到有效的交易记录</string>
     <string name="bill_import_error_ocr_failed">识别失败: %s</string>
     <string name="bill_import_error_invalid_amount">请输入有效金额</string>
-    <!-- Widget -->
-    <string name="widget_app_name">掌记</string>
-    <string name="widget_monthly_expense">本月支出</string>
-    <string name="widget_monthly_income">本月收入</string>
-    <string name="widget_today_expense">今日支出</string>
-    <string name="widget_today_income">今日收入</string>
-    <string name="widget_bill_count">笔数</string>
-    <string name="widget_recent_bills">最近账单</string>
     <string name="widget_bill_desc">记账概览小组件 - 显示当月收支概览</string>
     <string name="widget_todo_title">待办清单</string>
-    <string name="widget_today_todo">今日待办</string>
     <string name="widget_overdue">已逾期</string>
     <string name="widget_completed">已完成</string>
-    <string name="widget_todo_unit">条</string>
-    <string name="widget_todo_list_label">待办列表</string>
     <string name="widget_todo_desc">生活待办小组件 - 显示今日待办和逾期提醒</string>
     <string name="widget_counter_title">生活计数器</string>
-    <string name="widget_days_left">剩余</string>
-    <string name="widget_countdown">倒计时</string>
-    <string name="widget_birthday">生日</string>
-    <string name="widget_anniversary">纪念日</string>
     <string name="widget_upcoming_events">即将到来</string>
     <string name="widget_counter_desc">生活计数器小组件 - 显示倒计时、生日、纪念日</string>
-    <string name="widget_no_countdown">暂无倒计时</string>
     <string name="widget_asset_title">物品管理</string>
-    <string name="widget_asset_total">物品总数</string>
-    <string name="widget_asset_value">总价值</string>
     <string name="widget_asset_held">在用</string>
-    <string name="widget_asset_warranty">质保到期</string>
-    <string name="widget_asset_maintenance">待维护</string>
-    <string name="widget_asset_categories">分类分布</string>
     <string name="widget_asset_desc">物品管理小组件 - 显示物品统计和分类分布</string>
     <string name="widget_vault_title">密码本</string>
     <string name="widget_vault_entries">条记录</string>
     <string name="widget_vault_hint">点击打开密码本</string>
     <string name="widget_vault_desc">密码本小组件 - 显示密码记录数量</string>
     <string name="widget_dashboard_title">概览</string>
-    <string name="widget_dashboard_goals">目标</string>
-    <string name="widget_dashboard_todos">待办</string>
-    <string name="widget_dashboard_habits">习惯</string>
-    <string name="widget_dashboard_anniversaries">纪念日</string>
-    <string name="widget_dashboard_quick_actions">快捷操作</string>
-    <string name="widget_action_bill">记一笔</string>
-    <string name="widget_action_asset">物品</string>
-    <string name="widget_action_todo">待办</string>
     <string name="widget_dashboard_desc">总览面板小组件 - 显示各项数据概览</string>
     <string name="widget_quick_bill_title">快捷记账</string>
-    <string name="widget_add_expense">记一笔支出</string>
-    <string name="widget_add_income">记一笔收入</string>
     <string name="widget_quick_bill_desc">快捷记账小组件 - 一键快速记账</string>
-    <string name="widget_life_todo">生活待办</string>
-    <string name="widget_today_count">今日</string>
-    <string name="widget_overdue_count">逾期</string>
-    <string name="widget_completed_count">已完成</string>
-    <string name="widget_todo_list">待办列表</string>
-    <string name="widget_life_counter">生活计数器</string>
-    <string name="widget_countdown_label">倒计时</string>
-    <string name="widget_birthday_label">生日</string>
-    <string name="widget_anniversary_label">纪念日</string>
-    <string name="widget_counter_list">即将到来</string>
-    <string name="widget_asset_overview">物品管理</string>
-    <string name="widget_asset_label">物品</string>
-    <string name="widget_asset_category">分类分布</string>
     <string name="widget_goals_label">目标</string>
     <string name="widget_todos_label">待办</string>
-    <string name="widget_habits_label">习惯</string>
-    <string name="widget_vault_label">密码</string>
-    <string name="widget_quick_bill">快捷记账</string>
     <string name="widget_add_bill">记一笔</string>
-    <string name="widget_add_bill_hint">点击快速记账</string>
-    <string name="widget_vault_recent">最近记录</string>
     <string name="widget_vault_empty">暂无记录</string>
     <string name="widget_bill_empty">暂无账单记录</string>
-    <string name="widget_bill_overview">记账概览</string>
     <string name="widget_todo_empty">暂无待办事项</string>
     <string name="widget_counter_empty">暂无倒计时事件</string>
     <string name="widget_asset_empty">暂无物品记录</string>
     <string name="widget_budget_remaining">预算剩余</string>
     <string name="widget_net_income">净收入</string>
-    <string name="widget_today_remaining">今日剩余</string>
     <string name="widget_days_label">天</string>
-    <string name="widget_month_format">%d月</string>
-    <string name="widget_this_month">本月</string>
-    <string name="widget_days_elapsed">本月已过 %1$d / %2$d 天</string>
     <string name="widget_status_held">持有中</string>
     <string name="widget_status_away">已借出</string>
     <string name="widget_status_removed">已移除</string>
@@ -880,12 +613,16 @@
     <string name="widget_budget_used_format">本月预算已使用 %1$d%%</string>
     <string name="widget_budget_top_format">%1$s预算已使用 %2$d%%</string>
     <string name="widget_month_balance_format">本月结余 %1$s</string>
-    <string name="widget_todo_remaining_format">%1$d 项未完成</string>
-    <string name="widget_todo_footer_format">今日 %1$d 项 · 待完成 %2$d</string>
+    <string tools:ignore="PluralsCandidate" name="widget_todo_remaining_format">%1$d 项未完成</string>
+    <string tools:ignore="PluralsCandidate" name="widget_todo_footer_format">今日 %1$d 项 · 待完成 %2$d</string>
     <string name="widget_goal_all_done">全部完成</string>
     <string name="widget_no_goals">暂无目标</string>
     <string name="widget_no_anniversary">暂无纪念日</string>
-    <string name="widget_days_remaining_format">剩余 %1$d 天</string>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="widget_days_remaining_format">
+        <item quantity="one">None</item>
+        <item quantity="other">剩余 %1$d 天</item>
+    </plurals>
     <string name="widget_budget_used_format_preview">餐饮预算已使用 82%</string>
     <string name="widget_preview_todo_1">采购配件</string>
     <string name="widget_preview_todo_2">整理物品库存</string>
@@ -911,9 +648,13 @@
     <string name="widget_shortcuts_desc">快捷入口小组件 - 常用功能一键直达</string>
     <string name="widget_days_unit">天</string>
     <string name="widget_tomorrow">明天</string>
-    <string name="widget_days_later">%d天后</string>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="widget_days_later">
+        <item quantity="one">None</item>
+        <item quantity="other">%d天后</item>
+    </plurals>
     <!-- Bill Import Diagnostics -->
-    <string name="bill_import_diag_file_size">文件大小: %d字节</string>
+    <string tools:ignore="PluralsCandidate" name="bill_import_diag_file_size">文件大小: %d字节</string>
     <string name="bill_import_diag_format">格式: %s</string>
     <string name="bill_import_diag_records">解析记录: %d条</string>
     <string name="bill_import_diag_lines">文本行数: %d</string>
@@ -962,15 +703,30 @@
     <string name="asset_depreciation">折旧</string>
     <string name="asset_warranty_info">保修信息</string>
     <string name="asset_warranty_expiry_format">到期: %s</string>
-    <string name="asset_warranty_remaining_days">剩余%d天</string>
-    <string name="asset_warranty_expired_days">已过期%d天</string>
+    <!-- 计数文案：数量为 1 时英文要用单数（%d items → 1 item），故用 plurals。 -->
+    <plurals name="asset_warranty_remaining_days">
+        <item quantity="other">剩余%d天</item>
+    </plurals>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="asset_warranty_expired_days">
+        <item quantity="one">None</item>
+        <item quantity="other">已过期%d天</item>
+    </plurals>
     <string name="asset_maintenance_info">维护信息</string>
     <string name="asset_maintenance_interval">维护间隔</string>
     <string name="asset_maintenance_interval_hint">间隔天数</string>
     <string name="asset_last_maintenance_format">上次维护: %s</string>
-    <string name="asset_maintenance_cycle_format">维护周期: %d天</string>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="asset_maintenance_cycle_format">
+        <item quantity="one">None</item>
+        <item quantity="other">维护周期: %d天</item>
+    </plurals>
     <string name="asset_maintenance_needed">需要维护</string>
-    <string name="asset_days_later_format">%d天后</string>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="asset_days_later_format">
+        <item quantity="one">None</item>
+        <item quantity="other">%d天后</item>
+    </plurals>
     <string name="asset_maintenance_expired">已过期</string>
     <string name="asset_complete_maintenance">完成维护</string>
     <string name="asset_insurance_info">保险信息</string>
@@ -1002,12 +758,19 @@
     <string name="asset_linked_bill">关联账单</string>
     <string name="asset_linked_moment">关联瞬间</string>
     <string name="asset_usage_records">使用记录</string>
-    <string name="asset_usage_count_format">共 %d 次</string>
+    <!-- 计数文案：数量为 1 时英文要用单数（%d items → 1 item），故用 plurals。 -->
+    <plurals name="asset_usage_count_format">
+        <item quantity="other">共 %d 次</item>
+    </plurals>
     <string name="asset_record_usage">记录使用</string>
     <string name="asset_no_usage_records">暂无使用记录</string>
     <string name="asset_click_to_record_usage">点击上方按钮记录使用</string>
     <string name="asset_collapse">收起</string>
-    <string name="asset_expand_all_format">展开全部 %d 条</string>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="asset_expand_all_format">
+        <item quantity="one">None</item>
+        <item quantity="other">展开全部 %d 条</item>
+    </plurals>
     <string name="asset_status_change">状态变更</string>
     <string name="asset_status_held">持有</string>
     <string name="asset_status_away">暂离</string>
@@ -1041,13 +804,11 @@
     <string name="asset_dialog_delete_title">删除物品</string>
     <string name="asset_dialog_delete_confirm">确定要删除「%s」吗？删除后可在回收站中恢复。</string>
     <string name="asset_edit_usage_record">编辑使用记录</string>
-    <string name="asset_close">关闭</string>
     <!-- Asset Categories -->
     <!-- Add Asset Screen -->
     <string name="asset_add_title">添加物品</string>
     <string name="asset_edit_title">编辑物品</string>
     <string name="asset_image_section">物品图片</string>
-    <string name="asset_remove_image">移除</string>
     <string name="asset_image_hint">首图默认为物品封面，最多上传4张</string>
     <string name="asset_input_name_hint">输入物品名称</string>
     <string name="asset_custom_acquisition">自定义获取方式</string>
@@ -1080,7 +841,6 @@
     <string name="backup_error_corrupted">备份文件损坏或为空</string>
     <string name="backup_error_cross_device">此备份无法在当前设备恢复：它不含跨设备恢复所需的密钥（通常是不设密码的明文备份，或由旧版本创建）。请在原设备上恢复，或设置密码后重新备份再换机</string>
     <string name="backup_error_create_failed">备份失败</string>
-    <string name="backup_error_restore_failed">恢复失败</string>
     <!-- Calendar Sync -->
     <string name="calendar_sync_name">掌记</string>
     <string name="calendar_sync_display_name">掌记同步</string>
@@ -1090,11 +850,6 @@
     <string name="calendar_event_person_format">人物: %s</string>
     <!-- Field Validation -->
     <!-- Date Format -->
-    <!-- Currency Format -->
-    <!-- App Lock -->
-    <string name="app_lock_change_pin">修改PIN码</string>
-    <string name="app_lock_forgot_pin_confirm">确定要清除PIN码吗？这将移除应用锁保护。</string>
-    <string name="app_lock_forgot_pin_action">清除</string>
     <string name="app_lock_pin_changed">PIN码修改成功</string>
     <!-- Notifications -->
     <string name="notification_daily_title">每日提醒</string>
@@ -1104,20 +859,28 @@
     <string name="notification_birthday_title">生日提醒</string>
     <string name="notification_birthday_message">「%s」的生日就要到了！</string>
     <string name="notification_anniversary_title">纪念日提醒</string>
-    <string name="notification_anniversary_message">"%1$s" %2$d 周年纪念日即将到来</string>
+    <string tools:ignore="PluralsCandidate" name="notification_anniversary_message">"%1$s" %2$d 周年纪念日即将到来</string>
     <string name="notification_countdown_today_title">倒计时到期</string>
     <string name="notification_countdown_today_message">「%s」就是今天！</string>
+    <string name="notification_action_complete">标记完成</string>
     <string name="notification_countdown_soon_title">倒计时即将到期</string>
-    <string name="notification_countdown_soon_message">「%1$s」还剩 %2$d 天</string>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="notification_countdown_soon_message">
+        <item quantity="one">None</item>
+        <item quantity="other">「%1$s」还剩 %2$d 天</item>
+    </plurals>
     <string name="notification_milestone_title">正数日里程碑</string>
-    <string name="notification_milestone_message">你的「%1$s」已经坚持了 %2$d 天！</string>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="notification_milestone_message">
+        <item quantity="one">None</item>
+        <item quantity="other">你的「%1$s」已经坚持了 %2$d 天！</item>
+    </plurals>
     <string name="notification_subscription_title">订阅扣费提醒</string>
     <string name="notification_subscription_message">「%1$s」今日扣费 %2$s</string>
     <!-- Notification Channels -->
     <!-- About Screen -->
     <string name="about_title">关于</string>
-    <string name="about_subtitle">PalmNote</string>
-    <string name="about_description_detail">掌记是一款简洁优雅的个人生活管理应用，帮助您记录资产、管理账单、追踪目标、记录纪念日和生活瞬间。</string>
+    <string name="about_description_detail">掌记是一款本地优先的生活记录应用，集记账、物品、生活与密码本于一体，数据只存在本机。</string>
     <string name="about_privacy_policy">隐私政策</string>
     <string name="about_terms_of_service">用户协议</string>
     <string name="about_made_with">用心制作</string>
@@ -1126,11 +889,14 @@
     <string name="about_open_source_license">开源许可</string>
     <string name="license_load_failed">许可文本加载失败</string>
     <string name="about_version_history">版本历史</string>
-    <string name="about_feedback">意见反馈</string>
     <string name="about_feedback_failed">未找到可打开链接的应用</string>
     <string name="version_history_load_failed">版本历史加载失败</string>
     <string name="version_history_current">当前版本</string>
-    <string name="version_history_item_count">%1$d 条更新</string>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="version_history_item_count">
+        <item quantity="one">None</item>
+        <item quantity="other">%1$d 条更新</item>
+    </plurals>
     <!-- Onboarding -->
     <string name="onboarding_title">欢迎使用 PalmNote</string>
     <string name="onboarding_subtitle">先看看它能做什么，再了解几件数据安全的事</string>
@@ -1158,7 +924,7 @@
     <string name="onboarding_local_title">数据只存在你的手机上</string>
     <string name="onboarding_local_body">全程不联网、不收集、不上传，应用未声明网络权限。</string>
     <string name="onboarding_pin_title">主密码忘记就无法找回</string>
-    <string name="onboarding_pin_body">密码本与加密备份都由它保护，且只保存在本机，请务必牢记。</string>
+    <string name="onboarding_pin_body">它只保护密码本；加密备份用的是你另外设置的备份密码。两者都只存在本机，请务必牢记。</string>
     <string name="onboarding_uninstall_title">卸载或清除数据会全部丢失</string>
     <string name="onboarding_uninstall_body">本机是唯一副本，没有云端可以恢复。</string>
     <string name="onboarding_backup_title">备份需要你自己动手</string>
@@ -1181,7 +947,11 @@
     <string name="app_lock_auto_lock_timeout_hint">切后台超时或锁屏后锁定</string>
     <string name="app_lock_auto_lock_changed">自动锁定模式已更新</string>
     <string name="app_lock_auto_lock_timeout_duration">超时时长</string>
-    <string name="app_lock_auto_lock_minutes">%1$d 分钟</string>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="app_lock_auto_lock_minutes">
+        <item quantity="one">None</item>
+        <item quantity="other">%1$d 分钟</item>
+    </plurals>
     <string name="app_lock_auto_lock_timeout_value">超时锁定（%1$d 分钟）</string>
     <string name="app_lock_change_pin_title">修改PIN码</string>
     <string name="app_lock_change_pin_subtitle">更改应用锁密码</string>
@@ -1205,13 +975,11 @@
     <string name="bill_sub_category">子分类</string>
     <string name="bill_location">地点</string>
     <string name="bill_tags">标签</string>
-    <string name="bill_attachments">附件</string>
     <string name="bill_image_section">附件图片</string>
     <string name="bill_image_hint">支持添加发票或小票照片，最多4张</string>
     <string name="bill_reimbursement_status">报销状态</string>
     <string name="bill_reimbursed">已报销</string>
     <string name="bill_pending_reimbursement">待报销</string>
-    <string name="bill_record_id">记录ID</string>
     <string name="bill_created_at">创建时间</string>
     <string name="bill_updated_at">更新时间</string>
     <!-- Bill Import -->
@@ -1221,9 +989,6 @@
     <string name="bill_import_parsing">正在解析…</string>
     <string name="bill_import_importing">正在导入…</string>
     <string name="bill_import_failed">导入失败</string>
-    <string name="bill_import_select_method">选择导入方式</string>
-    <string name="bill_import_file_desc">导入微信/支付宝账单文件 (CSV/XLSX)</string>
-    <string name="bill_import_image_desc">拍摄或选择交易记录截图，自动识别</string>
     <string name="bill_import_hero_title">添加外部账单流水</string>
     <string name="bill_import_hero_desc">选择文件导入或图片识别，自动整理为记账记录</string>
     <string name="bill_import_file_desc_short">微信/支付宝CSV批量导入</string>
@@ -1245,52 +1010,33 @@
     <string name="bill_import_tutorial_note">邮件里的压缩包不用手动解压，直接选中它导入；带密码的输入密码即可。</string>
     <string name="bill_import_tutorial_ack">知道了</string>
     <string name="bill_import_duplicate_existing">已存在</string>
-    <string name="bill_import_summary">共 %1$d 条 · 已选 %2$d</string>
     <string name="bill_import_unrecognized">未识别</string>
     <string name="bill_import_source_file">文件</string>
-    <string name="bill_import_source_image">图片</string>
     <string name="bill_import_expense_sum">支出合计</string>
     <string name="bill_import_income_sum">收入合计</string>
     <string name="bill_import_preview_source">来源</string>
-    <string name="bill_import_image_preview_title">原始图片预览</string>
     <string name="bill_import_view_original">点击查看原图</string>
     <string name="bill_import_ocr_details">查看识别详情</string>
     <string name="bill_import_complete">导入完成</string>
-    <string name="bill_import_success_count">成功导入 %d 条账单</string>
     <string name="bill_import_continue">继续导入</string>
     <string name="bill_import_reselect">重新选择</string>
-    <string name="bill_import_select_all">全选</string>
     <string name="bill_import_select_none">全不选</string>
     <string name="bill_import_wechat_bill">微信账单</string>
     <string name="bill_import_alipay_bill">支付宝账单</string>
-    <string name="bill_import_selected_count">导入 %d 条账单</string>
-    <string name="bill_import_ocr_recognized">识别到 %1$d 笔交易，已选 %2$d 笔</string>
-    <string name="bill_import_ocr_result">识别结果</string>
     <string name="bill_import_amount">金额</string>
     <string name="bill_import_merchant">商户</string>
     <string name="bill_import_date">日期</string>
-    <string name="bill_import_category">分类</string>
     <string name="bill_import_note">备注</string>
-    <string name="bill_import_hide_raw">隐藏原始文字</string>
-    <string name="bill_import_show_raw">查看原始识别文字</string>
     <string name="bill_import_save">保存账单</string>
     <string name="bill_import_batch_save">批量保存 (%d)</string>
     <string name="bill_import_unknown_file">未知文件</string>
     <string name="bill_import_screenshot">截图</string>
-    <string name="bill_import_total_records">共 %d 条记录</string>
-    <string name="bill_import_selected_records">已选 %d 条</string>
     <string name="bill_import_selected">已选</string>
     <string name="bill_import_change">更改</string>
-    <string name="bill_import_ocr_no_date">未识别日期，保存时记为今天</string>
-    <string name="bill_import_ocr_edit">编辑</string>
     <string name="bill_import_ocr_edit_title">编辑识别结果</string>
     <string name="bill_import_edit_bill">编辑账单</string>
     <string name="bill_import_amount_invalid">请输入大于 0 的金额</string>
-    <string name="bill_import_ocr_tap_zoom">点击图片可放大查看</string>
-    <string name="bill_import_result_imported">导入 %1$d</string>
-    <string name="bill_import_result_skipped">跳过 %1$d</string>
-    <string name="bill_import_result_failed">失败 %1$d</string>
-    <string name="bill_import_export_failures">查看并导出失败的 %1$d 条</string>
+    <string tools:ignore="PluralsCandidate" name="bill_import_export_failures">查看并导出失败的 %1$d 条</string>
     <string name="bill_import_failed_csv_name">palmnote_import_failed.csv</string>
     <string name="bill_import_failed_export_ok">已导出失败记录，修正后可重新导入</string>
     <string name="bill_import_failed_export_error">导出失败，请重试</string>
@@ -1309,7 +1055,11 @@
     <string name="bill_import_result_imported_label">导入</string>
     <string name="bill_import_result_skipped_label">跳过</string>
     <string name="bill_import_result_failed_label">失败</string>
-    <string name="bill_import_result_total_subtitle">本次共处理 %1$d 条</string>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="bill_import_result_total_subtitle">
+        <item quantity="one">None</item>
+        <item quantity="other">本次共处理 %1$d 条</item>
+    </plurals>
     <string name="bill_import_review_line">待复核 · %1$s</string>
     <string name="bill_import_confidence_legend_title">字段置信度</string>
     <string name="bill_import_confidence_high">可靠识别</string>
@@ -1318,15 +1068,15 @@
     <!-- 分拣台（文件导入结果页） -->
     <string name="bill_import_confirm_title">导入确认</string>
     <string name="bill_import_confirm_all">全部确认</string>
-    <string name="bill_import_review_headline">%1$d 条需要你确认</string>
-    <string name="bill_import_review_subtitle">%1$s · 其余 %2$d 条已就绪</string>
-    <string name="bill_import_review_all_ready">%1$d 条已就绪，可直接导入</string>
+    <string tools:ignore="PluralsCandidate" name="bill_import_review_headline">%1$d 条需要你确认</string>
+    <string tools:ignore="PluralsCandidate" name="bill_import_review_subtitle">%1$s · 其余 %2$d 条已就绪</string>
+    <string tools:ignore="PluralsCandidate" name="bill_import_review_all_ready">%1$d 条已就绪，可直接导入</string>
     <string name="bill_import_review_hint_amount">置信度低 · 点金额可直接修改</string>
     <string name="bill_import_review_hint_date">日期缺失 · 点卡片标记已确认</string>
     <string name="bill_import_review_hint_merchant">商户名识别不完整 · 点商户名可改</string>
     <string name="bill_import_review_hint_category">分类未识别 · 点分类可直接改</string>
     <string name="bill_import_category_entry">分类：%1$s</string>
-    <string name="bill_import_review_more">还有 %1$d 条待确认 · 查看全部</string>
+    <string tools:ignore="PluralsCandidate" name="bill_import_review_more">还有 %1$d 条待确认 · 查看全部</string>
     <string name="bill_import_filter_all_count">全部 %1$d</string>
     <string name="bill_import_filter_skipped">已跳过 %1$d</string>
     <string name="bill_import_no_skipped">没有跳过的账单</string>
@@ -1361,7 +1111,10 @@
     <string name="report_total_expense">总支出</string>
     <string name="report_total_income">总收入</string>
     <string name="report_daily_avg">日均 %s</string>
-    <string name="report_count_format">%d笔</string>
+    <!-- 计数文案：数量为 1 时英文要用单数（%d items → 1 item），故用 plurals。 -->
+    <plurals name="report_count_format">
+        <item quantity="other">%d笔</item>
+    </plurals>
     <string name="report_other">其他</string>
     <string name="report_no_records">本月暂无记录</string>
     <string name="report_category_ranking">分类排行</string>
@@ -1374,7 +1127,10 @@
     <string name="account_book_manage_title">账本管理</string>
     <string name="account_book_add">添加账本</string>
     <string name="account_book_my_books">我的账本</string>
-    <string name="account_book_count_format">%d 个账本</string>
+    <!-- 计数文案：数量为 1 时英文要用单数（%d items → 1 item），故用 plurals。 -->
+    <plurals name="account_book_count_format">
+        <item quantity="other">%d 个账本</item>
+    </plurals>
     <string name="account_book_empty">暂无账本</string>
     <string name="account_book_empty_hint">点击右下角按钮添加账本</string>
     <string name="account_book_delete_title">删除账本</string>
@@ -1456,7 +1212,10 @@
     <string name="wallet_title">账户管理</string>
     <string name="wallet_add">添加账户</string>
     <string name="wallet_total_assets">总资产</string>
-    <string name="wallet_count_format">%d 个账户</string>
+    <!-- 计数文案：数量为 1 时英文要用单数（%d items → 1 item），故用 plurals。 -->
+    <plurals name="wallet_count_format">
+        <item quantity="other">%d 个账户</item>
+    </plurals>
     <string name="wallet_empty">暂无账户</string>
     <string name="wallet_empty_hint">点击右下角按钮添加账户</string>
     <string name="wallet_delete_title">删除账户</string>
@@ -1542,7 +1301,6 @@
     <string name="backup_password">输入密码</string>
     <string name="backup_backing_up">正在备份…</string>
     <string name="backup_restore_title">恢复</string>
-    <string name="backup_restore_hint">恢复会替换当前数据，自动先存一份快照</string>
     <string name="backup_restore_from_file">从文件恢复</string>
     <string name="backup_restore_from_file_desc">支持加密或明文的备份包</string>
     <string name="backup_file_not_package">不是备份文件；CSV 数据请在「导出与导入」页导入</string>
@@ -1561,22 +1319,32 @@
     <string name="backup_auto_interval">备份频率</string>
     <string name="backup_auto_off">不自动备份</string>
     <string name="backup_auto_daily">每天</string>
-    <string name="backup_auto_interval_option">每 %1$d 天</string>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="backup_auto_interval_option">
+        <item quantity="one">None</item>
+        <item quantity="other">每 %1$d 天</item>
+    </plurals>
     <string name="backup_auto_keep">保留份数</string>
-    <string name="backup_auto_keep_option">%1$d 份</string>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="backup_auto_keep_option">
+        <item quantity="one">None</item>
+        <item quantity="other">%1$d 份</item>
+    </plurals>
 
     <!-- 备份状态（健康度）：给结论，不给一串时间戳 -->
     <string name="backup_health_last_success">上次备份：%1$s</string>
     <string name="backup_health_never">还没有备份</string>
-    <string name="backup_health_stale">已 %1$d 天没有新备份</string>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="backup_health_stale">
+        <item quantity="one">None</item>
+        <item quantity="other">已 %1$d 天没有新备份</item>
+    </plurals>
     <string name="backup_health_failed">上次自动备份失败：%1$s</string>
     <string name="backup_health_failed_unknown">上次自动备份失败</string>
     <string name="backup_health_dismiss">知道了</string>
-    <string name="backup_health_counts">共 %1$d 份</string>
+    <string tools:ignore="PluralsCandidate" name="backup_health_counts">共 %1$d 份</string>
     <string name="backup_health_counts_size">共 %1$d 份 · %2$s</string>
 
-    <!-- 创建与删除 -->
-    <string name="backup_create_export">导出到文件夹</string>
     <string name="backup_existing">已有备份</string>
     <string name="backup_delete">删除</string>
     <string name="backup_delete_title">删除这份备份？</string>
@@ -1592,50 +1360,15 @@
     <!-- Field Components -->
     <!-- Asset Tags -->
     <!-- Settings Messages -->
-    <string name="settings_sync_success">已同步 %d 个纪念日到系统日历</string>
+    <string tools:ignore="PluralsCandidate" name="settings_sync_success">已同步 %d 个纪念日到系统日历</string>
     <string name="settings_sync_failed">同步失败: %s</string>
     <string name="settings_sync_cleared">已清除同步日历</string>
     <string name="settings_export_failed">导出失败: %s</string>
-    <string name="settings_import_success">导入成功，共 %d 条记录</string>
-    <string name="settings_import_no_data">未找到可导入的数据</string>
-    <string name="settings_import_failed">导入失败: %s</string>
-    <string name="settings_import_success_with_skipped">导入成功，新增 %1$d 条，跳过 %2$d 条重复</string>
-    <string name="settings_import_all_skipped">%d 条已存在，未覆盖任何数据</string>
-    <string name="settings_import_balance_recalculated">%d 个钱包余额已按账单重算</string>
     <string name="settings_cache_cleared">缓存已清除</string>
     <string name="settings_cache_clear_failed">清除失败: %s</string>
     <string name="settings_appearance_subtitle">主题、语言、主题色</string>
     <string name="settings_reminder_subtitle">日常提醒、账单提醒、生日提醒</string>
     <string name="settings_data_subtitle">备份、导出与导入、存储清理</string>
-    <string name="life_empty_habit_start">开始打卡</string>
-    <string name="life_empty_habit_hint">养成良好的习惯</string>
-    <string name="life_empty_countup">暂无正数日</string>
-    <string name="life_empty_countup_subtitle">记录值得纪念的日子</string>
-    <string name="life_empty_countup_action">创建正数日</string>
-    <!-- Life - Template Empty States -->
-    <string name="life_empty_saving_title">暂无存钱计划</string>
-    <string name="life_empty_saving_subtitle">设定一个目标，开始攒钱吧</string>
-    <string name="life_empty_shopping_title">心愿单是空的</string>
-    <string name="life_empty_travel_title">暂无旅行计划</string>
-    <string name="life_empty_reading_title">书架是空的</string>
-    <string name="life_empty_study_title">暂无学习计划</string>
-    <string name="life_empty_todo_title">没有待办事项</string>
-    <string name="life_empty_countup_title">暂无正数日</string>
-    <string name="life_empty_countdown_title">没有倒计时</string>
-    <string name="life_empty_birthday_title">暂无生日记录</string>
-    <string name="life_empty_anniversary_title">暂无纪念日</string>
-    <string name="life_empty_subscription_title">暂无订阅记录</string>
-    <string name="life_empty_habit_title">开始你的第一个习惯</string>
-    <string name="life_empty_habit_subtitle">选择一个习惯，每天打卡</string>
-    <string name="life_empty_mood_title">今天还没记录心情</string>
-    <string name="life_empty_mood_subtitle">记录此刻的感受</string>
-    <string name="life_empty_journal_title">还没有日记</string>
-    <string name="life_empty_journal_subtitle">写下今天发生的事</string>
-    <string name="life_empty_report_title">暂无报告数据</string>
-    <string name="life_empty_report_subtitle">积累数据后自动生成报告</string>
-    <string name="life_empty_default_title">暂无数据</string>
-    <string name="life_empty_default_subtitle">点击 + 开始添加</string>
-    <string name="life_habit_times">次</string>
     <string name="settings_notification_permission_title">开启通知权限</string>
     <string name="settings_notification_permission_text">需要通知权限才能按时提醒您。我们不会发送垃圾通知。</string>
     <string name="settings_notification_permission_allow">允许</string>
@@ -1655,20 +1388,7 @@
     <string name="privacy_consent_note">点击上方按钮可查看完整条款。继续即表示你已阅读并同意上述《用户协议》与《隐私政策》。</string>
     <string name="privacy_dialog_agree">同意并开始使用</string>
     <string name="privacy_dialog_disagree">不同意</string>
-    <string name="field_select_time">选择时间</string>
-    <string name="field_enabled">已开启</string>
-    <string name="field_disabled">未开启</string>
-    <string name="field_option">选项%s</string>
-    <string name="field_url_placeholder">https://</string>
-    <string name="field_email_placeholder">example@email.com</string>
-    <string name="field_phone_placeholder">手机号码</string>
-    <string name="field_color_placeholder">#HEX</string>
-    <string name="field_image_placeholder">输入图片URL或路径</string>
-    <string name="field_image_helper">支持本地路径和网络URL</string>
-    <string name="field_location_placeholder">输入地点名称或地址</string>
-    <string name="field_duration_format">HH:mm</string>
     <string name="life_preset">预设</string>
-    <string name="life_create_template">创建模板</string>
     <!-- Trigger Engine Notifications -->
     <!-- Default Goal Categories -->
     <string name="goal_category_fitness">运动健身</string>
@@ -1713,19 +1433,8 @@
     <string name="tag_default_finance">财务</string>
     <string name="tag_default_shopping">购物</string>
     <string name="tag_default_gift">礼物</string>
-    <!-- TimeAgo & Relative Time -->
-    <string name="time_hours_ago">%d小时前</string>
-    <string name="time_days_ago">%d天前</string>
-    <string name="time_weeks_ago">%d周前</string>
-    <string name="time_months_ago">%d个月前</string>
-    <string name="time_years_ago">%d年前</string>
-    <!-- Life Cards -->
-    <string name="life_card_status_completed">已完成</string>
-    <string name="life_card_status_archived">已归档</string>
-    <string name="life_card_status_ongoing">进行中</string>
     <string name="life_card_today">今天</string>
-    <string name="life_card_days_left">剩余 %1$d 天</string>
-    <string name="life_card_expired_days">已逾期 %1$d 天</string>
+    <string name="life_card_elapsed_today">就是今天</string>
     <string name="life_weekly_calendar_month_header">%1$d年%2$d月</string>
     <string name="life_calendar_view_week">周</string>
     <string name="life_calendar_view_month">月</string>
@@ -1737,93 +1446,77 @@
     <string name="life_board_agenda_today">今日安排</string>
     <string name="life_board_agenda_on">安排</string>
     <string name="life_board_agenda_date">%1$d月%2$d日 %3$s</string>
+    <string tools:ignore="PluralsCandidate" name="life_board_agenda_progress">已完成 %1$d/%2$d</string>
+    <string name="life_board_all_done_title">全部完成 🎉</string>
+    <string tools:ignore="PluralsCandidate" name="life_board_all_done_hint">这一天共有 %1$d 件安排，都完成了</string>
+    <string name="life_board_all_done_view">查看这 %1$d 件</string>
+    <string name="life_board_tomorrow_with">明天 %1$d 件 · %2$s</string>
+    <string name="life_board_tomorrow_none">明天暂无安排 · %1$s</string>
     <string name="life_board_empty">这一天暂无安排</string>
     <string name="life_board_empty_hint">去模板里新增一条安排吧</string>
-    <string name="life_home_today_added">今日 +%1$d</string>
-    <string name="life_home_todo">待办</string>
-    <string name="life_home_todo_overdue">逾期 %1$d</string>
-    <string name="life_home_todo_total">全部 %1$d</string>
-    <string name="life_home_todo_empty">暂无堆积待办</string>
-    <string name="life_home_todo_empty_hint">点 ＋ 新建，把要做的事记下来</string>
-    <string name="life_home_todo_no_date">无日期</string>
-    <string name="life_home_todo_overdue_days">已逾期 %1$d 天</string>
-    <string name="life_home_todo_due">%1$d月%2$d日</string>
-    <string name="life_home_drag_hint">拖动调整顺序</string>
+    <string name="life_home_today_count">今日 %1$d 件</string>
+    <string name="life_home_todo">待安排</string>
+    <string tools:ignore="PluralsCandidate" name="life_home_todo_total">全部 %1$d</string>
+    <string name="life_home_todo_empty">暂无待安排</string>
+    <string name="life_home_todo_empty_hint">有想法先记下，之后再排期</string>
+    <string name="life_home_todo_view_all_brief">查看全部 %1$d 条</string>
     <string name="life_item_toggle_complete">切换完成状态</string>
-    <string name="life_item_uncompleted">已取消完成</string>
-    <string name="life_item_completed">已标记完成</string>
-    <string name="life_home_todo_view_all">查看全部 → 专页</string>
-    <string name="life_card_expired_prefix">已过</string>
-    <string name="life_card_expired_overflow">999+</string>
-    <string name="life_card_tap_to_view">点击查看</string>
-    <string name="life_card_more_events">（还有%d个事件）</string>
     <string name="life_card_days_unit">天</string>
     <!-- Life Stats -->
     <string name="life_stats_today_todo">今日待办</string>
     <string name="life_stats_habit_rate">习惯完成率</string>
     <string name="life_stats_focus_minutes">今日专注</string>
+    <string name="life_stats_minutes">%1$d 分钟</string>
     <string name="life_stats_max_streak">最长连胜</string>
     <string name="life_stats_week_chart_title">近 7 天看板</string>
     <string name="life_stats_category_share">本周记录分布</string>
     <string name="life_stats_compare_title">与上期对比</string>
     <string name="life_stats_records">记录条数</string>
     <string name="life_stats_records_count">%1$d 条</string>
-    <string name="life_stats_days">%1$d 天</string>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="life_stats_days">
+        <item quantity="one">None</item>
+        <item quantity="other">%1$d 天</item>
+    </plurals>
     <string name="life_stats_percent">%1$d%%</string>
-    <string name="life_stats_empty">暂无数据</string>
     <!-- Life Category Detail -->
-    <string name="life_category_detail_count">%1$d 条</string>
-    <string name="life_category_detail_week_new">本周 +%1$d</string>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="life_category_detail_count">
+        <item quantity="one">None</item>
+        <item quantity="other">%1$d 条</item>
+    </plurals>
+    <string tools:ignore="PluralsCandidate" name="life_category_detail_week_new">本周 +%1$d</string>
+    <string tools:ignore="PluralsCandidate" name="life_category_detail_due_today">今日到期 %1$d</string>
+    <string tools:ignore="PluralsCandidate" name="life_category_detail_overdue">逾期 %1$d</string>
+    <string tools:ignore="PluralsCandidate" name="life_category_detail_done_count">已完成 %1$d</string>
     <string name="life_category_detail_empty">该分类暂无模板，请先在模板管理中新建</string>
-    <string name="life_category_filter_daily">每日</string>
-    <string name="life_category_filter_weekly">每周</string>
-    <string name="life_category_filter_monthly">月度</string>
+    <string name="life_category_detail_go_manage">去模板库创建</string>
+    <string name="life_meta_overdue_days">已逾期 %1$d 天</string>
+    <string name="life_meta_days_ago">%1$d 天前</string>
+    <string name="life_meta_due_today_time">今天 %1$s</string>
+    <string name="life_meta_repeat_yearly">每年</string>
+    <string name="life_quick_action_complete">标记为完成</string>
+    <string name="life_quick_action_reopen">标记为未完成</string>
+    <string name="life_quick_action_reschedule">推迟到今天</string>
+    <string name="life_quick_action_delete">删除</string>
     <string name="life_category_filter_all">全部</string>
     <string name="life_category_pick_template">选择模板</string>
     <string name="life_category_new_item">新建条目</string>
-    <!-- Life Item Detail -->
-    <string name="life_item_more">更多</string>
-    <string name="life_item_delete">删除</string>
-    <string name="life_item_data_not_found">数据不存在</string>
-    <string name="life_item_updated_to">已更新为「%s」</string>
-    <string name="life_item_progress">进度</string>
-    <string name="life_item_notes">备注</string>
-    <string name="life_item_linked_data">关联数据</string>
-    <string name="life_item_link_count">%d 项</string>
-    <string name="life_item_no_links">暂无关联</string>
-    <string name="life_item_add_link_hint">点击添加关联账单或物品</string>
-    <string name="life_item_time">时间</string>
-    <string name="life_item_created_at">创建于 %s</string>
-    <string name="life_item_updated_at">更新于 %s</string>
-    <string name="life_item_deposit">存入一笔</string>
-    <string name="life_item_archived_hint">条目已归档，可在回收站找回</string>
-    <string name="life_item_archive">归档</string>
-    <!-- Life Dynamic Form -->
-    <string name="life_form_save_failed">保存失败，请重试</string>
-    <string name="life_form_save_success">保存成功</string>
-    <string name="life_form_saved">已保存</string>
-    <string name="life_form_save_changes">保存修改</string>
-    <string name="life_form_save">保存</string>
-    <string name="life_form_missing_required">还需填写：%s</string>
-    <string name="life_form_missing_sep">、</string>
-    <!-- Life Link Selector -->
-    <string name="life_link_title">关联数据</string>
-    <string name="life_link_bills">账单</string>
-    <string name="life_link_no_bills">暂无账单</string>
-    <string name="life_link_bill_format">账单 #%d</string>
-    <string name="life_link_assets">物品</string>
-    <string name="life_link_no_assets">暂无物品</string>
-    <!-- Mood Trend Chart -->
-    <string name="life_mood_monthly_distribution">月度心情分布</string>
-    <!-- Life Focus Preview -->
-    <string name="life_focus_preview_today">今日专注 %d分钟</string>
     <!-- Life Template Field Labels -->
     <!-- Life Template Field Units -->
     <!-- Life Template Status Labels -->
     <!-- CSV Export/Import -->
     <string name="export_error_create_file">无法创建文件</string>
-    <string name="export_success">导出成功，共 %d 条记录</string>
-    <string name="export_success_images">导出成功，共 %1$d 条记录，含 %2$d 张图片</string>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="export_success">
+        <item quantity="one">None</item>
+        <item quantity="other">导出成功，共 %d 条记录</item>
+    </plurals>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="export_success_images">
+        <item quantity="one">None</item>
+        <item quantity="other">导出成功，共 %1$d 条记录，含 %2$d 张图片</item>
+    </plurals>
     <string name="export_error_io">导出失败: %s</string>
     <string name="export_error_serialization">导出数据序列化失败: %s</string>
     <string name="export_error_unknown">导出发生未知错误: %s</string>
@@ -1856,11 +1549,6 @@
     <string name="transfer_from_required">请选择转出账户</string>
     <string name="transfer_to_required">请选择转入账户</string>
     <string name="budget_invalid_amount">请输入有效金额</string>
-    <string name="back_to_top">回到顶部</string>
-    <string name="countdown_clear_expired_title">清除过期倒计时</string>
-    <string name="countdown_clear_expired_confirm">确定清除已过期的倒计时吗？</string>
-    <string name="countdown_clear_expired_success">已清除 %d 个过期倒计时</string>
-    <string name="app_lock_biometric_verify_fail">生物识别验证失败</string>
     <string name="app_lock_biometric_enable_verify_title">验证 PIN 后开启生物识别</string>
     <string name="app_lock_biometric_enabled_toast">已开启生物识别解锁</string>
     <string name="app_lock_disabled_toast">应用锁已关闭</string>
@@ -1872,20 +1560,6 @@
     <string name="category_adj_new">新建分类</string>
     <string name="category_adj_preset">预设分类</string>
     <string name="category_confirm_action">确认%1$s</string>
-    <string name="life_entity_item">条目</string>
-    <string name="life_entity_note">笔记</string>
-    <string name="life_entity_todo">待办</string>
-    <string name="life_entity_moment">瞬间</string>
-    <string name="life_entity_mood">心情</string>
-    <string name="life_entity_focus">专注</string>
-    <string name="life_entity_report">周报</string>
-    <string name="life_entity_plan">计划</string>
-    <string name="life_entity_reading">阅读</string>
-    <string name="life_entity_anniversary">纪念日</string>
-    <string name="life_entity_goal">目标</string>
-    <string name="life_entity_bill">账单</string>
-    <string name="life_entity_asset">资产</string>
-    <string name="life_template_field_image_coming_soon">（即将推出）</string>
     <string name="life_template_preview">预览</string>
     <string name="life_template_preview_card">卡片</string>
     <string name="life_template_preview_detail">详情</string>
@@ -1904,9 +1578,17 @@
     <string name="life_template_progress_hint">能算出来的才出现，算不出来的不出现（不是灰掉）</string>
     <string name="life_template_progress_ring_hint">圆环族落到卡片流会自动换成横向（不报错、不阻断）</string>
     <string name="life_template_delete">删除模板</string>
-    <string name="category_count_bills">%1$d 个账单</string>
-    <string name="category_count_both">%1$d 个账单，%2$d 个物品</string>
-    <string name="category_count_items">%1$d 个物品</string>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="category_count_bills">
+        <item quantity="one">None</item>
+        <item quantity="other">%1$d 个账单</item>
+    </plurals>
+    <string tools:ignore="PluralsCandidate" name="category_count_both">%1$d 个账单，%2$d 个物品</string>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="category_count_items">
+        <item quantity="one">None</item>
+        <item quantity="other">%1$d 个物品</item>
+    </plurals>
     <string name="category_delete_all">删除全部</string>
     <string name="category_delete_all_desc">删除分类及所有关联记录</string>
     <string name="category_delete_related_hint">删除分类将同时删除该分类下的所有记录，此操作不可逆。</string>
@@ -1937,7 +1619,11 @@
     <string name="vault_setup_hint_1">设置一个独立的 6 位密码</string>
     <string name="vault_setup_hint_2">再次输入以确认</string>
     <string name="vault_locked_out_hint">尝试次数过多，请稍后重试</string>
-    <string name="vault_locked_out">已锁定，%1$d 秒后重试</string>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="vault_locked_out">
+        <item quantity="one">None</item>
+        <item quantity="other">已锁定，%1$d 秒后重试</item>
+    </plurals>
     <string name="vault_locked_out_short">尝试次数过多，请稍后重试</string>
     <string name="vault_pin_wrong">密码错误</string>
     <string name="vault_bio_failed">指纹已失效，请到密码本设置重新开启</string>
@@ -1974,7 +1660,6 @@
     <string name="vault_field_password">密码</string>
     <string name="vault_field_url">网站</string>
     <string name="vault_field_notes">备注</string>
-    <string name="vault_field_category">分类：%1$s</string>
     <string name="vault_field_category_input">分类</string>
     <string name="vault_field_email">邮箱</string>
     <string name="vault_field_phone">手机号</string>
@@ -1991,7 +1676,7 @@
     <string name="vault_error_save_failed">保存失败，请重试</string>
     <string name="vault_generator_title">密码生成器</string>
     <string name="vault_generator_empty">至少选择一种字符类型</string>
-    <string name="vault_generator_strength">强度：%1$s（约 %2$d bit）</string>
+    <string tools:ignore="PluralsCandidate" name="vault_generator_strength">强度：%1$s（约 %2$d bit）</string>
     <string name="vault_generator_length">长度</string>
     <string name="vault_generator_uppercase">大写字母</string>
     <string name="vault_generator_lowercase">小写字母</string>
@@ -2005,18 +1690,25 @@
     <string name="vault_strength_very_strong">极强</string>
     <string name="vault_edit_password_strength">密码强度：%1$s</string>
     <string name="dashboard_card_vault">密码本</string>
-    <string name="vault_card_count">共 %1$d 条</string>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="vault_card_count">
+        <item quantity="one">None</item>
+        <item quantity="other">共 %1$d 条</item>
+    </plurals>
     <string name="vault_card_empty_subtitle">暂无条目</string>
     <string name="vault_card_empty">点击添加第一条密码</string>
     <string name="vault_card_privacy_hint">密码条目标题已隐藏，点击查看</string>
-    <string name="vault_card_more">查看更多 →</string>
     <string name="vault_settings_clipboard">剪贴板自动清除</string>
     <string name="vault_settings_section_general">通用</string>
     <string name="vault_settings_section_security">安全</string>
     <string name="vault_settings_hint">提示：主密码用于加密密码数据，请妥善保管；忘记主密码可重置密码本（会清空全部条目）。</string>
     <string name="vault_settings_clipboard_value">当前：%1$d 秒</string>
     <string name="vault_settings_clipboard_never">永不清除</string>
-    <string name="vault_settings_clipboard_option">%1$d 秒</string>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="vault_settings_clipboard_option">
+        <item quantity="one">None</item>
+        <item quantity="other">%1$d 秒</item>
+    </plurals>
     <string name="vault_settings_clipboard_selected">当前</string>
     <string name="vault_settings_require_auth">后台自动锁定</string>
     <string name="vault_settings_require_auth_hint">开启后切换后台会锁定，重新进入需验证主密码</string>
@@ -2029,7 +1721,6 @@
     <string name="vault_bio_setup_title">验证指纹以开启生物识别</string>
     <string name="vault_bio_setup_subtitle">开启后可使用指纹快速解锁密码本</string>
     <string name="vault_bio_enable_failed">生物识别开启失败，请重试</string>
-    <string name="vault_bio_upgrade_hint">开启生物识别需先设置主密码</string>
     <string name="vault_settings_change_pin">修改主密码</string>
     <string name="vault_settings_change_pin_hint">更新密码本解锁密码</string>
     <string name="vault_settings_reset">重置密码本</string>
@@ -2071,9 +1762,9 @@
     <string name="common_previous_month">上月</string>
     <string name="confirm">确定</string>
     <string name="currency_symbol">¥</string>
-    <string name="date_format_display">MM月dd日</string>
+    <string tools:ignore="UnusedResources" name="date_format_display">MM月dd日</string>
     <string name="date_format_display_month">yyyy年MM月</string>
-    <string name="date_format_display_year">yyyy/MM/dd</string>
+    <string tools:ignore="UnusedResources" name="date_format_display_year">yyyy/MM/dd</string>
     <string name="date_weekday_short_fri">周五</string>
     <string name="date_weekday_short_mon">周一</string>
     <string name="date_weekday_short_sat">周六</string>
@@ -2084,15 +1775,11 @@
     <string name="delete">删除</string>
     <string name="field_decrease">减少</string>
     <string name="field_increase">增加</string>
-    <string name="field_select_date">选择日期</string>
-    <string name="field_select_datetime">选择日期时间</string>
-    <string name="field_file_placeholder">选择文件</string>
-    <string name="field_file_helper">选择系统文件，存储文件 URI</string>
-    <string name="field_clear">清除</string>
+    <string tools:ignore="UnusedResources" name="field_select_date">选择日期</string>
     <string name="save">保存</string>
     <string name="settings_cancel">取消</string>
-    <string name="time_just_now">刚刚</string>
-    <string name="time_minutes_ago">%d分钟前</string>
+    <string tools:ignore="UnusedResources" name="time_just_now">刚刚</string>
+    <string tools:ignore="UnusedResources" name="time_minutes_ago">%d分钟前</string>
     <string name="wallet_type_alipay">支付宝</string>
     <string name="wallet_type_bank_card">银行卡</string>
     <string name="wallet_type_cash">现金</string>
@@ -2137,15 +1824,12 @@
     <string name="wallpaper_done">完成</string>
     <string name="wallpaper_preset">预设</string>
     <string name="wallpaper_from_gallery">从相册选择</string>
-    <string name="dashboard_card_net_worth_color">卡片颜色</string>
     <string name="import_pick_file">选择文件导入</string>
     <string name="import_pick_file_hint">支持本应用导出的全量数据包（ZIP），自动识别</string>
-    <string name="import_from_ocr">截图识别账单</string>
-    <string name="import_from_ocr_desc">拍照或从相册选择账单截图，自动识别金额</string>
     <string name="import_help_title">关于导入</string>
     <string name="import_help_body">全量数据包按业务键判重，重复记录自动跳过、不覆盖已有数据；完整备份文件请到「备份与恢复」页恢复；微信/支付宝账单请到「账单」页导入</string>
     <string name="import_full_done_title">导入完成</string>
-    <string name="import_full_done_body">新增 %1$d 条，跳过重复 %2$d 条</string>
+    <string tools:ignore="PluralsCandidate" name="import_full_done_body">新增 %1$d 条，跳过重复 %2$d 条</string>
     <string name="import_full_running">正在导入</string>
     <string name="import_full_running_detail">数据合并中，请稍候</string>
     <string name="import_is_package_title">这是完整备份文件</string>
@@ -2169,60 +1853,236 @@
     <string name="import_bill_file_title">这是账单文件</string>
     <string name="import_bill_file_body">微信/支付宝账单、通用 CSV、Excel 和截图识别，请在「账单」页右上角的导入入口操作。本页只导入应用全量数据包。</string>
     <string name="import_error_too_large">文件过大，无法导入（上限约 300MB）</string>
-    <string name="import_full_done_wallets">已按账单重算 %1$d 个钱包余额</string>
+    <string tools:ignore="PluralsCandidate" name="import_full_done_wallets">已按账单重算 %1$d 个钱包余额</string>
     <string name="backup_file_is_data">这是数据文件，请到「数据与备份 → 导入导出」页导入</string>
     <string name="about_version_history_desc">看看每个版本都带来了什么</string>
     <string name="about_project_source">项目源码</string>
     <string name="about_project_source_desc">GPL-3.0 开源，全部代码在 GitHub</string>
-    <string name="about_feedback_desc">提问题、提建议，或参与改进</string>
+    <string name="about_feedback_github_title">GitHub Issues</string>
+    <string name="about_feedback_desc">提 Bug、提建议；可检索、能留档</string>
+    <string name="about_group_title">QQ 群</string>
+    <string name="about_group_desc">用法交流、反馈建议</string>
+    <string name="about_group_sheet_desc">用法交流、反馈与建议都可以，加群直接说。</string>
+    <string name="about_group_copied">群号已复制</string>
+    <string name="about_group_number_label">群号</string>
+    <string name="about_group_copy">复制群号</string>
+    <string name="about_group_open">在 QQ 中打开</string>
+    <string name="about_group_open_failed">未检测到 QQ，群号已复制，可手动添加</string>
     <string name="about_privacy_desc">数据如何被保护：纯本地、无网络权限</string>
     <string name="about_terms_desc">使用本应用前请先了解</string>
     <string name="about_license_desc">本应用依赖的开源组件清单</string>
     <string name="about_open_source_note">掌记是基于 GPL-3.0 协议的开源软件，感谢所有开源贡献者。</string>
     <string name="wallet_default_set">已设为默认钱包</string>
-    <string name="life_form_due_date">计划日期</string>
-    <string name="life_form_due_time">计划时间</string>
-    <string name="life_form_today">今天</string>
-    <string name="life_form_tomorrow">明天</string>
-    <string name="life_form_yesterday">昨天</string>
-    <string name="life_form_pick_date">选择日期</string>
-    <string name="life_form_pick_time">选择时间</string>
     <string name="life_form_clear">清除</string>
-    <string name="life_form_priority">优先级</string>
-    <string name="life_priority_high">高</string>
-    <string name="life_priority_medium">中</string>
-    <string name="life_priority_low">低</string>
-    <string name="life_priority_none">无</string>
     <string name="life_board_overdue">已逾期</string>
-    <string name="life_board_reschedule">今天</string>
+    <string name="life_board_overdue_empty">暂无逾期事项</string>
+    <string name="life_board_reschedule">推迟</string>
     <string name="life_board_swipe_complete_title">标记为完成？</string>
     <string name="life_board_swipe_complete_message">完成后仍可在详情中取消。</string>
     <string name="life_board_swipe_complete_confirm">完成</string>
     <string name="life_board_swipe_uncomplete_title">取消完成标记？</string>
     <string name="life_board_swipe_uncomplete_message">将恢复为未完成状态。</string>
     <string name="life_board_swipe_uncomplete_confirm">取消完成</string>
-    <string name="life_focus_entry_desc">番茄钟专注计时，记录你的专注时长</string>
     <string name="life_template_manage_hint">关闭后，该模板的首页卡片、新建入口与每日提醒一起静默；关闭待办模板后「今日待办」也会随之清空。已创建的记录不会丢失。</string>
     <string name="life_template_hide">隐藏模板</string>
     <string name="life_template_restore">恢复显示</string>
     <!-- 模板管理页（设计稿 ed_10 / ed_11 · §4.8；命名统一「关闭/开启」，不用「隐藏/恢复显示」） -->
     <string name="life_template_disabled">已关闭</string>
     <string name="life_template_disable">关闭模板</string>
-    <string name="life_template_builtin">内置模板</string>
-    <string name="life_template_group_count">%1$d 个 · %2$d 个已关闭</string>
-    <string name="life_template_field_count">%1$d 个字段 · %2$d 个显示在卡片</string>
+    <string tools:ignore="PluralsCandidate" name="life_template_group_count">%1$d 个 · %2$d 个已关闭</string>
+    <string tools:ignore="PluralsCandidate" name="life_template_field_count">%1$d 个字段 · %2$d 个显示在卡片</string>
     <string name="life_template_closed_sub">已关闭 · 不再出现在生活页与提醒</string>
-    <string name="life_template_closed_kept">已关闭 · %1$d 条记录保留</string>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="life_template_closed_kept">
+        <item quantity="one">None</item>
+        <item quantity="other">已关闭 · %1$d 条记录保留</item>
+    </plurals>
     <string name="life_template_close_title">关闭「%1$s」？</string>
-    <string name="life_template_close_body">已有 %1$d 条记录，不会被删除；重新开启后还能看到。</string>
+    <string tools:ignore="PluralsCandidate" name="life_template_close_body">已有 %1$d 条记录，不会被删除；重新开启后还能看到。</string>
     <string name="life_template_close_scope">关闭后不再出现在生活页、搜索、小组件和提醒里。</string>
     <string name="life_template_manage_sub">按生活领域分组</string>
     <string name="life_template_all_closed">所有模板都已关闭</string>
     <string name="life_template_go_manage">去模板管理</string>
     <string name="life_template_delete_confirm_title">删除模板</string>
     <string name="life_template_delete_confirm_body">该模板为自定义模板，删除后将同时删除此模板下的全部记录，且不可恢复。</string>
-    <string name="life_journal_edit">编辑日记</string>
-    <string name="life_mood_title_edit">心情记录</string>
-    <string name="life_report_focus_total">累计专注 %1$d 分钟</string>
-    <string name="life_type_focus">专注</string>
-</resources>
+    <string name="life_template_save_as_new">另存为新模板</string>
+    <string name="life_template_copy_suffix">副本</string>
+    <string name="life_discard_changes_title">放弃更改？</string>
+    <string name="life_discard_changes_body">未保存的修改将会丢失。</string>
+    <string name="life_template_block_text_budget">文本字段超过 %1$d 个（当前 %2$d 个）——卡片放不下</string>
+    <string name="life_template_block_text_budget_suggest">建议：把次要文本改成「标签」或「选项」</string>
+    <string name="life_template_block_required">必填字段「%1$s」没有默认值——无法留空</string>
+    <string name="life_template_block_required_suggest">建议：给字段设置默认值，或取消必填</string>
+    <string name="life_template_block_derived">「%1$s」缺少配置，算不出值</string>
+    <string name="life_template_block_derived_suggest">建议：在该字段的「参考字段」里选中它要用的字段；用公式的请填写表达式</string>
+    <string name="life_template_field_ref_empty">模板里还没有可选的字段，先加一个数值或日期字段</string>
+    <string name="life_tpl_last_today">上次记录：今天</string>
+    <string tools:ignore="PluralsCandidate" name="life_tpl_last_days">上次记录：%1$d 天前</string>
+    <string name="life_tpl_last_short_never">从未</string>
+    <string name="life_tpl_last_short_today">今天</string>
+    <string name="life_tpl_last_short_days">%1$d 天前</string>
+    <string name="life_tpl_search_hint">搜索模板</string>
+    <string name="life_template_repeat_section">重复</string>
+    <string name="life_template_repeat_yearly">每年重复</string>
+    <string name="life_template_repeat_yearly_hint">生日 / 纪念日这类事件每年都过：开启后「剩余天数」按**下一次周年**算，而不是停在那一天。农历生日按农历反算。</string>
+    <string tools:ignore="PluralsCandidate" name="life_record_disabled_fields">另有 %1$d 个字段已停用，可在模板管理里恢复</string>
+    <string name="life_share_sheet_title">分享卡片</string>
+    <string name="life_share_action">分享</string>
+    <string name="life_share_ready">已生成分享图，选择分享目标</string>
+    <string name="life_share_failed">生成分享图失败</string>
+    <string name="life_share_footer">由 PalmNote 记录</string>
+    <string name="life_template_advisory_contrast">卡片颜色对比度可能不足（建议更深一点）</string>
+    <string name="life_quick_add_hint">记一笔，如：明天下午3点 开会</string>
+    <string name="life_quick_add_send">添加</string>
+    <string name="life_quick_add_done">已添加：%1$s</string>
+    <string name="life_quick_add_demo_suffix">（演示模式开启中，关闭演示后可见）</string>
+    <string name="life_quick_add_close_demo">关闭演示</string>
+    <string name="life_quick_add_no_template">没有可用的「待办」模板，无法快捷添加</string>
+    <string name="life_quick_add_go_manage">去模板管理</string>
+    <string name="life_quick_add_undo">撤销</string>
+    <string name="life_quick_add_when_date">%1$d月%2$d日</string>
+    <!-- 紧凑胶囊右端的计数（三张平分一屏宽，放不下长文案；英文见 values-en：那边只给数字）。 -->
+    <string name="life_home_chip_today">今日 %1$d</string>
+    <string name="life_home_overdue_reschedule_all">全部推迟</string>
+    <string tools:ignore="PluralsCandidate" name="life_board_completed_collapsed">▸ 已完成 %1$d 件</string>
+    <string tools:ignore="PluralsCandidate" name="life_board_completed_expanded">▾ 已完成 %1$d 件</string>
+    <string name="life_on_this_day_brief">🕰 那年今天 · %1$d 条 ▸</string>
+    <string name="life_unsched_schedule">排期</string>
+    <string name="life_review_mode_month">上月</string>
+    <string name="life_review_mode_year">去年</string>
+    <string name="life_review_share">分享回顾图</string>
+    <string name="life_review_shared">已生成回顾图，选择分享目标</string>
+    <string name="life_review_share_failed">生成回顾图失败</string>
+    <string name="life_on_this_day">那年今天</string>
+    <string name="life_review_title">月度回顾</string>
+    <string name="life_review_month">%1$d 年 %2$d 月</string>
+    <string name="life_review_records">条记录</string>
+    <string tools:ignore="PluralsCandidate" name="life_review_active_days">记录了 %1$d / %2$d 天</string>
+    <string name="life_review_top">最常记录</string>
+    <string name="life_review_mood">心情分布</string>
+    <string name="life_review_empty">上个月还没有记录</string>
+    <string name="life_review_empty_hint">记录会出现在下个月的回顾里</string>
+    <string name="life_review_entry">上月回顾</string>
+    <string name="life_review_entry_hint">看看上个月记录了什么</string>
+    <string name="life_milestone_title">目标达成！</string>
+    <string name="life_milestone_days">连续打卡 %1$d 天</string>
+    <string name="life_detail_stat_checkin">打卡统计</string>
+    <string name="life_detail_stat_week">近 7 天</string>
+    <string name="life_detail_stat_month">本月打卡</string>
+    <string name="life_detail_stat_total">累计打卡</string>
+    <string name="life_template_reminder_section">提醒</string>
+    <string name="life_template_reminder_toggle">到期提醒</string>
+    <string name="life_template_reminder_kind">提醒类型</string>
+    <string name="life_template_reminder_kind_title">选择提醒类型</string>
+    <string name="life_template_reminder_date">日期字段</string>
+    <string name="life_template_reminder_date_title">选择日期字段</string>
+    <string name="life_template_reminder_date_unset">未设置</string>
+    <string name="life_template_reminder_date_empty">这个模板还没有日期字段——先在字段编排里加一个</string>
+    <string name="life_template_reminder_no_date">提醒已开启，但日期字段不可用——补一个日期字段或改选提醒类型，否则不会发出提醒</string>
+    <string name="life_reminder_kind_milestone">里程碑</string>
+    <string name="life_reminder_kind_milestone_hint">每满 100 / 200 / 365… 天提醒一次</string>
+    <string name="life_reminder_kind_countdown">倒数日</string>
+    <string name="life_reminder_kind_countdown_hint">到期当天与临近时提醒</string>
+    <string name="life_reminder_kind_birthday">生日</string>
+    <string name="life_reminder_kind_birthday_hint">每年临近生日时提醒</string>
+    <string name="life_reminder_kind_anniversary">周年纪念</string>
+    <string name="life_reminder_kind_anniversary_hint">每年临近纪念日时提醒</string>
+    <string name="life_reminder_kind_subscription">订阅扣费</string>
+    <string name="life_reminder_kind_subscription_hint">扣费日当天提醒（按扣费周期防重复）</string>
+    <string name="life_record_edit_title">编辑记录</string>
+    <string name="life_record_new_title">新建记录</string>
+    <string name="life_record_importing">正在导入…</string>
+    <string name="life_record_today">今天</string>
+    <string name="life_record_tomorrow">明天</string>
+    <string name="life_record_weekend">周末</string>
+    <string name="life_record_now">现在</string>
+    <string name="life_record_add_item">添加项目</string>
+    <string name="life_record_delete_item">删除项目</string>
+    <string tools:ignore="PluralsCandidate" name="life_map_track_stats">%1$d 个轨迹点 · %2$s · 爬升 %3$d 米</string>
+    <string name="life_detail_pages_left">剩余 %1$s 页</string>
+    <string name="life_hero_remaining">%1$d 项待完成</string>
+    <string name="life_hero_done_group">已完成 · %1$d</string>
+    <string name="life_dayread_title">%1$d月%2$d日</string>
+    <string tools:ignore="PluralsCandidate" name="life_dayread_count">这天记了 %1$d 条</string>
+    <string name="life_dayread_empty">这天还没有记录</string>
+    <string name="life_dayread_empty_hint">长按月历的其他格子，可以回看别的日子</string>
+    <string name="life_demo_badge">示例</string>
+    <string name="life_template_untitled">未命名模板</string>
+    <string name="life_record_error_template_not_found">模板未找到</string>
+    <string name="life_record_error_read_file">无法读取文件</string>
+    <string name="life_record_error_required">请填写「%1$s」</string>
+    <string name="life_record_error_save_failed">保存失败</string>
+    <string tools:ignore="PluralsCandidate" name="life_record_track_imported">已导入 %1$d 个轨迹点</string>
+    <string name="life_track_error_empty">文件中没有可用的轨迹点</string>
+    <string name="life_track_error_unsupported_kml">不支持含外部图层或网络链接的 KML</string>
+    <string name="life_track_error_parse">轨迹文件格式无法解析</string>
+    <string name="life_track_error_invalid_points">轨迹点无效</string>
+    <string name="life_detail_show_all">展开全部 %1$d 条</string>
+    <string name="life_detail_show_less">收起</string>
+    <string tools:ignore="PluralsCandidate" name="life_calendar_day_desc">%1$d月%2$d日 · %3$d 条记录</string>
+    <string name="life_stats_empty_title">还没有记录</string>
+    <string name="life_stats_empty_hint">去生活页记一条，这里的图表就会开始生长</string>
+    <string tools:ignore="PluralsCandidate" name="life_board_overdue_total">逾期 %1$d 条</string>
+    <string tools:ignore="PluralsCandidate" name="life_route_board_desc">路线图，共 %1$d 个途经点</string>
+    <!-- 模板编辑页 v1.41 重设计（iOS 分组式） -->
+    <string tools:ignore="PluralsCandidate" name="life_template_edit_field_count">%1$d 个在用 · 共 %2$d 个</string>
+    <string name="life_template_no_fields">还没有字段</string>
+    <string name="life_template_no_fields_hint">模板至少要有一个字段才能新建记录</string>
+    <string name="life_template_block_name_required">模板名称不能为空</string>
+    <string name="life_template_desc_hint">写一句说明，会显示在模板列表</string>
+    <string name="life_template_field_edit">编辑字段</string>
+    <string name="life_template_field_basic">基本设置</string>
+    <string name="life_template_field_default">默认值</string>
+    <string name="life_template_field_default_hint">新建记录时的初始值</string>
+    <string name="life_template_field_options">选项</string>
+    <string name="life_template_field_range">数值范围</string>
+    <string name="life_template_field_display">显示方式</string>
+    <string name="life_template_field_progress">进度</string>
+    <string name="life_template_field_progress_target">目标分母</string>
+    <string name="life_template_field_progress_target_hint">进度条按哪个字段算满；不选则用该字段的最大值</string>
+    <string name="life_template_field_progress_target_none">用最大值</string>
+    <string name="life_template_field_derived_ref">参考字段</string>
+    <string name="life_template_field_ref_hint">派生值由下面这些字段算出；选好之后它才会出现在卡片与详情页</string>
+    <string name="life_template_field_ref_minuend">被减字段</string>
+    <string name="life_template_field_ref_subtrahend">减数字段（可留空）</string>
+    <string name="life_template_field_ref_date">日期字段</string>
+    <string name="life_template_field_ref_none">未选择</string>
+    <string name="life_template_field_formula">公式表达式</string>
+    <string name="life_template_field_derived_auto">自动统计，无需参考字段</string>
+    <string name="life_template_field_derived_missing">缺少配置</string>
+    <string tools:ignore="PluralsCandidate" name="life_template_field_library_result">%1$d 种字段</string>
+    <string name="life_template_field_library_empty">没有匹配的字段</string>
+    <string name="life_field_hint_number">任意数值，用于计数或统计</string>
+    <string name="life_field_hint_currency">带货币符号的金额</string>
+    <string name="life_field_hint_percent">0–100 的百分比</string>
+    <string name="life_field_hint_slider">在给定范围内拖动取值</string>
+    <string name="life_field_hint_duration">一段时间，如 45 分钟</string>
+    <string name="life_field_hint_rating">1–5 星评分</string>
+    <string name="life_field_hint_boolean">开 / 关两态</string>
+    <string name="life_field_hint_select">从若干选项中选一个</string>
+    <string name="life_field_hint_multi_select">可同时选多个选项</string>
+    <string name="life_field_hint_tag">自由输入的标签，可多个</string>
+    <string name="life_field_hint_color">一个颜色值</string>
+    <string name="life_field_hint_date">一个日期</string>
+    <string name="life_field_hint_time">一个时间</string>
+    <string name="life_field_hint_datetime">日期 + 时间</string>
+    <string name="life_field_hint_location">一个地点</string>
+    <string name="life_field_hint_image">一张或多张图片</string>
+    <string name="life_field_hint_video">一段视频</string>
+    <string name="life_field_hint_audio">一段语音</string>
+    <string name="life_field_hint_file">任意附件</string>
+    <string name="life_field_hint_map">路线或地点，在地图上展示</string>
+    <string name="life_field_hint_text">多行长文本</string>
+    <string name="life_field_hint_short_text">单行短文本</string>
+    <string name="life_field_hint_rich_text">可加粗、列表的富文本</string>
+    <string name="life_field_hint_url">一个网址链接</string>
+    <string name="life_field_hint_email">邮箱地址</string>
+    <string name="life_field_hint_phone">电话号码</string>
+    <string name="life_field_hint_checklist">一组可勾选的待办项</string>
+    <string name="life_field_hint_table">可增删行的明细表</string>
+    <string name="life_field_hint_range">从一个值选到另一个值</string>
+    <string name="life_field_hint_person">一个或多个联系人</string>
+    <string name="life_field_hint_formula">由其他字段算出的值，只读；需写表达式（字段 key 与 + − × ÷）</string>
+    <string name="life_field_hint_remaining">目标减去当前，只读；需选「被减 / 减数」字段</string>
+    <string name="life_field_hint_streak">连续记录的天数，自动统计（无需参考字段）</string>
+    <string name="life_field_hint_elapsed">距某天已过 / 还剩多少天；需选一个日期字段</string></resources>

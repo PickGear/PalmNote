@@ -983,12 +983,20 @@ fun InlineFormContainer(
 
 @Composable
 fun DetailRow(label: String, value: String) {
+    // 值列占满剩余宽度并右对齐：长值（如「招商银行 ****6214」）折行时每行都贴右，
+    // 也不会反过来把标签挤窄（原先值列取固有宽度，SpaceBetween 下长值会压标签）。
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text(text = label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(text = value, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium,
+            textAlign = TextAlign.End,
+            modifier = Modifier.weight(1f)
+        )
     }
 }
 

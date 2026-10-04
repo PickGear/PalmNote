@@ -35,7 +35,9 @@ subprojects {
                         "ktlint_standard_max-line-length" to "disabled",
                         // 仓库既有风格无尾逗号；且尾逗号会改变 detekt baseline 的签名，故关闭
                         "ktlint_standard_trailing-comma-on-declaration-site" to "disabled",
-                        "ktlint_standard_trailing-comma-on-call-site" to "disabled"
+                        "ktlint_standard_trailing-comma-on-call-site" to "disabled",
+                        // Compose 约定：@Composable 函数用 PascalCase，放行 function-naming
+                        "ktlint_function_naming_ignore_when_annotated_with" to "Composable"
                     )
                 )
         }

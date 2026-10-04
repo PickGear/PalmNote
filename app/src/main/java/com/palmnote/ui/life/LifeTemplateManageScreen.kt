@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Restore
@@ -33,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -40,11 +42,12 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.palmnote.app.R
+import com.palmnote.data.db.entity.builtinTemplateNameRes
 import com.palmnote.ui.components.AppDialog
 import com.palmnote.ui.components.CapsuleSwitch
 import com.palmnote.ui.components.CompactTopAppBar
-import com.palmnote.ui.theme.Spacing
 import com.palmnote.ui.theme.ListCardShape
+import com.palmnote.ui.theme.Spacing
 import com.palmnote.ui.theme.Warning
 
 /**
@@ -56,13 +59,13 @@ import com.palmnote.ui.theme.Warning
  * 2. 开关**直接在行内**（不再藏进二级弹层），且**只有该模板已有记录时才弹确认**
  *    —— 无数据就没有不可逆损失，开关本身就是撤销。
  *
- * 「编辑模板」与「删除」两个动作留在编辑器那一批（`ed_1`–`ed_9`）：入口指向一个
- * 尚不存在的页面比缺一个入口更糟，故本页先只上「开关 + 恢复出厂」。
+ * 行点击进入编辑器，顶栏「+」新建模板；行尾菜单提供恢复出厂与删除。
  */
 @Composable
 fun LifeTemplateManageScreen(
     onBack: () -> Unit,
     onEditTemplate: (Long) -> Unit,
+    onCreateTemplate: () -> Unit,
     viewModel: LifeTemplateManageViewModel = hiltViewModel()
 ) {
     val groups by viewModel.groups.collectAsStateWithLifecycle()
@@ -82,6 +85,15 @@ fun LifeTemplateManageScreen(
                             Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.settings_navigate_back),
                             tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = onCreateTemplate) {
+                        Icon(
+                            Icons.Filled.Add,
+                            contentDescription = stringResource(R.string.life_template_new),
+                            tint = MaterialTheme.colorScheme.primary
                         )
                     }
                 }
@@ -112,7 +124,7 @@ fun LifeTemplateManageScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            group.category,
+                            categoryChipLabel(group.category),
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -132,10 +144,14 @@ fun LifeTemplateManageScreen(
                 items(group.rows, key = { it.id }) { row ->
                     TemplateRowCard(
                         row = row,
+                        onClick = { onEditTemplate(row.id) },
                         onToggle = { checked ->
                             // 关闭「有记录」的模板才二次确认；开启永远直接生效（开关即撤销）
-                            if (!checked && row.itemCount > 0) pendingClose = row
-                            else viewModel.setHidden(row.id, !checked)
+                            if (!checked && row.itemCount > 0) {
+                                pendingClose = row
+                            } else {
+                                viewModel.setHidden(row.id, !checked)
+                            }
                         },
                         onLongPress = { actionRow = row }
                     )
@@ -149,7 +165,7 @@ fun LifeTemplateManageScreen(
     pendingClose?.let { row ->
         AppDialog(
             onDismissRequest = { pendingClose = null },
-            title = { Text(stringResource(R.string.life_template_close_title, row.name), fontWeight = FontWeight.Bold) },
+            title = { Text(stringResource(R.string.life_template_close_title, templateRowTitle(row)), fontWeight = FontWeight.Bold) },
             text = {
                 Column {
                     Text(stringResource(R.string.life_template_close_body, row.itemCount))
@@ -215,12 +231,13 @@ fun LifeTemplateManageScreen(
     actionRow?.let { row ->
         AppDialog(
             onDismissRequest = { actionRow = null },
-            title = { Text(row.name, fontWeight = FontWeight.Bold) },
+            title = { Text(templateRowTitle(row), fontWeight = FontWeight.Bold) },
             text = {
                 Column {
                     Row(
                         modifier = Modifier.fillMaxWidth().clickable {
-                            onEditTemplate(row.id); actionRow = null
+                            onEditTemplate(row.id)
+                            actionRow = null
                         }.padding(vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -232,7 +249,8 @@ fun LifeTemplateManageScreen(
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                         Row(
                             modifier = Modifier.fillMaxWidth().clickable {
-                                pendingRestore = row; actionRow = null
+                                pendingRestore = row
+                                actionRow = null
                             }.padding(vertical = 10.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -244,7 +262,8 @@ fun LifeTemplateManageScreen(
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     Row(
                         modifier = Modifier.fillMaxWidth().clickable {
-                            viewModel.setHidden(row.id, !row.isHidden); actionRow = null
+                            viewModel.setHidden(row.id, !row.isHidden)
+                            actionRow = null
                         }.padding(vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -256,7 +275,8 @@ fun LifeTemplateManageScreen(
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                         Row(
                             modifier = Modifier.fillMaxWidth().clickable {
-                                pendingDelete = row; actionRow = null
+                                pendingDelete = row
+                                actionRow = null
                             }.padding(vertical = 10.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -282,7 +302,8 @@ fun LifeTemplateManageScreen(
             text = { Text(stringResource(R.string.life_template_delete_confirm_body)) },
             confirmButton = {
                 TextButton(onClick = {
-                    viewModel.deleteTemplate(row.id); pendingDelete = null
+                    viewModel.deleteTemplate(row.id)
+                    pendingDelete = null
                 }) {
                     Text(stringResource(R.string.life_template_delete), color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
                 }
@@ -292,10 +313,25 @@ fun LifeTemplateManageScreen(
     }
 }
 
+/**
+ * 行标题：内置模板读资源名，自建模板读用户输入。
+ *
+ * 内置模板的 `name` 列存的是**建库时的中文**，英文界面下直接读会在管理页、关闭确认、
+ * 长按菜单三处一起漏出中文（真机截图 15-09-31）。资源名缺失时才回落到 `name`。
+ */
+@Composable
+private fun templateRowTitle(row: LifeTemplateManageViewModel.TemplateRow): String =
+    if (row.isBuiltin) {
+        builtinTemplateNameRes(row.icon)?.let { stringResource(it) } ?: row.name
+    } else {
+        row.name
+    }
+
 /** 模板行（ed_10）：图标 + 名称 + 徽标 + 副行 + 右端行内开关；已关闭整行降透明度。 */
 @Composable
 private fun TemplateRowCard(
     row: LifeTemplateManageViewModel.TemplateRow,
+    onClick: () -> Unit,
     onToggle: (Boolean) -> Unit,
     onLongPress: () -> Unit
 ) {
@@ -306,14 +342,16 @@ private fun TemplateRowCard(
             .fillMaxWidth()
             .alpha(dim)
             .clip(ListCardShape)
-            .combinedClickable(onClick = {}, onLongClick = onLongPress),
+            .combinedClickable(onClick = onClick, onLongClick = onLongPress),
         shape = ListCardShape,
         color = MaterialTheme.colorScheme.surface,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         tonalElevation = 0.dp
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().height(56.dp).padding(horizontal = Spacing.sm),
+            // 最小高度而不是固定高度：副行多了「最近记录」之后，窄屏上宁可让行高一档，
+            // 也不要把信息挤成省略号（固定 56dp 时更长的那段一定被裁掉）。
+            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = Spacing.sm),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
@@ -329,7 +367,7 @@ private fun TemplateRowCard(
             Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        row.name,
+                        templateRowTitle(row),
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = if (row.isHidden) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
@@ -347,13 +385,18 @@ private fun TemplateRowCard(
                     }
                 }
                 Spacer(Modifier.height(2.dp))
+                val base = stringResource(R.string.life_template_field_count, row.fieldCount, row.cardFieldCount)
+                val lastDays = relativeDaysSince(row.lastLogAt, java.time.LocalDate.now())
                 Text(
-                    // 已关闭的行不报「几个字段」，改为说明「关掉意味着什么」+ 记录保留下来的事实
-                    if (row.isHidden) {
-                        if (row.itemCount > 0) stringResource(R.string.life_template_closed_kept, row.itemCount)
-                        else stringResource(R.string.life_template_closed_sub)
-                    } else {
-                        stringResource(R.string.life_template_field_count, row.fieldCount, row.cardFieldCount)
+                    // 已关闭的行不报「几个字段」，改为说明「关掉意味着什么」+ 记录保留下来的事实；
+                    // 其余行在最前面加上「最近记录」——管理页真正要判断的是"这个模板我还用不用"。
+                    when {
+                        row.isHidden && row.itemCount > 0 ->
+                            pluralStringResource(R.plurals.life_template_closed_kept, row.itemCount, row.itemCount)
+                        row.isHidden -> stringResource(R.string.life_template_closed_sub)
+                        lastDays == null -> base
+                        lastDays == 0L -> stringResource(R.string.life_tpl_last_today) + " · " + base
+                        else -> stringResource(R.string.life_tpl_last_days, lastDays) + " · " + base
                     },
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,

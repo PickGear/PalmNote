@@ -1,11 +1,13 @@
-以下是调整后的完整 **PalmNote 设计规范 v5.1**：
+以下是调整后的完整 **PalmNote 设计规范 v5.2**：
 
 ---
 
 # PalmNote 设计规范
 
-> v5.1 | 2026-08-02 | Material3 + Jetpack Compose | 纯本地存储 | Hilt DI
+> v5.2 | 2026-09-29 | Material3 + Jetpack Compose | 纯本地存储 | Hilt DI
 > 本规范涵盖全局设计系统 + 生活模块 + 密码本模块专属规范。生活模块以 `[Life]` 标记，密码本模块以 `[Vault]` 标记。
+>
+> **v5.2 变更说明：** 生活模块规范**回写至 v1.40 现状**（纯文档校准，未改一行代码）。§15.1 首页树按 `LifeScreen.kt` 重写（v4.6 动态分类蓝图作废，保留为历史）；§15.2 路由按 `LifeRoute.kt` 更正为实际 11 个目的地（原稿 13 个目的地名全部作废）；§15.3.1 `FieldType` 枚举更正为 35 常量 / 34 逻辑类型；§6.12 与 §5.3.2 `BarChart` 行的统计入口改为「顶栏图标」；§5.3 标注「`AppIcon` 规范在、生活模块零接线」；§6.5 标注生活页 FAB 为自绘胶囊、`StaggeredFabMenuItem` 全仓未使用。依据：本轮回写时逐条对照代码的审计记录 §7 / §12.4（第 37、42 项）；现状以代码为准（`LifeScreen.kt` / `LifeRoute.kt`）。
 >
 > **v5.1 变更说明：** 安全与 OCR 升级——**数据库 SQLCipher 全库加密**（`EncryptedOpenHelperFactory`，明文库自动迁移）；**OCR 引擎由 ML Kit 替换为 PaddleOCR PP-OCRv6**（`OcrEngine` 接口抽象 + `PaddleOcrEngine`，ONNX Runtime 离线推理，模型打包 assets，release 仅 arm64-v8a）。**对齐修正：15.2 路由改为类型安全路由（`LifeRoute.kt`，`@Serializable`）；15.3 FieldType 标注 19 种扩充为规划蓝图（当前 11 种）；15.1/6.12 动态分类与 15.4 规划标注一致；INTERNET 权限标注预留未声明。**
 >
@@ -150,24 +152,33 @@
 
 每个预设功能模板拥有独立色彩，用于图标、进度条、Tag、左侧彩色条等。
 
-| 模板 | 色值 | tint 函数 |
-|------|------|----------|
-| 存钱计划 | `#EC407A` | `lifeSavingColor()` |
-| 购物计划 | `#7C8CF0` | `lifeShoppingColor()` |
-| 旅行计划 | `#FF7043` | `lifeTravelColor()` |
-| 阅读计划 | `#26A69A` | `lifeReadingColor()` |
-| 学习计划 | `#AB47BC` | `lifeStudyColor()` |
-| 待办任务 | `#5C6BC0` | `lifeTodoColor()` |
-| 倒计时 | `#F07070` | `lifeCountdownColor()` |
-| 正数日 | `#50C890` | `lifeCountupColor()` |
-| 生日 | `#FFCA28` | `lifeBirthdayColor()` |
-| 纪念日 | `#F07070` | `lifeAnniversaryColor()` |
-| 打卡记录 | `#FF7043` | `lifeHabitColor()` |
-| 心情记录 | `#FFCA28` | `lifeMoodColor()` |
-| 日记 | `#AB47BC` | `lifeJournalColor()` |
-| 专注记录 | `#00ACC1` | `lifeFocusColor()` |
-| 订阅记录 | `#66BB6A` | `lifeSubscriptionColor()` |
-| 周报月报 | `#42A5F5` | `lifeReportColor()` |
+> ⚠️ **本表原值已过时，勿据此实现。** 身份色的唯一真源是
+> `core/src/main/java/com/palmnote/ui/theme/Color.kt` 的 `LifeTemplateIdentityHex`
+> （`LifeSaving` 等 val 一律由它 `identity(...)` 派生，不再各写一份字面量）。
+> 下表已按该真源更正 —— **原表 16 项里有 11 项与真源不同**（如购物 `#7C8CF0`→`#FF7043`、
+> 打卡 `#FF7043`→`#3F51B5`、倒计时 `#F07070`→`#FFCA28`），原表还把「旅行」与「购物」、
+> 「学习」与「日记」等写成了同色。
+
+| 模板 | 图标 key | 色值（§5.2 定案） |
+|------|---------|------|
+| 存钱计划 | `savings` | `#EC407A` |
+| 购物计划 | `shopping_cart` | `#FF7043` |
+| 订阅记录 | `subscriptions` | `#FFB300` |
+| 待办 | `checklist` | `#5C6BC0` |
+| 打卡 | `calendar_month` | `#3F51B5` |
+| 纪念日 | `celebration` | `#EF5350` |
+| 生日 | `cake` | `#F06292` |
+| 倒计时 | `timer_off` | `#FFCA28` |
+| 正数日 | `trending_up` | `#AB47BC` |
+| 日记 | `book` | `#7E57C2` |
+| 心情 | `mood` | `#FFA726` |
+| 阅读 | `menu_book` | `#26A69A` |
+| 旅行计划 | `flight` | `#66BB6A` |
+| 学习计划 | `school` | `#29B6F6` |
+| 周报月报 | `BarChart` | `#42A5F5` |
+| 专注 | `timer` | `#00ACC1` |
+| 身体记录 | `fitness_center` | `#00897B` |
+| 物品维护 | `build` | `#8D6E63` |
 
 #### 1.7.3 自定义模板颜色选择器
 
@@ -309,6 +320,13 @@ val lifeColorPalette = listOf(
 
 ### 5.3 `[Life]` 生活模块图标规范
 
+> **⚠️ 规范在、代码零接线（v1.40 现状，2026-09-29 核对）**：`app/src/main/java/com/palmnote/ui/life` 下
+> **0 处** `AppIcon` 引用 —— 生活页一律直接用裸 `Icons.Outlined.*` / `Icons.Filled.*`
+> （顶栏三图标即 `Outlined.BarChart` / `Outlined.Search` / `Outlined.GridView`）。
+> 本小节列出的 `AppIcon` 枚举**确实都已经存在**（§5.3.2 的表不是空头规划），只是生活模块**没有接线**。
+> **待拍板**：是「按本节把生活模块接到 `AppIcon`」，还是「把本节改成反映裸图标的现状」——
+> 两种都是一次成型，不要各改一半。
+
 #### 5.3.1 总体规则
 
 生活模块延续全局 `AppIcon` 枚举体系，新增图标全部添加到 `AppIcon.kt`，风格与现有图标保持一致（Material Symbols 线性风格，Rounded）。
@@ -342,7 +360,7 @@ val lifeColorPalette = listOf(
 | `CheckCircle` | 打卡记录 |
 | `Timer` | 专注记录 |
 | `Autorenew` | 订阅记录 |
-| `BarChart` | 统计与报告（v1.27：原「周报月报」模板已退役，报告归**统计页**；此图标现为统计页入口；v1.34：生活页内统计入口 = 「全部」视图搜索条右侧按钮，页内不再占顶栏图标） |
+| `BarChart` | 统计与报告（v1.27：原「周报月报」模板已退役，报告归**统计页**）。**v1.40 起生活页统计入口回到顶栏右侧图标**（`Icons.Outlined.BarChart`）；v1.34 的「全部视图搜索条右侧」随「全部」三视图退役作废） |
 
 **心情模块图标：**
 
@@ -517,34 +535,67 @@ Card(
 
 ### 6.5 FAB
 
+> **⚠️ v5.4 规则修订（2026-10-04 二次定稿）：三层色。**
+> 颜色按"这层东西属于谁"分三层，互不越界：
+>
+> | 层级 | 用什么色 | 覆盖范围 |
+> |---|---|---|
+> | **app 级** | 主题色 `colorScheme.primary`（随主题包切换） | 设置、引导、关于、全局按钮与开关 |
+> | **模块级** | **模块身份色**（生活 `ModuleLife #C2185B`、记账 `ModuleBill #A67A00`） | 该模块自己的页面框架：顶栏标题、FAB、链接、进度条、空态 |
+> | **内容级** | 分类色（计划蓝 / 时间紫 / 记录绿）或模板身份色 | 分类详情页框架、条目行、模板卡 |
+>
+> 为什么模块级不跟主题：模块色承担"我在哪个模块"的识别职责（红=生活、琥珀=记账），
+> 它是**固定身份**而非主题皮肤；把它换掉会丢掉模块辨识度（v5.3 曾按"动作色跟主题"
+> 统一过一版，真机上看生活页失去红色身份，已回退）。
+>
+> **模块身份色表**（`core/.../theme/Color.kt`）：`ModuleHome` #0891B2（首页/概览）、
+> `ModuleItem` #2A6BAB（物品）、`ModuleBill` #A67A00（记账）、`ModuleLife` #C2185B（生活）、
+> `ModuleSettings` #607D8B（设置）。使用位置：底部导航项选中态（`BottomNavItem.activeColor`）、
+> 模块页面框架、仪表盘该模块的卡片、设置里**归属该模块**的分区标题。
+>
+> **设置分区色的归属规则**：分区标题色 = 该分区数据的归属。属于某模块的分区用该模块色
+> （「记账」→ `ModuleBill`）；跨模块或全局分区用 `ModuleSettings`（数据传输、示例数据、
+> 外观、通用、提醒）；**语义色**（存储与清理用 `Amber`、错误/成功等）按语义选，不参与归属判断。
+>
+> **设置页「多巴胺」装饰色（2026-10-04 定稿，用户裁定「还是彩色好看」）**：
+> 设置模块的图标与分区标题改用一组**专用装饰色** `DopamineCoral / DopamineAmber /
+> DopamineMint / DopamineSky / DopamineViolet / DopaminePink`（定义在 `theme/Color.kt`）——
+> 每处一个稳定色，纯视觉节奏，**不表达归属也不表达状态**。这样既保住活泼观感，
+> 又不再出现"设置里冒出生活分类色"的层次错乱。**语义色仍优先**：清除数据/清除缓存用
+> `ErrorLight`/`Amber` 表达风险，回收站用 `StatusActive`，这些不受装饰色影响。
+>
+> **历史（已作废）**：本表更早还写过生活页 FAB 为 `ModuleLife`、物品/账本为
+> `AccentOrange`、待办/习惯为 `secondary` —— 与代码不符，勿据此实现。
+
 | 类型 | 尺寸 | 颜色 | 使用页面 |
 |------|------|------|---------|
-| 标准 `FloatingActionButton` | 56dp | `secondary` + `Color.White` | 生活、待办、习惯、倒计时、纪念日、瞬间 |
-| 扩展 `ExtendedFloatingActionButton` | 含文字 | `AccentOrange` + `Color.White` | 物品、账本 |
+| 标准 `FloatingActionButton` | 56dp | 模块级页面用模块身份色，app 级页面用 `primary` | 记账、物品、生活各二级页 |
+| 扩展 `ExtendedFloatingActionButton` | 含文字 | 同上 | 物品、账本、生活（自绘胶囊同色） |
 | 圆角 | large（16dp） | — | 全部 |
 | 位置 | 右下角，距底部 16dp，距右侧 16dp | — | — |
 | 阴影 | Material3 默认（约 6dp） | — | — |
 
-> Asset/Bill 的 FAB 统一使用 `secondary` 色。
+#### `[Life]` FAB（生活页）
 
-#### `[Life]` 展开式 FAB（生活页）
+> **⚠️ 与上表的差异（v1.40 现状，2026-09-29 核对；2026-10-04 颜色修订）**：生活页**不用** Material `FloatingActionButton` /
+> `ExtendedFloatingActionButton`，也**不使用 `StaggeredFabMenuItem`**（全仓 0 命中）。
+> 实际是**自绘**的「+ 新建」胶囊：`Box` + `combinedClickable` + `background(colorScheme.primary, RoundedCornerShape(16.dp))`
+> （原为写死的 `ModuleLife` 粉，按本节"动作色跟主题"规则修订），
+> 内含 `Icons.Filled.Add` 与文案，**无交错动画、无 0.3f 遮罩**。
 
-生活页使用 `StaggeredFabMenuItem`，展开动画 `fadeIn` + `slideInVertically`，每项间隔 50ms，背景 0.3f 黑色遮罩。
+交互：
 
-菜单项 8 个：
+| 手势 | 行为 |
+|------|------|
+| 单击 | 打开 `ModalBottomSheet`（`skipPartiallyExpanded = true`）**模板宫格** |
+| 长按 | 直达**上次使用**的模板表单（未选过则退化为单击） |
 
-| 位置 | AppIcon | 文字 | 模板色 | 动作目标 |
-|------|---------|------|--------|---------|
-| 1 | `EditNote` | 新建待办 | `lifeTodoColor()` | 跳转待办创建页 |
-| 2 | `CheckCircle` | 打卡 | `lifeHabitColor()` | 弹出打卡 BottomSheet |
-| 3 | `Savings` | 存一笔 | `LifeSaving` | 弹出存钱 BottomSheet |
-| 4 | `SentimentSatisfied` | 记心情 | `lifeMoodColor()` | 弹出心情选择 BottomSheet |
-| 5 | `Timer` | 专注 | `lifeFocusColor()` | 进入专注计时页面 |
-| 6 | `MenuBook` | 记阅读 | `lifeReadingColor()` | 弹出阅读记录 BottomSheet |
-| 7 | `AutoStories` | 写日记 | `lifeJournalColor()` | 跳转日记编辑页 |
-| 8 | `MoreHoriz` | 更多 | `onSurfaceVariant` | 展开全部功能入口列表 |
+创建面板（`FabSheet`，`LifeScreen.kt`）的实际内容：标题「新建记录」→ **最近使用胶囊行**（≤3 个按上次记录时间排序，全新用户整行隐藏，单击直达表单）→ **搜索框常驻**（不再设 ≥6 个模板的门槛，对标 Notion 模板选择器）→ **分类图标 tab**（全部 + 各分类，选中 = 类别 tint 底 + 类别色描边，与首页分类卡身份色同源）→ **三列模板卡网格**（tint 图标容器 + 名称 +「上次记录」短文案；卡片回归 §6.6：1dp 边框、无阴影）。**过滤掉 `isSpecial` 的系统型模板**（如专注），
+模板列表来自用户实际拥有的模板，**不是**固定 8 个意图。长按 FAB 直达上次使用模板的手势保留。
 
-> **说明：** 第 7 项"写日记"使用 `AutoStories` 而非 `EditNote`，避免与第 1 项"新建待办"图标重复造成混淆。
+> **历史（已作废）**：原稿写「生活页使用 `StaggeredFabMenuItem`，展开动画 `fadeIn` + `slideInVertically`，
+> 每项间隔 50ms，背景 0.3f 黑色遮罩」，并给出 8 个固定菜单项（新建待办 / 打卡 / 存一笔 / 记心情 /
+> 专注 / 记阅读 / 写日记 / 更多）。该形态是 v4.6 蓝图，**已作废**。
 
 ### 6.6 Card
 
@@ -686,7 +737,7 @@ Card(
 
 当用户处于生活模块内部页面（分类页、模板列表页、详情页等）时，底部导航栏保持全局 4-Tab 结构不变，"生活" Tab 保持选中态。**生活模块内部不替换底部导航栏。**
 
-生活主页（LifeScreen）的内容区域内部使用**可折叠的动态分类入口**（默认 3 个预置分类 + 用户新增分类）代替模块内部二级导航，每个分类区展示该分类下有 ACTIVE 条目的模板卡片。用户点击分类区不跳转页面，直接浏览下方模板卡片列表。分类区支持自定义排序和显隐。**（⚠️ 动态分类为 v4.6 设计蓝图，规划中未实现；当前按硬编码三分类分组，详见 15.4。）**
+生活主页（LifeScreen）的内容区域**没有**模块内部二级导航：顶栏三图标（统计 / 搜索 / 模板管理）+ **三张分类卡**（计划 / 时间 / 记录，硬编码分类）+ 今日看板 + 待办卡 + FAB。点分类卡进入 `LifeCategoryDetail(category)` 二级页。**（v4.6 的「可折叠动态分类入口」已随 v1.40 首页回退作废，详见 15.1。）**
 
 ### 6.13 TopAppBar
 
@@ -1108,6 +1159,11 @@ SimpleDateFormat("yyyy-MM-dd")
 
 // ❌ LazyColumn items() 缺 key
 items(list)  // 改为 items(list, key = { it.id })
+
+// ❌ 粉彩卡用渐变（指标卡 / 总览卡 / 入口卡）
+Brush.verticalGradient(...)  // 改为平涂：lerp(accent, surface, 0.90f)
+// 说明：渐变并排多卡时会出现「每卡一条斜向色带」的噪声，且与扁平卡片语言不一致。
+// 例外：交易流水/钱包一类的「卡面装饰」渐变（饱和色 + 白字）是另一种语言，不在此列。
 ```
 
 ### 13.2 颜色引用
@@ -1134,22 +1190,11 @@ LifePlan = Color(0xFF2B6FE0)       // 预置分类「计划」（亮蓝）
 LifeTime = Color(0xFF9A4FD0)       // 预置分类「时间」（亮紫偏品红）
 LifeRecord = Color(0xFF1FA870)     // 预置分类「记录」（亮绿）
 
-// 预设模板色（val 属性）
-LifeSaving = Color(0xFFEC407A)       // 存钱计划
-LifeShopping = Color(0xFF7C8CF0)     // 购物计划
-LifeTravel = Color(0xFFFF7043)       // 旅行计划
-LifeReading = Color(0xFF26A69A)      // 阅读计划
-LifeStudy = Color(0xFFAB47BC)        // 学习计划
-LifeTodo = Color(0xFF5C6BC0)         // 待办任务
-LifeCountdown = Color(0xFFF07070)    // 倒计时
-LifeCountUp = Color(0xFF50C890)      // 正数日
-LifeBirthday = Color(0xFFFFCA28)     // 生日
-LifeHabit = Color(0xFFFF7043)        // 打卡记录
-LifeMoodColor = Color(0xFFFFCA28)    // 心情记录
-LifeJournal = Color(0xFFAB47BC)      // 日记
-LifeFocus = Color(0xFF00ACC1)        // 专注记录
-LifeSubscription = Color(0xFF66BB6A) // 订阅记录
-LifeReport = Color(0xFF42A5F5)       // 周报月报
+// ⚠️ 本段已过时，勿据此实现。身份色唯一真源：
+//   代码：core/src/main/java/com/palmnote/ui/theme/Color.kt 的 LifeTemplateIdentityHex
+// LifeSaving / LifeShopping / … 等 val 一律由 identity("<icon key>") 从该表派生，
+// 不再各写一份字面量（这正是「身份色只存一份」的设计要求，已实施）。
+// 原段 15 项里有 11 项与真源不同，且把「旅行/购物」「学习/日记」等写成了同色。
 
 // 心情色（val 属性）
 LifeMoodHappy = Color(0xFFFFCA28)   // 开心
@@ -1211,77 +1256,107 @@ LifeMoodAngry = Color(0xFFE53935)   // 生气
 
 ### 15.1 生活主页（LifeScreen）
 
-> **⚠️ 本节为动态分类重构（v4.6 设计蓝图）的目标形态，尚未实施。** 当前实现为硬编码三分类（`计划`/`时间`/`记录`），按模板 `category` 值分组渲染，无 `life_categories` 表、无动态分类区。详见 15.4 节规划标注。
+> **⛔ v1.40 首页回退（2026-09-23，用户看真机截图后裁决）：本节原有的 v4.6 动态分类蓝图已作废，不再实施。**
+> 下方「现状」树按代码核对（`app/src/main/java/com/palmnote/ui/life/LifeScreen.kt`）。
+
+**现状（v1.40 起）**
 
 ```
-LifeScreen（动态 Section 渲染）
+LifeScreen
+├── CompactTopAppBar
+│   ├── 标题「生活」displaySmall / Bold / ModuleLife（搜索态换成 ModuleSearchBar + 取消按钮）
+│   └── 右侧三图标（onSurfaceVariant）：统计 Outlined.BarChart · 搜索 Outlined.Search · 模板管理 Outlined.GridView
+├── 三张分类卡（计划 / 时间 / 记录）：计数走真实 category，非动态分类
+├── 今日看板：周历点选 / 展开月历 + 逾期置顶红色区 + 一键推迟到今天
+│   └──「📋 今日安排 · M月d日 周X」分类 chip 时间序列表
+├── 待办卡（待安排）：未完成清单 take 4 + 逾期计数
+└── FAB：自绘「+ 新建」胶囊（**不是** Material FAB）
+    ├── 单击 → ModalBottomSheet 模板宫格（分类筛选 chip + 搜索 + 模板卡）
+    └── 长按 → 直达上次使用的模板表单（未选过则退化为单击）
+```
+
+> **分类不是动态的**：仍是硬编码三分类（`计划`/`时间`/`记录`），按模板 `category` 值分组，**没有** `life_categories` 表。点分类卡进入 `LifeCategoryDetail(category)` 二级页。
+> **派生链未变**：`LifeCalendarViewModel` 仍派生 `boardRows` / `scheduledItems` / `markedDates` / `overdueItems` / `todoItems` / `categoryCounts`，演示感知互斥。
+> 创建面板会过滤掉 `isSpecial` 的系统型模板；搜索框常驻（见 §6.5）。
+
+#### `[Life]` 分类详情页（CategoryDetailScreen，2026-10-04 重设计）
+
+- **两层颜色**：页面框架（顶栏标题 / 头部卡 tint / FAB / 加载与空态）用**分类身份色**（计划蓝 `LifePlan` / 时间紫 `LifeTime` / 记录绿 `LifeRecord`，自定义分类退回 `ModuleLife`）；条目行图标容器用**模板身份色**（`identityColor(tpl.color)` 的 tint 语言）——首页入口卡 → 详情页 → 条目，颜色链路连续。
+- **头部统计 badge 组**：`N 条` / `今日到期 N` / `逾期 N`（error 色，仅 >0 显示）/ `本周 +N`，全部由 `firstActionEpoch` 现算（与排序口径一致，不改 DB）。
+- **行内 meta 徽标**：`已逾期 N 天`（error）/ `今天 HH:mm`（身份色 tint）/ `MM-dd` / `每年` / 清单 `n/m`——把排序语义（actionBucket）视觉化；条目行不再重复模板描述。
+- **已完成**：灰 + 删除线沉底；分区已完成 ≥3 自动折叠成「已完成 N」行（可展开）。
+- **交互**：分区标题点击折叠/展开该模板；**长按条目 = 快捷操作**（完成 ⇄ 未完成 / 推迟到今天 / 删除，AppBottomSheet；年度重复不参与推迟，与看板守卫一致）；空态补「去模板库创建」按钮。
+- **卡片**：全部回归 §6.6（surface + 1dp `outlineVariant` 边框、无阴影）；分类 DB 值经 `categoryLabel` 本地化展示（原实现直接显示中文 DB 值，英文界面漏翻）。
+
+**历史（已作废，保留备查）**
+
+```
+LifeScreen（动态 Section 渲染）  ← v4.6 蓝图，未实施
 ├── TopAppBar：标题 "生活"，primary 色，右侧搜索图标
 ├── 问候区：日期 + 问候语 + 心情快捷入口（AppIcon.SentimentSatisfied）
 ├── 概览区：3 个数据卡片（待办数 / 习惯完成率 / 今日专注时长）
 ├── 通知区：订阅提醒 / 生日提醒 / 预算结余提醒
 ├── 动态分类区：遍历所有 LifeCategory，每个渲染一个可折叠 LifeSection
-│   ├── 🎯 目标区（预置）：可折叠，展示 ACTIVE 条目摘要
-│   ├── 📅 纪念区（预置）：可折叠，展示天数计算 + 即将到来
-│   ├── 📓 记录区（预置）：可折叠，展示今日待打卡 + 最近记录
-│   ├── 健康区（用户新增）：可折叠，展示对应模板条目
-│   └── ...（用户可新增/重命名/删除分类）
 └── FAB：展开式 8 个菜单项
 ```
 
-> **分类区渲染规则：** LifeScreen 从 `life_categories` 表读取全部分类，按 `sortOrder` 排序，遍历渲染。每个 Section 的卡片样式由模板的 `layoutType` 决定（PROGRESS→PlanCard, DATE_COUNT→TimeCard, TIMELINE→TimelineCard, STATS→StatsCard），不再依赖分类名称硬编码判断。
->
-> **空分类：** 分类下所有模板均无数据时，该 Section 折叠显示分类标题+模板图标摘要。
+> **原分类区渲染规则（作废）：** LifeScreen 从 `life_categories` 表读取全部分类，按 `sortOrder` 排序遍历渲染；卡片样式由模板 `layoutType` 决定（PROGRESS→PlanCard, DATE_COUNT→TimeCard, TIMELINE→TimelineCard, STATS→StatsCard），不再依赖分类名称硬编码。**该表与机制均未实现。**
 
 ### 15.2 路由定义
 
-`[Life]` 模块内嵌 NavHost，使用类型安全路由（`ui/life/LifeRoute.kt`，`@Serializable`）：
+`[Life]` 模块内嵌 NavHost，使用类型安全路由（`app/src/main/java/com/palmnote/ui/life/LifeRoute.kt`，`@Serializable`）。
+**以下为 v1.40 实际存在的 11 个目的地**（路由类名**不带** `Route` 后缀）：
 
 ```kotlin
-// 生活主页
-@Serializable data object LifeHomeRoute
-
-// 动态路由（携带参数）
-@Serializable data class LifeTemplateRoute(val templateId: Long)   // 模板列表页
-@Serializable data class LifeItemRoute(val itemId: Long)           // 条目详情页
-@Serializable data class LifeCreateRoute(val templateId: Long)     // 新建条目（Wizard）
-@Serializable data class LifeEditRoute(val itemId: Long)           // 编辑条目
-
-// 通用页面（固定路由）
-@Serializable data object LifeFocusRoute      // 专注计时
-@Serializable data object LifeHabitRoute      // 习惯打卡
-@Serializable data object LifeMoodRoute       // 心情记录
-@Serializable data object LifeJournalRoute    // 日记
-@Serializable data object LifeTodoRoute       // 今日待办
-@Serializable data object LifeReportRoute     // 周报/月报
-@Serializable data object LifeAchievementRoute// 成就徽章
-@Serializable data object LifeTemplateManageRoute // 模板管理
-@Serializable data object LifeTemplateCreateRoute // 模板创建
+@Serializable data object LifeHome                                    // 生活主页
+@Serializable data class LifeDetail(val itemId: Long)                 // 条目详情
+@Serializable data class LifeDayRead(val dateKey: String)             // 单日回读（ISO yyyy-MM-dd）
+@Serializable data object LifeStats                                   // 统计页
+@Serializable data object LifeMonthlyReview                           // 月度 / 年度回顾
+@Serializable data class LifeCategoryDetail(val category: String)     // 分类详情（计划 / 时间 / 记录）
+@Serializable data class LifeFullList(val mode: String, val dateEpochDay: Long = 0L) // 逾期 / 今日安排 / 待安排共用一页
+@Serializable data object LifeTemplateManage                          // 模板管理
+@Serializable data class LifeTemplateEdit(val templateId: Long = 0L)  // 模板编辑器（0 = 新建）
+@Serializable data object LifeFieldLibrary                            // 字段库全屏页
+@Serializable data class LifeCreateRecord(val templateIconKey: String, val itemId: Long = 0L) // 记录填写（itemId > 0 = 编辑）
 ```
 
-> **说明：** 预设模板（存钱/旅行/阅读等）与时间类（倒计时/生日/纪念日等）不再有独立路由，统一通过 `LifeTemplateRoute(templateId)` 动态导航。`LIFE_CATEGORY_MANAGE`（分类管理）为动态分类蓝图（15.4）的一部分，规划中未实现。
+> **与旧稿的差异（原稿的 13 个目的地已全部作废）**：
+> - 类名不同：没有 `LifeHomeRoute` / `LifeTemplateRoute` / `LifeItemRoute` / `LifeCreateRoute` / `LifeEditRoute` 这些名字；
+> - 专注 / 打卡 / 心情 / 日记 / 待办 / 报告 / 成就**都没有独立路由** —— 它们都是**模板**，统一走 `LifeDetail` + `LifeCreateRecord`；
+> - 「全部」三视图（今天 / 日历 / 全部）随 v1.40 退役，取而代之的是 `LifeFullList` 的三种 `mode`（OVERDUE / AGENDA / UNSCHEDULED）；
+> - `LifeCategoryManage`（分类管理）随动态分类蓝图一并作废，未实现。
 
 ### 15.3 模板字段类型系统
 
 `[Life]` 自定义模板使用统一的 `FieldType` enum 作为单一数据源。所有渲染组件（`FieldComponents.kt` / `FieldInputComponent.kt`）和创建 Wizard 均从此 enum 派生，消除三方并行定义。
 
-> **⚠️ 本节的 19 种 FieldType 扩充为 v4.6 设计蓝图，尚未实施。** 当前实现（`domain/model/FieldType.kt`）为 11 种：`TEXT, NUMBER, DATE, BOOLEAN, SELECT, MULTI_SELECT, IMAGE, LOCATION, TIME, PERCENT, RATING`。以下 15.3.1/15.3.3 的 `SHORT_TEXT/SLIDER/URL/EMAIL/PHONE/COLOR/DURATION/TAG` 及对应 Wizard UI 均规划中。
+> **✅ 本节蓝图已实施（v1.26 起），下表数字为历史记录。** 当前实现（`core/src/main/java/com/palmnote/domain/model/FieldType.kt`）
+> 为 **35 个枚举常量 / 34 个逻辑类型**：原子 26 + 复合 4（`CHECKLIST/TABLE/RANGE/PERSON`）+ 派生 4（`FORMULA/REMAINING/STREAK/ELAPSED`）。
+> `PERCENTAGE` 是 `PERCENT` 的旧别名，**仅为读取旧数据保留**，契约层两者同槽。
+> 原记的「当前实现 11 种」及「`SHORT_TEXT/SLIDER/URL/EMAIL/PHONE/COLOR/DURATION/TAG` 规划中」均已过时。
+> ⚠️ 但**表单控件并未覆盖全部类型**：`DATETIME/SLIDER/COLOR/VIDEO/AUDIO/FILE` 目前降级为普通文本框，
+> `TABLE`/`RANGE` 只读不能编辑（依据：审计记录 §13.2）。
 
 #### 15.3.1 统一 FieldType 枚举
 
 ```kotlin
 enum class FieldType {
-    // 文本类
-    TEXT, SHORT_TEXT, URL, EMAIL, PHONE,
-    // 数值类
-    NUMBER, PERCENT, RATING, SLIDER,
-    // 选择类
-    SELECT, MULTI_SELECT, BOOLEAN, COLOR, TAG,
-    // 时间类
-    DATE, TIME, DURATION,
-    // 媒体类
-    IMAGE, LOCATION
+    // 原子 26（+ PERCENTAGE 为 PERCENT 的旧别名，见下）
+    TEXT, NUMBER, DATE, BOOLEAN, SELECT, MULTI_SELECT, IMAGE, LOCATION, TIME, PERCENT, RATING,
+    SHORT_TEXT, SLIDER, PERCENTAGE, URL, EMAIL, PHONE, COLOR, DURATION,
+    CURRENCY, DATETIME, RICH_TEXT, FILE,
+    VIDEO, AUDIO, TAG, MAP,
+    // 复合 4（E 组）
+    CHECKLIST, TABLE, RANGE, PERSON,
+    // 派生 4（F 组）
+    FORMULA, REMAINING, STREAK, ELAPSED
 }
 ```
+
+> **红线：序列化名即存储名，只增不改不删**（改枚举名 = 静默丢掉存量数据）。
+> `PERCENTAGE` 已并入 `PERCENT`（§3.2），枚举值保留**只为读取旧数据**，契约层两者同槽。
+> ⚠️ 上表是**契约**，不等于表单控件：`DATETIME/SLIDER/COLOR/VIDEO/AUDIO/FILE` 当前降级为普通文本框，`TABLE`/`RANGE` 只读不能编辑（见 15.3 顶部注记）。
 
 **变更要点：**
 
@@ -1650,3 +1725,4 @@ MainActivity.onCreate()  (@AndroidEntryPoint)
 | **4.7** | **2026-07-28** | **取消模块化架构（PalmModule / ModuleRegistry / Tab 动态配置），底栏恢复为固定 4 Tab。新增模块均通过 Dashboard 卡片入口（不占 Tab）。删除第 17 章。** |
 | **5.0** | **2026-08-02** | **架构对齐当前实现：依赖注入回归 Hilt（手动 DI / AppContainer 已移除）；密码本 v1.3.0 已实现（feature/vault，字段级 AES-256-GCM + 独立主密码密钥包裹，DB v5 Migration4To5）；15.4 动态分类标注为规划中未实现；版本升 1.3.0。** |
 | **5.1** | **2026-08-02** | **安全与 OCR 升级：数据库 SQLCipher 全库加密（EncryptedOpenHelperFactory，明文库自动迁移）；OCR 引擎 ML Kit → PaddleOCR PP-OCRv6（OcrEngine 接口 + PaddleOcrEngine，ONNX Runtime 离线推理，模型打包 assets，release 仅 arm64-v8a）；APK 体积 86MB → 42.6MB。对齐修正：15.2 路由改类型安全路由（LifeRoute.kt）；15.3 FieldType 扩充标注为规划（当前 11 种）；INTERNET 权限标注预留未声明。** |
+| **5.2** | **2026-09-29** | **生活模块规范回写至 v1.40 现状（纯文档校准，未改代码）：§15.1 首页树（按 LifeScreen.kt）/ §15.2 路由（实际 11 个目的地）/ §15.3.1 FieldType（35 常量 / 34 逻辑类型）/ §6.12 与 §5.3.2 统计入口（顶栏图标）/ §5.3 AppIcon 零接线标注 / §6.5 生活页 FAB（自绘胶囊，StaggeredFabMenuItem 未使用）。v4.6 动态分类蓝图与 8 项展开式 FAB 均标注作废并保留历史。** |

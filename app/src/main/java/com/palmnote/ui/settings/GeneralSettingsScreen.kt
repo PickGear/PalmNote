@@ -52,6 +52,8 @@ import com.palmnote.ui.components.SettingRowContent
 import com.palmnote.ui.components.SettingRow
 import com.palmnote.app.R
 import com.palmnote.ui.theme.*
+import com.palmnote.ui.theme.ModuleBill
+import androidx.compose.material.icons.outlined.ReceiptLong
 
 private val iconVisuals = linkedMapOf(
     PreferencesManager.APP_ICON_GREEN_WHITE to Pair(Color(0xFF2D4A3E), Color.White),
@@ -80,6 +82,7 @@ fun GeneralSettingsScreen(
     viewModel: SettingsViewModel
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val categoryCompactEnabled by viewModel.categoryCompactEnabled.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val isDarkTheme = LocalIsDarkTheme.current
     var showThemePicker by remember { mutableStateOf(false) }
@@ -139,15 +142,12 @@ fun GeneralSettingsScreen(
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            item { SectionHeader(stringResource(R.string.settings_appearance), Icons.Default.Palette, LifePlan) }
+            // 分区色用设置页多巴胺装饰色；「记账」分区归属记账模块 → 保留 ModuleBill
+            item { SectionHeader(stringResource(R.string.settings_appearance), Icons.Default.Palette, DopamineCoral) }
             item {
                 ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
                     SettingRow(clickable = { showThemePicker = true }) {
                         SettingRowContent(title = stringResource(R.string.settings_dark_mode), subtitle = stringResource(R.string.settings_dark_mode_subtitle), value = themes[state.themeMode], showChevron = true)
-                    }
-                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-                    SettingRow(clickable = { showLanguagePicker = true }) {
-                        SettingRowContent(title = stringResource(R.string.settings_language), subtitle = stringResource(R.string.settings_language_subtitle), value = languageLabels[state.language], showChevron = true)
                     }
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                     val currentThemeColor = ThemePackages.getById(state.themeColor)
@@ -204,16 +204,40 @@ fun GeneralSettingsScreen(
                             Icon(Icons.Filled.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                    // 页面形态偏好：只影响生活首页的分类卡，但它是**显示偏好**，
+                    // 与主题色/深浅色同类 → 集中在外观区（单开一类不够用，见设置页规划的说明）。
+                    SettingRow {
+                        SettingRowContent(
+                            title = stringResource(R.string.settings_life_category_compact),
+                            subtitle = stringResource(R.string.settings_life_category_compact_subtitle)
+                        )
+                        CapsuleSwitch(
+                            checked = categoryCompactEnabled,
+                            onCheckedChange = { viewModel.setCategoryCompact(it) },
+                            checkedTrackColor = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
             }
 
-            item { SectionHeader(stringResource(R.string.settings_general), Icons.Default.Tune, LifeRecord) }
+            item { SectionHeader(stringResource(R.string.settings_general), Icons.Default.Tune, DopamineMint) }
             item {
                 ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
+                    SettingRow(clickable = { showLanguagePicker = true }) {
+                        SettingRowContent(title = stringResource(R.string.settings_language), subtitle = stringResource(R.string.settings_language_subtitle), value = languageLabels[state.language], showChevron = true)
+                    }
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                     SettingRow(clickable = { showStartPagePicker = true }) {
                         SettingRowContent(title = stringResource(R.string.settings_default_start_page), value = startPages[state.defaultStartPage], showChevron = true)
                     }
-                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                }
+            }
+
+            // 账单相关偏好独立成区：它们只影响记账模块，和「语言/启动页」这类全局通用项不同关切点
+            item { SectionHeader(stringResource(R.string.settings_bill_section), Icons.Outlined.ReceiptLong, ModuleBill) }
+            item {
+                ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
                     SettingRow(clickable = { showBillTypePicker = true }) {
                         SettingRowContent(title = stringResource(R.string.settings_default_bill_type), value = billTypes[state.defaultBillType.value], showChevron = true)
                     }

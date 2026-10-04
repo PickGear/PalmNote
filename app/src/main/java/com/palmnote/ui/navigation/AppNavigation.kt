@@ -31,6 +31,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import com.palmnote.app.BuildConfig
 import com.palmnote.app.R
 import com.palmnote.ui.asset.AddAssetScreen
 import com.palmnote.ui.asset.AssetDetailScreen
@@ -81,6 +82,9 @@ data class BottomNavItem(
     val iconSize: Dp = 24.dp
 )
 
+// README 截图用 `-PhideDemoBanner=true` 构建时隐藏「示例模式」状态条（见 build.gradle.kts）。
+// 发布包必须是 false —— 状态条是产品刻意做成不可关闭的状态指示，别把它关掉。
+
 private val bottomNavItems = listOf(
     BottomNavItem(R.string.nav_dashboard, Icons.Filled.Home, Icons.Outlined.Home, ModuleHome, iconSize = 26.dp),
     BottomNavItem(R.string.nav_asset, Icons.Filled.Inventory2, Icons.Outlined.Inventory2, ModuleItem, iconSize = 22.dp),
@@ -112,6 +116,23 @@ fun PalmNoteNavHost() {
         PalmNoteApp.pendingNavigation = null
         LaunchedEffect(Unit) {
             navController.navigate(AddBill())
+        }
+    }
+
+    // 小组件点事件 → 深链生活记录详情：经 MainTabs 的 savedStateHandle 传给 LifeNavHost
+    PalmNoteApp.pendingLifeDetailItemId?.let { itemId ->
+        PalmNoteApp.pendingLifeDetailItemId = null
+        navController.currentBackStackEntry?.savedStateHandle?.apply {
+            set("navToTab", "life")
+            set("lifeDetailItemId", itemId)
+        }
+    }
+    // 小组件页脚 → 深链完整清单
+    PalmNoteApp.pendingLifeListMode?.let { mode ->
+        PalmNoteApp.pendingLifeListMode = null
+        navController.currentBackStackEntry?.savedStateHandle?.apply {
+            set("navToTab", "life")
+            set("lifeListMode", mode)
         }
     }
 
@@ -471,13 +492,25 @@ private fun MainTabs(
     val tabNavController = rememberNavController()
     val tabBackStackEntry by tabNavController.currentBackStackEntryAsState()
     val currentTabDestination = tabBackStackEntry?.destination
+    val demoModeVm: com.palmnote.ui.navigation.DemoModeViewModel = hiltViewModel()
+    val demoModeOn by demoModeVm.demoModeOn.collectAsStateWithLifecycle()
 
     var lifeChildAtHome by remember { mutableStateOf(true) }
 
-    // 接收外层（Search 等）发来的"切到某 Tab"信号
+    // 接收外层（Search / 小组件深链）发来的"切到某 Tab"信号
     val mainTabsEntry by appNavController.currentBackStackEntryAsState()
+    var pendingLifeDetailId by remember { mutableStateOf<Long?>(null) }
+    var pendingLifeListTarget by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(mainTabsEntry) {
         val handle = mainTabsEntry?.savedStateHandle ?: return@LaunchedEffect
+        handle.get<Long>("lifeDetailItemId")?.let {
+            handle.remove<Long>("lifeDetailItemId")
+            pendingLifeDetailId = it
+        }
+        handle.get<String>("lifeListMode")?.let {
+            handle.remove<String>("lifeListMode")
+            pendingLifeListTarget = it
+        }
         val target = handle.get<String>("navToTab") ?: return@LaunchedEffect
         handle.remove<String>("navToTab")
         val route: Any = when (target) {
@@ -587,11 +620,31 @@ private fun MainTabs(
                     }
                 }
             }
-            Box(
+            // 壳层统一避让状态栏并消费 inset：各 tab 页面自己的 statusBarsPadding
+            // 会基于「已消费」的窗口 insets 计算，自动归零 —— 否则横幅下面会叠出
+            // 一整段「页面又避让了一次」的双重空白（真机截图实测过）。
+            Column(
                 modifier = Modifier
                     .weight(1f)
                     .padding(innerPadding)
+                    .statusBarsPadding()
             ) {
+                // 「示例模式」状态条：固定槽位（布局流里）、**不可关闭**、极薄一行。
+                // 状态不做成可关闭的消息（关掉又冒出来=骚扰），也不浮动（浮动会压标题）。
+                //
+                // 文案随 tab 变：生活页是**互斥**口径（演示开启时自己的记录不可见），
+                // 那句"本页只显示示例、你的记录关闭演示后恢复"就并进这同一条里 ——
+                // 此前生活页另有一条内联说明，两条都在说"示例模式"，冗余（用户指出）。
+                if (demoModeOn && !BuildConfig.HIDE_DEMO_BANNER) {
+                    com.palmnote.ui.components.AppBanner(
+                        text = stringResource(
+                            if (isTabSelected(3)) R.string.life_demo_banner_life_tab else R.string.life_demo_banner
+                        ),
+                        // 用主题主色：与引导页示例页同一语义同一色，且跟随用户选的主题包
+                        accent = MaterialTheme.colorScheme.primary
+                    )
+                }
+                Box(modifier = Modifier.weight(1f)) {
                 NavHost(
                     navController = tabNavController,
                     startDestination = startTab,
@@ -671,13 +724,18 @@ private fun MainTabs(
 
             composable<TabLife> {
                 LifeNavHost(
-                    onChildNavigated = { lifeChildAtHome = it }
+                    onChildNavigated = { lifeChildAtHome = it },
+                    pendingDetailItemId = pendingLifeDetailId,
+                    onPendingDetailConsumed = { pendingLifeDetailId = null },
+                    pendingListMode = pendingLifeListTarget,
+                    onPendingListConsumed = { pendingLifeListTarget = null }
                 )
             }
-                }
             }
         }
     }
+    }
+}
 }
 
 @Composable

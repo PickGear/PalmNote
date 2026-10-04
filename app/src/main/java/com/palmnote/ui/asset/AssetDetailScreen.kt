@@ -45,6 +45,7 @@ import com.palmnote.domain.model.Money
 import com.palmnote.domain.model.toMoney
 import com.palmnote.domain.util.CurrencyUtils
 import com.palmnote.domain.util.DateUtils
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import com.palmnote.app.R
 import com.palmnote.ui.components.*
@@ -278,8 +279,12 @@ if (asset.purchasePrice > 0) DetailRow(
                                 }
                             }
                             val daysLeft = DateUtils.getDaysUntil(warrantyExpireDate)
-                            if (daysLeft >= 0) StatusChip(text = stringResource(R.string.asset_warranty_remaining_days, daysLeft), color = StatusActive)
-                            else StatusChip(text = stringResource(R.string.asset_warranty_expired_days, -daysLeft), color = StatusRetired)
+                            if (daysLeft >= 0) StatusChip(text = pluralStringResource(
+                                R.plurals.asset_warranty_remaining_days, daysLeft, daysLeft
+                            ), color = StatusActive)
+                            else StatusChip(text = pluralStringResource(
+                                R.plurals.asset_warranty_expired_days, -daysLeft, -daysLeft
+                            ), color = StatusRetired)
                         }
                     }
                 }
@@ -306,14 +311,33 @@ if (asset.purchasePrice > 0) DetailRow(
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                     }
-                                    if (asset.maintenanceIntervalDays > 0) Text(text = stringResource(R.string.asset_maintenance_cycle_format, asset.maintenanceIntervalDays), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    if (asset.maintenanceIntervalDays > 0) {
+                                        Text(
+                                            text = pluralStringResource(
+                                                R.plurals.asset_maintenance_cycle_format,
+                                                asset.maintenanceIntervalDays,
+                                                asset.maintenanceIntervalDays
+                                            ),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
                                 }
                             }
                             if (isDue) StatusChip(text = stringResource(R.string.asset_maintenance_needed), color = AccentOrange)
                             else if (asset.nextMaintenanceDate != null) {
                                 val nextMaintenanceDate = asset.nextMaintenanceDate!!
                                 val daysUntil = DateUtils.getDaysUntil(nextMaintenanceDate)
-                                StatusChip(text = if (daysUntil >= 0) stringResource(R.string.asset_days_later_format, daysUntil) else stringResource(R.string.asset_maintenance_expired), color = if (daysUntil < 7) AccentOrange else StatusActive)
+                                StatusChip(
+                                    text = if (daysUntil >= 0) {
+                                        pluralStringResource(
+                                            R.plurals.asset_days_later_format, daysUntil, daysUntil
+                                        )
+                                    } else {
+                                        stringResource(R.string.asset_maintenance_expired)
+                                    },
+                                    color = if (daysUntil < 7) AccentOrange else StatusActive
+                                )
                             }
                         }
                         if (isDue) {
@@ -438,7 +462,13 @@ if (asset.purchasePrice > 0) DetailRow(
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Column {
                         Text(text = stringResource(R.string.asset_usage_records), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        Text(text = stringResource(R.string.asset_usage_count_format, asset.useCount), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(
+                            text = pluralStringResource(
+                                R.plurals.asset_usage_count_format, asset.useCount, asset.useCount
+                            ),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                     FilledTonalButton(
                         onClick = { viewModel.addUsageRecord(assetId) },
@@ -465,7 +495,9 @@ if (asset.purchasePrice > 0) DetailRow(
                 if (detailState.usageRecords.size > 3) {
                     item {
                         TextButton(onClick = { showAllRecords = !showAllRecords }, modifier = Modifier.fillMaxWidth()) {
-                            Text(if (showAllRecords) stringResource(R.string.asset_collapse) else stringResource(R.string.asset_expand_all_format, detailState.usageRecords.size), color = MaterialTheme.colorScheme.primary)
+                            Text(if (showAllRecords) stringResource(R.string.asset_collapse) else pluralStringResource(
+                                R.plurals.asset_expand_all_format, detailState.usageRecords.size, detailState.usageRecords.size
+                            ), color = MaterialTheme.colorScheme.primary)
                         }
                     }
                 }

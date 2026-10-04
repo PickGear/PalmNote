@@ -1,18 +1,20 @@
 package com.palmnote.ui.life
 
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.border
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -24,6 +26,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -34,17 +37,22 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.palmnote.app.R
+import com.palmnote.domain.util.BuiltinTemplates
 import com.palmnote.ui.theme.LifePlan
 import com.palmnote.ui.theme.LifeRecord
 import com.palmnote.ui.theme.LifeTime
+import com.palmnote.ui.theme.LocalIsDarkTheme
+import com.palmnote.ui.theme.TypeScale
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.temporal.ChronoUnit
@@ -89,6 +97,8 @@ fun LifeMonthCalendar(
     onWeekModeChange: (Boolean) -> Unit,
     dayMap: Map<LocalDate, LifeCalendarViewModel.DayCalInfo>,
     onSelectDate: (LocalDate) -> Unit,
+    /** 长按某格 → 当日回读页（只读；单击仍是选中该日）。 */
+    onOpenDayRead: (LocalDate) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val today = LocalDate.now()
@@ -148,6 +158,7 @@ fun LifeMonthCalendar(
         BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
             // 格子边长由可用宽度推出（7 列 + 6 个列间距）→ 行数由「落定月」决定的高度（格 + 行间距）。
             val cell = (maxWidth - GRID_GAP * (COLUMNS - 1)) / COLUMNS
+
             // 滑动中相邻两页同时可见：若落定月行数少于滑入月（如 9 月 5 行 → 8 月 6 行），
             // 固定按落定页取高会把滑入月的末行裁掉半截。故滑动中高度取落定页及左右相邻页的
             // 最大行数（宁可短暂多留白也不裁字），落定后收回到该月实际行数，animateDpAsState 平滑过渡。
@@ -184,7 +195,8 @@ fun LifeMonthCalendar(
                                         isToday = date == today,
                                         isSelected = date == selectedDate,
                                         info = dayMap[date],
-                                        onClick = { onSelectDate(date) }
+                                        onClick = { onSelectDate(date) },
+                                        onLongClick = { onOpenDayRead(date) },
                                     )
                                 }
                             }
@@ -199,7 +211,8 @@ fun LifeMonthCalendar(
                             displayMonth = baseMonth.plusMonths((page - CENTER_PAGE).toLong()),
                             selectedDate = selectedDate,
                             dayMap = dayMap,
-                            onSelectDate = onSelectDate
+                            onSelectDate = onSelectDate,
+                            onOpenDayRead = onOpenDayRead
                         )
                     }
                 }
@@ -224,18 +237,19 @@ private fun MonthHeader(
         Text(
             title,
             fontWeight = FontWeight.SemiBold,
-            fontSize = 16.sp,
+            fontSize = TypeScale.titleM,
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier
                 .clip(MaterialTheme.shapes.small)
                 .clickable(onClick = onToday)
+                .minimumInteractiveComponentSize()
                 .padding(vertical = 2.dp, horizontal = 4.dp)
         )
         Spacer(modifier = Modifier.weight(1f))
         Text(
             stringResource(R.string.life_weekly_calendar_month_header, displayMonth.year, displayMonth.monthValue),
             fontWeight = FontWeight.Medium,
-            fontSize = 15.sp,
+            fontSize = TypeScale.metricValue,
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(end = 10.dp)
         )
@@ -244,53 +258,23 @@ private fun MonthHeader(
     }
 }
 
-/** 右上角的「周 | 月」分段切换：胶囊轨道 + 选中侧主色圆片。 */
+/**
+ * 右上角的「周 | 月」分段切换：**胶囊轨道 + 选中侧主色圆片**（形态见 [PillToggle]）。
+ */
 @Composable
 private fun ModeToggle(weekMode: Boolean, onToggleMode: (Boolean) -> Unit) {
-    Row(
-        modifier = Modifier
-            .clip(CircleShape)
-            .background(TOGGLE_TRACK_BG)
-            .padding(1.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        ModeToggleOption(
-            label = stringResource(R.string.life_calendar_view_week),
-            selected = weekMode,
-            contentDescription = stringResource(R.string.life_calendar_toggle_week),
-            onClick = { onToggleMode(true) }
+    PillToggle(
+        options = listOf(
+            stringResource(R.string.life_calendar_view_week),
+            stringResource(R.string.life_calendar_view_month)
+        ),
+        selectedIndex = if (weekMode) 0 else 1,
+        onSelect = { onToggleMode(it == 0) },
+        contentDescriptions = listOf(
+            stringResource(R.string.life_calendar_toggle_week),
+            stringResource(R.string.life_calendar_toggle_month)
         )
-        ModeToggleOption(
-            label = stringResource(R.string.life_calendar_view_month),
-            selected = !weekMode,
-            contentDescription = stringResource(R.string.life_calendar_toggle_month),
-            onClick = { onToggleMode(false) }
-        )
-    }
-}
-
-@Composable
-private fun ModeToggleOption(
-    label: String,
-    selected: Boolean,
-    contentDescription: String,
-    onClick: () -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .clip(CircleShape)
-            .background(if (selected) MaterialTheme.colorScheme.primary else Color.Transparent)
-            .clickable(onClick = onClick, onClickLabel = contentDescription)
-            .padding(horizontal = 10.dp, vertical = 2.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            label,
-            fontSize = 12.sp,
-            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
-            color = if (selected) MaterialTheme.colorScheme.onPrimary else TOGGLE_TEXT
-        )
-    }
+    )
 }
 
 @Composable
@@ -299,11 +283,19 @@ private fun WeekdayHeader() {
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(GRID_GAP)
     ) {
-        listOf("一", "二", "三", "四", "五", "六", "日").forEach { label ->
+        listOf(
+            R.string.date_weekday_short_mon,
+            R.string.date_weekday_short_tue,
+            R.string.date_weekday_short_wed,
+            R.string.date_weekday_short_thu,
+            R.string.date_weekday_short_fri,
+            R.string.date_weekday_short_sat,
+            R.string.date_weekday_short_sun
+        ).forEach { res ->
             Text(
-                label,
-                fontSize = 10.sp,
-                color = WEEKDAY_TEXT,
+                stringResource(res),
+                fontSize = TypeScale.labelS,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.weight(1f),
                 textAlign = TextAlign.Center
             )
@@ -316,7 +308,8 @@ private fun MonthGrid(
     displayMonth: YearMonth,
     selectedDate: LocalDate,
     dayMap: Map<LocalDate, LifeCalendarViewModel.DayCalInfo>,
-    onSelectDate: (LocalDate) -> Unit
+    onSelectDate: (LocalDate) -> Unit,
+    onOpenDayRead: (LocalDate) -> Unit
 ) {
     // 行数按月动态：该月实际跨几周就画几行（4~6），不补空行、不补相邻月灰号。
     Column(verticalArrangement = Arrangement.spacedBy(GRID_GAP)) {
@@ -331,7 +324,8 @@ private fun MonthGrid(
                         displayMonth = displayMonth,
                         selectedDate = selectedDate,
                         dayMap = dayMap,
-                        onSelectDate = onSelectDate
+                        onSelectDate = onSelectDate,
+                        onOpenDayRead = onOpenDayRead
                     )
                 }
             }
@@ -352,7 +346,8 @@ private fun RowScope.GridCell(
     displayMonth: YearMonth,
     selectedDate: LocalDate,
     dayMap: Map<LocalDate, LifeCalendarViewModel.DayCalInfo>,
-    onSelectDate: (LocalDate) -> Unit
+    onSelectDate: (LocalDate) -> Unit,
+    onOpenDayRead: (LocalDate) -> Unit
 ) {
     val firstDayOffset = (displayMonth.atDay(1).dayOfWeek.value + 6) % 7
     val daysInMonth = displayMonth.lengthOfMonth()
@@ -369,7 +364,8 @@ private fun RowScope.GridCell(
                     isToday = false,
                     isSelected = false,
                     info = null,
-                    onClick = { onSelectDate(date) }
+                    onClick = { onSelectDate(date) },
+                    onLongClick = { onOpenDayRead(date) }
                 )
             }
         }
@@ -382,7 +378,8 @@ private fun RowScope.GridCell(
                     isToday = false,
                     isSelected = false,
                     info = null,
-                    onClick = { onSelectDate(date) }
+                    onClick = { onSelectDate(date) },
+                    onLongClick = { onOpenDayRead(date) }
                 )
             }
         }
@@ -395,13 +392,15 @@ private fun RowScope.GridCell(
                     isToday = date == today,
                     isSelected = date == selectedDate,
                     info = dayMap[date],
-                    onClick = { onSelectDate(date) }
+                    onClick = { onSelectDate(date) },
+                    onLongClick = { onOpenDayRead(date) }
                 )
             }
         }
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun MonthDayCell(
     date: LocalDate,
@@ -409,26 +408,32 @@ private fun MonthDayCell(
     isToday: Boolean,
     isSelected: Boolean,
     info: LifeCalendarViewModel.DayCalInfo?,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onLongClick: () -> Unit = {}
 ) {
     // 底色 / 圆点一律随数据：当天没有记录 → 透明底、无圆点。
     // 「今天」只靠主色细环标记当前日，不再强制涂粉（避免「没记录却有底色」的歧义）。
     val level = heatLevel(info?.count ?: 0)
     val bg = heatBackground(level)
     val textColor = when {
-        !inMonth -> OTHER_TEXT
+        !inMonth -> MaterialTheme.colorScheme.outline
         level >= 3 -> Color.White
-        else -> DAY_TEXT
+        else -> MaterialTheme.colorScheme.onSurface
     }
     // 框的取舍（用户反馈：选中环必须统一粗细）：
     // - 选中（含今天）→ 统一 1dp 主色细环，今天不再加粗（设计稿 3dp 环与其他选中日不一致）；
     // - 今天未被选中 → 同样细，但透明度降到 0.28，只作「今天在哪」的定位提示，不与选中框争焦点。
+    val ringColor = MaterialTheme.colorScheme.primary
     val border = when {
-        isSelected -> BorderStroke(SELECT_RING_WIDTH, TODAY_RING)
-        isToday -> BorderStroke(SELECT_RING_WIDTH, TODAY_RING.copy(alpha = TODAY_HINT_ALPHA))
+        isSelected -> BorderStroke(SELECT_RING_WIDTH, ringColor)
+        isToday -> BorderStroke(SELECT_RING_WIDTH, ringColor.copy(alpha = TODAY_HINT_ALPHA))
         else -> null
     }
     val shape = RoundedCornerShape(DAY_CELL_RADIUS)
+    // 读屏：报日期与当日记录数（此前 TalkBack 只读一个数字）
+    val dayDesc = stringResource(
+        R.string.life_calendar_day_desc, date.monthValue, date.dayOfMonth, info?.count ?: 0
+    )
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -436,14 +441,20 @@ private fun MonthDayCell(
             .clip(shape)
             .background(bg)
             .then(if (border != null) Modifier.border(border, shape) else Modifier)
-            .clickable(onClick = onClick)
+            .semantics { contentDescription = dayDesc }
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
     ) {
+        // 有分类圆点时数字整体上移（BottomCenter 排布），避免「选中粗字 + 细环 + 底部圆点」
+        // 在格子下半部挤成一团 —— 截图里 26 号的圆点几乎贴上选中环就是这个原因。
+        val hasDots = inMonth && info != null
         Text(
             date.dayOfMonth.toString(),
-            fontSize = 13.sp,
+            fontSize = TypeScale.heroUnit,
             fontWeight = if (isToday || isSelected) FontWeight.Bold else FontWeight.Normal,
             color = textColor,
-            modifier = Modifier.align(Alignment.Center)
+            modifier = Modifier
+                .align(if (hasDots) Alignment.TopCenter else Alignment.Center)
+                .then(if (hasDots) Modifier.padding(top = DOT_TEXT_TOP_PADDING) else Modifier)
         )
         if (inMonth && info != null) {
             Row(
@@ -468,8 +479,7 @@ private fun MonthDayCell(
 }
 
 /** 该日期所在周的第一天（周一），周视图以它为锚。 */
-private fun startOfWeek(date: LocalDate): LocalDate =
-    date.minusDays(((date.dayOfWeek.value + 6) % 7).toLong())
+private fun startOfWeek(date: LocalDate): LocalDate = date.minusDays(((date.dayOfWeek.value + 6) % 7).toLong())
 
 /**
  * 周视图某周的「锚定月」：优先选中日所在月（选了 10.1 就显示 10 月），
@@ -503,12 +513,17 @@ private fun heatLevel(count: Int): Int = when {
     else -> 4
 }
 
-private fun heatBackground(level: Int): Color = when (level) {
-    0 -> Color.Transparent
-    1 -> PINK1
-    2 -> PINK2
-    3 -> PINK3
-    else -> PINK4
+/** 热力底色的明暗两档：浅色为设计稿粉阶，深色改用低明度暖紫红，保证数字仍可读。 */
+@Composable
+private fun heatBackground(level: Int): Color {
+    val dark = LocalIsDarkTheme.current
+    return when (level) {
+        0 -> Color.Transparent
+        1 -> if (dark) Color(0xFF33202A) else Color(0xFFFCE4EC)
+        2 -> if (dark) Color(0xFF4A2A39) else Color(0xFFF8CDDB)
+        3 -> if (dark) Color(0xFF7E3652) else Color(0xFFF48FB1)
+        else -> if (dark) Color(0xFFB23A63) else Color(0xFFEC407A)
+    }
 }
 
 private fun categoryDotColor(category: String): Color = when (category) {
@@ -518,17 +533,7 @@ private fun categoryDotColor(category: String): Color = when (category) {
     else -> LifePlan
 }
 
-// ── A 版设计稿配色（doubao_html 今日看板日历优化）──
-private val PINK1 = Color(0xFFFCE4EC)
-private val PINK2 = Color(0xFFF8CDDB)
-private val PINK3 = Color(0xFFF48FB1)
-private val PINK4 = Color(0xFFEC407A)
-private val TODAY_RING = Color(0xFFD81B60)
-private val DAY_TEXT = Color(0xFF444444)
-private val OTHER_TEXT = Color(0xFFC2C2C2)
-private val WEEKDAY_TEXT = Color(0xFF9CA3AF)
-private val TOGGLE_TRACK_BG = Color(0xFFF3F4F6)
-private val TOGGLE_TEXT = Color(0xFF6B7280)
+// ── 配色已全部改走 MaterialTheme / LocalIsDarkTheme（见 heatBackground / MonthDayCell）──
 
 /** 网格列数（周一至周日）。 */
 private const val COLUMNS = 7
@@ -543,6 +548,9 @@ private const val CENTER_PAGE = MONTH_PAGE_COUNT / 2
 /** 日期格圆角：设计稿 14px 按 0.82 换算 → 12dp。 */
 private val DAY_CELL_RADIUS = 12.dp
 
+/** 有分类圆点时日期数字距格顶的间距：让数字落格中部偏上，与底部圆点留出呼吸。 */
+private val DOT_TEXT_TOP_PADDING = 9.dp
+
 /**
  * 网格容器高度的裁剪余量：格边长为小数 dp，容器与格子取整可能差 1px，
  * 不留余量时末行/单行格子的选中环底边会被裁。1dp 视觉不可感知。
@@ -555,6 +563,6 @@ private val SELECT_RING_WIDTH = 1.dp
 /** 「今天」被别的日期选中时的环透明度：只作定位提示，不能与选中框争焦点。 */
 private const val TODAY_HINT_ALPHA = 0.28f
 
-private const val CAT_PLAN = "计划"
-private const val CAT_TIME = "时间"
-private const val CAT_RECORD = "记录"
+private const val CAT_PLAN = BuiltinTemplates.PLAN_CATEGORY
+private const val CAT_TIME = BuiltinTemplates.TIME_CATEGORY
+private const val CAT_RECORD = BuiltinTemplates.RECORD_CATEGORY

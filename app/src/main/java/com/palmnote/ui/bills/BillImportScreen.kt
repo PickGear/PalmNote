@@ -50,6 +50,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontFamily
@@ -1215,7 +1216,9 @@ private fun DoneSuccessHeader(count: Int, skipped: Int, failed: Int) {
     Text(stringResource(R.string.bill_import_complete), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
     Spacer(modifier = Modifier.height(4.dp))
     Text(
-        stringResource(R.string.bill_import_result_total_subtitle, count + skipped + failed),
+        pluralStringResource(
+            R.plurals.bill_import_result_total_subtitle, count + skipped + failed, count + skipped + failed
+        ),
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant
     )

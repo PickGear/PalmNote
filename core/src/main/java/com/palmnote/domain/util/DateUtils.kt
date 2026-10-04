@@ -66,8 +66,18 @@ object DateUtils {
     fun parseDateValueOrNull(raw: String?): Long? {
         if (raw.isNullOrBlank()) return null
         raw.toLongOrNull()?.let { return if (isPlausibleMillis(it)) it else null }
+        // ① `yyyy-MM-dd`
+        try {
+            return LocalDate.parse(raw).atStartOfDay(zone).toInstant().toEpochMilli()
+        } catch (_: Exception) {
+            // 落到下一种写法
+        }
+        // ② `yyyy-MM-dd HH:mm` —— DATETIME 字段编辑态的显示格式，也是用户手输的常见写法。
+        // 不认它的话，DATETIME 记录会被判成「没有日期」：dueDate 镜像不出来（不上日历、
+        // 不进今日），详情页那一行也显示空白。
         return try {
-            LocalDate.parse(raw).atStartOfDay(zone).toInstant().toEpochMilli()
+            LocalDateTime.parse(raw, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))
+                .atZone(zone).toInstant().toEpochMilli()
         } catch (_: Exception) {
             null
         }

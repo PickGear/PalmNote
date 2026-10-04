@@ -4,7 +4,6 @@
   <CurrentIssues>
     <ID>ComplexCondition:FieldContract.kt$DerivedEvaluator$t == "-" &amp;&amp; (prev == null || prev in prec || prev == "(")</ID>
     <ID>ComplexCondition:FieldValueExtractor.kt$FieldValueExtractor$h != null &amp;&amp; m != null &amp;&amp; h in 0..23 &amp;&amp; m in 0..59</ID>
-    <ID>CyclomaticComplexMethod:AppIconMapper.kt$fun iconFromName(name: String): ImageVector</ID>
     <ID>CyclomaticComplexMethod:AppLockScreen.kt$@Composable fun AppLockScreen( appLockManager: AppLockManager, onUnlocked: () -&gt; Unit, isSetupMode: Boolean = false )</ID>
     <ID>CyclomaticComplexMethod:CategoryClassifier.kt$CategoryClassifier$fun guessCategory(text: String): String</ID>
     <ID>CyclomaticComplexMethod:CommonComponents.kt$@Composable fun TagPicker( selectedTags: List&lt;String&gt;, status: String, onTagsChanged: (List&lt;String&gt;) -&gt; Unit, modifier: Modifier = Modifier )</ID>
@@ -31,7 +30,6 @@
     <ID>LongParameterList:FieldContract.kt$FieldContracts$( type: FieldType, group: FieldGroup, input: InputKind, display: DisplayKind, agg: Set&lt;AggFn&gt; = emptySet(), defaultPolicy: DefaultPolicy = DefaultPolicy.NONE, editorOnly: Boolean = false, progressCapable: Boolean = false, countable: Boolean = false, segmented: Boolean = false )</ID>
     <ID>LoopWithTooManyJumpStatements:FieldValueExtractor.kt$FieldValueExtractor$for</ID>
     <ID>LoopWithTooManyJumpStatements:Migration8To9.kt$&lt;no name provided&gt;$while</ID>
-    <ID>MatchingDeclarationName:TypeTokens.kt$TypeScale</ID>
     <ID>MaxLineLength:AnniversaryDao.kt$AnniversaryDao$@Query("SELECT * FROM anniversaries WHERE (title LIKE '%' || :query || '%' OR description LIKE '%' || :query || '%' OR personName LIKE '%' || :query || '%') ORDER BY updatedAt DESC")</ID>
     <ID>MaxLineLength:AppLockManager.kt$AppLockManager$return "${PBKDF2_PREFIX}${PBKDF2_ITERATIONS}:${Base64.getEncoder().encodeToString(salt)}:${Base64.getEncoder().encodeToString(hash)}"</ID>
     <ID>MaxLineLength:AssetDao.kt$AssetDao$@Query("SELECT * FROM assets WHERE (name LIKE '%' || :query || '%' OR brand LIKE '%' || :query || '%' OR model LIKE '%' || :query || '%' OR description LIKE '%' || :query || '%' OR tags LIKE '%' || :query || '%')")</ID>
@@ -44,6 +42,7 @@
     <ID>MaxLineLength:AssetDao.kt$AssetDao$@Query("UPDATE assets SET status = 'REMOVED', soldDate = :soldDate, soldPrice = :soldPrice, soldChannel = :soldChannel, soldToWhom = :soldToWhom, updatedAt = :now WHERE id = :id")</ID>
     <ID>MaxLineLength:AssetDao.kt$AssetDao$suspend</ID>
     <ID>MaxLineLength:BillDao.kt$BillDao$@Query("SELECT * FROM bills WHERE note LIKE '%' || :query || '%' OR merchant LIKE '%' || :query || '%' OR tags LIKE '%' || :query || '%' ORDER BY date DESC")</ID>
+    <ID>MaxLineLength:BillDao.kt$BillDao$@Query("UPDATE bills SET accountBookId = :targetBookId WHERE accountBookId IN (SELECT id FROM account_books WHERE isDemo = 1) AND isDemo = 0")</ID>
     <ID>MaxLineLength:CommonComponents.kt$confirmButton = { TextButton(onClick = { datePickerState.selectedDateMillis?.let { onDateSelected(it) }; showDatePicker = false }) { Text(stringResource(R.string.confirm), fontWeight = FontWeight.Bold) } }</ID>
     <ID>MaxLineLength:CommonComponents.kt$dismissButton = { TextButton(onClick = { showDatePicker = false }) { Text(stringResource(R.string.cancel), fontWeight = FontWeight.Bold) } }</ID>
     <ID>MaxLineLength:CommonComponents.kt$var month by remember(currentMonth) { mutableIntStateOf(parts[1].toIntOrNull() ?: java.util.Calendar.getInstance().get(java.util.Calendar.MONTH) + 1) }</ID>
@@ -55,7 +54,6 @@
     <ID>MaxLineLength:DateUtils.kt$DateUtils$@Deprecated("Use formatDisplayDateWithWeekday(context, timestamp) for proper i18n", ReplaceWith("formatDisplayDateWithWeekday(context, timestamp)"))</ID>
     <ID>MaxLineLength:DateUtils.kt$DateUtils$@Deprecated("Use formatWeekRange(context, startDate, endDate) for proper i18n", ReplaceWith("formatWeekRange(context, startDate, endDate)"))</ID>
     <ID>MaxLineLength:FieldContract.kt$FieldContracts$put(FieldType.FORMULA, c(FieldType.FORMULA, FieldGroup.DERIVED, InputKind.NONE, DisplayKind.DERIVED_VALUE, editorOnly = true, progressCapable = true))</ID>
-    <ID>MaxLineLength:FieldContract.kt$FieldContracts$put(FieldType.STREAK, c(FieldType.STREAK, FieldGroup.DERIVED, InputKind.NONE, DisplayKind.DERIVED_VALUE, editorOnly = true, countable = true, segmented = true))</ID>
     <ID>MaxLineLength:FieldInputComponent.kt$dismissButton = { TextButton(onClick = { showPicker = false }) { Text(stringResource(R.string.cancel), fontWeight = FontWeight.Bold) } }</ID>
     <ID>MaxLineLength:FieldInputComponent.kt$try { java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date(value.toLong())) } catch (_: Exception) { value }</ID>
     <ID>MaxLineLength:FocusRecordDao.kt$FocusRecordDao$@Query("SELECT COALESCE(SUM(durationMinutes), 0) FROM focus_records WHERE startTime &gt;= :startOfDay AND startTime &lt; :endOfDay AND completed = 1")</ID>
@@ -73,14 +71,7 @@
     <ID>MaxLineLength:IconPicker.kt$style</ID>
     <ID>MaxLineLength:IconPicker.kt$travelLabel to listOf(AppIcon.Flight, AppIcon.DirectionsCar, AppIcon.BeachAccess, AppIcon.DirectionsCarFilled, AppIcon.LocalShipping)</ID>
     <ID>MaxLineLength:IconPicker.kt$workLabel to listOf(AppIcon.Work, AppIcon.Payments, AppIcon.BusinessCenter, AppIcon.Build, AppIcon.Receipt, AppIcon.Devices, AppIcon.Code, AppIcon.PhoneAndroid)</ID>
-    <ID>MaxLineLength:LifeCharts.kt$Text(label, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)</ID>
-    <ID>MaxLineLength:LifeCharts.kt$drawArc(color, startAngle = -90f, sweepAngle = 360f * fraction.coerceIn(0f, 1f), useCenter = false, style = Stroke(stroke, cap = StrokeCap.Round), topLeft = Offset(inset, inset), size = arcSize)</ID>
-    <ID>MaxLineLength:LifeCharts.kt$drawArc(track, startAngle = 0f, sweepAngle = 360f, useCenter = false, style = Stroke(stroke, cap = StrokeCap.Round), topLeft = Offset(inset, inset), size = arcSize)</ID>
-    <ID>MaxLineLength:LifeCharts.kt$drawRoundRect(if (v == values.maxOf { it.second }) color else dim, topLeft = Offset(x, size.height - h), size = Size(barW, h), cornerRadius = androidx.compose.ui.geometry.CornerRadius(3.dp.toPx()))</ID>
-    <ID>MaxLineLength:LifeCharts.kt$drawRoundRect(track, topLeft = Offset(x, 0f), size = Size(barW, size.height), cornerRadius = androidx.compose.ui.geometry.CornerRadius(3.dp.toPx()))</ID>
-    <ID>MaxLineLength:LifeItemDao.kt$LifeItemDao$@Query("SELECT * FROM life_items WHERE (title LIKE '%' || :query || '%' OR note LIKE '%' || :query || '%') ORDER BY updatedAt DESC LIMIT 50")</ID>
     <ID>MaxLineLength:LifeItemDao.kt$LifeItemDao$suspend</ID>
-    <ID>MaxLineLength:LifeItemPagingSource.kt$LifeItemPagingSource$LoadResult.Page(data = items, prevKey = if (page &gt; 0) page - 1 else null, nextKey = if (items.size == pageSize) page + 1 else null)</ID>
     <ID>MaxLineLength:Migration3To4.kt$&lt;no name provided&gt;$db.execSQL("CREATE INDEX IF NOT EXISTS index_bills_isReimbursable_isReimbursed_isDeleted ON bills(isReimbursable, isReimbursed, isDeleted)")</ID>
     <ID>MaxLineLength:Migration5To6.kt$Migration5To6$"INSERT INTO vault_entries (title, username, passwordEncrypted, url, notes, category, createdAt, updatedAt) VALUES (?,?,?,?,?,?,?,?)"</ID>
     <ID>MaxLineLength:Migration5To6.kt$Migration5To6$db.execSQL("""INSERT INTO new_account_books (`id`, `name`, `icon`, `color`, `description`, `bookType`, `sortOrder`, `isDefault`, `isAllBooks`, `isHidden`, `createdAt`, `updatedAt`) SELECT `id`, `name`, `icon`, `color`, `description`, `bookType`, `sortOrder`, `isDefault`, `isAllBooks`, `isHidden`, `createdAt`, `updatedAt` FROM account_books""")</ID>
@@ -105,7 +96,7 @@
     <ID>MaxLineLength:NotificationHelper.kt$NotificationHelper$mgr.createNotificationChannel(NotificationChannel(CHANNEL_CHECKIN, context.getString(R.string.notification_channel_checkin), NotificationManager.IMPORTANCE_HIGH).apply { description = context.getString(R.string.notification_channel_checkin_desc) })</ID>
     <ID>MaxLineLength:NotificationHelper.kt$NotificationHelper$mgr.createNotificationChannel(NotificationChannel(CHANNEL_LIFE, context.getString(R.string.notification_channel_life), NotificationManager.IMPORTANCE_DEFAULT).apply { description = context.getString(R.string.notification_channel_life_desc) })</ID>
     <ID>MaxLineLength:NotificationHelper.kt$NotificationHelper$mgr.createNotificationChannel(NotificationChannel(CHANNEL_REMINDER, context.getString(R.string.notification_channel_reminder), NotificationManager.IMPORTANCE_HIGH).apply { description = context.getString(R.string.notification_channel_reminder_desc) })</ID>
-    <ID>MaxLineLength:NotificationHelper.kt$NotificationHelper$try { NotificationManagerCompat.from(context).notify(id, notification) } catch (_: SecurityException) { /* Notification permission not granted */ }</ID>
+    <ID>MaxLineLength:NotificationHelper.kt$NotificationHelper$try { NotificationManagerCompat.from(context).notify(id, builder.build()) } catch (_: SecurityException) { /* Notification permission not granted */ }</ID>
     <ID>MaxLineLength:PinComponents.kt$return</ID>
     <ID>MaxLineLength:SettingsComponents.kt$Box</ID>
     <ID>MaxLineLength:SettingsComponents.kt$Row</ID>
@@ -116,14 +107,14 @@
     <ID>MaxLineLength:SettingsComponents.kt$val mod = if (clickable != null) Modifier.fillMaxWidth().clip(MaterialTheme.shapes.medium).clickable(onClick = clickable) else Modifier.fillMaxWidth()</ID>
     <ID>MaxLineLength:TimeAgo.kt$isSameYear(timestampMillis, now) -&gt; SimpleDateFormat(context.getString(R.string.date_format_display), Locale.getDefault()).format(Date(timestampMillis))</ID>
     <ID>MaxLineLength:TriggerEngine.kt$TriggerAction$CreateAutoLink : TriggerAction</ID>
-    <ID>MaxLineLength:TriggerEngine.kt$TriggerEngine$TriggerAction.CreateAutoLink(EntityType.ASSET, LinkType.PART_OF, targetId = item.id, metadata = """{"reason":"saving_completed"}""")</ID>
-    <ID>MaxLineLength:TriggerEngine.kt$TriggerEngine$val data = try { json.decodeFromString&lt;JsonObject&gt;(item.fieldsData) } catch (e: Exception) { AppLogger.w("TriggerEngine", "decode fieldsData failed", e); JsonObject(emptyMap()) }</ID>
     <ID>NestedBlockDepth:FieldContract.kt$DerivedEvaluator$private fun evalArithmetic(expr: String): Double?</ID>
     <ID>NestedBlockDepth:Migration5To6.kt$Migration5To6$private fun preserveLegacyVault(db: SupportSQLiteDatabase)</ID>
     <ID>NestedBlockDepth:Migration8To9.kt$&lt;no name provided&gt;$override fun migrate(db: SupportSQLiteDatabase)</ID>
     <ID>ReturnCount:FieldContract.kt$DerivedEvaluator$private fun evalArithmetic(expr: String): Double?</ID>
     <ID>ThrowsCount:EncryptedOpenHelperFactory.kt$EncryptedOpenHelperFactory.Companion$@Synchronized fun migrateIfPlaintext(context: Context, dbName: String, key: ByteArray)</ID>
+    <ID>TooManyFunctions:BillDao.kt$BillDao</ID>
     <ID>TooManyFunctions:DateUtils.kt$DateUtils</ID>
+    <ID>TooManyFunctions:PreferencesManager.kt$PreferencesManager</ID>
     <ID>UnusedParameter:CommonComponents.kt$onSearch: () -&gt; Unit = {}</ID>
     <ID>UseCheckOrError:EncryptedOpenHelperFactory.kt$EncryptedOpenHelperFactory.Companion$throw IllegalStateException("加密库改名失败，恢复原库: $dbFile")</ID>
     <ID>UseCheckOrError:EncryptedOpenHelperFactory.kt$EncryptedOpenHelperFactory.Companion$throw IllegalStateException("明文库重命名失败，中止加密迁移: $dbFile")</ID>
@@ -134,8 +125,6 @@
     <ID>WildcardImport:AppDatabase.kt$import com.palmnote.data.db.entity.*</ID>
     <ID>WildcardImport:AppIcon.kt$import androidx.compose.material.icons.automirrored.outlined.*</ID>
     <ID>WildcardImport:AppIcon.kt$import androidx.compose.material.icons.outlined.*</ID>
-    <ID>WildcardImport:AppIconMapper.kt$import androidx.compose.material.icons.automirrored.filled.*</ID>
-    <ID>WildcardImport:AppIconMapper.kt$import androidx.compose.material.icons.filled.*</ID>
     <ID>WildcardImport:AppLockScreen.kt$import androidx.compose.foundation.layout.*</ID>
     <ID>WildcardImport:AppLockScreen.kt$import androidx.compose.material3.*</ID>
     <ID>WildcardImport:AppLockScreen.kt$import androidx.compose.runtime.*</ID>

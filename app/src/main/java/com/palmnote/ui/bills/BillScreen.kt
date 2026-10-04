@@ -9,10 +9,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.*
@@ -23,6 +25,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import com.palmnote.ui.theme.ModuleBill
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
@@ -36,6 +39,7 @@ import kotlin.math.roundToInt
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.palmnote.app.R
@@ -266,8 +270,8 @@ fun BillScreen(
                         state.selectedBookId.takeIf { it != com.palmnote.data.db.entity.AccountBook.ALL_BOOKS_ID }
                     onNavigateToAdd(date)
                 },
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
+                containerColor = ModuleBill,
+                contentColor = Color.White,
                 shape = MaterialTheme.shapes.large,
                 icon = { Icon(Icons.Filled.Add, contentDescription = null) },
                 text = { Text(stringResource(R.string.bill_add), fontWeight = FontWeight.Medium) }
@@ -316,7 +320,16 @@ fun BillScreen(
                 // Filter chips (fixed)
                 AnimatedCard(index = 2) {
                 Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    // 英文下四个 chip（All / Expense / Income / Transfer）比中文宽得多，
+                    // 挤在一行里会把末尾的 "Transfer" 拦腰折断成 "Tran/sfer"（真机截图 15-09-19）。
+                    // 改为：chip 行占满剩余宽度并**可横向滚动**——装得下就一行排开，
+                    // 装不下就滑，文案永远不折行。
+                    Row(
+                        modifier = Modifier
+                            .weight(1f, fill = false)
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
                         val interactionSource = remember { MutableInteractionSource() }
                         Surface(
                             shape = MaterialTheme.shapes.extraLarge,
@@ -325,10 +338,11 @@ fun BillScreen(
                         ) {
                             Text(
                                 text = stringResource(R.string.bill_all),
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                                 color = if (selectedFilter == "ALL") Color.White else MaterialTheme.colorScheme.onSurface,
                                 fontWeight = if (selectedFilter == "ALL") FontWeight.Bold else FontWeight.Normal,
-                                style = MaterialTheme.typography.labelLarge
+                                style = MaterialTheme.typography.labelLarge,
+                                maxLines = 1
                             )
                         }
                         val interactionSource2 = remember { MutableInteractionSource() }
@@ -337,7 +351,7 @@ fun BillScreen(
                             color = if (selectedFilter == "EXPENSE") ExpenseRed.copy(alpha = 0.85f) else Color.Transparent,
                             modifier = Modifier.clickable(interactionSource = interactionSource2, indication = null) { viewModel.setFilterType("EXPENSE") }
                         ) {
-                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
                                 Icon(
                                     Icons.AutoMirrored.Outlined.TrendingDown,
                                     null,
@@ -349,7 +363,8 @@ fun BillScreen(
                                     text = stringResource(R.string.bill_expense),
                                     color = if (selectedFilter == "EXPENSE") Color.White else MaterialTheme.colorScheme.onSurface,
                                     fontWeight = if (selectedFilter == "EXPENSE") FontWeight.Bold else FontWeight.Normal,
-                                    style = MaterialTheme.typography.labelLarge
+                                    style = MaterialTheme.typography.labelLarge,
+                                    maxLines = 1
                                 )
                             }
                         }
@@ -359,7 +374,7 @@ fun BillScreen(
                             color = if (selectedFilter == "INCOME") StatusActive.copy(alpha = 0.85f) else Color.Transparent,
                             modifier = Modifier.clickable(interactionSource = interactionSource3, indication = null) { viewModel.setFilterType("INCOME") }
                         ) {
-                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
                                 Icon(
                                     Icons.AutoMirrored.Outlined.TrendingUp,
                                     null,
@@ -371,7 +386,8 @@ fun BillScreen(
                                     text = stringResource(R.string.bill_income),
                                     color = if (selectedFilter == "INCOME") Color.White else MaterialTheme.colorScheme.onSurface,
                                     fontWeight = if (selectedFilter == "INCOME") FontWeight.Bold else FontWeight.Normal,
-                                    style = MaterialTheme.typography.labelLarge
+                                    style = MaterialTheme.typography.labelLarge,
+                                    maxLines = 1
                                 )
                             }
                         }
@@ -384,7 +400,7 @@ fun BillScreen(
                                 indication = null
                             ) { viewModel.setFilterType("TRANSFER") }
                         ) {
-                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
                                 Icon(
                                     Icons.Outlined.SwapVert,
                                     null,
@@ -396,7 +412,8 @@ fun BillScreen(
                                     text = stringResource(R.string.bill_transfer),
                                     color = if (selectedFilter == "TRANSFER") Color.White else MaterialTheme.colorScheme.onSurface,
                                     fontWeight = if (selectedFilter == "TRANSFER") FontWeight.Bold else FontWeight.Normal,
-                                    style = MaterialTheme.typography.labelLarge
+                                    style = MaterialTheme.typography.labelLarge,
+                                    maxLines = 1
                                 )
                             }
                         }
@@ -431,7 +448,9 @@ fun BillScreen(
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = stringResource(R.string.bill_count, filteredBills.size),
+                                text = pluralStringResource(
+                                    R.plurals.bill_count, filteredBills.size, filteredBills.size
+                                ),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 textAlign = TextAlign.End,
@@ -658,11 +677,16 @@ fun BillListItem(bill: Bill, wallets: Map<Long, String> = emptyMap(), onDetail: 
                     )
                     bill.walletId?.let { walletId ->
                         wallets[walletId]?.let { walletName ->
+                            // 银行卡显示名是「招商银行 ****6214」，尾部列只有 100dp 宽，会在空格处折成两行；
+                            // 不设 textAlign 的话第二行按左对齐排，看起来"没有靠右"（真机截图即此）。
                             Text(
                                 walletName,
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(top = 2.dp)
+                                textAlign = TextAlign.End,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.fillMaxWidth().padding(top = 2.dp)
                             )
                         }
                     }

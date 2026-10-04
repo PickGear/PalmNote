@@ -1,13 +1,20 @@
 package com.palmnote.data.worker
 
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.palmnote.app.R
-import com.palmnote.data.db.entity.LifeItem
+import com.palmnote.domain.util.AppLogger
+import com.nlf.calendar.Lunar
+import com.nlf.calendar.Solar
+import com.palmnote.ui.life.parseLunarFlag
 import com.palmnote.data.db.entity.LifeReport
+import com.palmnote.data.db.entity.LifeTemplate
 import com.palmnote.data.datastore.PreferencesManager
+import com.palmnote.domain.model.ReminderSpec
 import com.palmnote.domain.repository.BillRepository
 import com.palmnote.domain.repository.FocusRecordRepository
 import com.palmnote.domain.repository.LifeItemRepository
@@ -20,6 +27,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.booleanOrNull
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
@@ -47,6 +55,37 @@ class LifeDailyCheckWorker @AssistedInject constructor(
     /** 把日期平移到今年；2/29 在平年时落到 2/28，避免 withYear 抛异常 */
     private fun toThisYear(date: LocalDate, today: LocalDate): LocalDate =
         try { date.withYear(today.year) } catch (_: java.time.DateTimeException) { LocalDate.of(today.year, 2, 28) }
+
+    /**
+     * 通知的深链入口：复用**桌面组件那条既有通路**（`WIDGET_TAB` / `WIDGET_ITEM_ID`
+     * → `MainActivity.handleWidgetIntent` 写入 `pendingLifeDetailItemId`）。
+     * 于是点提醒直接跳到那条记录的详情，而不是只把应用拉到前台。
+     */
+    private fun lifeDetailPendingIntent(itemId: Long): PendingIntent =
+        PendingIntent.getActivity(
+            applicationContext,
+            (7_400_100 + itemId).toInt(),
+            Intent(applicationContext, com.palmnote.MainActivity::class.java)
+                .putExtra("WIDGET_TAB", "life")
+                .putExtra("WIDGET_ITEM_ID", itemId.toString()),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+    /**
+     * 倒计时类提醒的公共尾巴：**深链到该记录** + **「标记完成」动作**。
+     *
+     * 动作复用桌面组件的 `TodoToggleReceiver`（它已经会把 ACTIVE↔COMPLETED 翻转并刷新小组件），
+     * 所以用户不必先打开应用 —— 这是 todo / 提醒类 app 的标配（TickTick、Apple 提醒都是这样）。
+     */
+    private fun countdownExtras(
+        itemId: Long
+    ): Pair<PendingIntent, List<com.palmnote.ui.notification.NotificationHelper.Action>> =
+        lifeDetailPendingIntent(itemId) to listOf(
+            com.palmnote.ui.notification.NotificationHelper.Action(
+                applicationContext.getString(R.string.notification_action_complete),
+                com.palmnote.ui.widget.TodoToggleReceiver.togglePendingIntent(applicationContext, itemId)
+            )
+        )
 
     override suspend fun doWork(): Result {
         val startTime = System.currentTimeMillis()
@@ -105,27 +144,28 @@ class LifeDailyCheckWorker @AssistedInject constructor(
 
     private suspend fun checkCountUpMilestones() {
         val today = LocalDate.now()
-        val tpls = templateRepo.getAllVisibleTemplates().first().filter { it.name == "\u6B63\u6570\u65E5" }
         val milestoneDays = listOf(100L, 200L, 365L, 500L, 750L, 1000L)
-        tpls.forEach { tpl ->
-            itemRepo.getActiveItemsByTemplate(tpl.id, 200).first().forEach { item ->
+        reminderTargets(ReminderSpec.Kind.MILESTONE).forEach { target ->
+            itemRepo.getActiveItemsByTemplate(target.templateId, 200).first().forEach { item ->
                 try {
                     val obj = Json.decodeFromString<JsonObject>(item.fieldsData)
-                    val startDateStr = (obj["start_date"] as? JsonPrimitive)?.content?.toLongOrNull()
-                        ?: (obj["startDate"] as? JsonPrimitive)?.content?.toLongOrNull()
-                    if (startDateStr != null) {
-                        val start = millisToLocalDate(startDateStr)
-                        val days = ChronoUnit.DAYS.between(start, today)
-                        if (days in milestoneDays) {
-                            com.palmnote.ui.notification.NotificationHelper.show(
-                                applicationContext,
-                                com.palmnote.ui.notification.NotificationHelper.CHANNEL_LIFE,
-                                applicationContext.getString(R.string.notification_milestone_title),
-                                applicationContext.getString(R.string.notification_milestone_message, item.title, days)
+                    if (!obj.recordReminderOn()) return@forEach
+                    val startMs = obj.dateMs(target.spec, "start_date", "startDate") ?: return@forEach
+                    val start = millisToLocalDate(startMs)
+                    val days = ChronoUnit.DAYS.between(start, today)
+                    if (days in milestoneDays) {
+                        com.palmnote.ui.notification.NotificationHelper.show(
+                            applicationContext,
+                            com.palmnote.ui.notification.NotificationHelper.CHANNEL_LIFE,
+                            applicationContext.getString(R.string.notification_milestone_title),
+                            applicationContext.resources.getQuantityString(
+                                R.plurals.notification_milestone_message, days.toInt(), item.title, days
                             )
-                        }
+                        )
                     }
-                } catch (_: Exception) { }
+                } catch (e: Exception) {
+                    AppLogger.e("LifeDailyCheck", "check failed for " + item.title, e)
+                }
             }
         }
     }
@@ -133,32 +173,46 @@ class LifeDailyCheckWorker @AssistedInject constructor(
     private suspend fun checkCountdownExpiry() {
         val today = LocalDate.now()
         val advanceDays = pm.birthdayReminderAdvanceDays.first()
-        val tpls = templateRepo.getAllVisibleTemplates().first().filter { it.name.contains("\u5012\u8BA1\u65F6") }
-        tpls.forEach { tpl ->
-            itemRepo.getActiveItemsByTemplate(tpl.id, 200).first().forEach { item ->
+        reminderTargets(ReminderSpec.Kind.COUNTDOWN).forEach { target ->
+            itemRepo.getActiveItemsByTemplate(target.templateId, 200).first().forEach { item ->
                 try {
                     val obj = Json.decodeFromString<JsonObject>(item.fieldsData)
-                    val dateStr = (obj["targetDate"] as? JsonPrimitive)?.content?.toLongOrNull()
-                        ?: (obj["target_date"] as? JsonPrimitive)?.content?.toLongOrNull()
-                    if (dateStr != null) {
-                        val target = millisToLocalDate(dateStr)
-                        val daysLeft = ChronoUnit.DAYS.between(today, target)
-                        when {
-                            daysLeft == 0L -> com.palmnote.ui.notification.NotificationHelper.show(
+                    if (!obj.recordReminderOn()) return@forEach
+                    val targetMs = obj.dateMs(target.spec, "targetDate", "target_date") ?: return@forEach
+                    val date = millisToLocalDate(targetMs)
+                    val daysLeft = ChronoUnit.DAYS.between(today, date)
+                    when {
+                        daysLeft == 0L -> {
+                            val (contentIntent, actions) = countdownExtras(item.id)
+                            com.palmnote.ui.notification.NotificationHelper.show(
                                 applicationContext,
                                 com.palmnote.ui.notification.NotificationHelper.CHANNEL_REMINDER,
                                 applicationContext.getString(R.string.notification_countdown_today_title),
-                                applicationContext.getString(R.string.notification_countdown_today_message, item.title)
+                                applicationContext.getString(R.string.notification_countdown_today_message, item.title),
+                                contentIntent = contentIntent,
+                                actions = actions
                             )
-                            daysLeft in 1..advanceDays.toLong() -> com.palmnote.ui.notification.NotificationHelper.show(
+                        }
+                        daysLeft in 1..advanceDays.toLong() -> {
+                            val (contentIntent, actions) = countdownExtras(item.id)
+                            com.palmnote.ui.notification.NotificationHelper.show(
                                 applicationContext,
                                 com.palmnote.ui.notification.NotificationHelper.CHANNEL_REMINDER,
                                 applicationContext.getString(R.string.notification_countdown_soon_title),
-                                applicationContext.getString(R.string.notification_countdown_soon_message, item.title, daysLeft)
+                                applicationContext.resources.getQuantityString(
+                                    R.plurals.notification_countdown_soon_message,
+                                    daysLeft.toInt(),
+                                    item.title,
+                                    daysLeft
+                                ),
+                                contentIntent = contentIntent,
+                                actions = actions
                             )
                         }
                     }
-                } catch (_: Exception) { }
+                } catch (e: Exception) {
+                    AppLogger.e("LifeDailyCheck", "check failed for " + item.title, e)
+                }
             }
         }
     }
@@ -166,27 +220,33 @@ class LifeDailyCheckWorker @AssistedInject constructor(
     private suspend fun checkBirthdayReminders() {
         val today = LocalDate.now()
         val advanceDays = pm.birthdayReminderAdvanceDays.first()
-        val tpls = templateRepo.getAllVisibleTemplates().first().filter { it.name.contains("\u751F\u65E5") }
-        tpls.forEach { tpl ->
-            itemRepo.getActiveItemsByTemplate(tpl.id, 200).first().forEach { item ->
+        reminderTargets(ReminderSpec.Kind.BIRTHDAY).forEach { target ->
+            itemRepo.getActiveItemsByTemplate(target.templateId, 200).first().forEach { item ->
                 try {
                     val obj = Json.decodeFromString<JsonObject>(item.fieldsData)
-                    val dateStr = (obj["date"] as? JsonPrimitive)?.content?.toLongOrNull()
-                        ?: (obj["birthday_date"] as? JsonPrimitive)?.content?.toLongOrNull()
-                    if (dateStr != null) {
-                        val birthDate = millisToLocalDate(dateStr)
-                        val nextBirthday = toThisYear(birthDate, today)
-                        val diff = ChronoUnit.DAYS.between(today, if (nextBirthday.isAfter(today) || nextBirthday == today) nextBirthday else nextBirthday.plusYears(1))
-                        if (diff in 0..advanceDays.toLong()) {
-                            com.palmnote.ui.notification.NotificationHelper.show(
-                                applicationContext,
-                                com.palmnote.ui.notification.NotificationHelper.CHANNEL_REMINDER,
-                                applicationContext.getString(R.string.notification_birthday_title),
-                                applicationContext.getString(R.string.notification_birthday_message, item.title)
-                            )
-                        }
+                    if (!obj.recordReminderOn()) return@forEach
+                    val dateMsValue = obj.dateMs(target.spec, "date", "birthday_date") ?: return@forEach
+                    val birthDate = millisToLocalDate(dateMsValue)
+                    // 农历生日按农历月-日反算今年的公历日（与详情页的农历锚点展示同口径）；
+                    // 反算失败（如当年无对应闰月）回退公历锚点，别静默丢提醒
+                    val isLunar = parseLunarFlag((obj["lunar"] as? JsonPrimitive)?.content)
+                    val nextBirthday = if (isLunar) {
+                        nextLunarBirthday(birthDate, today) ?: toThisYear(birthDate, today)
+                    } else {
+                        toThisYear(birthDate, today)
                     }
-                } catch (_: Exception) { }
+                    val diff = ChronoUnit.DAYS.between(today, if (nextBirthday.isAfter(today) || nextBirthday == today) nextBirthday else nextBirthday.plusYears(1))
+                    if (diff in 0..advanceDays.toLong()) {
+                        com.palmnote.ui.notification.NotificationHelper.show(
+                            applicationContext,
+                            com.palmnote.ui.notification.NotificationHelper.CHANNEL_REMINDER,
+                            applicationContext.getString(R.string.notification_birthday_title),
+                            applicationContext.getString(R.string.notification_birthday_message, item.title)
+                        )
+                    }
+                } catch (e: Exception) {
+                    AppLogger.e("LifeDailyCheck", "check failed for " + item.title, e)
+                }
             }
         }
     }
@@ -194,38 +254,39 @@ class LifeDailyCheckWorker @AssistedInject constructor(
     private suspend fun checkAnniversaryReminders() {
         val today = LocalDate.now()
         val advanceDays = pm.anniversaryReminderAdvanceDays.first()
-        val tpls = templateRepo.getAllVisibleTemplates().first().filter { it.name.contains("\u7EAA\u5FF5\u65E5") }
-        tpls.forEach { tpl ->
-            itemRepo.getActiveItemsByTemplate(tpl.id, 200).first().forEach { item ->
+        reminderTargets(ReminderSpec.Kind.ANNIVERSARY).forEach { target ->
+            itemRepo.getActiveItemsByTemplate(target.templateId, 200).first().forEach { item ->
                 try {
                     val obj = Json.decodeFromString<JsonObject>(item.fieldsData)
-                    val dateStr = (obj["date"] as? JsonPrimitive)?.content?.toLongOrNull()
-                    if (dateStr != null) {
-                        val anniDate = millisToLocalDate(dateStr)
-                        val nextAnni = toThisYear(anniDate, today)
-                        val diff = ChronoUnit.DAYS.between(today, if (nextAnni.isAfter(today) || nextAnni == today) nextAnni else nextAnni.plusYears(1))
-                        if (diff in 0..advanceDays.toLong()) {
-                            val years = ChronoUnit.YEARS.between(anniDate, today).coerceAtLeast(0)
-                            com.palmnote.ui.notification.NotificationHelper.show(
-                                applicationContext,
-                                com.palmnote.ui.notification.NotificationHelper.CHANNEL_REMINDER,
-                                applicationContext.getString(R.string.notification_anniversary_title),
-                                applicationContext.getString(R.string.notification_anniversary_message, item.title, years)
-                            )
-                        }
+                    if (!obj.recordReminderOn()) return@forEach
+                    val dateMsValue = obj.dateMs(target.spec, "date") ?: return@forEach
+                    val anniDate = millisToLocalDate(dateMsValue)
+                    val nextAnni = toThisYear(anniDate, today)
+                    val diff = ChronoUnit.DAYS.between(today, if (nextAnni.isAfter(today) || nextAnni == today) nextAnni else nextAnni.plusYears(1))
+                    if (diff in 0..advanceDays.toLong()) {
+                        val years = ChronoUnit.YEARS.between(anniDate, today).coerceAtLeast(0)
+                        com.palmnote.ui.notification.NotificationHelper.show(
+                            applicationContext,
+                            com.palmnote.ui.notification.NotificationHelper.CHANNEL_REMINDER,
+                            applicationContext.getString(R.string.notification_anniversary_title),
+                            applicationContext.getString(R.string.notification_anniversary_message, item.title, years)
+                        )
                     }
-                } catch (_: Exception) { }
+                } catch (e: Exception) {
+                    AppLogger.e("LifeDailyCheck", "check failed for " + item.title, e)
+                }
             }
         }
     }
 
     private suspend fun checkSubscriptionBilling() {
         val today = LocalDate.now()
-        val tpls = templateRepo.getAllVisibleTemplates().first().filter { it.name.contains(BuiltinTemplates.SUBSCRIPTION_KEYWORD) }
-        for (tpl in tpls) {
-            for (item in itemRepo.getActiveItemsByTemplate(tpl.id, 200).first()) {
+        // SUBSCRIPTION 不看日期字段：扣费日是「几号」数字键 + 周期文本键（无配置键可覆盖，走 kind 固定键）
+        for (target in reminderTargets(ReminderSpec.Kind.SUBSCRIPTION)) {
+            for (item in itemRepo.getActiveItemsByTemplate(target.templateId, 200).first()) {
                 try {
                     val obj = Json.decodeFromString<JsonObject>(item.fieldsData)
+                    if (!obj.recordReminderOn()) continue
                     val billingDay = (obj["billingDay"] as? JsonPrimitive)?.content?.toIntOrNull()
                         ?: (obj["billing_day"] as? JsonPrimitive)?.content?.toIntOrNull()
                     val lastBilled = (obj["lastBilledDate"] as? JsonPrimitive)?.content?.toLongOrNull()
@@ -257,10 +318,51 @@ class LifeDailyCheckWorker @AssistedInject constructor(
                         val newFields = JsonObject(obj + ("lastBilledDate" to JsonPrimitive(today.atStartOfDay(zone).toInstant().toEpochMilli().toString())))
                         itemRepo.updateFieldsData(item.id, newFields.toString())
                     }
-                } catch (_: Exception) { }
+                } catch (e: Exception) {
+                    AppLogger.e("LifeDailyCheck", "check failed for " + item.title, e)
+                }
             }
         }
     }
+
+    // ---- 提醒目标的解析（§提醒显式化）：配置优先，图标兜底 ----
+
+    /** 一条提醒目标：模板 id + 显式提醒配置。 */
+    private data class ReminderTarget(val templateId: Long, val spec: ReminderSpec)
+
+    /**
+     * 取某类型的提醒目标：模板 [ReminderSpec] 配置驱动；
+     * 没配置的按图标兜底推断（迁移回填前的存量安装，行为与显式化之前一致）。
+     */
+    private suspend fun reminderTargets(kind: ReminderSpec.Kind): List<ReminderTarget> =
+        templateRepo.getAllVisibleTemplates().first().mapNotNull { tpl ->
+            val spec = ReminderSpec.fromJson(tpl.reminderConfig) ?: legacySpecOf(tpl)
+            if (spec?.kind == kind && spec.enabled) ReminderTarget(tpl.id, spec) else null
+        }
+
+    /** 图标 → 提醒配置（存量安装的兜底识别路径）。 */
+    private fun legacySpecOf(tpl: LifeTemplate): ReminderSpec? = when (tpl.icon) {
+        ICON_COUNT_UP -> ReminderSpec(ReminderSpec.Kind.MILESTONE, dateKey = "start_date")
+        ICON_COUNTDOWN -> ReminderSpec(ReminderSpec.Kind.COUNTDOWN, dateKey = "targetDate")
+        ICON_BIRTHDAY -> ReminderSpec(ReminderSpec.Kind.BIRTHDAY, dateKey = "date")
+        ICON_ANNIVERSARY -> ReminderSpec(ReminderSpec.Kind.ANNIVERSARY, dateKey = "date")
+        ICON_SUBSCRIPTION -> ReminderSpec(ReminderSpec.Kind.SUBSCRIPTION)
+        else -> if (tpl.name.contains(BuiltinTemplates.SUBSCRIPTION_KEYWORD)) {
+            ReminderSpec(ReminderSpec.Kind.SUBSCRIPTION)
+        } else {
+            null
+        }
+    }
+
+    /** 记录级提醒开关：条目 fieldsData 的 `reminder` 布尔字段，缺省视为开启（显式 false 才跳过）。 */
+    private fun JsonObject.recordReminderOn(): Boolean =
+        (this["reminder"] as? JsonPrimitive)?.booleanOrNull ?: true
+
+    /** 取日期毫秒：先用配置键，再回退 kind 的历史键（老数据键名）。 */
+    private fun JsonObject.dateMs(spec: ReminderSpec, vararg legacyKeys: String): Long? =
+        (listOfNotNull(spec.dateKey) + legacyKeys).firstNotNullOfOrNull { key ->
+            (this[key] as? JsonPrimitive)?.content?.toLongOrNull()
+        }
 
     private suspend fun tryGenerateMonthlyReport() {
         val today = LocalDate.now()
@@ -292,6 +394,36 @@ class LifeDailyCheckWorker @AssistedInject constructor(
     companion object {
         /** 唯一任务名：调度（PalmNoteApp）与恢复前取消（BackupViewModel）共用 */
         const val UNIQUE_WORK_NAME = "life_daily_check"
+
+        // 图标是全模块的身份键；提醒现已由模板 reminderConfig 显式驱动，
+        // 这些常量只作为「存量安装未回填配置」时的兜底识别键（legacySpecOf）。
+        const val ICON_COUNT_UP = "trending_up"
+        const val ICON_COUNTDOWN = "timer_off"
+        const val ICON_BIRTHDAY = "cake"
+        const val ICON_ANNIVERSARY = "celebration"
+        const val ICON_SUBSCRIPTION = "subscriptions"
     }
 }
+
+/**
+ * 农历生日 → 今年的下一次公历日期（含今天）：按生日的农历月-日反算今年，
+ * 今年已过则取明年；当年无对应月份（如闰月）返回 null，调用方回退公历锚点。
+ * 顶层 internal 仅为可测试。
+ */
+internal fun nextLunarBirthday(solarBirth: LocalDate, today: LocalDate): LocalDate? {
+    val thisYear = lunarToSolar(solarBirth, today.year) ?: return null
+    return if (!thisYear.isBefore(today)) thisYear else lunarToSolar(solarBirth, today.year + 1)
+}
+
+/** 公历生日的农历月-日 → [year] 年的公历日期；换算失败返回 null。 */
+internal fun lunarToSolar(solarBirth: LocalDate, year: Int): LocalDate? = runCatching {
+    // 用 fromYmd 而非 fromDate：锚定的是「本地日历日」本身，不吃 JVM/设备时区
+    val anchor = Solar.fromYmd(solarBirth.year, solarBirth.monthValue, solarBirth.dayOfMonth).lunar
+    // lunar-java 约定：闰月传负数月份
+    // 闰月生日按通行约定：当年有此闰月按闰月过，没有则按对应平月过
+    val solar = runCatching { Lunar.fromYmd(year, anchor.month, anchor.day).solar }
+        .getOrNull()
+        ?: if (anchor.month < 0) Lunar.fromYmd(year, -anchor.month, anchor.day).solar else null
+    solar?.let { LocalDate.of(it.year, it.month, it.day) }
+}.getOrNull()
 

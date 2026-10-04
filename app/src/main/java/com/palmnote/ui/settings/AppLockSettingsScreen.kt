@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -243,7 +244,7 @@ private fun AppLockSettingsList(
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            item { SectionHeader(stringResource(R.string.app_lock_settings_section_lock), Icons.Outlined.Lock, ModuleSettings) }
+            item { SectionHeader(stringResource(R.string.app_lock_settings_section_lock), Icons.Outlined.Lock, DopamineViolet) }
             item {
                 LockSettingsCard(
                     uiState = uiState,
@@ -253,7 +254,7 @@ private fun AppLockSettingsList(
                 )
             }
 
-            item { SectionHeader(stringResource(R.string.app_lock_settings_section_autolock), Icons.Outlined.Timer, AccentOrange) }
+            item { SectionHeader(stringResource(R.string.app_lock_settings_section_autolock), Icons.Outlined.Timer, DopamineCoral) }
             item {
                 AutoLockSettingsCard(
                     uiState = uiState,
@@ -350,7 +351,9 @@ private fun AutoLockSettingsCard(
             SettingRow(clickable = onAutoLockTimeout) {
                 SettingRowContent(
                     title = stringResource(R.string.app_lock_auto_lock_timeout_duration),
-                    subtitle = stringResource(R.string.app_lock_auto_lock_minutes, uiState.autoLockTimeoutMinutes),
+                    subtitle = pluralStringResource(
+                        R.plurals.app_lock_auto_lock_minutes, uiState.autoLockTimeoutMinutes, uiState.autoLockTimeoutMinutes
+                    ),
                     showChevron = true
                 )
             }
@@ -393,7 +396,7 @@ private fun AutoLockTimeoutDialog(
         title = stringResource(R.string.app_lock_auto_lock_timeout_duration),
         options = listOf(1, 5, 15, 30),
         selected = currentMinutes,
-        optionLabel = { stringResource(R.string.app_lock_auto_lock_minutes, it) },
+        optionLabel = { pluralStringResource(R.plurals.app_lock_auto_lock_minutes, it, it) },
         optionIcon = { Icons.Outlined.Schedule },
         optionTint = { AccentOrange },
         onSelect = { onSelect(it) },

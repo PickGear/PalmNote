@@ -47,7 +47,12 @@ class LifeTemplateManageViewModel @Inject constructor(
         val fieldCount: Int,
         val cardFieldCount: Int,
         /** **用户自己的**记录数（示例行不算）：决定关闭时要不要二次确认。 */
-        val itemCount: Int
+        val itemCount: Int,
+        /**
+         * 该模板最近一次记录的时间（毫秒）；null = 从未记录过。
+         * 管理页的「最近记录 N 天前」用它回答"这个模板我多久没用了"。
+         */
+        val lastLogAt: Long? = null
     )
 
     data class TemplateGroup(val category: String, val rows: List<TemplateRow>) {
@@ -57,16 +62,24 @@ class LifeTemplateManageViewModel @Inject constructor(
     val groups: StateFlow<List<TemplateGroup>> =
         combine(
             templateRepo.getAllTemplates(),
-            itemDao.getItemCountsByTemplate(LIFE_DEMO_META)
-        ) { templates, counts ->
+            itemDao.getItemCountsByTemplate(LIFE_DEMO_META),
+            itemDao.getLastLogByTemplate(LIFE_DEMO_META)
+        ) { templates, counts, lastLogs ->
             val customized = seeder.customizedTemplateIds()
             val countByTemplate = counts.associate { it.templateId to it.cnt }
+            val lastByTemplate = lastLogs.associate { it.templateId to it.lastAt }
             templates
                 .groupBy { it.category }
                 .map { (category, list) ->
-                    TemplateGroup(category, list.map { it.toRow(customized, countByTemplate[it.id] ?: 0) })
+                    TemplateGroup(
+                        category,
+                        list.map {
+                            it.toRow(customized, countByTemplate[it.id] ?: 0, lastByTemplate[it.id])
+                        }
+                    )
                 }
-        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+        }.catchLife("templateManage.groups", emptyList())
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     /** 关闭 / 开启（硬开关）。零数据风险：不删记录、不动布局配置。 */
     fun setHidden(id: Long, hidden: Boolean) {
@@ -83,7 +96,7 @@ class LifeTemplateManageViewModel @Inject constructor(
         viewModelScope.launch { templateRepo.deleteTemplateCascade(id) }
     }
 
-    private fun LifeTemplate.toRow(customized: Set<Long>, itemCount: Int): TemplateRow {
+    private fun LifeTemplate.toRow(customized: Set<Long>, itemCount: Int, lastLogAt: Long?): TemplateRow {
         val configs = runCatching { JSON.decodeFromString<List<FieldConfig>>(fieldsConfig) }
             .getOrNull().orEmpty()
         return TemplateRow(
@@ -96,7 +109,8 @@ class LifeTemplateManageViewModel @Inject constructor(
             customized = isBuiltin && id in customized,
             fieldCount = configs.size,
             cardFieldCount = configs.count { it.showInCard },
-            itemCount = itemCount
+            itemCount = itemCount,
+            lastLogAt = lastLogAt
         )
     }
 

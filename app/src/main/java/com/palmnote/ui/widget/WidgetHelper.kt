@@ -54,6 +54,35 @@ object WidgetHelper {
 
     // requestCode 必须由调用方保证全局唯一：Intent 仅 extras 不同（不参与 filterEquals 匹配），
     // 若复用同一 requestCode，FLAG_UPDATE_CURRENT 会互相覆盖，导致点击所有组件跳到同一个页面
+    /**
+     * 计数/倒数事件的深链：点事件 → 打开 App 并直达该记录详情页。
+     * extras 不参与 PendingIntent 相等性判断，requestCode 必须逐 item 唯一。
+     */
+    fun createLifeEventPendingIntent(context: Context, itemId: Long): PendingIntent {
+        val intent = Intent(context, com.palmnote.MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            putExtra("WIDGET_TAB", "life")
+            putExtra("WIDGET_ITEM_ID", itemId.toString())
+        }
+        return PendingIntent.getActivity(
+            context, (400_000_000L + itemId).toInt(), intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+    }
+
+    /** 页脚深链：到生活完整清单的指定模式（AGENDA / OVERDUE / UNSCHEDULED）。 */
+    fun createLifeListPendingIntent(context: Context, requestCode: Int, mode: String): PendingIntent {
+        val intent = Intent(context, com.palmnote.MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            putExtra("WIDGET_TAB", "life")
+            putExtra("WIDGET_LIST_MODE", mode)
+        }
+        return PendingIntent.getActivity(
+            context, (500_000_000 + requestCode).toInt(), intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+    }
+
     fun createPendingIntent(context: Context, requestCode: Int, tab: String): PendingIntent {
         val intent = Intent(context, com.palmnote.MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
@@ -97,7 +126,10 @@ object WidgetHelper {
                 days < 0 -> context.getString(R.string.widget_overdue)
                 days == 0L -> context.getString(R.string.widget_today)
                 days == 1L -> context.getString(R.string.widget_tomorrow)
-                else -> context.getString(R.string.widget_days_later, days)
+                // 复数走 getQuantityString（quantity 要 Int，格式化参数仍用 Long）
+                else -> context.resources.getQuantityString(
+                    R.plurals.widget_days_later, days.toInt(), days
+                )
             }
         } ?: ""
         itemView.setTextViewText(R.id.widget_item_due, dueText)

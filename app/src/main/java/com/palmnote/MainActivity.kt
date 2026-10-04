@@ -59,6 +59,7 @@ import com.palmnote.ui.lock.AppLockState
 import com.palmnote.ui.navigation.PalmNoteNavHost
 import com.palmnote.ui.onboarding.OnboardingScreen
 import com.palmnote.ui.theme.PalmNoteTheme
+import com.palmnote.ui.theme.TypeScale
 import com.palmnote.ui.theme.WallpaperBackground
 import androidx.compose.ui.res.stringResource
 import com.palmnote.app.R
@@ -83,6 +84,9 @@ class MainActivity : AppCompatActivity() {
 
     @javax.inject.Inject
     lateinit var preferencesManager: com.palmnote.data.datastore.PreferencesManager
+
+    @javax.inject.Inject
+    lateinit var demoDataSeeder: com.palmnote.data.DemoDataSeeder
 
     @javax.inject.Inject
     lateinit var vaultLockManager: com.palmnote.feature.vault.VaultLockManager
@@ -246,138 +250,131 @@ class MainActivity : AppCompatActivity() {
                                         )
                                 )
 
-                                // 可滚动内容：铺满整屏，从固定底栏下方穿过
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .verticalScroll(rememberScrollState())
-                                        .statusBarsPadding()
-                                        .padding(horizontal = 20.dp)
-                                        .padding(bottom = 172.dp)
-                                        .navigationBarsPadding()
-                                ) {
-                                    Spacer(Modifier.height(20.dp))
-
-                                    // 品牌行：方形圆角底 + 白色图形 + 拉丁品牌名
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(36.dp)
-                                                .clip(RoundedCornerShape(10.dp))
-                                                .background(MaterialTheme.colorScheme.primary),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Icon(
-                                                painter = painterResource(id = R.drawable.ic_launcher_foreground_bw),
-                                                contentDescription = null,
-                                                // 该 vector 的 viewport 为 108dp、图形仅占居中的 36/108，故容器须取 66dp
-                                                // 才等于 22dp 视觉图形；容器大于底框（36dp），必须用 requiredSize
-                                                // 才不会被父级约束钳到 36dp（那样图形只剩 12dp）
-                                                modifier = Modifier.requiredSize(66.dp),
-                                                tint = Color.White
-                                            )
-                                        }
-
-                                        Spacer(Modifier.width(12.dp))
-
-                                        Text(
-                                            stringResource(R.string.privacy_brand_latin),
-                                            fontSize = 16.sp,
-                                            lineHeight = 22.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.onBackground
-                                        )
-                                    }
-
-                                    Spacer(Modifier.height(28.dp))
-
-                                    Text(
-                                        stringResource(R.string.privacy_eyebrow),
-                                        fontSize = 12.sp,
-                                        lineHeight = 16.sp,
-                                        fontWeight = FontWeight.Medium,
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-
-                                    Spacer(Modifier.height(8.dp))
-
-                                    Text(
-                                        stringResource(R.string.privacy_dialog_title),
-                                        fontSize = 24.sp,
-                                        lineHeight = 32.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onBackground
-                                    )
-
-                                    Spacer(Modifier.height(10.dp))
-
-                                    Text(
-                                        stringResource(R.string.privacy_dialog_text),
-                                        fontSize = 14.sp,
-                                        lineHeight = 21.sp,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-
-                                    Spacer(Modifier.height(24.dp))
-
-                                    PrivacyPointsCards()
-
-                                    Spacer(Modifier.height(16.dp))
-
-                                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                        PrivacyDocButton(
-                                            icon = Icons.Outlined.Security,
-                                            label = stringResource(R.string.about_privacy_policy),
-                                            modifier = Modifier.weight(1f),
-                                            onClick = { showPolicy = true }
-                                        )
-                                        PrivacyDocButton(
-                                            icon = Icons.Outlined.Description,
-                                            label = stringResource(R.string.about_terms_of_service),
-                                            modifier = Modifier.weight(1f),
-                                            onClick = { showTerms = true }
-                                        )
-                                    }
-
-                                    Spacer(Modifier.height(14.dp))
-
-                                    Text(
-                                        stringResource(R.string.privacy_consent_note),
-                                        fontSize = 12.sp,
-                                        lineHeight = 17.sp,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-
-                                // 固定底栏：16dp 渐隐（透明 → 背景色）+ 不透明操作区。
-                                // 渐隐条必须与不透明区是兄弟节点——否则渐隐的下半段压在自身底色上，等于没做。
-                                Column(
-                                    modifier = Modifier
-                                        .align(Alignment.BottomCenter)
-                                        .fillMaxWidth()
-                                ) {
-                                    Box(
+                                // 内容分上下两区：上半（品牌 + 承诺）占满并吃掉空余空间，
+                                // 下半（条款入口 + 同意）钉在底部 —— 短屏时上半滚动、底部操作始终可见。
+                                Column(modifier = Modifier.fillMaxSize()) {
+                                    // 上半区按可视高度垂直居中：装得下时上下留白均分（不再全堆在顶部、
+                                    // 把下方留空），装不下时照常滚动（heightIn(min = 可视高度) 即
+                                    // 「能居中、超了能滚」的标准写法）。
+                                    BoxWithConstraints(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .height(16.dp)
-                                            .background(
-                                                Brush.verticalGradient(
-                                                    listOf(
-                                                        MaterialTheme.colorScheme.background.copy(alpha = 0f),
-                                                        MaterialTheme.colorScheme.background
-                                                    )
-                                                )
-                                            )
-                                    )
+                                            .weight(1f)
+                                            .statusBarsPadding()
+                                    ) {
+                                        val minContentHeight = maxHeight
+                                        Column(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .verticalScroll(rememberScrollState())
+                                                .heightIn(min = minContentHeight)
+                                                .padding(horizontal = 20.dp),
+                                            verticalArrangement = Arrangement.Center
+                                        ) {
+                                            Spacer(Modifier.height(24.dp))
 
+                                            // 品牌行：方形圆角底 + 白色图形 + 拉丁品牌名
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .size(36.dp)
+                                                        .clip(RoundedCornerShape(10.dp))
+                                                        .background(MaterialTheme.colorScheme.primary),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    Icon(
+                                                        painter = painterResource(id = R.drawable.ic_launcher_foreground_bw),
+                                                        contentDescription = null,
+                                                    // 该 vector 的 viewport 为 108dp、图形仅占居中的 36/108，故容器须取 66dp
+                                                    // 才等于 22dp 视觉图形；容器大于底框（36dp），必须用 requiredSize
+                                                    // 才不会被父级约束钳到 36dp（那样图形只剩 12dp）
+                                                    modifier = Modifier.requiredSize(66.dp),
+                                                    // onPrimary：深色模式下主题色是亮青，白图形会糊掉
+                                                    tint = MaterialTheme.colorScheme.onPrimary
+                                                )
+                                                }
+
+                                                Spacer(Modifier.width(12.dp))
+
+                                                Text(
+                                                    stringResource(R.string.privacy_brand_latin),
+                                                    fontSize = TypeScale.bodyL,
+                                                    lineHeight = 22.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = MaterialTheme.colorScheme.onBackground
+                                                )
+                                            }
+
+                                            Spacer(Modifier.height(32.dp))
+
+                                            Text(
+                                                stringResource(R.string.privacy_eyebrow),
+                                                fontSize = TypeScale.bodyS,
+                                                lineHeight = 16.sp,
+                                                fontWeight = FontWeight.Medium,
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+
+                                            Spacer(Modifier.height(10.dp))
+
+                                            Text(
+                                                stringResource(R.string.privacy_dialog_title),
+                                                fontSize = TypeScale.displayS,
+                                                lineHeight = 32.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.onBackground
+                                            )
+
+                                            Spacer(Modifier.height(12.dp))
+
+                                            Text(
+                                                stringResource(R.string.privacy_dialog_text),
+                                                fontSize = TypeScale.bodyM,
+                                                lineHeight = 21.sp,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+
+                                            Spacer(Modifier.height(28.dp))
+
+                                            PrivacyPointsCards()
+
+                                            Spacer(Modifier.height(24.dp))
+                                        }
+                                    }
+
+                                    // 底部操作区：条款入口 + 同意声明 + 主/次按钮，始终可见。
                                     Column(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            // 背景须在 navigationBarsPadding 之前，才能盖满导航栏安全区
-                                            .background(MaterialTheme.colorScheme.background)
                                             .navigationBarsPadding()
-                                            .padding(20.dp)
+                                            .padding(horizontal = 20.dp)
                                     ) {
+                                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                            PrivacyDocButton(
+                                                icon = Icons.Outlined.Security,
+                                                label = stringResource(R.string.about_privacy_policy),
+                                                modifier = Modifier.weight(1f),
+                                                onClick = { showPolicy = true }
+                                            )
+                                            PrivacyDocButton(
+                                                icon = Icons.Outlined.Description,
+                                                label = stringResource(R.string.about_terms_of_service),
+                                                modifier = Modifier.weight(1f),
+                                                onClick = { showTerms = true }
+                                            )
+                                        }
+
+                                        Spacer(Modifier.height(12.dp))
+
+                                        Text(
+                                            stringResource(R.string.privacy_consent_note),
+                                            fontSize = TypeScale.bodyS,
+                                            lineHeight = 17.sp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+
+                                        Spacer(Modifier.height(16.dp))
+
                                         Button(
                                             onClick = {
                                                 scope.launch { preferencesManager.setPrivacyAgreed(true) }
@@ -394,7 +391,7 @@ class MainActivity : AppCompatActivity() {
                                             )
                                         }
 
-                                        Spacer(Modifier.height(8.dp))
+                                        Spacer(Modifier.height(4.dp))
 
                                         TextButton(
                                             onClick = { finishAffinity() },
@@ -408,6 +405,8 @@ class MainActivity : AppCompatActivity() {
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                         }
+
+                                        Spacer(Modifier.height(12.dp))
                                     }
                                 }
                             }
@@ -432,7 +431,19 @@ class MainActivity : AppCompatActivity() {
                         // Still loading onboarding state - show nothing
                     } else if (onboardingCompleted == false) {
                         OnboardingScreen(
-                            onFinish = { scope.launch { preferencesManager.setOnboardingCompleted(true) } }
+                            onFinish = { demoEnabled ->
+                                scope.launch {
+                                    // 演示模式的选择在引导里一次定音（策略与设置页 setDemoModeEnabled 相同）：
+                                    // 先落开关（播种器要读它），再播种/清理；此后不再有任何事后弹窗。
+                                    preferencesManager.setLifeDemoMode(demoEnabled)
+                                    if (demoEnabled) {
+                                        demoDataSeeder.ensureSeeded(preferencesManager)
+                                    } else {
+                                        demoDataSeeder.clearAll(preferencesManager)
+                                    }
+                                    preferencesManager.setOnboardingCompleted(true)
+                                }
+                            }
                         )
                     } else {
                         if (Build.VERSION.SDK_INT >= 33) {
@@ -494,6 +505,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun handleWidgetIntent(intent: Intent?) {
         val tab = intent?.getStringExtra("WIDGET_TAB") ?: return
+        intent.getStringExtra("WIDGET_ITEM_ID")?.toLongOrNull()?.let {
+            PalmNoteApp.pendingLifeDetailItemId = it
+        }
+        intent.getStringExtra("WIDGET_LIST_MODE")?.let {
+            PalmNoteApp.pendingLifeListMode = it
+        }
         PalmNoteApp.cachedStartPage = when (tab) {
             "bill", "add_bill" -> "bill"
             "asset" -> "asset"
