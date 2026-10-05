@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.ContentResolver
 import android.content.Context
 import android.net.Uri
+import androidx.lifecycle.viewModelScope
 import androidx.room.Room
 import androidx.test.platform.app.InstrumentationRegistry
 import com.palmnote.data.db.AppDatabase
@@ -16,6 +17,7 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -53,6 +55,9 @@ class BillImportViewModelImportTest {
     private var walletId: Long = 0
     private lateinit var vm: BillImportViewModel
 
+    /** 本测建过的所有 VM：tearDown 先取消它们的 viewModelScope，再关库。 */
+    private val createdViewModels = mutableListOf<BillImportViewModel>()
+
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
@@ -71,6 +76,13 @@ class BillImportViewModelImportTest {
 
     @After
     fun tearDown() {
+        // 顺序要紧：先取消 VM 的 viewModelScope（里面挂着 stateIn 分享协程与
+        // withContext(IO) 的导入任务），再排空调度器，最后才关库。
+        // 反过来的话，还在跑的 IO 任务会撞上已关闭的连接池，在真实线程上抛未捕获异常，
+        // 记到下一个测试头上（UncaughtExceptionsBeforeTest）。
+        createdViewModels.forEach { it.viewModelScope.cancel() }
+        createdViewModels.clear()
+        testDispatcher.scheduler.advanceUntilIdle()
         Dispatchers.resetMain()
         db.close()
     }
@@ -83,7 +95,7 @@ class BillImportViewModelImportTest {
         MutableStateFlow<List<AccountBook>>(emptyList()),
         mockk(relaxed = true),
         mockk(relaxed = true)
-    )
+    ).also { createdViewModels += it }
 
     /** 反复推进测试调度器并短暂让出真实 IO 线程，直到条件成立或超时。 */
     private fun settle(timeoutMs: Long = 10_000, until: () -> Boolean) {
