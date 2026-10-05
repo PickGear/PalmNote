@@ -1,22 +1,24 @@
 package com.palmnote.ui.bills
 
+import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.viewModelScope
+import com.palmnote.data.datastore.PreferencesManager
 import com.palmnote.data.db.entity.AccountBook
-import com.palmnote.data.db.entity.Bill
 import com.palmnote.data.db.entity.CategoryConfig
 import com.palmnote.data.db.entity.Wallet
-import com.palmnote.data.datastore.PreferencesManager
+import com.palmnote.domain.model.BillType
 import com.palmnote.domain.repository.AccountBookRepository
 import com.palmnote.domain.repository.BillRepository
 import com.palmnote.domain.repository.BudgetRepository
-import com.palmnote.domain.model.BillType
-import androidx.lifecycle.SavedStateHandle
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -75,11 +77,21 @@ class BillViewModelTest {
 
     @After
     fun tearDown() {
+        // ViewModel 持有 stateIn(viewModelScope, WhileSubscribed(5000)) 的分享协程。
+        // 必须与各测试的 runTest 共用 testDispatcher.scheduler：否则 runTest 结束时
+        // Main 调度器上残留的 5 秒延迟任务会漏到下一测，表现为 UncaughtExceptionsBeforeTest。
+        if (::viewModel.isInitialized) {
+            viewModel.viewModelScope.cancel()
+            testDispatcher.scheduler.advanceUntilIdle()
+        }
         Dispatchers.resetMain()
     }
 
+    /** 全部测试共用 Main 的 scheduler，避免双调度器把协程残留给下一测。 */
+    private fun runTestOnMain(block: suspend TestScope.() -> Unit) = runTest(testDispatcher.scheduler, testBody = block)
+
     @Test
-    fun `initial state has correct defaults`() = runTest {
+    fun `initial state has correct defaults`() = runTestOnMain {
         advanceUntilIdle()
 
         val state = viewModel.state.value
@@ -89,7 +101,7 @@ class BillViewModelTest {
     }
 
     @Test
-    fun `updateForm modifies form state`() = runTest {
+    fun `updateForm modifies form state`() = runTestOnMain {
         advanceUntilIdle()
 
         viewModel.updateForm { copy(category = "餐饮", amount = "50.0") }
@@ -99,7 +111,7 @@ class BillViewModelTest {
     }
 
     @Test
-    fun `resetForm resets amount note and merchant`() = runTest {
+    fun `resetForm resets amount note and merchant`() = runTestOnMain {
         advanceUntilIdle()
 
         viewModel.updateForm {
@@ -115,7 +127,7 @@ class BillViewModelTest {
     }
 
     @Test
-    fun `formState type resets to defaultBillType after resetForm`() = runTest {
+    fun `formState type resets to defaultBillType after resetForm`() = runTestOnMain {
         advanceUntilIdle()
 
         viewModel.updateForm { copy(type = BillType.INCOME, category = "工资") }
@@ -126,7 +138,7 @@ class BillViewModelTest {
     }
 
     @Test
-    fun `formState walletId resets to default wallet after resetForm`() = runTest {
+    fun `formState walletId resets to default wallet after resetForm`() = runTestOnMain {
         advanceUntilIdle()
 
         viewModel.updateForm { copy(walletId = 42L) }
@@ -136,7 +148,7 @@ class BillViewModelTest {
     }
 
     @Test
-    fun `formState date resets to now after resetForm`() = runTest {
+    fun `formState date resets to now after resetForm`() = runTestOnMain {
         advanceUntilIdle()
 
         val testDate = 1700000000000L
