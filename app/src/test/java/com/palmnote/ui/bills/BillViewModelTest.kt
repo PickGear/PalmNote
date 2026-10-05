@@ -2,16 +2,21 @@ package com.palmnote.ui.bills
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
+import com.palmnote.PalmNoteApp
 import com.palmnote.data.datastore.PreferencesManager
 import com.palmnote.data.db.entity.AccountBook
+import com.palmnote.data.db.entity.Bill
 import com.palmnote.data.db.entity.CategoryConfig
 import com.palmnote.data.db.entity.Wallet
 import com.palmnote.domain.model.BillType
 import com.palmnote.domain.repository.AccountBookRepository
 import com.palmnote.domain.repository.BillRepository
 import com.palmnote.domain.repository.BudgetRepository
+import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
@@ -25,6 +30,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -157,5 +163,32 @@ class BillViewModelTest {
 
         val resetDate = viewModel.formState.value.date
         assertTrue(resetDate in (System.currentTimeMillis() - 5000L)..(System.currentTimeMillis() + 5000L))
+    }
+
+    /**
+     * issue#1 补充问题：从非默认账本点「记一笔」时，新账单会落进默认账本。
+     * 成因是新建的 VM 里 selectedBookId 是 ALL_BOOKS 的默认值，init 里的 collect 会把它改成默认账本；
+     * 修复是让 BillScreen 的 FAB 用一次性字段把用户当前账本交给 resetForm，save 时直接读它。
+     */
+    @Test
+    fun `新账单写入当前选中的账本而不是默认账本`() = runTestOnMain {
+        // 复现 issue#1 的场景：存在一个「日常」默认账本，而用户当前在另一个账本里点记一笔
+        cachedAccountBooks.value = listOf(
+            AccountBook(id = 1L, name = "日常", isDefault = true),
+            AccountBook(id = 42L, name = "旅行")
+        )
+        coEvery { billRepository.createBillWithWalletAdjustment(any()) } returns 1L
+        val saved = slot<Bill>()
+        PalmNoteApp.pendingAddBillBookId = 42L
+
+        viewModel.resetForm()
+        viewModel.updateForm { copy(amount = "50.00", category = "餐饮") }
+        viewModel.saveBill()
+        advanceUntilIdle()
+
+        coVerify { billRepository.createBillWithWalletAdjustment(capture(saved)) }
+        assertEquals(42L, saved.captured.accountBookId)
+        // 一次性：消费后必须清空，否则会影响下一个 VM
+        assertNull(PalmNoteApp.pendingAddBillBookId)
     }
 }
