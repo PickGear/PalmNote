@@ -15,6 +15,7 @@ import com.palmnote.data.repository.BillRepositoryImpl
 import com.palmnote.domain.model.BillType
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.spyk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
@@ -115,9 +116,13 @@ class BillImportViewModelImportTest {
     private fun balanceNow(): Long = runBlocking { db.walletDao().getWalletById(walletId)!!.currentBalance }
     private fun billsNow() = runBlocking { db.billDao().getAllBills().first() }
 
-    /** 模拟"用户点开文件导入"：mock 一个只提供字节流的 Context。 */
+    /**
+     * 模拟"用户点开文件导入"：只替换文件流来源。
+     * 用 spyk 而不是纯 mock：parseFile 会把传入的 context 用于 getString（错误/诊断文案），
+     * 纯 mock 的 getString 返回空串，会让「文案对不对」这类断言失去意义。
+     */
     private fun fileContext(bytes: ByteArray): Context {
-        val context = mockk<Context>(relaxed = true)
+        val context = spyk(ctx)
         val resolver = mockk<ContentResolver>(relaxed = true)
         every { context.contentResolver } returns resolver
         every { resolver.openInputStream(any()) } answers { ByteArrayInputStream(bytes) }
@@ -239,8 +244,54 @@ class BillImportViewModelImportTest {
         )
     }
 
-    // ── 编码：支付宝在 Windows 导出的 .csv 是 GBK，不是 UTF-8 ──
+    /**
+     * 旧版 Excel（.xls，BIFF8）是 OLE2 复合文档：既不是 zip 也不是文本。
+     * 按文本硬解只会得到乱码、最后报一句「未能解析」。这里断言给出的是一条能照做的指引。
+     */
+    @Test
+    fun `legacy BIFF xls gets an actionable message instead of a vague parse failure`() {
+        val ole2 = byteArrayOf(
+            0xD0.toByte(),
+            0xCF.toByte(),
+            0x11,
+            0xE0.toByte(),
+            0xA1.toByte(),
+            0xB1.toByte(),
+            0x1A,
+            0xE1.toByte()
+        ) + ByteArray(64)
 
+        vm.parseFile(fileContext(ole2), Uri.parse("content://t/legacy.xls"), "legacy.xls")
+        settle { vm.state.value.stage == ImportStage.ERROR }
+
+        assertEquals(
+            ctx.getString(com.palmnote.app.R.string.bill_import_error_legacy_xls),
+            vm.state.value.error
+        )
+        assertTrue(vm.state.value.diagnostic.contains("OLE2"))
+    }
+
+    /**
+     * 银行网页导出的「.xls」是 HTML 表格套壳：走完整链路验证 VM 里 normalizeLines 的接线。
+     */
+    @Test
+    fun `html table export with xls name imports through the whole pipeline`() {
+        val html = (
+            "<html><body><table>" +
+                "<tr><td>交易日期</td><td>摘要</td><td>交易金额</td><td>收支</td><td>对方户名</td></tr>" +
+                "<tr><td>2026-07-20</td><td>消费</td><td>45.00</td><td>支出</td><td>星巴克</td></tr>" +
+                "</table></body></html>"
+            ).toByteArray(Charsets.UTF_8)
+
+        vm.parseFile(fileContext(html), Uri.parse("content://t/bank.xls"), "bank.xls")
+        settle { vm.state.value.stage == ImportStage.PREVIEW }
+
+        assertEquals(1, vm.state.value.parsed.size)
+        assertEquals(4500L, vm.state.value.parsed[0].amount)
+        assertEquals("星巴克", vm.state.value.parsed[0].merchant)
+    }
+
+    // ── 编码：支付宝在 Windows 导出的 .csv 是 GBK，不是 UTF-8 ──
     /**
      * issue#1 的原始报障场景：「支付宝下载的 .csv 无法解析」。
      * 实测原因之一是编码——按 UTF-8 硬解 GBK 字节会得到乱码，表头（含「支付宝」「交易创建时间」）

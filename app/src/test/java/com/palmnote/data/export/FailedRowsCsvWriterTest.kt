@@ -106,17 +106,26 @@ class FailedRowsCsvWriterTest {
     }
 
     /**
-     * 反例（验证工人的取舍理由）：若失败 CSV 改用纯 GENERIC 表头，而原始内容含品牌关键词，
-     * detectFormat 的品牌扫描会先命中，导致整个文件被误判、找不到表头、0 行导入。
+     * 失败 CSV 用纯 GENERIC 表头也安全了：正文含品牌关键词时 detectFormat 仍会先判成 WECHAT，
+     * 但品牌解析器找不到表头会回退通用，不再整份文件 0 行。
+     * （此前这里是一条反例，用「0 行」论证必须给失败 CSV 套品牌表头——回退通用后该顾虑消失。）
      */
     @Test
-    fun `generic-only header with brand keyword body would be mis-detected and import nothing`() {
+    fun `generic-only header with brand keyword body imports via generic fallback`() {
         val genericHeader = "日期,金额,备注"
         val lines = listOf(genericHeader, "2026-07-20,12.34,微信支付退款")
-        // 品牌关键词扫描（第二段循环）在 GENERIC 兜底之前命中 → 误判为 WECHAT
+        // 品牌关键词扫描（第二段循环）在 GENERIC 兜底之前命中 → 判为 WECHAT
         assertEquals(CsvFormat.WECHAT, importer.detectFormat(lines))
-        // 以 WECHAT 解析时找不到「交易时间」表头 → 0 行
-        assertEquals(0, importer.parseFromLines(lines, CsvFormat.WECHAT).size)
+
+        val bills = importer.parseFromLines(lines, CsvFormat.WECHAT)
+
+        assertEquals(1, bills.size)
+        assertEquals(1234L, bills[0].amount)
+        assertEquals(
+            java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault())
+                .parse("2026-07-20 00:00:00")!!.time,
+            bills[0].date
+        )
     }
 
     @Test
