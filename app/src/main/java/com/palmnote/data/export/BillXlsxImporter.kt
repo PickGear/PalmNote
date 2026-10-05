@@ -11,6 +11,7 @@ import org.xmlpull.v1.XmlPullParserFactory
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
 import java.util.zip.ZipInputStream
 
@@ -58,7 +59,11 @@ class BillXlsxImporter {
         val rows = readSheetRows(bytes, diag)
         if (rows.isEmpty()) return BillCsvImporter.CsvFormat.UNKNOWN to emptyList()
 
-        val layout = detectSheetLayout(rows, diag) ?: return BillCsvImporter.CsvFormat.UNKNOWN to emptyList()
+        val layout = detectSheetLayout(rows, diag)
+        if (layout == null || layout.format == BillCsvImporter.CsvFormat.UNKNOWN) {
+            // 微信/支付宝之外的来源（银行、云闪付等）：没有品牌表头就走通用解析
+            return parseGenericSheet(rows, diag, fails)
+        }
         val bills = rows.drop(layout.headerRowIdx + 1).mapNotNull { cols ->
             try { parseDataRow(cols, layout, fails) } catch (_: Exception) {
                 fails?.add(ImportFailure(cols.joinToString(","), ImportFailureReason.UNPARSEABLE))
@@ -317,5 +322,66 @@ class BillXlsxImporter {
         val fraction = serial - days
         val fracMs = (fraction * DateUtils.MILLIS_PER_DAY).toLong()
         return dayMs + fracMs
+    }
+
+    /**
+     * 无品牌表头的表格（银行 / 云闪付 / 自造表格）：把工作表行转成 CSV 行，交给
+     * [BillCsvImporter] 的通用解析，复用它的列映射（单金额列 / 收入支出分列 / 借贷标志）
+     * 与金额清洗——两套逻辑分家就会漂移。
+     *
+     * 日期列里的纯数字是 Excel 日期序列号（如 `46223`），必须先转成文本再交出去，
+     * 否则会被当成金额或直接判成非法日期。
+     */
+    private fun parseGenericSheet(
+        rows: List<List<String>>,
+        diag: StringBuilder,
+        fails: MutableList<ImportFailure>?
+    ): Pair<BillCsvImporter.CsvFormat, List<ParsedBill>> {
+        val headerRowIdx = rows.indexOfFirst { row ->
+            val joined = row.joinToString(",")
+            joined.contains("金额") && (joined.contains("时间") || joined.contains("日期"))
+        }
+        if (headerRowIdx < 0) {
+            diag.append("通用表头: 未找到\n")
+            return BillCsvImporter.CsvFormat.UNKNOWN to emptyList()
+        }
+        val header = rows[headerRowIdx]
+        val dateCols = header.indices.filterTo(mutableSetOf()) { i ->
+            header[i].contains("日期") || header[i].contains("时间")
+        }
+        val dateTimeFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+
+        fun excelSerialOrRaw(raw: String, isDateColumn: Boolean): String {
+            val text = raw.trim()
+            if (!isDateColumn) return text
+            val v = text.toDoubleOrNull() ?: return text
+            // 只转「日期」值的序列号：小于 1 的是「一天内的小数」＝纯时间，转了会被时区拧错，
+            // 而日期列在场时通用解析本就优先用日期列，时间列原样留着无害。
+            if (v < 1.0 || v > MAX_EXCEL_SERIAL) return text
+            // 复用本文件既有的序列号→毫秒换算，保持与品牌路径同一口径（含时区语义）
+            return dateTimeFormat.format(Date(excelSerialToMillis(v)))
+        }
+
+        val csvLines = rows.drop(headerRowIdx).map { row ->
+            row.mapIndexed { i, raw ->
+                BillCsvImporter.quoteCsvField(excelSerialOrRaw(raw, dateCols.contains(i)))
+            }.joinToString(",")
+        }
+        diag.append("通用表头: ${header.joinToString(" | ").take(200)}\n")
+        val genericDiag = StringBuilder()
+        val bills = BillCsvImporter().parseWithFailures(
+            csvLines,
+            BillCsvImporter.CsvFormat.GENERIC,
+            genericDiag,
+            fails
+        )
+        diag.append(genericDiag)
+        diag.append("通用有效记录: ${bills.size}条\n")
+        return BillCsvImporter.CsvFormat.GENERIC to bills
+    }
+
+    private companion object {
+        /** 9999-12-31 的 Excel 序列号；超出范围的数字不当作日期 */
+        const val MAX_EXCEL_SERIAL = 2_958_465.0
     }
 }

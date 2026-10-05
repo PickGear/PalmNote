@@ -419,6 +419,112 @@ class BillCsvImporterTest {
         assertEquals("EXPENSE", bills[0].type)
         assertEquals("其他", bills[0].category)
     }
+
+    // ── 通用格式：银行导出实测形态（日期与时间分列 / 收入支出分列 / 借贷标志） ──
+
+    @Test
+    fun `bank csv with separate date and time columns parses every row`() {
+        // 实测踩坑：只按「时间」取日期列会拿到纯时间列（"12:30:00"）→ 整份文件被判日期缺失
+        val header = "交易日期,交易时间,摘要,交易金额,借贷标志,余额,对方户名"
+        val bills = importer.parseFromLines(
+            listOf(
+                header,
+                "2026-07-20,12:30:00,消费,45.00,借,10234.56,星巴克",
+                "2026-07-21,09:00:00,工资,8500.00,贷,18734.56,某某科技有限公司"
+            ),
+            CsvFormat.GENERIC
+        )
+
+        assertEquals(2, bills.size)
+        assertEquals("2026-07-20 00:00:00".ts(), bills[0].date)
+        assertEquals("EXPENSE", bills[0].type)
+        assertEquals(4500L, bills[0].amount)
+        assertEquals("星巴克", bills[0].merchant)
+        assertEquals("INCOME", bills[1].type)
+        assertEquals(850000L, bills[1].amount)
+    }
+
+    @Test
+    fun `bank csv with split income and expense columns keeps direction`() {
+        // 实测踩坑：没有单一「金额」列时，列序靠前的「收入金额」被当成通用金额 → 支出行全丢、收入行记成支出
+        val header = "交易日期,摘要,收入金额,支出金额,余额,对方户名"
+        val bills = importer.parseFromLines(
+            listOf(
+                header,
+                "2026-07-20,消费,,45.00,10234.56,星巴克",
+                "2026-07-21,工资,8500.00,,18734.56,某某科技有限公司"
+            ),
+            CsvFormat.GENERIC
+        )
+
+        assertEquals(2, bills.size)
+        assertEquals("EXPENSE", bills[0].type)
+        assertEquals(4500L, bills[0].amount)
+        assertEquals("INCOME", bills[1].type)
+        assertEquals(850000L, bills[1].amount)
+    }
+
+    @Test
+    fun `brand format whose header does not match falls back to generic`() {
+        // 「交易时间 + 收/支 + 商品说明」会被判成支付宝，但支付宝解析器只认「记录时间/交易创建时间」
+        val lines = listOf(
+            "交易时间,交易类型,交易对方,商品说明,金额,收/支,交易状态",
+            "2026-07-20 12:30:00,消费,星巴克,拿铁,32.00,支出,交易成功"
+        )
+        assertEquals(CsvFormat.ALIPAY, importer.detectFormat(lines))
+
+        val bills = importer.parseFromLines(lines, CsvFormat.ALIPAY)
+
+        assertEquals(1, bills.size)
+        assertEquals(3200L, bills[0].amount)
+        assertEquals("星巴克", bills[0].merchant)
+    }
+
+    @Test
+    fun `decimal comma amount is not mistaken for thousands separator`() {
+        // 45,00 被当千分位剥掉会变成 4500 元（金额错 100 倍）
+        val bills = importer.parseFromLines(
+            listOf("交易日期;摘要;交易金额;收支", "2026-07-20;消费;45,00;支出"),
+            CsvFormat.GENERIC
+        )
+        assertEquals(1, bills.size)
+        assertEquals(4500L, bills[0].amount)
+    }
+
+    @Test
+    fun `three digit grouping is still treated as thousands separator`() {
+        val bills = importer.parseFromLines(
+            listOf("交易日期,摘要,交易金额,收支", "2026-07-20,消费,\"12,345.67\",支出"),
+            CsvFormat.GENERIC
+        )
+        assertEquals(1, bills.size)
+        assertEquals(1234567L, bills[0].amount)
+    }
+
+    @Test
+    fun `html table export is normalized into parseable rows`() {
+        // 银行网页导出的「.xls」多半是 HTML 表格套壳
+        val html = listOf(
+            "<html><body><table>",
+            "<tr><td>交易日期</td><td>摘要</td><td>交易金额</td><td>收支</td><td>对方户名</td></tr>",
+            "<tr><td>2026-07-20</td><td>消费</td><td>45.00</td><td>支出</td><td>星巴克</td></tr>",
+            "</table></body></html>"
+        )
+
+        val normalized = importer.normalizeLines(html)
+
+        assertEquals(CsvFormat.GENERIC, importer.detectFormat(normalized))
+        val bills = importer.parseFromLines(normalized, CsvFormat.GENERIC)
+        assertEquals(1, bills.size)
+        assertEquals(4500L, bills[0].amount)
+        assertEquals("星巴克", bills[0].merchant)
+    }
+
+    @Test
+    fun `plain text lines are returned untouched by normalizeLines`() {
+        val lines = listOf("交易日期,摘要,交易金额", "2026-07-20,消费,45.00")
+        assertEquals(lines, importer.normalizeLines(lines))
+    }
 }
 
 private fun String.ts(): Long {
