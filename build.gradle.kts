@@ -33,6 +33,9 @@ subprojects {
                         "ktlint_standard_no-wildcard-imports" to "disabled",
                         // 既有长行（含中文注释/字串）较多，交给 detekt MaxLineLength 把关
                         "ktlint_standard_max-line-length" to "disabled",
+                        // 行长既然不归 ktlint 管，签名换行也必须关掉：该规则判断「放得下」时会退化成
+                        // 「总能放一行」，把 150+ 字符的签名合并成一行，反而触发 detekt MaxLineLength。
+                        "ktlint_standard_function-signature" to "disabled",
                         // 仓库既有风格无尾逗号；且尾逗号会改变 detekt baseline 的签名，故关闭
                         "ktlint_standard_trailing-comma-on-declaration-site" to "disabled",
                         "ktlint_standard_trailing-comma-on-call-site" to "disabled",
