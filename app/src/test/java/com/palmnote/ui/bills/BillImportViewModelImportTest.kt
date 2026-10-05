@@ -34,6 +34,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.io.ByteArrayInputStream
+import java.nio.charset.Charset
 
 /**
  * 独立验证 T1 / T3 / T5：真实 [BillImportViewModel] 驱动真实 [BillRepositoryImpl] + in-memory Room。
@@ -236,6 +237,36 @@ class BillImportViewModelImportTest {
             vm.state.value.parsed.size,
             vm.state.value.importCount + vm.state.value.skippedCount
         )
+    }
+
+    // ── 编码：支付宝在 Windows 导出的 .csv 是 GBK，不是 UTF-8 ──
+
+    /**
+     * issue#1 的原始报障场景：「支付宝下载的 .csv 无法解析」。
+     * 实测原因之一是编码——按 UTF-8 硬解 GBK 字节会得到乱码，表头（含「支付宝」「交易创建时间」）
+     * 匹配不上，整份文件被判为未知格式而报「未能解析」。这条测试锁住解码回退按 GBK 走通。
+     */
+    @Test
+    fun `GBK 编码的支付宝 CSV 仍能识别为支付宝账单并解析出行`() {
+        val header =
+            "交易号,商家订单号,交易创建时间,付款时间,最近修改时间,交易来源地,类型,交易对方," +
+                "商品名称,金额（元）,收/支,交易状态,服务费（元）,成功退款（元）,备注,资金状态"
+        val row =
+            "TEST_GBK_0001,ORD_1,2026-07-20 12:30:00,2026-07-20 12:31:00,2026-07-20 12:31:00," +
+                "其他,即时到账-商户,肯德基,汉堡套餐,45.00,支出,交易成功,0.00,,,已支出"
+        val bytes = listOf("支付宝交易记录明细查询", header, row)
+            .joinToString("\r\n")
+            .toByteArray(Charset.forName("GBK"))
+
+        vm.parseFile(fileContext(bytes), Uri.parse("content://t/gbk.csv"), "gbk.csv")
+        settle { vm.state.value.stage == ImportStage.PREVIEW }
+
+        assertEquals("GBK 编码不该被判为未知格式（解析出 0 条）", 1, vm.state.value.parsed.size)
+        val bill = vm.state.value.parsed.single()
+        assertEquals("肯德基", bill.merchant)
+        assertEquals("汉堡套餐", bill.note)
+        assertEquals(4500L, bill.amount)
+        assertEquals("ALIPAY", bill.paymentMethod)
     }
 
     // ── T3：撤销范围 / 内存态 ──
