@@ -61,16 +61,7 @@ class BillCsvImporter {
     ): List<ParsedBill> {
         val headerLine = findHeaderLine(lines, format)
         diag?.append("CSV表头行: ${if (headerLine != null) headerLine.take(80) else "未找到"}\n")
-        if (headerLine == null) {
-            // detectFormat 的品牌分支比品牌解析器宽松（如「交易时间 + 收/支 + 商品说明」判为支付宝，
-            // 但支付宝解析器只认「记录时间 / 交易创建时间」）。判成品牌却找不到表头时回退通用，
-            // 别让整份文件白白失败——银行、云闪付的表头常落进这个缝里。
-            if (format == CsvFormat.WECHAT || format == CsvFormat.ALIPAY) {
-                diag?.append("品牌表头未命中 → 回退通用\n")
-                return parseWithFailures(lines, CsvFormat.GENERIC, diag, fails)
-            }
-            return emptyList()
-        }
+        if (headerLine == null) return emptyList()
         val sep = detectSeparator(headerLine)
         val headerIdx = parseCsvLine(headerLine, sep).mapIndexed { i, h -> h.trim() to i }.toMap()
         val dataLines = dataLinesAfter(lines, headerLine)
@@ -124,18 +115,11 @@ class BillCsvImporter {
         return idx?.let { cols.getOrNull(it)?.trim() } ?: ""
     }
 
-    /**
-     * 金额文本清洗：去货币符号/正负号/各类空格；逗号按「是不是三位分组」区别对待——
-     * `1,234.56` 的逗号是千分位（去掉），`45,00` 的逗号是小数逗号（换成小数点）。
-     * 一刀切会把 `45,00` 读成 4500 元（金额错 100 倍，实测某银行的分号导出就是这种写法）。
-     * 全角逗号实测是支付宝导出的千分位，保持按千分位处理。
-     */
+    /** 金额文本清洗：去货币符号/正负号/半角与全角千分位/各类空格（实测支付宝导出会用全角逗号做千分位） */
     private fun cleanAmountText(raw: String): String = raw
         .replace("¥", "").replace("￥", "")
         .replace("+", "").replace("-", "")
-        .replace(THOUSANDS_COMMA, "")
-        .replace(',', '.')
-        .replace("\uFF0C", "")
+        .replace(",", "").replace("\uFF0C", "") // 半角 / 全角逗号千分位
         .replace(" ", "").replace("\u3000", "").replace("\u00A0", "")
 
     private fun parseWechat(
@@ -272,31 +256,40 @@ class BillCsvImporter {
     }
 
     // 通用格式：不依赖品牌表头，按关键词匹配列（银行/云闪付/手动表格等其他导出来源）
+    @Suppress("CyclomaticComplexMethod")
     private fun parseGeneric(
         lines: List<String>,
         headerIdx: Map<String, Int>,
         sep: Char,
         fails: MutableList<ImportFailure>?
     ): List<ParsedBill> {
-        val c = GenericColumns.resolve(headerIdx)
+        val dateIdx = col(headerIdx, "时间") ?: col(headerIdx, "日期")
+        val amountIdx = col(headerIdx, "金额")
+        val ieIdx = col(headerIdx, "收/支") ?: col(headerIdx, "收支") ?: col(headerIdx, "类型")
+        val merchantIdx = col(headerIdx, "商户") ?: col(headerIdx, "对方") ?: col(headerIdx, "摘要")
+            ?: col(headerIdx, "描述") ?: col(headerIdx, "收款方") ?: col(headerIdx, "付款方")
+        val noteIdx = col(headerIdx, "备注") ?: col(headerIdx, "说明")
+        val categoryIdx = col(headerIdx, "分类") ?: col(headerIdx, "类别")
 
         return lines.mapNotNull { line ->
             try {
                 val cols = parseCsvLine(line, sep)
-                val date = parseRowDate(cols, c.dateIdx, c.timeIdx)
-                    ?: return@mapNotNull fails.reject(line, ImportFailureReason.MISSING_DATE)
-                val rowAmount = rowAmount(cols, c)
-                    ?: return@mapNotNull fails.reject(line, ImportFailureReason.MISSING_AMOUNT)
-                val ieText = cell(cols, c.ieIdx)
-                val isIncome = rowAmount.incomeByColumn ?: when {
-                    rowAmount.signIncome -> true
+                val timeStr = cell(cols, dateIdx).ifBlank { return@mapNotNull fails.reject(line, ImportFailureReason.MISSING_DATE) }
+                val amountStr = cell(cols, amountIdx).ifBlank { return@mapNotNull fails.reject(line, ImportFailureReason.MISSING_AMOUNT) }
+                val ieText = cell(cols, ieIdx)
+                val isIncome = when {
                     ieText.contains("收入") || ieText.contains("转入") || ieText.contains("贷") -> true
-                    else -> false
+                    ieText.contains("支出") || ieText.contains("转出") || ieText.contains("借") -> false
+                    else -> amountStr.trimStart().startsWith("+")
                 }
-                val merchant = cell(cols, c.merchantIdx)
-                val note = cell(cols, c.noteIdx)
-                val categoryText = cell(cols, c.categoryIdx)
-                val type = if (isIncome && !rowAmount.negative) BillType.INCOME.value else BillType.EXPENSE.value
+                val negative = amountStr.trimStart().startsWith("-")
+                val cleanAmount = cleanAmountText(amountStr)
+                val amount = Money.parse(cleanAmount)?.cents ?: return@mapNotNull fails.reject(line, ImportFailureReason.MISSING_AMOUNT)
+                val date = parseDate(timeStr) ?: return@mapNotNull fails.reject(line, ImportFailureReason.MISSING_DATE)
+                val merchant = cell(cols, merchantIdx)
+                val note = cell(cols, noteIdx)
+                val categoryText = cell(cols, categoryIdx)
+                val type = if (isIncome && !negative) BillType.INCOME.value else BillType.EXPENSE.value
                 val nc = if (categoryText.isNotBlank()) {
                     normalizeCategoryEx(categoryText, type)
                 } else {
@@ -307,7 +300,7 @@ class BillCsvImporter {
                 ParsedBill(
                     date = date,
                     type = type,
-                    amount = rowAmount.cents,
+                    amount = amount,
                     category = nc.category,
                     merchant = merchant,
                     note = note,
@@ -320,85 +313,6 @@ class BillCsvImporter {
                 null
             }
         }
-    }
-
-    /** 通用表头 → 列索引。银行导出的表头分化很大，三类金额布局都要认（见 [rowAmount]） */
-    private class GenericColumns(
-        val dateIdx: Int?,
-        val timeIdx: Int?,
-        val singleAmountIdx: Int?,
-        val incomeAmountIdx: Int?,
-        val expenseAmountIdx: Int?,
-        val ieIdx: Int?,
-        val merchantIdx: Int?,
-        val noteIdx: Int?,
-        val categoryIdx: Int?
-    ) {
-        companion object {
-            fun resolve(h: Map<String, Int>): GenericColumns {
-                /** 命中第一个出现的关键词（同义词按优先级传入） */
-                fun col(vararg keywords: String): Int? = keywords.firstNotNullOfOrNull { kw ->
-                    h.entries.firstOrNull { it.key.contains(kw) }?.value
-                }
-                // 日期优先：只按「时间」取列会拿到纯时间列（"12:30:00"），整份文件将被判日期缺失
-                val dateCol = col("日期", "时间")
-                return GenericColumns(
-                    dateIdx = dateCol,
-                    timeIdx = col("时间")?.takeIf { it != dateCol },
-                    singleAmountIdx = h.entries.firstOrNull { isPlainAmountColumn(it.key) }?.value,
-                    incomeAmountIdx = col("收入", "贷方", "存入"),
-                    expenseAmountIdx = col("支出", "借方", "支取"),
-                    ieIdx = col("收/支", "收支", "借贷", "收付", "类型"),
-                    merchantIdx = col("商户", "对方", "摘要", "描述", "收款方", "付款方"),
-                    noteIdx = col("备注", "说明"),
-                    categoryIdx = col("分类", "类别")
-                )
-            }
-        }
-    }
-
-    /** 一行的金额与方向：分列决定的方向优先，其次是金额自带的正负号 */
-    private class RowAmount(
-        val cents: Long,
-        val incomeByColumn: Boolean?,
-        val signIncome: Boolean,
-        val negative: Boolean
-    )
-
-    /**
-     * 取一行的金额。三种真实布局：
-     * 1. 单一「金额」列 + 收支/借贷标志列（标志由 [GenericColumns.ieIdx] 解读）；
-     * 2. 收入、支出分列（银行常见）：哪列有值就用哪列，方向由列本身决定；
-     * 3. 带符号的单列（+ 收入 / - 支出）。
-     */
-    private fun rowAmount(cols: List<String>, c: GenericColumns): RowAmount? {
-        val single = cell(cols, c.singleAmountIdx)
-        if (single.isNotBlank()) {
-            centsOf(single)?.let {
-                val head = single.trimStart()
-                return RowAmount(it, null, head.startsWith("+"), head.startsWith("-"))
-            }
-        }
-        val income = cell(cols, c.incomeAmountIdx)
-        if (income.isNotBlank()) centsOf(income)?.let { return RowAmount(it, true, false, false) }
-        val expense = cell(cols, c.expenseAmountIdx)
-        if (expense.isNotBlank()) centsOf(expense)?.let { return RowAmount(it, false, false, false) }
-        return null
-    }
-
-    private fun centsOf(raw: String): Long? =
-        if (raw.isBlank()) null else Money.parse(cleanAmountText(raw))?.cents
-
-    /**
-     * 通用格式的日期：优先日期列；只有时间列时用它；两列都有但日期列不成日期时拼起来。
-     * 银行常把日期与时间分成两列（交易日期 + 交易时间），这是此前整份文件被判日期缺失的根因。
-     */
-    private fun parseRowDate(cols: List<String>, dateIdx: Int?, timeIdx: Int?): Long? {
-        val d = cell(cols, dateIdx)
-        parseDate(d)?.let { return it }
-        val t = cell(cols, timeIdx)
-        if (t.isNotBlank() && t != d) parseDate(t)?.let { return it }
-        return if (d.isNotBlank() && t.isNotBlank()) parseDate("$d $t") else null
     }
 
     private fun parseDate(timeStr: String): Long? {
@@ -414,58 +328,7 @@ class BillCsvImporter {
         return null
     }
 
-    /**
-     * 银行网页导出的「.xls」多半是 HTML 表格套壳（真 BIFF 另说）。把 `<tr>/<td>` 抽成 CSV 行，
-     * 后续的格式判定与通用解析就能像普通表格一样处理；非 HTML 内容原样返回。
-     */
-    fun normalizeLines(lines: List<String>): List<String> {
-        val text = lines.joinToString("\n")
-        if (!text.contains("<table", ignoreCase = true) && !text.contains("<tr", ignoreCase = true)) return lines
-        return TABLE_ROW.findAll(text)
-            .map { row ->
-                TABLE_CELL.findAll(row.groupValues[1])
-                    .map { quoteCsvField(unescapeHtml(TAG.replace(it.groupValues[1], "")).trim()) }
-                    .joinToString(",")
-            }
-            .filter { it.isNotBlank() }
-            .toList()
-    }
-
-    private fun unescapeHtml(raw: String): String = raw
-        .replace("&nbsp;", " ")
-        .replace("&lt;", "<").replace("&gt;", ">")
-        .replace("&quot;", "\"").replace("&#39;", "'").replace("&apos;", "'")
-        .replace("&amp;", "&")
-
     companion object {
-        /** 「金额」列的分列名标记：带这些字样的「…金额」列属于收入/支出分列，不是通用金额列 */
-        private val SPLIT_AMOUNT_MARKERS = listOf("收入", "支出", "借", "贷")
-
-        /**
-         * 「金额」列且**不是**收入/支出分列名。不排除的话，列序靠前的「收入金额」会被当成通用金额，
-         * 于是支出行取到空值被丢弃、收入行按支出记账。
-         */
-        private fun isPlainAmountColumn(header: String): Boolean =
-            header.contains("金额") && SPLIT_AMOUNT_MARKERS.none { header.contains(it) }
-
-        /** 半角逗号当千分位的判定：后面正好跟 3 位数字且再后面不是数字（1,234 / 1,234.56 / 1,234,567） */
-        private val THOUSANDS_COMMA = Regex(",(?=\\d{3}(?:\\D|$))")
-
-        private val TABLE_ROW = Regex("(?is)<tr[^>]*>(.*?)</tr>")
-        private val TABLE_CELL = Regex("(?is)<t[dh][^>]*>(.*?)</t[dh]>")
-        private val TAG = Regex("(?is)<[^>]+>")
-
-        /** 需要加引号包裹的字符：分隔符、引号与各类空白 */
-        private const val QUOTE_TRIGGER_CHARS = ",;\"\t\n\r"
-
-        /** CSV 字段转义：含分隔符/引号/空白换行时用双引号包裹，内部引号翻倍 */
-        internal fun quoteCsvField(value: String): String =
-            if (value.any { it in QUOTE_TRIGGER_CHARS }) {
-                "\"" + value.replace("\"", "\"\"") + "\""
-            } else {
-                value
-            }
-
         private val EXPENSE_CATEGORIES = setOf("餐饮", "零食", "饮品", "交通", "购物", "服饰", "数码", "二手", "居住", "家居", "租金", "娱乐", "旅游", "运动", "医疗", "健身", "美容", "教育", "文具", "社交", "人情", "红包", "赠与", "通讯", "家政", "快递", "维修", "投资", "股票", "理财", "保险", "宠物", "母婴", "烟酒", "捐赠", "罚款", "手续费", "其他")
         private val INCOME_CATEGORIES = setOf("工资", "奖金", "兼职", "副业", "报销", "投资", "股票", "理财", "分红", "利息", "租金", "二手", "红包", "赠与", "人情", "退款", "中奖", "保险理赔", "继承", "其他")
 

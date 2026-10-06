@@ -392,8 +392,7 @@
     <!-- Bill Import Errors -->
     <string name="bill_import_error_read_file">Unable to read file</string>
     <string name="bill_import_error_parse_invalid">No valid bill records found</string>
-    <string name="bill_import_error_format_unknown">Unrecognized file format: the header needs both a time/date column and an amount column</string>
-    <string name="bill_import_error_legacy_xls">This is the legacy Excel (.xls) format or a password-protected Office file, which cannot be parsed directly. Please save it as CSV or xlsx in Excel/WPS (remove the password first) and import again</string>
+    <string name="bill_import_error_format_unknown">Unrecognized file format, please confirm it is a WeChat or Alipay bill</string>
     <string name="bill_import_error_parse_failed">Parse failed: %s</string>
     <string name="bill_import_error_read_image">Unable to read image</string>
     <string name="bill_import_error_ocr_invalid">No valid transactions recognized</string>

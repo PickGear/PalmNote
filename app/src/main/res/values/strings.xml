@@ -563,8 +563,7 @@
     <!-- Bill Import Errors -->
     <string name="bill_import_error_read_file">无法读取文件</string>
     <string name="bill_import_error_parse_invalid">未能解析到有效的账单记录</string>
-    <string name="bill_import_error_format_unknown">无法识别文件格式：表头需含「时间/日期」与「金额」列</string>
-    <string name="bill_import_error_legacy_xls">这是旧版 Excel（.xls）或带密码保护的 Office 文件，暂不支持直接解析；请在 Excel/WPS 里另存为 CSV 或 xlsx（有密码请先去掉）后再导入</string>
+    <string name="bill_import_error_format_unknown">无法识别文件格式，请确认是微信或支付宝账单</string>
     <string name="bill_import_error_parse_failed">解析失败: %s</string>
     <string name="bill_import_error_read_image">无法读取图片</string>
     <string name="bill_import_error_ocr_invalid">未能识别到有效的交易记录</string>
