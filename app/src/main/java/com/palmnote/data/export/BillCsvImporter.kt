@@ -115,11 +115,18 @@ class BillCsvImporter {
         return idx?.let { cols.getOrNull(it)?.trim() } ?: ""
     }
 
-    /** 金额文本清洗：去货币符号/正负号/半角与全角千分位/各类空格（实测支付宝导出会用全角逗号做千分位） */
+    /**
+     * 金额文本清洗：去货币符号/正负号/各类空格；半角逗号按「是不是三位分组」区别对待——
+     * `1,234.56` 的逗号是千分位（去掉），`45,00` 的逗号是小数逗号（换成小数点）。
+     * 一刀切会把 `45,00` 读成 4500 元（差 100 倍，静默记错账）。
+     * 全角逗号实测是支付宝导出的千分位，保持按千分位处理。
+     */
     private fun cleanAmountText(raw: String): String = raw
         .replace("¥", "").replace("￥", "")
         .replace("+", "").replace("-", "")
-        .replace(",", "").replace("\uFF0C", "") // 半角 / 全角逗号千分位
+        .replace(THOUSANDS_COMMA, "")
+        .replace(',', '.')
+        .replace("\uFF0C", "")
         .replace(" ", "").replace("\u3000", "").replace("\u00A0", "")
 
     private fun parseWechat(
@@ -264,7 +271,12 @@ class BillCsvImporter {
         fails: MutableList<ImportFailure>?
     ): List<ParsedBill> {
         val dateIdx = col(headerIdx, "时间") ?: col(headerIdx, "日期")
-        val amountIdx = col(headerIdx, "金额")
+        // 「金额」列要排除收入/支出这类分列名：否则列序靠前的「收入金额」会被当成主金额列，
+        // 于是支出行取到空值被丢弃、收入行按支出记账——静默记错账，比导不进来更糟。
+        // 这类表若定不出主金额列，就让每行以「金额缺失」被拒，用户能在失败列表里看到原因。
+        val amountIdx = headerIdx.entries
+            .firstOrNull { (name, _) -> name.contains("金额") && SPLIT_AMOUNT_MARKERS.none { name.contains(it) } }
+            ?.value
         val ieIdx = col(headerIdx, "收/支") ?: col(headerIdx, "收支") ?: col(headerIdx, "类型")
         val merchantIdx = col(headerIdx, "商户") ?: col(headerIdx, "对方") ?: col(headerIdx, "摘要")
             ?: col(headerIdx, "描述") ?: col(headerIdx, "收款方") ?: col(headerIdx, "付款方")
@@ -329,6 +341,12 @@ class BillCsvImporter {
     }
 
     companion object {
+        /** 半角逗号当千分位的判定：后面正好跟 3 位数字且再后面不是数字（1,234 / 1,234.56 / 1,234,567） */
+        private val THOUSANDS_COMMA = Regex(",(?=\\d{3}(?:\\D|$))")
+
+        /** 金额分列的列名标记：带这些字样的「…金额」列是收入/支出分列，不是主金额列 */
+        private val SPLIT_AMOUNT_MARKERS = listOf("收入", "支出", "借", "贷")
+
         private val EXPENSE_CATEGORIES = setOf("餐饮", "零食", "饮品", "交通", "购物", "服饰", "数码", "二手", "居住", "家居", "租金", "娱乐", "旅游", "运动", "医疗", "健身", "美容", "教育", "文具", "社交", "人情", "红包", "赠与", "通讯", "家政", "快递", "维修", "投资", "股票", "理财", "保险", "宠物", "母婴", "烟酒", "捐赠", "罚款", "手续费", "其他")
         private val INCOME_CATEGORIES = setOf("工资", "奖金", "兼职", "副业", "报销", "投资", "股票", "理财", "分红", "利息", "租金", "二手", "红包", "赠与", "人情", "退款", "中奖", "保险理赔", "继承", "其他")
 
