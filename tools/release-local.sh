@@ -57,7 +57,10 @@ echo "▶ 2/5 本地核对产物"
 [ -f "$MAPPING" ] || { echo "✗ 没找到 mapping.txt（R8 没执行？）" >&2; exit 1; }
 APKSIGNER="$(find_apksigner || true)"
 if [ -n "$APKSIGNER" ]; then
-    CERT="$("$APKSIGNER" verify --print-certs "$APK" | sed -n 's/.*certificate SHA-256 digest: //p' | head -1)"
+    # 未签名/签名损坏时 apksigner 会非零退出：先吞掉退出码，否则 set -e 会在给出下面
+    # 那句提示之前就终止——而「包没签名」恰恰是这段最该拦下的情况。
+    VERIFY_OUT="$("$APKSIGNER" verify --print-certs "$APK" 2>&1 || true)"
+    CERT="$(printf '%s\n' "$VERIFY_OUT" | sed -n 's/.*certificate SHA-256 digest: //p' | head -1)"
     [ "$CERT" = "$EXPECT_CERT_SHA256" ] || {
         echo "✗ 签名证书指纹不符：期望 $EXPECT_CERT_SHA256，实际 ${CERT:-（未签名）}" >&2
         echo "  多半是 local.properties 缺签名配置，或用了 debug 签名；已中止，不上传。" >&2
