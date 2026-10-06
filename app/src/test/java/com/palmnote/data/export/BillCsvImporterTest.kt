@@ -243,7 +243,7 @@ class BillCsvImporterTest {
 
     @Test
     fun `generic format parses non-brand exports`() {
-        // issue#1：银行/云闪付等非微信/支付宝导出曾全部"未能解析"
+        // 通用格式：非微信/支付宝来源、只要表头含「时间/日期」与「金额」列即可解析
         val detectLines = listOf("账单日期,摘要,收付类型,金额,备注")
         assertEquals(CsvFormat.GENERIC, importer.detectFormat(detectLines))
         val header = "账单日期,摘要,收付类型,金额,备注"
