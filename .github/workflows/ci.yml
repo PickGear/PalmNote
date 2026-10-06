@@ -39,6 +39,19 @@ jobs:
       - name: Lint, detekt & unit tests
         run: ./gradlew lintDebug detekt testDebugUnitTest --continue
 
+      # 单测偶发失败（UncaughtExceptionsBeforeTest 这类协程泄漏）时控制台只有一行摘要，
+      # 原始堆栈只存在于报告里。仅失败时上传，方便下次直接看到底是谁抛的。
+      - name: Upload unit test report on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: unit-test-report
+          if-no-files-found: ignore
+          retention-days: 3
+          path: |
+            app/build/reports/tests
+            app/build/test-results
+
       # testDebugUnitTest 会触发 kspDebugKotlin（生成 app/schemas 与 core/schemas），
       # 这里直接校验导出的 Room schema 是否已提交，无需再跑一次 Gradle。
       - name: Verify Room schema is up to date
