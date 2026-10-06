@@ -82,9 +82,15 @@ echo "  · mapping sha256 $LOCAL_MAP_SUM"
 if [ "$DRY_RUN" = 1 ]; then
     echo "▶ 4/5 试运行：跳过上传（资产已在 $STAGE）"
 else
-    echo "▶ 4/5 覆盖上传到 Release $TAG"
+    echo "▶ 4/5 上传到 Release $TAG"
     gh auth status >/dev/null 2>&1 || { echo "✗ gh 未登录" >&2; exit 1; }
-    gh release upload "$TAG" "$STAGE/$RELEASE_APK" "$STAGE/mapping.txt" "$STAGE/SHA256SUMS.txt" --clobber
+    if gh release view "$TAG" >/dev/null 2>&1; then
+        gh release upload "$TAG" "$STAGE/$RELEASE_APK" "$STAGE/mapping.txt" "$STAGE/SHA256SUMS.txt" --clobber
+    else
+        # 新版本还没有 Release：由本脚本创建（tag 不存在时会一并创建并触发 release.yml 的构建冒烟）
+        gh release create "$TAG" "$STAGE/$RELEASE_APK" "$STAGE/mapping.txt" "$STAGE/SHA256SUMS.txt" \
+            --title "PalmNote $TAG" --generate-notes
+    fi
 fi
 
 echo "▶ 5/5 核对线上 digest"

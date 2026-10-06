@@ -61,6 +61,7 @@ jobs:
       # secrets 走 env 注入（不内联进脚本正文）；local.properties 用逐行 echo 写入，
       # 避免 run:| 缩进导致 heredoc 终止符 EOF 对不上而语法报错。
       - name: Inject release signing config
+        id: signing
         shell: bash
         env:
           RELEASE_JKS_BASE64: ${{ secrets.RELEASE_JKS_BASE64 }}
@@ -77,8 +78,10 @@ jobs:
               echo "RELEASE_KEY_PASSWORD=$RELEASE_KEY_PASSWORD"
             } >> local.properties
             echo "::notice::Release signing configured from secrets."
+            echo "signed=true" >> "$GITHUB_OUTPUT"
           else
             echo "::warning::No RELEASE_JKS_BASE64 secret; building unsigned APK."
+            echo "signed=false" >> "$GITHUB_OUTPUT"
           fi
 
       # assembleRelease 依赖 lintVitalRelease：致命 manifest/资源错误会在此失败（不过度跳过）。
@@ -93,7 +96,12 @@ jobs:
 
       # 发布到 GitHub Release：复用同名 tag 的既有 release（--clobber 覆盖同名 asset），
       # 无则创建。上传 APK + R8 mapping.txt（崩溃反解用）+ SHA256SUMS.txt（完整性校验）。
+      #
+      # 只在**已签名**时发布：未签名（无签名配置）时这条 tag 只做构建冒烟，不动任何资产——
+      # 否则会把已发布的签名包覆盖成未签名包，而 SHA256SUMS 是就地重算的、校验依然自洽，
+      # 不专门验签根本发现不了。
       - name: Publish to GitHub Release
+        if: steps.signing.outputs.signed == 'true'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}

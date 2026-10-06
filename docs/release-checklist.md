@@ -30,7 +30,8 @@
 - [ ] 构建产物签名验证通过：`apksigner verify --print-certs <apk>`，确认 `Signer #1` 是正式证书而非 debug
 - [ ] ⚠️ `release.jks` 已**离线备份**（丢失无法找回，且不能从 git 恢复）
 - [ ] 发布资产上传 / 替换：`bash tools/release-local.sh`（构建 → 证书指纹核对 → 覆盖上传 APK / mapping / SHA256SUMS → 服务端 digest 复验）。
-      `--dry-run` 只构建与本地核对，`--install` 顺带 `adb install -r` 供真机回归。
+      `--dry-run` 只构建与本地核对，`--install` 顺带 `adb install -r` 供真机回归；**Release 不存在时它会创建**，所以新版本也走这里。
+- [ ] CI 侧行为：`release.yml` 的发布步骤只在**已签名**时执行，未签名时仅做构建冒烟、不动任何资产（避免把已发布的签名包覆盖成未签名包）。故**发版以本地脚本为准**，CI 负责质量门禁与冒烟。
 
 ## 三、Build Types
 
