@@ -54,6 +54,12 @@ find_apksigner() {
     ls -1 "$sdk"/build-tools/*/apksigner "$sdk"/build-tools/*/apksigner.bat 2>/dev/null | sort -V | tail -1
 }
 
+find_adb() {
+    if command -v adb >/dev/null 2>&1; then command -v adb; return; fi
+    local sdk="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-$HOME/AppData/Local/Android/Sdk}}"
+    ls -1 "$sdk"/platform-tools/adb "$sdk"/platform-tools/adb.exe 2>/dev/null | sort -V | tail -1
+}
+
 echo "▶ 1/5 构建正式包"
 [ "$DO_CLEAN" = 1 ] && ./gradlew clean
 ./gradlew :app:assembleRelease
@@ -119,7 +125,9 @@ fi
 
 if [ "$DO_INSTALL" = 1 ]; then
     echo "▶ 真机安装（覆盖装、保数据）"
-    adb install -r "$APK"
+    ADB="$(find_adb || true)"
+    [ -n "$ADB" ] || { echo "✗ 找不到 adb（可设 ANDROID_HOME 或把 platform-tools 加进 PATH）" >&2; exit 1; }
+    "$ADB" install -r "$APK"
 fi
 
 echo "✅ 完成。真机回归清单见 docs/release-checklist.md 第八项（必须用 release 包走）。"
