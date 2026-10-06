@@ -29,6 +29,8 @@
 - [ ] 密码/别名通过 `local.properties`（`RELEASE_STORE_*` / `RELEASE_KEY_*`）注入，**未入库**
 - [ ] 构建产物签名验证通过：`apksigner verify --print-certs <apk>`，确认 `Signer #1` 是正式证书而非 debug
 - [ ] ⚠️ `release.jks` 已**离线备份**（丢失无法找回，且不能从 git 恢复）
+- [ ] 发布资产上传 / 替换：`bash tools/release-local.sh`（构建 → 证书指纹核对 → 覆盖上传 APK / mapping / SHA256SUMS → 服务端 digest 复验）。
+      **签名密钥不进 GitHub secrets**：secrets 的收益只是省掉手工上传，代价是任何能在默认分支跑 workflow 的人（或被入侵的 token）都能拿到密钥，而签名密钥不可更换——泄露只能换密钥、等于换 App（用户要卸载重装、丢数据）。`--dry-run` 只构建与本地核对；`--install` 顺带 `adb install -r` 供真机回归。
 
 ## 三、Build Types
 
