@@ -256,17 +256,6 @@ class BillImportViewModel @Inject constructor(
     ): Unit? {
         val reader = ZipArchiveReader()
         if (!reader.isZip(bytes)) {
-            // 旧版 Excel（BIFF8 的 .xls）是 OLE2 复合文档：按文本解只会得到乱码、最后报一句「未能解析」。
-            // 这里直接给出能照做的指引，而不是让用户对着解析失败发懵。
-            if (isOle2Container(bytes)) {
-                diag.append(context.getString(R.string.bill_import_diag_format, "OLE2/BIFF(.xls)") + "\n")
-                _state.value = _state.value.copy(
-                    stage = ImportStage.ERROR,
-                    error = context.getString(R.string.bill_import_error_legacy_xls),
-                    diagnostic = diag.toString()
-                )
-                return null
-            }
             diag.append(context.getString(R.string.bill_import_diag_format, "CSV/Text") + "\n")
             return parsePayload(context, bytes, diag, failures)
         }
@@ -378,16 +367,6 @@ class BillImportViewModel @Inject constructor(
     private fun isDataEntry(name: String): Boolean =
         name.endsWith(".csv", true) || name.endsWith(".txt", true) || name.endsWith(".xlsx", true)
 
-    /** OLE2 复合文档魔数：旧版 `.xls`（BIFF8）就装在这种容器里，不是 zip 也不是文本 */
-    private fun isOle2Container(bytes: ByteArray): Boolean {
-        val magic = byteArrayOf(
-            0xD0.toByte(), 0xCF.toByte(), 0x11, 0xE0.toByte(),
-            0xA1.toByte(), 0xB1.toByte(), 0x1A, 0xE1.toByte()
-        )
-        if (bytes.size < magic.size) return false
-        return magic.indices.all { bytes[it] == magic[it] }
-    }
-
     /** 把「可能是 xlsx、也可能是 CSV 文本」的字节解析进预览；空结果置错误态并返回 null */
     private suspend fun parsePayload(
         context: Context,
@@ -405,16 +384,13 @@ class BillImportViewModel @Inject constructor(
         diag.append(context.getString(R.string.bill_import_diag_lines, lines.size) + "\n")
         if (lines.isNotEmpty()) diag.append(context.getString(R.string.bill_import_diag_first_line, lines.first().take(80)) + "\n")
         val importer = BillCsvImporter()
-        // 银行网页导出的「.xls」常是 HTML 表格套壳：先抽成表格行，再走既有的格式判定与解析
-        val tableLines = importer.normalizeLines(lines)
-        if (tableLines.size != lines.size) diag.append("HTML 表格: 抽出 ${tableLines.size} 行\n")
-        val format = importer.detectFormat(tableLines)
+        val format = importer.detectFormat(lines)
         diag.append(context.getString(R.string.bill_import_diag_detected_format, format) + "\n")
         if (format == BillCsvImporter.CsvFormat.UNKNOWN) {
             _state.value = _state.value.copy(stage = ImportStage.ERROR, error = context.getString(R.string.bill_import_error_format_unknown), diagnostic = diag.toString())
             return null
         }
-        val parsed = withContext(Dispatchers.IO) { importer.parseWithFailures(tableLines, format, diag, failures) }
+        val parsed = withContext(Dispatchers.IO) { importer.parseWithFailures(lines, format, diag, failures) }
         return showParsed(context, parsed, format, diag, failures)
     }
 
