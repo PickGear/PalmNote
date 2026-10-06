@@ -38,7 +38,7 @@ class BillCsvImporter {
             if (line.contains("微信支付") || line.contains("微信账单")) return CsvFormat.WECHAT
             if (line.contains("支付宝") || line.contains("Alipay")) return CsvFormat.ALIPAY
         }
-        // 通用兜底：任意来源（银行/云闪付/手动表格等），表头含"时间/日期"+"金额"即可尝试
+        // 通用兜底：不依赖品牌表头，表头含"时间/日期"+"金额"即可尝试
         for (line in lines) {
             val clean = line.trimStart('\uFEFF').trim()
             if (clean.contains("金额") && (clean.contains("时间") || clean.contains("日期"))) return CsvFormat.GENERIC
@@ -255,7 +255,7 @@ class BillCsvImporter {
         }
     }
 
-    // 通用格式：不依赖品牌表头，按关键词匹配列（银行/云闪付/手动表格等其他导出来源）
+    // 通用格式：不依赖品牌表头，按关键词匹配列
     @Suppress("CyclomaticComplexMethod")
     private fun parseGeneric(
         lines: List<String>,
