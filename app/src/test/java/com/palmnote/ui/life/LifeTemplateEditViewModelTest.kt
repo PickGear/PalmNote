@@ -2,6 +2,7 @@ package com.palmnote.ui.life
 
 import android.content.Context
 import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.viewModelScope
 import com.palmnote.data.LifeDataSeeder
 import com.palmnote.data.db.AppDatabase
 import com.palmnote.data.db.dao.LifeItemDao
@@ -17,6 +18,7 @@ import io.mockk.mockk
 import io.mockk.slot
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
@@ -34,6 +36,9 @@ class LifeTemplateEditViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
 
+    /** 本测建过的所有 VM：tearDown 必须逐个取消 viewModelScope，否则 load/save 协程会漏到下一测。 */
+    private val createdViewModels = mutableListOf<LifeTemplateEditViewModel>()
+
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
@@ -41,6 +46,12 @@ class LifeTemplateEditViewModelTest {
 
     @After
     fun tearDown() {
+        // ViewModel 的 viewModelScope 里挂着 load/save 等协程。不取消的话，它们会带着
+        // 本测的桩活到下一个测试类，抛出 UncaughtExceptionsBeforeTest（同 WalletViewModelTest
+        // 2026-09-24 那次偶发失败）；测试用标准调度器，取消后再排空，确保不留待执行任务。
+        createdViewModels.forEach { it.viewModelScope.cancel() }
+        createdViewModels.clear()
+        testDispatcher.scheduler.advanceUntilIdle()
         Dispatchers.resetMain()
     }
 
@@ -195,26 +206,25 @@ class LifeTemplateEditViewModelTest {
     }
 
     @Test
-    fun `progress target candidates exclude self, disabled and non numeric fields`() =
-        runTest(testDispatcher.scheduler) {
-            val viewModel = createViewModel(
-                template = builtinTemplate(
-                    fieldsConfig = """
+    fun `progress target candidates exclude self, disabled and non numeric fields`() = runTest(testDispatcher.scheduler) {
+        val viewModel = createViewModel(
+            template = builtinTemplate(
+                fieldsConfig = """
                         [
                           {"key":"amount","label":"当前","type":"CURRENCY"},
                           {"key":"goal","label":"目标","type":"CURRENCY"},
                           {"key":"note","label":"备注","type":"TEXT"},
                           {"key":"off","label":"已停用","type":"NUMBER","disabled":true}
                         ]
-                    """.trimIndent()
-                )
+                """.trimIndent()
             )
-            testDispatcher.scheduler.advanceUntilIdle()
+        )
+        testDispatcher.scheduler.advanceUntilIdle()
 
-            val candidates = viewModel.progressTargetCandidates("amount").map { it.key }
+        val candidates = viewModel.progressTargetCandidates("amount").map { it.key }
 
-            assertEquals(listOf("goal"), candidates)
-        }
+        assertEquals(listOf("goal"), candidates)
+    }
 
     @Test
     fun `options and default value are exposed by field capability`() {
@@ -312,7 +322,7 @@ class LifeTemplateEditViewModelTest {
                 mockk<LifeTemplateRepository>(relaxed = true),
                 mockk<AppDatabase>(relaxed = true)
             )
-        )
+        ).also { createdViewModels += it }
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.setReminderEnabled(true)
@@ -422,7 +432,7 @@ class LifeTemplateEditViewModelTest {
                 mockk<LifeTemplateRepository>(relaxed = true),
                 mockk<AppDatabase>(relaxed = true)
             )
-        )
+        ).also { createdViewModels += it }
     }
 
     private fun builtinTemplate(fieldsConfig: String): LifeTemplate = LifeTemplate(
