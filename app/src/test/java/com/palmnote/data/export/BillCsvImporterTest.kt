@@ -261,6 +261,48 @@ class BillCsvImporterTest {
         assertEquals(850000L, bills[1].amount)
     }
 
+    @Test
+    fun `split income and expense amount columns are rejected instead of recording the wrong direction`() {
+        // 「收入金额 / 支出金额」分列时没有主金额列：此前会把「收入金额」当成主列，
+        // 于是支出行取到空值被丢弃、收入行按支出记账（静默错账）。现在宁可整行拒绝。
+        val header = "交易日期,摘要,收入金额,支出金额,余额,对方户名"
+        val fails = mutableListOf<ImportFailure>()
+        val bills = importer.parseWithFailures(
+            listOf(
+                header,
+                "2026-07-20,消费,,45.00,10234.56,星巴克",
+                "2026-07-21,工资,8500.00,,18734.56,某某科技有限公司"
+            ),
+            CsvFormat.GENERIC,
+            null,
+            fails
+        )
+
+        assertEquals(0, bills.size)
+        assertEquals(2, fails.size)
+    }
+
+    @Test
+    fun `decimal comma amount is not mistaken for a thousands separator`() {
+        // 45,00 被当千分位剥掉会变成 4500 元（差 100 倍）
+        val bills = importer.parseFromLines(
+            listOf("交易日期,摘要,交易金额,收支", "2026-07-20,消费,45,00,支出"),
+            CsvFormat.GENERIC
+        )
+        assertEquals(1, bills.size)
+        assertEquals(4500L, bills[0].amount)
+    }
+
+    @Test
+    fun `three digit grouping is still treated as a thousands separator`() {
+        val bills = importer.parseFromLines(
+            listOf("交易日期,摘要,交易金额,收支", "2026-07-20,消费,\"1,234.56\",支出"),
+            CsvFormat.GENERIC
+        )
+        assertEquals(1, bills.size)
+        assertEquals(123456L, bills[0].amount)
+    }
+
     // ── 批15/16：支付宝「分类标签」映射（真机实测：该表头无交易对方列 + 复合分类 → 全部要复核） ──
 
     private val legacyAlipayHeader = "记录时间,交易分类,商品说明,收/支,金额,备注,账户"
