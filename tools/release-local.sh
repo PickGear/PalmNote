@@ -36,7 +36,17 @@ APK="app/build/outputs/apk/release/$RELEASE_APK"
 MAPPING="app/build/outputs/mapping/release/mapping.txt"
 STAGE="app/build/release-assets"
 
-echo "▶ 版本 $VERSION · tag $TAG · $([ "$DRY_RUN" = 1 ] && echo '试运行（不上传）' || echo '将覆盖上传发布资产')"
+# 真实发布必须从「可追溯的提交」出包：工作区有未提交改动时，发出去的包对应不到任何提交，
+# 事后既无法复现也无法反查（--dry-run 不受此限，它的用途就是随时试构建）。
+if [ "$DRY_RUN" != 1 ] && [ -n "$(git status --porcelain)" ]; then
+    echo "✗ 工作区有未提交改动，发布会推出无法追溯到提交的包。请先提交（或 git stash）后再发。" >&2
+    git status --short >&2
+    exit 1
+fi
+
+HEAD_SHA="$(git rev-parse --short HEAD)"
+echo "▶ 版本 $VERSION · tag $TAG · 构建提交 $HEAD_SHA（$(git log -1 --format=%s)）"
+echo "  $([ "$DRY_RUN" = 1 ] && echo '试运行：只构建与本地核对，不上传' || echo '将覆盖上传发布资产')"
 
 find_apksigner() {
     if command -v apksigner >/dev/null 2>&1; then command -v apksigner; return; fi
