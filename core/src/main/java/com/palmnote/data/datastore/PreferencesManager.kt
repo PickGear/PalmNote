@@ -63,14 +63,27 @@ class PreferencesManager @Inject constructor(
         val LANGUAGE = stringPreferencesKey("language")
         val APP_LOCK_ENABLED = booleanPreferencesKey("app_lock_enabled")
         val ENCRYPTED_PIN = stringPreferencesKey("encrypted_pin")
-        val BIRTHDAY_REMINDER_ADVANCE_DAYS = intPreferencesKey("birthday_reminder_advance_days")
-        val ANNIVERSARY_REMINDER_ADVANCE_DAYS = intPreferencesKey("anniversary_reminder_advance_days")
+        /**
+         * 统一的「提前几天提醒」。
+         *
+         * 原先生日 / 纪念日 / 保质期各有一个，设置页因此出现三行几乎一样的条目（用户分不清谁是谁）。
+         * 合并之后**旧键仍然要读**（见 [resolveReminderAdvanceDays]）：旧值是用户一格格点出来的，
+         * 不能让升级把它悄悄变回默认值。
+         */
+        val REMINDER_ADVANCE_DAYS = intPreferencesKey("reminder_advance_days")
+
+        /** 提前天数的默认值。 */
+        const val DEFAULT_REMINDER_ADVANCE_DAYS = 3
+
+        /** 合并前的旧键，**只读不写**。键名取自 v1.4.0 发布版，不能改（改了就读不到存量用户的值）。 */
+        val LEGACY_BIRTHDAY_ADVANCE_DAYS = intPreferencesKey("birthday_reminder_advance_days")
+        val LEGACY_ANNIVERSARY_ADVANCE_DAYS = intPreferencesKey("anniversary_reminder_advance_days")
+        val LEGACY_ASSET_EXPIRY_ADVANCE_DAYS = intPreferencesKey("asset_expiry_reminder_advance_days")
         val DAILY_REMINDER_ENABLED = booleanPreferencesKey("daily_reminder_enabled")
         val BILL_REMINDER_ENABLED = booleanPreferencesKey("bill_reminder_enabled")
+        val ASSET_EXPIRY_REMINDER_ENABLED = booleanPreferencesKey("asset_expiry_reminder_enabled")
         val DAILY_REMINDER_HOUR = intPreferencesKey("daily_reminder_hour")
         val DAILY_REMINDER_MINUTE = intPreferencesKey("daily_reminder_minute")
-        val BILL_REMINDER_HOUR = intPreferencesKey("bill_reminder_hour")
-        val BILL_REMINDER_MINUTE = intPreferencesKey("bill_reminder_minute")
         val BIOMETRIC_ENABLED = booleanPreferencesKey("biometric_enabled")
         val PRIVACY_AGREED = booleanPreferencesKey("privacy_agreed")
         val ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
@@ -411,13 +424,13 @@ class PreferencesManager @Inject constructor(
         }
     }
 
-    val birthdayReminderAdvanceDays: Flow<Int> = prefsFlow.map { it[BIRTHDAY_REMINDER_ADVANCE_DAYS] ?: 3 }
+    val reminderAdvanceDays: Flow<Int> = prefsFlow.map { resolveReminderAdvanceDays(it) }
 
-    suspend fun setBirthdayReminderAdvanceDays(days: Int) { context.dataStore.edit { it[BIRTHDAY_REMINDER_ADVANCE_DAYS] = days } }
+    suspend fun setReminderAdvanceDays(days: Int) { context.dataStore.edit { it[REMINDER_ADVANCE_DAYS] = days } }
 
-    val anniversaryReminderAdvanceDays: Flow<Int> = prefsFlow.map { it[ANNIVERSARY_REMINDER_ADVANCE_DAYS] ?: 3 }
+    val assetExpiryReminderEnabled: Flow<Boolean> = prefsFlow.map { it[ASSET_EXPIRY_REMINDER_ENABLED] ?: true }
 
-    suspend fun setAnniversaryReminderAdvanceDays(days: Int) { context.dataStore.edit { it[ANNIVERSARY_REMINDER_ADVANCE_DAYS] = days } }
+    suspend fun setAssetExpiryReminderEnabled(enabled: Boolean) { context.dataStore.edit { it[ASSET_EXPIRY_REMINDER_ENABLED] = enabled } }
 
     val dailyReminderEnabled: Flow<Boolean> = prefsFlow.map { it[DAILY_REMINDER_ENABLED] ?: true }
 
@@ -434,14 +447,6 @@ class PreferencesManager @Inject constructor(
     val dailyReminderMinute: Flow<Int> = prefsFlow.map { it[DAILY_REMINDER_MINUTE] ?: 0 }
 
     suspend fun setDailyReminderMinute(minute: Int) { context.dataStore.edit { it[DAILY_REMINDER_MINUTE] = minute } }
-
-    val billReminderHour: Flow<Int> = prefsFlow.map { it[BILL_REMINDER_HOUR] ?: 21 }
-
-    suspend fun setBillReminderHour(hour: Int) { context.dataStore.edit { it[BILL_REMINDER_HOUR] = hour } }
-
-    val billReminderMinute: Flow<Int> = prefsFlow.map { it[BILL_REMINDER_MINUTE] ?: 0 }
-
-    suspend fun setBillReminderMinute(minute: Int) { context.dataStore.edit { it[BILL_REMINDER_MINUTE] = minute } }
 
     val biometricEnabled: Flow<Boolean> = prefsFlow.map { it[BIOMETRIC_ENABLED] ?: false }
 
@@ -627,3 +632,20 @@ class PreferencesManager @Inject constructor(
         }
     }
 }
+
+/**
+ * 「提前几天提醒」的取值：新键优先，其次合并前的三个旧键，最后默认 3。
+ *
+ * 为什么要读旧键：v1.4.0 里生日、纪念日各有一个 1/2/3/5/7/14 的选择器，用户点出来的值存在
+ * 各自的键里。合并成一个键之后如果只读新键，那些设过的人升级上来会**静默变回 3 天**——
+ * 设置项还在、值却换了，用户不会收到任何提示。
+ *
+ * 三个旧键都有值且不一致时只能保一个：按 生日 → 纪念日 → 保质期 的固定顺序取第一个
+ * （生日是三者里用得最多的）。用户之后在设置页改一次，新键就生效并一直优先。
+ */
+fun resolveReminderAdvanceDays(prefs: Preferences): Int =
+    prefs[PreferencesManager.REMINDER_ADVANCE_DAYS]
+        ?: prefs[PreferencesManager.LEGACY_BIRTHDAY_ADVANCE_DAYS]
+        ?: prefs[PreferencesManager.LEGACY_ANNIVERSARY_ADVANCE_DAYS]
+        ?: prefs[PreferencesManager.LEGACY_ASSET_EXPIRY_ADVANCE_DAYS]
+        ?: PreferencesManager.DEFAULT_REMINDER_ADVANCE_DAYS

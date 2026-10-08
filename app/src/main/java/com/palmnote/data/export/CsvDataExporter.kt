@@ -6,6 +6,7 @@ import com.palmnote.domain.model.AssetStatus
 import com.palmnote.domain.model.BillType
 import com.palmnote.domain.model.PaymentMethod
 import com.palmnote.domain.model.RecurringFrequency
+import com.palmnote.domain.model.ShelfLifeUnit
 import com.palmnote.domain.util.AppLogger
 import com.palmnote.app.R
 import kotlinx.serialization.json.Json
@@ -58,7 +59,7 @@ class CsvDataExporter(
         private val DATE_FIELDS = setOf(
             "date", "deadline", "solarDate", "startDate", "periodStartDate",
             "lastCheckInDate", "usedAt", "acquisitionDate",
-            "warrantyExpireDate", "insuranceExpireDate", "lastMaintenanceDate",
+            "warrantyExpireDate", "shelfLifeExpireDate", "shelfLifeProducedDate", "insuranceExpireDate", "lastMaintenanceDate",
             "nextMaintenanceDate", "retireDate", "lostDate", "soldDate",
             "reimbursedDate", "createdAt", "updatedAt",
             "dueDate", "remindAt", "recurringEndDate"
@@ -84,7 +85,13 @@ class CsvDataExporter(
                 "status" to mapOf(AssetStatus.HELD.value to "持有中", AssetStatus.AWAY.value to "暂离中", AssetStatus.REMOVED.value to "已清出"),
                 "acquisitionType" to mapOf("PURCHASE" to "购买", "GIFT" to "赠送", "LOTTERY" to "抽奖", "PRIZE" to "奖品", "INHERITANCE" to "继承", "OTHER" to "其他"),
                 "condition" to mapOf("NEW" to "全新", "GOOD" to "良好", "FAIR" to "一般", "POOR" to "较差"),
-                "costMode" to mapOf("DAILY" to "按天计算", "PER_USE" to "按次计算", "DEPRECIATION" to "折旧")
+                "costMode" to mapOf("DAILY" to "按天计算", "PER_USE" to "按次计算", "DEPRECIATION" to "折旧"),
+                // 与其它代码列一致：导出成中文，导入侧靠反查表映射回代码
+                "shelfLifeDurationUnit" to mapOf(
+                    ShelfLifeUnit.DAY.value to "天",
+                    ShelfLifeUnit.MONTH.value to "个月",
+                    ShelfLifeUnit.YEAR.value to "年"
+                )
             ),
             Bill::class.java to mapOf(
                 "type" to mapOf(BillType.EXPENSE.value to "支出", BillType.INCOME.value to "收入", BillType.TRANSFER.value to "转账"),
@@ -144,7 +151,10 @@ class CsvDataExporter(
             "useCount" to "使用次数", "totalUsageHours" to "使用总时长",
             "location" to "存放位置", "room" to "房间",
             "purchaseChannel" to "购买渠道",
-            "warrantyExpireDate" to "保修日期", "insuranceExpireDate" to "保险到期日",
+            "warrantyExpireDate" to "保修日期", "shelfLifeExpireDate" to "保质期到期日",
+            "shelfLifeProducedDate" to "生产日期",
+            "shelfLifeDurationValue" to "保质期时长", "shelfLifeDurationUnit" to "保质期时长单位",
+            "insuranceExpireDate" to "保险到期日",
             "insuranceCompany" to "保险公司", "insurancePolicyNo" to "保单号",
             "condition" to "成色", "serialNumber" to "序列号",
             "depreciationRate" to "折旧率", "currentValue" to "现值",
@@ -536,16 +546,16 @@ class CsvDataExporter(
             val extraForClass = classExtraCols[clazz].orEmpty()
             val typeNameEsc = escapeCsv(typeName)
             for (entity in entities) {
-                val values = fieldLookup.mapIndexed { i, fieldName ->
-                    if (i == 0) typeNameEsc
-                    else {
-                        val extraValDef = extraForClass.firstOrNull { it.first == fieldName }
-                        if (extraValDef != null) {
-                            valueToCsv(fieldName, extraValDef.second(entity), clazz)
-                        } else {
-                            val field = fieldMap[fieldName]
-                            if (field != null) valueToCsv(fieldName, field.get(entity), clazz) else ""
-                        }
+                // 「实体类型」是**额外加在行首**的一列，不能顶掉第一个字段的值：
+                // headers 是 listOf("实体类型") + fieldNames，行也必须是 typeName + 各字段值，
+                // 否则整行少一格、第 2 列起全部左移（账单的「金额」会拿到「类型」的值）。
+                val values = listOf(typeNameEsc) + fieldLookup.map { fieldName ->
+                    val extraValDef = extraForClass.firstOrNull { it.first == fieldName }
+                    if (extraValDef != null) {
+                        valueToCsv(fieldName, extraValDef.second(entity), clazz)
+                    } else {
+                        val field = fieldMap[fieldName]
+                        if (field != null) valueToCsv(fieldName, field.get(entity), clazz) else ""
                     }
                 }
                 sb.appendLine(values.joinToString(","))
@@ -1109,6 +1119,11 @@ class CsvDataExporter(
                 room = row["room"] ?: "",
                 purchaseChannel = row["purchaseChannel"] ?: "",
                 warrantyExpireDate = parseDateOrNull(row["warrantyExpireDate"]),
+                shelfLifeExpireDate = parseDateOrNull(row["shelfLifeExpireDate"]),
+                shelfLifeProducedDate = parseDateOrNull(row["shelfLifeProducedDate"]),
+                shelfLifeDurationValue = row["shelfLifeDurationValue"]?.toIntOrNull(),
+                // 空串要落回 null：这一列是「没填」而非「填了空单位」
+                shelfLifeDurationUnit = row["shelfLifeDurationUnit"]?.ifBlank { null },
                 insuranceExpireDate = parseDateOrNull(row["insuranceExpireDate"]),
                 insuranceCompany = row["insuranceCompany"] ?: "",
                 insurancePolicyNo = row["insurancePolicyNo"] ?: "",
