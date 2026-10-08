@@ -47,7 +47,6 @@
     <plurals name="asset_days_used">
         <item quantity="other">已使用 %d天</item>
     </plurals>
-    <string name="asset_warranty_valid">质保</string>
     <!-- 计数文案：数量为 1 时英文要用单数（%d items → 1 item），故用 plurals。 -->
     <plurals name="asset_used_days">
         <item quantity="other">已用%d天</item>
@@ -156,16 +155,19 @@
     <string name="settings_security_subtitle">PIN 锁、图案、生物识别</string>
     <string name="settings_security_subtitle_on">已开启，点此管理</string>
     <string name="settings_reminder">提醒设置</string>
-    <string name="settings_reminder_daily_section">日常提醒</string>
-    <string name="settings_reminder_advance_section">提前通知</string>
+    <string name="settings_reminder_time_section">什么时候提醒</string>
+    <string name="settings_reminder_content_section">提醒什么</string>
+    <string name="settings_reminder_channel_section">通知渠道</string>
     <string name="settings_daily_reminder">每日提醒</string>
-    <string name="settings_daily_reminder_subtitle">每天定时提醒查看生活记录</string>
+    <string name="settings_daily_reminder_subtitle">今天还没记过生活记录时提醒</string>
     <string name="settings_bill_reminder">记账提醒</string>
-    <string name="settings_bill_reminder_subtitle">每天提醒记录今日收支</string>
-    <string name="settings_birthday_advance">生日提前提醒天数</string>
-    <string name="settings_birthday_advance_subtitle">生日前提前几天发送提醒</string>
-    <string name="settings_anniversary_advance">纪念日提前提醒天数</string>
-    <string name="settings_anniversary_advance_subtitle">纪念日前提前几天发送提醒</string>
+    <string name="settings_bill_reminder_subtitle">今天还没记账时提醒</string>
+    <string name="settings_asset_expiry_reminder">物品到期提醒</string>
+    <string name="settings_asset_expiry_reminder_subtitle">物品保质期或质保临近到期时提醒</string>
+    <string name="settings_birthday_anniversary_reminder">生日 / 纪念日提醒</string>
+    <string name="settings_birthday_anniversary_reminder_subtitle">在各自条目的编辑页里开关</string>
+    <string name="settings_system_notification">系统通知设置</string>
+    <string name="settings_system_notification_subtitle">按功能分别开关通知</string>
     <string name="settings_account_category">账户与分类</string>
     <string name="settings_wallet_manage">账户管理</string>
     <string name="settings_wallet_manage_subtitle">管理钱包和银行账户</string>
@@ -199,8 +201,8 @@
     <string name="settings_about_app">关于</string>
     <string name="settings_about_version">版本 %1$s</string>
     <!-- 计数文案：数量为 1 时英文要用单数（%d items → 1 item），故用 plurals。 -->
-    <plurals name="settings_days">
-        <item quantity="other">%d 天</item>
+    <plurals name="settings_advance_days">
+        <item quantity="other">提前 %d 天</item>
     </plurals>
     <string name="settings_select_start_page">默认启动页</string>
     <string name="settings_select_bill_type">默认记账类型</string>
@@ -227,8 +229,13 @@
     <string name="settings_calendar_permission_text">同步纪念日到系统日历需要访问你的日历。掌记不会读取或修改你的其他日历事件。</string>
     <string name="settings_calendar_permission_action">前往授权</string>
     <string name="settings_calendar_permission_denied">日历权限已被永久拒绝，请前往系统设置手动开启</string>
-    <string name="settings_birthday_advance_title">生日提前提醒天数</string>
-    <string name="settings_anniversary_advance_title">纪念日提前提醒天数</string>
+    <string name="settings_reminder_advance">提前提醒</string>
+    <string name="settings_reminder_advance_subtitle">倒计时 / 生日 / 纪念日 / 物品到期共用</string>
+    <string name="settings_reminder_advance_title">提前提醒天数</string>
+    <string name="settings_reminder_advance_field">提前天数</string>
+    <string name="settings_reminder_advance_unit">天</string>
+    <string name="settings_reminder_advance_range">可填 0 - 365 天；填 0 表示只在到期当天提醒</string>
+    <string name="settings_advance_same_day">仅当天提醒</string>
     <string name="settings_navigate_back">返回</string>
     <string name="settings_home">首页</string>
     <string name="settings_bill_expense">支出</string>
@@ -712,6 +719,38 @@
         <item quantity="one">None</item>
         <item quantity="other">已过期%d天</item>
     </plurals>
+    <string name="asset_shelf_life_info">保质期</string>
+    <string name="asset_shelf_life_mode_date">到期日</string>
+    <string name="asset_shelf_life_mode_duration">保质期限</string>
+    <string name="asset_shelf_life_produced_date">生产日期</string>
+    <string name="asset_shelf_life_duration_hint">如 12</string>
+    <string name="asset_shelf_life_unit_day">天</string>
+    <string name="asset_shelf_life_unit_month">月</string>
+    <string name="asset_shelf_life_unit_year">年</string>
+    <string name="asset_shelf_life_expiry_format">到期: %s</string>
+    <string name="asset_shelf_life_produced_format">生产日期: %s</string>
+    <string name="asset_shelf_life_duration_format">保质期: %s</string>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="asset_shelf_life_remaining_days">
+        <item quantity="other">剩余%d天</item>
+    </plurals>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="asset_shelf_life_expired_days">
+        <item quantity="other">已过期%d天</item>
+    </plurals>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="asset_shelf_life_unit_days">
+        <item quantity="other">%d 天</item>
+    </plurals>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="asset_shelf_life_unit_months">
+        <item quantity="other">%d 个月</item>
+    </plurals>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="asset_shelf_life_unit_years">
+        <item quantity="other">%d 年</item>
+    </plurals>
+    <string name="asset_select_shelf_life_date">选择日期</string>
     <string name="asset_maintenance_info">维护信息</string>
     <string name="asset_maintenance_interval">维护间隔</string>
     <string name="asset_maintenance_interval_hint">间隔天数</string>
@@ -869,6 +908,17 @@
         <item quantity="one">None</item>
         <item quantity="other">「%1$s」还剩 %2$d 天</item>
     </plurals>
+    <string name="notification_asset_expiry_warranty_title">物品质保提醒</string>
+    <string name="notification_asset_expiry_shelf_life_title">物品保质期提醒</string>
+    <string name="notification_asset_expiry_today_message">「%s」今天到期</string>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="notification_asset_expiry_soon_message">
+        <item quantity="other">「%1$s」还有 %2$d 天到期</item>
+    </plurals>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="notification_asset_expiry_expired_message">
+        <item quantity="other">「%1$s」已过期 %2$d 天</item>
+    </plurals>
     <string name="notification_milestone_title">正数日里程碑</string>
     <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
     <plurals name="notification_milestone_message">
@@ -959,8 +1009,7 @@
     <string name="app_lock_biometric_enable_subtitle">使用指纹或面部识别快速解锁</string>
     <!-- Reminder Time -->
     <string name="settings_reminder_time">提醒时间</string>
-    <string name="settings_reminder_time_subtitle">设置每日提醒的具体时间</string>
-    <string name="settings_reminder_time_bill_subtitle">设置记账提醒的具体时间</string>
+    <string name="settings_reminder_time_subtitle">所有提醒都在这个时间统一检查一次</string>
     <string name="settings_select_reminder_time">选择提醒时间</string>
     <!-- Default Book -->
     <string name="report_all_books">全部账本</string>

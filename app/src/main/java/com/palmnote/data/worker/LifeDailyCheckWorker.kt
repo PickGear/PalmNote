@@ -10,17 +10,23 @@ import com.palmnote.app.R
 import com.palmnote.domain.util.AppLogger
 import com.nlf.calendar.Lunar
 import com.nlf.calendar.Solar
+import com.palmnote.ui.notification.NotificationHelper
 import com.palmnote.ui.life.parseLunarFlag
 import com.palmnote.data.db.entity.LifeReport
 import com.palmnote.data.db.entity.LifeTemplate
+import com.palmnote.data.db.entity.nearestExpiry
 import com.palmnote.data.datastore.PreferencesManager
+import com.palmnote.domain.model.ExpiryKind
+import com.palmnote.domain.model.ExpiryReminderKind
 import com.palmnote.domain.model.ReminderSpec
+import com.palmnote.domain.repository.AssetRepository
 import com.palmnote.domain.repository.BillRepository
 import com.palmnote.domain.repository.FocusRecordRepository
 import com.palmnote.domain.repository.LifeItemRepository
 import com.palmnote.domain.repository.LifeReportRepository
 import com.palmnote.domain.repository.LifeTemplateRepository
 import com.palmnote.domain.util.BuiltinTemplates
+import com.palmnote.domain.util.expiryReminderKind
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.flow.first
@@ -43,6 +49,7 @@ class LifeDailyCheckWorker @AssistedInject constructor(
     private val focusRepo: FocusRecordRepository,
     private val reportRepo: LifeReportRepository,
     private val billRepo: BillRepository,
+    private val assetRepo: AssetRepository,
     private val pm: PreferencesManager,
 ) : CoroutineWorker(context, params) {
 
@@ -79,9 +86,9 @@ class LifeDailyCheckWorker @AssistedInject constructor(
      */
     private fun countdownExtras(
         itemId: Long
-    ): Pair<PendingIntent, List<com.palmnote.ui.notification.NotificationHelper.Action>> =
+    ): Pair<PendingIntent, List<NotificationHelper.Action>> =
         lifeDetailPendingIntent(itemId) to listOf(
-            com.palmnote.ui.notification.NotificationHelper.Action(
+            NotificationHelper.Action(
                 applicationContext.getString(R.string.notification_action_complete),
                 com.palmnote.ui.widget.TodoToggleReceiver.togglePendingIntent(applicationContext, itemId)
             )
@@ -101,6 +108,8 @@ class LifeDailyCheckWorker @AssistedInject constructor(
             if (overBudget()) return Result.success()
             checkCountdownExpiry()
             if (overBudget()) return Result.success()
+            checkAssetExpiry()
+            if (overBudget()) return Result.success()
             checkBirthdayReminders()
             if (overBudget()) return Result.success()
             checkAnniversaryReminders()
@@ -116,9 +125,15 @@ class LifeDailyCheckWorker @AssistedInject constructor(
     }
 
     private suspend fun checkDailyReminder() {
-        com.palmnote.ui.notification.NotificationHelper.show(
+        // 只在今天还没记过生活记录时才提。文案说的是「今天还没有记录生活」，
+        // 原来无条件就发——记了它也一样说，等于在说假话。
+        val today = LocalDate.now()
+        val todayStart = today.atStartOfDay(zone).toInstant().toEpochMilli()
+        val tomorrowStart = today.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
+        if (itemRepo.countItemsCreatedBetween(todayStart, tomorrowStart - 1) > 0) return
+        NotificationHelper.show(
             applicationContext,
-            com.palmnote.ui.notification.NotificationHelper.CHANNEL_CHECKIN,
+            NotificationHelper.Channel.CHECKIN,
             applicationContext.getString(R.string.notification_daily_title),
             applicationContext.getString(R.string.notification_daily_message)
         )
@@ -133,9 +148,9 @@ class LifeDailyCheckWorker @AssistedInject constructor(
         // 账单存完整时间戳，用日期区间匹配而非精确相等，避免当天有账单仍误报"未记账"
         val bills = billRepo.getBillsByDateRange(todayStart, tomorrowStart - 1).first()
         if (bills.isEmpty()) {
-            com.palmnote.ui.notification.NotificationHelper.show(
+            NotificationHelper.show(
                 applicationContext,
-                com.palmnote.ui.notification.NotificationHelper.CHANNEL_REMINDER,
+                NotificationHelper.Channel.BILL,
                 applicationContext.getString(R.string.notification_bill_title),
                 applicationContext.getString(R.string.notification_bill_message)
             )
@@ -154,9 +169,9 @@ class LifeDailyCheckWorker @AssistedInject constructor(
                     val start = millisToLocalDate(startMs)
                     val days = ChronoUnit.DAYS.between(start, today)
                     if (days in milestoneDays) {
-                        com.palmnote.ui.notification.NotificationHelper.show(
+                        NotificationHelper.show(
                             applicationContext,
-                            com.palmnote.ui.notification.NotificationHelper.CHANNEL_LIFE,
+                            NotificationHelper.Channel.MILESTONE,
                             applicationContext.getString(R.string.notification_milestone_title),
                             applicationContext.resources.getQuantityString(
                                 R.plurals.notification_milestone_message, days.toInt(), item.title, days
@@ -172,7 +187,7 @@ class LifeDailyCheckWorker @AssistedInject constructor(
 
     private suspend fun checkCountdownExpiry() {
         val today = LocalDate.now()
-        val advanceDays = pm.birthdayReminderAdvanceDays.first()
+        val advanceDays = pm.reminderAdvanceDays.first()
         reminderTargets(ReminderSpec.Kind.COUNTDOWN).forEach { target ->
             itemRepo.getActiveItemsByTemplate(target.templateId, 200).first().forEach { item ->
                 try {
@@ -184,20 +199,21 @@ class LifeDailyCheckWorker @AssistedInject constructor(
                     when {
                         daysLeft == 0L -> {
                             val (contentIntent, actions) = countdownExtras(item.id)
-                            com.palmnote.ui.notification.NotificationHelper.show(
+                            NotificationHelper.show(
                                 applicationContext,
-                                com.palmnote.ui.notification.NotificationHelper.CHANNEL_REMINDER,
+                                NotificationHelper.Channel.COUNTDOWN,
                                 applicationContext.getString(R.string.notification_countdown_today_title),
                                 applicationContext.getString(R.string.notification_countdown_today_message, item.title),
                                 contentIntent = contentIntent,
-                                actions = actions
+                                actions = actions,
+                                id = lifeReminderNotifyId(ReminderSpec.Kind.COUNTDOWN, item.id)
                             )
                         }
                         daysLeft in 1..advanceDays.toLong() -> {
                             val (contentIntent, actions) = countdownExtras(item.id)
-                            com.palmnote.ui.notification.NotificationHelper.show(
+                            NotificationHelper.show(
                                 applicationContext,
-                                com.palmnote.ui.notification.NotificationHelper.CHANNEL_REMINDER,
+                                NotificationHelper.Channel.COUNTDOWN,
                                 applicationContext.getString(R.string.notification_countdown_soon_title),
                                 applicationContext.resources.getQuantityString(
                                     R.plurals.notification_countdown_soon_message,
@@ -206,7 +222,8 @@ class LifeDailyCheckWorker @AssistedInject constructor(
                                     daysLeft
                                 ),
                                 contentIntent = contentIntent,
-                                actions = actions
+                                actions = actions,
+                                id = lifeReminderNotifyId(ReminderSpec.Kind.COUNTDOWN, item.id)
                             )
                         }
                     }
@@ -217,9 +234,67 @@ class LifeDailyCheckWorker @AssistedInject constructor(
         }
     }
 
+    /**
+     * 物品到期提醒。
+     *
+     * 提醒对象是**质保与保质期里更紧迫的那个**（`Asset.nearestExpiry`）——与列表卡、网格卡、
+     * 详情页头部同一套判定，否则会出现「卡片上橙着质保 1 天、却一条通知都不发」的矛盾。
+     * 窗口是以到期日为中心的对称区间：提前 N 天起、过期后 N 天止（[expiryReminderKind]）。
+     *
+     * 通知用**每件物品固定的 id**：同一条就地更新，所以「连着几天提醒」不会在通知栏堆成一摞，
+     * 过期之后也才敢继续提醒。
+     */
+    private suspend fun checkAssetExpiry() {
+        if (!pm.assetExpiryReminderEnabled.first()) return
+        val advanceDays = pm.reminderAdvanceDays.first()
+        val today = LocalDate.now()
+        assetRepo.getHeldAssetsWithExpiry().first().forEach { asset ->
+            try {
+                val (kind, expireAt) = asset.nearestExpiry ?: return@forEach
+                val daysLeft = ChronoUnit.DAYS.between(today, millisToLocalDate(expireAt))
+                val reminder = expiryReminderKind(daysLeft, advanceDays) ?: return@forEach
+                val titleRes = when (kind) {
+                    ExpiryKind.WARRANTY -> R.string.notification_asset_expiry_warranty_title
+                    ExpiryKind.SHELF_LIFE -> R.string.notification_asset_expiry_shelf_life_title
+                }
+                val message = when (reminder) {
+                    ExpiryReminderKind.TODAY -> applicationContext.getString(
+                        R.string.notification_asset_expiry_today_message, asset.name
+                    )
+                    ExpiryReminderKind.SOON -> applicationContext.resources.getQuantityString(
+                        R.plurals.notification_asset_expiry_soon_message, daysLeft.toInt(), asset.name, daysLeft
+                    )
+                    ExpiryReminderKind.EXPIRED -> applicationContext.resources.getQuantityString(
+                        R.plurals.notification_asset_expiry_expired_message, (-daysLeft).toInt(), asset.name, -daysLeft
+                    )
+                }
+                NotificationHelper.show(
+                    applicationContext,
+                    NotificationHelper.Channel.ASSET_EXPIRY,
+                    applicationContext.getString(titleRes),
+                    message,
+                    contentIntent = assetTabPendingIntent(),
+                    id = assetExpiryNotifyId(asset.id)
+                )
+            } catch (e: Exception) {
+                AppLogger.e("LifeDailyCheck", "asset expiry check failed for " + asset.name, e)
+            }
+        }
+    }
+
+    /** 物品到期提醒的落点：打开「物品」标签页（物品没有像生活记录那样的详情深链）。 */
+    private fun assetTabPendingIntent(): PendingIntent =
+        PendingIntent.getActivity(
+            applicationContext,
+            7_400_200,
+            Intent(applicationContext, com.palmnote.MainActivity::class.java)
+                .putExtra("WIDGET_TAB", "asset"),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
     private suspend fun checkBirthdayReminders() {
         val today = LocalDate.now()
-        val advanceDays = pm.birthdayReminderAdvanceDays.first()
+        val advanceDays = pm.reminderAdvanceDays.first()
         reminderTargets(ReminderSpec.Kind.BIRTHDAY).forEach { target ->
             itemRepo.getActiveItemsByTemplate(target.templateId, 200).first().forEach { item ->
                 try {
@@ -237,11 +312,12 @@ class LifeDailyCheckWorker @AssistedInject constructor(
                     }
                     val diff = ChronoUnit.DAYS.between(today, if (nextBirthday.isAfter(today) || nextBirthday == today) nextBirthday else nextBirthday.plusYears(1))
                     if (diff in 0..advanceDays.toLong()) {
-                        com.palmnote.ui.notification.NotificationHelper.show(
+                        NotificationHelper.show(
                             applicationContext,
-                            com.palmnote.ui.notification.NotificationHelper.CHANNEL_REMINDER,
+                            NotificationHelper.Channel.EVENTS,
                             applicationContext.getString(R.string.notification_birthday_title),
-                            applicationContext.getString(R.string.notification_birthday_message, item.title)
+                            applicationContext.getString(R.string.notification_birthday_message, item.title),
+                            id = lifeReminderNotifyId(ReminderSpec.Kind.BIRTHDAY, item.id)
                         )
                     }
                 } catch (e: Exception) {
@@ -253,7 +329,7 @@ class LifeDailyCheckWorker @AssistedInject constructor(
 
     private suspend fun checkAnniversaryReminders() {
         val today = LocalDate.now()
-        val advanceDays = pm.anniversaryReminderAdvanceDays.first()
+        val advanceDays = pm.reminderAdvanceDays.first()
         reminderTargets(ReminderSpec.Kind.ANNIVERSARY).forEach { target ->
             itemRepo.getActiveItemsByTemplate(target.templateId, 200).first().forEach { item ->
                 try {
@@ -265,11 +341,12 @@ class LifeDailyCheckWorker @AssistedInject constructor(
                     val diff = ChronoUnit.DAYS.between(today, if (nextAnni.isAfter(today) || nextAnni == today) nextAnni else nextAnni.plusYears(1))
                     if (diff in 0..advanceDays.toLong()) {
                         val years = ChronoUnit.YEARS.between(anniDate, today).coerceAtLeast(0)
-                        com.palmnote.ui.notification.NotificationHelper.show(
+                        NotificationHelper.show(
                             applicationContext,
-                            com.palmnote.ui.notification.NotificationHelper.CHANNEL_REMINDER,
+                            NotificationHelper.Channel.EVENTS,
                             applicationContext.getString(R.string.notification_anniversary_title),
-                            applicationContext.getString(R.string.notification_anniversary_message, item.title, years)
+                            applicationContext.getString(R.string.notification_anniversary_message, item.title, years),
+                            id = lifeReminderNotifyId(ReminderSpec.Kind.ANNIVERSARY, item.id)
                         )
                     }
                 } catch (e: Exception) {
@@ -308,9 +385,9 @@ class LifeDailyCheckWorker @AssistedInject constructor(
                             if (today.isBefore(nextDue)) continue
                         }
                         val price = (obj["price"] as? JsonPrimitive)?.content ?: ""
-                        com.palmnote.ui.notification.NotificationHelper.show(
+                        NotificationHelper.show(
                             applicationContext,
-                            com.palmnote.ui.notification.NotificationHelper.CHANNEL_REMINDER,
+                            NotificationHelper.Channel.SUBSCRIPTION,
                             applicationContext.getString(R.string.notification_subscription_title),
                             applicationContext.getString(R.string.notification_subscription_message, item.title, price)
                         )
@@ -426,4 +503,24 @@ internal fun lunarToSolar(solarBirth: LocalDate, year: Int): LocalDate? = runCat
         ?: if (anchor.month < 0) Lunar.fromYmd(year, -anchor.month, anchor.day).solar else null
     solar?.let { LocalDate.of(it.year, it.month, it.day) }
 }.getOrNull()
+
+/**
+ * 物品到期提醒的通知 id：**每件物品固定一个**，重复提醒就地更新同一条，不会在通知栏越堆越多。
+ *
+ * 偏移 7_500_000 是为了避开 `NotificationHelper` 的自增号段（从 1000 起）。顶层 internal 仅为可测试。
+ */
+internal fun assetExpiryNotifyId(assetId: Long): Int = 7_500_000 + (assetId % 500_000).toInt()
+
+/**
+ * 生活类提醒（倒计时 / 生日 / 纪念日）的固定通知 id。
+ *
+ * 窗口是「当天 + 前 N 天」，**每天都会算到一次**；用固定 id 才能让它原地更新一条
+ * （内容从「还有 7 天」滚到「今天」），而不是一天堆一条——提前 7 天原本会堆出 8 条。
+ * 我们没有按分钟调度的精确闹钟，只有这一个每天跑的任务，所以不能用「只在某两天各发一条」
+ * 那种里程碑写法：那天没跑到就永远漏了；天天算 + 原地更新，两头都不吃亏。
+ *
+ * 号段与 [assetExpiryNotifyId]（7_500_000 段）错开，并按提醒种类再分段，避免不同提醒撞号。
+ */
+internal fun lifeReminderNotifyId(kind: ReminderSpec.Kind, itemId: Long): Int =
+    8_000_000 + kind.ordinal * 1_000_000 + (itemId % 1_000_000).toInt()
 

@@ -61,6 +61,9 @@ import coil3.compose.AsyncImage
 import com.palmnote.app.R
 import com.palmnote.data.db.entity.Asset
 import com.palmnote.data.db.entity.getWarrantyStatusText
+import com.palmnote.data.db.entity.getShelfLifeStatusText
+import com.palmnote.data.db.entity.getNearestExpiryText
+import com.palmnote.data.db.entity.nearestExpiryDate
 import com.palmnote.domain.model.toMoney
 import com.palmnote.domain.util.CurrencyUtils
 import com.palmnote.domain.util.DateUtils
@@ -92,6 +95,23 @@ fun getCategoryDisplayName(category: String, context: android.content.Context, o
 
 private val statusColorMap = mapOf(AssetStatus.HELD to StatusHeld, AssetStatus.AWAY to StatusAway, AssetStatus.REMOVED to StatusRemoved)
 fun getStatusColor(status: AssetStatus): Color = statusColorMap[status] ?: StatusHeld
+
+/** 「临期」门槛：距到期 7 天内。 */
+internal const val EXPIRY_SOON_DAYS = 7
+
+/**
+ * 到期徽标的紧迫度配色：已过期=红，[EXPIRY_SOON_DAYS] 天内=橙，其余=物品模块蓝。
+ *
+ * 颜色只作辅助，语义始终由文案承载（已过期 / 保质期N天 / 质保中）——不靠颜色单独传信息。
+ */
+internal fun expiryAccentColor(expireDate: Long): Color {
+    val daysLeft = DateUtils.getDaysUntil(expireDate)
+    return when {
+        daysLeft < 0 -> StatusLost
+        daysLeft <= EXPIRY_SOON_DAYS -> AccentOrange
+        else -> ModuleItem
+    }
+}
 
 @Composable
 fun getStatusText(status: AssetStatus): String = when (status) {
@@ -733,7 +753,13 @@ fun EnhancedAssetCard(
                     if (asset.warrantyExpireDate != null) {
                         StatusChip(
                             text = asset.getWarrantyStatusText(context),
-                            color = ModuleItem
+                            color = expiryAccentColor(asset.warrantyExpireDate!!)
+                        )
+                    }
+                    if (asset.shelfLifeExpireDate != null) {
+                        StatusChip(
+                            text = asset.getShelfLifeStatusText(context),
+                            color = expiryAccentColor(asset.shelfLifeExpireDate!!)
                         )
                     }
                     StatusChip(text = statusText, color = statusColor)
@@ -917,17 +943,21 @@ fun GridAssetCard(
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Spacer(modifier = Modifier.weight(1f))
-                        if (asset.warrantyExpireDate != null) {
+                        // 窄卡只放一个到期徽标：取质保 / 保质期里更紧迫的那个，按紧迫度着色。
+                        // 加第三个徽标在英文（"Warranty" + "Shelf life"）下会顶出两列卡片宽度。
+                        val deadline = asset.nearestExpiryDate
+                        if (deadline != null) {
+                            val deadlineColor = expiryAccentColor(deadline)
                             Surface(
                                 shape = MaterialTheme.shapes.medium,
-                                color = ModuleItem.copy(alpha = 0.12f)
+                                color = deadlineColor.copy(alpha = 0.12f)
                             ) {
                                 Text(
-                                text = if (asset.isWarrantyValid) stringResource(R.string.asset_warranty_valid) else stringResource(R.string.asset_warranty_expired),
+                                    text = asset.getNearestExpiryText(context),
                                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Medium,
-                                    color = ModuleItem,
+                                    color = deadlineColor,
                                     maxLines = 1
                                 )
                             }

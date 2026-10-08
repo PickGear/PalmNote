@@ -102,6 +102,11 @@ data class AddAssetFormState(
     val location: String = "",
     val room: String = "",
     val warrantyExpireDate: Long? = null,
+    val shelfLifeExpireDate: Long? = null,
+    val shelfLifeMode: String = SHELF_LIFE_MODE_DATE,
+    val shelfLifeProducedDate: Long? = null,
+    val shelfLifeDurationValue: String = "",
+    val shelfLifeDurationUnit: String = SHELF_LIFE_DURATION_DEFAULT_UNIT,
     val costMode: String = "DAILY",
     val description: String = "",
     val images: String = "",
@@ -490,6 +495,15 @@ class AssetViewModel @Inject constructor(
                 location = asset.location,
                 room = asset.room,
                 warrantyExpireDate = asset.warrantyExpireDate,
+                shelfLifeExpireDate = asset.shelfLifeExpireDate,
+                shelfLifeMode = if (asset.shelfLifeDurationValue != null && asset.shelfLifeDurationUnit != null) {
+                    SHELF_LIFE_MODE_PERIOD
+                } else {
+                    SHELF_LIFE_MODE_DATE
+                },
+                shelfLifeProducedDate = asset.shelfLifeProducedDate,
+                shelfLifeDurationValue = asset.shelfLifeDurationValue?.toString() ?: "",
+                shelfLifeDurationUnit = asset.shelfLifeDurationUnit ?: SHELF_LIFE_DURATION_DEFAULT_UNIT,
                 costMode = asset.costMode,
                 description = asset.description,
                 images = asset.images,
@@ -551,6 +565,9 @@ class AssetViewModel @Inject constructor(
             val price = Money.parse(form.purchasePrice)?.cents ?: 0L
             val now = System.currentTimeMillis()
 
+            // 保质期两种录法 → 落库的四列，规则见 resolveShelfLife（有单测）
+            val shelfLife = form.resolveShelfLife()
+
             val asset = Asset(
                 id = form.id ?: 0L,
                 name = form.name.trim(),
@@ -586,6 +603,10 @@ class AssetViewModel @Inject constructor(
                 location = form.location.trim(),
                 room = form.room.trim(),
                 warrantyExpireDate = form.warrantyExpireDate,
+                shelfLifeExpireDate = shelfLife.expireDate,
+                shelfLifeProducedDate = shelfLife.producedDate,
+                shelfLifeDurationValue = shelfLife.durationValue,
+                shelfLifeDurationUnit = shelfLife.durationUnit,
                 description = form.description.trim(),
                 images = form.images,
                 createdAt = if (form.isEditing) form.createdAt else now,

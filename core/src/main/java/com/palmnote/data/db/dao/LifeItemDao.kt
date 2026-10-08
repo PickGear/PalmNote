@@ -153,6 +153,15 @@ interface LifeItemDao {
     @Query("SELECT COUNT(*) FROM life_items WHERE templateId = :templateId AND (meta IS NULL OR meta <> :demoMeta)")
     suspend fun countUserItemsByTemplate(templateId: Long, demoMeta: String = LIFE_DEMO_META): Int
 
+    /**
+     * [start, end] 内新建的生活记录条数。
+     *
+     * 用途：「每日提醒」据此判断今天是否已经记过——原来它无条件就发一条"今天还没有记录生活哦"，
+     * 与事实不符。`createdAt` 上有索引（idx_items_created），这个计数很便宜。
+     */
+    @Query("SELECT COUNT(*) FROM life_items WHERE createdAt BETWEEN :start AND :end")
+    suspend fun countItemsCreatedBetween(start: Long, end: Long): Int
+
     
     @Query(
         """

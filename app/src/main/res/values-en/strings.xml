@@ -49,7 +49,6 @@
         <item quantity="one">Used for %d day</item>
         <item quantity="other">Used for %d days</item>
     </plurals>
-    <string name="asset_warranty_valid">Warranty</string>
     <!-- 计数文案：数量为 1 时英文要用单数（%d items → 1 item），故用 plurals。 -->
     <plurals name="asset_used_days">
         <item quantity="one">Used %d day</item>
@@ -160,16 +159,19 @@
     <string name="settings_security_subtitle">PIN lock, pattern, biometrics</string>
     <string name="settings_security_subtitle_on">Enabled, tap to manage</string>
     <string name="settings_reminder">Reminders</string>
-    <string name="settings_reminder_daily_section">Daily Reminder</string>
-    <string name="settings_reminder_advance_section">Advance Notice</string>
+    <string name="settings_reminder_time_section">When to Remind</string>
+    <string name="settings_reminder_content_section">What to Remind</string>
+    <string name="settings_reminder_channel_section">Notification Channels</string>
     <string name="settings_daily_reminder">Daily Reminder</string>
-    <string name="settings_daily_reminder_subtitle">Daily reminder to check life records</string>
+    <string name="settings_daily_reminder_subtitle">Only when nothing has been recorded today</string>
     <string name="settings_bill_reminder">Bookkeeping Reminder</string>
-    <string name="settings_bill_reminder_subtitle">Daily reminder to record expenses and income</string>
-    <string name="settings_birthday_advance">Birthday Advance Days</string>
-    <string name="settings_birthday_advance_subtitle">Days before birthday to send reminder</string>
-    <string name="settings_anniversary_advance">Anniversary Advance Days</string>
-    <string name="settings_anniversary_advance_subtitle">Days before anniversary to send reminder</string>
+    <string name="settings_bill_reminder_subtitle">Only when nothing has been recorded today</string>
+    <string name="settings_asset_expiry_reminder">Item Expiry Reminder</string>
+    <string name="settings_asset_expiry_reminder_subtitle">When item shelf life or warranty is nearing expiry</string>
+    <string name="settings_birthday_anniversary_reminder">Birthday &amp; Anniversary</string>
+    <string name="settings_birthday_anniversary_reminder_subtitle">Turn them on inside each entry</string>
+    <string name="settings_system_notification">System Notification Settings</string>
+    <string name="settings_system_notification_subtitle">Turn notifications on or off per type</string>
     <string name="settings_account_category">Accounts &amp; Categories</string>
     <string name="settings_wallet_manage">Account Management</string>
     <string name="settings_wallet_manage_subtitle">Manage wallets and bank accounts</string>
@@ -203,9 +205,9 @@
     <string name="settings_about_app">About</string>
     <string name="settings_about_version">Version %1$s</string>
     <!-- 计数文案：数量为 1 时英文要用单数（%d items → 1 item），故用 plurals。 -->
-    <plurals name="settings_days">
-        <item quantity="one">%d day</item>
-        <item quantity="other">%d days</item>
+    <plurals name="settings_advance_days">
+        <item quantity="one">%d day ahead</item>
+        <item quantity="other">%d days ahead</item>
     </plurals>
     <string name="settings_select_start_page">Default Start Page</string>
     <string name="settings_select_bill_type">Default Bill Type</string>
@@ -232,8 +234,13 @@
     <string name="settings_calendar_permission_text">Syncing anniversaries to the system calendar requires calendar access. PalmNote will not read or modify your other calendar events.</string>
     <string name="settings_calendar_permission_action">Grant Permission</string>
     <string name="settings_calendar_permission_denied">Calendar permission was permanently denied. Please go to system settings to grant it manually.</string>
-    <string name="settings_birthday_advance_title">Birthday Advance Days</string>
-    <string name="settings_anniversary_advance_title">Anniversary Advance Days</string>
+    <string name="settings_reminder_advance">Advance Reminder</string>
+    <string name="settings_reminder_advance_subtitle">Shared by all date reminders</string>
+    <string name="settings_reminder_advance_title">Advance Reminder Days</string>
+    <string name="settings_reminder_advance_field">Days ahead</string>
+    <string name="settings_reminder_advance_unit">days</string>
+    <string name="settings_reminder_advance_range">0 to 365 days; 0 notifies on the due day only</string>
+    <string name="settings_advance_same_day">On the due day only</string>
     <string name="settings_navigate_back">Back</string>
     <string name="settings_home">Home</string>
     <string name="settings_bill_expense">Expense</string>
@@ -542,6 +549,43 @@
         <item quantity="one">Expired %d day ago</item>
         <item quantity="other">Expired %d days ago</item>
     </plurals>
+    <string name="asset_shelf_life_info">Shelf Life</string>
+    <string name="asset_shelf_life_mode_date">Expiry date</string>
+    <string name="asset_shelf_life_mode_duration">Shelf life period</string>
+    <string name="asset_shelf_life_produced_date">Production date</string>
+    <string name="asset_shelf_life_duration_hint">e.g. 12</string>
+    <string name="asset_shelf_life_unit_day">Days</string>
+    <string name="asset_shelf_life_unit_month">Months</string>
+    <string name="asset_shelf_life_unit_year">Years</string>
+    <string name="asset_shelf_life_expiry_format">Expires: %s</string>
+    <string name="asset_shelf_life_produced_format">Produced: %s</string>
+    <string name="asset_shelf_life_duration_format">Shelf life: %s</string>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="asset_shelf_life_remaining_days">
+        <item quantity="one">%d day left</item>
+        <item quantity="other">%d days left</item>
+    </plurals>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="asset_shelf_life_expired_days">
+        <item quantity="one">Expired %d day ago</item>
+        <item quantity="other">Expired %d days ago</item>
+    </plurals>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="asset_shelf_life_unit_days">
+        <item quantity="one">%d day</item>
+        <item quantity="other">%d days</item>
+    </plurals>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="asset_shelf_life_unit_months">
+        <item quantity="one">%d month</item>
+        <item quantity="other">%d months</item>
+    </plurals>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="asset_shelf_life_unit_years">
+        <item quantity="one">%d year</item>
+        <item quantity="other">%d years</item>
+    </plurals>
+    <string name="asset_select_shelf_life_date">Select date</string>
     <string name="asset_maintenance_info">Maintenance Info</string>
     <string name="asset_maintenance_interval">Maintenance Interval</string>
     <string name="asset_maintenance_interval_hint">Interval (days)</string>
@@ -700,6 +744,19 @@
         <item quantity="one">"%1$s" has %2$d day left</item>
         <item quantity="other">"%1$s" has %2$d days left</item>
     </plurals>
+    <string name="notification_asset_expiry_warranty_title">Item Warranty Reminder</string>
+    <string name="notification_asset_expiry_shelf_life_title">Item Shelf Life Reminder</string>
+    <string name="notification_asset_expiry_today_message">"%s" expires today</string>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="notification_asset_expiry_soon_message">
+        <item quantity="one">"%1$s" expires in %2$d day</item>
+        <item quantity="other">"%1$s" expires in %2$d days</item>
+    </plurals>
+    <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="notification_asset_expiry_expired_message">
+        <item quantity="one">"%1$s" expired %2$d day ago</item>
+        <item quantity="other">"%1$s" expired %2$d days ago</item>
+    </plurals>
     <string name="notification_milestone_title">Count Up Milestone</string>
     <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
     <plurals name="notification_milestone_message">
@@ -790,8 +847,7 @@
     <string name="app_lock_biometric_enable_subtitle">Use fingerprint or face to unlock quickly</string>
     <!-- Reminder Time -->
     <string name="settings_reminder_time">Reminder Time</string>
-    <string name="settings_reminder_time_subtitle">Set specific time for daily reminder</string>
-    <string name="settings_reminder_time_bill_subtitle">Set specific time for bookkeeping reminder</string>
+    <string name="settings_reminder_time_subtitle">All reminders are checked once at this time</string>
     <string name="settings_select_reminder_time">Select Reminder Time</string>
     <!-- Default Book -->
     <string name="report_all_books">All Books</string>

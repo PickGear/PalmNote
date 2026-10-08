@@ -38,10 +38,13 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.palmnote.data.db.entity.Asset
 import com.palmnote.data.db.entity.UsageRecord
-import com.palmnote.data.db.entity.getWarrantyStatusText
+import com.palmnote.data.db.entity.getNearestExpiryText
 import com.palmnote.data.db.entity.getInsuranceStatusText
+import com.palmnote.data.db.entity.nearestExpiryDate
 import com.palmnote.domain.model.Money
+import com.palmnote.domain.model.ShelfLifeUnit
 import com.palmnote.domain.model.toMoney
 import com.palmnote.domain.util.CurrencyUtils
 import com.palmnote.domain.util.DateUtils
@@ -171,7 +174,14 @@ fun AssetDetailScreen(
                             Spacer(Modifier.height(4.dp))
                             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                 StatusChip(text = statusText, color = statusColor)
-                                if (asset.warrantyExpireDate != null) StatusChip(text = asset.getWarrantyStatusText(context), color = if (asset.isWarrantyValid) StatusActive else StatusRetired)
+                                // 与列表/网格卡同一套口径：取质保/保质期里更紧迫的那个，按紧迫度着色。
+                                // 以前这里只看质保、且用「有效就绿」的老口径，同一个日期在两处颜色不一样。
+                                asset.nearestExpiryDate?.let { deadline ->
+                                    StatusChip(
+                                        text = asset.getNearestExpiryText(context),
+                                        color = expiryAccentColor(deadline)
+                                    )
+                                }
                             }
                         }
                     }
@@ -288,6 +298,10 @@ if (asset.purchasePrice > 0) DetailRow(
                         }
                     }
                 }
+            }
+            // Shelf Life Info
+            if (asset.shelfLifeExpireDate != null) {
+                item { ShelfLifeCard(asset) }
             }
             // Maintenance Info
             if (asset.maintenanceIntervalDays > 0 || asset.lastMaintenanceDate != null) {
@@ -796,4 +810,85 @@ private fun UsageRecordItem(record: UsageRecord, actionsWidthPx: Float, onEdit: 
             }
         }
     }
+}
+
+/**
+ * 保质期倒计时卡：到期日 + 剩余（或已过期）天数。
+ *
+ * 单独提为 internal 是为了能离屏渲染核对（见 AssetShelfLifeRenderTest）：
+ * 卡片在详情页 LazyColumn 靠下，整屏渲染取不到它。
+ */
+@Composable
+internal fun ShelfLifeCard(asset: Asset, modifier: Modifier = Modifier) {
+    val expireDate = asset.shelfLifeExpireDate ?: return
+    val context = LocalContext.current
+    // 过期判定与文案、徽标同口径：一律按自然日算。
+    // 若这里改用毫秒比较，到期当天会渲染出「红色图标 + 绿色『剩余0天』」这种自相矛盾的卡。
+    val daysLeft = DateUtils.getDaysUntil(expireDate)
+    val expired = daysLeft < 0
+    ModuleCard(tint = if (expired) anniversaryTint() else goalTint(), modifier = modifier.fillMaxWidth()) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = if (expired) Icons.Outlined.EventBusy else Icons.Filled.EventAvailable,
+                    contentDescription = null,
+                    tint = if (expired) StatusLost else StatusActive,
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(Modifier.width(8.dp))
+                Column {
+                    Text(
+                        text = stringResource(R.string.asset_shelf_life_info),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = stringResource(
+                            R.string.asset_shelf_life_expiry_format,
+                            DateUtils.formatDisplayYearDate(context, expireDate)
+                        ),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    // 按「生产日期 + 时长」录的物品才留得下这两行；直接填到期日的那种没有
+                    asset.shelfLifeProducedDate?.let { produced ->
+                        Text(
+                            text = stringResource(
+                                R.string.asset_shelf_life_produced_format,
+                                DateUtils.formatDisplayYearDate(context, produced)
+                            ),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    shelfLifeDurationText(asset)?.let { durationText ->
+                        Text(
+                            text = stringResource(R.string.asset_shelf_life_duration_format, durationText),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+            if (!expired) StatusChip(text = pluralStringResource(
+                R.plurals.asset_shelf_life_remaining_days, daysLeft, daysLeft
+            ), color = StatusActive)
+            else StatusChip(text = pluralStringResource(
+                R.plurals.asset_shelf_life_expired_days, -daysLeft, -daysLeft
+            ), color = StatusRetired)
+        }
+    }
+}
+
+/** 保质期时长的本地化文本（「12 个月」）；物品不是按「生产日期 + 时长」录的则为 null。 */
+@Composable
+private fun shelfLifeDurationText(asset: Asset): String? {
+    val amount = asset.shelfLifeDurationValue ?: return null
+    val unitPlural = when (ShelfLifeUnit.fromOrNull(asset.shelfLifeDurationUnit)) {
+        ShelfLifeUnit.DAY -> R.plurals.asset_shelf_life_unit_days
+        ShelfLifeUnit.MONTH -> R.plurals.asset_shelf_life_unit_months
+        ShelfLifeUnit.YEAR -> R.plurals.asset_shelf_life_unit_years
+        null -> return null
+    }
+    return pluralStringResource(unitPlural, amount, amount)
 }

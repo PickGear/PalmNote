@@ -126,7 +126,8 @@ class TriggerEngineTest {
         val item = lifeItem(status = "COMPLETED")
         createEngine(this).evaluate(TriggerEvent.ITEM_STATUS_CHANGED, item)
         advanceUntilIdle()
-        verify { NotificationHelper.show(any(), "trigger_1", "状态已更新", "状态更新") }
+        // 这里原来断言的是 "trigger_1"——一个不存在的渠道 id，等于在钉住"通知发不出去"
+        verify { NotificationHelper.show(any(), NotificationHelper.Channel.MILESTONE, "状态已更新", "状态更新") }
     }
 
     @Test

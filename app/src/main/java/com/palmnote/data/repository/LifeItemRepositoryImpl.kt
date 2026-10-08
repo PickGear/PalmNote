@@ -58,6 +58,7 @@ class LifeItemRepositoryImpl @Inject constructor(
     }
     override fun getItemCountByTemplate(templateId: Long): Flow<Int> = dao.getVisibleItemCountByTemplate(templateId)
     override suspend fun search(query: String): List<LifeItem> = dao.search(query)
+    override suspend fun countItemsCreatedBetween(start: Long, end: Long): Int = dao.countItemsCreatedBetween(start, end)
     override suspend fun insertItem(item: LifeItem): Long = try {
         val (dueDate, dueTime) = mirrorExecutionColumns(item.templateId, item.fieldsData)
         val resolvedDue = item.dueDate ?: dueDate ?: recordFallbackDueDate(item.templateId, item.createdAt)
