@@ -3,6 +3,7 @@ package com.palmnote.data.export
 import com.palmnote.data.export.BillCsvImporter.CsvFormat
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class BillCsvImporterTest {
@@ -226,6 +227,75 @@ class BillCsvImporterTest {
         assertEquals("INCOME", bills[0].type)
         assertEquals("EXPENSE", bills[1].type)
         assertEquals("通讯", bills[1].category)
+    }
+
+    // ── 支付宝 App 导出：`交易时间 + 商品说明/交易分类 + 收/支` ──
+    // 回归事故：detectFormat 认 `收/支`、findHeaderLine 只认 `收支`，两处表头清单漂移 →
+    // 这类表头被判成 ALIPAY 却定位不到，整份账单解析 0 条。
+
+    private val appAlipayHeader =
+        "交易时间,交易分类,交易对方,商品说明,收/支,金额,收/付款方式,交易状态,交易订单号,备注"
+
+    @Test
+    fun `app style alipay header parses rows instead of zero records`() {
+        val row = "2026-09-09 18:57:11,餐饮美食,肯德基,汉堡套餐,支出,45.00,余额宝,交易成功,TEST0001,午餐"
+        val bills = importer.parseFromLines(listOf(appAlipayHeader, row), CsvFormat.ALIPAY)
+
+        assertEquals(1, bills.size)
+        val bill = bills.single()
+        assertEquals("2026-09-09 18:57:11".ts(), bill.date)
+        assertEquals(4500L, bill.amount)
+        assertEquals("EXPENSE", bill.type)
+        assertEquals("餐饮", bill.category)
+        assertEquals("肯德基", bill.merchant)
+        assertEquals("午餐", bill.note)
+    }
+
+    @Test
+    fun `app style alipay header without goods column still parses`() {
+        // 只靠 `交易分类` 触发品牌消歧的表头（无「商品说明」）
+        val bills = importer.parseFromLines(
+            listOf("交易时间,交易分类,收/支,金额,备注", "2026-09-09 18:57:11,交通出行,支出,23.50,打车"),
+            CsvFormat.ALIPAY
+        )
+        assertEquals(1, bills.size)
+        assertEquals(2350L, bills.single().amount)
+        assertEquals("交通", bills.single().category)
+    }
+
+    @Test
+    fun `full width slash in income expense column is supported`() {
+        // 部分导出把收/支写成全角「收／支」：此前既判不出格式，也定位不到表头，取不到收支列
+        val header = "交易时间,交易分类,商品说明,收／支,金额,备注"
+        val expense = "2026-09-09 18:57:11,餐饮美食,汉堡套餐,支出,45.00,午餐"
+        val income = "2026-09-10 09:00:00,工资,月薪,收入,8000.00,八月工资"
+        val lines = listOf("支付宝交易记录明细查询", header, expense, income)
+
+        assertEquals(CsvFormat.ALIPAY, importer.detectFormat(lines))
+        val bills = importer.parseFromLines(lines, CsvFormat.ALIPAY)
+        assertEquals(2, bills.size)
+        assertEquals("EXPENSE", bills[0].type)
+        assertEquals(4500L, bills[0].amount)
+        assertEquals("INCOME", bills[1].type)
+        assertEquals(800000L, bills[1].amount)
+    }
+
+    @Test
+    fun `every alipay header variant detectFormat accepts can be located`() {
+        // 判据不许再漂移：这些变体都要「认得出 + 定位得到」
+        val headers = listOf(
+            "记录时间,交易分类,商品说明,收/支,金额,备注,账户",
+            "交易时间,交易分类,交易对方,商品说明,收/支,金额,收/付款方式,备注",
+            "交易时间,交易分类,商品说明,收／支,金额,备注",
+            "交易时间,商品说明,收/支,金额,备注",
+            modernAlipayHeader
+        )
+        for (header in headers) {
+            assertEquals("表头应判为 ALIPAY: $header", CsvFormat.ALIPAY, importer.detectFormat(listOf(header)))
+            val diag = StringBuilder()
+            importer.parseWithFailures(listOf("支付宝交易记录明细查询", header), CsvFormat.ALIPAY, diag)
+            assertTrue("表头应能定位（诊断里不该出现「未找到」）: $header", !diag.contains("未找到"))
+        }
     }
 
     // ── 通用行为 ──

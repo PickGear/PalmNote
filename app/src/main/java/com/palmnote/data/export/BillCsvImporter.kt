@@ -26,13 +26,8 @@ class BillCsvImporter {
     fun detectFormat(lines: List<String>): CsvFormat {
         for (line in lines) {
             val clean = line.trimStart('\uFEFF').trim()
-            if (clean.contains("记录时间") && clean.contains("收支")) return CsvFormat.ALIPAY
-            // 支付宝当代官方导出：表头为"交易创建时间…收/支"（无"记录时间/交易时间"字样）
-            if (clean.contains("交易创建时间") && clean.contains("收/支")) return CsvFormat.ALIPAY
-            if (clean.contains("交易时间") && clean.contains("收/支")) {
-                if (clean.contains("商品说明") || clean.contains("交易分类")) return CsvFormat.ALIPAY
-                if (clean.contains("商品") || clean.contains("交易对方") || clean.contains("交易类型")) return CsvFormat.WECHAT
-            }
+            if (isAlipayHeader(clean)) return CsvFormat.ALIPAY
+            if (isWechatHeader(clean)) return CsvFormat.WECHAT
         }
         for (line in lines) {
             if (line.contains("微信支付") || line.contains("微信账单")) return CsvFormat.WECHAT
@@ -74,17 +69,44 @@ class BillCsvImporter {
         }
     }
 
+    /**
+     * 行内是否含「收/支」语义的列名：`收支类型` / `收/支` / `收／支`（全角斜杠）。
+     *
+     * **这条判据只能有一处**：表头识别（[detectFormat]）与表头定位（[findHeaderLine]）必须共用，
+     * 否则两处清单各自漂移——曾因此把「交易时间…收/支…」这类表头判成 ALIPAY 却定位不到表头，
+     * 整份账单解析出 0 条。
+     */
+    private fun hasIncomeExpenseColumn(line: String): Boolean =
+        line.contains("收支") || line.contains("收/支") || line.contains("收／支")
+
+    /** 支付宝表头（含品牌消歧）：`记录时间` / `交易创建时间` / 「交易时间 + 商品说明|交易分类」 */
+    private fun isAlipayHeader(line: String): Boolean =
+        hasIncomeExpenseColumn(line) && (
+            line.contains("记录时间") || line.contains("交易创建时间") ||
+                (line.contains("交易时间") && (line.contains("商品说明") || line.contains("交易分类")))
+            )
+
+    /** 微信表头：`交易时间` + 收/支列 + 微信独有的商品/对方/类型列 */
+    private fun isWechatHeader(line: String): Boolean =
+        line.contains("交易时间") && hasIncomeExpenseColumn(line) &&
+            (line.contains("商品") || line.contains("交易对方") || line.contains("交易类型"))
+
+    /**
+     * 支付宝**表头行定位**用的判据：比 [isAlipayHeader] 宽——不要求「商品说明/交易分类」这类
+     * 只用于品牌消歧的列。口径保证「[detectFormat] 认得出的行，[findHeaderLine] 一定找得到」。
+     */
+    private fun isAlipayDataHeader(line: String): Boolean =
+        line.contains("记录时间") || line.contains("交易创建时间") ||
+            (line.contains("交易时间") && hasIncomeExpenseColumn(line))
+
     /** 按品牌格式的关键词定位表头行 */
     private fun findHeaderLine(lines: List<String>, format: CsvFormat): String? = when (format) {
-        CsvFormat.ALIPAY -> lines.firstOrNull {
-            it.contains("记录时间") || it.contains("交易创建时间") ||
-                (it.contains("交易时间") && it.contains("收支"))
-        }
+        CsvFormat.ALIPAY -> lines.firstOrNull { isAlipayDataHeader(it) }
         CsvFormat.GENERIC -> lines.firstOrNull {
             it.contains("金额") && (it.contains("时间") || it.contains("日期"))
         }
         else -> lines.firstOrNull {
-            it.contains("交易时间") && (it.contains("收/支") || it.contains("金额"))
+            it.contains("交易时间") && (hasIncomeExpenseColumn(it) || it.contains("金额"))
         }
     }
 
@@ -139,7 +161,7 @@ class BillCsvImporter {
         val typeIdx = col(headerIdx, "交易类型")
         val merchantIdx = col(headerIdx, "交易对方")
         val goodsIdx = col(headerIdx, "商品")
-        val ieIdx = col(headerIdx, "收/支")
+        val ieIdx = col(headerIdx, "收/支") ?: col(headerIdx, "收／支")
         val amountIdx = col(headerIdx, "金额")
         val methodIdx = col(headerIdx, "支付方式")
         val noteIdx = col(headerIdx, "备注")
@@ -202,7 +224,7 @@ class BillCsvImporter {
         categoryIdx = col(headerIdx, "交易分类") ?: col(headerIdx, "分类"),
         merchantIdx = col(headerIdx, "交易对方") ?: col(headerIdx, "商品说明"),
         goodsIdx = col(headerIdx, "商品名称") ?: col(headerIdx, "商品说明") ?: col(headerIdx, "商品"),
-        ieIdx = col(headerIdx, "收支类型") ?: col(headerIdx, "收/支"),
+        ieIdx = col(headerIdx, "收支类型") ?: col(headerIdx, "收/支") ?: col(headerIdx, "收／支"),
         amountIdx = col(headerIdx, "金额"),
         noteIdx = col(headerIdx, "备注"),
         accountIdx = col(headerIdx, "账户"),
@@ -277,7 +299,7 @@ class BillCsvImporter {
         val amountIdx = headerIdx.entries
             .firstOrNull { (name, _) -> name.contains("金额") && SPLIT_AMOUNT_MARKERS.none { name.contains(it) } }
             ?.value
-        val ieIdx = col(headerIdx, "收/支") ?: col(headerIdx, "收支") ?: col(headerIdx, "类型")
+        val ieIdx = col(headerIdx, "收/支") ?: col(headerIdx, "收／支") ?: col(headerIdx, "收支") ?: col(headerIdx, "类型")
         val merchantIdx = col(headerIdx, "商户") ?: col(headerIdx, "对方") ?: col(headerIdx, "摘要")
             ?: col(headerIdx, "描述") ?: col(headerIdx, "收款方") ?: col(headerIdx, "付款方")
         val noteIdx = col(headerIdx, "备注") ?: col(headerIdx, "说明")
