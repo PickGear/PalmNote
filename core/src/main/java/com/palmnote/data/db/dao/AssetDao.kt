@@ -40,6 +40,17 @@ interface AssetDao {
     @Query("SELECT * FROM assets WHERE insuranceExpireDate IS NOT NULL AND insuranceExpireDate > :now AND ((insuranceExpireDate - :now) / 86400000) <= 30 AND status = 'HELD'")
     fun getAssetsNeedingInsuranceAlert(now: Long = System.currentTimeMillis()): Flow<List<Asset>>
 
+    /**
+     * 有到期日（质保或保质期）且仍在持有的物品。
+     *
+     * 两种到期日都取：界面和提醒都按「更紧迫的那个」说话（`Asset.nearestExpiry`），
+     * 只查保质期会让质保更紧迫的物品在界面上橙着却永远收不到提醒。
+     * 「还差几天」交给上层按**自然日**判，不在这里用时间戳除法——那样算出来的天数跟界面上
+     * （同样按自然日）会差一天，同一个物品在列表里显示的和提醒说的就对不上了。
+     */
+    @Query("SELECT * FROM assets WHERE (warrantyExpireDate IS NOT NULL OR shelfLifeExpireDate IS NOT NULL) AND status = 'HELD'")
+    fun getHeldAssetsWithExpiry(): Flow<List<Asset>>
+
     @Query("SELECT * FROM assets WHERE room = :room ORDER BY name ASC")
     fun getAssetsByRoom(room: String): Flow<List<Asset>>
 

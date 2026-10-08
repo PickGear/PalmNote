@@ -39,6 +39,9 @@ import androidx.compose.ui.res.stringResource
 import com.palmnote.app.R
 import com.palmnote.ui.components.*
 import com.palmnote.ui.components.SectionHeader
+import com.palmnote.domain.model.ShelfLifeUnit
+import com.palmnote.domain.util.DateUtils
+import com.palmnote.domain.util.shelfLifeExpiryOrNull
 import com.palmnote.ui.theme.*
 
 private data class AcquisitionTypeOption(
@@ -56,6 +59,12 @@ private val acquisitionTypes = listOf(
     AcquisitionTypeOption("INHERITANCE", R.string.acquisition_inheritance, Icons.Outlined.FamilyRestroom, Brown),
     AcquisitionTypeOption("OTHER", R.string.acquisition_other, Icons.Outlined.MoreHoriz, ModuleSettings),
     AcquisitionTypeOption("CUSTOM", R.string.acquisition_custom, Icons.Outlined.Edit, ModuleSettings)
+)
+
+private val shelfLifeUnitOptions = listOf(
+    ShelfLifeUnit.DAY.value to R.string.asset_shelf_life_unit_day,
+    ShelfLifeUnit.MONTH.value to R.string.asset_shelf_life_unit_month,
+    ShelfLifeUnit.YEAR.value to R.string.asset_shelf_life_unit_year
 )
 
 val assetCategoryItems = listOf(
@@ -421,6 +430,10 @@ fun AddAssetScreen(
                             }
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    ShelfLifeSection(formState, viewModel::updateFormField)
                 }
             }
 
@@ -640,5 +653,194 @@ private fun SectionHeader(icon: ImageVector, title: String) {
         Spacer(modifier = Modifier.width(8.dp))
         Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
     }
+}
+
+/**
+ * 保质期一栏：两种录法——① 直接选到期日；② 填生产日期 + 保质期时长，到期日由两者算出并实时预览。
+ *
+ * 拆成三个小函数：这一栏有近百行，而 detekt 的 LongMethod 上限是 60 行（`AddAssetScreen`
+ * 本身是历史遗留、在基线里，新代码不该再靠基线）。表单改动统一走 `onChange`，不依赖 ViewModel。
+ */
+@Composable
+private fun ShelfLifeSection(
+    form: AddAssetFormState,
+    onChange: (AddAssetFormState.() -> AddAssetFormState) -> Unit
+) {
+    // 包装上印的就是「生产日期 + 保质期 N 个月」，所以按期限录比让用户自己把日期算出来更省事
+    Text(
+        stringResource(R.string.asset_shelf_life_info),
+        style = MaterialTheme.typography.bodyMedium,
+        fontWeight = FontWeight.Medium
+    )
+    Spacer(modifier = Modifier.height(4.dp))
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FilterChip(
+            selected = form.shelfLifeMode == SHELF_LIFE_MODE_DATE,
+            onClick = { onChange { copy(shelfLifeMode = SHELF_LIFE_MODE_DATE) } },
+            label = { Text(stringResource(R.string.asset_shelf_life_mode_date), style = MaterialTheme.typography.labelMedium) }
+        )
+        FilterChip(
+            selected = form.shelfLifeMode == SHELF_LIFE_MODE_PERIOD,
+            onClick = { onChange { copy(shelfLifeMode = SHELF_LIFE_MODE_PERIOD) } },
+            label = { Text(stringResource(R.string.asset_shelf_life_mode_duration), style = MaterialTheme.typography.labelMedium) }
+        )
+    }
+    Spacer(modifier = Modifier.height(8.dp))
+
+    if (form.shelfLifeMode == SHELF_LIFE_MODE_DATE) {
+        DatePickerField(
+            selectedDate = form.shelfLifeExpireDate,
+            // 直接选日期意味着日期才是准的，把「按期限录」那组输入清掉，
+            // 免得切回期限时旧时长又把它顶回去
+            onDateSelected = { onChange { withAbsoluteShelfLife(it) } },
+            placeholder = stringResource(R.string.asset_select_shelf_life_date)
+        )
+    } else {
+        ShelfLifePeriodFields(form, onChange)
+    }
+}
+
+/**
+ * 「保质期限」录法那半边：生产日期与保质期**并排一行**，外加实时算出的到期日。
+ *
+ * 单列堆下来是六行、占掉大半屏（离屏出图看得清清楚楚）；并排两列与同一张卡里的
+ * 「保修日期 / 成本计算方式」是同一个做法。
+ */
+@Composable
+private fun ShelfLifePeriodFields(
+    form: AddAssetFormState,
+    onChange: (AddAssetFormState.() -> AddAssetFormState) -> Unit
+) {
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                stringResource(R.string.asset_shelf_life_produced_date),
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            DatePickerField(
+                selectedDate = form.shelfLifeProducedDate,
+                onDateSelected = { onChange { withShelfLifePeriod(it, shelfLifeDurationValue, shelfLifeDurationUnit) } }
+            )
+        }
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                stringResource(R.string.asset_shelf_life_info),
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            ShelfLifeDurationField(
+                value = form.shelfLifeDurationValue,
+                unit = form.shelfLifeDurationUnit,
+                onValueChange = { input ->
+                    if (input.length <= 4 && input.all { it.isDigit() }) {
+                        onChange { withShelfLifePeriod(shelfLifeProducedDate, input, shelfLifeDurationUnit) }
+                    }
+                },
+                onUnitChange = { unit ->
+                    onChange { withShelfLifePeriod(shelfLifeProducedDate, shelfLifeDurationValue, unit) }
+                }
+            )
+        }
+    }
+    ShelfLifeExpiryPreview(form)
+}
+
+/**
+ * 保质期时长：数字与单位**同一个框**，单位是框内右侧的下拉。
+ *
+ * 单位原先单独占一行三个 chip——既占地方，英文的「Days / Months / Years」在窄列里也放不下。
+ *
+ * 弹层的做法与同一张卡的「成本计算方式」完全一致（量出框宽 + `TopEnd` 对齐）：弹层正好落在
+ * 框的正下方、贴着箭头那一侧，而不是从左边展开。
+ */
+@Composable
+private fun ShelfLifeDurationField(
+    value: String,
+    unit: String,
+    onValueChange: (String) -> Unit,
+    onUnitChange: (String) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    var boxHeight by remember { mutableIntStateOf(0) }
+    var boxWidth by remember { mutableIntStateOf(0) }
+    val density = LocalDensity.current
+    Box(modifier = Modifier.onSizeChanged { boxHeight = it.height; boxWidth = it.width }) {
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 56.dp),
+            placeholder = { Text(stringResource(R.string.asset_shelf_life_duration_hint)) },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            shape = MaterialTheme.shapes.medium,
+            singleLine = true,
+            trailingIcon = {
+                Row(
+                    modifier = Modifier.clickable { expanded = true }.padding(horizontal = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        stringResource(shelfLifeUnitLabelRes(unit)),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Icon(Icons.Filled.ArrowDropDown, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                }
+            }
+        )
+        if (expanded) {
+            Popup(
+                onDismissRequest = { expanded = false },
+                alignment = Alignment.TopEnd,
+                offset = IntOffset(x = 0, y = boxHeight)
+            ) {
+                Surface(
+                    shape = MaterialTheme.shapes.medium,
+                    color = MaterialTheme.colorScheme.background,
+                    tonalElevation = 2.dp,
+                    shadowElevation = 4.dp,
+                    modifier = Modifier.width(with(density) { boxWidth.toDp() })
+                ) {
+                    Column {
+                        shelfLifeUnitOptions.forEach { (unitValue, labelRes) ->
+                            DropdownMenuItem(
+                                text = { Text(stringResource(labelRes)) },
+                                onClick = { onUnitChange(unitValue); expanded = false }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun shelfLifeUnitLabelRes(unit: String): Int =
+    shelfLifeUnitOptions.firstOrNull { it.first == unit }?.second ?: R.string.asset_shelf_life_unit_month
+
+/**
+ * 实时把算出来的到期日摊给用户看，省得存完才发现算错。
+ *
+ * 只按「这里的期限」算：表单里那份到期日可能是用户在「到期日」里填的，跟这里的期限无关，
+ * 直接读它会显示出一个凭空的到期日。
+ */
+@Composable
+private fun ShelfLifeExpiryPreview(form: AddAssetFormState) {
+    val previewExpiry = shelfLifeExpiryOrNull(
+        form.shelfLifeProducedDate,
+        form.shelfLifeDurationValue.toIntOrNull(),
+        ShelfLifeUnit.fromOrNull(form.shelfLifeDurationUnit)
+    ) ?: return
+    Spacer(modifier = Modifier.height(8.dp))
+    Text(
+        text = stringResource(
+            R.string.asset_shelf_life_expiry_format,
+            DateUtils.formatDisplayYearDate(LocalContext.current, previewExpiry)
+        ),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant
+    )
 }
 

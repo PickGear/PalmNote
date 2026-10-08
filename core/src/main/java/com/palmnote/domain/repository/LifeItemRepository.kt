@@ -13,6 +13,8 @@ interface LifeItemRepository {
     fun getActiveItemsByTemplate(templateId: Long, limit: Int): Flow<List<LifeItem>>
     fun getItemCountByTemplate(templateId: Long): Flow<Int>
     suspend fun search(query: String): List<LifeItem>
+    /** [start, end] 内新建的生活记录条数；「每日提醒」用它判断今天是否已经记过。 */
+    suspend fun countItemsCreatedBetween(start: Long, end: Long): Int
     suspend fun insertItem(item: LifeItem): Long
     suspend fun updateItem(item: LifeItem)
     suspend fun updateStatus(id: Long, status: String)

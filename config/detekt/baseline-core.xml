@@ -14,7 +14,6 @@
     <ID>CyclomaticComplexMethod:FieldContract.kt$fun parseMap(raw: String?): MapModel</ID>
     <ID>CyclomaticComplexMethod:FieldValueExtractor.kt$FieldValueExtractor$fun extract(fieldsConfigJson: String, fieldsData: String): List&lt;FieldValueRow&gt;</ID>
     <ID>CyclomaticComplexMethod:LifeTemplate.kt$fun LifeTemplate.getDisplayDescription(context: Context): String</ID>
-    <ID>CyclomaticComplexMethod:LifeTemplate.kt$fun LifeTemplate.getDisplayName(context: Context): String</ID>
     <ID>CyclomaticComplexMethod:Migration5To6.kt$Migration5To6$private fun preserveLegacyVault(db: SupportSQLiteDatabase)</ID>
     <ID>CyclomaticComplexMethod:PinComponents.kt$@Composable fun ChangePinDialog( appLockManager: AppLockManager, onDismiss: () -&gt; Unit, onSuccess: () -&gt; Unit )</ID>
     <ID>ForEachOnRange:FieldInputComponent.kt$1..5</ID>
@@ -93,10 +92,6 @@
     <ID>MaxLineLength:MomentDao.kt$MomentDao$@Query("SELECT * FROM moments WHERE (title LIKE '%' || :query || '%' OR content LIKE '%' || :query || '%' OR location LIKE '%' || :query || '%' OR tags LIKE '%' || :query || '%') ORDER BY timestamp DESC")</ID>
     <ID>MaxLineLength:MomentDao.kt$MomentDao$@Query("SELECT * FROM moments WHERE (title LIKE '%' || :query || '%' OR content LIKE '%' || :query || '%' OR tags LIKE '%' || :query || '%') ORDER BY timestamp DESC")</ID>
     <ID>MaxLineLength:NotificationHelper.kt$NotificationHelper$.</ID>
-    <ID>MaxLineLength:NotificationHelper.kt$NotificationHelper$mgr.createNotificationChannel(NotificationChannel(CHANNEL_CHECKIN, context.getString(R.string.notification_channel_checkin), NotificationManager.IMPORTANCE_HIGH).apply { description = context.getString(R.string.notification_channel_checkin_desc) })</ID>
-    <ID>MaxLineLength:NotificationHelper.kt$NotificationHelper$mgr.createNotificationChannel(NotificationChannel(CHANNEL_LIFE, context.getString(R.string.notification_channel_life), NotificationManager.IMPORTANCE_DEFAULT).apply { description = context.getString(R.string.notification_channel_life_desc) })</ID>
-    <ID>MaxLineLength:NotificationHelper.kt$NotificationHelper$mgr.createNotificationChannel(NotificationChannel(CHANNEL_REMINDER, context.getString(R.string.notification_channel_reminder), NotificationManager.IMPORTANCE_HIGH).apply { description = context.getString(R.string.notification_channel_reminder_desc) })</ID>
-    <ID>MaxLineLength:NotificationHelper.kt$NotificationHelper$try { NotificationManagerCompat.from(context).notify(id, builder.build()) } catch (_: SecurityException) { /* Notification permission not granted */ }</ID>
     <ID>MaxLineLength:PinComponents.kt$return</ID>
     <ID>MaxLineLength:SettingsComponents.kt$Box</ID>
     <ID>MaxLineLength:SettingsComponents.kt$Row</ID>

@@ -64,7 +64,6 @@
     <ID>CyclomaticComplexMethod:LifeFieldCodec.kt$internal fun decodeFieldValue(cfg: FieldConfig, el: JsonElement?): String?</ID>
     <ID>CyclomaticComplexMethod:LifeMonthCalendar.kt$@OptIn(ExperimentalFoundationApi::class) @Composable private fun MonthDayCell( date: LocalDate, inMonth: Boolean, isToday: Boolean, isSelected: Boolean, info: LifeCalendarViewModel.DayCalInfo?, onClick: () -&gt; Unit, onLongClick: () -&gt; Unit = {} )</ID>
     <ID>CyclomaticComplexMethod:MainActivity.kt$MainActivity$override fun onCreate(savedInstanceState: Bundle?)</ID>
-    <ID>CyclomaticComplexMethod:OnboardingScreen.kt$@Composable fun OnboardingScreen( onFinish: (demoEnabled: Boolean) -&gt; Unit, /** 当前外观偏好（由 MainActivity 从 DataStore 读出）与即时写入回调：改了就生效，本页立刻变色。 */ themeColor: String, themeMode: String, onThemeColor: (String) -&gt; Unit, onThemeMode: (String) -&gt; Unit )</ID>
     <ID>CyclomaticComplexMethod:RecycleBinScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun RecycleBinScreen( onNavigateBack: () -&gt; Unit = {}, viewModel: RecycleBinViewModel = hiltViewModel() )</ID>
     <ID>CyclomaticComplexMethod:ReportScreen.kt$@Composable private fun DonutChartSection(state: ReportState, onNavigateToAddBill: () -&gt; Unit, customExpense: List&lt;CategoryItem&gt; = emptyList(), customIncome: List&lt;CategoryItem&gt; = emptyList())</ID>
     <ID>CyclomaticComplexMethod:ReportScreen.kt$@Composable private fun WeeklyBarChart(dailySummary: List&lt;DailySummary&gt;, isExpense: Boolean)</ID>
@@ -84,8 +83,6 @@
     <ID>ImplicitDefaultLocale:CalendarView.kt$String.format("%04d-%02d", newYear, newMonth)</ID>
     <ID>ImplicitDefaultLocale:CalendarView.kt$String.format("%04d-%02d", nextCal.get(Calendar.YEAR), nextCal.get(Calendar.MONTH) + 1)</ID>
     <ID>ImplicitDefaultLocale:CalendarView.kt$String.format("%04d-%02d", prevCalendar.get(Calendar.YEAR), prevCalendar.get(Calendar.MONTH) + 1)</ID>
-    <ID>ImplicitDefaultLocale:ReminderSettingsScreen.kt$String.format("%02d:%02d", state.billReminderHour, state.billReminderMinute)</ID>
-    <ID>ImplicitDefaultLocale:ReminderSettingsScreen.kt$String.format("%02d:%02d", state.dailyReminderHour, state.dailyReminderMinute)</ID>
     <ID>ImplicitDefaultLocale:WidgetHelper.kt$WidgetHelper$String.format("¥%.2f", amount)</ID>
     <ID>ImplicitDefaultLocale:WidgetHelper.kt$WidgetHelper$String.format("¥%.2f", yuan)</ID>
     <ID>LargeClass:BillImportViewModel.kt$BillImportViewModel : ViewModel</ID>
@@ -145,7 +142,6 @@
     <ID>LongMethod:LifeTemplateManageScreen.kt$@Composable private fun TemplateRowCard( row: LifeTemplateManageViewModel.TemplateRow, onClick: () -&gt; Unit, onToggle: (Boolean) -&gt; Unit, onLongPress: () -&gt; Unit )</ID>
     <ID>LongMethod:MainActivity.kt$@Composable private fun PrivacyPointsCards()</ID>
     <ID>LongMethod:MainActivity.kt$MainActivity$override fun onCreate(savedInstanceState: Bundle?)</ID>
-    <ID>LongMethod:OnboardingScreen.kt$@Composable fun OnboardingScreen( onFinish: (demoEnabled: Boolean) -&gt; Unit, /** 当前外观偏好（由 MainActivity 从 DataStore 读出）与即时写入回调：改了就生效，本页立刻变色。 */ themeColor: String, themeMode: String, onThemeColor: (String) -&gt; Unit, onThemeMode: (String) -&gt; Unit )</ID>
     <ID>LongMethod:OnboardingScreen.kt$@Composable private fun OnboardingSafetyPage()</ID>
     <ID>LongMethod:RecycleBinScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun RecycleBinScreen( onNavigateBack: () -&gt; Unit = {}, viewModel: RecycleBinViewModel = hiltViewModel() )</ID>
     <ID>LongMethod:ReminderSettingsScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun ReminderSettingsScreen( onNavigateBack: () -&gt; Unit, viewModel: SettingsViewModel )</ID>
@@ -186,7 +182,6 @@
     <ID>MaxLineLength:AboutScreen.kt$line.startsWith("一、") || line.startsWith("二、") || line.startsWith("三、") || line.startsWith("四、") || line.startsWith("五、") || line.startsWith("六、") || line.startsWith("七、") || line.startsWith("八、") || line.startsWith("九、") || line.startsWith("十") || line.endsWith("用户服务协议")</ID>
     <ID>MaxLineLength:AccountBookManageScreen.kt$Box(contentAlignment = Alignment.Center) { Icon(templateIcon, contentDescription = null, modifier = Modifier.size(24.dp), tint = Color.White) }</ID>
     <ID>MaxLineLength:AccountBookManageScreen.kt$Text(book.getDisplayDescription(context), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
-    <ID>MaxLineLength:AccountBookManageScreen.kt$Text(stringResource(R.string.account_book_count_format, state.allAccountBooks.size), style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.7f))</ID>
     <ID>MaxLineLength:AccountBookManageScreen.kt$Text(stringResource(R.string.account_book_my_books), style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.8f))</ID>
     <ID>MaxLineLength:AccountBookManageScreen.kt$Text(stringResource(R.string.account_book_select_type), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
     <ID>MaxLineLength:AccountBookManageScreen.kt$Text(template.getDisplayDescription(context), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
@@ -278,8 +273,6 @@
     <ID>MaxLineLength:AssetDetailScreen.kt$OutlinedTextField(value = reason, onValueChange = { reason = it; selectedPreset = -1 }, label = { Text(reasonLabel[clearType]) }, modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium)</ID>
     <ID>MaxLineLength:AssetDetailScreen.kt$Row</ID>
     <ID>MaxLineLength:AssetDetailScreen.kt$StatItem(label = stringResource(R.string.asset_days_owned), value = "${detailState.daysOwned}", color = MaterialTheme.colorScheme.primary)</ID>
-    <ID>MaxLineLength:AssetDetailScreen.kt$StatusChip(text = if (daysUntil &gt;= 0) stringResource(R.string.asset_days_later_format, daysUntil) else stringResource(R.string.asset_maintenance_expired), color = if (daysUntil &lt; 7) AccentOrange else StatusActive)</ID>
-    <ID>MaxLineLength:AssetDetailScreen.kt$Text(if (showAllRecords) stringResource(R.string.asset_collapse) else stringResource(R.string.asset_expand_all_format, detailState.usageRecords.size), color = MaterialTheme.colorScheme.primary)</ID>
     <ID>MaxLineLength:AssetDetailScreen.kt$Text(stringResource(R.string.asset_quick_select), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
     <ID>MaxLineLength:AssetDetailScreen.kt$Text(text = "×${asset.quantity}", modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp), style = MaterialTheme.typography.titleSmall, color = AccentOrange, fontWeight = FontWeight.Bold)</ID>
     <ID>MaxLineLength:AssetDetailScreen.kt$Text(text = asset.description, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)</ID>
@@ -292,7 +285,6 @@
     <ID>MaxLineLength:AssetDetailScreen.kt$Text(text = stringResource(R.string.asset_maintenance_info), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)</ID>
     <ID>MaxLineLength:AssetDetailScreen.kt$Text(text = stringResource(R.string.asset_other_info), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)</ID>
     <ID>MaxLineLength:AssetDetailScreen.kt$Text(text = stringResource(R.string.asset_status_change), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)</ID>
-    <ID>MaxLineLength:AssetDetailScreen.kt$Text(text = stringResource(R.string.asset_usage_count_format, asset.useCount), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
     <ID>MaxLineLength:AssetDetailScreen.kt$Text(text = stringResource(R.string.asset_usage_records), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)</ID>
     <ID>MaxLineLength:AssetDetailScreen.kt$Text(text = stringResource(R.string.asset_value_info), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)</ID>
     <ID>MaxLineLength:AssetDetailScreen.kt$Text(text = stringResource(R.string.asset_warranty_info), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)</ID>
@@ -309,16 +301,13 @@
     <ID>MaxLineLength:AssetDetailScreen.kt$confirmButton = { TextButton(onClick = { viewModel.updateUsageRecord(r.id, editDate, editNote); onDismiss() }) { Text(stringResource(R.string.save)) } }</ID>
     <ID>MaxLineLength:AssetDetailScreen.kt$dismissButton = { TextButton(onClick = { showMaintConfirm = false }) { Text(stringResource(R.string.cancel)) } }</ID>
     <ID>MaxLineLength:AssetDetailScreen.kt$dismissButton = { TextButton(onClick = { showReactConfirm = false }) { Text(stringResource(R.string.cancel)) } }</ID>
-    <ID>MaxLineLength:AssetDetailScreen.kt$if</ID>
     <ID>MaxLineLength:AssetDetailScreen.kt$if (asset.acquisitionType == "PURCHASE" &amp;&amp; asset.purchaseChannel.isNotEmpty()) DetailRow(stringResource(R.string.asset_purchase_channel), asset.purchaseChannel)</ID>
     <ID>MaxLineLength:AssetDetailScreen.kt$if (asset.depreciationRate &gt; 0) DetailRow(stringResource(R.string.asset_depreciation_rate), "${"%.1f".format(asset.depreciationRate)}%")</ID>
     <ID>MaxLineLength:AssetDetailScreen.kt$if (asset.getInsuranceStatusText(context).isNotEmpty()) DetailRow(stringResource(R.string.asset_status), asset.getInsuranceStatusText(context))</ID>
     <ID>MaxLineLength:AssetDetailScreen.kt$if (asset.insuranceCompany.isNotEmpty()) DetailRow(stringResource(R.string.asset_insurance_company), asset.insuranceCompany)</ID>
     <ID>MaxLineLength:AssetDetailScreen.kt$if (asset.insurancePolicyNo.isNotEmpty()) DetailRow(stringResource(R.string.asset_insurance_policy), asset.insurancePolicyNo)</ID>
-    <ID>MaxLineLength:AssetDetailScreen.kt$if (asset.maintenanceIntervalDays &gt; 0) Text(text = stringResource(R.string.asset_maintenance_cycle_format, asset.maintenanceIntervalDays), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
     <ID>MaxLineLength:AssetDetailScreen.kt$if (asset.retireReason.isNotEmpty()) DetailRow(stringResource(R.string.asset_description), asset.retireReason)</ID>
     <ID>MaxLineLength:AssetDetailScreen.kt$if (asset.retireReason.isNotEmpty()) DetailRow(stringResource(R.string.asset_retire_reason), asset.retireReason)</ID>
-    <ID>MaxLineLength:AssetDetailScreen.kt$if (asset.warrantyExpireDate != null) StatusChip(text = asset.getWarrantyStatusText(context), color = if (asset.isWarrantyValid) StatusActive else StatusRetired)</ID>
     <ID>MaxLineLength:AssetDetailScreen.kt$item { EmptyState(icon = Icons.Outlined.History, title = stringResource(R.string.asset_no_usage_records), subtitle = stringResource(R.string.asset_click_to_record_usage)) }</ID>
     <ID>MaxLineLength:AssetDetailScreen.kt$listOf(stringResource(R.string.asset_clear_type_retire), stringResource(R.string.asset_clear_type_lost), stringResource(R.string.asset_clear_type_sell))</ID>
     <ID>MaxLineLength:AssetDetailScreen.kt$tags.takeIf { it.isNotEmpty() }?.let { DetailRow(stringResource(R.string.asset_away_reason), it.joinToString("、")) }</ID>
@@ -333,18 +322,14 @@
     <ID>MaxLineLength:AssetDetailScreen.kt$w.insetsController?.setSystemBarsAppearance(origInsetsAppearance, WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS or WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS)</ID>
     <ID>MaxLineLength:AssetScreen.kt$"${sortOptions.find { it.first == state.selectedSort }?.second ?: ""}${if (state.sortAscending) " ↑" else " ↓"}"</ID>
     <ID>MaxLineLength:AssetScreen.kt$"PER_USE" -&gt; if (useCount &gt; 0) stringResource(R.string.asset_cost_per_use_price, String.format("%.1f", purchasePrice / 100.0 / useCount)) else stringResource(R.string.asset_cost_per_use_none)</ID>
-    <ID>MaxLineLength:AssetScreen.kt$AnimatedCard</ID>
     <ID>MaxLineLength:AssetScreen.kt$Box</ID>
     <ID>MaxLineLength:AssetScreen.kt$TextButton</ID>
     <ID>MaxLineLength:AssetScreen.kt$contentDescription = if (catExpanded) stringResource(R.string.bill_collapse) else stringResource(R.string.bill_expand)</ID>
     <ID>MaxLineLength:AssetScreen.kt$contentDescription = if (isGridView) stringResource(R.string.asset_list_view) else stringResource(R.string.asset_grid_view)</ID>
     <ID>MaxLineLength:AssetScreen.kt$contentDescription = if (sortExpanded) stringResource(R.string.bill_collapse) else stringResource(R.string.bill_expand)</ID>
     <ID>MaxLineLength:AssetScreen.kt$contentDescription = if (statusExpanded) stringResource(R.string.bill_collapse) else stringResource(R.string.bill_expand)</ID>
-    <ID>MaxLineLength:AssetScreen.kt$itemsIndexed</ID>
     <ID>MaxLineLength:AssetScreen.kt$subtitle = if (state.searchQuery.isNotEmpty()) stringResource(R.string.asset_try_other_keywords) else stringResource(R.string.asset_add_first_item)</ID>
     <ID>MaxLineLength:AssetScreen.kt$text = "${getCategoryDisplayName(cat.category, LocalContext.current, assetPresetOverrides)} (${cat.count})"</ID>
-    <ID>MaxLineLength:AssetScreen.kt$text = "${stringResource(R.string.asset_removed)} ${stringResource(R.string.asset_count, state.removedCount)}"</ID>
-    <ID>MaxLineLength:AssetScreen.kt$text = if (asset.isWarrantyValid) stringResource(R.string.asset_warranty_valid) else stringResource(R.string.asset_warranty_expired)</ID>
     <ID>MaxLineLength:AssetScreen.kt$text = state.selectedCategory?.let { getCategoryDisplayName(it, LocalContext.current, assetPresetOverrides) } ?: stringResource(R.string.bill_category)</ID>
     <ID>MaxLineLength:AssetScreen.kt$text = statusFilters.find { it.first == state.selectedStatus }?.second ?: stringResource(R.string.asset_status_filter)</ID>
     <ID>MaxLineLength:AssetScreen.kt$title = if (state.searchQuery.isNotEmpty()) stringResource(R.string.asset_not_found) else stringResource(R.string.asset_no_items)</ID>
@@ -460,15 +445,12 @@
     <ID>MaxLineLength:DashboardCards.kt$Text</ID>
     <ID>MaxLineLength:DashboardCards.kt$Text(getCategoryDisplayName(item.category, context, dashPresetVer), style = MaterialTheme.typography.bodySmall, maxLines = maxLines, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))</ID>
     <ID>MaxLineLength:DashboardCards.kt$Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)</ID>
-    <ID>MaxLineLength:DashboardCards.kt$Text(pluralStringResource(R.plurals.dashboard_items_count, item.count, item.count), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Medium)</ID>
-    <ID>MaxLineLength:DashboardCards.kt$Text(pluralStringResource(R.plurals.dashboard_items_count, state.activeAssetCount, state.activeAssetCount), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimary)</ID>
     <ID>MaxLineLength:DashboardCards.kt$Text(stringResource(R.string.dashboard_card_vault), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)</ID>
     <ID>MaxLineLength:DashboardCards.kt$Text(stringResource(R.string.dashboard_monthly_expense), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f))</ID>
     <ID>MaxLineLength:DashboardCards.kt$Text(stringResource(R.string.dashboard_monthly_income), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f))</ID>
     <ID>MaxLineLength:DashboardCards.kt$Text(stringResource(R.string.dashboard_recorded), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
     <ID>MaxLineLength:DashboardCards.kt$else</ID>
     <ID>MaxLineLength:DashboardCards.kt$text</ID>
-    <ID>MaxLineLength:DashboardCards.kt$text = if (state.vaultCount &gt; 0) stringResource(R.string.vault_card_count, state.vaultCount) else stringResource(R.string.vault_card_empty_subtitle)</ID>
     <ID>MaxLineLength:DashboardCards.kt$text = if (state.vaultCount &gt; 0) stringResource(R.string.vault_card_privacy_hint) else stringResource(R.string.vault_card_empty)</ID>
     <ID>MaxLineLength:DashboardScreen.kt$cardGlobalYs[t]?.let { it - boxGlobalY.floatValue + (itemHeights[t]?.toFloat() ?: 0f) * 0.5f }</ID>
     <ID>MaxLineLength:DataClearScreen.kt$Text(stringResource(R.string.data_clear_warning), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
@@ -526,12 +508,6 @@
     <ID>MaxLineLength:LifeDetailSections.kt$Text(stringResource(R.string.life_detail_no_value), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
     <ID>MaxLineLength:LifeItemRepositoryImpl.kt$LifeItemRepositoryImpl$fieldValueDao.insertAll(rows.map { FieldValue(itemId = itemId, fieldKey = it.fieldKey, type = it.type, num = it.num, text = it.text, dateMs = it.dateMs, json = it.json, idx = it.idx) })</ID>
     <ID>MaxLineLength:LifeReportRepositoryImpl.kt$LifeReportRepositoryImpl$override fun getReportsByTypeAndRange(type: String, start: Long, end: Long): Flow&lt;List&lt;LifeReport&gt;&gt;</ID>
-    <ID>MaxLineLength:LifeStatsScreen.kt$StatsCard(stringResource(R.string.life_stats_focus_minutes), ui.focusMinutesToday.toString(), Icons.Filled.Timer, LifeTime, Modifier.weight(1f))</ID>
-    <ID>MaxLineLength:LifeStatsScreen.kt$StatsCard(stringResource(R.string.life_stats_habit_rate), stringResource(R.string.life_stats_percent, ui.habitRatePercent), Icons.Filled.LocalFireDepartment, LifeRecord, Modifier.weight(1f))</ID>
-    <ID>MaxLineLength:LifeStatsScreen.kt$StatsCard(stringResource(R.string.life_stats_max_streak), stringResource(R.string.life_stats_days, ui.maxStreak), Icons.Filled.LocalFireDepartment, LifePlan, Modifier.weight(1f))</ID>
-    <ID>MaxLineLength:LifeStatsScreen.kt$StatsCard(stringResource(R.string.life_stats_today_todo), ui.todoToday.toString(), Icons.Filled.Checklist, LifePlan, Modifier.weight(1f))</ID>
-    <ID>MaxLineLength:LifeStatsScreen.kt$Text(stringResource(R.string.life_stats_heat_title), fontWeight = FontWeight.SemiBold, fontSize = TypeScale.bodyM, color = ModuleLife)</ID>
-    <ID>MaxLineLength:LifeStatsScreen.kt$Text(stringResource(R.string.life_stats_week_chart_title), fontWeight = FontWeight.SemiBold, fontSize = TypeScale.bodyM, color = ModuleLife)</ID>
     <ID>MaxLineLength:LifeTemplateEditScreen.kt$FieldGroup("A 数值与进度", listOf(FieldType.NUMBER, FieldType.CURRENCY, FieldType.PERCENT, FieldType.SLIDER, FieldType.DURATION, FieldType.RATING))</ID>
     <ID>MaxLineLength:LifeTemplateEditScreen.kt$FieldGroup("B 点选", listOf(FieldType.BOOLEAN, FieldType.SELECT, FieldType.MULTI_SELECT, FieldType.TAG, FieldType.COLOR, FieldType.DATE, FieldType.TIME, FieldType.DATETIME, FieldType.LOCATION))</ID>
     <ID>MaxLineLength:LifeTemplateManageScreen.kt$Icon(if (row.isHidden) Icons.Filled.Visibility else Icons.Filled.VisibilityOff, null, tint = MaterialTheme.colorScheme.onSurface)</ID>
@@ -541,9 +517,6 @@
     <ID>MaxLineLength:MainActivity.kt$MainActivity$val appLockEnabled by appLockManager.appLockEnabledFlow().collectAsStateWithLifecycle(initialValue = appLockManager.isLockEnabled())</ID>
     <ID>MaxLineLength:MainActivity.kt$MainActivity$val notificationPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }</ID>
     <ID>MaxLineLength:MainActivity.kt$style = if (isHeading) MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold) else MaterialTheme.typography.bodyMedium</ID>
-    <ID>MaxLineLength:ManageCategoryScreen.kt$SettingsMenuItem(icon = Icons.Outlined.AccountBalanceWallet, title = stringResource(R.string.settings_wallet_manage), subtitle = stringResource(R.string.settings_wallet_manage_subtitle), tint = AccentOrange, onClick = onNavigateToWallet)</ID>
-    <ID>MaxLineLength:ManageCategoryScreen.kt$SettingsMenuItem(icon = Icons.Outlined.Book, title = stringResource(R.string.settings_bill_manage), subtitle = stringResource(R.string.settings_bill_manage_subtitle), tint = MaterialTheme.colorScheme.primary, onClick = onNavigateToAccountBook)</ID>
-    <ID>MaxLineLength:ManageCategoryScreen.kt$SettingsMenuItem(icon = Icons.Outlined.Category, title = stringResource(R.string.settings_category_manage), subtitle = stringResource(R.string.settings_category_manage_subtitle), tint = InfoBlue, onClick = onNavigateToCategory)</ID>
     <ID>MaxLineLength:Migration5To6Test.kt$Migration5To6Test$"INSERT INTO assets (id, name, category, subCategory, brand, model, purchasePrice, acquisitionType, acquisitionDate, status, costMode, quantity, useCount, totalUsageHours, location, room, purchaseChannel, warrantyExpireDate, insuranceExpireDate, insuranceCompany, insurancePolicyNo, images, description, condition, serialNumber, receiptPath, depreciationRate, currentValue, maintenanceIntervalDays, lastMaintenanceDate, nextMaintenanceDate, maintenanceNotes, isFavorite, tags, linkedBillId, linkedMomentId, retireDate, retireReason, lostDate, lostReason, soldDate, soldPrice, soldChannel, soldToWhom, sortOrder, isDeleted, deletedAt, createdAt, updatedAt) "</ID>
     <ID>MaxLineLength:Migration5To6Test.kt$Migration5To6Test$"INSERT INTO bills (id, amount, type, category, subCategory, note, date, yearMonth, timeOfDay, accountBookId, walletId, toWalletId, paymentMethod, merchant, transactionId, location, tags, images, linkedAssetId, linkType, recurringId, recurringFrequency, splitGroupId, isReimbursable, isReimbursed, reimbursedDate, isTaxDeductible, latitude, longitude, isAutoGenerated, isDeleted, deletedAt, createdAt, updatedAt) "</ID>
     <ID>MaxLineLength:Migration5To6Test.kt$Migration5To6Test$"VALUES (1, 'laptop', 'electronics', '', '', '', 5000, 'PURCHASE', 1, 'IN_USE', 'NONE', 1, 0, 0.0, '', '', '', NULL, NULL, '', '', '', '', '', '', '', 0.1, 5000, 0, NULL, NULL, '', 0, '', NULL, NULL, NULL, '', NULL, '', NULL, NULL, NULL, NULL, 0, 0, NULL, 1, 1)"</ID>
@@ -551,9 +524,6 @@
     <ID>MaxLineLength:MigrationV3ToV4Test.kt$MigrationV3ToV4Test$"(id, title, username, email, phone, passwordEncrypted, url, notes, category, avatarPath, isFavorite, lastViewAt, createdAt, updatedAt) "</ID>
     <ID>MaxLineLength:QuickBillWidgetProvider.kt$QuickBillWidgetProvider$override</ID>
     <ID>MaxLineLength:ReminderSettingsScreen.kt$SettingRow</ID>
-    <ID>MaxLineLength:ReminderSettingsScreen.kt$TextButton</ID>
-    <ID>MaxLineLength:ReminderSettingsScreen.kt$TextButton(onClick = { showNotificationDeniedDialog = false }) { Text(stringResource(R.string.settings_cancel), fontWeight = FontWeight.Bold) }</ID>
-    <ID>MaxLineLength:ReminderSettingsScreen.kt$TextButton(onClick = { showNotificationPermissionDialog = false }) { Text(stringResource(R.string.settings_cancel), fontWeight = FontWeight.Bold) }</ID>
     <ID>MaxLineLength:ReportScreen.kt$Text(stringResource(R.string.empty_title), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
     <ID>MaxLineLength:ReportScreen.kt$Text(stringResource(R.string.report_no_records), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
     <ID>MaxLineLength:ReportScreen.kt$item { Box(modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() } }</ID>
@@ -568,14 +538,6 @@
     <ID>MaxLineLength:SearchScreen.kt$sections.add(SearchSection("ANNIVERSARIES", stringResource(R.string.search_section_anniversaries), Icons.Outlined.FavoriteBorder, ModuleLife))</ID>
     <ID>MaxLineLength:SearchScreen.kt$sections.add(SearchSection("BILLS", stringResource(R.string.search_section_bills), Icons.Outlined.AccountBalanceWallet, AccentOrange))</ID>
     <ID>MaxLineLength:SettingsScreen.kt$HorizontalDivider(modifier = Modifier.padding(horizontal = 52.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))</ID>
-    <ID>MaxLineLength:SettingsScreen.kt$SettingsMenuItem(icon = Icons.Outlined.Category, title = stringResource(R.string.settings_category_manage), subtitle = stringResource(R.string.settings_category_manage_subtitle), tint = InfoBlue, onClick = onNavigateToManageCategory)</ID>
-    <ID>MaxLineLength:SettingsScreen.kt$SettingsMenuItem(icon = Icons.Outlined.Lock, title = stringResource(R.string.settings_security), subtitle = if (state.appLockEnabled) stringResource(R.string.settings_security_subtitle_on) else stringResource(R.string.settings_security_subtitle), tint = ModuleSettings, onClick = onNavigateToAppLock)</ID>
-    <ID>MaxLineLength:SettingsScreen.kt$SettingsMenuItem(icon = Icons.Outlined.Notifications, title = stringResource(R.string.settings_reminder), subtitle = stringResource(R.string.settings_reminder_subtitle), tint = AccentOrange, onClick = onNavigateToReminder)</ID>
-    <ID>MaxLineLength:SettingsScreen.kt$SettingsMenuItem(icon = Icons.Outlined.Palette, title = stringResource(R.string.settings_appearance), subtitle = stringResource(R.string.settings_appearance_subtitle), tint = LifePlan, onClick = onNavigateToGeneral)</ID>
-    <ID>MaxLineLength:SettingsScreen.kt$SettingsMenuItem(icon = Icons.Outlined.Storage, title = stringResource(R.string.settings_data), subtitle = stringResource(R.string.settings_data_subtitle), tint = LifeRecord, onClick = onNavigateToDataStorage)</ID>
-    <ID>MaxLineLength:SettingsScreen.kt$StatItemSmall(Icons.Outlined.AutoAwesome, "${state.momentCount}", stringResource(R.string.settings_moments), ModuleLife)</ID>
-    <ID>MaxLineLength:SettingsScreen.kt$StatItemSmall(Icons.Outlined.FavoriteBorder, "${state.anniversaryCount}", stringResource(R.string.settings_anniversaries), AccentOrange)</ID>
-    <ID>MaxLineLength:SettingsScreen.kt$StatItemSmall(Icons.Outlined.Inventory2, "${state.assetCount}", stringResource(R.string.settings_items), InfoBlue)</ID>
     <ID>MaxLineLength:SettingsScreen.kt$Text(state.profileSignature, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
     <ID>MaxLineLength:SettingsScreen.kt$modifier = Modifier.size(52.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f))</ID>
     <ID>MaxLineLength:SettingsScreen.kt$modifier = Modifier.size(64.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f))</ID>
@@ -586,7 +548,6 @@
     <ID>MaxLineLength:WalletEditScreen.kt$currentBalance = existingWallet?.let { it.currentBalance + (balance - it.initialBalance) } ?: balance</ID>
     <ID>MaxLineLength:WalletRepositoryImpl.kt$WalletRepositoryImpl$color = "#%02X%02X%02X".format((preset.color.red * 255).toInt(), (preset.color.green * 255).toInt(), (preset.color.blue * 255).toInt())</ID>
     <ID>MaxLineLength:WalletScreen.kt$Text(com.palmnote.ui.components.getLocalizedWalletDisplayName(wallet, context), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)</ID>
-    <ID>MaxLineLength:WalletScreen.kt$Text(stringResource(R.string.wallet_count_format, wallets.size), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f))</ID>
     <ID>MaxLineLength:WalletScreen.kt$Text(stringResource(R.string.wallet_total_assets), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f))</ID>
     <ID>MaxLineLength:WalletScreen.kt$Text(stringResource(walletTypeResIds[wallet.type] ?: R.string.wallet_type_other), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
     <ID>MaxLineLength:WalletScreen.kt$TextButton(onClick = { onSetDefault(); onDismiss() }) { Text(stringResource(R.string.account_book_set_default), color = StatusActive) }</ID>

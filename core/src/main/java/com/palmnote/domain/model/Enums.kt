@@ -27,6 +27,41 @@ enum class AssetStatus(val value: String) {
 }
 
 /**
+ * 物品上「到期日」的两种：质保与保质期。界面与提醒都取更紧迫的那一个
+ * （见 `Asset.nearestExpiryDate` / `Asset.nearestExpiryKind`），所以需要知道它是哪一种。
+ */
+enum class ExpiryKind { WARRANTY, SHELF_LIFE }
+
+/**
+ * 物品到期提醒的落点（窗口见 `expiryReminderKind`）。
+ * 管的是**物品上更紧迫的那个到期日**（质保或保质期），不是只管保质期——界面和提醒必须说同一件事。
+ */
+enum class ExpiryReminderKind {
+    /** 今天到期。 */
+    TODAY,
+
+    /** 还有 N 天（N ≤ 提前天数）。 */
+    SOON,
+
+    /** 已过期 N 天（N ≤ 提前天数）。 */
+    EXPIRED
+}
+
+/**
+ * 保质期时长的单位（`Asset.shelfLifeDurationUnit`）。
+ * 列可空，所以这里是 `fromOrNull` 而不是像其它枚举那样给兜底值——「没填」和「填了天」是两回事。
+ */
+enum class ShelfLifeUnit(val value: String) {
+    DAY("DAY"),
+    MONTH("MONTH"),
+    YEAR("YEAR");
+
+    companion object {
+        fun fromOrNull(s: String?): ShelfLifeUnit? = entries.firstOrNull { it.value == s }
+    }
+}
+
+/**
  * 支付方式
  */
 enum class PaymentMethod(val value: String) {

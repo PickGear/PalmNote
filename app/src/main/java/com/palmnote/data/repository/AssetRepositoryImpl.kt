@@ -46,6 +46,8 @@ class AssetRepositoryImpl @Inject constructor(
 
     override fun getAssetsWithExpiredWarranty() = assetDao.getAssetsWithExpiredWarranty()
 
+    override fun getHeldAssetsWithExpiry() = assetDao.getHeldAssetsWithExpiry()
+
     override fun getAllAssetsSortedByStatus() = assetDao.getAllAssetsSortedByStatus()
 
     override suspend fun insertAsset(asset: Asset): Long = assetDao.insertAsset(asset)

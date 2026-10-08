@@ -21,6 +21,7 @@ interface AssetRepository {
     fun getCategoryDistribution(): Flow<List<CategoryCount>>
     fun getAssetsWithValidWarranty(): Flow<List<Asset>>
     fun getAssetsWithExpiredWarranty(): Flow<List<Asset>>
+    fun getHeldAssetsWithExpiry(): Flow<List<Asset>>
     fun getAllAssetsSortedByStatus(): Flow<List<Asset>>
     suspend fun insertAsset(asset: Asset): Long
     suspend fun updateAsset(asset: Asset)

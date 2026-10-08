@@ -163,7 +163,8 @@ object DatabaseModule {
                 com.palmnote.data.db.migration.MIGRATION_10_11,
                 com.palmnote.data.db.migration.MIGRATION_11_12,
                 com.palmnote.data.db.migration.MIGRATION_12_13,
-                com.palmnote.data.db.migration.MIGRATION_13_14
+                com.palmnote.data.db.migration.MIGRATION_13_14,
+                com.palmnote.data.db.migration.MIGRATION_14_15
             )
             .addCallback(object : androidx.room.RoomDatabase.Callback() {
                 override fun onCreate(db: SupportSQLiteDatabase) {

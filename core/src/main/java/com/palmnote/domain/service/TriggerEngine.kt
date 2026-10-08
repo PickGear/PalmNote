@@ -126,7 +126,10 @@ class TriggerEngine(
         when (action) {
             is TriggerAction.UpdateStatus -> itemRepo.updateStatus(item.id, action.newStatus)
             is TriggerAction.ShowNotification -> {
-                NotificationHelper.show(context, "trigger_${item.id}", action.title, action.body)
+                // ⚠️ 这里原来传的是 `"trigger_" + item.id`——一个**从来没被创建过**的渠道 id。
+                // Android 8+ 对不存在的渠道是静默丢弃：通知不弹、不报错，日志里只有一行
+                // "No Channel found"。存钱达标那条规则因此从来没成功提醒过。
+                NotificationHelper.show(context, NotificationHelper.Channel.MILESTONE, action.title, action.body)
             }
             is TriggerAction.CreateAutoLink -> {
                 // targetId = 0 表示“关联当前记录”，而不是自关联；显式指定时才检查是否为自身。

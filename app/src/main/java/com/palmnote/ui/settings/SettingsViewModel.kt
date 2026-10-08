@@ -49,14 +49,13 @@ data class SettingsState(
     val momentCount: Int = 0,
     val anniversaryCount: Int = 0,
 
-    val birthdayReminderAdvanceDays: Int = 3,
-    val anniversaryReminderAdvanceDays: Int = 3,
+    /** 生日 / 纪念日 / 物品保质期统一提前几天提醒。 */
+    val reminderAdvanceDays: Int = 3,
     val dailyReminderEnabled: Boolean = true,
     val billReminderEnabled: Boolean = true,
+    val assetExpiryReminderEnabled: Boolean = true,
     val dailyReminderHour: Int = 9,
     val dailyReminderMinute: Int = 0,
-    val billReminderHour: Int = 21,
-    val billReminderMinute: Int = 0,
     val biometricEnabled: Boolean = false,
     val autoLockMode: String = com.palmnote.data.datastore.PreferencesManager.AUTO_LOCK_MODE_SYSTEM,
     val autoLockTimeoutMinutes: Int = 5,
@@ -117,14 +116,12 @@ class SettingsViewModel @Inject constructor(
                 preferencesManager.calendarSyncEnabled,
                 preferencesManager.defaultStartPage,
                 preferencesManager.language,
-                preferencesManager.birthdayReminderAdvanceDays,
-                preferencesManager.anniversaryReminderAdvanceDays,
+                preferencesManager.reminderAdvanceDays,
                 preferencesManager.dailyReminderEnabled,
                 preferencesManager.billReminderEnabled,
+                preferencesManager.assetExpiryReminderEnabled,
                 preferencesManager.dailyReminderHour,
                 preferencesManager.dailyReminderMinute,
-                preferencesManager.billReminderHour,
-                preferencesManager.billReminderMinute,
                 preferencesManager.biometricEnabled,
                 preferencesManager.autoLockMode,
                 preferencesManager.appLockEnabledFlow,
@@ -155,34 +152,32 @@ class SettingsViewModel @Inject constructor(
                         calendarSyncEnabled = (i(3) as? Boolean) ?: false,
                         defaultStartPage = (i(4) as? String) ?: "dashboard",
                         language = (i(5) as? String) ?: "SYSTEM",
-                        birthdayReminderAdvanceDays = (i(6) as? Int) ?: 3,
-                        anniversaryReminderAdvanceDays = (i(7) as? Int) ?: 3,
-                        dailyReminderEnabled = (i(8) as? Boolean) ?: true,
-                        billReminderEnabled = (i(9) as? Boolean) ?: true,
+                        reminderAdvanceDays = (i(6) as? Int) ?: 3,
+                        dailyReminderEnabled = (i(7) as? Boolean) ?: true,
+                        billReminderEnabled = (i(8) as? Boolean) ?: true,
+                        assetExpiryReminderEnabled = (i(9) as? Boolean) ?: true,
                         dailyReminderHour = (i(10) as? Int) ?: 9,
                         dailyReminderMinute = (i(11) as? Int) ?: 0,
-                        billReminderHour = (i(12) as? Int) ?: 21,
-                        billReminderMinute = (i(13) as? Int) ?: 0,
-                        biometricEnabled = (i(14) as? Boolean) ?: false,
-                        autoLockMode = (i(15) as? String) ?: com.palmnote.data.datastore.PreferencesManager.AUTO_LOCK_MODE_SYSTEM,
-                        appLockEnabled = (i(16) as? Boolean) ?: false,
-                        profileNickname = (i(17) as? String) ?: "",
-                        profileSignature = (i(18) as? String) ?: "",
-                        profileAvatar = (i(19) as? String) ?: "Spa",
-                        profileAvatarPath = (i(20) as? String) ?: "",
-                        appIconStyle = (i(21) as? String) ?: PreferencesManager.DEFAULT_APP_ICON_STYLE,
-                        themeColor = (i(22) as? String) ?: PreferencesManager.DEFAULT_THEME_COLOR,
-                        wallpaperStyle = (i(23) as? String) ?: PreferencesManager.DEFAULT_WALLPAPER_STYLE,
-                        wallpaperBlur = (i(24) as? Float) ?: PreferencesManager.DEFAULT_WALLPAPER_BLUR,
-                        wallpaperOpacity = (i(25) as? Float) ?: PreferencesManager.DEFAULT_WALLPAPER_OPACITY,
-                        wallpaperCustomUri = (i(26) as? String) ?: "",
-                        wallpaperCustomColor = (i(27) as? String) ?: PreferencesManager.DEFAULT_WALLPAPER_CUSTOM_COLOR,
-                        assetCount = (i(28) as? Int) ?: 0,
-                        goalCount = (i(29) as? Int) ?: 0,
-                        momentCount = (i(30) as? Int) ?: 0,
-                        anniversaryCount = (i(31) as? Int) ?: 0,
-                        autoLockTimeoutMinutes = (i(32) as? Int) ?: 5,
-                        demoModeEnabled = (i(33) as? Boolean) ?: true
+                        biometricEnabled = (i(12) as? Boolean) ?: false,
+                        autoLockMode = (i(13) as? String) ?: com.palmnote.data.datastore.PreferencesManager.AUTO_LOCK_MODE_SYSTEM,
+                        appLockEnabled = (i(14) as? Boolean) ?: false,
+                        profileNickname = (i(15) as? String) ?: "",
+                        profileSignature = (i(16) as? String) ?: "",
+                        profileAvatar = (i(17) as? String) ?: "Spa",
+                        profileAvatarPath = (i(18) as? String) ?: "",
+                        appIconStyle = (i(19) as? String) ?: PreferencesManager.DEFAULT_APP_ICON_STYLE,
+                        themeColor = (i(20) as? String) ?: PreferencesManager.DEFAULT_THEME_COLOR,
+                        wallpaperStyle = (i(21) as? String) ?: PreferencesManager.DEFAULT_WALLPAPER_STYLE,
+                        wallpaperBlur = (i(22) as? Float) ?: PreferencesManager.DEFAULT_WALLPAPER_BLUR,
+                        wallpaperOpacity = (i(23) as? Float) ?: PreferencesManager.DEFAULT_WALLPAPER_OPACITY,
+                        wallpaperCustomUri = (i(24) as? String) ?: "",
+                        wallpaperCustomColor = (i(25) as? String) ?: PreferencesManager.DEFAULT_WALLPAPER_CUSTOM_COLOR,
+                        assetCount = (i(26) as? Int) ?: 0,
+                        goalCount = (i(27) as? Int) ?: 0,
+                        momentCount = (i(28) as? Int) ?: 0,
+                        anniversaryCount = (i(29) as? Int) ?: 0,
+                        autoLockTimeoutMinutes = (i(30) as? Int) ?: 5,
+                        demoModeEnabled = (i(31) as? Boolean) ?: true
                     )
                 }
             }.catch { AppLogger.w("SettingsVM", "Settings flow failed", it) }.collect()
@@ -330,12 +325,12 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun setBirthdayReminderAdvanceDays(days: Int) {
-        viewModelScope.launch { preferencesManager.setBirthdayReminderAdvanceDays(days) }
+    fun setReminderAdvanceDays(days: Int) {
+        viewModelScope.launch { preferencesManager.setReminderAdvanceDays(days) }
     }
 
-    fun setAnniversaryReminderAdvanceDays(days: Int) {
-        viewModelScope.launch { preferencesManager.setAnniversaryReminderAdvanceDays(days) }
+    fun setAssetExpiryReminderEnabled(enabled: Boolean) {
+        viewModelScope.launch { preferencesManager.setAssetExpiryReminderEnabled(enabled) }
     }
 
     fun setDailyReminderEnabled(enabled: Boolean) {
@@ -378,13 +373,6 @@ class SettingsViewModel @Inject constructor(
             val request = PeriodicWorkRequestBuilder<LifeDailyCheckWorker>(24, TimeUnit.HOURS)
                 .setInitialDelay(delay, TimeUnit.MILLISECONDS).build()
             WorkManager.getInstance(context).enqueueUniquePeriodicWork("life_daily_check", ExistingPeriodicWorkPolicy.REPLACE, request)
-        }
-    }
-
-    fun setBillReminderTime(hour: Int, minute: Int) {
-        viewModelScope.launch {
-            preferencesManager.setBillReminderHour(hour)
-            preferencesManager.setBillReminderMinute(minute)
         }
     }
 
