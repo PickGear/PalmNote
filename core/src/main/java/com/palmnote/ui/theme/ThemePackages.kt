@@ -55,6 +55,18 @@ object ThemePackages {
         onBackground = TextPrimaryLight,
         surface = SurfaceLight,
         onSurface = TextPrimaryLight,
+        // 不用 M3 的「色调抬升」：主题不覆盖 surfaceTint 时它会留在基线紫色，
+        // 任何带 tonalElevation 的组件（下拉菜单、弹层）都会被染成紫色。
+        // 本 App 的设计本来就是平涂（各处显式 tonalElevation = 0.dp），这里把默认也置空。
+        surfaceTint = Color.Transparent,
+        // surfaceContainer* 这一组同理：不覆盖就留在 M3 基线调色板（浅 #ECE6F0 / 深 #2B2930，都是紫调），
+        // 而 AlertDialog、ModalBottomSheet、DropdownMenu 的**容器色**恰好取自这一组 →
+        // 漏掉的话弹窗/弹层整片发紫（加密账单密码弹窗就是这么来的）。App 是平涂设计，统一落到面色。
+        surfaceContainerLowest = SurfaceLight,
+        surfaceContainerLow = SurfaceLight,
+        surfaceContainer = SurfaceLight,
+        surfaceContainerHigh = SurfaceLight,
+        surfaceContainerHighest = SurfaceLight,
         surfaceVariant = SurfaceVariantLight,
         onSurfaceVariant = TextSecondaryLight,
         error = ErrorLight,
@@ -78,6 +90,14 @@ object ThemePackages {
         onBackground = TextPrimaryDark,
         surface = SurfaceDark,
         onSurface = TextPrimaryDark,
+        // 同 lightScheme：置空 surfaceTint，别让 M3 基线的紫色漏到抬升表面上
+        surfaceTint = Color.Transparent,
+        // 同 lightScheme：surfaceContainer* 必须显式落到面色，否则弹窗/弹层取到基线紫调
+        surfaceContainerLowest = SurfaceDark,
+        surfaceContainerLow = SurfaceDark,
+        surfaceContainer = SurfaceDark,
+        surfaceContainerHigh = SurfaceDark,
+        surfaceContainerHighest = SurfaceDark,
         surfaceVariant = SurfaceVariantDark,
         onSurfaceVariant = TextSecondaryDark,
         error = ErrorDark,
