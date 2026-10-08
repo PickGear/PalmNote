@@ -9,6 +9,7 @@ import com.palmnote.R
 import androidx.compose.runtime.Immutable
 import com.palmnote.domain.util.DateUtils
 import com.palmnote.domain.model.AssetStatus
+import com.palmnote.domain.model.ExpiryKind
 
 @Entity(
     tableName = "assets",
@@ -16,6 +17,7 @@ import com.palmnote.domain.model.AssetStatus
         Index(value = ["status"]),
         Index(value = ["category"]),
         Index(value = ["warrantyExpireDate"]),
+        Index(value = ["shelfLifeExpireDate"]),
         Index(value = ["nextMaintenanceDate"]),
         Index(value = ["insuranceExpireDate"]),
         Index(value = ["isFavorite"])
@@ -42,6 +44,10 @@ data class Asset(
     val room: String = "", // 房间: 卧室/客厅/书房/厨房/卫生间
     val purchaseChannel: String = "",
     val warrantyExpireDate: Long? = null,
+    val shelfLifeExpireDate: Long? = null, // 保质期到期日
+    val shelfLifeProducedDate: Long? = null, // 生产日期（按「保质期限」录法时记，直接填到期日时为 null）
+    val shelfLifeDurationValue: Int? = null, // 保质期时长数值
+    val shelfLifeDurationUnit: String? = null, // 保质期时长单位（ShelfLifeUnit.value）
     val insuranceExpireDate: Long? = null, // 保险到期日
     val insuranceCompany: String = "", // 保险公司
     val insurancePolicyNo: String = "", // 保单号
@@ -79,28 +85,19 @@ data class Asset(
 
     val updatedAt: Long = System.currentTimeMillis()
 ) {
+    /**
+     * 质保 / 保险是否还在有效期内。
+     *
+     * ⚠️ 口径必须与界面上那个「剩余 N 天」chip 一致，也就是**自然日**（`DateUtils.getDaysUntil`）。
+     * 这两个日期列存的是当天 00:00，直接拿时间戳比大小会在**到期当天**就判成"已过期"，
+     * 于是同一张卡上出现「红色过期图标 + 绿色 剩余 0 天」这种自相矛盾的组合。
+     * 到期日当天算有效——那天是最后一天。
+     */
     val isWarrantyValid: Boolean
-        get() = warrantyExpireDate != null && warrantyExpireDate > System.currentTimeMillis()
+        get() = warrantyExpireDate?.let { DateUtils.getDaysUntil(it) >= 0 } ?: false
 
     val isInsuranceValid: Boolean
-        get() = insuranceExpireDate != null && insuranceExpireDate > System.currentTimeMillis()
-
-    val warrantyStatusText: String
-        get() = when {
-            warrantyExpireDate == null -> ""
-            isWarrantyValid -> {
-                val days = ((warrantyExpireDate - System.currentTimeMillis()) / DateUtils.MILLIS_PER_DAY).toInt()
-                if (days <= 30) "质保${days}天" else "质保中"
-            }
-            else -> "已过保"
-        }
-
-    val insuranceStatusText: String
-        get() = when {
-            insuranceExpireDate == null -> ""
-            isInsuranceValid -> "保险有效"
-            else -> "保险过期"
-        }
+        get() = insuranceExpireDate?.let { DateUtils.getDaysUntil(it) >= 0 } ?: false
 
     val effectiveDate: Long
         get() = acquisitionDate ?: createdAt
@@ -123,13 +120,12 @@ data class Asset(
 }
 
 fun Asset.getWarrantyStatusText(context: Context): String {
+    val expire = warrantyExpireDate ?: return ""
+    val days = DateUtils.getDaysUntil(expire)
     return when {
-        warrantyExpireDate == null -> ""
-        isWarrantyValid -> {
-            val days = ((warrantyExpireDate - System.currentTimeMillis()) / DateUtils.MILLIS_PER_DAY).toInt()
-            if (days <= 30) context.getString(R.string.asset_warranty_days, days) else context.getString(R.string.asset_warranty_active)
-        }
-        else -> context.getString(R.string.asset_warranty_expired)
+        days < 0 -> context.getString(R.string.asset_warranty_expired)
+        days <= 30 -> context.getString(R.string.asset_warranty_days, days)
+        else -> context.getString(R.string.asset_warranty_active)
     }
 }
 
@@ -139,4 +135,45 @@ fun Asset.getInsuranceStatusText(context: Context): String {
         isInsuranceValid -> context.getString(R.string.asset_insurance_active)
         else -> context.getString(R.string.asset_insurance_expired)
     }
+}
+
+fun Asset.getShelfLifeStatusText(context: Context): String {
+    val expire = shelfLifeExpireDate ?: return ""
+    val days = DateUtils.getDaysUntil(expire)
+    return when {
+        days < 0 -> context.getString(R.string.asset_shelf_life_expired)
+        days <= 30 -> context.getString(R.string.asset_shelf_life_days, days)
+        else -> context.getString(R.string.asset_shelf_life_active)
+    }
+}
+
+/**
+ * 质保 / 保质期里更早的那个到期日，以及它属于哪一种；都没有则 null。
+ *
+ * 界面（列表卡、网格卡、详情页头部）与提醒**共用这一个判定**——否则会出现
+ * 「卡片上橙色标着质保 1 天、却因为提醒只看保质期而一条通知都不发」这种自相矛盾。
+ */
+val Asset.nearestExpiry: Pair<ExpiryKind, Long>?
+    get() {
+        val warranty = warrantyExpireDate
+        val shelfLife = shelfLifeExpireDate
+        return when {
+            warranty == null -> shelfLife?.let { ExpiryKind.SHELF_LIFE to it }
+            shelfLife == null -> ExpiryKind.WARRANTY to warranty
+            shelfLife <= warranty -> ExpiryKind.SHELF_LIFE to shelfLife
+            else -> ExpiryKind.WARRANTY to warranty
+        }
+    }
+
+val Asset.nearestExpiryDate: Long?
+    get() = nearestExpiry?.second
+
+val Asset.nearestExpiryKind: ExpiryKind?
+    get() = nearestExpiry?.first
+
+/** [nearestExpiry] 对应的文案，按更早的那种选措辞（质保 / 保质期）。 */
+fun Asset.getNearestExpiryText(context: Context): String = when (nearestExpiryKind) {
+    ExpiryKind.SHELF_LIFE -> getShelfLifeStatusText(context)
+    ExpiryKind.WARRANTY -> getWarrantyStatusText(context)
+    null -> ""
 }
