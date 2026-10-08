@@ -101,8 +101,10 @@ class BillXlsxImporterTest {
         val bill = bills.single()
         assertEquals(8860L, bill.amount)
         assertEquals("INCOME", bill.type)
-        // 45840 - 25569 = 20271 days after Unix epoch (2025-07-02 UTC)
-        assertEquals(20271L * 86_400_000L, bill.date)
+        // 序列号是本地墙钟：45840 = 2025-07-02 00:00（本机时区，不做 UTC 换算）
+        val expectedDate = java.time.LocalDate.of(2025, 7, 2)
+            .atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
+        assertEquals(expectedDate, bill.date)
     }
 
     @Test
@@ -188,11 +190,11 @@ class BillXlsxImporterTest {
 
         assertEquals(BillCsvImporter.CsvFormat.WECHAT, format)
         assertEquals(5, bills.size)
-        // 序列号 46273.724432870367 对应 2026-09-09 01:23:10 GMT+8（excelSerialToMillis 按 UTC 换算：1899-12-30 起，-25569 天）；
-        // 序列号小数部分是当天时间 17:23:10 UTC，容差 ±2s
-        val fmt = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-        fmt.timeZone = java.util.TimeZone.getTimeZone("GMT+8")
-        val expected = fmt.parse("2026-09-09 01:23:10")!!.time
+        // 序列号 46273.724432870367 的墙钟日期是 **2026-09-08**，小数部分 17:23:10（容差 ±2s）。
+        // 早先这条期望值写的是「2026-09-09 01:23:10 GMT+8」——那正是按 UTC 换算后的偏移结果，
+        // 等于把缺陷写成了期望，所以一直没暴露。现在按本机时区还原墙钟。
+        val expected = java.time.LocalDateTime.of(2026, 9, 8, 17, 23, 10)
+            .atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
         assertEquals(expected.toDouble(), bills[0].date.toDouble(), 2000.0)
         assertEquals("", bills[0].merchant)          // 交易对方 "/" → 空
         assertEquals("WECHAT", bills[0].paymentMethod) // 支付方式 "/" → 回退 WECHAT

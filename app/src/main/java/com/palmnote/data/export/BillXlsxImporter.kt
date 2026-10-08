@@ -11,6 +11,8 @@ import org.xmlpull.v1.XmlPullParserFactory
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.text.SimpleDateFormat
+import java.time.LocalDate
+import java.time.ZoneId
 import java.util.Locale
 import java.util.zip.ZipInputStream
 
@@ -311,11 +313,21 @@ class BillXlsxImporter {
         return null
     }
 
+    /**
+     * Excel 序列号 → 毫秒。
+     *
+     * ⚠️ 序列号编码的是**本地墙钟**（1899-12-30 起的天数 + 当日进度），**不是 UTC 时刻**。
+     * 早先按 UTC 换算（`(days - 25569) * 86400000`），再由 [DateUtils] 按系统时区渲染，
+     * 等于整体加了 8 小时：傍晚之后（时刻 ≥16:00）的记录直接跨到次日——实测**约一半的行**日期
+     * 会被显示成第二天。所以这里按本机时区还原墙钟。
+     */
     private fun excelSerialToMillis(serial: Double): Long {
         val days = serial.toInt()
-        val dayMs = (days - 25569L) * DateUtils.MILLIS_PER_DAY
-        val fraction = serial - days
-        val fracMs = (fraction * DateUtils.MILLIS_PER_DAY).toLong()
-        return dayMs + fracMs
+        val millisOfDay = ((serial - days) * DateUtils.MILLIS_PER_DAY).toLong()
+        return LocalDate.of(1899, 12, 30)
+            .plusDays(days.toLong())
+            .atStartOfDay(ZoneId.systemDefault())
+            .toInstant()
+            .toEpochMilli() + millisOfDay
     }
 }
