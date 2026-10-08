@@ -27,7 +27,9 @@ val MIGRATION_13_14 = object : Migration(13, 14) {
         db.execSQL("ALTER TABLE `goal_check_ins` ADD COLUMN `isDemo` INTEGER NOT NULL DEFAULT 0")
         // 回收站也要带标记：用户在演示期删除的示例账单/物品会先进回收站，
         // 不带标记的话关演示清不掉、从回收站恢复还会混进真实数据。
-        db.execSQL("ALTER TABLE `bill_recycle_bin` ADD COLUMN `isDemo` INTEGER NOT NULL DEFAULT 0")
-        db.execSQL("ALTER TABLE `asset_recycle_bin` ADD COLUMN `isDemo` INTEGER NOT NULL DEFAULT 0")
+        // ⚠️ 表名是复数（`bills_recycle_bin` / `assets_recycle_bin`）：写成单数会在真机上抛
+        // `no such table`，导致任何一次 v13→v14 升级开库即崩（见 Migration13To14Test）。
+        db.execSQL("ALTER TABLE `bills_recycle_bin` ADD COLUMN `isDemo` INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE `assets_recycle_bin` ADD COLUMN `isDemo` INTEGER NOT NULL DEFAULT 0")
     }
 }
