@@ -1,25 +1,18 @@
 package com.palmnote.ui.widget
 
 import android.appwidget.AppWidgetManager
-import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.view.View
 import android.widget.RemoteViews
 import com.palmnote.app.R
 import com.palmnote.domain.model.AssetStatus
-import com.palmnote.domain.util.AppLogger
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 
-class AssetWidgetProvider : AppWidgetProvider() {
+class AssetWidgetProvider : ScopedWidgetProvider() {
 
     @EntryPoint
     @InstallIn(SingletonComponent::class)
@@ -27,76 +20,41 @@ class AssetWidgetProvider : AppWidgetProvider() {
         fun assetDao(): com.palmnote.data.db.dao.AssetDao
     }
 
-    private var scope: CoroutineScope? = null
+    override suspend fun onUpdateAsync(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
+        val entryPoint = EntryPointAccessors.fromApplication(
+            context.applicationContext, WidgetEntryPoint::class.java
+        )
+        val heldCount = entryPoint.assetDao().getAssetCountByStatus(AssetStatus.HELD).first()
+        // 估值口径：先取当前估值，无人填过估值则回退购买价（与 App 内口径一致）
+        val totalValue = entryPoint.assetDao().getTotalCurrentValue().first()
+            ?: entryPoint.assetDao().getHeldAssetValue().first()
+            ?: 0L
 
-    override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
-        updateWidgets(context, appWidgetManager, appWidgetIds)
-    }
-
-    override fun onAppWidgetOptionsChanged(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int, newOptions: android.os.Bundle) {
-        updateWidgets(context, appWidgetManager, intArrayOf(appWidgetId))
-    }
-
-    override fun onEnabled(context: Context) {
-        super.onEnabled(context)
-        scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-    }
-
-    override fun onDisabled(context: Context) {
-        super.onDisabled(context)
-        scope?.cancel()
-        scope = null
-    }
-
-    private fun updateWidgets(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
-        val pendingResult = goAsync()
-        // onEnabled 未触发的路径（进程被杀后直接 onUpdate）没有缓存作用域：
-        // 用临时作用域并在收尾取消，避免孤儿 Job 泄漏（审计 #16）
-        val ownedScope = scope == null
-        val coroutineScope = scope ?: CoroutineScope(Dispatchers.IO + SupervisorJob())
-
-        coroutineScope.launch {
-            try {
-                val entryPoint = EntryPointAccessors.fromApplication(
-                    context.applicationContext, WidgetEntryPoint::class.java
-                )
-                val assetDao = entryPoint.assetDao()
-
-                val heldAssets = assetDao.getAssetsByStatus("HELD").first()
-                val firstAsset = heldAssets.firstOrNull()
-
-                for (appWidgetId in appWidgetIds) {
-                    val views = RemoteViews(context.packageName, R.layout.widget_asset_unified)
-
-                    views.setTextViewText(R.id.widget_asset_count, "${heldAssets.size}")
-
-                    if (firstAsset != null) {
-                        views.setTextViewText(R.id.widget_asset_name, firstAsset.name)
-                        val statusText = when (firstAsset.status) {
-                            AssetStatus.HELD -> context.getString(R.string.widget_status_held)
-                            AssetStatus.AWAY -> context.getString(R.string.widget_status_away)
-                            AssetStatus.REMOVED -> context.getString(R.string.widget_status_removed)
-                        }
-                        views.setTextViewText(R.id.widget_asset_status, statusText)
-                        views.setViewVisibility(R.id.widget_first_asset, View.VISIBLE)
-                        views.setViewVisibility(R.id.widget_empty_state, View.GONE)
-                    } else {
-                        views.setViewVisibility(R.id.widget_first_asset, View.GONE)
-                        views.setViewVisibility(R.id.widget_empty_state, View.VISIBLE)
-                    }
-
-                    views.setOnClickPendingIntent(
-                        R.id.widget_layout,
-                        WidgetHelper.createPendingIntent(context, 400_000 + appWidgetId, "asset")
-                    )
-                    appWidgetManager.updateAppWidget(appWidgetId, views)
-                }
-            } catch (e: Exception) {
-                AppLogger.e("AssetWidgetProvider", "Widget update failed", e)
-            } finally {
-                pendingResult.finish()
-                if (ownedScope) coroutineScope.cancel()
-            }
+        for (appWidgetId in appWidgetIds) {
+            appWidgetManager.updateAppWidget(
+                appWidgetId,
+                bindViews(context, appWidgetId, heldCount, totalValue)
+            )
         }
+    }
+
+    internal fun bindViews(context: Context, appWidgetId: Int, heldCount: Int, totalValue: Long): RemoteViews {
+        val views = RemoteViews(context.packageName, R.layout.widget_asset_unified)
+
+        if (heldCount > 0) {
+            views.setTextViewText(R.id.widget_asset_count, "$heldCount")
+            views.setTextViewText(R.id.widget_asset_value, WidgetData.formatMoneyCompact(context, totalValue))
+            views.setViewVisibility(R.id.widget_first_asset, View.VISIBLE)
+            views.setViewVisibility(R.id.widget_empty_state, View.GONE)
+        } else {
+            views.setViewVisibility(R.id.widget_first_asset, View.GONE)
+            views.setViewVisibility(R.id.widget_empty_state, View.VISIBLE)
+        }
+
+        views.setOnClickPendingIntent(
+            R.id.widget_layout,
+            WidgetHelper.createPendingIntent(context, WidgetDeepLink.SEG_ASSET + appWidgetId, WidgetDeepLink.TAB_ASSET)
+        )
+        return views
     }
 }

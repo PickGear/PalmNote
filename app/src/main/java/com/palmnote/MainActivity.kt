@@ -512,7 +512,7 @@ class MainActivity : AppCompatActivity() {
             PalmNoteApp.pendingLifeListMode = it
         }
         PalmNoteApp.cachedStartPage = when (tab) {
-            "bill", "add_bill" -> "bill"
+            "bill", "add_bill", "report", "budget" -> "bill"
             "asset" -> "asset"
             "life" -> "life"
             "vault" -> "vault"
@@ -520,6 +520,14 @@ class MainActivity : AppCompatActivity() {
         }
         if (tab == "add_bill") {
             PalmNoteApp.pendingNavigation = "add_bill"
+        }
+        if (tab == "report") {
+            // 小组件预算横幅 → 报表页：与 add_bill 同走 pendingNavigation（报表非 tab，是外层路由）
+            PalmNoteApp.pendingNavigation = "report"
+        }
+        if (tab == "budget") {
+            // 小组件预算卡 → 预算页（外层路由）
+            PalmNoteApp.pendingNavigation = "budget"
         }
     }
 

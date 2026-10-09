@@ -13,25 +13,32 @@
         android:layout_weight="1"
         android:orientation="horizontal">
 
-        <LinearLayout
+        <FrameLayout
             android:id="@+id/widget_sc_add"
             android:contentDescription="@string/widget_add_bill"
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="center"
-            android:background="@drawable/widget_card_teal">
+            android:layout_weight="1">
 
-            <TextView
+            <ImageView
+                android:id="@+id/widget_sc_add_bg"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:src="@drawable/widget_shape_card"
+                android:contentDescription="@null" />
+
+            <LinearLayout
+                android:contentDescription="@string/widget_add_bill"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:gravity="center">
+
+            <ImageView
                 android:layout_width="18dp"
                 android:layout_height="18dp"
-                android:text="+"
-                android:textSize="13sp"
-                android:textStyle="bold"
-                android:textColor="@color/widget_v2_accent"
-                android:gravity="center"
-                android:background="@drawable/widget_circle_white" />
+                android:src="@drawable/widget_ic_add_square"
+                android:contentDescription="@null" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -42,7 +49,8 @@
                 android:textStyle="bold"
                 android:textColor="#FFFFFF"
                 android:singleLine="true" />
-        </LinearLayout>
+            </LinearLayout>
+        </FrameLayout>
 
         <LinearLayout
             android:id="@+id/widget_sc_bill"
@@ -55,15 +63,11 @@
             android:background="@drawable/widget_soft_card"
             android:layout_marginStart="8dp">
 
-            <TextView
+            <ImageView
                 android:layout_width="18dp"
                 android:layout_height="18dp"
-                android:text="¥"
-                android:textSize="11sp"
-                android:textStyle="bold"
-                android:textColor="@color/widget_v2_accent"
-                android:gravity="center"
-                android:background="@drawable/widget_chip_soft_cyan" />
+                android:src="@drawable/widget_ic_receipt"
+                android:contentDescription="@null" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -94,15 +98,11 @@
             android:gravity="center"
             android:background="@drawable/widget_soft_card">
 
-            <TextView
+            <ImageView
                 android:layout_width="18dp"
                 android:layout_height="18dp"
-                android:text="✓"
-                android:textSize="11sp"
-                android:textStyle="bold"
-                android:textColor="@color/widget_v2_accent"
-                android:gravity="center"
-                android:background="@drawable/widget_chip_soft_cyan" />
+                android:src="@drawable/widget_ic_check_square"
+                android:contentDescription="@null" />
 
             <TextView
                 android:layout_width="wrap_content"

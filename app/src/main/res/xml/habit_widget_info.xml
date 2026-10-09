@@ -8,6 +8,7 @@
     android:maxResizeHeight="400dp"
     android:updatePeriodMillis="1800000"
     android:initialLayout="@layout/widget_habit_unified"
+    android:previewImage="@drawable/widget_preview_habit"
     android:widgetCategory="home_screen"
     android:description="@string/widget_habit_desc"
     android:previewLayout="@layout/widget_habit_preview"

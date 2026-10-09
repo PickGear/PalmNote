@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- 默认摆放 3×2（全档）；缩小到 2×1 由 minResize* 放开，BillWidgetProvider 按实际尺寸切迷你档。
+     minWidth/minHeight 保持 3×2 口径：写小会让 Android 12 以下的默认摆放落成 1 格宽的畸形档。 -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:minWidth="180dp"
     android:minHeight="110dp"
+    android:minResizeWidth="110dp"
+    android:minResizeHeight="40dp"
     android:targetCellWidth="3"
     android:targetCellHeight="2"
     android:maxResizeWidth="400dp"
@@ -11,5 +15,5 @@
     android:widgetCategory="home_screen"
     android:description="@string/widget_bill_desc"
     android:previewImage="@drawable/widget_preview_bill"
-    android:previewLayout="@layout/widget_bill_preview"
+    android:previewLayout="@layout/widget_bill_unified"
     android:resizeMode="horizontal|vertical" />

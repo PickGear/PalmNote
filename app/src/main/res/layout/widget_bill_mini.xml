@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 账单 2×1 迷你档：本月支出 + 预算进度条 + 预算剩余/结余 + 快捷记一笔。
+     2 格宽（≈130dp）放不下两列「标签+金额」，所以横排放标签与金额，进度条与剩余金额同排第二行。 -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="8dp"
+    android:background="@drawable/widget_card_round">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/widget_expense_label"
+            android:textSize="10sp"
+            android:textColor="@color/widget_v2_text_secondary" />
+
+        <TextView
+            android:id="@+id/widget_bill_mini_expense"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="0"
+            android:textSize="18sp"
+            android:textColor="@color/widget_v2_text_primary"
+            android:textStyle="bold"
+            android:layout_marginStart="4dp"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <ImageView
+            android:id="@+id/widget_bill_mini_add"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:layout_marginStart="6dp"
+            android:src="@drawable/widget_ic_add_square"
+            android:contentDescription="@string/widget_add_bill" />
+    </LinearLayout>
+
+    <!-- 预算进度条：底槽 + 可着色填充（填充比例由 setImageLevel 定）；无预算时只隐藏条，金额照显 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginTop="5dp">
+
+        <FrameLayout
+            android:id="@+id/widget_bill_mini_bar"
+            android:layout_width="0dp"
+            android:layout_height="4dp"
+            android:layout_weight="1">
+
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:src="@drawable/widget_bar_track"
+                android:contentDescription="@null" />
+
+            <ImageView
+                android:id="@+id/widget_bill_mini_bar_fill"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:src="@drawable/widget_bar_fill"
+                android:contentDescription="@null" />
+        </FrameLayout>
+
+        <TextView
+            android:id="@+id/widget_bill_mini_budget"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="9sp"
+            android:textColor="@color/widget_v2_accent"
+            android:textStyle="bold"
+            android:layout_marginStart="6dp"
+            android:maxLines="1"
+            android:ellipsize="end" />
+    </LinearLayout>
+
+</LinearLayout>

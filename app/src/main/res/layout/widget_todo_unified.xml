@@ -35,12 +35,10 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/widget_add"
-            android:textSize="12sp"
+            android:textSize="13sp"
             android:textStyle="bold"
-            android:textColor="#FFFFFF"
-            android:background="@drawable/widget_pill_accent"
-            android:paddingHorizontal="12dp"
-            android:paddingVertical="4dp" />
+            android:textColor="@color/widget_v2_accent"
+            android:layout_marginStart="8dp" />
     </LinearLayout>
 
     <!-- Todo card -->

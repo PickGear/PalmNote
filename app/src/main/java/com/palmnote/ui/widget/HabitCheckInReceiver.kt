@@ -35,15 +35,10 @@ class HabitCheckInReceiver : BroadcastReceiver() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val entryPoint = EntryPointAccessors.fromApplication(
-                    context.applicationContext, CheckInEntryPoint::class.java
+                    context.applicationContext,
+                    CheckInEntryPoint::class.java
                 )
-                val today = LocalDate.now()
-                val dayStart = today.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-
-                val repository = entryPoint.goalRepository()
-                // 仓库层 insertCheckIn 已在事务内判重；返回 -1 表示当日已打过
-                val checkInId = repository.insertCheckIn(GoalCheckIn(goalId = goalId, date = dayStart))
-                if (checkInId > 0) repository.incrementGoalProgress(goalId)
+                checkIn(entryPoint.goalRepository(), goalId)
                 HabitWidgetProvider.requestUpdateAll(context)
                 // Dashboard 小组件展示目标完成率，打卡后需同步刷新，否则要等到下一轮轮询才更新
                 WidgetUpdateHelper.refreshDashboardWidgets()
@@ -58,6 +53,18 @@ class HabitCheckInReceiver : BroadcastReceiver() {
     companion object {
         const val ACTION_CHECK_IN = "com.palmnote.widget.action.HABIT_CHECK_IN"
         const val EXTRA_GOAL_ID = "extra_goal_id"
+
+        /**
+         * 打卡核心动作（接收器薄壳与单测共用）：
+         * 仓库层 insertCheckIn 已在事务内判重，返回 -1 表示当日已打过（不累计进度）。
+         */
+        suspend fun checkIn(repository: GoalRepository, goalId: Long): Long {
+            val today = LocalDate.now()
+            val dayStart = today.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+            val checkInId = repository.insertCheckIn(GoalCheckIn(goalId = goalId, date = dayStart))
+            if (checkInId > 0) repository.incrementGoalProgress(goalId)
+            return checkInId
+        }
 
         fun checkInPendingIntent(context: Context, goalId: Long): PendingIntent {
             val intent = Intent(context, HabitCheckInReceiver::class.java)

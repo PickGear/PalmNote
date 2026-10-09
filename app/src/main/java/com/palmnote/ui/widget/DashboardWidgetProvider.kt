@@ -1,26 +1,19 @@
 package com.palmnote.ui.widget
 
 import android.appwidget.AppWidgetManager
-import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.view.View
 import android.widget.RemoteViews
 import com.palmnote.app.R
-import com.palmnote.domain.util.AppLogger
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-class DashboardWidgetProvider : AppWidgetProvider() {
+class DashboardWidgetProvider : ScopedWidgetProvider() {
 
     @EntryPoint
     @InstallIn(SingletonComponent::class)
@@ -34,71 +27,76 @@ class DashboardWidgetProvider : AppWidgetProvider() {
         fun preferencesManager(): com.palmnote.data.datastore.PreferencesManager
     }
 
-    private var scope: CoroutineScope? = null
+    override suspend fun onUpdateAsync(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
+        val entryPoint = EntryPointAccessors.fromApplication(
+            context.applicationContext,
+            WidgetEntryPoint::class.java
+        )
+        val snapshot = fetchSnapshot(context, entryPoint)
+        val accent = WidgetData.readAccentTheme(context, entryPoint.preferencesManager())
 
-    override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
-        updateWidgets(context, appWidgetManager, appWidgetIds)
-    }
+        for (appWidgetId in appWidgetIds) {
+            val options = appWidgetManager.getAppWidgetOptions(appWidgetId)
+            val width = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 250)
+            val height = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 110)
+            val isLarge = width >= 250 && height >= 180
 
-    override fun onAppWidgetOptionsChanged(
-        context: Context,
-        appWidgetManager: AppWidgetManager,
-        appWidgetId: Int,
-        newOptions: android.os.Bundle
-    ) {
-        updateWidgets(context, appWidgetManager, intArrayOf(appWidgetId))
-    }
-
-    override fun onEnabled(context: Context) {
-        super.onEnabled(context)
-        scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-    }
-
-    override fun onDisabled(context: Context) {
-        super.onDisabled(context)
-        scope?.cancel()
-        scope = null
-    }
-
-    private fun updateWidgets(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
-        val pendingResult = goAsync()
-        // onEnabled 未触发的路径（进程被杀后直接 onUpdate）没有缓存作用域：
-        // 用临时作用域并在收尾取消，避免孤儿 Job 泄漏（审计 #16）
-        val ownedScope = scope == null
-        val coroutineScope = scope ?: CoroutineScope(Dispatchers.IO + SupervisorJob())
-
-        coroutineScope.launch {
-            try {
-                val entryPoint = EntryPointAccessors.fromApplication(
-                    context.applicationContext, WidgetEntryPoint::class.java
-                )
-                val snapshot = fetchSnapshot(context, entryPoint)
-
-                for (appWidgetId in appWidgetIds) {
-                    val options = appWidgetManager.getAppWidgetOptions(appWidgetId)
-                    val width = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 250)
-                    val height = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 110)
-                    val isLarge = width >= 250 && height >= 180
-
-                    val views = RemoteViews(context.packageName, R.layout.widget_dashboard_unified)
-                    bindSnapshot(context, views, snapshot)
-                    views.setViewVisibility(R.id.widget_stats_row2, if (isLarge) View.VISIBLE else View.GONE)
-                    views.setOnClickPendingIntent(
-                        R.id.widget_layout,
-                        WidgetHelper.createPendingIntent(context, 600_000 + appWidgetId, "dashboard")
-                    )
-                    appWidgetManager.updateAppWidget(appWidgetId, views)
-                }
-            } catch (e: Exception) {
-                AppLogger.e("DashboardWidgetProvider", "Widget update failed", e)
-            } finally {
-                pendingResult.finish()
-                if (ownedScope) coroutineScope.cancel()
-            }
+            val views = RemoteViews(context.packageName, R.layout.widget_dashboard_unified)
+            bindSnapshot(context, views, snapshot)
+            // 实底卡改运行时着色：预算卡=主题色，目标卡=语义 Coral（实底白字，深浅共用）
+            views.setInt(R.id.widget_dashboard_budget_bg, "setColorFilter", accent.accent)
+            views.setInt(R.id.widget_dashboard_goal_bg, "setColorFilter", WidgetData.SEMANTIC_GOAL)
+            views.setViewVisibility(R.id.widget_stats_row2, if (isLarge) View.VISIBLE else View.GONE)
+            views.setOnClickPendingIntent(
+                R.id.widget_layout,
+                WidgetHelper.createPendingIntent(context, WidgetDeepLink.SEG_DASHBOARD + appWidgetId, WidgetDeepLink.TAB_DASHBOARD)
+            )
+            bindCardClicks(context, views, appWidgetId)
+            appWidgetManager.updateAppWidget(appWidgetId, views)
         }
     }
 
-    private data class DashboardSnapshot(
+    /**
+     * 分区热区：四张卡各自深链，子卡点击不再整块落回首页。
+     * 预算卡 → 预算页；待办卡 → 生活页的今日清单；目标/纪念卡 → 生活页。
+     */
+    internal fun bindCardClicks(context: Context, views: RemoteViews, appWidgetId: Int) {
+        for (target in cardTargets()) {
+            val requestCode = target.segment + appWidgetId
+            val pendingIntent = if (target.listMode != null) {
+                WidgetHelper.createLifeListPendingIntent(context, requestCode, target.listMode)
+            } else {
+                WidgetHelper.createPendingIntent(context, requestCode, target.tab)
+            }
+            views.setOnClickPendingIntent(target.viewId, pendingIntent)
+        }
+    }
+
+    /**
+     * 卡片 viewId → 深链号段 + 目标页（可选生活清单模式）。
+     * 号段必须互不相同，否则 FLAG_UPDATE_CURRENT 会让点击互相覆盖。
+     */
+    internal data class CardTarget(
+        val viewId: Int,
+        val segment: Int,
+        val tab: String,
+        val listMode: String? = null
+    )
+
+    internal fun cardTargets(): List<CardTarget> = listOf(
+        CardTarget(R.id.widget_dashboard_budget_card, WidgetDeepLink.SEG_DASHBOARD_BUDGET, WidgetDeepLink.TAB_BUDGET),
+        CardTarget(R.id.widget_dashboard_goal_card, WidgetDeepLink.SEG_DASHBOARD_GOAL, WidgetDeepLink.TAB_LIFE),
+        // 待办卡看的是「今日还有几项」→ 直接落到今日清单（LifeFullListMode.AGENDA），不落首页
+        CardTarget(
+            R.id.widget_dashboard_todo_card,
+            WidgetDeepLink.SEG_DASHBOARD_TODO,
+            WidgetDeepLink.TAB_LIFE,
+            listMode = "AGENDA"
+        ),
+        CardTarget(R.id.widget_dashboard_anniversary_card, WidgetDeepLink.SEG_DASHBOARD_ANNIVERSARY, WidgetDeepLink.TAB_LIFE)
+    )
+
+    internal data class DashboardSnapshot(
         val dateText: String,
         val budgetCardAmount: String,
         val budgetCardSub: String,
@@ -168,7 +166,7 @@ class DashboardWidgetProvider : AppWidgetProvider() {
         )
     }
 
-    private fun bindSnapshot(context: Context, views: RemoteViews, snapshot: DashboardSnapshot) {
+    internal fun bindSnapshot(context: Context, views: RemoteViews, snapshot: DashboardSnapshot) {
         views.setTextViewText(R.id.widget_dashboard_date, snapshot.dateText)
         views.setTextViewText(R.id.widget_dashboard_budget, snapshot.budgetCardAmount)
         views.setTextViewText(R.id.widget_dashboard_budget_sub, snapshot.budgetCardSub)
@@ -193,14 +191,14 @@ class DashboardWidgetProvider : AppWidgetProvider() {
         }
     }
 
-    private fun formatAnniversarySub(context: Context, days: Long): String {
-        return if (days == 0L) {
-            context.getString(R.string.widget_today)
-        } else {
-            // 复数走 getQuantityString（quantity 要 Int，格式化参数仍用 Long）
-            context.resources.getQuantityString(
-                R.plurals.widget_days_remaining_format, days.toInt(), days
-            )
-        }
+    private fun formatAnniversarySub(context: Context, days: Long): String = if (days == 0L) {
+        context.getString(R.string.widget_today)
+    } else {
+        // 复数走 getQuantityString（quantity 要 Int，格式化参数仍用 Long）
+        context.resources.getQuantityString(
+            R.plurals.widget_days_remaining_format,
+            days.toInt(),
+            days
+        )
     }
 }

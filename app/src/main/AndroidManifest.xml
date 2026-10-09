@@ -136,16 +136,6 @@
                 android:resource="@xml/counter_widget_medium_info" />
         </receiver>
         <receiver
-            android:name="com.palmnote.ui.widget.QuickBillWidgetProvider"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-            </intent-filter>
-            <meta-data
-                android:name="android.appwidget.provider"
-                android:resource="@xml/quick_bill_widget_info" />
-        </receiver>
-        <receiver
             android:name="com.palmnote.ui.widget.AssetWidgetProvider"
             android:exported="true">
             <intent-filter>

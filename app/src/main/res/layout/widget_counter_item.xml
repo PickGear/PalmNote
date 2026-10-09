@@ -16,7 +16,7 @@
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:textSize="14sp"
-        android:textColor="@color/widget_title_color"
+        android:textColor="@color/widget_v2_text_primary"
         android:fontFamily="sans-serif-medium"
         android:maxLines="1"
         android:ellipsize="end" />
@@ -36,7 +36,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textSize="14sp"
-            android:textColor="@color/widget_accent_blue"
+            android:textColor="@color/widget_v2_accent"
             android:fontFamily="sans-serif-medium" />
 
         <TextView
@@ -45,7 +45,7 @@
             android:layout_height="wrap_content"
             android:text="天"
             android:textSize="12sp"
-            android:textColor="@color/widget_label_color"
+            android:textColor="@color/widget_v2_text_secondary"
             android:fontFamily="sans-serif"
             android:layout_marginStart="2dp" />
     </LinearLayout>

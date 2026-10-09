@@ -150,15 +150,25 @@
         </LinearLayout>
 
         <!-- Budget banner -->
-        <LinearLayout
+        <FrameLayout
             android:id="@+id/widget_budget_banner"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:background="@drawable/widget_banner_accent"
-            android:layout_marginTop="8dp"
-            android:paddingHorizontal="10dp"
-            android:paddingVertical="8dp">
+            android:layout_marginTop="8dp">
+
+            <ImageView
+                android:id="@+id/widget_budget_banner_bg"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:src="@drawable/widget_shape_card"
+                android:contentDescription="@null" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingHorizontal="10dp"
+                android:paddingVertical="8dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -206,7 +216,8 @@
                 android:progressTint="#FFFFFF"
                 android:progressBackgroundTint="#33FFFFFF"
                 android:visibility="gone" />
-        </LinearLayout>
+            </LinearLayout>
+        </FrameLayout>
     </LinearLayout>
 
     <!-- Empty -->

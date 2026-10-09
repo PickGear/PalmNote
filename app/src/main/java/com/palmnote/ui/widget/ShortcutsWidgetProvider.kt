@@ -1,50 +1,53 @@
 package com.palmnote.ui.widget
 
 import android.appwidget.AppWidgetManager
-import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.widget.RemoteViews
 import com.palmnote.app.R
+import com.palmnote.data.datastore.PreferencesManager
+import dagger.hilt.EntryPoint
+import dagger.hilt.InstallIn
+import dagger.hilt.android.EntryPointAccessors
+import dagger.hilt.components.SingletonComponent
 
-// 快捷入口组件：四个直达入口（记一笔/账单/待办/密码本），纯静态无数据查询
-class ShortcutsWidgetProvider : AppWidgetProvider() {
+// 快捷入口组件：四个直达入口（记一笔/账单/待办/密码本）；记一笔格主题色运行时着色
+class ShortcutsWidgetProvider : ScopedWidgetProvider() {
 
-    override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
-        updateWidgets(context, appWidgetManager, appWidgetIds)
+    @EntryPoint
+    @InstallIn(SingletonComponent::class)
+    interface WidgetEntryPoint {
+        fun preferencesManager(): PreferencesManager
     }
 
-    override fun onAppWidgetOptionsChanged(
-        context: Context,
-        appWidgetManager: AppWidgetManager,
-        appWidgetId: Int,
-        newOptions: android.os.Bundle
-    ) {
-        updateWidgets(context, appWidgetManager, intArrayOf(appWidgetId))
-    }
+    override suspend fun onUpdateAsync(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
+        val entryPoint = EntryPointAccessors.fromApplication(
+            context.applicationContext, WidgetEntryPoint::class.java
+        )
+        val accent = WidgetData.readAccentTheme(context, entryPoint.preferencesManager())
 
-    private fun updateWidgets(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
         for (appWidgetId in appWidgetIds) {
             val views = RemoteViews(context.packageName, R.layout.widget_shortcuts_unified)
+            views.setInt(R.id.widget_sc_add_bg, "setColorFilter", accent.accent)
 
             views.setOnClickPendingIntent(
                 R.id.widget_sc_add,
-                WidgetHelper.createPendingIntent(context, 11_000_000 + appWidgetId, "add_bill")
+                WidgetHelper.createPendingIntent(context, WidgetDeepLink.SEG_SHORTCUT_ADD + appWidgetId, WidgetDeepLink.TAB_ADD_BILL)
             )
             views.setOnClickPendingIntent(
                 R.id.widget_sc_bill,
-                WidgetHelper.createPendingIntent(context, 12_000_000 + appWidgetId, "bill")
+                WidgetHelper.createPendingIntent(context, WidgetDeepLink.SEG_SHORTCUT_BILL + appWidgetId, WidgetDeepLink.TAB_BILL)
             )
             views.setOnClickPendingIntent(
                 R.id.widget_sc_todo,
-                WidgetHelper.createPendingIntent(context, 13_000_000 + appWidgetId, "life")
+                WidgetHelper.createPendingIntent(context, WidgetDeepLink.SEG_SHORTCUT_TODO + appWidgetId, WidgetDeepLink.TAB_LIFE)
             )
             views.setOnClickPendingIntent(
                 R.id.widget_sc_vault,
-                WidgetHelper.createPendingIntent(context, 14_000_000 + appWidgetId, "vault")
+                WidgetHelper.createPendingIntent(context, WidgetDeepLink.SEG_SHORTCUT_VAULT + appWidgetId, WidgetDeepLink.TAB_VAULT)
             )
             views.setOnClickPendingIntent(
                 R.id.widget_layout,
-                WidgetHelper.createPendingIntent(context, 650_000 + appWidgetId, "dashboard")
+                WidgetHelper.createPendingIntent(context, WidgetDeepLink.SEG_SHORTCUT_ROOT + appWidgetId, WidgetDeepLink.TAB_DASHBOARD)
             )
 
             appWidgetManager.updateAppWidget(appWidgetId, views)

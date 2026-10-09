@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 密码本 1×1 迷你档：锁 + 条数（隐私口径不变，不显示任何条目内容） -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="6dp"
+    android:background="@drawable/widget_card_round">
+
+    <ImageView
+        android:layout_width="22dp"
+        android:layout_height="22dp"
+        android:src="@drawable/widget_ic_lock_dark"
+        android:contentDescription="@null" />
+
+    <TextView
+        android:id="@+id/widget_vault_small_count"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="0"
+        android:textSize="15sp"
+        android:textColor="@color/widget_v2_text_primary"
+        android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/widget_vault_entries"
+        android:textSize="9sp"
+        android:textColor="@color/widget_v2_text_secondary" />
+
+</LinearLayout>

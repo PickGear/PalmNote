@@ -65,9 +65,7 @@ object WidgetUpdateHelper {
     fun refreshBillWidgets() {
         val manager = AppWidgetManager.getInstance(appContext)
         val billIds = manager.getAppWidgetIds(ComponentName(appContext, BillWidgetProvider::class.java))
-        val quickIds = manager.getAppWidgetIds(ComponentName(appContext, QuickBillWidgetProvider::class.java))
         sendUpdate(BillWidgetProvider::class.java, billIds)
-        sendUpdate(QuickBillWidgetProvider::class.java, quickIds)
         refreshDashboardWidgets()
     }
 
@@ -114,8 +112,6 @@ object WidgetUpdateHelper {
         val manager = AppWidgetManager.getInstance(appContext)
         sendUpdate(BillWidgetProvider::class.java,
             manager.getAppWidgetIds(ComponentName(appContext, BillWidgetProvider::class.java)))
-        sendUpdate(QuickBillWidgetProvider::class.java,
-            manager.getAppWidgetIds(ComponentName(appContext, QuickBillWidgetProvider::class.java)))
         sendUpdate(TodoWidgetProvider::class.java,
             manager.getAppWidgetIds(ComponentName(appContext, TodoWidgetProvider::class.java)))
         sendUpdate(LifeCounterWidgetProvider::class.java,

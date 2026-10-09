@@ -8,6 +8,7 @@
     android:maxResizeHeight="220dp"
     android:updatePeriodMillis="0"
     android:initialLayout="@layout/widget_shortcuts_unified"
+    android:previewImage="@drawable/widget_preview_shortcuts"
     android:widgetCategory="home_screen"
     android:description="@string/widget_shortcuts_desc"
     android:previewLayout="@layout/widget_shortcuts_unified"

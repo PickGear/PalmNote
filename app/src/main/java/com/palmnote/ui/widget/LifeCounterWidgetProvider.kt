@@ -1,30 +1,23 @@
 package com.palmnote.ui.widget
 
 import android.appwidget.AppWidgetManager
-import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.view.View
 import android.widget.RemoteViews
 import com.palmnote.app.R
-import com.palmnote.domain.util.AppLogger
 import com.palmnote.domain.util.LifeTemplateKind
 import com.palmnote.domain.util.getKind
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 
-class LifeCounterWidgetProvider : AppWidgetProvider() {
+class LifeCounterWidgetProvider : ScopedWidgetProvider() {
 
     @EntryPoint
     @InstallIn(SingletonComponent::class)
@@ -34,52 +27,21 @@ class LifeCounterWidgetProvider : AppWidgetProvider() {
         fun preferencesManager(): com.palmnote.data.datastore.PreferencesManager
     }
 
-    private var scope: CoroutineScope? = null
-
-    override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
-        updateWidgets(context, appWidgetManager, appWidgetIds)
-    }
-
-    override fun onAppWidgetOptionsChanged(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int, newOptions: android.os.Bundle) {
-        updateWidgets(context, appWidgetManager, intArrayOf(appWidgetId))
-    }
-
-    override fun onEnabled(context: Context) {
-        super.onEnabled(context)
-        scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-    }
-
-    override fun onDisabled(context: Context) {
-        super.onDisabled(context)
-        scope?.cancel()
-        scope = null
-    }
-
-    private fun updateWidgets(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
-        val pendingResult = goAsync()
-        // onEnabled 未触发的路径（进程被杀后直接 onUpdate）没有缓存作用域：
-        // 用临时作用域并在收尾取消，避免孤儿 Job 泄漏（审计 #16）
-        val ownedScope = scope == null
-        val coroutineScope = scope ?: CoroutineScope(Dispatchers.IO + SupervisorJob())
-
-        coroutineScope.launch {
-            try {
-                val events = collectCounterEvents(context)
-                for (appWidgetId in appWidgetIds) {
-                    // 按实际宽度分桶：大档（≥400dp）显示多事件列表，小/中档只显示最近一个事件
-                    val minWidth = appWidgetManager.getAppWidgetOptions(appWidgetId)
-                        .getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH)
-                    appWidgetManager.updateAppWidget(
-                        appWidgetId,
-                        counterViews(context, appWidgetId, events, isLarge = minWidth >= 400)
-                    )
-                }
-            } catch (e: Exception) {
-                AppLogger.e("LifeCounterWidgetProvider", "Widget update failed", e)
-            } finally {
-                pendingResult.finish()
-                if (ownedScope) coroutineScope.cancel()
-            }
+    override suspend fun onUpdateAsync(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
+        val entryPoint = EntryPointAccessors.fromApplication(
+            context.applicationContext,
+            WidgetEntryPoint::class.java
+        )
+        val accent = WidgetData.readAccentTheme(context, entryPoint.preferencesManager())
+        val events = collectCounterEvents(context)
+        for (appWidgetId in appWidgetIds) {
+            // 按实际宽度分桶：大档（≥400dp）显示多事件列表，小/中档只显示最近一个事件
+            val minWidth = appWidgetManager.getAppWidgetOptions(appWidgetId)
+                .getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH)
+            val views = counterViews(context, appWidgetId, events, isLarge = minWidth >= 400)
+            // 焦点卡底运行时取主题色（此前硬编码青色）
+            views.setInt(R.id.widget_counter_focus_bg, "setColorFilter", accent.accent)
+            appWidgetManager.updateAppWidget(appWidgetId, views)
         }
     }
 
@@ -115,7 +77,7 @@ class LifeCounterWidgetProvider : AppWidgetProvider() {
             .sortedBy { it.daysLeft }
     }
 
-    private fun counterViews(context: Context, appWidgetId: Int, events: List<CounterEvent>, isLarge: Boolean): RemoteViews {
+    internal fun counterViews(context: Context, appWidgetId: Int, events: List<CounterEvent>, isLarge: Boolean): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.widget_counter_unified)
         views.setTextViewText(R.id.widget_counter_count, "${events.size}")
         val firstEvent = events.firstOrNull()
@@ -146,6 +108,12 @@ class LifeCounterWidgetProvider : AppWidgetProvider() {
                 R.id.widget_event_date,
                 firstEvent.targetDate.format(DateTimeFormatter.ofPattern(datePattern))
             )
+            // 周年滚动进度环：生日/纪念日才有周期，一次性倒计时隐藏
+            val rollPercent = firstEvent.progressPercent
+            views.setViewVisibility(R.id.widget_counter_ring, if (rollPercent != null) View.VISIBLE else View.GONE)
+            if (rollPercent != null) {
+                views.setProgressBar(R.id.widget_counter_ring, 100, rollPercent, false)
+            }
             // 点焦点事件 → 直达该记录详情页（深链）
             views.setOnClickPendingIntent(
                 R.id.widget_first_event,
@@ -172,9 +140,36 @@ class LifeCounterWidgetProvider : AppWidgetProvider() {
             .atZone(ZoneId.systemDefault())
             .toLocalDate()
         val yearly = kind == LifeTemplateKind.BIRTHDAY || kind == LifeTemplateKind.ANNIVERSARY
-        val targetDate = counterTargetDate(anchor, today, yearly, lunar = lunarFlagOf(fieldsData))
+        val lunar = lunarFlagOf(fieldsData)
+        val targetDate = counterTargetDate(anchor, today, yearly, lunar = lunar)
         val daysLeft = ChronoUnit.DAYS.between(today, targetDate)
-        return if (daysLeft >= 0) CounterEvent(id, title, daysLeft, targetDate) else null
+        if (daysLeft < 0) return null
+        return CounterEvent(
+            itemId = id,
+            name = title,
+            daysLeft = daysLeft,
+            targetDate = targetDate,
+            progressPercent = yearlyRollPercent(anchor, today, targetDate, yearly, lunar)
+        )
+    }
+
+    /**
+     * 周年滚动进度：本期（上一次周年 → 下一次周年）已过比例 0..100。
+     * 上一次周年由「一年前的今天」反推，农历也按农历反算，周期因此是真实间隔而非固定 365。
+     * 一次性倒计时没有周期，返回 null（环隐藏）。
+     */
+    internal fun yearlyRollPercent(
+        anchor: LocalDate,
+        today: LocalDate,
+        targetDate: LocalDate,
+        yearly: Boolean,
+        lunar: Boolean
+    ): Int? {
+        if (!yearly) return null
+        val previous = counterTargetDate(anchor, today.minusYears(1), yearly = true, lunar = lunar)
+        val cycleDays = ChronoUnit.DAYS.between(previous, targetDate)
+        if (cycleDays <= 0) return null
+        return (ChronoUnit.DAYS.between(previous, today) * 100 / cycleDays).toInt().coerceIn(0, 100)
     }
 
     /** 条目字段里的 `lunar` 开关（生日模板才有）；解析不出按公历。 */
@@ -185,7 +180,14 @@ class LifeCounterWidgetProvider : AppWidgetProvider() {
         com.palmnote.ui.life.parseLunarFlag(raw)
     }.getOrDefault(false)
 
-    private data class CounterEvent(val itemId: Long, val name: String, val daysLeft: Long, val targetDate: LocalDate)
+    internal data class CounterEvent(
+        val itemId: Long,
+        val name: String,
+        val daysLeft: Long,
+        val targetDate: LocalDate,
+        /** 周年滚动进度 0..100；一次性倒计时为 null。 */
+        val progressPercent: Int? = null
+    )
 }
 
 /** 倒计时组件纳入的模板身份：显式倒计时 + 生日 + 纪念日（与组件说明文案一致）。 */

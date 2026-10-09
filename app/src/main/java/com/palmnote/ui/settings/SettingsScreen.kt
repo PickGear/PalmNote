@@ -47,6 +47,7 @@ fun SettingsScreen(
     onNavigateToReminder: () -> Unit = {},
     onNavigateToManageCategory: () -> Unit = {},
     onNavigateToDataStorage: () -> Unit = {},
+    onNavigateToWidget: () -> Unit = {},
     onNavigateToAppLock: () -> Unit = {},
     onNavigateToAbout: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel()
@@ -193,6 +194,14 @@ fun SettingsScreen(
                             subtitle = stringResource(R.string.settings_data_subtitle),
                             tint = DopamineSky,
                             onClick = onNavigateToDataStorage
+                        )
+                        HorizontalDivider(modifier = Modifier.padding(horizontal = 52.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                        SettingsMenuItem(
+                            icon = Icons.Outlined.Widgets,
+                            title = stringResource(R.string.settings_widget_title),
+                            subtitle = stringResource(R.string.settings_widget_subtitle),
+                            tint = DopaminePink,
+                            onClick = onNavigateToWidget
                         )
                         HorizontalDivider(modifier = Modifier.padding(horizontal = 52.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                         SettingsMenuItem(

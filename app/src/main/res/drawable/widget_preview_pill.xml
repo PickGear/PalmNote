@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 预览布局专用的静态强调色胶囊（预览无运行时着色，取默认品牌青） -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#FF0891B2" />
+    <corners android:radius="999dp" />
+</shape>
