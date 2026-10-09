@@ -8,12 +8,8 @@
     <!-- 背景层级 -->
     
     <!-- 文字层级 - 柔和但清晰 -->
-    <color name="widget_title_color">#FF1A1A1A</color>
-    <color name="widget_label_color">#FF8A8A8E</color>
     
     <!-- 功能色 - 柔和高级 -->
-    <color name="widget_expense_color">#FFD4845C</color>
-    <color name="widget_accent_blue">#FF007AFF</color>
     
     <!-- 装饰色 -->
     

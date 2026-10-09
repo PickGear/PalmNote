@@ -31,13 +31,10 @@ class TodoToggleReceiver : BroadcastReceiver() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val dao = EntryPointAccessors.fromApplication(
-                    context.applicationContext, ToggleEntryPoint::class.java
+                    context.applicationContext,
+                    ToggleEntryPoint::class.java
                 ).lifeItemDao()
-                val item = dao.getItemById(itemId)
-                if (item != null && item.parentId == null) {
-                    val next = if (item.status == "COMPLETED") "ACTIVE" else "COMPLETED"
-                    dao.updateStatus(itemId, next)
-                }
+                toggle(dao, itemId)
                 WidgetUpdateHelper.refreshTodoWidgets()
                 WidgetUpdateHelper.refreshDashboardWidgets()
             } catch (e: Exception) {
@@ -52,13 +49,25 @@ class TodoToggleReceiver : BroadcastReceiver() {
         const val ACTION_TOGGLE = "com.palmnote.widget.action.TODO_TOGGLE"
         const val EXTRA_ITEM_ID = "extra_item_id"
 
+        /**
+         * 勾选核心动作（接收器薄壳与单测共用）：ACTIVE↔COMPLETED 双向切换。
+         * 子项（parentId != null）与不存在的 id 一律不动；返回是否发生了切换。
+         */
+        suspend fun toggle(dao: com.palmnote.data.db.dao.LifeItemDao, itemId: Long): Boolean {
+            val item = dao.getItemById(itemId) ?: return false
+            if (item.parentId != null) return false
+            val next = if (item.status == "COMPLETED") "ACTIVE" else "COMPLETED"
+            dao.updateStatus(itemId, next)
+            return true
+        }
+
         fun togglePendingIntent(context: Context, itemId: Long): PendingIntent {
             val intent = Intent(context, TodoToggleReceiver::class.java)
                 .setAction(ACTION_TOGGLE)
                 .putExtra(EXTRA_ITEM_ID, itemId)
             return PendingIntent.getBroadcast(
                 context,
-                (21_000_000 + itemId).toInt(),
+                (WidgetDeepLink.SEG_TODO_TOGGLE + itemId).toInt(),
                 intent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )

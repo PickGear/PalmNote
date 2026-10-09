@@ -408,6 +408,7 @@
     <string name="widget_counter_desc">Life Counter Widget - Countdown, birthday, anniversary</string>
     <string name="widget_asset_title">Assets</string>
     <string name="widget_asset_held">In Use</string>
+    <string name="widget_asset_value_label">Total value</string>
     <string name="widget_asset_desc">Asset Widget - Asset statistics and category distribution</string>
     <string name="widget_vault_title">Vault</string>
     <string name="widget_vault_entries">entries</string>
@@ -415,8 +416,6 @@
     <string name="widget_vault_desc">Vault Widget - Password entry count</string>
     <string name="widget_dashboard_title">Overview</string>
     <string name="widget_dashboard_desc">Dashboard Widget - Overview of all modules</string>
-    <string name="widget_quick_bill_title">Quick Bill</string>
-    <string name="widget_quick_bill_desc">Quick Bill Widget - One-tap quick bill entry</string>
     <string name="widget_goals_label">Goals</string>
     <string name="widget_todos_label">Todos</string>
     <string name="widget_add_bill">Add Bill</string>
@@ -429,8 +428,6 @@
     <string name="widget_net_income">Net Income</string>
     <string name="widget_days_label">days</string>
     <string name="widget_status_held">Held</string>
-    <string name="widget_status_away">Lent out</string>
-    <string name="widget_status_removed">Removed</string>
     <string name="widget_date_format_cn">MMM d, yyyy</string>
     <string name="widget_days_ago">days ago</string>
     <string name="widget_today">today</string>
@@ -452,16 +449,10 @@
         <item quantity="one">%1$d day left</item>
         <item quantity="other">%1$d days left</item>
     </plurals>
-    <string name="widget_budget_used_format_preview">Dining budget 82% used</string>
     <string name="widget_preview_todo_1">Buy accessories</string>
     <string name="widget_preview_todo_2">Inventory check</string>
     <string name="widget_preview_todo_3">Monthly report</string>
     <string name="widget_todo_footer_preview">3 today · 2 to go</string>
-    <string name="widget_preview_date">Sep 3</string>
-    <string name="widget_preview_goal">New tablet 64%</string>
-    <string name="widget_preview_todo_pending">2 pending</string>
-    <string name="widget_preview_anniversary">Birthday</string>
-    <string name="widget_days_remaining_format_preview">24 days left</string>
     <string name="widget_habit_title">Check-in</string>
     <string name="widget_habit_empty">No habits</string>
     <string name="widget_streak_format">%1$dd</string>
@@ -470,11 +461,21 @@
     <string name="widget_preview_habit_2">Read 30 min</string>
     <string name="widget_preview_habit_3">Drink 8 cups</string>
     <string name="widget_preview_asset_name">MacBook Pro</string>
-    <string name="widget_preview_vault_name">Email Account</string>
-    <string name="widget_preview_vault_category">Work</string>
     <string name="widget_shortcut_bills">Bills</string>
     <string name="widget_habit_desc">Check-in Widget - Check in from home screen and track streaks</string>
     <string name="widget_shortcuts_desc">Shortcuts Widget - One-tap access to key features</string>
+    <string name="widget_shortcuts_title">Quick Access</string>
+    <string name="settings_widget_title">Home Screen Widgets</string>
+    <string name="settings_widget_subtitle">Pin widgets to your home screen and see added counts</string>
+    <string name="widget_pin_add">Add to home screen</string>
+    <string name="widget_pin_none">Not added</string>
+    <string name="widget_pin_count">%1$d on home screen</string>
+    <string name="widget_pin_tip">Tap "Add to home screen" and confirm in the system dialog to place the widget.</string>
+    <string name="widget_pin_unsupported_tip">Your home screen app doesn\'t support in-app pinning. Long-press an empty spot on the home screen and find PalmNote in the widget list.</string>
+    <string name="widget_pin_failed">Couldn\'t start pinning. Add from your home screen\'s widget list instead.</string>
+    <string name="widget_pin_requested">Pin request sent — check your home screen</string>
+    <string name="widget_pin_miui_tip">MIUI requires the "Desktop shortcuts" permission to pin widgets: Settings → Apps → Manage apps → PalmNote → Permissions → Desktop shortcuts → Allow.</string>
+    <string name="widget_pin_open_settings">Open permission settings</string>
     <string name="widget_days_unit">days</string>
     <string name="widget_tomorrow">tomorrow</string>
     <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->

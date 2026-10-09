@@ -100,6 +100,9 @@ data object DataStorage
 data object AppLockSettings
 
 @Serializable
+data object WidgetSettings
+
+@Serializable
 data object Vault
 
 @Serializable
