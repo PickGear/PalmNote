@@ -60,7 +60,7 @@
                 android:textStyle="bold"
                 android:textColor="#FFFFFF"
                 android:gravity="center"
-                android:background="@drawable/widget_circle_accent" />
+                android:background="@drawable/widget_preview_circle" />
 
             <TextView
                 android:layout_width="wrap_content"

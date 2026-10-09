@@ -62,6 +62,7 @@ import com.palmnote.ui.settings.ReminderSettingsScreen
 import com.palmnote.ui.settings.ManageCategoryScreen
 import com.palmnote.ui.settings.DataStorageScreen
 import com.palmnote.ui.settings.AppLockSettingsScreen
+import com.palmnote.ui.settings.WidgetPinScreen
 
 import com.palmnote.PalmNoteApp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -116,6 +117,18 @@ fun PalmNoteNavHost() {
         PalmNoteApp.pendingNavigation = null
         LaunchedEffect(Unit) {
             navController.navigate(AddBill())
+        }
+    }
+    if (pendingNav == "report") {
+        PalmNoteApp.pendingNavigation = null
+        LaunchedEffect(Unit) {
+            navController.navigate(Report())
+        }
+    }
+    if (pendingNav == "budget") {
+        PalmNoteApp.pendingNavigation = null
+        LaunchedEffect(Unit) {
+            navController.navigate(Budget)
         }
     }
 
@@ -268,8 +281,15 @@ fun PalmNoteNavHost() {
                 onNavigateToReminder = { navController.navigate(ReminderSettings) },
                 onNavigateToManageCategory = { navController.navigate(ManageCategory) },
                 onNavigateToDataStorage = { navController.navigate(DataStorage) },
+                onNavigateToWidget = { navController.navigate(WidgetSettings) },
                 onNavigateToAbout = { navController.navigate(About) },
                 onNavigateToAppLock = { navController.navigate(AppLockSettings) }
+            )
+        }
+
+        composable<WidgetSettings> {
+            WidgetPinScreen(
+                onNavigateBack = { navController.popBackStack() }
             )
         }
 

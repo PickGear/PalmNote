@@ -586,6 +586,7 @@
     <string name="widget_counter_desc">生活计数器小组件 - 显示倒计时、生日、纪念日</string>
     <string name="widget_asset_title">物品管理</string>
     <string name="widget_asset_held">在用</string>
+    <string name="widget_asset_value_label">总价值</string>
     <string name="widget_asset_desc">物品管理小组件 - 显示物品统计和分类分布</string>
     <string name="widget_vault_title">密码本</string>
     <string name="widget_vault_entries">条记录</string>
@@ -593,8 +594,6 @@
     <string name="widget_vault_desc">密码本小组件 - 显示密码记录数量</string>
     <string name="widget_dashboard_title">概览</string>
     <string name="widget_dashboard_desc">总览面板小组件 - 显示各项数据概览</string>
-    <string name="widget_quick_bill_title">快捷记账</string>
-    <string name="widget_quick_bill_desc">快捷记账小组件 - 一键快速记账</string>
     <string name="widget_goals_label">目标</string>
     <string name="widget_todos_label">待办</string>
     <string name="widget_add_bill">记一笔</string>
@@ -607,8 +606,6 @@
     <string name="widget_net_income">净收入</string>
     <string name="widget_days_label">天</string>
     <string name="widget_status_held">持有中</string>
-    <string name="widget_status_away">已借出</string>
-    <string name="widget_status_removed">已移除</string>
     <string name="widget_date_format_cn">yyyy年M月d日</string>
     <string name="widget_days_ago">天前</string>
     <string name="widget_today">今天</string>
@@ -630,16 +627,10 @@
         <item quantity="one">None</item>
         <item quantity="other">剩余 %1$d 天</item>
     </plurals>
-    <string name="widget_budget_used_format_preview">餐饮预算已使用 82%</string>
     <string name="widget_preview_todo_1">采购配件</string>
     <string name="widget_preview_todo_2">整理物品库存</string>
     <string name="widget_preview_todo_3">完成月度周报</string>
     <string name="widget_todo_footer_preview">今日 3 项 · 待完成 2</string>
-    <string name="widget_preview_date">9月3日</string>
-    <string name="widget_preview_goal">买平板 64%</string>
-    <string name="widget_preview_todo_pending">2 项未完成</string>
-    <string name="widget_preview_anniversary">生日</string>
-    <string name="widget_days_remaining_format_preview">剩余 24 天</string>
     <string name="widget_habit_title">今日打卡</string>
     <string name="widget_habit_empty">暂无习惯</string>
     <string name="widget_streak_format">%1$d天</string>
@@ -648,11 +639,21 @@
     <string name="widget_preview_habit_2">阅读 30 分钟</string>
     <string name="widget_preview_habit_3">喝够 8 杯水</string>
     <string name="widget_preview_asset_name">MacBook Pro</string>
-    <string name="widget_preview_vault_name">邮箱账号</string>
-    <string name="widget_preview_vault_category">工作</string>
     <string name="widget_shortcut_bills">账单</string>
     <string name="widget_habit_desc">今日打卡小组件 - 桌面直接打卡，查看连续天数</string>
     <string name="widget_shortcuts_desc">快捷入口小组件 - 常用功能一键直达</string>
+    <string name="widget_shortcuts_title">快捷入口</string>
+    <string name="settings_widget_title">桌面小组件</string>
+    <string name="settings_widget_subtitle">把小组件添加到桌面、查看已添加数量</string>
+    <string name="widget_pin_add">添加到桌面</string>
+    <string name="widget_pin_none">未添加</string>
+    <string name="widget_pin_count">桌面已有 %1$d 个</string>
+    <string name="widget_pin_tip">点击「添加到桌面」，在系统确认框中确认后，组件就会出现在桌面。</string>
+    <string name="widget_pin_unsupported_tip">当前桌面不支持在应用内添加。请长按桌面空白处，在小组件列表中找到 PalmNote 添加。</string>
+    <string name="widget_pin_failed">未能发起添加，请从桌面的小组件列表添加</string>
+    <string name="widget_pin_requested">已发起添加，请到桌面查看</string>
+    <string name="widget_pin_miui_tip">小米桌面需要「桌面快捷方式」权限才能添加：系统设置 → 应用设置 → 应用管理 → PalmNote → 权限管理 → 桌面快捷方式，选择允许。</string>
+    <string name="widget_pin_open_settings">前往权限设置</string>
     <string name="widget_days_unit">天</string>
     <string name="widget_tomorrow">明天</string>
     <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->

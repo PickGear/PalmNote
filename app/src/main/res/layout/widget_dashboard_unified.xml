@@ -47,13 +47,24 @@
         android:orientation="horizontal"
         android:layout_marginTop="8dp">
 
-        <LinearLayout
+        <FrameLayout
+            android:id="@+id/widget_dashboard_budget_card"
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:background="@drawable/widget_card_teal"
-            android:padding="8dp">
+            android:layout_weight="1">
+
+            <ImageView
+                android:id="@+id/widget_dashboard_budget_bg"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:src="@drawable/widget_shape_card"
+                android:contentDescription="@null" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:padding="8dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -99,16 +110,28 @@
                 android:textSize="9sp"
                 android:textColor="#CCFFFFFF"
                 android:maxLines="1" />
-        </LinearLayout>
+            </LinearLayout>
+        </FrameLayout>
 
-        <LinearLayout
+        <FrameLayout
+            android:id="@+id/widget_dashboard_goal_card"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:orientation="vertical"
-            android:background="@drawable/widget_card_orange"
-            android:layout_marginStart="8dp"
-            android:padding="8dp">
+            android:layout_marginStart="8dp">
+
+            <ImageView
+                android:id="@+id/widget_dashboard_goal_bg"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:src="@drawable/widget_shape_card"
+                android:contentDescription="@null" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:padding="8dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -154,7 +177,8 @@
                 android:textColor="#CCFFFFFF"
                 android:maxLines="1"
                 android:ellipsize="end" />
-        </LinearLayout>
+            </LinearLayout>
+        </FrameLayout>
     </LinearLayout>
 
     <!-- Row 2: todo + countdown -->
@@ -168,6 +192,7 @@
         android:visibility="gone">
 
         <LinearLayout
+            android:id="@+id/widget_dashboard_todo_card"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
@@ -221,6 +246,7 @@
         </LinearLayout>
 
         <LinearLayout
+            android:id="@+id/widget_dashboard_anniversary_card"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"

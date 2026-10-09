@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  可着色进度条填充：白底 + clip，由 Provider 运行时 setColorFilter 着主题色、setImageLevel 定进度。
+  白卡上的条不能用 ProgressBar（progressTint 只能在 XML 里写死，跟不了自定义主题色），
+  所以走 ImageView + clip：level 0..10000 对应 0..100%。
+-->
+<clip xmlns:android="http://schemas.android.com/apk/res/android"
+    android:clipOrientation="horizontal"
+    android:gravity="left">
+    <shape android:shape="rectangle">
+        <solid android:color="#FFFFFF" />
+        <corners android:radius="2dp" />
+    </shape>
+</clip>

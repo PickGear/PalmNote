@@ -30,7 +30,6 @@
     <ID>CyclomaticComplexMethod:BillScreen.kt$@Composable fun BillListItem(bill: Bill, wallets: Map&lt;Long, String&gt; = emptyMap(), onDetail: () -&gt; Unit, onDelete: () -&gt; Unit, customExpenseItems: List&lt;CategoryItem&gt;? = null, customIncomeItems: List&lt;CategoryItem&gt;? = null, presetOverrides: Map&lt;String, String&gt; = emptyMap())</ID>
     <ID>CyclomaticComplexMethod:BillScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun BillScreen( onNavigateToAdd: (Long) -&gt; Unit = {}, onNavigateToDetail: (Long) -&gt; Unit = {}, onNavigateToBudget: () -&gt; Unit = {}, onNavigateToReport: (Long, String) -&gt; Unit = { _, _ -&gt; }, onNavigateToImportCsv: () -&gt; Unit = {}, onNavigateToAccountBook: () -&gt; Unit = {}, viewModel: BillViewModel = hiltViewModel() )</ID>
     <ID>CyclomaticComplexMethod:BillViewModel.kt$BillViewModel$fun saveBill()</ID>
-    <ID>CyclomaticComplexMethod:BillWidgetProvider.kt$BillWidgetProvider$private fun updateWidgets(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray)</ID>
     <ID>CyclomaticComplexMethod:BillXlsxImporter.kt$BillXlsxImporter$private fun parseSheet(input: InputStream, sharedStrings: List&lt;String&gt;): List&lt;List&lt;String&gt;&gt;</ID>
     <ID>CyclomaticComplexMethod:BudgetScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun BudgetScreen( onNavigateBack: () -&gt; Unit = {}, viewModel: BillViewModel = hiltViewModel() )</ID>
     <ID>CyclomaticComplexMethod:CalendarView.kt$@Composable fun CalendarView( yearMonth: String, // "2024-01" dailyData: Map&lt;Int, Pair&lt;Long, Long&gt;&gt;, // day -&gt; (expense, income) selectedDay: Int?, onDaySelected: (Int) -&gt; Unit, collapsed: Boolean = false, onMonthChanged: ((String) -&gt; Unit)? = null, modifier: Modifier = Modifier )</ID>
@@ -110,7 +109,6 @@
     <ID>LongMethod:BillScreen.kt$@Composable fun BillListItem(bill: Bill, wallets: Map&lt;Long, String&gt; = emptyMap(), onDetail: () -&gt; Unit, onDelete: () -&gt; Unit, customExpenseItems: List&lt;CategoryItem&gt;? = null, customIncomeItems: List&lt;CategoryItem&gt;? = null, presetOverrides: Map&lt;String, String&gt; = emptyMap())</ID>
     <ID>LongMethod:BillScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun BillScreen( onNavigateToAdd: (Long) -&gt; Unit = {}, onNavigateToDetail: (Long) -&gt; Unit = {}, onNavigateToBudget: () -&gt; Unit = {}, onNavigateToReport: (Long, String) -&gt; Unit = { _, _ -&gt; }, onNavigateToImportCsv: () -&gt; Unit = {}, onNavigateToAccountBook: () -&gt; Unit = {}, viewModel: BillViewModel = hiltViewModel() )</ID>
     <ID>LongMethod:BillViewModel.kt$BillViewModel$fun saveBill()</ID>
-    <ID>LongMethod:BillWidgetProvider.kt$BillWidgetProvider$private fun updateWidgets(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray)</ID>
     <ID>LongMethod:BudgetScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun BudgetScreen( onNavigateBack: () -&gt; Unit = {}, viewModel: BillViewModel = hiltViewModel() )</ID>
     <ID>LongMethod:CalendarView.kt$@Composable fun CalendarView( yearMonth: String, // "2024-01" dailyData: Map&lt;Int, Pair&lt;Long, Long&gt;&gt;, // day -&gt; (expense, income) selectedDay: Int?, onDaySelected: (Int) -&gt; Unit, collapsed: Boolean = false, onMonthChanged: ((String) -&gt; Unit)? = null, modifier: Modifier = Modifier )</ID>
     <ID>LongMethod:CalendarView.kt$@Composable private fun RowScope.DayCell( day: Int, isCurrentMonth: Boolean, isToday: Boolean, isSelected: Boolean, hasExpense: Boolean, hasIncome: Boolean, onClick: () -&gt; Unit )</ID>
@@ -125,7 +123,6 @@
     <ID>LongMethod:DataExchangeScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun DataExchangeScreen( onNavigateBack: () -&gt; Unit = {}, onNavigateToBackup: () -&gt; Unit = {}, importViewModel: ImportViewModel = hiltViewModel(), viewModel: SettingsViewModel = hiltViewModel() )</ID>
     <ID>LongMethod:DataStorageScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun DataStorageScreen( onNavigateBack: () -&gt; Unit, onNavigateToRecycleBin: () -&gt; Unit, onNavigateToDataClear: () -&gt; Unit, onNavigateToBackup: () -&gt; Unit, onNavigateToDataExchange: () -&gt; Unit, viewModel: SettingsViewModel )</ID>
     <ID>LongMethod:GeneralSettingsScreen.kt$@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class) @Composable fun GeneralSettingsScreen( onNavigateBack: () -&gt; Unit, viewModel: SettingsViewModel )</ID>
-    <ID>LongMethod:HabitWidgetProvider.kt$HabitWidgetProvider$private fun updateWidgets(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray)</ID>
     <ID>LongMethod:LifeCreateRecordScreen.kt$@Composable fun LifeCreateRecordScreen( onBack: () -&gt; Unit, onSaved: () -&gt; Unit, vm: LifeCreateRecordViewModel = hiltViewModel() )</ID>
     <ID>LongMethod:LifeDayReadScreen.kt$@Composable fun LifeDayReadScreen( dateKey: String, onBack: () -&gt; Unit, vm: LifeDayReadViewModel = hiltViewModel() )</ID>
     <ID>LongMethod:LifeDetailHero.kt$@Composable private fun HeroNote(ctx: DetailCtx)</ID>
@@ -151,9 +148,8 @@
     <ID>LongMethod:ReportScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun ReportScreen( onNavigateBack: () -&gt; Unit = {}, onNavigateToAddBill: () -&gt; Unit = {}, selectedBookId: Long = -1L, bookName: String? = null, viewModel: ReportViewModel = hiltViewModel() )</ID>
     <ID>LongMethod:RouteBoard.kt$@Composable fun RouteBoard( model: MapModel, accent: Color, chip: String, modifier: Modifier = Modifier )</ID>
     <ID>LongMethod:SearchScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun SearchScreen( onNavigateToAsset: (Long) -&gt; Unit = {}, onNavigateToBill: (Long) -&gt; Unit = {}, onNavigateToGoal: (Long) -&gt; Unit = {}, onNavigateToAnniversary: (Long) -&gt; Unit = {}, onNavigateToMoment: (Long) -&gt; Unit = {}, onBack: () -&gt; Unit = {}, viewModel: SearchViewModel = hiltViewModel() )</ID>
-    <ID>LongMethod:SettingsScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun SettingsScreen( onNavigateBack: () -&gt; Unit = {}, onNavigateToGeneral: () -&gt; Unit = {}, onNavigateToReminder: () -&gt; Unit = {}, onNavigateToManageCategory: () -&gt; Unit = {}, onNavigateToDataStorage: () -&gt; Unit = {}, onNavigateToAppLock: () -&gt; Unit = {}, onNavigateToAbout: () -&gt; Unit = {}, viewModel: SettingsViewModel = hiltViewModel() )</ID>
+    <ID>LongMethod:SettingsScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun SettingsScreen( onNavigateBack: () -&gt; Unit = {}, onNavigateToGeneral: () -&gt; Unit = {}, onNavigateToReminder: () -&gt; Unit = {}, onNavigateToManageCategory: () -&gt; Unit = {}, onNavigateToDataStorage: () -&gt; Unit = {}, onNavigateToWidget: () -&gt; Unit = {}, onNavigateToAppLock: () -&gt; Unit = {}, onNavigateToAbout: () -&gt; Unit = {}, viewModel: SettingsViewModel = hiltViewModel() )</ID>
     <ID>LongMethod:SettingsViewModel.kt$SettingsViewModel$private fun loadSettings()</ID>
-    <ID>LongMethod:TodoWidgetProvider.kt$TodoWidgetProvider$private fun updateWidgets(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray)</ID>
     <ID>LongMethod:VaultDetailScreen.kt$@Composable fun VaultDetailScreen( viewModel: VaultDetailViewModel = hiltViewModel(), onNavigateBack: () -&gt; Unit, onNavigateToEdit: (Long) -&gt; Unit )</ID>
     <ID>LongMethod:VaultEditScreen.kt$@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class) @Composable fun VaultEditScreen( viewModel: VaultEditViewModel = hiltViewModel(), onNavigateBack: () -&gt; Unit )</ID>
     <ID>LongMethod:VaultLockGate.kt$@Composable fun VaultLockGate( lockState: LockState, error: String?, lockoutRemainingMs: Long, biometricEnabled: Boolean, onBiometricUnlock: () -&gt; Unit, onSetup: (String) -&gt; Unit, onUnlock: (String) -&gt; Unit, onSkip: (() -&gt; Unit)? = null, onForgotPin: (() -&gt; Unit)? = null, onPinTyped: () -&gt; Unit = {} )</ID>
@@ -406,8 +402,6 @@
     <ID>MaxLineLength:BillScreen.kt$val groupedBills = remember(filteredBills) { filteredBills.groupBy { DateUtils.formatDate(it.date) }.mapValues { it.value.sortedByDescending { b -&gt; b.createdAt } } }</ID>
     <ID>MaxLineLength:BillViewModel.kt$BillViewModel$s.currentYearMonth</ID>
     <ID>MaxLineLength:BillViewModel.kt$BillViewModel$val filterActive = filter.type != null || filter.category != null || filter.paymentMethod != null || filter.amountMin != null || filter.amountMax != null</ID>
-    <ID>MaxLineLength:BillWidgetProvider.kt$BillWidgetProvider$bannerText = context.getString(R.string.widget_month_balance_format, "$sign${WidgetData.formatMoneyCompact(context, balance)}")</ID>
-    <ID>MaxLineLength:BillWidgetProvider.kt$BillWidgetProvider$views.setTextViewText(R.id.widget_budget_amount, WidgetData.formatMoneyCompact(context, budget.totalBudget - monthlyExpense))</ID>
     <ID>MaxLineLength:BudgetScreen.kt$Text(if (state.budget != null) stringResource(R.string.budget_modify) else stringResource(R.string.budget_set), fontWeight = FontWeight.Bold)</ID>
     <ID>MaxLineLength:BudgetScreen.kt$Text(stringResource(R.string.budget_total), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
     <ID>MaxLineLength:BudgetScreen.kt$Text(stringResource(R.string.budget_used), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
@@ -478,7 +472,6 @@
     <ID>MaxLineLength:GeneralSettingsScreen.kt$val startPages = mapOf("dashboard" to stringResource(R.string.settings_home), "asset" to stringResource(R.string.settings_items), "bill" to stringResource(R.string.bill_title), "life" to stringResource(R.string.life_title))</ID>
     <ID>MaxLineLength:GeneralSettingsScreen.kt$val themeOptions = listOf(Triple("SYSTEM", stringResource(R.string.settings_follow_system), Icons.Outlined.BrightnessAuto), Triple("LIGHT", stringResource(R.string.settings_theme_light), Icons.Outlined.WbSunny), Triple("DARK", stringResource(R.string.settings_theme_dark), Icons.Outlined.Brightness3))</ID>
     <ID>MaxLineLength:GeneralSettingsScreen.kt$val themes = mapOf("SYSTEM" to stringResource(R.string.settings_follow_system), "LIGHT" to stringResource(R.string.settings_theme_light), "DARK" to stringResource(R.string.settings_theme_dark))</ID>
-    <ID>MaxLineLength:HabitWidgetProvider.kt$HabitWidgetProvider$if (checked) context.getColor(R.color.widget_v2_text_tertiary) else context.getColor(R.color.widget_v2_text_primary)</ID>
     <ID>MaxLineLength:HiltModules.kt$AppModule$lifeItemRepository: LifeItemRepository</ID>
     <ID>MaxLineLength:LifeCounterWidgetProvider.kt$LifeCounterWidgetProvider$override</ID>
     <ID>MaxLineLength:LifeDailyCheckWorker.kt$LifeDailyCheckWorker$reportRepo.insertReport(LifeReport(type = "MONTHLY", periodStart = monthStart, periodEnd = monthEnd, reportData = """{"focusMinutes":$focusMinutes}"""))</ID>
@@ -565,7 +558,6 @@
     <ID>NestedBlockDepth:LifeDailyCheckWorker.kt$LifeDailyCheckWorker$private suspend fun checkCountdownExpiry()</ID>
     <ID>NestedBlockDepth:LifeDailyCheckWorker.kt$LifeDailyCheckWorker$private suspend fun checkSubscriptionBilling()</ID>
     <ID>NestedBlockDepth:LifeDetailViewModel.kt$internal fun multiSelectCountsOf(rows: List&lt;LifeItemDao.TemplateDayRow&gt;): Map&lt;String, Map&lt;String, Int&gt;&gt;</ID>
-    <ID>NewLineAtEndOfFile:QuickBillWidgetProvider.kt$com.palmnote.ui.widget.QuickBillWidgetProvider.kt</ID>
     <ID>ReturnCount:BillCsvImporter.kt$BillCsvImporter$fun detectFormat(lines: List&lt;String&gt;): CsvFormat</ID>
     <ID>ReturnCount:BillImportViewModel.kt$BillImportViewModel$private fun detectEncoding(rawBytes: ByteArray): String</ID>
     <ID>ReturnCount:BillOcrParser.kt$BillOcrParser$private fun isNewTransaction(line: String, prevLines: List&lt;String&gt;): Boolean</ID>

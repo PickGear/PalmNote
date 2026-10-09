@@ -4,6 +4,7 @@ import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.Intent
+import android.view.View
 import android.widget.RemoteViews
 import com.palmnote.app.R
 import com.palmnote.domain.model.BillType
@@ -83,6 +84,18 @@ object WidgetHelper {
         )
     }
 
+    /** 账单横幅深链：到报表页（MainActivity 把 "report" 转 pendingNavigation）。 */
+    fun createReportPendingIntent(context: Context, widgetId: Int): PendingIntent {
+        val intent = Intent(context, com.palmnote.MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            putExtra("WIDGET_TAB", WidgetDeepLink.TAB_REPORT)
+        }
+        return PendingIntent.getActivity(
+            context, WidgetDeepLink.SEG_BILL_REPORT + widgetId, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+    }
+
     fun createPendingIntent(context: Context, requestCode: Int, tab: String): PendingIntent {
         val intent = Intent(context, com.palmnote.MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
@@ -100,15 +113,18 @@ object WidgetHelper {
         views: RemoteViews,
         containerId: Int,
         item: com.palmnote.data.db.entity.LifeItem,
-        accentCircleRes: Int = R.drawable.widget_circle_accent,
+        accentColor: Int,
         togglePendingIntent: android.app.PendingIntent? = null
     ) {
         val itemView = RemoteViews(context.packageName, R.layout.widget_todo_item)
         val completed = item.status == "COMPLETED"
-        itemView.setInt(
-            R.id.widget_item_check, "setBackgroundResource",
-            if (completed) accentCircleRes else R.drawable.widget_ring_gray
-        )
+        // 圆圈三层结构（灰环/可着色圆底/对勾）：主题色经 setColorFilter 运行时着色，全主题生效
+        itemView.setViewVisibility(R.id.widget_item_check_ring, if (completed) View.GONE else View.VISIBLE)
+        itemView.setViewVisibility(R.id.widget_item_check_fill, if (completed) View.VISIBLE else View.GONE)
+        if (completed) {
+            itemView.setInt(R.id.widget_item_check_fill, "setColorFilter", accentColor)
+        }
+        itemView.setViewVisibility(R.id.widget_item_check, if (completed) View.VISIBLE else View.GONE)
         // 整行可点：桌面直接勾选/取消（传入 PendingIntent 时）
         togglePendingIntent?.let { itemView.setOnClickPendingIntent(R.id.widget_todo_row, it) }
         // 无障碍：行内容描述（API 30+ RemoteViews 支持，低版本自动忽略）
