@@ -1,78 +1,51 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  订阅一个色片（半宽，两列网格用）：淡彩胶囊底 + 同族色点 + 服务名（上行）+ 金额与剩余天数（下行）。
-  半宽下四个元素挤不进一行，所以拆成两行 —— 参考主页「物品分布」的色片也是这种紧凑两行结构。
+  订阅时间轴的一行：色点（落在竖线上）+ 日期 + 名称 + 金额。
+  色点与金额运行时着该行的色族色（金额直接着在文字上）。
 -->
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="0dp"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_subscription_row"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_weight="1"
-    android:layout_marginEnd="4dp">
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingVertical="5dp">
 
     <ImageView
-        android:id="@+id/widget_subscription_item_chip"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:src="@drawable/widget_chip_round"
+        android:id="@+id/widget_subscription_item_dot"
+        android:layout_width="9dp"
+        android:layout_height="9dp"
+        android:src="@drawable/widget_shape_circle"
         android:contentDescription="@null" />
 
-    <LinearLayout
-        android:layout_width="match_parent"
+    <TextView
+        android:id="@+id/widget_subscription_item_date"
+        android:layout_width="34dp"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:paddingHorizontal="10dp"
-        android:paddingVertical="7dp">
+        android:textSize="@dimen/widget_text_micro"
+        android:textColor="@color/widget_v2_text_tertiary"
+        android:layout_marginStart="6dp"
+        android:maxLines="1" />
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
+    <TextView
+        android:id="@+id/widget_subscription_item_name"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:textSize="12sp"
+        android:textColor="@color/widget_v2_text_primary"
+        android:textStyle="bold"
+        android:layout_marginStart="6dp"
+        android:maxLines="1"
+        android:ellipsize="end" />
 
-            <ImageView
-                android:id="@+id/widget_subscription_item_dot"
-                android:layout_width="8dp"
-                android:layout_height="8dp"
-                android:src="@drawable/widget_shape_circle"
-                android:contentDescription="@null" />
+    <TextView
+        android:id="@+id/widget_subscription_item_price"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        android:layout_marginStart="6dp"
+        android:maxLines="1" />
 
-            <TextView
-                android:id="@+id/widget_subscription_item_name"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:textSize="13sp"
-                android:textColor="@color/widget_v2_text_primary"
-                android:layout_marginStart="6dp"
-                android:maxLines="1"
-                android:ellipsize="end" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:layout_marginTop="2dp">
-
-            <TextView
-                android:id="@+id/widget_subscription_item_price"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                android:textColor="@color/widget_v2_text_primary"
-                android:maxLines="1" />
-
-            <TextView
-                android:id="@+id/widget_subscription_item_days"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textSize="@dimen/widget_text_micro"
-                android:textColor="@color/widget_v2_text_secondary"
-                android:layout_marginStart="4dp"
-                android:maxLines="1" />
-        </LinearLayout>
-    </LinearLayout>
-</FrameLayout>
+</LinearLayout>

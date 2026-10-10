@@ -7,21 +7,17 @@
     <color name="widget_v2_card_bg_40">#661C211F</color>
     <color name="widget_v2_soft_mint">#FF22322D</color>
     <color name="widget_v2_soft_gray">#FF262C2A</color>
-    <color name="widget_v2_pill_soft">#FF1E3A3C</color>
     <color name="widget_v2_text_primary">#FFECEFF0</color>
     <color name="widget_v2_text_secondary">#FF9DB0AB</color>
     <color name="widget_v2_text_tertiary">#FF74857F</color>
-    <color name="widget_v2_text_footer">#FF8A9994</color>
     <color name="widget_v2_accent">#FF2EC0D6</color>
     <color name="widget_v2_ring">#FF47524F</color>
+    <!-- 涨跌（总资产胶囊）：夜间同色相提亮 -->
+    <color name="widget_delta_up">#FF34D399</color>
+    <color name="widget_delta_down">#FFF87171</color>
+    <color name="widget_delta_up_tint">#FF14301F</color>
+    <color name="widget_delta_down_tint">#FF3A1F1F</color>
 
-    <!-- 组件调色板（夜间）：同色相、略提亮，保证深色卡上够清楚 -->
-    <color name="widget_palette_1">#FF2EC0D6</color>
-    <color name="widget_palette_2">#FFFBBF24</color>
-    <color name="widget_palette_3">#FFF87171</color>
-    <color name="widget_palette_4">#FFA78BFA</color>
-    <color name="widget_palette_5">#FF60A5FA</color>
-    <color name="widget_palette_6">#FF34D399</color>
 
     <!-- 色族（夜间）：淡底压到深色卡上不刺眼，前景提亮保证对比 -->
     <color name="widget_tint_1">#FF3A2A1C</color>

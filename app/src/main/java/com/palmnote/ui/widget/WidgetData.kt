@@ -104,23 +104,6 @@ object WidgetData {
     )
 
     /**
-     * 组件调色板：按条目区分用 —— 一个习惯一个色、一块瓷片一个色。
-     * 参考稿里正是这样（运动健身青、餐饮橙、每支车队一色），不局限在单一强调色上。
-     * 深浅两套色值由 `values` / `values-night` 分别给。
-     */
-    fun widgetPalette(context: Context): IntArray =
-        PALETTE_COLOR_IDS.map { context.getColor(it) }.toIntArray()
-
-    private val PALETTE_COLOR_IDS = intArrayOf(
-        R.color.widget_palette_1,
-        R.color.widget_palette_2,
-        R.color.widget_palette_3,
-        R.color.widget_palette_4,
-        R.color.widget_palette_5,
-        R.color.widget_palette_6
-    )
-
-    /**
      * 窄格子里的金额：**不带货币符号、只到元、不带正负号**（返回绝对值）。
      *
      * 账单组件那三格在 3 格宽时每格只有约 47dp 放文字（格子 67dp 减去 20dp 内边距），

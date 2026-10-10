@@ -49,7 +49,6 @@ internal class TodoViewsFactory(
 ) : RemoteViewsService.RemoteViewsFactory {
 
     private var todos: List<LifeItem> = emptyList()
-    private var accent = WidgetData.AccentTheme(accent = 0, onAccent = 0)
 
     override fun onCreate() = Unit
 
@@ -64,7 +63,6 @@ internal class TodoViewsFactory(
         )
         val prefs = entryPoint.preferencesManager()
         runBlocking {
-            accent = WidgetData.readAccentTheme(context, prefs)
             todos = WidgetData.fetchTodayTodos(
                 entryPoint.lifeItemDao(),
                 entryPoint.lifeTemplateDao(),
@@ -82,7 +80,7 @@ internal class TodoViewsFactory(
 
     override fun getViewAt(position: Int): RemoteViews? {
         val item = todos.getOrNull(position) ?: return null
-        return WidgetHelper.todoRowViews(context, item, accent.accent)
+        return WidgetHelper.todoRowViews(context, item)
     }
 
     override fun getLoadingView(): RemoteViews? = null

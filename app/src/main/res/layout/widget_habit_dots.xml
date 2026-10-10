@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 习惯点阵的一行：近 7 天（从 6 天前排到今天）各一个圆点，整行可点＝给这个习惯打今天的卡 -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_habit_dots_row"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingVertical="3dp">
+
+    <ImageView
+        android:id="@+id/widget_habit_dot_0"
+        android:layout_width="16dp"
+        android:layout_height="16dp"
+        android:src="@drawable/widget_shape_circle"
+        android:contentDescription="@null" />
+
+    <ImageView
+        android:id="@+id/widget_habit_dot_1"
+        android:layout_width="16dp"
+        android:layout_height="16dp"
+        android:layout_marginStart="6dp"
+        android:src="@drawable/widget_shape_circle"
+        android:contentDescription="@null" />
+
+    <ImageView
+        android:id="@+id/widget_habit_dot_2"
+        android:layout_width="16dp"
+        android:layout_height="16dp"
+        android:layout_marginStart="6dp"
+        android:src="@drawable/widget_shape_circle"
+        android:contentDescription="@null" />
+
+    <ImageView
+        android:id="@+id/widget_habit_dot_3"
+        android:layout_width="16dp"
+        android:layout_height="16dp"
+        android:layout_marginStart="6dp"
+        android:src="@drawable/widget_shape_circle"
+        android:contentDescription="@null" />
+
+    <ImageView
+        android:id="@+id/widget_habit_dot_4"
+        android:layout_width="16dp"
+        android:layout_height="16dp"
+        android:layout_marginStart="6dp"
+        android:src="@drawable/widget_shape_circle"
+        android:contentDescription="@null" />
+
+    <ImageView
+        android:id="@+id/widget_habit_dot_5"
+        android:layout_width="16dp"
+        android:layout_height="16dp"
+        android:layout_marginStart="6dp"
+        android:src="@drawable/widget_shape_circle"
+        android:contentDescription="@null" />
+
+    <ImageView
+        android:id="@+id/widget_habit_dot_6"
+        android:layout_width="16dp"
+        android:layout_height="16dp"
+        android:layout_marginStart="6dp"
+        android:src="@drawable/widget_shape_circle"
+        android:contentDescription="@null" />
+
+</LinearLayout>

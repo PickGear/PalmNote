@@ -28,11 +28,6 @@ class LifeCounterWidgetProvider : ScopedWidgetProvider() {
     }
 
     override suspend fun onUpdateAsync(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
-        val entryPoint = EntryPointAccessors.fromApplication(
-            context.applicationContext,
-            WidgetEntryPoint::class.java
-        )
-        val accent = WidgetData.readAccentTheme(context, entryPoint.preferencesManager())
         val events = collectCounterEvents(context)
         publish(context, appWidgetManager, appWidgetIds) { appWidgetId, _ ->
             // 按尺寸分档：宽到 400dp 以上显示多事件列表，否则只显示最近一个焦点事件
@@ -47,10 +42,7 @@ class LifeCounterWidgetProvider : ScopedWidgetProvider() {
                     events,
                     isLarge = width >= LARGE_WIDTH_DP,
                     compactHeight = height < COMPACT_HEIGHT_DP
-                ).also {
-                    // 焦点卡底运行时取主题色（此前硬编码青色）
-                    it.setInt(R.id.widget_counter_focus_bg, "setColorFilter", accent.accent)
-                }
+                )
             }
         }
     }
@@ -95,6 +87,10 @@ class LifeCounterWidgetProvider : ScopedWidgetProvider() {
         compactHeight: Boolean = false
     ): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.widget_counter_unified)
+        // 装饰色走色族（不占全局强调色）：倒计时用粉（稿子如此），徽章里的时钟字形着白
+        val family = WidgetData.colorFamily(context, 3)
+        views.setInt(R.id.widget_counter_badge, "setColorFilter", family.hue)
+        views.setInt(R.id.widget_counter_badge_icon, "setColorFilter", android.graphics.Color.WHITE)
         views.setTextViewText(R.id.widget_counter_count, "${events.size}")
         val firstEvent = events.firstOrNull()
         // 大档：整列多事件（首事件并入列表）；小/中档：只留单个焦点事件，窄格子里才不至于挤成一列
@@ -119,19 +115,15 @@ class LifeCounterWidgetProvider : ScopedWidgetProvider() {
             views.removeAllViews(R.id.widget_more_events)
             views.setTextViewText(R.id.widget_event_name, firstEvent.name)
             views.setTextViewText(R.id.widget_days_count, "${firstEvent.daysLeft}")
+            views.setTextColor(R.id.widget_days_count, family.hue)
             val datePattern = context.getString(R.string.widget_date_format_cn)
             views.setTextViewText(
                 R.id.widget_event_date,
                 firstEvent.targetDate.format(DateTimeFormatter.ofPattern(datePattern))
             )
-            // 高度不足时收起日期行（次要信息），名称、天数与进度环保留
+            // 高度不足时收起日期行（次要信息），天数与日历条保留
             views.setViewVisibility(R.id.widget_event_date, if (compactHeight) View.GONE else View.VISIBLE)
-            // 周年滚动进度环：生日/纪念日才有周期，一次性倒计时隐藏
-            val rollPercent = firstEvent.progressPercent
-            views.setViewVisibility(R.id.widget_counter_ring, if (rollPercent != null) View.VISIBLE else View.GONE)
-            if (rollPercent != null) {
-                views.setProgressBar(R.id.widget_counter_ring, 100, rollPercent, false)
-            }
+            bindDateStrip(context, views, firstEvent.targetDate, family.hue)
             // 点焦点事件 → 直达该记录详情页（深链）
             views.setOnClickPendingIntent(
                 R.id.widget_first_event,
@@ -148,6 +140,38 @@ class LifeCounterWidgetProvider : ScopedWidgetProvider() {
         )
         return views
     }
+
+    /**
+     * 横向日历条：目标日前后各几天，目标日那格上色族色、文字转白并放大一号。
+     * 格子等宽（布局里写死的 weight），只换颜色与字号 —— RemoteViews 改不了格子宽度。
+     */
+    private fun bindDateStrip(context: Context, views: RemoteViews, target: LocalDate, highlight: Int) {
+        val secondary = context.getColor(R.color.widget_v2_text_secondary)
+        dateCellIds.forEachIndexed { index, (bgId, textId) ->
+            val date = target.plusDays((index - STRIP_LEAD).toLong())
+            views.setTextViewText(textId, "${date.dayOfMonth}")
+            val isTarget = date == target
+            views.setViewVisibility(bgId, if (isTarget) View.VISIBLE else View.GONE)
+            if (isTarget) {
+                views.setInt(bgId, "setColorFilter", highlight)
+                views.setTextColor(textId, android.graphics.Color.WHITE)
+                views.setTextViewTextSize(textId, android.util.TypedValue.COMPLEX_UNIT_SP, 13f)
+            } else {
+                views.setTextColor(textId, secondary)
+                views.setTextViewTextSize(textId, android.util.TypedValue.COMPLEX_UNIT_SP, 11f)
+            }
+        }
+    }
+
+    private val dateCellIds = listOf(
+        R.id.widget_counter_date_bg_0 to R.id.widget_counter_date_0,
+        R.id.widget_counter_date_bg_1 to R.id.widget_counter_date_1,
+        R.id.widget_counter_date_bg_2 to R.id.widget_counter_date_2,
+        R.id.widget_counter_date_bg_3 to R.id.widget_counter_date_3,
+        R.id.widget_counter_date_bg_4 to R.id.widget_counter_date_4,
+        R.id.widget_counter_date_bg_5 to R.id.widget_counter_date_5,
+        R.id.widget_counter_date_bg_6 to R.id.widget_counter_date_6
+    )
 
     private fun com.palmnote.data.db.entity.LifeItem.toCounterEvent(
         today: LocalDate,
@@ -166,28 +190,8 @@ class LifeCounterWidgetProvider : ScopedWidgetProvider() {
             itemId = id,
             name = title,
             daysLeft = daysLeft,
-            targetDate = targetDate,
-            progressPercent = yearlyRollPercent(anchor, today, targetDate, yearly, lunar)
+            targetDate = targetDate
         )
-    }
-
-    /**
-     * 周年滚动进度：本期（上一次周年 → 下一次周年）已过比例 0..100。
-     * 上一次周年由「一年前的今天」反推，农历也按农历反算，周期因此是真实间隔而非固定 365。
-     * 一次性倒计时没有周期，返回 null（环隐藏）。
-     */
-    internal fun yearlyRollPercent(
-        anchor: LocalDate,
-        today: LocalDate,
-        targetDate: LocalDate,
-        yearly: Boolean,
-        lunar: Boolean
-    ): Int? {
-        if (!yearly) return null
-        val previous = counterTargetDate(anchor, today.minusYears(1), yearly = true, lunar = lunar)
-        val cycleDays = ChronoUnit.DAYS.between(previous, targetDate)
-        if (cycleDays <= 0) return null
-        return (ChronoUnit.DAYS.between(previous, today) * 100 / cycleDays).toInt().coerceIn(0, 100)
     }
 
     /** 条目字段里的 `lunar` 开关（生日模板才有）；解析不出按公历。 */
@@ -202,9 +206,7 @@ class LifeCounterWidgetProvider : ScopedWidgetProvider() {
         val itemId: Long,
         val name: String,
         val daysLeft: Long,
-        val targetDate: LocalDate,
-        /** 周年滚动进度 0..100；一次性倒计时为 null。 */
-        val progressPercent: Int? = null
+        val targetDate: LocalDate
     )
 
     private companion object {
@@ -217,6 +219,9 @@ class LifeCounterWidgetProvider : ScopedWidgetProvider() {
 
         /** 高度不足 2 格（160dp）时收起次要元素。 */
         const val COMPACT_HEIGHT_DP = 160
+
+        /** 日历条 7 格：目标日在前 5 天后 1 天的位置上。 */
+        const val STRIP_LEAD = 5
     }
 }
 

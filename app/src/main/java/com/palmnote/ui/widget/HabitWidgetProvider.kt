@@ -23,7 +23,8 @@ import java.time.LocalDate
 import kotlinx.coroutines.flow.first
 
 /**
- * 今日打卡组件：列出 kind = HABIT 的生活模板，点行就地切换当天打卡。
+ * 今日打卡组件（定稿）：左栏给连击最长的那个习惯的连续天数，右侧是「习惯 × 近 7 天」点阵。
+ * 点阵行的整行点击＝给该习惯打今天的卡。
  *
  * 与生活页详情**同一份数据**（LifeItem + LifeTemplate）：已打卡 = 今天该模板有一条非
  * ARCHIVED 的行；连击用 [StreakEngine] 按 [LifeItemDao.getDistinctCheckInDays] 的天数算，
@@ -45,7 +46,7 @@ class HabitWidgetProvider : ScopedWidgetProvider() {
         val name: String,
         val checked: Boolean,
         val streak: Int,
-        /** 近 7 天（从 6 天前到今天）是否打卡 —— 圆点矩阵的一行 */
+        /** 近 7 天（从 6 天前到今天）是否打卡 —— 点阵的一行 */
         val recent: List<Boolean> = emptyList()
     )
 
@@ -61,10 +62,9 @@ class HabitWidgetProvider : ScopedWidgetProvider() {
             itemDao = entryPoint.lifeItemDao(),
             includeDemo = preferences.lifeDemoMode.first()
         )
-        val accent = WidgetData.readAccentTheme(context, preferences)
 
         publish(context, appWidgetManager, appWidgetIds) { appWidgetId, _ ->
-            bindViews(context, appWidgetId, rows, accent)
+            bindViews(context, appWidgetId, rows)
         }
     }
 
@@ -96,26 +96,35 @@ class HabitWidgetProvider : ScopedWidgetProvider() {
     internal fun bindViews(
         context: Context,
         appWidgetId: Int,
-        rows: List<HabitRow>,
-        accent: WidgetData.AccentTheme
+        rows: List<HabitRow>
     ): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.widget_habit_unified)
-        views.removeAllViews(R.id.widget_habit_list)
-        // 一个习惯一个颜色（按行序取调色板）：参考稿里就是这么区分的，整片网格也更好看
-        val palette = WidgetData.widgetPalette(context)
-        rows.take(MAX_ROWS).forEachIndexed { index, row ->
-            views.addView(
-                R.id.widget_habit_list,
-                habitRow(context, row, palette[index % palette.size])
-            )
-        }
-
-        views.setInt(R.id.widget_habit_badge, "setColorFilter", accent.accent)
-        val checkedCount = rows.count { it.checked }
-        views.setTextViewText(R.id.widget_habit_count, "$checkedCount/${rows.size}")
-        views.setTextColor(R.id.widget_habit_count, accent.accent)
+        // 组件自身的徽章与完成度用第一个色族（装饰色不占全局强调色）
+        val widgetFamily = WidgetData.colorFamily(context, 0)
+        views.setInt(R.id.widget_habit_badge, "setColorFilter", widgetFamily.hue)
+        views.setTextColor(R.id.widget_habit_count, widgetFamily.hue)
+        views.setTextViewText(R.id.widget_habit_count, "${rows.count { it.checked }}/${rows.size}")
         views.setViewVisibility(R.id.widget_habit_count, if (rows.isEmpty()) View.GONE else View.VISIBLE)
         views.setViewVisibility(R.id.widget_habit_empty, if (rows.isEmpty()) View.VISIBLE else View.GONE)
+
+        // 左栏：连击最长的那个习惯（数字与习惯名同色）
+        val topIndex = rows.indices.maxByOrNull { rows[it].streak }
+        val top = topIndex?.let { rows[it] }
+        if (top != null) {
+            val topFamily = WidgetData.colorFamily(context, topIndex)
+            views.setTextViewText(R.id.widget_habit_streak, "${top.streak}")
+            views.setTextColor(R.id.widget_habit_streak, topFamily.hue)
+            views.setTextViewText(R.id.widget_habit_streak_name, top.name)
+            views.setTextColor(R.id.widget_habit_streak_name, topFamily.hue)
+        }
+
+        // 点阵：一行一个习惯，行本身是打卡热区
+        views.removeAllViews(R.id.widget_habit_grid)
+        val shown = rows.take(MAX_ROWS)
+        shown.forEachIndexed { index, row ->
+            views.addView(R.id.widget_habit_grid, dotsRow(context, row, index))
+        }
+        views.setTextViewText(R.id.widget_habit_names, shown.joinToString(" · ") { it.name })
 
         views.setOnClickPendingIntent(
             R.id.widget_layout,
@@ -124,46 +133,24 @@ class HabitWidgetProvider : ScopedWidgetProvider() {
         return views
     }
 
-    private fun habitRow(
-        context: Context,
-        row: HabitRow,
-        rowColor: Int
-    ): RemoteViews {
-        val itemView = RemoteViews(context.packageName, R.layout.widget_habit_item)
-        // 圆圈三层结构（灰环/可着色圆底/对勾）：主题色经 setColorFilter 运行时着色，全主题生效
-        itemView.setViewVisibility(R.id.widget_habit_check_ring, if (row.checked) View.GONE else View.VISIBLE)
-        itemView.setViewVisibility(R.id.widget_habit_check_fill, if (row.checked) View.VISIBLE else View.GONE)
-        if (row.checked) {
-            itemView.setInt(R.id.widget_habit_check_fill, "setColorFilter", rowColor)
-        }
-        itemView.setViewVisibility(R.id.widget_habit_check, if (row.checked) View.VISIBLE else View.GONE)
-        itemView.setTextViewText(R.id.widget_habit_check, if (row.checked) "✓" else "")
-        itemView.setTextViewText(R.id.widget_habit_name, row.name)
-        val nameColor = if (row.checked) {
-            context.getColor(R.color.widget_v2_text_tertiary)
-        } else {
-            context.getColor(R.color.widget_v2_text_primary)
-        }
-        itemView.setTextColor(R.id.widget_habit_name, nameColor)
-        itemView.setTextViewText(
-            R.id.widget_habit_streak,
-            if (row.streak > 0) context.getString(R.string.widget_streak_format, row.streak) else ""
-        )
-        // 近 7 天圆点：打过卡着主题色、没打卡着中性灰（图形是这行的主角）
+    /** 点阵的一行：一个习惯的 7 个圆点，已打卡着该行的色族色、没打卡着中性灰。 */
+    private fun dotsRow(context: Context, row: HabitRow, index: Int): RemoteViews {
+        val rowView = RemoteViews(context.packageName, R.layout.widget_habit_dots)
+        val family = WidgetData.colorFamily(context, index)
         val emptyDot = context.getColor(R.color.widget_v2_ring)
-        habitDotIds.forEachIndexed { index, dotId ->
-            val done = row.recent.getOrElse(index) { false }
-            itemView.setInt(dotId, "setColorFilter", if (done) rowColor else emptyDot)
+        habitDotIds.forEachIndexed { dotIndex, dotId ->
+            val done = row.recent.getOrElse(dotIndex) { false }
+            rowView.setInt(dotId, "setColorFilter", if (done) family.hue else emptyDot)
         }
         if (android.os.Build.VERSION.SDK_INT >= 30) {
             val state = if (row.checked) context.getString(R.string.widget_completed) else ""
-            itemView.setContentDescription(R.id.widget_habit_row, "${row.name} $state".trim())
+            rowView.setContentDescription(R.id.widget_habit_dots_row, "${row.name} $state".trim())
         }
-        // 整行可点：18dp 圆圈太小，全行作为打卡热区
-        val toggle = HabitCheckInReceiver.checkInPendingIntent(context, row.templateId)
-        itemView.setOnClickPendingIntent(R.id.widget_habit_row, toggle)
-        itemView.setOnClickPendingIntent(R.id.widget_habit_check, toggle)
-        return itemView
+        rowView.setOnClickPendingIntent(
+            R.id.widget_habit_dots_row,
+            HabitCheckInReceiver.checkInPendingIntent(context, row.templateId)
+        )
+        return rowView
     }
 
     private val habitDotIds = listOf(
@@ -178,9 +165,9 @@ class HabitWidgetProvider : ScopedWidgetProvider() {
 
     companion object {
         /** 组件里最多列几行（再多交给生活页）。 */
-        const val MAX_ROWS = 4
+        const val MAX_ROWS = 5
 
-        /** 圆点矩阵一行 7 格，从 6 天前排到今天。 */
+        /** 点阵一行 7 格，从 6 天前排到今天。 */
         private const val RECENT_DAYS = 7
 
         fun requestUpdateAll(context: Context) {

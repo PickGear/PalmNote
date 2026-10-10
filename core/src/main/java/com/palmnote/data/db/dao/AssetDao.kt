@@ -81,6 +81,10 @@ interface AssetDao {
     @Query("SELECT category, COUNT(*) as count, SUM(purchasePrice) as totalValue FROM assets GROUP BY category ORDER BY count DESC")
     fun getCategoryDistribution(): Flow<List<CategoryCount>>
 
+    /** 在用物品按分类的件数分布（物品组件用）。只数 HELD，与组件头部「共 N 件」同口径。 */
+    @Query("SELECT category, COUNT(*) as count FROM assets WHERE status = 'HELD' GROUP BY category ORDER BY count DESC, category ASC")
+    fun getHeldCategoryCounts(): Flow<List<HeldCategoryCount>>
+
     @Query("SELECT brand, COUNT(*) as count, SUM(purchasePrice) as totalValue FROM assets WHERE brand != '' GROUP BY brand ORDER BY count DESC LIMIT 10")
     fun getBrandDistribution(): Flow<List<BrandCount>>
 
@@ -185,6 +189,12 @@ data class CategoryCount(
     val category: String,
     val count: Int,
     val totalValue: Long = 0
+)
+
+/** 只要分类与件数的投影（物品组件占比条与色片网格用）。 */
+data class HeldCategoryCount(
+    val category: String,
+    val count: Int
 )
 
 data class BrandCount(

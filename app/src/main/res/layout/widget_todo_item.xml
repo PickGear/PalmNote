@@ -1,69 +1,53 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!--
+  待办色片（清单一行）：淡彩胶囊底 + 同族色点 + 标题 + 到期说明。底与色点都是白底占位，
+  运行时 setColorFilter 上该条目的色族色；完成的行用划线 + 三级色文字区分。
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_todo_row"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:orientation="horizontal"
-    android:gravity="center_vertical"
-    android:paddingVertical="9dp">
+    android:layout_height="wrap_content">
 
-    <!-- 左侧色条：一个条目一个颜色（按 id 取调色板），参考稿里那种带色条的清单 -->
     <ImageView
-        android:id="@+id/widget_todo_bar"
-        android:layout_width="3dp"
+        android:id="@+id/widget_todo_chip_bg"
+        android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginEnd="10dp"
-        android:src="@drawable/widget_shape_card"
+        android:src="@drawable/widget_chip_round"
         android:contentDescription="@null" />
 
-    <FrameLayout
-        android:layout_width="18dp"
-        android:layout_height="18dp">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="8dp"
+        android:paddingVertical="6dp">
 
-        <!-- 未完成：灰环（固定色，不随主题） -->
         <ImageView
-            android:id="@+id/widget_item_check_ring"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:src="@drawable/widget_ring_gray"
-            android:contentDescription="@null" />
-
-        <!-- 已完成：可着色圆底（setColorFilter 运行时取主题色） -->
-        <ImageView
-            android:id="@+id/widget_item_check_fill"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:id="@+id/widget_todo_dot"
+            android:layout_width="8dp"
+            android:layout_height="8dp"
             android:src="@drawable/widget_shape_circle"
-            android:visibility="gone"
             android:contentDescription="@null" />
 
         <TextView
-            android:id="@+id/widget_item_check"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:textSize="11sp"
-            android:textStyle="bold"
-            android:textColor="#FFFFFF"
-            android:gravity="center" />
-    </FrameLayout>
+            android:id="@+id/widget_item_text"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textSize="13sp"
+            android:textColor="@color/widget_v2_text_primary"
+            android:layout_marginStart="6dp"
+            android:maxLines="1"
+            android:ellipsize="end" />
 
-    <TextView
-        android:id="@+id/widget_item_text"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:textSize="15sp"
-        android:textColor="@color/widget_v2_text_primary"
-        android:layout_marginStart="8dp"
-        android:maxLines="1"
-        android:ellipsize="end" />
-
-    <TextView
-        android:id="@+id/widget_item_due"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textSize="10sp"
-        android:textColor="@color/widget_v2_text_footer"
-        android:layout_marginStart="6dp" />
-
-</LinearLayout>
+        <TextView
+            android:id="@+id/widget_item_due"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="@dimen/widget_text_micro"
+            android:textColor="@color/widget_v2_text_tertiary"
+            android:layout_marginStart="4dp"
+            android:maxLines="1" />
+    </LinearLayout>
+</FrameLayout>

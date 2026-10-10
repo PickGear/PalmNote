@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  物品组件的选择器/确认框静态预览（`previewLayout`）：内容写死，跟运行时布局同一套结构
+  （头部 + 占比条 + 两列色片网格）。运行时布局的色片网格是空的、占比条与色片都靠 setColorFilter
+  上色，静态下没法跑，所以这里改用 backgroundTint 上色族色。
+-->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -10,28 +15,104 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:gravity="center_vertical">
+        android:gravity="center_vertical"
+        android:baselineAligned="false">
 
-        <ImageView
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:src="@drawable/widget_ic_box"
-            android:contentDescription="@null" />
+        <FrameLayout
+            android:layout_width="@dimen/widget_icon_badge"
+            android:layout_height="@dimen/widget_icon_badge">
+
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/widget_shape_circle"
+                android:backgroundTint="@color/widget_hue_2"
+                android:contentDescription="@null" />
+
+            <ImageView
+                android:layout_width="11dp"
+                android:layout_height="11dp"
+                android:layout_gravity="center"
+                android:src="@drawable/widget_ic_box_white"
+                android:contentDescription="@null" />
+        </FrameLayout>
 
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="@string/widget_asset_title"
-            android:textSize="15sp"
+            android:textSize="@dimen/widget_text_title"
             android:textColor="@color/widget_v2_text_primary"
             android:textStyle="bold"
-            android:layout_marginStart="6dp" />
+            android:layout_marginStart="8dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/widget_preview_asset_total"
+            android:textSize="@dimen/widget_text_micro"
+            android:textColor="@color/widget_v2_text_tertiary" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="10dp"
+        android:orientation="horizontal"
+        android:baselineAligned="false"
+        android:layout_marginTop="6dp">
 
         <ImageView
-            android:layout_width="14dp"
-            android:layout_height="14dp"
-            android:src="@drawable/widget_ic_chevron_white"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginEnd="3dp"
+            android:background="@drawable/widget_seg_slot"
+            android:backgroundTint="@color/widget_hue_1"
+            android:contentDescription="@null" />
+
+        <ImageView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginEnd="3dp"
+            android:background="@drawable/widget_seg_slot"
+            android:backgroundTint="@color/widget_hue_2"
+            android:contentDescription="@null" />
+
+        <ImageView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginEnd="3dp"
+            android:background="@drawable/widget_seg_slot"
+            android:backgroundTint="@color/widget_hue_3"
+            android:contentDescription="@null" />
+
+        <ImageView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginEnd="3dp"
+            android:background="@drawable/widget_seg_slot"
+            android:backgroundTint="@color/widget_hue_4"
+            android:contentDescription="@null" />
+
+        <ImageView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginEnd="3dp"
+            android:background="@drawable/widget_seg_slot"
+            android:backgroundTint="@color/widget_hue_5"
+            android:contentDescription="@null" />
+
+        <ImageView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@drawable/widget_seg_slot"
+            android:backgroundTint="@color/widget_hue_6"
             android:contentDescription="@null" />
     </LinearLayout>
 
@@ -39,59 +120,330 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:layout_marginTop="10dp">
+        android:baselineAligned="false"
+        android:layout_marginTop="6dp">
 
-        <LinearLayout
+        <FrameLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:orientation="vertical"
-            android:background="@drawable/widget_soft_card"
-            android:padding="10dp">
+            android:layout_marginEnd="4dp">
 
-            <TextView
-                android:layout_width="wrap_content"
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/widget_chip_round"
+                android:backgroundTint="@color/widget_tint_1"
+                android:contentDescription="@null" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/widget_asset_held"
-                android:textSize="10sp"
-                android:textColor="@color/widget_v2_text_secondary" />
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:baselineAligned="false"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="4dp">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="23"
-                android:textSize="24sp"
-                android:textColor="@color/widget_v2_text_primary"
-                android:textStyle="bold"
-                android:layout_marginTop="6dp" />
-        </LinearLayout>
+                <ImageView
+                    android:layout_width="8dp"
+                    android:layout_height="8dp"
+                    android:background="@drawable/widget_shape_circle"
+                    android:backgroundTint="@color/widget_hue_1"
+                    android:contentDescription="@null" />
 
-        <LinearLayout
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/widget_preview_asset_cat_1"
+                    android:textSize="12sp"
+                    android:textColor="@color/widget_v2_text_primary"
+                    android:layout_marginStart="6dp"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/widget_preview_asset_cnt_1"
+                    android:textSize="@dimen/widget_text_micro"
+                    android:textColor="@color/widget_v2_text_secondary"
+                    android:layout_marginStart="4dp"
+                    android:maxLines="1" />
+            </LinearLayout>
+        </FrameLayout>
+
+        <FrameLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1.6"
-            android:orientation="vertical"
-            android:gravity="center_vertical"
-            android:background="@drawable/widget_soft_card_gray"
-            android:layout_marginStart="6dp"
-            android:padding="10dp">
+            android:layout_weight="1"
+            android:layout_marginEnd="4dp">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/widget_preview_asset_name"
-                android:textSize="13sp"
-                android:textColor="@color/widget_v2_text_primary"
-                android:textStyle="bold" />
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/widget_chip_round"
+                android:backgroundTint="@color/widget_tint_2"
+                android:contentDescription="@null" />
 
-            <TextView
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/widget_status_held"
-                android:textSize="10sp"
-                android:textColor="@color/widget_v2_text_secondary"
-                android:layout_marginTop="4dp" />
-        </LinearLayout>
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:baselineAligned="false"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="4dp">
+
+                <ImageView
+                    android:layout_width="8dp"
+                    android:layout_height="8dp"
+                    android:background="@drawable/widget_shape_circle"
+                    android:backgroundTint="@color/widget_hue_2"
+                    android:contentDescription="@null" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/widget_preview_asset_cat_2"
+                    android:textSize="12sp"
+                    android:textColor="@color/widget_v2_text_primary"
+                    android:layout_marginStart="6dp"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/widget_preview_asset_cnt_2"
+                    android:textSize="@dimen/widget_text_micro"
+                    android:textColor="@color/widget_v2_text_secondary"
+                    android:layout_marginStart="4dp"
+                    android:maxLines="1" />
+            </LinearLayout>
+        </FrameLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:baselineAligned="false"
+        android:layout_marginTop="4dp">
+
+        <FrameLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="4dp">
+
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/widget_chip_round"
+                android:backgroundTint="@color/widget_tint_3"
+                android:contentDescription="@null" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:baselineAligned="false"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="4dp">
+
+                <ImageView
+                    android:layout_width="8dp"
+                    android:layout_height="8dp"
+                    android:background="@drawable/widget_shape_circle"
+                    android:backgroundTint="@color/widget_hue_3"
+                    android:contentDescription="@null" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/widget_preview_asset_cat_3"
+                    android:textSize="12sp"
+                    android:textColor="@color/widget_v2_text_primary"
+                    android:layout_marginStart="6dp"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/widget_preview_asset_cnt_3"
+                    android:textSize="@dimen/widget_text_micro"
+                    android:textColor="@color/widget_v2_text_secondary"
+                    android:layout_marginStart="4dp"
+                    android:maxLines="1" />
+            </LinearLayout>
+        </FrameLayout>
+
+        <FrameLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="4dp">
+
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/widget_chip_round"
+                android:backgroundTint="@color/widget_tint_4"
+                android:contentDescription="@null" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:baselineAligned="false"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="4dp">
+
+                <ImageView
+                    android:layout_width="8dp"
+                    android:layout_height="8dp"
+                    android:background="@drawable/widget_shape_circle"
+                    android:backgroundTint="@color/widget_hue_4"
+                    android:contentDescription="@null" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/widget_preview_asset_cat_4"
+                    android:textSize="12sp"
+                    android:textColor="@color/widget_v2_text_primary"
+                    android:layout_marginStart="6dp"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/widget_preview_asset_cnt_4"
+                    android:textSize="@dimen/widget_text_micro"
+                    android:textColor="@color/widget_v2_text_secondary"
+                    android:layout_marginStart="4dp"
+                    android:maxLines="1" />
+            </LinearLayout>
+        </FrameLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:baselineAligned="false"
+        android:layout_marginTop="4dp">
+
+        <FrameLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="4dp">
+
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/widget_chip_round"
+                android:backgroundTint="@color/widget_tint_5"
+                android:contentDescription="@null" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:baselineAligned="false"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="4dp">
+
+                <ImageView
+                    android:layout_width="8dp"
+                    android:layout_height="8dp"
+                    android:background="@drawable/widget_shape_circle"
+                    android:backgroundTint="@color/widget_hue_5"
+                    android:contentDescription="@null" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/widget_preview_asset_cat_5"
+                    android:textSize="12sp"
+                    android:textColor="@color/widget_v2_text_primary"
+                    android:layout_marginStart="6dp"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/widget_preview_asset_cnt_5"
+                    android:textSize="@dimen/widget_text_micro"
+                    android:textColor="@color/widget_v2_text_secondary"
+                    android:layout_marginStart="4dp"
+                    android:maxLines="1" />
+            </LinearLayout>
+        </FrameLayout>
+
+        <FrameLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="4dp">
+
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/widget_chip_round"
+                android:backgroundTint="@color/widget_tint_6"
+                android:contentDescription="@null" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:baselineAligned="false"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="4dp">
+
+                <ImageView
+                    android:layout_width="8dp"
+                    android:layout_height="8dp"
+                    android:background="@drawable/widget_shape_circle"
+                    android:backgroundTint="@color/widget_hue_6"
+                    android:contentDescription="@null" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/widget_preview_asset_cat_6"
+                    android:textSize="12sp"
+                    android:textColor="@color/widget_v2_text_primary"
+                    android:layout_marginStart="6dp"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/widget_preview_asset_cnt_6"
+                    android:textSize="@dimen/widget_text_micro"
+                    android:textColor="@color/widget_v2_text_secondary"
+                    android:layout_marginStart="4dp"
+                    android:maxLines="1" />
+            </LinearLayout>
+        </FrameLayout>
     </LinearLayout>
 
 </LinearLayout>

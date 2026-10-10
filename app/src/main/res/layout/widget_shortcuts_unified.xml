@@ -1,10 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  快捷入口 2×2（定稿）：四个入口各一块淡彩方块 + 同族饱和字形，方块下面写名称。
+  方块底与字形都是白底占位，运行时 setColorFilter 上色族色（一个入口一族色）。
+-->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="10dp"
+    android:padding="12dp"
     android:background="@drawable/widget_card_round">
 
     <LinearLayout
@@ -13,71 +17,79 @@
         android:layout_weight="1"
         android:orientation="horizontal">
 
-        <FrameLayout
-            android:id="@+id/widget_sc_add"
-            android:contentDescription="@string/widget_add_bill"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1">
-
-            <ImageView
-                android:id="@+id/widget_sc_add_bg"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:src="@drawable/widget_shape_card"
-                android:contentDescription="@null" />
-
-            <LinearLayout
-                android:contentDescription="@string/widget_add_bill"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="vertical"
-                android:gravity="center">
-
-            <ImageView
-                android:layout_width="18dp"
-                android:layout_height="18dp"
-                android:src="@drawable/widget_ic_add_square"
-                android:contentDescription="@null" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="@string/widget_add_bill"
-                android:textSize="11sp"
-                android:textStyle="bold"
-                android:textColor="#FFFFFF"
-                android:singleLine="true" />
-            </LinearLayout>
-        </FrameLayout>
-
         <LinearLayout
-            android:id="@+id/widget_sc_bill"
-            android:contentDescription="@string/widget_shortcut_bills"
+            android:id="@+id/widget_sc_add"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:orientation="vertical"
             android:gravity="center"
-            android:background="@drawable/widget_soft_card"
-            android:layout_marginStart="8dp">
+            android:layout_marginEnd="6dp">
 
-            <ImageView
-                android:layout_width="18dp"
-                android:layout_height="18dp"
-                android:src="@drawable/widget_ic_receipt"
-                android:contentDescription="@null" />
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="46dp">
+
+                <ImageView
+                    android:id="@+id/widget_sc_add_bg"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/widget_chip_round"
+                    android:contentDescription="@null" />
+
+                <ImageView
+                    android:id="@+id/widget_sc_add_icon"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/widget_ic_plus_white"
+                    android:contentDescription="@null" />
+            </FrameLayout>
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="@string/widget_shortcut_bills"
-                android:textSize="11sp"
-                android:textStyle="bold"
-                android:textColor="@color/widget_v2_text_primary"
-                android:singleLine="true" />
+                android:text="@string/widget_shortcut_add"
+                android:textSize="@dimen/widget_text_micro"
+                android:textColor="@color/widget_v2_text_secondary"
+                android:layout_marginTop="4dp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/widget_sc_asset"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="46dp">
+
+                <ImageView
+                    android:id="@+id/widget_sc_asset_bg"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/widget_chip_round"
+                    android:contentDescription="@null" />
+
+                <ImageView
+                    android:id="@+id/widget_sc_asset_icon"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/widget_ic_box_white"
+                    android:contentDescription="@null" />
+            </FrameLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/widget_shortcut_asset"
+                android:textSize="@dimen/widget_text_micro"
+                android:textColor="@color/widget_v2_text_secondary"
+                android:layout_marginTop="4dp" />
         </LinearLayout>
     </LinearLayout>
 
@@ -86,61 +98,81 @@
         android:layout_height="0dp"
         android:layout_weight="1"
         android:orientation="horizontal"
-        android:layout_marginTop="8dp">
+        android:layout_marginTop="6dp">
 
         <LinearLayout
-            android:id="@+id/widget_sc_todo"
-            android:contentDescription="@string/widget_todos_label"
+            android:id="@+id/widget_sc_goal"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:orientation="vertical"
             android:gravity="center"
-            android:background="@drawable/widget_soft_card">
+            android:layout_marginEnd="6dp">
 
-            <ImageView
-                android:layout_width="18dp"
-                android:layout_height="18dp"
-                android:src="@drawable/widget_ic_check_square"
-                android:contentDescription="@null" />
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="46dp">
+
+                <ImageView
+                    android:id="@+id/widget_sc_goal_bg"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/widget_chip_round"
+                    android:contentDescription="@null" />
+
+                <ImageView
+                    android:id="@+id/widget_sc_goal_icon"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/widget_ic_flag_white"
+                    android:contentDescription="@null" />
+            </FrameLayout>
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="@string/widget_todos_label"
-                android:textSize="11sp"
-                android:textStyle="bold"
-                android:textColor="@color/widget_v2_text_primary"
-                android:singleLine="true" />
+                android:text="@string/widget_shortcut_goal"
+                android:textSize="@dimen/widget_text_micro"
+                android:textColor="@color/widget_v2_text_secondary"
+                android:layout_marginTop="4dp" />
         </LinearLayout>
 
         <LinearLayout
-            android:id="@+id/widget_sc_vault"
-            android:contentDescription="@string/widget_vault_title"
+            android:id="@+id/widget_sc_anniversary"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:orientation="vertical"
-            android:gravity="center"
-            android:background="@drawable/widget_soft_card"
-            android:layout_marginStart="8dp">
+            android:gravity="center">
 
-            <ImageView
-                android:layout_width="18dp"
-                android:layout_height="18dp"
-                android:src="@drawable/widget_ic_lock_dark"
-                android:contentDescription="@null" />
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="46dp">
+
+                <ImageView
+                    android:id="@+id/widget_sc_anniversary_bg"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/widget_chip_round"
+                    android:contentDescription="@null" />
+
+                <ImageView
+                    android:id="@+id/widget_sc_anniversary_icon"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/widget_ic_sparkle_white"
+                    android:contentDescription="@null" />
+            </FrameLayout>
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="@string/widget_vault_title"
-                android:textSize="11sp"
-                android:textStyle="bold"
-                android:textColor="@color/widget_v2_text_primary"
-                android:singleLine="true" />
+                android:text="@string/widget_shortcut_anniversary"
+                android:textSize="@dimen/widget_text_micro"
+                android:textColor="@color/widget_v2_text_secondary"
+                android:layout_marginTop="4dp" />
         </LinearLayout>
     </LinearLayout>
 

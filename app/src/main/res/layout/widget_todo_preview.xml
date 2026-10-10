@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  待办组件的选择器/确认框静态预览（`previewLayout`）：内容写死，结构跟运行时布局一致
+  （左竖进度轴 + 右色片清单）。运行时靠 setColorFilter 上色、清单行由桌面填充，静态下都没法跑，
+  所以这里用 backgroundTint 上色族色、色片直接写在布局里。
+-->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -13,30 +18,24 @@
         android:gravity="center_vertical">
 
         <FrameLayout
-            android:layout_width="38dp"
-            android:layout_height="38dp">
+            android:layout_width="@dimen/widget_icon_badge"
+            android:layout_height="@dimen/widget_icon_badge">
 
             <ImageView
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:src="@drawable/widget_ring_track_thick"
-                android:contentDescription="@null" />
-
-            <ImageView
-                android:id="@+id/widget_todo_ring"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:src="@drawable/widget_ring_arc_thick"
+                android:background="@drawable/widget_shape_circle"
+                android:backgroundTint="@color/widget_hue_3"
                 android:contentDescription="@null" />
 
             <TextView
-                android:id="@+id/widget_todo_ring_text"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:gravity="center"
+                android:text="✓"
                 android:textSize="11sp"
                 android:textStyle="bold"
-                android:textColor="@color/widget_v2_text_primary" />
+                android:textColor="#FFFFFFFF"
+                android:gravity="center" />
         </FrameLayout>
 
         <TextView
@@ -44,123 +43,260 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="@string/widget_todo_title"
-            android:textSize="15sp"
+            android:textSize="@dimen/widget_text_title"
             android:textColor="@color/widget_v2_text_primary"
             android:textStyle="bold"
-            android:layout_marginStart="6dp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/widget_add"
-            android:textSize="13sp"
-            android:textStyle="bold"
-            android:textColor="@color/widget_v2_accent"
             android:layout_marginStart="8dp" />
+
+        <FrameLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/widget_chip_round"
+                android:backgroundTint="@color/widget_tint_3"
+                android:contentDescription="@null" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/widget_add"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:textColor="@color/widget_hue_3"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="4dp" />
+        </FrameLayout>
     </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:layout_marginTop="6dp">
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="horizontal"
+        android:layout_marginTop="10dp">
 
         <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:paddingVertical="8dp">
-            <ImageView
-                android:layout_width="3dp"
-                android:layout_height="match_parent"
-                android:layout_marginEnd="10dp"
-                android:background="@color/widget_palette_1"
-                android:contentDescription="@null" />
+            android:layout_width="86dp"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center_horizontal|center_vertical">
 
-            <TextView
-                android:layout_width="18dp"
-                android:layout_height="18dp"
-                android:text="✓"
-                android:textSize="11sp"
-                android:textStyle="bold"
-                android:textColor="#FFFFFF"
-                android:gravity="center"
-                android:background="@drawable/widget_preview_circle" />
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="bottom">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="2"
+                    android:textSize="32sp"
+                    android:textColor="@color/widget_v2_text_primary"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="/3"
+                    android:textSize="12sp"
+                    android:textColor="@color/widget_v2_text_secondary"
+                    android:layout_marginStart="1dp" />
+            </LinearLayout>
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/widget_preview_todo_1"
-                android:textSize="13sp"
-                android:textColor="@color/widget_v2_text_tertiary"
-                android:layout_marginStart="8dp" />
+                android:text="@string/widget_todo_done_label"
+                android:textSize="@dimen/widget_text_micro"
+                android:textColor="@color/widget_v2_text_secondary"
+                android:layout_marginTop="2dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="5dp"
+                android:orientation="horizontal"
+                android:baselineAligned="false"
+                android:layout_marginTop="8dp">
+
+                <ImageView
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="2"
+                    android:layout_marginEnd="2dp"
+                    android:background="@drawable/widget_seg_slot"
+                    android:backgroundTint="@color/widget_hue_2"
+                    android:contentDescription="@null" />
+
+                <ImageView
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:background="@drawable/widget_bar_track"
+                    android:contentDescription="@null" />
+            </LinearLayout>
         </LinearLayout>
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:paddingVertical="8dp">
-            <ImageView
-                android:layout_width="3dp"
-                android:layout_height="match_parent"
-                android:layout_marginEnd="10dp"
-                android:background="@color/widget_palette_2"
-                android:contentDescription="@null" />
-
-            <TextView
-                android:layout_width="18dp"
-                android:layout_height="18dp"
-                android:gravity="center"
-                android:background="@drawable/widget_ring_gray" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/widget_preview_todo_2"
-                android:textSize="13sp"
-                android:textColor="@color/widget_v2_text_primary"
-                android:layout_marginStart="8dp" />
-        </LinearLayout>
+        <ImageView
+            android:layout_width="2dp"
+            android:layout_height="match_parent"
+            android:background="@color/widget_v2_ring"
+            android:contentDescription="@null" />
 
         <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:paddingVertical="8dp">
-            <ImageView
-                android:layout_width="3dp"
-                android:layout_height="match_parent"
-                android:layout_marginEnd="10dp"
-                android:background="@color/widget_palette_3"
-                android:contentDescription="@null" />
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginStart="10dp">
 
-            <TextView
-                android:layout_width="18dp"
-                android:layout_height="18dp"
-                android:gravity="center"
-                android:background="@drawable/widget_ring_gray" />
+            <!-- 已完成的行：三级色文字（划线在 RemoteViews 里由 StrikethroughSpan 给，静态布局表达不了） -->
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
 
-            <TextView
-                android:layout_width="wrap_content"
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/widget_chip_round"
+                    android:backgroundTint="@color/widget_tint_1"
+                    android:contentDescription="@null" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="6dp">
+
+                    <ImageView
+                        android:layout_width="8dp"
+                        android:layout_height="8dp"
+                        android:background="@drawable/widget_shape_circle"
+                        android:backgroundTint="@color/widget_hue_1"
+                        android:contentDescription="@null" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/widget_preview_todo_1"
+                        android:textSize="13sp"
+                        android:textColor="@color/widget_v2_text_tertiary"
+                        android:layout_marginStart="6dp"
+                        android:maxLines="1"
+                        android:ellipsize="end" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/widget_today"
+                        android:textSize="@dimen/widget_text_micro"
+                        android:textColor="@color/widget_v2_text_tertiary"
+                        android:layout_marginStart="4dp" />
+                </LinearLayout>
+            </FrameLayout>
+
+            <FrameLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/widget_preview_todo_3"
-                android:textSize="13sp"
-                android:textColor="@color/widget_v2_text_primary"
-                android:layout_marginStart="8dp" />
+                android:layout_marginTop="4dp">
+
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/widget_chip_round"
+                    android:backgroundTint="@color/widget_tint_2"
+                    android:contentDescription="@null" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="6dp">
+
+                    <ImageView
+                        android:layout_width="8dp"
+                        android:layout_height="8dp"
+                        android:background="@drawable/widget_shape_circle"
+                        android:backgroundTint="@color/widget_hue_2"
+                        android:contentDescription="@null" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/widget_preview_todo_2"
+                        android:textSize="13sp"
+                        android:textColor="@color/widget_v2_text_primary"
+                        android:layout_marginStart="6dp"
+                        android:maxLines="1"
+                        android:ellipsize="end" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/widget_tomorrow"
+                        android:textSize="@dimen/widget_text_micro"
+                        android:textColor="@color/widget_v2_text_tertiary"
+                        android:layout_marginStart="4dp" />
+                </LinearLayout>
+            </FrameLayout>
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp">
+
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/widget_chip_round"
+                    android:backgroundTint="@color/widget_tint_3"
+                    android:contentDescription="@null" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="6dp">
+
+                    <ImageView
+                        android:layout_width="8dp"
+                        android:layout_height="8dp"
+                        android:background="@drawable/widget_shape_circle"
+                        android:backgroundTint="@color/widget_hue_3"
+                        android:contentDescription="@null" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/widget_preview_todo_3"
+                        android:textSize="13sp"
+                        android:textColor="@color/widget_v2_text_primary"
+                        android:layout_marginStart="6dp"
+                        android:maxLines="1"
+                        android:ellipsize="end" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/widget_preview_todo_due_3"
+                        android:textSize="@dimen/widget_text_micro"
+                        android:textColor="@color/widget_v2_text_tertiary"
+                        android:layout_marginStart="4dp" />
+                </LinearLayout>
+            </FrameLayout>
         </LinearLayout>
     </LinearLayout>
-
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/widget_todo_footer_preview"
-        android:textSize="10sp"
-        android:textColor="@color/widget_v2_text_footer"
-        android:gravity="center"
-        android:layout_marginTop="8dp" />
 
 </LinearLayout>

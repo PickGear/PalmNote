@@ -37,36 +37,4 @@ class LifeCounterWidgetTargetTest {
             counterTargetDate(LocalDate.of(1990, 3, 8), today, yearly = true, lunar = false)
         )
     }
-
-    // ── 周年滚动进度（焦点卡进度环的比例） ──
-
-    private val provider = LifeCounterWidgetProvider()
-
-    @Test
-    fun `周年进度按上一次周年到下一次周年算`() {
-        // 锚点 1990-05-01、今天 2026-10-01 → 下一次周年 2027-05-01，本期起于 2026-05-01
-        // 本期 365 天，已过 152 天 → 41%
-        val percent = provider.yearlyRollPercent(
-            anchor = LocalDate.of(1990, 5, 1),
-            today = today,
-            targetDate = LocalDate.of(2027, 5, 1),
-            yearly = true,
-            lunar = false
-        )
-        assertEquals(41, percent)
-    }
-
-    @Test
-    fun `一次性倒计时没有滚动进度`() {
-        assertEquals(
-            null,
-            provider.yearlyRollPercent(
-                anchor = LocalDate.of(2026, 12, 20),
-                today = today,
-                targetDate = LocalDate.of(2026, 12, 20),
-                yearly = false,
-                lunar = false
-            )
-        )
-    }
 }

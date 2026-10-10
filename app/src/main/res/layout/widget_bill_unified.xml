@@ -1,17 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  账单 3×2：主体是**近 7 天支出柱状图**（图形当主角），上面一行是「支出（主）+ 收入/预算剩余（次）」，
-  底下一条主题色胶囊给预算用量或本月结余。柱子的高度由 Provider 用 clip 的 level 控制。
+  账单 3×2（定稿）：左栏「本月支出」大数字 + 预算用量条，右栏近 7 天支出柱状图（图形当主角）。
+  柱高与用量条都靠 clip 的 level 定（RemoteViews 改不了控件尺寸）：用量条是「轨道 + clip 填充」
+  叠在 FrameLayout 里，颜色运行时 setColorFilter，所以两层的默认白色都不是最终色。
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="@dimen/widget_pad"
+    android:padding="12dp"
     android:background="@drawable/widget_card_round">
 
-    <!-- Header: 实底徽章 + 标题 + 新增 pill -->
+    <!-- Header：色族徽章 + 标题 + 新增色片 -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -56,196 +57,182 @@
             android:text="@string/widget_add"
             android:textSize="12sp"
             android:textStyle="bold"
-            android:textColor="@color/widget_v2_accent"
-            android:background="@drawable/widget_pill_soft"
+            android:background="@drawable/widget_pill_tint1"
             android:paddingHorizontal="12dp"
             android:paddingVertical="4dp" />
     </LinearLayout>
 
-    <!-- Content -->
+    <!-- Content：左栏大数字 / 右栏柱状图 -->
     <LinearLayout
         android:id="@+id/widget_content_with_data"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:orientation="vertical"
-        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:gravity="bottom"
+        android:layout_marginTop="9dp"
         android:visibility="gone">
 
-        <!-- 支出（主）+ 收入 / 预算剩余（次） -->
         <LinearLayout
-            android:layout_width="match_parent"
+            android:layout_width="96dp"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="bottom">
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/widget_expense_label"
-                    android:textSize="@dimen/widget_text_micro"
-                    android:textColor="@color/widget_v2_text_secondary" />
-
-                <TextView
-                    android:id="@+id/widget_expense_amount"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="0"
-                    android:textSize="@dimen/widget_text_value"
-                    android:textColor="@color/widget_v2_text_primary"
-                    android:textStyle="bold"
-                    android:layout_marginTop="1dp"
-                    android:maxLines="1"
-                    android:ellipsize="end" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:layout_marginStart="@dimen/widget_gap">
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/widget_income_label"
-                        android:textSize="@dimen/widget_text_micro"
-                        android:textColor="@color/widget_v2_text_secondary" />
-
-                    <TextView
-                        android:id="@+id/widget_income_amount"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="0"
-                        android:textSize="@dimen/widget_text_micro"
-                        android:textColor="@color/widget_v2_text_primary"
-                        android:textStyle="bold"
-                        android:layout_marginStart="6dp"
-                        android:maxLines="1"
-                        android:ellipsize="end" />
-                </LinearLayout>
-
-            </LinearLayout>
-        </LinearLayout>
-
-        <!-- 近 7 天支出柱状图：柱子高度由 clip 的 level 定，颜色运行时着主题色 -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="58dp"
-            android:orientation="horizontal"
-            android:gravity="bottom"
-            android:layout_marginTop="2dp">
-
-            <ImageView
-                android:id="@+id/widget_bill_bar_0"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:src="@drawable/widget_bar_clip"
-                android:contentDescription="@null" />
-
-            <ImageView
-                android:id="@+id/widget_bill_bar_1"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:layout_marginStart="4dp"
-                android:src="@drawable/widget_bar_clip"
-                android:contentDescription="@null" />
-
-            <ImageView
-                android:id="@+id/widget_bill_bar_2"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:layout_marginStart="4dp"
-                android:src="@drawable/widget_bar_clip"
-                android:contentDescription="@null" />
-
-            <ImageView
-                android:id="@+id/widget_bill_bar_3"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:layout_marginStart="4dp"
-                android:src="@drawable/widget_bar_clip"
-                android:contentDescription="@null" />
-
-            <ImageView
-                android:id="@+id/widget_bill_bar_4"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:layout_marginStart="4dp"
-                android:src="@drawable/widget_bar_clip"
-                android:contentDescription="@null" />
-
-            <ImageView
-                android:id="@+id/widget_bill_bar_5"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:layout_marginStart="4dp"
-                android:src="@drawable/widget_bar_clip"
-                android:contentDescription="@null" />
-
-            <ImageView
-                android:id="@+id/widget_bill_bar_6"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:layout_marginStart="4dp"
-                android:src="@drawable/widget_bar_clip"
-                android:contentDescription="@null" />
-        </LinearLayout>
-
-        <!-- 图下说明：左「近 7 天」，右「预算剩余 / 净收入」 -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:layout_marginTop="3dp">
+            android:orientation="vertical">
 
             <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="@string/widget_bill_week_label"
-                android:textSize="@dimen/widget_text_micro"
-                android:textColor="@color/widget_v2_text_tertiary" />
-
-            <TextView
-                android:id="@+id/widget_budget_card_label"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/widget_budget_remaining"
+                android:text="@string/widget_expense_label"
                 android:textSize="@dimen/widget_text_micro"
                 android:textColor="@color/widget_v2_text_secondary" />
 
             <TextView
-                android:id="@+id/widget_budget_amount"
+                android:id="@+id/widget_expense_amount"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="0"
-                android:textSize="@dimen/widget_text_micro"
+                android:textSize="26sp"
                 android:textColor="@color/widget_v2_text_primary"
                 android:textStyle="bold"
-                android:layout_marginStart="6dp"
+                android:layout_marginTop="1dp"
                 android:maxLines="1"
                 android:ellipsize="end" />
+
+            <!-- 预算用量条：轨道 + clip 填充（宽度由 level 定） -->
+            <FrameLayout
+                android:id="@+id/widget_bill_budget_bar"
+                android:layout_width="match_parent"
+                android:layout_height="9dp"
+                android:layout_marginTop="8dp">
+
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/widget_bar_track"
+                    android:contentDescription="@null" />
+
+                <ImageView
+                    android:id="@+id/widget_bill_budget_fill"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/widget_bar_fill"
+                    android:contentDescription="@null" />
+            </FrameLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="4dp">
+
+                <TextView
+                    android:id="@+id/widget_budget_card_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/widget_budget_used"
+                    android:textSize="@dimen/widget_text_micro"
+                    android:textColor="@color/widget_v2_text_secondary" />
+
+                <TextView
+                    android:id="@+id/widget_budget_amount"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="0"
+                    android:textSize="@dimen/widget_text_micro"
+                    android:textColor="@color/widget_v2_text_primary"
+                    android:textStyle="bold"
+                    android:layout_marginStart="4dp"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- 近 7 天支出柱状图：柱高由 clip 的 level 定，颜色运行时着色（最高的一天换个色） -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginStart="12dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="72dp"
+                android:orientation="horizontal"
+                android:gravity="bottom">
+
+                <ImageView
+                    android:id="@+id/widget_bill_bar_0"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:src="@drawable/widget_bar_clip"
+                    android:contentDescription="@null" />
+
+                <ImageView
+                    android:id="@+id/widget_bill_bar_1"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:layout_marginStart="4dp"
+                    android:src="@drawable/widget_bar_clip"
+                    android:contentDescription="@null" />
+
+                <ImageView
+                    android:id="@+id/widget_bill_bar_2"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:layout_marginStart="4dp"
+                    android:src="@drawable/widget_bar_clip"
+                    android:contentDescription="@null" />
+
+                <ImageView
+                    android:id="@+id/widget_bill_bar_3"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:layout_marginStart="4dp"
+                    android:src="@drawable/widget_bar_clip"
+                    android:contentDescription="@null" />
+
+                <ImageView
+                    android:id="@+id/widget_bill_bar_4"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:layout_marginStart="4dp"
+                    android:src="@drawable/widget_bar_clip"
+                    android:contentDescription="@null" />
+
+                <ImageView
+                    android:id="@+id/widget_bill_bar_5"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:layout_marginStart="4dp"
+                    android:src="@drawable/widget_bar_clip"
+                    android:contentDescription="@null" />
+
+                <ImageView
+                    android:id="@+id/widget_bill_bar_6"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:layout_marginStart="4dp"
+                    android:src="@drawable/widget_bar_clip"
+                    android:contentDescription="@null" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/widget_bill_week_label"
+                android:textSize="@dimen/widget_text_micro"
+                android:textColor="@color/widget_v2_text_tertiary"
+                android:gravity="center"
+                android:layout_marginTop="3dp" />
         </LinearLayout>
     </LinearLayout>
 

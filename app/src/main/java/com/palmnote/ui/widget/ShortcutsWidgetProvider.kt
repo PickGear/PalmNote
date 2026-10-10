@@ -4,56 +4,58 @@ import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.widget.RemoteViews
 import com.palmnote.app.R
-import com.palmnote.data.datastore.PreferencesManager
-import dagger.hilt.EntryPoint
-import dagger.hilt.InstallIn
-import dagger.hilt.android.EntryPointAccessors
-import dagger.hilt.components.SingletonComponent
 
-// 快捷入口组件：四个直达入口（记一笔/账单/待办/密码本）；记一笔格主题色运行时着色
+/**
+ * 快捷入口 2×2（定稿）：四个直达入口（记账 / 物品 / 目标 / 纪念日），
+ * 每块一个色族的淡彩方块 + 同族饱和字形。
+ */
 class ShortcutsWidgetProvider : ScopedWidgetProvider() {
 
-    @EntryPoint
-    @InstallIn(SingletonComponent::class)
-    interface WidgetEntryPoint {
-        fun preferencesManager(): PreferencesManager
-    }
-
     override suspend fun onUpdateAsync(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
-        val entryPoint = EntryPointAccessors.fromApplication(
-            context.applicationContext, WidgetEntryPoint::class.java
-        )
-        val accent = WidgetData.readAccentTheme(context, entryPoint.preferencesManager())
-
         publish(context, appWidgetManager, appWidgetIds) { appWidgetId, _ ->
-            bindViews(context, appWidgetId, accent)
+            bindViews(context, appWidgetId)
         }
     }
 
-    private fun bindViews(context: Context, appWidgetId: Int, accent: WidgetData.AccentTheme): RemoteViews {
+    internal fun bindViews(context: Context, appWidgetId: Int): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.widget_shortcuts_unified)
-        views.setInt(R.id.widget_sc_add_bg, "setColorFilter", accent.accent)
+        // 一个入口一族色：淡彩方块底 + 同族饱和字形（装饰色不占全局强调色）
+        SHORTCUT_CELLS.forEachIndexed { index, (bgId, iconId) ->
+            val family = WidgetData.colorFamily(context, index)
+            views.setInt(bgId, "setColorFilter", family.tint)
+            views.setInt(iconId, "setColorFilter", family.hue)
+        }
 
         views.setOnClickPendingIntent(
             R.id.widget_sc_add,
             WidgetHelper.createPendingIntent(context, WidgetDeepLink.SEG_SHORTCUT_ADD + appWidgetId, WidgetDeepLink.TAB_ADD_BILL)
         )
         views.setOnClickPendingIntent(
-            R.id.widget_sc_bill,
-            WidgetHelper.createPendingIntent(context, WidgetDeepLink.SEG_SHORTCUT_BILL + appWidgetId, WidgetDeepLink.TAB_BILL)
+            R.id.widget_sc_asset,
+            WidgetHelper.createPendingIntent(context, WidgetDeepLink.SEG_SHORTCUT_ASSET + appWidgetId, WidgetDeepLink.TAB_ASSET)
         )
         views.setOnClickPendingIntent(
-            R.id.widget_sc_todo,
-            WidgetHelper.createPendingIntent(context, WidgetDeepLink.SEG_SHORTCUT_TODO + appWidgetId, WidgetDeepLink.TAB_LIFE)
+            R.id.widget_sc_goal,
+            WidgetHelper.createPendingIntent(context, WidgetDeepLink.SEG_SHORTCUT_GOAL + appWidgetId, WidgetDeepLink.TAB_LIFE)
         )
         views.setOnClickPendingIntent(
-            R.id.widget_sc_vault,
-            WidgetHelper.createPendingIntent(context, WidgetDeepLink.SEG_SHORTCUT_VAULT + appWidgetId, WidgetDeepLink.TAB_VAULT)
+            R.id.widget_sc_anniversary,
+            WidgetHelper.createPendingIntent(context, WidgetDeepLink.SEG_SHORTCUT_ANNIVERSARY + appWidgetId, WidgetDeepLink.TAB_LIFE)
         )
         views.setOnClickPendingIntent(
             R.id.widget_layout,
             WidgetHelper.createPendingIntent(context, WidgetDeepLink.SEG_SHORTCUT_ROOT + appWidgetId, WidgetDeepLink.TAB_DASHBOARD)
         )
         return views
+    }
+
+    private companion object {
+        /** 四个入口的（方块底, 字形）资源 id，顺序即色族顺序。 */
+        val SHORTCUT_CELLS = listOf(
+            R.id.widget_sc_add_bg to R.id.widget_sc_add_icon,
+            R.id.widget_sc_asset_bg to R.id.widget_sc_asset_icon,
+            R.id.widget_sc_goal_bg to R.id.widget_sc_goal_icon,
+            R.id.widget_sc_anniversary_bg to R.id.widget_sc_anniversary_icon
+        )
     }
 }

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 涨跌胶囊底（跌）：静态引用色值，昼夜自适应 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/widget_delta_down_tint" />
+    <corners android:radius="99dp" />
+</shape>

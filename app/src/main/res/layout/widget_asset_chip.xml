@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  物品分类色片（半宽，两列网格用）：淡彩胶囊底 + 同族色点 + 分类名 + 件数。
+  底与色点都是白底占位，运行时 setColorFilter 上色族的淡底与前景色。
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:layout_weight="1"
+    android:layout_marginEnd="4dp">
+
+    <ImageView
+        android:id="@+id/widget_asset_chip_bg"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:src="@drawable/widget_chip_round"
+        android:contentDescription="@null" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="8dp"
+        android:paddingVertical="4dp">
+
+        <ImageView
+            android:id="@+id/widget_asset_chip_dot"
+            android:layout_width="8dp"
+            android:layout_height="8dp"
+            android:src="@drawable/widget_shape_circle"
+            android:contentDescription="@null" />
+
+        <TextView
+            android:id="@+id/widget_asset_chip_name"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textSize="12sp"
+            android:textColor="@color/widget_v2_text_primary"
+            android:layout_marginStart="6dp"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <TextView
+            android:id="@+id/widget_asset_chip_count"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="@dimen/widget_text_micro"
+            android:textColor="@color/widget_v2_text_secondary"
+            android:layout_marginStart="4dp"
+            android:maxLines="1" />
+    </LinearLayout>
+</FrameLayout>

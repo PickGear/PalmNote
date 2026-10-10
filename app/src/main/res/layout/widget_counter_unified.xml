@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  倒计时 3×2（定稿）：焦点事件给「还有几天 + 名称 + 目标日期」，下面一条横向日历条把目标日
+  高亮出来（前 5 天到后 1 天）。日历条格子等宽，高亮那格由 Provider 上色族色、文字转白。
+  宽到 4 格以上仍走多事件列表（widget_more_events）。
+-->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_layout"
     android:layout_width="match_parent"
@@ -13,22 +18,42 @@
         android:orientation="horizontal"
         android:gravity="center_vertical">
 
-        <ImageView
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:src="@drawable/widget_ic_clock_accent"
-            android:contentDescription="@null" />
+        <FrameLayout
+            android:layout_width="@dimen/widget_icon_badge"
+            android:layout_height="@dimen/widget_icon_badge">
+
+            <ImageView
+                android:id="@+id/widget_counter_badge"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:src="@drawable/widget_shape_circle"
+                android:contentDescription="@null" />
+
+            <ImageView
+                android:id="@+id/widget_counter_badge_icon"
+                android:layout_width="11dp"
+                android:layout_height="11dp"
+                android:layout_gravity="center"
+                android:src="@drawable/widget_ic_clock_accent"
+                android:contentDescription="@null" />
+        </FrameLayout>
 
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="@string/widget_counter_title"
-            android:textSize="15sp"
+            android:textSize="@dimen/widget_text_title"
             android:textColor="@color/widget_v2_text_primary"
             android:textStyle="bold"
-            android:layout_marginStart="6dp" />
+            android:layout_marginStart="8dp" />
 
+        <TextView
+            android:id="@+id/widget_counter_count"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="@dimen/widget_text_micro"
+            android:textColor="@color/widget_v2_text_tertiary" />
     </LinearLayout>
 
     <LinearLayout
@@ -43,131 +68,236 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
-
-            <FrameLayout
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1.4">
-
-                <ImageView
-                    android:id="@+id/widget_counter_focus_bg"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:src="@drawable/widget_shape_card"
-                    android:contentDescription="@null" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:orientation="vertical"
-                    android:gravity="center_vertical"
-                    android:padding="10dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical">
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:id="@+id/widget_event_name"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:textSize="12sp"
-                                android:textColor="#FFFFFF"
-                                android:maxLines="1"
-                                android:ellipsize="end" />
-
-                            <LinearLayout
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:orientation="horizontal"
-                                android:layout_marginTop="6dp">
-
-                                <TextView
-                                    android:id="@+id/widget_days_count"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="0"
-                                    android:textSize="24sp"
-                                    android:textColor="#FFFFFF"
-                                    android:textStyle="bold" />
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="@string/widget_days_label"
-                                    android:textSize="11sp"
-                                    android:textColor="#CCFFFFFF"
-                                    android:layout_marginStart="2dp"
-                                    android:layout_gravity="bottom" />
-                            </LinearLayout>
-                        </LinearLayout>
-
-                        <!-- 周年滚动进度环：生日/纪念日显示（本期已过比例），一次性倒计时无周期则隐藏。
-                             indeterminateOnly 必须显式关掉：框架圆形 progressBarStyle 默认是纯转圈，
-                             那样 setProgress 会被 ProgressBar 直接忽略（进度恒为 0）。 -->
-                        <ProgressBar
-                            android:id="@+id/widget_counter_ring"
-                            style="?android:attr/progressBarStyle"
-                            android:layout_width="40dp"
-                            android:layout_height="40dp"
-                            android:layout_marginStart="8dp"
-                            android:indeterminate="false"
-                            android:indeterminateOnly="false"
-                            android:max="100"
-                            android:progress="0"
-                            android:progressDrawable="@drawable/widget_ring_progress"
-                            android:visibility="gone" />
-                    </LinearLayout>
-
-                    <!-- 日期独占整行：环占了右侧后，与「天数」同排会把长日期挤到换行 -->
-                    <TextView
-                        android:id="@+id/widget_event_date"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textSize="9sp"
-                        android:textColor="#CCFFFFFF"
-                        android:layout_marginTop="2dp"
-                        android:maxLines="1"
-                        android:ellipsize="end" />
-                </LinearLayout>
-            </FrameLayout>
+            android:orientation="horizontal"
+            android:gravity="bottom">
 
             <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:orientation="vertical"
-                android:gravity="center_vertical"
-                android:background="@drawable/widget_soft_card"
-                android:layout_marginStart="6dp"
-                android:padding="10dp">
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="bottom">
 
                 <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/widget_upcoming_events"
-                    android:textSize="10sp"
-                    android:textColor="@color/widget_v2_text_secondary" />
-
-                <TextView
-                    android:id="@+id/widget_counter_count"
+                    android:id="@+id/widget_days_count"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="0"
-                    android:textSize="24sp"
-                    android:textColor="@color/widget_v2_text_primary"
+                    android:textSize="30sp"
                     android:textStyle="bold"
-                    android:layout_marginTop="6dp" />
+                    android:maxLines="1" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/widget_days_label"
+                    android:textSize="11sp"
+                    android:textColor="@color/widget_v2_text_secondary"
+                    android:layout_marginStart="2dp" />
             </LinearLayout>
+
+            <TextView
+                android:id="@+id/widget_event_name"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:textColor="@color/widget_v2_text_primary"
+                android:layout_marginStart="8dp"
+                android:maxLines="1"
+                android:ellipsize="end" />
+
+            <TextView
+                android:id="@+id/widget_event_date"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="@dimen/widget_text_micro"
+                android:textColor="@color/widget_v2_text_tertiary"
+                android:layout_marginStart="6dp"
+                android:maxLines="1" />
+        </LinearLayout>
+
+        <!-- 横向日历条：目标日高亮（7 格等宽，前 5 天到后 1 天） -->
+        <LinearLayout
+            android:id="@+id/widget_counter_dates"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="10dp">
+
+            <FrameLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="4dp">
+
+                <ImageView
+                    android:id="@+id/widget_counter_date_bg_0"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/widget_chip_round"
+                    android:visibility="gone"
+                    android:contentDescription="@null" />
+
+                <TextView
+                    android:id="@+id/widget_counter_date_0"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:paddingVertical="8dp"
+                    android:textSize="11sp"
+                    android:textColor="@color/widget_v2_text_secondary"
+                    android:maxLines="1" />
+            </FrameLayout>
+
+            <FrameLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="4dp">
+
+                <ImageView
+                    android:id="@+id/widget_counter_date_bg_1"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/widget_chip_round"
+                    android:visibility="gone"
+                    android:contentDescription="@null" />
+
+                <TextView
+                    android:id="@+id/widget_counter_date_1"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:paddingVertical="8dp"
+                    android:textSize="11sp"
+                    android:textColor="@color/widget_v2_text_secondary"
+                    android:maxLines="1" />
+            </FrameLayout>
+
+            <FrameLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="4dp">
+
+                <ImageView
+                    android:id="@+id/widget_counter_date_bg_2"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/widget_chip_round"
+                    android:visibility="gone"
+                    android:contentDescription="@null" />
+
+                <TextView
+                    android:id="@+id/widget_counter_date_2"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:paddingVertical="8dp"
+                    android:textSize="11sp"
+                    android:textColor="@color/widget_v2_text_secondary"
+                    android:maxLines="1" />
+            </FrameLayout>
+
+            <FrameLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="4dp">
+
+                <ImageView
+                    android:id="@+id/widget_counter_date_bg_3"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/widget_chip_round"
+                    android:visibility="gone"
+                    android:contentDescription="@null" />
+
+                <TextView
+                    android:id="@+id/widget_counter_date_3"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:paddingVertical="8dp"
+                    android:textSize="11sp"
+                    android:textColor="@color/widget_v2_text_secondary"
+                    android:maxLines="1" />
+            </FrameLayout>
+
+            <FrameLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="4dp">
+
+                <ImageView
+                    android:id="@+id/widget_counter_date_bg_4"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/widget_chip_round"
+                    android:visibility="gone"
+                    android:contentDescription="@null" />
+
+                <TextView
+                    android:id="@+id/widget_counter_date_4"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:paddingVertical="8dp"
+                    android:textSize="11sp"
+                    android:textColor="@color/widget_v2_text_secondary"
+                    android:maxLines="1" />
+            </FrameLayout>
+
+            <FrameLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="4dp">
+
+                <ImageView
+                    android:id="@+id/widget_counter_date_bg_5"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/widget_chip_round"
+                    android:visibility="gone"
+                    android:contentDescription="@null" />
+
+                <TextView
+                    android:id="@+id/widget_counter_date_5"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:paddingVertical="8dp"
+                    android:textSize="11sp"
+                    android:textColor="@color/widget_v2_text_secondary"
+                    android:maxLines="1" />
+            </FrameLayout>
+
+            <FrameLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1">
+
+                <ImageView
+                    android:id="@+id/widget_counter_date_bg_6"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/widget_chip_round"
+                    android:visibility="gone"
+                    android:contentDescription="@null" />
+
+                <TextView
+                    android:id="@+id/widget_counter_date_6"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:paddingVertical="8dp"
+                    android:textSize="11sp"
+                    android:textColor="@color/widget_v2_text_secondary"
+                    android:maxLines="1" />
+            </FrameLayout>
         </LinearLayout>
     </LinearLayout>
 
@@ -188,7 +318,7 @@
             android:textColor="@color/widget_v2_text_tertiary" />
     </LinearLayout>
 
-    <!-- 大档（4×3）专用：多事件列表，与 widget_first_event 互斥显示（两者都占 weight=1） -->
+    <!-- 大档（4 格宽以上）专用：多事件列表，与 widget_first_event 互斥显示 -->
     <LinearLayout
         android:id="@+id/widget_more_events"
         android:layout_width="match_parent"
