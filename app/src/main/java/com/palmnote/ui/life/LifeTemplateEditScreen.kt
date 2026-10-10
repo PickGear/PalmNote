@@ -82,7 +82,7 @@ import com.palmnote.ui.theme.Spacing
 import com.palmnote.ui.theme.Warning
 
 /**
- * 模板添加 / 编辑页（单栏编排器，iOS 分组式）。
+ * 模板添加 / 编辑页（单栏编排器，分组内嵌式）。
  *
  * **视觉语言**与记录填写页（`LifeCreateRecordScreen`）完全一致：20dp 圆角浮卡 + 极淡投影、
  * 发丝分隔线内缩对齐、「图标+标签左 / 值右」、虚线添加区、底部 52dp 全宽主按钮。

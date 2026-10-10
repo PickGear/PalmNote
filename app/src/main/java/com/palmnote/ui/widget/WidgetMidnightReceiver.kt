@@ -12,8 +12,8 @@ class WidgetMidnightReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != ACTION_MIDNIGHT_REFRESH) return
         try {
+            // refreshAllWidgets 末尾已经刷过概览，不再单独再发一次概览广播
             WidgetUpdateHelper.refreshAllWidgets()
-            WidgetUpdateHelper.refreshDashboardWidgets()
         } catch (e: Exception) {
             AppLogger.e("WidgetMidnightReceiver", "Midnight widget refresh failed", e)
         } finally {

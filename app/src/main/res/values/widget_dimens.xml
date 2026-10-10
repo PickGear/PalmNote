@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  小组件设计令牌：字阶与间距。组件布局一律引用这里，不再随手写 textSize/padding。
+
+  字阶只有三档，一个组件里同一档只出现一次语义：
+    micro  微标签 —— 说明「这是哪一项」，次级色
+    value  数值   —— 组件的主角，加粗、明显大于其他文字
+    detail 说明   —— 补充信息，三级色
+  标题（组件名）单独一档，跟数值拉开。
+
+  间距三档：pad 卡片内边距 / gap 块与块之间 / inner_pad 子卡内边距。
+-->
+<resources>
+    <dimen name="widget_text_title">14sp</dimen>
+    <dimen name="widget_text_micro">10sp</dimen>
+    <dimen name="widget_text_value">20sp</dimen>
+
+    <dimen name="widget_pad">14dp</dimen>
+    <dimen name="widget_gap">8dp</dimen>
+    <dimen name="widget_icon_badge">20dp</dimen>
+</resources>

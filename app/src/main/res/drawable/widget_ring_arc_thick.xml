@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  用量环的进度弧：环用 useLevel，由 ImageView 的 level 决定扫过角度（setImageLevel，公开 API）。
+  实色是占位白，运行时用 setColorFilter 着成主题色 —— RemoteViews 的 setProgressTintList 是
+  @hide 的，应用代码调不到，所以环走 ImageView 而不是 ProgressBar。
+  rotate 270° 让起点落在 12 点方向。
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <rotate
+            android:fromDegrees="270"
+            android:toDegrees="270"
+            android:pivotX="50%"
+            android:pivotY="50%">
+            <shape
+                android:shape="ring"
+                android:thickness="7dp"
+                android:useLevel="true">
+                <solid android:color="#FFFFFFFF" />
+            </shape>
+        </rotate>
+    </item>
+</layer-list>

@@ -61,6 +61,7 @@ import com.palmnote.ui.onboarding.OnboardingScreen
 import com.palmnote.ui.theme.PalmNoteTheme
 import com.palmnote.ui.theme.TypeScale
 import com.palmnote.ui.theme.WallpaperBackground
+import com.palmnote.ui.widget.WidgetDeepLink
 import androidx.compose.ui.res.stringResource
 import com.palmnote.app.R
 import dagger.hilt.android.AndroidEntryPoint
@@ -75,6 +76,9 @@ private data class WallpaperPrefs(
     val customUri: String,
     val customColor: String
 )
+
+/** 回到前台补刷桌面组件的节流间隔：切来切去不必每次都跑一遍全量查询。 */
+private const val WIDGET_REFRESH_MIN_INTERVAL_MS = 5 * 60 * 1000L
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
@@ -94,6 +98,9 @@ class MainActivity : AppCompatActivity() {
     private var appBackgroundedAt = 0L
     private var cachedAutoLockMode = com.palmnote.data.datastore.PreferencesManager.AUTO_LOCK_MODE_SYSTEM
     private var cachedAutoLockTimeoutMinutes = com.palmnote.data.datastore.PreferencesManager.DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES
+
+    /** 上次「回到前台补刷桌面组件」的时间戳，用于节流。 */
+    private var lastWidgetRefreshAt = 0L
 
     // 密码本自动锁定（与页面级 VaultLockOnBackground 一致，但覆盖所有页面）：
     // 离开密码本页切后台时同样按规则回锁，避免内存 DK 跨后台长期驻留
@@ -129,6 +136,19 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * 回到前台补刷一次桌面组件（节流 5 分钟）。
+     *
+     * 组件平时靠 30 分钟周期更新，所以**装上带界面改版的包后，桌面会一直显示旧界面**——
+     * 周期没到就不会重画，用户会以为新版本没生效。打开应用就补刷一次，装完包一眼就能看到。
+     */
+    private fun maybeRefreshWidgetsOnForeground() {
+        val now = System.currentTimeMillis()
+        if (now - lastWidgetRefreshAt < WIDGET_REFRESH_MIN_INTERVAL_MS) return
+        lastWidgetRefreshAt = now
+        com.palmnote.ui.widget.WidgetUpdateHelper.refreshAllWidgets()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -153,6 +173,11 @@ class MainActivity : AppCompatActivity() {
 
         // 处理小组件跳转：设置目标 Tab
         handleWidgetIntent(intent)
+
+        // 回到前台补刷一次桌面组件：组件平时靠 30 分钟周期更新，装上带改版的包后
+        // 桌面会一直显示旧界面（周期没到就不会重画），用户以为没生效。
+        // 这里节流到 5 分钟一次，避免每次切回来都跑一遍全量查询。
+        maybeRefreshWidgetsOnForeground()
 
         // 冷启动/进程被杀恢复（非配置变更）时锁定；旋转（配置变更）不锁。
         // 用 isChangingConfigurations() 而非 savedInstanceState==null：进程被杀后从最近任务恢复
@@ -504,30 +529,32 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun handleWidgetIntent(intent: Intent?) {
-        val tab = intent?.getStringExtra("WIDGET_TAB") ?: return
-        intent.getStringExtra("WIDGET_ITEM_ID")?.toLongOrNull()?.let {
+        // 键与 tab 值都取自 WidgetDeepLink：生产端（组件 / 提醒通知）与这里必须完全一致
+        val tab = intent?.getStringExtra(WidgetDeepLink.KEY_TAB) ?: return
+        intent.getStringExtra(WidgetDeepLink.KEY_ITEM_ID)?.toLongOrNull()?.let {
             PalmNoteApp.pendingLifeDetailItemId = it
         }
-        intent.getStringExtra("WIDGET_LIST_MODE")?.let {
+        intent.getStringExtra(WidgetDeepLink.KEY_LIST_MODE)?.let {
             PalmNoteApp.pendingLifeListMode = it
         }
         PalmNoteApp.cachedStartPage = when (tab) {
-            "bill", "add_bill", "report", "budget" -> "bill"
-            "asset" -> "asset"
-            "life" -> "life"
-            "vault" -> "vault"
+            WidgetDeepLink.TAB_BILL, WidgetDeepLink.TAB_ADD_BILL,
+            WidgetDeepLink.TAB_REPORT, WidgetDeepLink.TAB_BUDGET -> "bill"
+            WidgetDeepLink.TAB_ASSET -> "asset"
+            WidgetDeepLink.TAB_LIFE -> "life"
+            WidgetDeepLink.TAB_VAULT -> "vault"
             else -> "dashboard"
         }
-        if (tab == "add_bill") {
-            PalmNoteApp.pendingNavigation = "add_bill"
+        if (tab == WidgetDeepLink.TAB_ADD_BILL) {
+            PalmNoteApp.pendingNavigation = WidgetDeepLink.TAB_ADD_BILL
         }
-        if (tab == "report") {
+        if (tab == WidgetDeepLink.TAB_REPORT) {
             // 小组件预算横幅 → 报表页：与 add_bill 同走 pendingNavigation（报表非 tab，是外层路由）
-            PalmNoteApp.pendingNavigation = "report"
+            PalmNoteApp.pendingNavigation = WidgetDeepLink.TAB_REPORT
         }
-        if (tab == "budget") {
+        if (tab == WidgetDeepLink.TAB_BUDGET) {
             // 小组件预算卡 → 预算页（外层路由）
-            PalmNoteApp.pendingNavigation = "budget"
+            PalmNoteApp.pendingNavigation = WidgetDeepLink.TAB_BUDGET
         }
     }
 

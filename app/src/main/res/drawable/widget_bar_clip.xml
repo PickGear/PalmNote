@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  柱状图的一根柱子：竖向 clip，ImageView 高度固定，用 level(0..10000) 决定填充比例。
+  RemoteViews 不能动态改控件高度，所以柱状图必须走 clip + setImageLevel；
+  实色是占位白，运行时 setColorFilter 上色。
+-->
+<clip xmlns:android="http://schemas.android.com/apk/res/android"
+    android:clipOrientation="vertical"
+    android:gravity="bottom">
+    <shape android:shape="rectangle">
+        <solid android:color="#FFFFFFFF" />
+        <corners android:radius="3dp" />
+    </shape>
+</clip>

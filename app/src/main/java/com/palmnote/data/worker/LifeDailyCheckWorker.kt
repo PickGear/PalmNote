@@ -64,7 +64,7 @@ class LifeDailyCheckWorker @AssistedInject constructor(
         try { date.withYear(today.year) } catch (_: java.time.DateTimeException) { LocalDate.of(today.year, 2, 28) }
 
     /**
-     * 通知的深链入口：复用**桌面组件那条既有通路**（`WIDGET_TAB` / `WIDGET_ITEM_ID`
+     * 通知的深链入口：复用**桌面组件那条既有通路**（`WidgetDeepLink.KEY_TAB` / `KEY_ITEM_ID`
      * → `MainActivity.handleWidgetIntent` 写入 `pendingLifeDetailItemId`）。
      * 于是点提醒直接跳到那条记录的详情，而不是只把应用拉到前台。
      */
@@ -73,8 +73,8 @@ class LifeDailyCheckWorker @AssistedInject constructor(
             applicationContext,
             (7_400_100 + itemId).toInt(),
             Intent(applicationContext, com.palmnote.MainActivity::class.java)
-                .putExtra("WIDGET_TAB", "life")
-                .putExtra("WIDGET_ITEM_ID", itemId.toString()),
+                .putExtra(com.palmnote.ui.widget.WidgetDeepLink.KEY_TAB, com.palmnote.ui.widget.WidgetDeepLink.TAB_LIFE)
+                .putExtra(com.palmnote.ui.widget.WidgetDeepLink.KEY_ITEM_ID, itemId.toString()),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
@@ -82,7 +82,7 @@ class LifeDailyCheckWorker @AssistedInject constructor(
      * 倒计时类提醒的公共尾巴：**深链到该记录** + **「标记完成」动作**。
      *
      * 动作复用桌面组件的 `TodoToggleReceiver`（它已经会把 ACTIVE↔COMPLETED 翻转并刷新小组件），
-     * 所以用户不必先打开应用 —— 这是 todo / 提醒类 app 的标配（TickTick、Apple 提醒都是这样）。
+     * 所以用户不必先打开应用 —— 提醒类应用本就该在系统层完成这一步。
      */
     private fun countdownExtras(
         itemId: Long

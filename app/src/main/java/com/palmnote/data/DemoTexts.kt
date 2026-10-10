@@ -58,6 +58,7 @@ internal object DemoTexts {
 
     private val EN: Map<String, String> = mapOf(
         // ── 生活：计划类 ──
+        "云盘会员" to "Cloud storage",
         "待办" to "To-do",
         "交水电费" to "Pay utilities",
         "交房租" to "Pay rent",

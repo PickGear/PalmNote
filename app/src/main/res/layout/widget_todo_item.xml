@@ -5,7 +5,16 @@
     android:layout_height="wrap_content"
     android:orientation="horizontal"
     android:gravity="center_vertical"
-    android:paddingVertical="6dp">
+    android:paddingVertical="9dp">
+
+    <!-- 左侧色条：一个条目一个颜色（按 id 取调色板），参考稿里那种带色条的清单 -->
+    <ImageView
+        android:id="@+id/widget_todo_bar"
+        android:layout_width="3dp"
+        android:layout_height="match_parent"
+        android:layout_marginEnd="10dp"
+        android:src="@drawable/widget_shape_card"
+        android:contentDescription="@null" />
 
     <FrameLayout
         android:layout_width="18dp"
@@ -43,7 +52,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:textSize="13sp"
+        android:textSize="15sp"
         android:textColor="@color/widget_v2_text_primary"
         android:layout_marginStart="8dp"
         android:maxLines="1"

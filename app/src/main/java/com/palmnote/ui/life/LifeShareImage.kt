@@ -45,7 +45,7 @@ internal fun saveSharePng(context: Context, bitmap: Bitmap, fileName: String): F
     return file
 }
 
-/** FileProvider 分享：用户自选进相册 / 发消息 / 上传（Wrapped 式传播闭环）。 */
+/** FileProvider 分享：用户自选进相册 / 发消息 / 上传，出口交给系统。 */
 internal fun sharePng(context: Context, file: File) {
     val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
     val intent = Intent(Intent.ACTION_SEND).apply {

@@ -23,7 +23,7 @@ data class LifeTemplate(
     val fieldsConfig: String,
     /**
      * ⚠️ **无消费方**（2026-09-30 审计）：保存时恒写 `"card"`，没有任何渲染/逻辑读它。
-     * 它原本服务于「一份数据多个视图」（Notion 式切换器），该特性未实现。
+     * 它原本服务于「一份数据多个视图」的切换器，该特性未实现。
      */
     val layoutType: String,
     /** ⚠️ **无消费方**（同上）：保存时恒写 `["card","list"]`，没人读。 */

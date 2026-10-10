@@ -7,16 +7,25 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.palmnote.data.db.dao.CategoryCount
 import com.palmnote.data.db.dao.LIFE_DEMO_META
+import com.palmnote.data.db.dao.LifeItemDao
+import com.palmnote.data.db.dao.LifeTemplateDao
 import com.palmnote.data.db.entity.Anniversary
 import com.palmnote.data.db.entity.Budget
 import com.palmnote.data.db.entity.Goal
+import com.palmnote.data.db.entity.getDisplayName
 import com.palmnote.data.datastore.PreferencesManager
 import com.palmnote.data.db.entity.CategoryConfig
 import com.palmnote.domain.model.SubscriptionDueItem
 import com.palmnote.domain.repository.*
 import com.palmnote.domain.util.DateUtils
+import com.palmnote.domain.util.HabitCheckIn
+import com.palmnote.domain.util.LifeTemplateKind
+import com.palmnote.domain.util.getKind
 import com.palmnote.feature.vault.VaultRepository
+import com.palmnote.ui.life.identityColor
 import com.palmnote.ui.theme.AppIcon
+import com.palmnote.ui.widget.WidgetUpdateHelper
+import java.time.LocalDate
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
@@ -46,10 +55,12 @@ data class DashboardState(
 
 @Stable
 data class HabitTodayRow(
-    val goalId: Long,
+    val templateId: Long,
     val title: String,
-    val icon: AppIcon,
-    val frequency: String,
+    /** 模板 iconKey（与生活页同一个映射表 [com.palmnote.ui.life.iconFor]）。 */
+    val iconKey: String,
+    /** 模板色，用作图标底与图标着色。 */
+    val tint: androidx.compose.ui.graphics.Color,
     val isCheckedToday: Boolean
 )
 
@@ -60,14 +71,17 @@ class DashboardViewModel @Inject constructor(
     private val assetRepository: AssetRepository,
     private val billRepository: BillRepository,
     private val budgetRepository: BudgetRepository,
-    private val goalRepository: GoalRepository,
     private val anniversaryRepository: AnniversaryRepository,
     private val preferencesManager: PreferencesManager,
     private val vaultRepository: VaultRepository,
     private val walletRepository: WalletRepository,
     private val lifeItemRepository: LifeItemRepository,
     private val cachedCategoryConfigs: @JvmSuppressWildcards StateFlow<List<CategoryConfig>>,
-    private val templateRepository: LifeTemplateRepository
+    private val templateRepository: LifeTemplateRepository,
+    // 打卡卡与生活页/桌面组件同源：直接走生活那两张表的 DAO（生活详情页也是这么取的）
+    private val lifeTemplateDao: LifeTemplateDao,
+    private val lifeItemDao: LifeItemDao,
+    @dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(DashboardState())
@@ -201,18 +215,55 @@ class DashboardViewModel @Inject constructor(
         }
     }
 
-    fun checkInHabit(goalId: Long) {
+    fun checkInHabit(templateId: Long) {
         viewModelScope.launch {
             try {
-                val today = DateUtils.getTodayStart()
-                val already = goalRepository.getTodayCheckedGoalIds(today, today + DateUtils.MILLIS_PER_DAY).first()
-                if (goalId in already) return@launch  // 快速连点/重复回调会导致当日重复计数
-                val checkInId = goalRepository.insertCheckIn(com.palmnote.data.db.entity.GoalCheckIn(goalId = goalId, date = today))
-                if (checkInId > 0) goalRepository.incrementGoalProgress(goalId)
+                val template = lifeTemplateDao.getTemplateById(templateId) ?: return@launch
+                val includeDemo = preferencesManager.lifeDemoMode.first()
+                HabitCheckIn.toggle(
+                    dao = lifeItemDao,
+                    templateId = templateId,
+                    title = template.getDisplayName(context),
+                    includeDemo = includeDemo,
+                    demoMeta = LIFE_DEMO_META
+                )
+                // 桌面组件读的是同一份数据，打卡后立刻刷新，不用等下一轮轮询
+                WidgetUpdateHelper.refreshHabitWidgets()
             } catch (e: Exception) {
                 AppLogger.e("DashboardVM", "checkInHabit failed", e)
             }
         }
+    }
+
+    /** 今天该模板是否已打卡：口径与组件、详情页一致（今天有非 ARCHIVED 的行）。 */
+    private suspend fun habitCheckedToday(templateId: Long, includeDemo: Boolean): Boolean =
+        lifeItemDao.getDistinctCheckInDays(templateId, includeDemo, LIFE_DEMO_META)
+            .first()
+            .contains(LocalDate.now().toString())
+
+    /**
+     * 打卡卡的数据：与生活页、桌面组件同源 —— kind = HABIT 的生活模板 + 今天该模板的打卡行。
+     * 每行状态要按模板取一次「打卡天集合」（与组件同法），模板数量在十位以内。
+     */
+    private fun buildHabitFlow(): Flow<HabitData> = combine(
+        lifeTemplateDao.getAllVisibleTemplates(),
+        preferencesManager.lifeDemoMode
+    ) { templates, includeDemo ->
+        val habits = templates.filter { it.getKind() == LifeTemplateKind.HABIT }
+        val checked = habits.filter { habitCheckedToday(it.id, includeDemo) }.map { it.id }.toSet()
+        HabitData(
+            total = habits.size,
+            checked = checked.size,
+            rows = habits.map { template ->
+                HabitTodayRow(
+                    templateId = template.id,
+                    title = template.getDisplayName(context),
+                    iconKey = template.icon,
+                    tint = identityColor(template.color),
+                    isCheckedToday = template.id in checked
+                )
+            }
+        )
     }
 
     private fun loadBudgetReminder() {
@@ -266,8 +317,6 @@ class DashboardViewModel @Inject constructor(
     private fun buildDashboardFlow(): Flow<Pair<CoreData, List<SubscriptionDueItem>>> = dayTickFlow().flatMapLatest {
         // 月/今日的边界此前在 VM 创建时算死，跨天后预算/今日打卡一直是旧值
         val currentYearMonth = DateUtils.getCurrentYearMonth()
-        val todayStart = DateUtils.getTodayStart()
-        val tomorrowStart = todayStart + DateUtils.MILLIS_PER_DAY
         // NET_WORTH 主数值 = Wallet 账户余额(启用非信用卡钱包),不再用物品购买总价
         val assetFlow = combine(
             walletRepository.getTotalBalance(),
@@ -311,19 +360,7 @@ class DashboardViewModel @Inject constructor(
                     }
             }
             .map { all -> GoalAnnivData(all.size, all) }
-        val habitFlow = combine(
-            goalRepository.getHabitGoals(),
-            goalRepository.getTodayCheckedGoalIds(todayStart, tomorrowStart)
-        ) { habits, checkedIds ->
-            val checked = checkedIds.toSet()
-            HabitData(
-                total = habits.size,
-                checked = habits.count { it.id in checked },
-                rows = habits.map {
-                    HabitTodayRow(it.id, it.title, it.icon, it.frequency, it.id in checked)
-                }
-            )
-        }
+        val habitFlow = buildHabitFlow()
         val budgetFlow = budgetRepository.getBudgetByMonthFlow(currentYearMonth)
         val subFlow = lifeItemRepository.getSubscriptionsDueWithin(7)
         val core = combine(assetFlow, billFlow, gaFlow, budgetFlow, habitFlow) { assetData, billData, gaData, budget, habitData ->

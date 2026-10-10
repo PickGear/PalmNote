@@ -27,17 +27,19 @@ class VaultWidgetProvider : ScopedWidgetProvider() {
         val totalCount = entryPoint.vaultDao().countEntriesFlow().first() ?: 0
         val hasEntries = totalCount > 0
 
-        for (appWidgetId in appWidgetIds) {
+        publish(context, appWidgetManager, appWidgetIds) { appWidgetId, _ ->
             // 1×1 缩档：只显示锁 + 条数（拖大到 ≥110dp 恢复完整布局）
-            val minWidth = appWidgetManager.getAppWidgetOptions(appWidgetId)
-                .getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 180)
-            val isSmall = minWidth in 1..109
-            val views = if (isSmall) {
-                bindSmallViews(context, appWidgetId, totalCount)
-            } else {
-                bindViews(context, appWidgetId, totalCount, hasEntries)
+            sizedRemoteViews(
+                appWidgetManager.getAppWidgetOptions(appWidgetId),
+                SMALL_WIDTH_DP,
+                SMALL_WIDTH_DP
+            ) { width, _ ->
+                if (width < FULL_MIN_WIDTH_DP) {
+                    bindSmallViews(context, appWidgetId, totalCount)
+                } else {
+                    bindViews(context, appWidgetId, totalCount, hasEntries)
+                }
             }
-            appWidgetManager.updateAppWidget(appWidgetId, views)
         }
     }
 
@@ -72,5 +74,13 @@ class VaultWidgetProvider : ScopedWidgetProvider() {
             WidgetHelper.createPendingIntent(context, WidgetDeepLink.SEG_VAULT + appWidgetId, WidgetDeepLink.TAB_VAULT)
         )
         return views
+    }
+
+    private companion object {
+        /** 组件声明的默认尺寸（1×1），桌面没给尺寸时兜底。 */
+        const val SMALL_WIDTH_DP = 40
+
+        /** 2 格宽起才放得下完整布局。 */
+        const val FULL_MIN_WIDTH_DP = 110
     }
 }

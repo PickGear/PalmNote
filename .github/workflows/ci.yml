@@ -15,6 +15,25 @@ permissions:
   contents: read
 
 jobs:
+  secrets:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # 扫描器在 PR 上要发评论说明命中位置，只在这个 job 放开该权限
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      # 标准扫描器，自带规则集；命中时只输出脱敏后的位置，不回显密钥内容
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   quality:
     name: Quality (lint, detekt, unit tests)
     runs-on: ubuntu-latest

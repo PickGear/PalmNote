@@ -116,6 +116,7 @@ class PreferencesManager @Inject constructor(
         val WALLPAPER_OPACITY = floatPreferencesKey("wallpaper_opacity")
         val WALLPAPER_CUSTOM_URI = stringPreferencesKey("wallpaper_custom_uri")
         val WALLPAPER_CUSTOM_COLOR = stringPreferencesKey("wallpaper_custom_color")
+        val WIDGET_OPACITY = floatPreferencesKey("widget_opacity")
         val DASHBOARD_MESSAGE_MODE = booleanPreferencesKey("dashboard_message_mode")
         val DASHBOARD_MESSAGE_LAST_DATE = stringPreferencesKey("dashboard_message_last_date")
         val AUTO_BACKUP_ENABLED = booleanPreferencesKey("auto_backup_enabled")
@@ -141,6 +142,9 @@ class PreferencesManager @Inject constructor(
         const val DEFAULT_WALLPAPER_BLUR = 0f
         const val DEFAULT_WALLPAPER_OPACITY = 1f
         const val DEFAULT_WALLPAPER_CUSTOM_COLOR = "#FFFFFF"
+        const val DEFAULT_WIDGET_OPACITY = 1f
+        /** 下界 0.4：对应最透的一档底色，再低整卡就快看不见了。 */
+        const val MIN_WIDGET_OPACITY = 0.4f
 
         // ========== 自动备份 ==========
         const val DEFAULT_AUTO_BACKUP_INTERVAL_DAYS = 1
@@ -206,6 +210,59 @@ class PreferencesManager @Inject constructor(
     suspend fun setWallpaperOpacity(opacity: Float) { context.dataStore.edit { it[WALLPAPER_OPACITY] = opacity } }
     suspend fun setWallpaperCustomUri(uri: String) { context.dataStore.edit { it[WALLPAPER_CUSTOM_URI] = uri } }
     suspend fun setWallpaperCustomColor(color: String) { context.dataStore.edit { it[WALLPAPER_CUSTOM_COLOR] = color } }
+
+    /** 桌面组件整卡透明度（1 = 不透明）。越界值一律夹回合法区间，避免坏值写进偏好后组件隐形。 */
+    val widgetOpacity: Flow<Float> = prefsFlow.map {
+        (it[WIDGET_OPACITY] ?: DEFAULT_WIDGET_OPACITY).coerceIn(MIN_WIDGET_OPACITY, 1f)
+    }
+
+    suspend fun setWidgetOpacity(opacity: Float) {
+        context.dataStore.edit { it[WIDGET_OPACITY] = opacity.coerceIn(MIN_WIDGET_OPACITY, 1f) }
+    }
+
+    // ── 小组件按实例的配置（账本选择）：键带 appWidgetId，一个组件一份 ──
+
+    private fun widgetBookKey(appWidgetId: Int) = stringPreferencesKey("widget_book_$appWidgetId")
+
+    private fun widgetOpacityKey(appWidgetId: Int) = floatPreferencesKey("widget_opacity_$appWidgetId")
+
+    /**
+     * 某个组件实例的**实际**透明度：有按实例的覆盖就用它，没有就跟随全局默认。
+     * 「全局默认 + 单组件覆盖」是刻意的模型——多数人只想调一次，少数人想给某个组件特殊处理。
+     */
+    fun widgetOpacityFor(appWidgetId: Int): Flow<Float> = prefsFlow.map { prefs ->
+        (prefs[widgetOpacityKey(appWidgetId)] ?: prefs[WIDGET_OPACITY] ?: DEFAULT_WIDGET_OPACITY)
+            .coerceIn(MIN_WIDGET_OPACITY, 1f)
+    }
+
+    /** 该实例的**覆盖值**；null = 跟随全局（配置页要据此显示「跟随默认」还是「已自定义」）。 */
+    fun widgetOpacityOverride(appWidgetId: Int): Flow<Float?> = prefsFlow.map { prefs ->
+        prefs[widgetOpacityKey(appWidgetId)]?.coerceIn(MIN_WIDGET_OPACITY, 1f)
+    }
+
+    /** 传 null = 取消覆盖、回到跟随全局（直接删键，不留脏值）。 */
+    suspend fun setWidgetOpacityFor(appWidgetId: Int, opacity: Float?) {
+        context.dataStore.edit { prefs ->
+            val key = widgetOpacityKey(appWidgetId)
+            if (opacity == null) {
+                prefs.remove(key)
+            } else {
+                prefs[key] = opacity.coerceIn(MIN_WIDGET_OPACITY, 1f)
+            }
+        }
+    }
+
+    /** 组件实例选中的账本；**无键 = 全账本**（默认，也是老用户升级后的行为）。 */
+    fun widgetBook(appWidgetId: Int): Flow<Long?> =
+        prefsFlow.map { it[widgetBookKey(appWidgetId)]?.toLongOrNull() }
+
+    /** bookId 传 null 表示全账本：直接删键，不留 "null" 之类的脏值。 */
+    suspend fun setWidgetBook(appWidgetId: Int, bookId: Long?) {
+        context.dataStore.edit { prefs ->
+            val key = widgetBookKey(appWidgetId)
+            if (bookId == null) prefs.remove(key) else prefs[key] = bookId.toString()
+        }
+    }
 
     val dashboardMessageMode: Flow<Boolean> = prefsFlow.map { it[DASHBOARD_MESSAGE_MODE] ?: false }
     val dashboardMessageLastDate: Flow<String> = prefsFlow.map { it[DASHBOARD_MESSAGE_LAST_DATE] ?: "" }

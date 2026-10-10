@@ -276,7 +276,7 @@ class SettingsViewModel @Inject constructor(
             // Use Activity context if provided, otherwise fall back to Application context
             // Some launchers need an Activity context for setComponentEnabledSetting to refresh the icon
             val ctx = activityContext ?: context
-            // Apply first, save only on success (same pattern as ZhishengWeather)
+            // Apply first, save only on success: a failed apply must not be persisted as the current style
             if (AppIconManager.apply(ctx, style)) {
                 preferencesManager.setAppIconStyle(style)
             }

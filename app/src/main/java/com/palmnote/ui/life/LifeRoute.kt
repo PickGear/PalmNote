@@ -22,7 +22,7 @@ data object LifeStats
 
 /**
  * 月度回顾页：回顾**上一个完整月份**——总记录数、活跃天数、最常记录、心情分布。
- * 叙事页（Moo/格志式），只读不编辑；今日视角由今日看板/统计页承担。
+ * 叙事式只读页；今日视角由今日看板/统计页承担。
  */
 @Serializable
 data object LifeMonthlyReview

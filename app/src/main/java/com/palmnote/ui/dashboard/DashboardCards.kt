@@ -602,11 +602,9 @@ internal fun HabitTodayCard(
 
 @Composable
 private fun HabitCheckRow(row: HabitTodayRow, onCheckIn: (Long) -> Unit) {
-    val periodLabel = when (row.frequency) {
-        "WEEKLY" -> stringResource(R.string.dashboard_habit_period_weekly)
-        "MONTHLY" -> stringResource(R.string.dashboard_habit_period_monthly)
-        else -> stringResource(R.string.dashboard_habit_period_daily)
-    }
+    // 打卡模板天生是「每天」一次，原来的周/月频率标签在生活模板上没有对应字段，
+    // 统一显示「每天」——保留这一行也让行高与原来一致
+    val periodLabel = stringResource(R.string.dashboard_habit_period_daily)
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -617,10 +615,10 @@ private fun HabitCheckRow(row: HabitTodayRow, onCheckIn: (Long) -> Unit) {
                 modifier = Modifier
                     .size(32.dp)
                     .clip(MaterialTheme.shapes.small)
-                    .background(row.icon.tint.copy(alpha = 0.15f)),
+                    .background(row.tint.copy(alpha = 0.15f)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(row.icon.imageVector, null, tint = row.icon.tint, modifier = Modifier.size(18.dp))
+                Icon(com.palmnote.ui.life.iconFor(row.iconKey), null, tint = row.tint, modifier = Modifier.size(18.dp))
             }
             Column(modifier = Modifier.widthIn(max = 180.dp)) {
                 Text(row.title, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -641,7 +639,7 @@ private fun HabitCheckRow(row: HabitTodayRow, onCheckIn: (Long) -> Unit) {
                 modifier = Modifier
                     .clip(MaterialTheme.shapes.small)
                     .background(com.palmnote.ui.theme.ModuleLife)
-                    .clickable { onCheckIn(row.goalId) }
+                    .clickable { onCheckIn(row.templateId) }
                     .padding(horizontal = 12.dp, vertical = 6.dp)
             ) {
                 Text(

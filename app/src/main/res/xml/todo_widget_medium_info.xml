@@ -12,4 +12,5 @@
     android:description="@string/widget_todo_desc"
     android:previewImage="@drawable/widget_preview_todo"
     android:previewLayout="@layout/widget_todo_preview"
+    android:configure="com.palmnote.ui.widget.WidgetConfigActivity"
     android:resizeMode="horizontal|vertical" />

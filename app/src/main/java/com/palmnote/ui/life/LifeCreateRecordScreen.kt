@@ -148,8 +148,8 @@ fun LifeCreateRecordScreen(
         ) {
             Spacer(Modifier.height(Spacing.xs))
             Spacer(Modifier.height(Spacing.sm))
-            // 一字段一卡（Apple 内嵌分组式，与编辑器预览态/详情结构区同一卡片语言）
-            // iOS 分组表单：连续"图标+标签左/值右"的字段合并进一张卡，复合字段单独成卡
+            // 一字段一卡（分组内嵌式，与编辑器预览态/详情结构区同一卡片语言）
+            // 分组表单：连续"图标+标签左/值右"的字段合并进一张卡，复合字段单独成卡
             EmptyFormNotice(visible = state.fields.isEmpty())
             val groups = remember(state.fields) { buildFieldGroups(state.fields) }
             groups.forEach { group ->

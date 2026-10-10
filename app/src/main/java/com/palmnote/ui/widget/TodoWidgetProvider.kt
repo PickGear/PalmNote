@@ -40,52 +40,39 @@ class TodoWidgetProvider : ScopedWidgetProvider() {
         )
         val accent = WidgetData.readAccentTheme(context, prefs)
 
-        for (appWidgetId in appWidgetIds) {
-            appWidgetManager.updateAppWidget(
-                appWidgetId,
-                bindViews(context, appWidgetManager, appWidgetId, todos, accent)
-            )
+        publish(context, appWidgetManager, appWidgetIds) { appWidgetId, _ ->
+            bindViews(context, appWidgetId, todos, accent)
         }
     }
 
     internal fun bindViews(
         context: Context,
-        appWidgetManager: AppWidgetManager,
         appWidgetId: Int,
         todos: List<LifeItem>,
         accent: WidgetData.AccentTheme
     ): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.widget_todo_unified)
-        // 加号从实底 pill 改为主题色文字按钮（pill 底随主题运行时着色在 RemoteViews 下不可行，
-        // 文字按钮与 Todoist 式文本动作一致，且自定义主题色也能生效）
+        // 加号用主题色文字按钮而不是实底 pill：pill 底随主题运行时着色在 RemoteViews 下不可行，
+        // 文字按钮既能跟自定义主题色，也更贴近「文本动作」的语义
         views.setInt(R.id.widget_todo_add, "setTextColor", accent.accent)
-
-        // 按实际格子大小自适应（Apple 式缩放：同一组件，尺寸变了内容跟着变）：
-        // S(2×1 ≈ <250dp) 只留最近 1 条；M 3 条；L(≥400dp) 6 条 + 页脚统计。
-        val minWidth = appWidgetManager.getAppWidgetOptions(appWidgetId)
-            .getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH)
-        val previewCount = when {
-            minWidth in 1..249 -> 1
-            minWidth < 400 -> 3
-            else -> 6
-        }
+        // 今日完成度环：主角图形（RemoteViews 没有 setImageLevel 专用 API，反射调）
+        views.setInt(R.id.widget_todo_ring, "setColorFilter", accent.accent)
+        val done = todos.count { it.status == "COMPLETED" }
+        val percent = if (todos.isEmpty()) 0 else done * 100 / todos.size
+        views.setInt(R.id.widget_todo_ring, "setImageLevel", percent * 100)
+        views.setTextViewText(R.id.widget_todo_ring_text, "$percent%")
 
         views.removeAllViews(R.id.widget_todo_list)
-        todos.take(previewCount).forEach { item ->
-            WidgetHelper.addTodoItemView(
-                context,
-                views,
-                R.id.widget_todo_list,
-                item,
-                accent.accent,
-                TodoToggleReceiver.togglePendingIntent(context, item.id)
-            )
-        }
-        views.setViewVisibility(R.id.widget_todo_empty, if (todos.isEmpty()) View.VISIBLE else View.GONE)
-        views.setViewVisibility(
-            R.id.widget_todo_footer,
-            if (todos.isEmpty() || previewCount == 1) View.GONE else View.VISIBLE
+        // 滚动列表：数据由 TodoWidgetService 提供，显示几行交给桌面自己决定
+        views.setRemoteAdapter(
+            R.id.widget_todo_list,
+            android.content.Intent(context, TodoWidgetService::class.java)
+                .putExtra(TodoWidgetService.EXTRA_APPWIDGET_ID, appWidgetId)
         )
+        views.setEmptyView(R.id.widget_todo_list, R.id.widget_todo_empty)
+        // 行内点击的条目 id 由行的 fill-in intent 带过来，模板只出 action 与组件
+        views.setPendingIntentTemplate(R.id.widget_todo_list, TodoToggleReceiver.toggleTemplatePendingIntent(context))
+        views.setViewVisibility(R.id.widget_todo_footer, if (todos.isEmpty()) View.GONE else View.VISIBLE)
         if (todos.isNotEmpty()) {
             val remainingCount = todos.count { it.status != "COMPLETED" }
             views.setTextViewText(

@@ -53,6 +53,16 @@ interface BillDao {
     @Query("SELECT SUM(amount) FROM bills WHERE yearMonth = :yearMonth AND type = 'EXPENSE'")
     fun getMonthlyExpense(yearMonth: String): Flow<Long?>
 
+    /**
+     * 近一段时间的每日支出合计（组件里的「近 7 天柱状图」用；`date` 是毫秒时间戳）。
+     * 复用既有的 [DailySummary] 投影，收入那列恒 0（这里只关心支出）。
+     */
+    @Query(
+        "SELECT date, SUM(amount) AS expense, 0 AS income FROM bills " +
+            "WHERE type = 'EXPENSE' AND date >= :fromMillis GROUP BY date ORDER BY date"
+    )
+    fun getDailyExpenseSince(fromMillis: Long): Flow<List<DailySummary>>
+
     @Query(
         "SELECT category AS category, SUM(amount) AS total FROM bills " +
             "WHERE yearMonth = :yearMonth AND type = 'EXPENSE' " +

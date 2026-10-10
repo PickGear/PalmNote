@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 同心环的轨道：整圈，颜色由 Provider 用同色相低透明度 setColorFilter 上色（苹果做法） -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="ring"
+    android:thickness="11dp"
+    android:useLevel="false">
+    <solid android:color="#FFFFFFFF" />
+</shape>

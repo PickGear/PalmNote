@@ -288,6 +288,7 @@ fun PalmNoteNavHost() {
         }
 
         composable<WidgetSettings> {
+            // 透明度按组件各自设置（在该组件的配置页里），本页不再需要 ViewModel
             WidgetPinScreen(
                 onNavigateBack = { navController.popBackStack() }
             )

@@ -30,11 +30,8 @@ class AssetWidgetProvider : ScopedWidgetProvider() {
             ?: entryPoint.assetDao().getHeldAssetValue().first()
             ?: 0L
 
-        for (appWidgetId in appWidgetIds) {
-            appWidgetManager.updateAppWidget(
-                appWidgetId,
-                bindViews(context, appWidgetId, heldCount, totalValue)
-            )
+        publish(context, appWidgetManager, appWidgetIds) { appWidgetId, _ ->
+            bindViews(context, appWidgetId, heldCount, totalValue)
         }
     }
 

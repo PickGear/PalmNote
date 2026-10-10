@@ -115,6 +115,24 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/bill_widget_medium_info" />
         </receiver>
+        <!-- 组件配置页：桌面摆放/长按改设置时拉起。
+             除账单外都只调透明度，账单多一段选账本，所以两个 Activity -->
+        <activity
+            android:name="com.palmnote.ui.widget.WidgetConfigActivity"
+            android:exported="true"
+            android:theme="@style/Theme.PalmNote">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name="com.palmnote.ui.widget.BillWidgetConfigActivity"
+            android:exported="true"
+            android:theme="@style/Theme.PalmNote">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
         <receiver
             android:name="com.palmnote.ui.widget.TodoWidgetProvider"
             android:exported="true">
@@ -156,6 +174,26 @@
                 android:resource="@xml/vault_widget_info" />
         </receiver>
         <receiver
+            android:name="com.palmnote.ui.widget.NetWorthWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/net_worth_widget_info" />
+        </receiver>
+        <receiver
+            android:name="com.palmnote.ui.widget.SubscriptionWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/subscription_widget_info" />
+        </receiver>
+        <receiver
             android:name="com.palmnote.ui.widget.DashboardWidgetProvider"
             android:exported="true">
             <intent-filter>
@@ -180,6 +218,10 @@
             android:exported="false" />
         <receiver
             android:name="com.palmnote.ui.widget.TodoToggleReceiver"
+            android:exported="false" />
+        <service
+            android:name="com.palmnote.ui.widget.TodoWidgetService"
+            android:permission="android.permission.BIND_REMOTEVIEWS"
             android:exported="false" />
         <receiver
             android:name="com.palmnote.ui.widget.WidgetMidnightReceiver"

@@ -75,7 +75,7 @@ private fun Modifier.cardElevation() = shadow(
     spotColor = Color.Black.copy(alpha = 0.06f)
 )
 
-/** 20dp 浮卡：白底 + 极淡投影，无描边（iOS 分组式语言的核心）。 */
+/** 20dp 浮卡：白底 + 极淡投影，无描边（分组内嵌式语言的核心）。 */
 @Composable
 internal fun GroupCard(
     modifier: Modifier = Modifier,
@@ -95,7 +95,7 @@ internal fun GroupCard(
 
 /**
  * 分组卡内的发丝分隔线：内缩到与行内图标后的文字对齐（48dp = 14 内边距 + 19 图标 + 10 间距 + 余量）。
- * 不画满宽，是 iOS 分组表「分隔线跟着内容缩进」的关键细节。
+ * 不画满宽，是分组表「分隔线跟着内容缩进」的关键细节。
  */
 @Composable
 internal fun GroupDivider(startInset: Dp = 43.dp) {

@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- 徽章上的白色字形：底色由运行时 setColorFilter 着成主题色，字形固定白色 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
     <path
-        android:fillColor="#0891B2"
+        android:fillColor="#FFFFFFFF"
         android:pathData="M12,3l9,8h-2.6v9h-4.9v-5.5h-3v5.5H5.6v-9H3z" />
 </vector>

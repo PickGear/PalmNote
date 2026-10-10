@@ -19,7 +19,7 @@ import java.time.ZoneId
  * 生日 1990-05-20（每年重复）的卡片说「还有 300 天」，红区却把它挂成逾期，
  * 「推迟到今天」还会把周年锚点改写掉。
  * 滚动后的日期恒为**今天或未来**，因此 repeatYearly 行自然退出逾期区 ——
- * 与 Todoist（循环任务逾期不堆积、吸回下一个未来档期）和倒数日品类（周年不存在"逾期"）一致。
+ * 循环任务逾期不堆积、吸回下一个未来档期；周年也本就不存在"逾期"。
  */
 internal fun LifeItemDao.LifeBoardItemRow.effectiveDueMillis(
     today: LocalDate,

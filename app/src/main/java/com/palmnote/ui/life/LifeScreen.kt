@@ -242,7 +242,7 @@ fun LifeScreen(
 ) {
     var fabSheetOpen by rememberSaveable { mutableStateOf(false) }
     // 「上次记录：N 天前」的模板维度读数：从**已在用的** boardRows 聚合，不新增查询。
-    // 对标 MarkTimes 的「上次发生：N 天前」——它回答的是"我该不该再记一笔"。
+    // 「上次发生：N 天前」——它回答的是"我该不该再记一笔"。
     val lastLogByTemplate = remember(boardRows) {
         boardRows.groupBy { it.templateId }.mapValues { (_, rows) -> rows.maxOf { it.updatedAt } }
     }
@@ -253,7 +253,7 @@ fun LifeScreen(
         searchQuery = ""
     }
 
-    // ── 快捷添加反馈（对标 Todoist/滴答清单：提交可确认、可撤销、失败有交代）──
+    // ── 快捷添加反馈：提交可确认、可撤销、失败有交代 ──
     val snackbarHostState = remember { SnackbarHostState() }
     val snackbarCopy = quickAddSnackbarCopy(quickAddOutcome, LocalDate.now())
     LaunchedEffect(quickAddOutcome?.seq) {
@@ -294,7 +294,7 @@ fun LifeScreen(
             },
             floatingActionButton = {
                 // 搜索态 / 全模板关闭态不显示：创建动作在这两种场景没有意义，
-                // 留着只会打开一个空面板或挡住搜索结果（Google Tasks/Keep 同款处理）。
+                // 留着只会打开一个空面板或挡住搜索结果，不如不给这个入口。
                 if (!showSearch && !allTemplatesClosed) {
                     // 「+ 新建」扩展 FAB：单击展开创建面板；**长按直达上次使用的模板表单**
                     // （未选过退化为单击）。高频用户八成的记录就一两个模板，省掉弹窗一层。
@@ -883,7 +883,7 @@ private fun TodayBoardHomeCard(
                 onOpenDayRead = onOpenDayRead
             )
             Spacer(modifier = Modifier.height(8.dp))
-            // 快捷添加（滴答清单式一句话记录）：仅「今天」视图。
+            // 快捷添加（一句话记录）：仅「今天」视图。
             if (isToday) {
                 QuickAddBar(onSubmit = onQuickAdd)
                 Spacer(modifier = Modifier.height(8.dp))
@@ -891,7 +891,7 @@ private fun TodayBoardHomeCard(
             // 滑动确认（左滑删除 / 右滑完成）：状态提升到看板卡，逾期与今日安排共用一套弹窗；
             // 行首勾圈不走这条路径（就地完成、一步可撤销）。
             var pendingSwipe by remember { mutableStateOf<PendingSwipe?>(null) }
-            // 逾期任务置顶（滴答清单模式）：分类色行 + 一键推迟到今天（仅「今天」视图显示）。
+            // 逾期任务置顶（仅「今天」视图显示）：分类色行 + 一键推迟到今天。
             // 但当日安排列表已包含这些条目（同一天到期，只是时刻已过），再列一遍会重复渲染，
             // 故顶部只保留「不在当日安排里」的逾期项 —— 正常情况即过去日期遗留的未完成项。
             val scheduledIds = remember(scheduledItems) { scheduledItems.map { it.itemId }.toSet() }
@@ -1097,7 +1097,7 @@ private fun OverdueSection(
     onRequestDelete: (Long) -> Unit,
     onOpenFullList: () -> Unit
 ) {
-    // 没有逾期就整个不渲染：红区标题常驻是视觉噪音（TickTick/Todoist 均如此，
+    // 没有逾期就整个不渲染：红区标题常驻是视觉噪音，
     // 「暂无逾期事项」的空态文案只保留给完整清单页）。
     if (items.isEmpty()) return
     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1108,7 +1108,7 @@ private fun OverdueSection(
             color = MaterialTheme.colorScheme.error,
             modifier = Modifier.weight(1f)
         )
-        // 批量推迟（滴答清单模式）：多于一条时出现；推迟是低风险操作，不逐条确认
+        // 批量推迟：多于一条时出现；推迟是低风险操作，不逐条确认
         if (items.size > 1) {
             Text(
                 stringResource(R.string.life_home_overdue_reschedule_all),
@@ -1178,7 +1178,7 @@ internal fun weekdayShortRes(day: DayOfWeek): Int = when (day) {
 /**
  * 当日安排列表（设计稿：📋 今日安排 · M月d日 周X + 分类色 chip 圆角行）。
  * 按 `dueTime` 升序、**无时间置顶**（随时可做的排前面，有时刻的按时间表排下面，
- * 对齐滴答清单/Google 日历的全天位；SQL 的 `ORDER BY dueTime ASC` 本就是 NULL 在前）。
+ * 无时刻（全天位）排在有时刻之前；SQL 的 `ORDER BY dueTime ASC` 本就是 NULL 在前）。
  */
 @Composable
 private fun DayAgenda(
@@ -1197,7 +1197,7 @@ private fun DayAgenda(
     }
     val doneCount = items.count { it.status == "COMPLETED" }
     if (doneCount == items.size) {
-        // 全部完成：列表让位给庆祝空态（Todoist/Things 的情绪闭环），已完成件数
+        // 全部完成：列表让位给庆祝空态（把「全部做完」当成一次正反馈），已完成件数
         // 从完整清单页可回看/可取消完成 —— 首页不再让划掉的行常驻占位。
         DayAgendaAllDone(doneCount, onOpenFullList)
         return
@@ -1205,7 +1205,7 @@ private fun DayAgenda(
     DayAgendaHeader(selectedDate, doneCount, items.size)
     val categoryByTemplate = remember(templates) { templates.associate { it.id to it.category } }
     // 未完成项按时间排序占用预览名额；已完成项收进「已完成 N 件」可展开行
-    // （Apple 提醒事项/滴答清单默认收起的做法，划掉的不消耗首屏空间）。
+    // （已完成的默认收起，划掉的不消耗首屏空间）。
     val active = remember(items) { items.filter { it.status != "COMPLETED" } }
     val completed = remember(items) {
         items.filter { it.status == "COMPLETED" }
@@ -1420,7 +1420,7 @@ private fun DayAgendaHeader(selectedDate: LocalDate, doneCount: Int, totalCount:
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Spacer(Modifier.weight(1f))
-        // 今日完成读数（Things Progress Pies / TickTick 统计的同款问题：今天过得到底怎么样）
+        // 今日完成读数（回答「今天到底过得怎么样」，而不只是给一个待办计数）
         Text(
             stringResource(R.string.life_board_agenda_progress, doneCount, totalCount),
             fontSize = TypeScale.bodyS,
@@ -2142,7 +2142,7 @@ private fun filterCreatable(
 /**
  * 创建面板的筛选头（搜索框常驻 + 分类图标 tab）。
  *
- * 搜索常驻对标 Notion 模板选择器——原「≥6 个模板才显示」的门槛已去掉；
+ * 搜索常驻第一层——原「≥6 个模板才显示」的门槛已去掉；
  * 分类 tab 携带类别身份色（选中 = tint 底 + 类别色描边），与首页分类卡同源。
  * 仍从 [FabSheet] 抽出：面板本身只负责"取数 + 排布"，筛选控件单独可改。
  */
@@ -2184,7 +2184,7 @@ private fun FabSheetHeader(
     }
 }
 
-/** 创建面板的模板搜索框：常驻第一层（对标 Notion 模板选择器），不自动弹键盘。 */
+/** 创建面板的模板搜索框：常驻第一层，不自动弹键盘。 */
 @Composable
 private fun FabSearchField(search: String, onSearchChange: (String) -> Unit) {
     BasicTextField(
@@ -2330,7 +2330,7 @@ private fun FabSheetTemplateCard(tpl: LifeTemplate, lastMs: Long?, today: LocalD
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-            // 「上次记录」短文案：回答此刻"这个该不该现在记一笔"（对标 MarkTimes 的「上次发生」）。
+            // 「上次记录」短文案：回答此刻"这个该不该现在记一笔"。
             Text(
                 lastLoggedShort(lastMs, today),
                 fontSize = TypeScale.labelS,

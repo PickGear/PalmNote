@@ -172,11 +172,11 @@ class LifeCalendarViewModel @Inject constructor(
     private var quickAddSeq = 0L
 
     /**
-     * 快捷添加（滴答清单式一句话记录）：解析日期/时间 → 落到「待办」模板 →
+     * 快捷添加（一句话记录）：解析日期/时间 → 落到「待办」模板 →
      * 走 [LifeItemRepository.insertItem] 让 deadline 字段镜像出执行列。
      * 标题 = 去掉日期时间词后的剩余文本；解析不出日期就记今天。
      *
-     * 结果一律经 [quickAddOutcome] 交给 UI 反馈（对标 Todoist/滴答清单：识别结果可见、
+     * 结果一律经 [quickAddOutcome] 交给 UI 反馈（识别结果可见、
      * 添加可撤销）。**不写示例 meta**：用户手输的内容不是示例数据，否则关闭演示模式时
      * 会被一并物理删除；演示模式下该条暂不显示，由 snackbar 说明并提供「关闭演示」。
      */
@@ -406,7 +406,7 @@ class LifeCalendarViewModel @Inject constructor(
      *
      * **「每年重复」拒绝推迟**：这些行已滚到下一次周年、本就不该出现在逾期区；
      * 万一从别的入口调进来，也不能把周年锚点改写成今天——那会毁掉整个年度语义
-     * （对齐 Todoist：改循环任务的日期必须走"编辑母本"，而不是推迟）。
+     * （改循环任务的日期必须走"编辑母本"，而不是推迟）。
      */
     fun rescheduleToToday(itemId: Long) {
         viewModelScope.launch {
