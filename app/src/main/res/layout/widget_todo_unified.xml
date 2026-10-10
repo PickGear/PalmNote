@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  待办 4×3（定稿）：左侧竖进度轴（今日完成 N/M + 一条完成度条），右侧色片清单
+  （可滚动，行由 TodoWidgetService 提供）。进度条的填充是 clip，宽度由 level 定。
+-->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_layout"
     android:layout_width="match_parent"
@@ -7,39 +11,32 @@
     android:padding="12dp"
     android:background="@drawable/widget_card_round">
 
-    <!-- Header -->
+    <!-- Header：色族徽章 + 标题 + 新增色片 -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical">
 
-        <!-- 今日完成度环：这个组件的主角图形（环内写百分比） -->
         <FrameLayout
-            android:layout_width="38dp"
-            android:layout_height="38dp">
+            android:layout_width="@dimen/widget_icon_badge"
+            android:layout_height="@dimen/widget_icon_badge">
 
             <ImageView
+                android:id="@+id/widget_todo_badge"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:src="@drawable/widget_ring_track_thick"
-                android:contentDescription="@null" />
-
-            <ImageView
-                android:id="@+id/widget_todo_ring"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:src="@drawable/widget_ring_arc_thick"
+                android:src="@drawable/widget_shape_circle"
                 android:contentDescription="@null" />
 
             <TextView
-                android:id="@+id/widget_todo_ring_text"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:gravity="center"
+                android:text="✓"
                 android:textSize="11sp"
                 android:textStyle="bold"
-                android:textColor="@color/widget_v2_text_primary" />
+                android:textColor="#FFFFFFFF"
+                android:gravity="center" />
         </FrameLayout>
 
         <TextView
@@ -50,59 +47,134 @@
             android:textSize="@dimen/widget_text_title"
             android:textColor="@color/widget_v2_text_primary"
             android:textStyle="bold"
-            android:layout_marginStart="6dp" />
-
-        <TextView
-            android:id="@+id/widget_todo_add"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/widget_add"
-            android:textSize="13sp"
-            android:textStyle="bold"
-            android:textColor="@color/widget_v2_accent"
             android:layout_marginStart="8dp" />
+
+        <FrameLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+
+            <ImageView
+                android:id="@+id/widget_todo_add_bg"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:src="@drawable/widget_chip_round"
+                android:contentDescription="@null" />
+
+            <TextView
+                android:id="@+id/widget_todo_add"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/widget_add"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="4dp" />
+        </FrameLayout>
     </LinearLayout>
 
-    <!-- Todo card -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:orientation="vertical"
-        android:background="@drawable/widget_soft_card_gray"
-        android:layout_marginTop="10dp"
-        android:paddingHorizontal="12dp"
-        android:paddingVertical="4dp"
-        android:gravity="center_vertical">
+        android:orientation="horizontal"
+        android:layout_marginTop="10dp">
 
-        <ListView
-            android:id="@+id/widget_todo_list"
-            android:layout_width="match_parent"
+        <!-- 竖进度轴：今日完成 N/M + 完成度条，点它进「今日安排」完整清单 -->
+        <LinearLayout
+            android:id="@+id/widget_todo_progress_col"
+            android:layout_width="86dp"
             android:layout_height="match_parent"
-            android:divider="@null"
-            android:dividerHeight="0dp"
-            android:scrollbars="none" />
+            android:orientation="vertical"
+            android:gravity="center_horizontal|center_vertical">
 
-        <TextView
-            android:id="@+id/widget_todo_empty"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/widget_todo_empty"
-            android:textSize="12sp"
-            android:textColor="@color/widget_v2_text_tertiary"
-            android:gravity="center"
-            android:paddingVertical="12dp"
-            android:visibility="gone" />
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="bottom">
+
+                <TextView
+                    android:id="@+id/widget_todo_done"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0"
+                    android:textSize="32sp"
+                    android:textColor="@color/widget_v2_text_primary"
+                    android:textStyle="bold"
+                    android:maxLines="1" />
+
+                <TextView
+                    android:id="@+id/widget_todo_total"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="/0"
+                    android:textSize="12sp"
+                    android:textColor="@color/widget_v2_text_secondary"
+                    android:layout_marginStart="1dp"
+                    android:maxLines="1" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/widget_todo_done_label"
+                android:textSize="@dimen/widget_text_micro"
+                android:textColor="@color/widget_v2_text_secondary"
+                android:layout_marginTop="2dp" />
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="5dp"
+                android:layout_marginTop="8dp">
+
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/widget_bar_track"
+                    android:contentDescription="@null" />
+
+                <ImageView
+                    android:id="@+id/widget_todo_progress_fill"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/widget_bar_fill"
+                    android:contentDescription="@null" />
+            </FrameLayout>
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/widget_todo_divider"
+            android:layout_width="2dp"
+            android:layout_height="match_parent"
+            android:background="@color/widget_v2_ring"
+            android:contentDescription="@null" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginStart="10dp">
+
+            <ListView
+                android:id="@+id/widget_todo_list"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:divider="@android:color/transparent"
+                android:dividerHeight="4dp"
+                android:scrollbars="none" />
+
+            <TextView
+                android:id="@+id/widget_todo_empty"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/widget_todo_empty"
+                android:textSize="12sp"
+                android:textColor="@color/widget_v2_text_tertiary"
+                android:gravity="center"
+                android:paddingVertical="12dp"
+                android:visibility="gone" />
+        </LinearLayout>
     </LinearLayout>
-
-    <!-- Footer -->
-    <TextView
-        android:id="@+id/widget_todo_footer"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:textSize="10sp"
-        android:textColor="@color/widget_v2_text_footer"
-        android:gravity="center"
-        android:layout_marginTop="8dp" />
 
 </LinearLayout>

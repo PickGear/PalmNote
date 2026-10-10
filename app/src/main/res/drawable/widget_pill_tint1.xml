@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 胶囊底（色族 1 淡色）：静态引用色族淡色，昼夜自适应，不需要运行时着色 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/widget_tint_1" />
+    <corners android:radius="99dp" />
+</shape>

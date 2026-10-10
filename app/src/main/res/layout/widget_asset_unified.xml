@@ -1,4 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  物品 3×2（定稿）：头部（徽章 + 物品分布 + 共 N 件）→ 顶部占比条（一段一族色，段数 = 分类数）
+  → 两列色片网格（淡彩胶囊底 + 同族色点 + 分类名 + 件数）。
+
+  RemoteViews 不能运行时改子控件宽度，所以占比条的各段只能等宽：段数按分类数显隐，
+  段色按色族给；每类到底几件，由下面的色片写清楚。
+  色片的淡彩底与色点都是白底占位，运行时 setColorFilter 上色（静态默认不可见，别删这两层）。
+-->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_layout"
     android:layout_width="match_parent"
@@ -13,104 +21,122 @@
         android:orientation="horizontal"
         android:gravity="center_vertical">
 
-        <ImageView
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:src="@drawable/widget_ic_box"
-            android:contentDescription="@null" />
+        <FrameLayout
+            android:layout_width="@dimen/widget_icon_badge"
+            android:layout_height="@dimen/widget_icon_badge">
+
+            <ImageView
+                android:id="@+id/widget_asset_badge"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:src="@drawable/widget_shape_circle"
+                android:contentDescription="@null" />
+
+            <ImageView
+                android:layout_width="11dp"
+                android:layout_height="11dp"
+                android:layout_gravity="center"
+                android:src="@drawable/widget_ic_box_white"
+                android:contentDescription="@null" />
+        </FrameLayout>
 
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="@string/widget_asset_title"
-            android:textSize="15sp"
+            android:textSize="@dimen/widget_text_title"
             android:textColor="@color/widget_v2_text_primary"
             android:textStyle="bold"
-            android:layout_marginStart="6dp" />
+            android:layout_marginStart="8dp" />
 
+        <TextView
+            android:id="@+id/widget_asset_total"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="@dimen/widget_text_micro"
+            android:textColor="@color/widget_v2_text_tertiary" />
     </LinearLayout>
 
     <LinearLayout
-        android:id="@+id/widget_first_asset"
+        android:id="@+id/widget_asset_bar"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
+        android:layout_height="10dp"
         android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:visibility="gone">
+        android:layout_marginTop="6dp">
 
-        <LinearLayout
+        <ImageView
+            android:id="@+id/widget_asset_seg_1"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:layout_weight="1"
-            android:orientation="vertical"
-            android:background="@drawable/widget_soft_card"
-            android:padding="10dp">
+            android:layout_marginEnd="3dp"
+            android:src="@drawable/widget_seg_slot"
+            android:contentDescription="@null" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/widget_asset_held"
-                android:textSize="10sp"
-                android:textColor="@color/widget_v2_text_secondary" />
-
-            <TextView
-                android:id="@+id/widget_asset_count"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="0"
-                android:textSize="24sp"
-                android:textColor="@color/widget_v2_text_primary"
-                android:textStyle="bold"
-                android:layout_marginTop="6dp" />
-        </LinearLayout>
-
-        <LinearLayout
+        <ImageView
+            android:id="@+id/widget_asset_seg_2"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1.6"
-            android:orientation="vertical"
-            android:gravity="center_vertical"
-            android:background="@drawable/widget_soft_card_gray"
-            android:layout_marginStart="6dp"
-            android:padding="10dp">
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginEnd="3dp"
+            android:src="@drawable/widget_seg_slot"
+            android:contentDescription="@null" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/widget_asset_value_label"
-                android:textSize="10sp"
-                android:textColor="@color/widget_v2_text_secondary" />
+        <ImageView
+            android:id="@+id/widget_asset_seg_3"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginEnd="3dp"
+            android:src="@drawable/widget_seg_slot"
+            android:contentDescription="@null" />
 
-            <TextView
-                android:id="@+id/widget_asset_value"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="0"
-                android:textSize="16sp"
-                android:textColor="@color/widget_v2_text_primary"
-                android:textStyle="bold"
-                android:layout_marginTop="6dp"
-                android:maxLines="1"
-                android:ellipsize="end" />
-        </LinearLayout>
+        <ImageView
+            android:id="@+id/widget_asset_seg_4"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginEnd="3dp"
+            android:src="@drawable/widget_seg_slot"
+            android:contentDescription="@null" />
+
+        <ImageView
+            android:id="@+id/widget_asset_seg_5"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginEnd="3dp"
+            android:src="@drawable/widget_seg_slot"
+            android:contentDescription="@null" />
+
+        <ImageView
+            android:id="@+id/widget_asset_seg_6"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:src="@drawable/widget_seg_slot"
+            android:contentDescription="@null" />
     </LinearLayout>
 
     <LinearLayout
-        android:id="@+id/widget_empty_state"
+        android:id="@+id/widget_asset_grid"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
         android:orientation="vertical"
-        android:gravity="center">
+        android:gravity="top"
+        android:layout_marginTop="6dp" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/widget_asset_empty"
-            android:textSize="12sp"
-            android:textColor="@color/widget_v2_text_tertiary" />
-    </LinearLayout>
+    <TextView
+        android:id="@+id/widget_asset_empty"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:text="@string/widget_asset_empty"
+        android:textSize="12sp"
+        android:textColor="@color/widget_v2_text_tertiary"
+        android:visibility="gone" />
 
 </LinearLayout>

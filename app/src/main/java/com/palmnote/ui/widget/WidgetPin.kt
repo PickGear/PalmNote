@@ -86,7 +86,7 @@ object WidgetPin {
         Entry(
             AssetWidgetProvider::class.java,
             R.drawable.widget_preview_asset,
-            R.layout.widget_asset_unified,
+            R.layout.widget_asset_preview,
             R.string.widget_asset_title,
             R.string.widget_asset_desc,
         ),

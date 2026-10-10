@@ -68,6 +68,10 @@ class VaultWidgetProvider : ScopedWidgetProvider() {
 
     internal fun bindSmallViews(context: Context, appWidgetId: Int, totalCount: Int): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.widget_vault_small)
+        // 淡彩方块 + 同族饱和锁字形（装饰色不占全局强调色）
+        val family = WidgetData.colorFamily(context, 4)
+        views.setInt(R.id.widget_vault_small_bg, "setColorFilter", family.tint)
+        views.setInt(R.id.widget_vault_small_icon, "setColorFilter", family.hue)
         views.setTextViewText(R.id.widget_vault_small_count, "$totalCount")
         views.setOnClickPendingIntent(
             R.id.widget_layout,

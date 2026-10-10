@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- 快捷入口「记账」格的字形：白色加号（叠在运行时着色的淡彩方块上） -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
     <path
-        android:fillColor="#1A1A1A"
-        android:pathData="M12,2.5l8.5,4.7v9.6L12,21.5l-8.5,-4.7V7.2L12,2.5zM12,4.6L5.5,8.2 12,11.8l6.5,-3.6L12,4.6zM5.2,9.9v6.3l5.8,3.2v-6.3L5.2,9.9zM13,19.4l5.8,-3.2V9.9L13,13.1v6.3z" />
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M10.8,3.6h2.4v7.2h7.2v2.4h-7.2v7.2h-2.4v-7.2H3.6v-2.4h7.2z" />
 </vector>

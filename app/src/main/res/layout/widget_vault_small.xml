@@ -1,27 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 密码本 1×1 迷你档：锁 + 条数（隐私口径不变，不显示任何条目内容） -->
+<!--
+  密码本 1×1（定稿）：淡彩方块里的锁 + 条数（隐私口径不变，不显示任何条目内容）。
+  方块底与锁字形都是占位，运行时 setColorFilter 上色族色。
+-->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:gravity="center"
-    android:padding="6dp"
+    android:padding="5dp"
     android:background="@drawable/widget_card_round">
 
-    <ImageView
-        android:layout_width="22dp"
-        android:layout_height="22dp"
-        android:src="@drawable/widget_ic_lock_dark"
-        android:contentDescription="@null" />
+    <FrameLayout
+        android:layout_width="30dp"
+        android:layout_height="30dp">
+
+        <ImageView
+            android:id="@+id/widget_vault_small_bg"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:src="@drawable/widget_chip_round"
+            android:contentDescription="@null" />
+
+        <ImageView
+            android:id="@+id/widget_vault_small_icon"
+            android:layout_width="15dp"
+            android:layout_height="15dp"
+            android:layout_gravity="center"
+            android:src="@drawable/widget_ic_lock_dark"
+            android:contentDescription="@null" />
+    </FrameLayout>
 
     <TextView
         android:id="@+id/widget_vault_small_count"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
+        android:layout_marginTop="2dp"
         android:text="0"
-        android:textSize="15sp"
+        android:textSize="16sp"
         android:textColor="@color/widget_v2_text_primary"
         android:textStyle="bold" />
 
