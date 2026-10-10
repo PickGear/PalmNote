@@ -36,7 +36,7 @@ class TodoWidgetProvider : ScopedWidgetProvider() {
         )
         val prefs = entryPoint.preferencesManager()
         // 演示感知互斥：开＝只看示例，关＝只看自己的（与其他出口同一口径）
-        val todos = WidgetData.fetchTodayTodos(
+        val board = WidgetData.fetchTodoBoard(
             entryPoint.lifeItemDao(),
             entryPoint.lifeTemplateDao(),
             includeDemo = prefs.lifeDemoMode.first(),
@@ -44,14 +44,14 @@ class TodoWidgetProvider : ScopedWidgetProvider() {
         )
 
         publish(context, appWidgetManager, appWidgetIds) { appWidgetId, _ ->
-            bindViews(context, appWidgetId, todos)
+            bindViews(context, appWidgetId, board)
         }
     }
 
     internal fun bindViews(
         context: Context,
         appWidgetId: Int,
-        todos: List<LifeItem>
+        board: WidgetData.TodoBoard
     ): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.widget_todo_unified)
         // 装饰色走色族（不占全局强调色）：徽章与新增片用绿，进度条用蓝（稿子如此）
@@ -61,8 +61,9 @@ class TodoWidgetProvider : ScopedWidgetProvider() {
         views.setInt(R.id.widget_todo_add_bg, "setColorFilter", badgeFamily.tint)
         views.setTextColor(R.id.widget_todo_add, badgeFamily.hue)
 
-        val done = todos.count { it.status == "COMPLETED" }
-        val total = todos.size
+        // 进度轴是「今日完成」（清单本身是全部活跃待办，两者口径不同，与稿子一致）
+        val done = board.todayDone
+        val total = board.todayTotal
         val percent = if (total == 0) 0 else done * 100 / total
         views.setTextViewText(R.id.widget_todo_done, "$done")
         views.setTextViewText(R.id.widget_todo_total, "/$total")
@@ -70,12 +71,13 @@ class TodoWidgetProvider : ScopedWidgetProvider() {
         views.setInt(R.id.widget_todo_progress_fill, "setColorFilter", progressFamily.hue)
         views.setInt(R.id.widget_todo_progress_fill, "setImageLevel", percent * 100)
         // 没有待办就不摆这根轴，空态由列表区的空文案说
-        val hasTodos = todos.isNotEmpty()
+        val hasTodos = board.items.isNotEmpty()
         views.setViewVisibility(R.id.widget_todo_progress_col, if (hasTodos) View.VISIBLE else View.GONE)
         views.setViewVisibility(R.id.widget_todo_divider, if (hasTodos) View.VISIBLE else View.GONE)
 
-        views.removeAllViews(R.id.widget_todo_list)
-        // 滚动列表：数据由 TodoWidgetService 提供，显示几行交给桌面自己决定
+        // 滚动列表：数据由 TodoWidgetService 提供，显示几行交给桌面自己决定。
+        // 别对 ListView 调 removeAllViews —— AdapterView 不支持，会抛 UnsupportedOperationException
+
         views.setRemoteAdapter(
             R.id.widget_todo_list,
             android.content.Intent(context, TodoWidgetService::class.java)

@@ -46,14 +46,12 @@ class AssetWidgetProvider : ScopedWidgetProvider() {
             context.resources.getQuantityString(R.plurals.widget_asset_total_count, total, total)
         )
 
-        // 占比条：段数 = 分类数，多出来的段隐藏（GONE 不占权重，剩下的段自动等分整条）
-        SEGMENT_IDS.forEachIndexed { index, id ->
-            if (index < shown.size) {
-                views.setViewVisibility(id, View.VISIBLE)
-                views.setInt(id, "setColorFilter", WidgetData.colorFamily(context, index).hue)
-            } else {
-                views.setViewVisibility(id, View.GONE)
-            }
+        // 占比条：24 段等宽槽位，按各分类件数占比分配段数 —— 段的宽度于是就是比例
+        // （RemoteViews 改不了子控件宽度，只能靠「占几段」表达比例）
+        val owners = slotOwners(shown.map { it.count }, BAR_SLOTS)
+        SEGMENT_IDS.forEachIndexed { slot, id ->
+            views.setViewVisibility(id, View.VISIBLE)
+            views.setInt(id, "setColorFilter", WidgetData.colorFamily(context, owners[slot]).hue)
         }
 
         // 两列色片网格：每行两个，条目数为奇数时补一个等宽占位
@@ -84,13 +82,41 @@ class AssetWidgetProvider : ScopedWidgetProvider() {
         return views
     }
 
+    /**
+     * 24 段等宽槽位各归哪个分类：按件数占比切分，累计边界四舍五入。
+     * 抽成纯函数是为了单测「段宽 = 比例」这件事（渲染层比较 ColorFilter 不可靠）。
+     */
+    internal fun slotOwners(counts: List<Int>, slots: Int): IntArray {
+        val owners = IntArray(slots)
+        if (counts.isEmpty()) return owners
+        val total = counts.sum().coerceAtLeast(1)
+        var cumulative = 0
+        var cursor = 0
+        counts.forEachIndexed { index, count ->
+            cumulative += count
+            val edge = if (index == counts.lastIndex) {
+                slots
+            } else {
+                Math.round(cumulative * slots.toFloat() / total).toInt()
+            }
+            for (slot in cursor until edge.coerceIn(cursor, slots)) owners[slot] = index
+            cursor = edge.coerceIn(cursor, slots)
+        }
+        return owners
+    }
+
     /** 一个分类色片：淡彩胶囊底 + 同族色点 + 分类名 + 件数。 */
     private fun chipViews(context: Context, category: HeldCategoryCount, index: Int): RemoteViews {
         val chip = RemoteViews(context.packageName, R.layout.widget_asset_chip)
         val family = WidgetData.colorFamily(context, index)
         chip.setInt(R.id.widget_asset_chip_bg, "setColorFilter", family.tint)
         chip.setInt(R.id.widget_asset_chip_dot, "setColorFilter", family.hue)
-        chip.setTextViewText(R.id.widget_asset_chip_name, category.category)
+        // DB 里存的是 DIGITAL/BOOKS 这类代码值，应用里会用 getCategoryName 翻成中文，
+        // 组件必须走同一套翻译，否则桌面上显示的是英文代码
+        chip.setTextViewText(
+            R.id.widget_asset_chip_name,
+            com.palmnote.ui.components.getCategoryName(category.category, context)
+        )
         chip.setTextViewText(
             R.id.widget_asset_chip_count,
             context.resources.getQuantityString(R.plurals.widget_asset_item_count, category.count, category.count)
@@ -105,9 +131,18 @@ class AssetWidgetProvider : ScopedWidgetProvider() {
         /** 头部徽章取的色族（稿子里物品是蓝色）—— 装饰色不占全局强调色。 */
         const val BADGE_FAMILY = 1
 
+        /** 占比条的槽位数：段越细，比例越准（24 段 ≈ 4% 一档）。 */
+        const val BAR_SLOTS = 24
+
         val SEGMENT_IDS = intArrayOf(
             R.id.widget_asset_seg_1, R.id.widget_asset_seg_2, R.id.widget_asset_seg_3,
-            R.id.widget_asset_seg_4, R.id.widget_asset_seg_5, R.id.widget_asset_seg_6
+            R.id.widget_asset_seg_4, R.id.widget_asset_seg_5, R.id.widget_asset_seg_6,
+            R.id.widget_asset_seg_7, R.id.widget_asset_seg_8, R.id.widget_asset_seg_9,
+            R.id.widget_asset_seg_10, R.id.widget_asset_seg_11, R.id.widget_asset_seg_12,
+            R.id.widget_asset_seg_13, R.id.widget_asset_seg_14, R.id.widget_asset_seg_15,
+            R.id.widget_asset_seg_16, R.id.widget_asset_seg_17, R.id.widget_asset_seg_18,
+            R.id.widget_asset_seg_19, R.id.widget_asset_seg_20, R.id.widget_asset_seg_21,
+            R.id.widget_asset_seg_22, R.id.widget_asset_seg_23, R.id.widget_asset_seg_24
         )
     }
 }

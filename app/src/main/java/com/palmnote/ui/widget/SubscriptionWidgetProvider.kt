@@ -142,7 +142,7 @@ class SubscriptionWidgetProvider : ScopedWidgetProvider() {
     }
 
     private companion object {
-        /** 3×2 放得下 3 行。 */
-        const val MAX_ROWS = 3
+        /** 真机 3×2 高 190dp，放得下 4 行（稿子也是 4 条）。 */
+        const val MAX_ROWS = 4
     }
 }

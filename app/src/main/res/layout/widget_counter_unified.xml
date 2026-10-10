@@ -67,9 +67,10 @@
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="0dp"
+            android:layout_weight="1"
             android:orientation="horizontal"
-            android:gravity="bottom">
+            android:gravity="center_vertical">
 
             <LinearLayout
                 android:layout_width="wrap_content"
@@ -82,7 +83,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="0"
-                    android:textSize="30sp"
+                    android:textSize="38sp"
                     android:textStyle="bold"
                     android:maxLines="1" />
 
@@ -131,10 +132,20 @@
                 android:layout_weight="1"
                 android:layout_marginEnd="4dp">
 
+                <!-- 外发光：目标日那格显示，色相同、透明度低 -->
+                <ImageView
+                    android:id="@+id/widget_counter_date_glow_0"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/widget_date_glow"
+                    android:visibility="gone"
+                    android:contentDescription="@null" />
+
                 <ImageView
                     android:id="@+id/widget_counter_date_bg_0"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
+                    android:layout_margin="3dp"
                     android:src="@drawable/widget_chip_round"
                     android:visibility="gone"
                     android:contentDescription="@null" />
@@ -144,8 +155,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center"
-                    android:paddingVertical="8dp"
-                    android:textSize="11sp"
+                    android:paddingVertical="12dp"
+                    android:textSize="13sp"
                     android:textColor="@color/widget_v2_text_secondary"
                     android:maxLines="1" />
             </FrameLayout>
@@ -156,10 +167,20 @@
                 android:layout_weight="1"
                 android:layout_marginEnd="4dp">
 
+                <!-- 外发光：目标日那格显示，色相同、透明度低 -->
+                <ImageView
+                    android:id="@+id/widget_counter_date_glow_1"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/widget_date_glow"
+                    android:visibility="gone"
+                    android:contentDescription="@null" />
+
                 <ImageView
                     android:id="@+id/widget_counter_date_bg_1"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
+                    android:layout_margin="3dp"
                     android:src="@drawable/widget_chip_round"
                     android:visibility="gone"
                     android:contentDescription="@null" />
@@ -169,8 +190,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center"
-                    android:paddingVertical="8dp"
-                    android:textSize="11sp"
+                    android:paddingVertical="12dp"
+                    android:textSize="13sp"
                     android:textColor="@color/widget_v2_text_secondary"
                     android:maxLines="1" />
             </FrameLayout>
@@ -181,10 +202,20 @@
                 android:layout_weight="1"
                 android:layout_marginEnd="4dp">
 
+                <!-- 外发光：目标日那格显示，色相同、透明度低 -->
+                <ImageView
+                    android:id="@+id/widget_counter_date_glow_2"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/widget_date_glow"
+                    android:visibility="gone"
+                    android:contentDescription="@null" />
+
                 <ImageView
                     android:id="@+id/widget_counter_date_bg_2"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
+                    android:layout_margin="3dp"
                     android:src="@drawable/widget_chip_round"
                     android:visibility="gone"
                     android:contentDescription="@null" />
@@ -194,8 +225,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center"
-                    android:paddingVertical="8dp"
-                    android:textSize="11sp"
+                    android:paddingVertical="12dp"
+                    android:textSize="13sp"
                     android:textColor="@color/widget_v2_text_secondary"
                     android:maxLines="1" />
             </FrameLayout>
@@ -206,10 +237,20 @@
                 android:layout_weight="1"
                 android:layout_marginEnd="4dp">
 
+                <!-- 外发光：目标日那格显示，色相同、透明度低 -->
+                <ImageView
+                    android:id="@+id/widget_counter_date_glow_3"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/widget_date_glow"
+                    android:visibility="gone"
+                    android:contentDescription="@null" />
+
                 <ImageView
                     android:id="@+id/widget_counter_date_bg_3"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
+                    android:layout_margin="3dp"
                     android:src="@drawable/widget_chip_round"
                     android:visibility="gone"
                     android:contentDescription="@null" />
@@ -219,8 +260,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center"
-                    android:paddingVertical="8dp"
-                    android:textSize="11sp"
+                    android:paddingVertical="12dp"
+                    android:textSize="13sp"
                     android:textColor="@color/widget_v2_text_secondary"
                     android:maxLines="1" />
             </FrameLayout>
@@ -231,10 +272,20 @@
                 android:layout_weight="1"
                 android:layout_marginEnd="4dp">
 
+                <!-- 外发光：目标日那格显示，色相同、透明度低 -->
+                <ImageView
+                    android:id="@+id/widget_counter_date_glow_4"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/widget_date_glow"
+                    android:visibility="gone"
+                    android:contentDescription="@null" />
+
                 <ImageView
                     android:id="@+id/widget_counter_date_bg_4"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
+                    android:layout_margin="3dp"
                     android:src="@drawable/widget_chip_round"
                     android:visibility="gone"
                     android:contentDescription="@null" />
@@ -244,8 +295,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center"
-                    android:paddingVertical="8dp"
-                    android:textSize="11sp"
+                    android:paddingVertical="12dp"
+                    android:textSize="13sp"
                     android:textColor="@color/widget_v2_text_secondary"
                     android:maxLines="1" />
             </FrameLayout>
@@ -256,10 +307,20 @@
                 android:layout_weight="1"
                 android:layout_marginEnd="4dp">
 
+                <!-- 外发光：目标日那格显示，色相同、透明度低 -->
+                <ImageView
+                    android:id="@+id/widget_counter_date_glow_5"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/widget_date_glow"
+                    android:visibility="gone"
+                    android:contentDescription="@null" />
+
                 <ImageView
                     android:id="@+id/widget_counter_date_bg_5"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
+                    android:layout_margin="3dp"
                     android:src="@drawable/widget_chip_round"
                     android:visibility="gone"
                     android:contentDescription="@null" />
@@ -269,8 +330,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center"
-                    android:paddingVertical="8dp"
-                    android:textSize="11sp"
+                    android:paddingVertical="12dp"
+                    android:textSize="13sp"
                     android:textColor="@color/widget_v2_text_secondary"
                     android:maxLines="1" />
             </FrameLayout>
@@ -280,10 +341,20 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1">
 
+                <!-- 外发光：目标日那格显示，色相同、透明度低 -->
+                <ImageView
+                    android:id="@+id/widget_counter_date_glow_6"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/widget_date_glow"
+                    android:visibility="gone"
+                    android:contentDescription="@null" />
+
                 <ImageView
                     android:id="@+id/widget_counter_date_bg_6"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
+                    android:layout_margin="3dp"
                     android:src="@drawable/widget_chip_round"
                     android:visibility="gone"
                     android:contentDescription="@null" />
@@ -293,8 +364,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center"
-                    android:paddingVertical="8dp"
-                    android:textSize="11sp"
+                    android:paddingVertical="12dp"
+                    android:textSize="13sp"
                     android:textColor="@color/widget_v2_text_secondary"
                     android:maxLines="1" />
             </FrameLayout>

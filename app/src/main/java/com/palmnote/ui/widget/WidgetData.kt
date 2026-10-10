@@ -136,6 +136,42 @@ object WidgetData {
         }
     }
 
+    /** 待办组件的一屏数据：清单是「逾期 + 今天及以后」的活跃条目，进度轴用今日完成度。 */
+    data class TodoBoard(
+        val items: List<LifeItem>,
+        val todayDone: Int,
+        val todayTotal: Int
+    )
+
+    /**
+     * 待办组件取数。**清单不能只查今天**：稿子里列的是「今天 / 明天 / 3 天后 / 本周日 / 11/02」，
+     * 只查今天到期会让用户记的（没填日期或排在别的日子的）待办一条都不显示。
+     * 排序：有日期的按到期日升序（逾期在最前），没日期的排最后。
+     */
+    suspend fun fetchTodoBoard(
+        lifeItemDao: LifeItemDao,
+        lifeTemplateDao: LifeTemplateDao,
+        includeDemo: Boolean,
+        demoMeta: String
+    ): TodoBoard {
+        val templates = lifeTemplateDao.getAllVisibleTemplates().first()
+        val todoTemplate = templates.firstOrNull { it.getKind() == LifeTemplateKind.TODO }
+            ?: return TodoBoard(emptyList(), 0, 0)
+        val active = lifeItemDao.getWidgetItemsByTemplate(todoTemplate.id, includeDemo, demoMeta).first()
+            .filter { it.parentId == null }
+        val today = LocalDate.now()
+        val todayStart = today.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        val todayEnd = today.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        val todayItems = active.filter { it.dueDate?.let { d -> d >= todayStart && d < todayEnd } == true }
+        return TodoBoard(
+            items = active.sortedWith(
+                compareBy({ it.dueDate == null }, { it.dueDate ?: Long.MAX_VALUE }, { it.sortOrder })
+            ),
+            todayDone = todayItems.count { it.status == "COMPLETED" },
+            todayTotal = todayItems.size
+        )
+    }
+
     // 今天有待办的活跃条目（TodoWidget 与概览小组件共用）
     suspend fun fetchTodayTodos(
         lifeItemDao: LifeItemDao,

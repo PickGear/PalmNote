@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 习惯点阵的一行：近 7 天（从 6 天前排到今天）各一个圆点，整行可点＝给这个习惯打今天的卡 -->
+<!-- 习惯点阵的一行：近 7 天（从 6 天前排到今天）各一个圆点，整行可点＝给这个习惯打今天的卡；
+     今天（第 7 格）多一圈描边 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_habit_dots_row"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
     android:gravity="center_vertical"
-    android:paddingVertical="3dp">
+    android:paddingVertical="5dp">
 
     <ImageView
         android:id="@+id/widget_habit_dot_0"
@@ -19,7 +20,7 @@
         android:id="@+id/widget_habit_dot_1"
         android:layout_width="16dp"
         android:layout_height="16dp"
-        android:layout_marginStart="6dp"
+        android:layout_marginStart="8dp"
         android:src="@drawable/widget_shape_circle"
         android:contentDescription="@null" />
 
@@ -27,7 +28,7 @@
         android:id="@+id/widget_habit_dot_2"
         android:layout_width="16dp"
         android:layout_height="16dp"
-        android:layout_marginStart="6dp"
+        android:layout_marginStart="8dp"
         android:src="@drawable/widget_shape_circle"
         android:contentDescription="@null" />
 
@@ -35,7 +36,7 @@
         android:id="@+id/widget_habit_dot_3"
         android:layout_width="16dp"
         android:layout_height="16dp"
-        android:layout_marginStart="6dp"
+        android:layout_marginStart="8dp"
         android:src="@drawable/widget_shape_circle"
         android:contentDescription="@null" />
 
@@ -43,7 +44,7 @@
         android:id="@+id/widget_habit_dot_4"
         android:layout_width="16dp"
         android:layout_height="16dp"
-        android:layout_marginStart="6dp"
+        android:layout_marginStart="8dp"
         android:src="@drawable/widget_shape_circle"
         android:contentDescription="@null" />
 
@@ -51,16 +52,30 @@
         android:id="@+id/widget_habit_dot_5"
         android:layout_width="16dp"
         android:layout_height="16dp"
-        android:layout_marginStart="6dp"
+        android:layout_marginStart="8dp"
         android:src="@drawable/widget_shape_circle"
         android:contentDescription="@null" />
 
-    <ImageView
-        android:id="@+id/widget_habit_dot_6"
-        android:layout_width="16dp"
-        android:layout_height="16dp"
-        android:layout_marginStart="6dp"
-        android:src="@drawable/widget_shape_circle"
-        android:contentDescription="@null" />
+    <FrameLayout
+        android:layout_width="22dp"
+        android:layout_height="22dp"
+        android:layout_marginStart="5dp">
+
+        <ImageView
+            android:id="@+id/widget_habit_dot_6"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:layout_gravity="center"
+            android:src="@drawable/widget_shape_circle"
+            android:contentDescription="@null" />
+
+        <!-- 今天那格多一圈描边（运行时着该行的色族色） -->
+        <ImageView
+            android:id="@+id/widget_habit_dot_today_ring"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:src="@drawable/widget_dot_ring"
+            android:contentDescription="@null" />
+    </FrameLayout>
 
 </LinearLayout>

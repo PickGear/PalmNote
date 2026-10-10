@@ -17,9 +17,10 @@ import kotlinx.coroutines.flow.first
  * 总资产 2×1 组件：各账户余额合计（与应用内钱包页同一口径）+ 一枚涨跌胶囊。
  * 点卡片进记账页看明细；尺寸变化只影响字号，不做分档。
  *
- * 涨幅口径：**本月净收入 ÷ 期初总资产**（期初 = 当前合计 − 本月净收入）。应用不存总资产历史，
- * 这是唯一能从现有数据算出来的环比；账单没有挂账户或走了信用卡时这个数会有偏差，
- * 所以取不到正数基数时干脆不显示胶囊。
+ * 胶囊口径：**本月净收入（本月收入 − 支出）的金额**，涨绿跌红。
+ * 一开始按稿子做的是百分比（净收入 ÷ 期初总资产），但真机上算出来是 +175.8% —— 基数是
+ * 期初总资产，收入远大于余额时这个比例毫无意义；应用也不存总资产历史，做不了真正的环比。
+ * 金额是现有数据能如实表达的，本月没有进出就整枚隐藏。
  */
 class NetWorthWidgetProvider : ScopedWidgetProvider() {
 
@@ -75,7 +76,7 @@ class NetWorthWidgetProvider : ScopedWidgetProvider() {
             android.util.TypedValue.COMPLEX_UNIT_SP,
             if (wide) 26f else 22f
         )
-        bindDelta(context, views, totalBalance, monthDelta)
+        bindDelta(context, views, monthDelta)
 
         views.setOnClickPendingIntent(
             R.id.widget_layout,
@@ -88,14 +89,12 @@ class NetWorthWidgetProvider : ScopedWidgetProvider() {
         return views
     }
 
-    /** 涨跌胶囊：期初基数取不到正数（或本月没变化）时整枚隐藏。 */
-    private fun bindDelta(context: Context, views: RemoteViews, totalBalance: Long, monthDelta: Long) {
-        val base = totalBalance - monthDelta
-        if (monthDelta == 0L || base <= 0L) {
+    /** 涨跌胶囊：本月没有进出就整枚隐藏，否则给带符号的净收入金额。 */
+    private fun bindDelta(context: Context, views: RemoteViews, monthDelta: Long) {
+        if (monthDelta == 0L) {
             views.setViewVisibility(R.id.widget_net_worth_delta, View.GONE)
             return
         }
-        val percent = monthDelta * 100.0 / base
         val up = monthDelta > 0
         views.setViewVisibility(R.id.widget_net_worth_delta, View.VISIBLE)
         // 胶囊底走 setBackgroundResource（RemoteViews 不能给背景 drawable 上色，换图最稳）
@@ -104,9 +103,10 @@ class NetWorthWidgetProvider : ScopedWidgetProvider() {
             "setBackgroundResource",
             if (up) R.drawable.widget_delta_pill_up else R.drawable.widget_delta_pill_down
         )
+        // 金额格式函数返回绝对值，符号在这里补（涨 +、跌 -）
         views.setTextViewText(
             R.id.widget_net_worth_delta,
-            String.format(java.util.Locale.US, "%+.1f%%", percent)
+            (if (up) "+" else "-") + "¥" + WidgetData.formatAmountCompact(context, monthDelta)
         )
         views.setTextColor(
             R.id.widget_net_worth_delta,

@@ -114,6 +114,16 @@ class HabitWidgetProvider : ScopedWidgetProvider() {
             val topFamily = WidgetData.colorFamily(context, topIndex)
             views.setTextViewText(R.id.widget_habit_streak, "${top.streak}")
             views.setTextColor(R.id.widget_habit_streak, topFamily.hue)
+            // 习惯只有一两条时卡片会空掉一大半：连击数字按行数放大，把左栏撑起来
+            views.setTextViewTextSize(
+                R.id.widget_habit_streak,
+                android.util.TypedValue.COMPLEX_UNIT_SP,
+                when {
+                    rows.size <= 2 -> STREAK_SP_FEW
+                    rows.size <= 4 -> STREAK_SP_SOME
+                    else -> STREAK_SP_MANY
+                }
+            )
             views.setTextViewText(R.id.widget_habit_streak_name, top.name)
             views.setTextColor(R.id.widget_habit_streak_name, topFamily.hue)
         }
@@ -142,6 +152,8 @@ class HabitWidgetProvider : ScopedWidgetProvider() {
             val done = row.recent.getOrElse(dotIndex) { false }
             rowView.setInt(dotId, "setColorFilter", if (done) family.hue else emptyDot)
         }
+        // 今天（最后一格）的描边环跟该行的色族色走
+        rowView.setInt(R.id.widget_habit_dot_today_ring, "setColorFilter", family.hue)
         if (android.os.Build.VERSION.SDK_INT >= 30) {
             val state = if (row.checked) context.getString(R.string.widget_completed) else ""
             rowView.setContentDescription(R.id.widget_habit_dots_row, "${row.name} $state".trim())
@@ -166,6 +178,11 @@ class HabitWidgetProvider : ScopedWidgetProvider() {
     companion object {
         /** 组件里最多列几行（再多交给生活页）。 */
         const val MAX_ROWS = 5
+
+        /** 连击数字字号：习惯越少放得越大（1-2 / 3-4 / 5+ 行）。 */
+        private const val STREAK_SP_FEW = 64f
+        private const val STREAK_SP_SOME = 48f
+        private const val STREAK_SP_MANY = 40f
 
         /** 点阵一行 7 格，从 6 天前排到今天。 */
         private const val RECENT_DAYS = 7

@@ -66,20 +66,21 @@ class WidgetPreviewPngGenerator {
         outDir = dir
         outDir.mkdirs()
 
-        render("bill", 735, 444, billViews())
+        render("bill", 774, 570, billViews())
         // 迷你档不进选择器（没有 previewImage），这里出图只为目检
-        render("bill_mini", 480, 222, billMiniViews())
+        render("bill_mini", 516, 285, billMiniViews())
         // 概览是 4×3：真机格子比 240×160dp 画布高，画布加高，否则第二行会被裁掉
-        render("dashboard", 1020, 666, dashboardViews())
-        render("todo", 1020, 666, todoViews())
-        render("habit", 1020, 666, habitViews())
-        render("counter", 1020, 666, counterViews())
-        render("asset", 735, 444, assetViews())
-        render("shortcuts", 480, 444, shortcutsViews())
+        render("dashboard", 1035, 852, dashboardViews())
+        render("todo", 1035, 852, todoViews())
+        render("habit", 1035, 852, habitViews())
+        // 倒计时是 3×2（稿子口径）：画布按 3 格宽给
+        render("counter", 774, 570, counterViews())
+        render("asset", 774, 570, assetViews())
+        render("shortcuts", 516, 570, shortcutsViews())
         // 总资产是 2×1：按真实格子给画布
-        render("net_worth", 480, 222, netWorthViews())
-        render("subscription", 735, 444, subscriptionViews())
-        render("vault", 246, 222, vaultViews())
+        render("net_worth", 516, 285, netWorthViews())
+        render("subscription", 774, 570, subscriptionViews())
+        render("vault", 258, 285, vaultViews())
     }
 
     // ── 各组件：与线上 onUpdateAsync 同源（同样的 bind + 同样的运行时着色） ──
@@ -165,6 +166,14 @@ class WidgetPreviewPngGenerator {
             HabitWidgetProvider.HabitRow(
                 templateId = 13, name = "喝水 8 杯", checked = false, streak = 0,
                 recent = listOf(false, false, false, true, false, false, false)
+            ),
+            HabitWidgetProvider.HabitRow(
+                templateId = 14, name = "早睡", checked = true, streak = 6,
+                recent = listOf(true, true, false, true, true, true, true)
+            ),
+            HabitWidgetProvider.HabitRow(
+                templateId = 15, name = "冥想 10 分钟", checked = false, streak = 2,
+                recent = listOf(true, false, true, false, true, true, false)
             )
         )
     )
@@ -190,12 +199,13 @@ class WidgetPreviewPngGenerator {
         context,
         1,
         listOf(
-            HeldCategoryCount("数码", 3),
-            HeldCategoryCount("运动", 2),
-            HeldCategoryCount("家具", 2),
-            HeldCategoryCount("图书", 2),
-            HeldCategoryCount("乐器", 1),
-            HeldCategoryCount("摄影", 1)
+            // 用 DB 里的规范代码（组件按 getCategoryName 翻译成中文，写中文名会落成「其他」）
+            HeldCategoryCount("DIGITAL", 3),
+            HeldCategoryCount("SPORTS", 2),
+            HeldCategoryCount("FURNITURE", 2),
+            HeldCategoryCount("BOOKS", 2),
+            HeldCategoryCount("MUSICAL", 1),
+            HeldCategoryCount("PHOTOGRAPHY", 1)
         )
     )
 
@@ -210,7 +220,8 @@ class WidgetPreviewPngGenerator {
         listOf(
             SubscriptionWidgetProvider.Renewal("云盘会员", "25", 4),
             SubscriptionWidgetProvider.Renewal("视频会员", "15", 12),
-            SubscriptionWidgetProvider.Renewal("音乐会员", "8", 23)
+            SubscriptionWidgetProvider.Renewal("音乐会员", "8", 23),
+            SubscriptionWidgetProvider.Renewal("云存储", "6", 29)
         )
     )
 

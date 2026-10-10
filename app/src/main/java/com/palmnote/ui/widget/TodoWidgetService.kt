@@ -63,12 +63,12 @@ internal class TodoViewsFactory(
         )
         val prefs = entryPoint.preferencesManager()
         runBlocking {
-            todos = WidgetData.fetchTodayTodos(
+            todos = WidgetData.fetchTodoBoard(
                 entryPoint.lifeItemDao(),
                 entryPoint.lifeTemplateDao(),
                 includeDemo = prefs.lifeDemoMode.first(),
                 demoMeta = com.palmnote.data.db.dao.LIFE_DEMO_META
-            )
+            ).items
         }
     }
 

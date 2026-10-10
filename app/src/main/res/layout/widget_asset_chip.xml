@@ -22,7 +22,7 @@
         android:orientation="horizontal"
         android:gravity="center_vertical"
         android:paddingHorizontal="8dp"
-        android:paddingVertical="4dp">
+        android:paddingVertical="7dp">
 
         <ImageView
             android:id="@+id/widget_asset_chip_dot"
@@ -36,7 +36,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:textSize="12sp"
+            android:textSize="13sp"
             android:textColor="@color/widget_v2_text_primary"
             android:layout_marginStart="6dp"
             android:maxLines="1"

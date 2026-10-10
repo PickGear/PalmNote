@@ -80,11 +80,6 @@ class DashboardWidgetProvider : ScopedWidgetProvider() {
             views, R.id.widget_dashboard_todo_ring_track, R.id.widget_dashboard_todo_ring,
             families[2].hue, todoPercent(snapshot)
         )
-        views.setTextViewText(
-            R.id.widget_dashboard_ring_text,
-            snapshot.budgetPercent?.let { "$it%" } ?: "--"
-        )
-
         views.setOnClickPendingIntent(
             R.id.widget_layout,
             WidgetHelper.createPendingIntent(context, WidgetDeepLink.SEG_DASHBOARD + appWidgetId, WidgetDeepLink.TAB_DASHBOARD)
@@ -243,6 +238,12 @@ class DashboardWidgetProvider : ScopedWidgetProvider() {
 
     internal fun bindSnapshot(context: Context, views: RemoteViews, snapshot: DashboardSnapshot) {
         views.setTextViewText(R.id.widget_dashboard_date, snapshot.dateText)
+        // 环中心的数字取第一个有数据的百分比（预算 → 目标 → 待办），三个都没有才显示 --
+        val ringPercent = snapshot.budgetPercent ?: snapshot.goalPercent ?: todoPercent(snapshot)
+        views.setTextViewText(
+            R.id.widget_dashboard_ring_text,
+            ringPercent?.let { "$it%" } ?: "--"
+        )
         views.setTextViewText(R.id.widget_dashboard_budget, snapshot.budgetCardAmount)
         views.setTextViewText(R.id.widget_dashboard_budget_sub, snapshot.budgetCardSub)
         views.setTextViewText(R.id.widget_dashboard_goal_pct, snapshot.goalPct)

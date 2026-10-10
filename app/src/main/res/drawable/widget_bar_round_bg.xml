@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 占比条的容器底：圆角矩形，配 android:clipToOutline 把里面的段裁成圆头 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/widget_v2_ring" />
+    <corners android:radius="4dp" />
+</shape>
