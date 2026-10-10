@@ -467,6 +467,10 @@
     <string name="widget_preview_todo_2">Inventory check</string>
     <string name="widget_preview_todo_3">Monthly report</string>
     <string name="widget_preview_todo_due_3">in 3 days</string>
+    <string name="widget_preview_todo_4">Call mom</string>
+    <string name="widget_preview_todo_5">Renew domain</string>
+    <string name="widget_preview_todo_due_4">Sunday</string>
+    <string name="widget_preview_todo_due_5">11/02</string>
     <string name="widget_habit_title">Check-in</string>
     <string name="widget_habit_streak_label">Day streak</string>
     <string name="widget_habit_empty">No habits</string>

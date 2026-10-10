@@ -51,14 +51,14 @@ object WidgetPin {
         Entry(
             TodoWidgetProvider::class.java,
             R.drawable.widget_preview_todo,
-            R.layout.widget_todo_unified,
+            R.layout.widget_todo_preview,
             R.string.widget_todo_title,
             R.string.widget_todo_desc,
         ),
         Entry(
             HabitWidgetProvider::class.java,
             R.drawable.widget_preview_habit,
-            R.layout.widget_habit_unified,
+            R.layout.widget_habit_preview,
             R.string.widget_habit_title,
             R.string.widget_habit_desc,
         ),
