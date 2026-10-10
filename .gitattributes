@@ -22,3 +22,6 @@
 *.apk binary
 *.aab binary
 *.zip binary
+
+# GitHub 语言统计忽略构建/发布脚本（tools/*.sh），语言条只反映 App 本体（Kotlin）
+*.sh linguist-detectable=false
