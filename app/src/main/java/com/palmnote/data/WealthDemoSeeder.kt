@@ -61,14 +61,22 @@ class WealthDemoSeeder @Inject constructor(
     data class ClearResult(val removed: Int)
 
     /**
-     * 保证示例内容存在且为最新：演示模式开启且（未播种 / 版本落后 / 示例账本不在）时重建。
+     * 保证示例内容存在且为最新：演示模式开启且（未播种 / 版本落后 / 示例行不在）时重建。
      * 与 `LifeDemoSeeder.ensureSeeded` 同构，三处调用（应用启动 / 设置开关 / 生活页 VM）。
      */
     suspend fun ensureSeeded(preferences: PreferencesManager): Int {
         if (!preferences.lifeDemoMode.first()) return 0
         val upToDate = preferences.wealthDemoSeeded.first() &&
             preferences.wealthDemoSeedVersion.first() >= SEED_VERSION
-        if (upToDate && bookDao.countDemoBooks() > 0) return 0
+        // 存在性检查必须落在**真正会被播种的行**上。v10 起示例账单直接进用户默认账本、
+        // 不再建示例账本，旧守卫的 `bookDao.countDemoBooks() > 0` 恒为 false ⟹
+        // 演示模式下每次应用启动都整库重建：演示期删掉的示例钱包被复活、刚进回收站的
+        // 示例账单被 [deleteDemoRows] 的 clearDemoBills 连带抹掉 ——
+        // 用户实测「删钱包→回收站没有，不能恢复」（2026-10-11）。
+        // 改查示例钱包：既保留「清库后标记残留 → 自动补播」的原意
+        // （clearBills/clearAll 清表不清 DataStore 标记），又让演示期的删除在
+        // 重启后依然成立、进回收站的示例账单可以安心恢复。
+        if (upToDate && walletDao.countDemoWallets() > 0) return 0
         return reseed(preferences)
     }
 
