@@ -43,6 +43,7 @@ import com.palmnote.ui.bills.BillDetailScreen
 import com.palmnote.ui.bills.BudgetScreen
 import com.palmnote.ui.bills.BillImportScreen
 import com.palmnote.ui.bills.ReportScreen
+import com.palmnote.ui.bills.ReimbursementScreen
 import com.palmnote.ui.bills.AccountBookManageScreen
 import com.palmnote.ui.dashboard.DashboardScreen
 import com.palmnote.ui.search.SearchScreen
@@ -180,6 +181,9 @@ fun PalmNoteNavHost() {
                 onNavigateToAccountBook = {
                     navController.navigate(AccountBookManage)
                 },
+                onNavigateToReimbursement = {
+                    navController.navigate(Reimbursement)
+                },
                 onNavigateToAssetDetail = { assetId ->
                     navController.navigate(AssetDetail(assetId))
                 },
@@ -247,13 +251,28 @@ fun PalmNoteNavHost() {
             BillDetailScreen(
                 billId = billDetail.billId,
                 onNavigateBack = { navController.popBackStack() },
-                onNavigateToEdit = { id -> navController.navigate(AddBill(billId = id)) }
+                onNavigateToEdit = { id -> navController.navigate(AddBill(billId = id)) },
+                onNavigateToBill = { id ->
+                    // 详情页之间是「同一笔报销业务的两面」互查（支出 ↔ 关联收入 ↔ 该收入涵盖的支出）。
+                    // 用替换而非堆叠：否则来回点几次导航栈会无限加深（支出→收入→支出 可成环），
+                    // 返回键要按很多次才能退出。inclusive 只弹掉 BillDetail 层，上级页面（搜索/报销）保留。
+                    navController.navigate(BillDetail(id)) {
+                        popUpTo<BillDetail> { inclusive = true }
+                    }
+                }
             )
         }
 
         composable<Budget> {
             BudgetScreen(
                 onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable<Reimbursement> {
+            ReimbursementScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToDetail = { billId -> navController.navigate(BillDetail(billId)) }
             )
         }
 
@@ -503,6 +522,7 @@ private fun MainTabs(
     onNavigateToReport: (Long, String) -> Unit,
     onNavigateToImportCsv: () -> Unit,
     onNavigateToAccountBook: () -> Unit,
+    onNavigateToReimbursement: () -> Unit,
     onNavigateToAssetDetail: (Long) -> Unit,
     onNavigateToAddAsset: () -> Unit,
     onNavigateToSettings: () -> Unit,
@@ -739,7 +759,8 @@ private fun MainTabs(
                         onNavigateToReport(selectedBookId, bookName)
                     },
                     onNavigateToImportCsv = onNavigateToImportCsv,
-                    onNavigateToAccountBook = onNavigateToAccountBook
+                    onNavigateToAccountBook = onNavigateToAccountBook,
+                    onNavigateToReimbursement = onNavigateToReimbursement
                 )
             }
 

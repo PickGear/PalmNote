@@ -17,7 +17,7 @@ import com.palmnote.data.db.entity.*
         LifeReport::class, TodoItem::class, LifeMoment::class, MoodDiary::class, FocusRecord::class,
         BillRecycleBin::class, AssetRecycleBin::class, FieldValue::class
     ],
-    version = 15,
+    version = 16,
     exportSchema = true
 )
 @TypeConverters(Converters::class)

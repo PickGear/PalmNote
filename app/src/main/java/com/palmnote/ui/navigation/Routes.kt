@@ -39,6 +39,10 @@ data class Report(val selectedBookId: Long = -1L, val bookName: String = "")
 @Serializable
 data object BillImport
 
+/** 报销管理：待报销汇总与逐笔标记。 */
+@Serializable
+data object Reimbursement
+
 @Serializable
 data class Category(val type: String = "ASSET")
 

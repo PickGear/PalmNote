@@ -17,6 +17,7 @@ import com.palmnote.domain.model.RecurringFrequency
         Index(value = ["type"]),
         Index(value = ["date"]),
         Index(value = ["isReimbursable", "isReimbursed"]),
+        Index(value = ["reimbursedByBillId"]),
         Index(value = ["recurringId"]),
         Index(value = ["category"])
     ]
@@ -47,8 +48,19 @@ data class Bill(
     val recurringFrequency: RecurringFrequency = RecurringFrequency.MONTHLY, // DAILY, WEEKLY, MONTHLY, YEARLY
     val splitGroupId: String = "", // 拆分组ID
     val isReimbursable: Boolean = false, // 是否可报销
-    val isReimbursed: Boolean = false, // 是否已报销
-    val reimbursedDate: Long? = null,
+    val isReimbursed: Boolean = false, // 是否已报销（= reimbursedAmount >= amount，由报销操作统一写入）
+    val reimbursedDate: Long? = null, // 最近一次报销日期
+    /**
+     * 累计已报销金额（分）。支持部分报销：0 表示未报，>= amount 表示报完。
+     * 与 [isReimbursed] 由同一处写入保证一致，不要单独改其中一个。
+     */
+    @ColumnInfo(defaultValue = "0")
+    val reimbursedAmount: Long = 0,
+    /**
+     * 关联的报销收入账单 id（收入侧不存字段，一笔收入覆盖多条支出靠这里反查）。
+     * 报销收入被删除时会被清空，不保留悬空引用。
+     */
+    val reimbursedByBillId: Long? = null,
     val isTaxDeductible: Boolean = false, // 是否可抵税
     val latitude: Double? = null, // GPS纬度
     val longitude: Double? = null, // GPS经度
