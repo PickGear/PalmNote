@@ -45,9 +45,9 @@ object WidgetDeepLink {
     const val SEG_SUBSCRIPTION = 910_000
     const val SEG_SHORTCUT_ROOT = 650_000
     const val SEG_SHORTCUT_ADD = 11_000_000
-    const val SEG_SHORTCUT_BILL = 12_000_000
-    const val SEG_SHORTCUT_TODO = 13_000_000
-    const val SEG_SHORTCUT_VAULT = 14_000_000
+    const val SEG_SHORTCUT_ASSET = 12_000_000
+    const val SEG_SHORTCUT_GOAL = 13_000_000
+    const val SEG_SHORTCUT_ANNIVERSARY = 14_000_000
     const val SEG_TODO_TOGGLE = 21_000_000
     const val SEG_EVENT_DETAIL = 400_000_000
     const val SEG_LIFE_LIST = 500_000_000

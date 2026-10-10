@@ -8,6 +8,7 @@ import android.widget.FrameLayout
 import android.widget.RemoteViews
 import androidx.test.platform.app.InstrumentationRegistry
 import com.palmnote.app.R
+import com.palmnote.data.db.dao.HeldCategoryCount
 import com.palmnote.data.db.entity.Budget
 import com.palmnote.data.db.entity.Goal
 import com.palmnote.data.db.entity.LifeItem
@@ -91,7 +92,7 @@ class WidgetPreviewPngGenerator {
         dailyExpense = listOf(12_000, 4_500, 38_000, 0, 21_500, 62_000, 15_800)
     )
 
-    private fun billViews(): RemoteViews = BillWidgetProvider().bindViews(context, 1, billSnapshot(), accent)
+    private fun billViews(): RemoteViews = BillWidgetProvider().bindViews(context, 1, billSnapshot())
 
     private fun billMiniViews(): RemoteViews =
         BillWidgetProvider().bindMiniViews(context, 1, billSnapshot(), accent)
@@ -146,11 +147,7 @@ class WidgetPreviewPngGenerator {
      * 所以预览出选择器实际用的静态预览布局。
      */
     private fun todoViews(): RemoteViews =
-        RemoteViews(context.packageName, R.layout.widget_todo_preview).apply {
-            setInt(R.id.widget_todo_ring, "setColorFilter", accent.accent)
-            setInt(R.id.widget_todo_ring, "setImageLevel", 50 * 100)
-            setTextViewText(R.id.widget_todo_ring_text, "50%")
-        }
+        RemoteViews(context.packageName, R.layout.widget_todo_preview)
 
     /** 习惯 4×3：样例取 3 条（4 条会超出 240×160dp 画布被裁）。 */
     private fun habitViews(): RemoteViews = HabitWidgetProvider().bindViews(
@@ -169,8 +166,7 @@ class WidgetPreviewPngGenerator {
                 templateId = 13, name = "喝水 8 杯", checked = false, streak = 0,
                 recent = listOf(false, false, false, true, false, false, false)
             )
-        ),
-        accent = accent
+        )
     )
 
     private fun counterViews(): RemoteViews {
@@ -181,22 +177,31 @@ class WidgetPreviewPngGenerator {
             context,
             1,
             listOf(
-                // 12 天后生日：本期已过 353/365 ≈ 96%
-                LifeCounterWidgetProvider.CounterEvent(1, "妈妈生日", 12, today.plusDays(12), progressPercent = 96),
-                LifeCounterWidgetProvider.CounterEvent(2, "结婚纪念日", 48, today.plusDays(48), progressPercent = 87)
+                LifeCounterWidgetProvider.CounterEvent(1, "妈妈生日", 12, today.plusDays(12)),
+                LifeCounterWidgetProvider.CounterEvent(2, "结婚纪念日", 48, today.plusDays(48))
             ),
             isLarge = false
         )
-        views.setInt(R.id.widget_counter_focus_bg, "setColorFilter", accent.accent)
         return views
     }
 
-    private fun assetViews(): RemoteViews =
-        AssetWidgetProvider().bindViews(context, 1, heldCount = 6, totalValue = 1_285_000)
+    /** 物品 3×2：样例与静态预览布局同源（6 个分类、共 11 件）。 */
+    private fun assetViews(): RemoteViews = AssetWidgetProvider().bindViews(
+        context,
+        1,
+        listOf(
+            HeldCategoryCount("数码", 3),
+            HeldCategoryCount("运动", 2),
+            HeldCategoryCount("家具", 2),
+            HeldCategoryCount("图书", 2),
+            HeldCategoryCount("乐器", 1),
+            HeldCategoryCount("摄影", 1)
+        )
+    )
 
     /** 总资产 2×1：样例值取「账户余额合计」。 */
     private fun netWorthViews(): RemoteViews =
-        NetWorthWidgetProvider().bindViews(context, 1, totalBalance = 1_285_000, widthDp = 110)
+        NetWorthWidgetProvider().bindViews(context, 1, totalBalance = 1_285_000, widthDp = 110, monthDelta = 26_400)
 
     /** 订阅提醒 3×2：样例取三条近期扣费。 */
     private fun subscriptionViews(): RemoteViews = SubscriptionWidgetProvider().bindViews(
@@ -209,11 +214,7 @@ class WidgetPreviewPngGenerator {
         )
     )
 
-    private fun shortcutsViews(): RemoteViews {
-        val views = RemoteViews(context.packageName, R.layout.widget_shortcuts_unified)
-        views.setInt(R.id.widget_sc_add_bg, "setColorFilter", accent.accent)
-        return views
-    }
+    private fun shortcutsViews(): RemoteViews = ShortcutsWidgetProvider().bindViews(context, 1)
 
     /** 密码本已缩为 1×1，预览出的是缩档布局（与 info 的 previewLayout 同源）。 */
     private fun vaultViews(): RemoteViews = VaultWidgetProvider().bindSmallViews(context, 1, totalCount = 24)

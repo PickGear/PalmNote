@@ -17,6 +17,7 @@ import dagger.hilt.components.SingletonComponent
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.Json
@@ -87,26 +88,29 @@ class SubscriptionWidgetProvider : ScopedWidgetProvider() {
 
     internal fun bindViews(context: Context, appWidgetId: Int, renewals: List<Renewal>): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.widget_subscription_unified)
+        // 装饰色走色族（不占全局强调色）：徽章用紫、徽章里的时钟字形着白
+        views.setInt(R.id.widget_subscription_badge, "setColorFilter", WidgetData.colorFamily(context, 4).hue)
+        views.setInt(R.id.widget_subscription_badge_icon, "setColorFilter", android.graphics.Color.WHITE)
+
+        val today = LocalDate.now()
+        val monthCount = renewals.count { isSameMonth(today, today.plusDays(it.daysLeft)) }
+        views.setTextViewText(
+            R.id.widget_subscription_month_count,
+            context.resources.getQuantityString(
+                R.plurals.widget_subscription_month_count, monthCount, monthCount
+            )
+        )
+
+        // 时间轴：一行一次待扣费，色点落在竖线上
         views.removeAllViews(R.id.widget_subscription_list)
-        // 两列色片网格（参考图那张「物品分布」的排布）：每行两个色片，条目数为奇数时补一个等宽占位
-        renewals.chunked(2).forEachIndexed { pairIndex, pair ->
-            val pairRow = RemoteViews(context.packageName, R.layout.widget_subscription_pair)
-            pair.forEachIndexed { i, renewal ->
-                pairRow.addView(
-                    R.id.widget_subscription_pair_row,
-                    rowViews(context, renewal, pairIndex * 2 + i)
-                )
-            }
-            if (pair.size == 1) {
-                pairRow.addView(
-                    R.id.widget_subscription_pair_row,
-                    RemoteViews(context.packageName, R.layout.widget_subscription_spacer)
-                )
-            }
-            views.addView(R.id.widget_subscription_list, pairRow)
+        renewals.forEachIndexed { index, renewal ->
+            views.addView(R.id.widget_subscription_list, rowViews(context, renewal, index, today))
         }
-        views.setViewVisibility(R.id.widget_subscription_empty, if (renewals.isEmpty()) View.VISIBLE else View.GONE)
-        views.setViewVisibility(R.id.widget_subscription_list, if (renewals.isEmpty()) View.GONE else View.VISIBLE)
+
+        val empty = renewals.isEmpty()
+        views.setViewVisibility(R.id.widget_subscription_empty, if (empty) View.VISIBLE else View.GONE)
+        views.setViewVisibility(R.id.widget_subscription_list, if (empty) View.GONE else View.VISIBLE)
+        views.setViewVisibility(R.id.widget_subscription_line, if (empty) View.GONE else View.VISIBLE)
         views.setOnClickPendingIntent(
             R.id.widget_layout,
             WidgetHelper.createPendingIntent(
@@ -118,27 +122,22 @@ class SubscriptionWidgetProvider : ScopedWidgetProvider() {
         return views
     }
 
-    /** 一行：名称 + 价格，右侧「还有几天」（当天显示「今天」）。 */
-    private fun rowViews(context: Context, renewal: Renewal, index: Int): RemoteViews {
+    /** 下一次扣费日是否落在与今天同一个月（「本月 N 笔」的口径）。 */
+    private fun isSameMonth(today: LocalDate, date: LocalDate): Boolean =
+        date.year == today.year && date.month == today.month
+
+    /** 时间轴一行：色点 + 日期 + 名称 + 金额（金额与色点同族上色）。 */
+    private fun rowViews(context: Context, renewal: Renewal, index: Int, today: LocalDate): RemoteViews {
         val row = RemoteViews(context.packageName, R.layout.widget_subscription_item)
-        // 每条一个色族：色片底淡彩、色点同族饱和（参考主页色片清单的用法）
         val family = WidgetData.colorFamily(context, index)
-        row.setInt(R.id.widget_subscription_item_chip, "setColorFilter", family.tint)
         row.setInt(R.id.widget_subscription_item_dot, "setColorFilter", family.hue)
+        row.setTextColor(R.id.widget_subscription_item_price, family.hue)
+        row.setTextViewText(
+            R.id.widget_subscription_item_date,
+            today.plusDays(renewal.daysLeft).format(DateTimeFormatter.ofPattern("M/d"))
+        )
         row.setTextViewText(R.id.widget_subscription_item_name, renewal.name)
         row.setTextViewText(R.id.widget_subscription_item_price, renewal.price)
-        row.setTextViewText(
-            R.id.widget_subscription_item_days,
-            if (renewal.daysLeft == 0L) {
-                context.getString(R.string.widget_today)
-            } else {
-                context.resources.getQuantityString(
-                    R.plurals.widget_days_remaining_format,
-                    renewal.daysLeft.toInt(),
-                    renewal.daysLeft
-                )
-            }
-        )
         return row
     }
 

@@ -46,7 +46,7 @@ class BillWidgetProvider : ScopedWidgetProvider() {
                 if (isCompactSize(width, height)) {
                     bindMiniViews(context, appWidgetId, snapshot, accent)
                 } else {
-                    bindViews(context, appWidgetId, snapshot, accent)
+                    bindViews(context, appWidgetId, snapshot)
                 }
             }
         }
@@ -147,16 +147,29 @@ class BillWidgetProvider : ScopedWidgetProvider() {
     /**
      * 近 7 天柱状图：柱高 = 当天支出 ÷ 七天里最大的一天。
      * RemoteViews 不能动态改控件高度，所以柱高走竖向 clip 的 level（0..10000）。
-     * 全为 0 或某天为 0 时留一条矮基线，免得整行看起来是空的。
+     * 全为 0 或某天为 0 时留一条矮基线（着轨道色），免得整行看起来是空的；
+     * 最高的一天换个颜色点出来。
      */
-    private fun bindDailyBars(views: RemoteViews, daily: List<Long>, color: Int) {
+    private fun bindDailyBars(
+        views: RemoteViews,
+        daily: List<Long>,
+        normalColor: Int,
+        highlightColor: Int,
+        trackColor: Int
+    ) {
         val max = daily.maxOrNull() ?: 0L
         barIds.forEachIndexed { index, id ->
             val value = daily.getOrElse(index) { 0L }
-            val level = if (max <= 0L || value <= 0L) {
+            val isEmpty = max <= 0L || value <= 0L
+            val level = if (isEmpty) {
                 MIN_BAR_LEVEL
             } else {
                 (value * FULL_LEVEL / max).toInt().coerceIn(MIN_BAR_LEVEL, FULL_LEVEL)
+            }
+            val color = when {
+                isEmpty -> trackColor
+                value >= max -> highlightColor
+                else -> normalColor
             }
             views.setInt(id, "setColorFilter", color)
             views.setInt(id, "setImageLevel", level)
@@ -194,30 +207,32 @@ class BillWidgetProvider : ScopedWidgetProvider() {
     internal fun bindViews(
         context: Context,
         appWidgetId: Int,
-        snapshot: BillSnapshot,
-        accent: WidgetData.AccentTheme
+        snapshot: BillSnapshot
     ): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.widget_bill_unified)
 
-        // 三格窄（3 格宽时每格约 47dp 放文字），金额走不带分位、不带正负号的紧凑格式：
-        // 真机上 `-¥5290.50`（9 个字符）会被省略号截成 `-¥529…`，金额看不全。
-        // 标签（收入/支出）已经说明方向，省掉符号只留 ¥，最长 5 个字符放得下。
-        views.setTextViewText(
-            R.id.widget_income_amount,
-            "¥${WidgetData.formatAmountCompact(context, snapshot.monthlyIncome)}"
-        )
+        // 装饰色走色族（不占全局强调色）：徽章与用量条用橙，柱子用蓝、最高的一天换回橙
+        val primary = WidgetData.colorFamily(context, 0)
+        val secondary = WidgetData.colorFamily(context, 1)
+
         views.setTextViewText(
             R.id.widget_expense_amount,
-            "¥${WidgetData.formatAmountCompact(context, snapshot.monthlyExpense)}"
+            WidgetData.formatMoneyCompact(context, snapshot.monthlyExpense)
         )
-        views.setTextColor(R.id.widget_add_btn, accent.accent)
-        // 头部徽章运行时着主题色（白底圆形 + 白色字形）
-        views.setInt(R.id.widget_bill_badge, "setColorFilter", accent.accent)
-        bindDailyBars(views, snapshot.dailyExpense, accent.accent)
+        views.setInt(R.id.widget_bill_badge, "setColorFilter", primary.hue)
+        views.setTextColor(R.id.widget_add_btn, primary.hue)
+        bindDailyBars(
+            views,
+            snapshot.dailyExpense,
+            normalColor = secondary.hue,
+            highlightColor = primary.hue,
+            trackColor = context.getColor(R.color.widget_v2_ring)
+        )
 
-        // 图下说明：预算剩余 / 净收入（原来的主题色横幅已下线，信息并到这一行）
-        if (snapshot.budget != null && snapshot.budget.totalBudget > 0) {
-            bindBudgetCard(context, views, snapshot)
+        // 用量条与图下说明：有预算给「预算已用 N%」，没预算就给本月净收入（与迷你档同口径）
+        val budget = snapshot.budget?.takeIf { it.totalBudget > 0 }
+        if (budget != null) {
+            bindBudgetUsage(context, views, snapshot, budget, primary.hue)
         } else {
             bindBalanceCard(context, views, snapshot)
         }
@@ -237,17 +252,28 @@ class BillWidgetProvider : ScopedWidgetProvider() {
         return views
     }
 
-    private fun bindBudgetCard(context: Context, views: RemoteViews, snapshot: BillSnapshot) {
-        val budget = snapshot.budget ?: return
-        views.setTextViewText(R.id.widget_budget_card_label, context.getString(R.string.widget_budget_remaining))
-        views.setTextViewText(
-            R.id.widget_budget_amount,
-            "¥${WidgetData.formatAmountCompact(context, budget.totalBudget - snapshot.monthlyExpense)}"
-        )
+    /** 有预算：用量条按「支出 ÷ 预算」扫过，下面写「预算已用 N%」。 */
+    private fun bindBudgetUsage(
+        context: Context,
+        views: RemoteViews,
+        snapshot: BillSnapshot,
+        budget: Budget,
+        fillColor: Int
+    ) {
+        // 超支按 100% 封顶，免得进度条扫过头
+        val usedPercent = (snapshot.monthlyExpense * 100 / budget.totalBudget).toInt().coerceIn(0, 100)
+        views.setViewVisibility(R.id.widget_bill_budget_bar, View.VISIBLE)
+        views.setInt(R.id.widget_bill_budget_fill, "setColorFilter", fillColor)
+        // RemoteViews 没有 setImageLevel 专用 API，反射调 ImageView.setImageLevel
+        views.setInt(R.id.widget_bill_budget_fill, "setImageLevel", usedPercent * 100)
+        views.setTextViewText(R.id.widget_budget_card_label, context.getString(R.string.widget_budget_used))
+        views.setTextViewText(R.id.widget_budget_amount, "$usedPercent%")
     }
 
     private fun bindBalanceCard(context: Context, views: RemoteViews, snapshot: BillSnapshot) {
         val balance = snapshot.monthlyIncome - snapshot.monthlyExpense
+        // 没有预算就没有用量可表，收起条只留一行结余
+        views.setViewVisibility(R.id.widget_bill_budget_bar, View.GONE)
         views.setTextViewText(R.id.widget_budget_card_label, context.getString(R.string.widget_net_income))
         // 净收入可正可负，标签不表方向，所以负值要带符号（格式函数返回绝对值）
         val balanceSign = if (balance < 0) "-" else ""

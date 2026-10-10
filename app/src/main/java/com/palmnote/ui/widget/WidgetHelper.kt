@@ -139,29 +139,27 @@ object WidgetHelper {
         )
     }
 
-    /** 待办行：整行点击走 fill-in intent —— 集合里的行不能各自持有 PendingIntent，由模板补全。 */
+    /** 待办行（色片）：整行点击走 fill-in intent —— 集合里的行不能各自持有 PendingIntent，由模板补全。 */
     fun todoRowViews(
         context: Context,
-        item: com.palmnote.data.db.entity.LifeItem,
-        accentColor: Int
+        item: com.palmnote.data.db.entity.LifeItem
     ): RemoteViews {
         val itemView = RemoteViews(context.packageName, R.layout.widget_todo_item)
         val completed = item.status == "COMPLETED"
-        // 左侧色条按条目 id 取调色板色：同一个条目每次刷新都是同一个颜色
-        val palette = WidgetData.widgetPalette(context)
-        itemView.setInt(R.id.widget_todo_bar, "setColorFilter", palette[(item.id % palette.size).toInt()])
-        // 圆圈三层结构（灰环/可着色圆底/对勾）：主题色经 setColorFilter 运行时着色，全主题生效
-        itemView.setViewVisibility(R.id.widget_item_check_ring, if (completed) View.GONE else View.VISIBLE)
-        itemView.setViewVisibility(R.id.widget_item_check_fill, if (completed) View.VISIBLE else View.GONE)
-        if (completed) {
-            itemView.setInt(R.id.widget_item_check_fill, "setColorFilter", accentColor)
-        }
-        itemView.setViewVisibility(R.id.widget_item_check, if (completed) View.VISIBLE else View.GONE)
+        // 一个条目一个色族：按条目 id 取，同一个条目每次刷新都是同一族色
+        val family = WidgetData.colorFamily(context, item.id.toInt())
+        itemView.setInt(R.id.widget_todo_chip_bg, "setColorFilter", family.tint)
+        itemView.setInt(R.id.widget_todo_dot, "setColorFilter", family.hue)
+        // 完成的行加勾前缀：RemoteViews 既没有划线 API，Spannable 的 StrikethroughSpan
+        // 也过不了 RemoteViews（跨进程只传文本、span 会丢），只能用可见前缀表状态
+        itemView.setTextViewText(
+            R.id.widget_item_text,
+            if (completed) "✓ ${item.title}" else item.title
+        )
         // 无障碍：行内容描述（API 30+ RemoteViews 支持，低版本自动忽略）
         if (android.os.Build.VERSION.SDK_INT >= 30) {
             itemView.setContentDescription(R.id.widget_todo_row, item.title)
         }
-        itemView.setTextViewText(R.id.widget_item_text, item.title)
         itemView.setTextColor(
             R.id.widget_item_text,
             if (completed) context.getColor(R.color.widget_v2_text_tertiary) else context.getColor(R.color.widget_v2_text_primary)
@@ -201,13 +199,6 @@ object WidgetHelper {
         itemView.setTextViewText(R.id.widget_item_category, bill.category)
         val prefix = if (bill.type == BillType.EXPENSE) "-" else "+"
         itemView.setTextViewText(R.id.widget_item_amount, "$prefix${formatMoney(bill.amount)}")
-        views.addView(containerId, itemView)
-    }
-
-    fun addAssetCategoryView(context: Context, views: RemoteViews, containerId: Int, category: String, count: Int) {
-        val itemView = RemoteViews(context.packageName, R.layout.widget_asset_category_item)
-        itemView.setTextViewText(R.id.widget_item_category, category)
-        itemView.setTextViewText(R.id.widget_item_count, "$count")
         views.addView(containerId, itemView)
     }
 
