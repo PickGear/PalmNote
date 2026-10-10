@@ -213,7 +213,7 @@ PalmNote 是纯本地应用，以下限制是"零联网"设计的直接代价，
 
 - 提交 Bug 或功能请求 → [Issues](https://github.com/PickGear/PalmNote/issues)
 - 提交代码 → [Pull Requests](https://github.com/PickGear/PalmNote/pulls)
-- 交流群（QQ）→ 1036958236（用法交流与建议；问题跟踪仍走 Issues，便于检索与留档）
+- 交流群（QQ）→ 1036958236（学习交流与建议）
 - 贡献指南 → [CONTRIBUTING.md](CONTRIBUTING.md)
 - 安全漏洞报告 → [SECURITY.md](SECURITY.md)
 - 社区行为准则 → [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
