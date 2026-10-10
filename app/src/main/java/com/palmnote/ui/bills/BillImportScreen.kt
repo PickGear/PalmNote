@@ -555,7 +555,7 @@ private fun EntryCardRow(
         EntryCard(
             title = stringResource(R.string.bill_import_file),
             desc = stringResource(R.string.bill_import_file_desc_short),
-            icon = Icons.Outlined.FileUpload,
+            icon = Icons.Outlined.FileDownload,
             emphasize = fileEmphasis,
             rotationDeg = -2f,
             stackDirX = -1f,
@@ -1184,7 +1184,7 @@ private fun DoneContent(
                 border = BorderStroke(1.dp, ExpenseRed),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = ExpenseRed)
             ) {
-                Icon(Icons.Outlined.FileDownload, null, modifier = Modifier.size(18.dp))
+                Icon(Icons.Outlined.FileUpload, null, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(stringResource(R.string.bill_import_export_failures, failedCount))
             }
