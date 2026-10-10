@@ -34,14 +34,24 @@ class LifeCounterWidgetProvider : ScopedWidgetProvider() {
         )
         val accent = WidgetData.readAccentTheme(context, entryPoint.preferencesManager())
         val events = collectCounterEvents(context)
-        for (appWidgetId in appWidgetIds) {
-            // 按实际宽度分桶：大档（≥400dp）显示多事件列表，小/中档只显示最近一个事件
-            val minWidth = appWidgetManager.getAppWidgetOptions(appWidgetId)
-                .getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH)
-            val views = counterViews(context, appWidgetId, events, isLarge = minWidth >= 400)
-            // 焦点卡底运行时取主题色（此前硬编码青色）
-            views.setInt(R.id.widget_counter_focus_bg, "setColorFilter", accent.accent)
-            appWidgetManager.updateAppWidget(appWidgetId, views)
+        publish(context, appWidgetManager, appWidgetIds) { appWidgetId, _ ->
+            // 按尺寸分档：宽到 400dp 以上显示多事件列表，否则只显示最近一个焦点事件
+            sizedRemoteViews(
+                appWidgetManager.getAppWidgetOptions(appWidgetId),
+                DEFAULT_WIDTH_DP,
+                DEFAULT_HEIGHT_DP
+            ) { width, height ->
+                counterViews(
+                    context,
+                    appWidgetId,
+                    events,
+                    isLarge = width >= LARGE_WIDTH_DP,
+                    compactHeight = height < COMPACT_HEIGHT_DP
+                ).also {
+                    // 焦点卡底运行时取主题色（此前硬编码青色）
+                    it.setInt(R.id.widget_counter_focus_bg, "setColorFilter", accent.accent)
+                }
+            }
         }
     }
 
@@ -77,11 +87,17 @@ class LifeCounterWidgetProvider : ScopedWidgetProvider() {
             .sortedBy { it.daysLeft }
     }
 
-    internal fun counterViews(context: Context, appWidgetId: Int, events: List<CounterEvent>, isLarge: Boolean): RemoteViews {
+    internal fun counterViews(
+        context: Context,
+        appWidgetId: Int,
+        events: List<CounterEvent>,
+        isLarge: Boolean,
+        compactHeight: Boolean = false
+    ): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.widget_counter_unified)
         views.setTextViewText(R.id.widget_counter_count, "${events.size}")
         val firstEvent = events.firstOrNull()
-        // 大档：整列多事件（首事件并入列表）；小/中档：单个焦点事件（Apple 式：S 档是单一焦点）
+        // 大档：整列多事件（首事件并入列表）；小/中档：只留单个焦点事件，窄格子里才不至于挤成一列
         if (isLarge && events.size > 1) {
             views.setViewVisibility(R.id.widget_first_event, View.GONE)
             views.setViewVisibility(R.id.widget_more_events, View.VISIBLE)
@@ -108,6 +124,8 @@ class LifeCounterWidgetProvider : ScopedWidgetProvider() {
                 R.id.widget_event_date,
                 firstEvent.targetDate.format(DateTimeFormatter.ofPattern(datePattern))
             )
+            // 高度不足时收起日期行（次要信息），名称、天数与进度环保留
+            views.setViewVisibility(R.id.widget_event_date, if (compactHeight) View.GONE else View.VISIBLE)
             // 周年滚动进度环：生日/纪念日才有周期，一次性倒计时隐藏
             val rollPercent = firstEvent.progressPercent
             views.setViewVisibility(R.id.widget_counter_ring, if (rollPercent != null) View.VISIBLE else View.GONE)
@@ -126,7 +144,7 @@ class LifeCounterWidgetProvider : ScopedWidgetProvider() {
         views.setViewVisibility(R.id.widget_empty_state, if (firstEvent == null) View.VISIBLE else View.GONE)
         views.setOnClickPendingIntent(
             R.id.widget_layout,
-            WidgetHelper.createPendingIntent(context, 300_000 + appWidgetId, "life")
+            WidgetHelper.createPendingIntent(context, WidgetDeepLink.SEG_COUNTER + appWidgetId, "life")
         )
         return views
     }
@@ -188,6 +206,18 @@ class LifeCounterWidgetProvider : ScopedWidgetProvider() {
         /** 周年滚动进度 0..100；一次性倒计时为 null。 */
         val progressPercent: Int? = null
     )
+
+    private companion object {
+        /** 组件声明的默认尺寸（4×3），桌面没给尺寸时兜底。 */
+        const val DEFAULT_WIDTH_DP = 250
+        const val DEFAULT_HEIGHT_DP = 180
+
+        /** 宽度到 4 格以上才显示多事件列表。 */
+        const val LARGE_WIDTH_DP = 400
+
+        /** 高度不足 2 格（160dp）时收起次要元素。 */
+        const val COMPACT_HEIGHT_DP = 160
+    }
 }
 
 /** 倒计时组件纳入的模板身份：显式倒计时 + 生日 + 纪念日（与组件说明文案一致）。 */

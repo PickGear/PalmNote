@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 占位：条目数为奇数时补在右列，保持左列色片是半宽（RemoteViews 只放行 @RemoteView 的类，所以用空 ImageView） -->
+<ImageView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="0dp"
+    android:layout_height="1dp"
+    android:layout_weight="1"
+    android:layout_marginEnd="4dp"
+    android:contentDescription="@null" />

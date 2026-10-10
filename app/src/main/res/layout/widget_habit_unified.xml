@@ -1,70 +1,91 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  习惯 4×3：主体是「习惯 × 近 7 天」的圆点矩阵（每行左边名称、右边 7 个点），
+  顶部一行是身份徽章 + 名称 + 今日完成度。文字克制，图形占主体。
+-->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="12dp"
+    android:padding="@dimen/widget_pad"
     android:background="@drawable/widget_card_round">
 
+    <!-- Header：实底徽章 + 名称 + 今日完成度 -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical">
 
-        <ImageView
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:src="@drawable/widget_ic_check_square"
-            android:contentDescription="@null" />
+        <FrameLayout
+            android:layout_width="@dimen/widget_icon_badge"
+            android:layout_height="@dimen/widget_icon_badge">
+
+            <ImageView
+                android:id="@+id/widget_habit_badge"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:src="@drawable/widget_shape_circle"
+                android:contentDescription="@null" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:text="✓"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFFFF"
+                android:gravity="center" />
+        </FrameLayout>
 
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="@string/widget_habit_title"
-            android:textSize="15sp"
+            android:textSize="@dimen/widget_text_title"
             android:textColor="@color/widget_v2_text_primary"
             android:textStyle="bold"
-            android:layout_marginStart="6dp" />
+            android:layout_marginStart="8dp" />
 
         <TextView
             android:id="@+id/widget_habit_count"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="12sp"
+            android:textSize="15sp"
             android:textStyle="bold"
             android:textColor="@color/widget_v2_accent" />
     </LinearLayout>
 
+    <!-- 圆点列的小标题：左边距 = 徽章 20 + 间距 8 + 名称列 112 + 间距 8，与点阵对齐 -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/widget_habit_week_label"
+        android:textSize="@dimen/widget_text_micro"
+        android:textColor="@color/widget_v2_text_tertiary"
+        android:layout_marginStart="132dp"
+        android:layout_marginTop="10dp" />
+
+    <!-- 点阵：每行一个习惯，行由 Provider 动态添加 -->
     <LinearLayout
+        android:id="@+id/widget_habit_list"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
         android:orientation="vertical"
-        android:background="@drawable/widget_soft_card_gray"
-        android:layout_marginTop="10dp"
-        android:paddingHorizontal="12dp"
-        android:paddingVertical="4dp"
-        android:gravity="center_vertical">
+        android:layout_marginTop="2dp" />
 
-        <LinearLayout
-            android:id="@+id/widget_habit_list"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical" />
-
-        <TextView
-            android:id="@+id/widget_habit_empty"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/widget_habit_empty"
-            android:textSize="12sp"
-            android:textColor="@color/widget_v2_text_tertiary"
-            android:gravity="center"
-            android:paddingVertical="12dp"
-            android:visibility="gone" />
-    </LinearLayout>
+    <TextView
+        android:id="@+id/widget_habit_empty"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:text="@string/widget_habit_empty"
+        android:textSize="12sp"
+        android:textColor="@color/widget_v2_text_tertiary"
+        android:gravity="center"
+        android:visibility="gone" />
 
 </LinearLayout>

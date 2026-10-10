@@ -476,6 +476,7 @@ class LifeDetailViewModel @Inject constructor(
                 active.forEach { itemDao.updateStatus(it.id, "ARCHIVED") }
                 WidgetUpdateHelper.refreshTodoWidgets()
                 WidgetUpdateHelper.refreshCounterWidgets()
+                WidgetUpdateHelper.refreshHabitWidgets()
             } else {
                 val archived = rows.filter { it.status == "ARCHIVED" }
                 if (archived.isNotEmpty()) {
@@ -483,6 +484,7 @@ class LifeDetailViewModel @Inject constructor(
                     archived.forEach { itemDao.updateStatus(it.id, "ACTIVE") }
                     WidgetUpdateHelper.refreshTodoWidgets()
                     WidgetUpdateHelper.refreshCounterWidgets()
+                    WidgetUpdateHelper.refreshHabitWidgets()
                 } else {
                     val now = System.currentTimeMillis()
                     itemDao.insertItem(
@@ -501,6 +503,7 @@ class LifeDetailViewModel @Inject constructor(
                     )
                     WidgetUpdateHelper.refreshTodoWidgets()
                     WidgetUpdateHelper.refreshCounterWidgets()
+                    WidgetUpdateHelper.refreshHabitWidgets()
                     celebrateMilestoneIfReached(item.templateId, demo)
                 }
             }

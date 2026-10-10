@@ -25,32 +25,35 @@ class ShortcutsWidgetProvider : ScopedWidgetProvider() {
         )
         val accent = WidgetData.readAccentTheme(context, entryPoint.preferencesManager())
 
-        for (appWidgetId in appWidgetIds) {
-            val views = RemoteViews(context.packageName, R.layout.widget_shortcuts_unified)
-            views.setInt(R.id.widget_sc_add_bg, "setColorFilter", accent.accent)
-
-            views.setOnClickPendingIntent(
-                R.id.widget_sc_add,
-                WidgetHelper.createPendingIntent(context, WidgetDeepLink.SEG_SHORTCUT_ADD + appWidgetId, WidgetDeepLink.TAB_ADD_BILL)
-            )
-            views.setOnClickPendingIntent(
-                R.id.widget_sc_bill,
-                WidgetHelper.createPendingIntent(context, WidgetDeepLink.SEG_SHORTCUT_BILL + appWidgetId, WidgetDeepLink.TAB_BILL)
-            )
-            views.setOnClickPendingIntent(
-                R.id.widget_sc_todo,
-                WidgetHelper.createPendingIntent(context, WidgetDeepLink.SEG_SHORTCUT_TODO + appWidgetId, WidgetDeepLink.TAB_LIFE)
-            )
-            views.setOnClickPendingIntent(
-                R.id.widget_sc_vault,
-                WidgetHelper.createPendingIntent(context, WidgetDeepLink.SEG_SHORTCUT_VAULT + appWidgetId, WidgetDeepLink.TAB_VAULT)
-            )
-            views.setOnClickPendingIntent(
-                R.id.widget_layout,
-                WidgetHelper.createPendingIntent(context, WidgetDeepLink.SEG_SHORTCUT_ROOT + appWidgetId, WidgetDeepLink.TAB_DASHBOARD)
-            )
-
-            appWidgetManager.updateAppWidget(appWidgetId, views)
+        publish(context, appWidgetManager, appWidgetIds) { appWidgetId, _ ->
+            bindViews(context, appWidgetId, accent)
         }
+    }
+
+    private fun bindViews(context: Context, appWidgetId: Int, accent: WidgetData.AccentTheme): RemoteViews {
+        val views = RemoteViews(context.packageName, R.layout.widget_shortcuts_unified)
+        views.setInt(R.id.widget_sc_add_bg, "setColorFilter", accent.accent)
+
+        views.setOnClickPendingIntent(
+            R.id.widget_sc_add,
+            WidgetHelper.createPendingIntent(context, WidgetDeepLink.SEG_SHORTCUT_ADD + appWidgetId, WidgetDeepLink.TAB_ADD_BILL)
+        )
+        views.setOnClickPendingIntent(
+            R.id.widget_sc_bill,
+            WidgetHelper.createPendingIntent(context, WidgetDeepLink.SEG_SHORTCUT_BILL + appWidgetId, WidgetDeepLink.TAB_BILL)
+        )
+        views.setOnClickPendingIntent(
+            R.id.widget_sc_todo,
+            WidgetHelper.createPendingIntent(context, WidgetDeepLink.SEG_SHORTCUT_TODO + appWidgetId, WidgetDeepLink.TAB_LIFE)
+        )
+        views.setOnClickPendingIntent(
+            R.id.widget_sc_vault,
+            WidgetHelper.createPendingIntent(context, WidgetDeepLink.SEG_SHORTCUT_VAULT + appWidgetId, WidgetDeepLink.TAB_VAULT)
+        )
+        views.setOnClickPendingIntent(
+            R.id.widget_layout,
+            WidgetHelper.createPendingIntent(context, WidgetDeepLink.SEG_SHORTCUT_ROOT + appWidgetId, WidgetDeepLink.TAB_DASHBOARD)
+        )
+        return views
     }
 }

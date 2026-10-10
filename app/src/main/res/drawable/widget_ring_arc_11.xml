@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 同心环的进度弧：useLevel 决定扫过角度（setImageLevel），颜色运行时 setColorFilter；起点 12 点方向 -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <rotate
+            android:fromDegrees="270"
+            android:toDegrees="270"
+            android:pivotX="50%"
+            android:pivotY="50%">
+            <shape
+                android:shape="ring"
+                android:thickness="11dp"
+                android:useLevel="true">
+                <solid android:color="#FFFFFFFF" />
+            </shape>
+        </rotate>
+    </item>
+</layer-list>

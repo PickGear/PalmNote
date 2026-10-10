@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 总资产 2×1：一个数字一件事（账户余额合计），点进记账页看明细 -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center_vertical"
+    android:padding="10dp"
+    android:background="@drawable/widget_card_round">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/wallet_total_assets"
+        android:textSize="10sp"
+        android:textColor="@color/widget_v2_text_secondary" />
+
+    <TextView
+        android:id="@+id/widget_net_worth_amount"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="0"
+        android:textSize="22sp"
+        android:textColor="@color/widget_v2_text_primary"
+        android:textStyle="bold"
+        android:layout_marginTop="4dp"
+        android:maxLines="1"
+        android:ellipsize="end" />
+
+</LinearLayout>

@@ -1,0 +1,10 @@
+#!/bin/sh
+# pre-commit hook: 若项目本地放了 tools/pre-commit-checks.sh 就跑一遍（秒级）。
+# lint 与单测留在 pre-push，避免每次提交都等。
+if [ -x ./tools/pre-commit-checks.sh ]; then
+    if ! ./tools/pre-commit-checks.sh; then
+        echo "❌ 本地检查未通过，阻止提交（确认要放行用 git commit --no-verify）"
+        exit 1
+    fi
+fi
+exit 0

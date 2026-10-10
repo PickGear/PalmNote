@@ -120,6 +120,14 @@ object WidgetUpdateHelper {
             manager.getAppWidgetIds(ComponentName(appContext, AssetWidgetProvider::class.java)))
         sendUpdate(VaultWidgetProvider::class.java,
             manager.getAppWidgetIds(ComponentName(appContext, VaultWidgetProvider::class.java)))
+        // 这三个此前漏在「全量刷新」之外：改账单会动钱包余额、改生活条目会动订阅，
+        // 却要等系统轮询才更新。设置页改透明度也走这里，必须一个不落。
+        sendUpdate(NetWorthWidgetProvider::class.java,
+            manager.getAppWidgetIds(ComponentName(appContext, NetWorthWidgetProvider::class.java)))
+        sendUpdate(SubscriptionWidgetProvider::class.java,
+            manager.getAppWidgetIds(ComponentName(appContext, SubscriptionWidgetProvider::class.java)))
+        sendUpdate(ShortcutsWidgetProvider::class.java,
+            manager.getAppWidgetIds(ComponentName(appContext, ShortcutsWidgetProvider::class.java)))
         refreshDashboardWidgets()
         refreshHabitWidgets()
     }

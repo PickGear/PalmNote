@@ -14,18 +14,40 @@
         android:orientation="horizontal"
         android:gravity="center_vertical">
 
-        <ImageView
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:src="@drawable/widget_ic_check_square"
-            android:contentDescription="@null" />
+        <!-- 今日完成度环：这个组件的主角图形（环内写百分比） -->
+        <FrameLayout
+            android:layout_width="38dp"
+            android:layout_height="38dp">
+
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:src="@drawable/widget_ring_track_thick"
+                android:contentDescription="@null" />
+
+            <ImageView
+                android:id="@+id/widget_todo_ring"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:src="@drawable/widget_ring_arc_thick"
+                android:contentDescription="@null" />
+
+            <TextView
+                android:id="@+id/widget_todo_ring_text"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:textColor="@color/widget_v2_text_primary" />
+        </FrameLayout>
 
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="@string/widget_todo_title"
-            android:textSize="15sp"
+            android:textSize="@dimen/widget_text_title"
             android:textColor="@color/widget_v2_text_primary"
             android:textStyle="bold"
             android:layout_marginStart="6dp" />
@@ -53,11 +75,13 @@
         android:paddingVertical="4dp"
         android:gravity="center_vertical">
 
-        <LinearLayout
+        <ListView
             android:id="@+id/widget_todo_list"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical" />
+            android:layout_height="match_parent"
+            android:divider="@null"
+            android:dividerHeight="0dp"
+            android:scrollbars="none" />
 
         <TextView
             android:id="@+id/widget_todo_empty"

@@ -6,7 +6,7 @@ import java.time.LocalTime
 import java.time.temporal.TemporalAdjusters
 
 /**
- * 快捷添加的自然语言解析（滴答清单「智能日期」的克制版）：
+ * 快捷添加的自然语言解析（克制版：只认明确的日期与时间词）：
  * 从一句话里摘出日期与时间，剩下的文本就是任务标题。
  *
  * 支持（中文优先，命中即消费）：

@@ -56,7 +56,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * 月度/年度回顾页（Moo/格志/Wrapped 式叙事页）：总览 → 最常记录 → 心情分布。
+ * 月度/年度回顾页（叙事式只读页）：总览 → 最常记录 → 心情分布。
  * 视觉遵循生活模块统一的二级页语言：背景色顶栏（模块色粗体标题）+ 扁平卡片（无渐变）；
  * 右上「分享」把页面渲染成 PNG 长图分享出去。
  */

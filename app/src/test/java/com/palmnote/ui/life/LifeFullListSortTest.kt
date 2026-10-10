@@ -20,7 +20,7 @@ class LifeFullListSortTest {
 
         val sorted = sortScheduledRows(rows)
 
-        // 无时间（随时可做）置顶，有时刻的按时间表排下面（对齐滴答清单/Google 日历全天位）
+        // 无时间（随时可做）置顶，有时刻的按时间表排下面（全天位排在有时刻之前）
         assertEquals(listOf(2L, 3L, 1L), sorted.map { it.itemId })
     }
 

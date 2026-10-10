@@ -379,7 +379,7 @@ private fun OnboardingBottomBar(
 
 /**
  * 示例数据页（**最后一页**，承载「开始使用」按钮）：说明演示模式 + 二选一。
- * 对标 Notion/Moze/格志的「首启选择示例内容」惯例——选定后不再在功能页里事后弹窗。
+ * 首启就选定示例内容——选定后不再在功能页里事后弹窗。
  */
 @Composable
 private fun OnboardingDemoPage(selected: Boolean, onSelect: (Boolean) -> Unit) {

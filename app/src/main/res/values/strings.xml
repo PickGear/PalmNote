@@ -309,9 +309,8 @@
     <string name="dashboard_habit_today_progress">今日 %1$d/%2$d</string>
     <string name="dashboard_habit_check">打卡</string>
     <string name="dashboard_habit_checked">已打卡</string>
+    <!-- 打卡模板天生每天一次，没有周/月口径（原来 Goal 时代有，接回生活模板后去掉了） -->
     <string name="dashboard_habit_period_daily">每日</string>
-    <string name="dashboard_habit_period_weekly">每周</string>
-    <string name="dashboard_habit_period_monthly">每月</string>
     <string name="dashboard_habit_go_all">去打卡全部</string>
     <string tools:ignore="PluralsCandidate" name="dashboard_subscription_due_count">%1$d 项到期</string>
     <string name="dashboard_subscription_price">¥%1$s</string>
@@ -576,28 +575,32 @@
     <string name="bill_import_error_ocr_invalid">未能识别到有效的交易记录</string>
     <string name="bill_import_error_ocr_failed">识别失败: %s</string>
     <string name="bill_import_error_invalid_amount">请输入有效金额</string>
-    <string name="widget_bill_desc">记账概览小组件 - 显示当月收支概览</string>
+    <string name="widget_bill_desc">看本月收支，和预算还剩多少</string>
     <string name="widget_todo_title">待办清单</string>
     <string name="widget_overdue">已逾期</string>
     <string name="widget_completed">已完成</string>
-    <string name="widget_todo_desc">生活待办小组件 - 显示今日待办和逾期提醒</string>
+    <string name="widget_todo_desc">今天的待办，点一行就勾掉</string>
     <string name="widget_counter_title">生活计数器</string>
     <string name="widget_upcoming_events">即将到来</string>
-    <string name="widget_counter_desc">生活计数器小组件 - 显示倒计时、生日、纪念日</string>
+    <string name="widget_counter_desc">生日、纪念日还有几天</string>
     <string name="widget_asset_title">物品管理</string>
     <string name="widget_asset_held">在用</string>
     <string name="widget_asset_value_label">总价值</string>
-    <string name="widget_asset_desc">物品管理小组件 - 显示物品统计和分类分布</string>
+    <string name="widget_asset_desc">在用的物品和它们的总价值</string>
+    <string name="widget_net_worth_desc">各账户余额合计</string>
+    <string name="widget_subscription_title">订阅提醒</string>
+    <string name="widget_subscription_desc">最近要扣的几笔，各还有几天</string>
+    <string name="widget_subscription_empty">暂无订阅</string>
     <string name="widget_vault_title">密码本</string>
     <string name="widget_vault_entries">条记录</string>
     <string name="widget_vault_hint">点击打开密码本</string>
-    <string name="widget_vault_desc">密码本小组件 - 显示密码记录数量</string>
+    <string name="widget_vault_desc">只显示一把锁，内容不上桌面</string>
     <string name="widget_dashboard_title">概览</string>
-    <string name="widget_dashboard_desc">总览面板小组件 - 显示各项数据概览</string>
-    <string name="widget_goals_label">目标</string>
+    <string name="widget_dashboard_desc">收支、待办、打卡一屏看完</string>
     <string name="widget_todos_label">待办</string>
     <string name="widget_add_bill">记一笔</string>
     <string name="widget_vault_empty">暂无记录</string>
+    <string name="widget_bill_week_label">近 7 天</string>
     <string name="widget_bill_empty">暂无账单记录</string>
     <string name="widget_todo_empty">暂无待办事项</string>
     <string name="widget_counter_empty">暂无倒计时事件</string>
@@ -613,16 +616,16 @@
     <string name="widget_add">新增</string>
     <string name="widget_income_label">收入</string>
     <string name="widget_expense_label">支出</string>
-    <string name="widget_budget_label">预算</string>
-    <string name="widget_budget_used_format">本月预算已使用 %1$d%%</string>
-    <string name="widget_budget_top_format">%1$s预算已使用 %2$d%%</string>
-    <string name="widget_month_balance_format">本月结余 %1$s</string>
-    <string tools:ignore="PluralsCandidate" name="widget_todo_remaining_format">%1$d 项未完成</string>
     <string tools:ignore="PluralsCandidate" name="widget_todo_footer_format">今日 %1$d 项 · 待完成 %2$d</string>
     <string name="widget_goal_all_done">全部完成</string>
     <string name="widget_no_goals">暂无目标</string>
     <string name="widget_no_anniversary">暂无纪念日</string>
+    <!-- 概览瓷片：大数字下面只写单位词，不再重复数字本身（参考「大数字 + 小单位」的排版） -->
     <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="widget_days_unit">
+        <item quantity="one">天后</item>
+        <item quantity="other">天后</item>
+    </plurals>
     <plurals name="widget_days_remaining_format">
         <item quantity="one">None</item>
         <item quantity="other">剩余 %1$d 天</item>
@@ -632,6 +635,7 @@
     <string name="widget_preview_todo_3">完成月度周报</string>
     <string name="widget_todo_footer_preview">今日 3 项 · 待完成 2</string>
     <string name="widget_habit_title">今日打卡</string>
+    <string name="widget_habit_week_label">近 7 天</string>
     <string name="widget_habit_empty">暂无习惯</string>
     <string name="widget_streak_format">%1$d天</string>
     <string name="widget_preview_streak_1">12天</string>
@@ -640,20 +644,37 @@
     <string name="widget_preview_habit_3">喝够 8 杯水</string>
     <string name="widget_preview_asset_name">MacBook Pro</string>
     <string name="widget_shortcut_bills">账单</string>
-    <string name="widget_habit_desc">今日打卡小组件 - 桌面直接打卡，查看连续天数</string>
-    <string name="widget_shortcuts_desc">快捷入口小组件 - 常用功能一键直达</string>
+    <string name="widget_habit_desc">点圆圈打卡，看连续多少天</string>
+    <string name="widget_shortcuts_desc">记一笔、账单、待办、密码本</string>
     <string name="widget_shortcuts_title">快捷入口</string>
     <string name="settings_widget_title">桌面小组件</string>
     <string name="settings_widget_subtitle">把小组件添加到桌面、查看已添加数量</string>
+    <!-- 添加页：头部 / 分组 / 权限条 / 默认外观 -->
+    <string name="widget_page_perm_title">先开一个权限，才能一键添加</string>
+    <string name="widget_page_perm_desc">小米桌面要求「桌面快捷方式」权限。没开的话，点添加不会成功。</string>
+    <string name="widget_page_perm_action">去开启 ›</string>
+    <string name="widget_page_unsupported">当前桌面不支持在应用内添加，只能从桌面的小组件列表里添加。</string>
+    <string name="widget_page_footer">放好之后长按组件还能改设置。</string>
+    <string name="widget_page_add_again">再添加</string>
     <string name="widget_pin_add">添加到桌面</string>
     <string name="widget_pin_none">未添加</string>
     <string name="widget_pin_count">桌面已有 %1$d 个</string>
-    <string name="widget_pin_tip">点击「添加到桌面」，在系统确认框中确认后，组件就会出现在桌面。</string>
-    <string name="widget_pin_unsupported_tip">当前桌面不支持在应用内添加。请长按桌面空白处，在小组件列表中找到 PalmNote 添加。</string>
     <string name="widget_pin_failed">未能发起添加，请从桌面的小组件列表添加</string>
-    <string name="widget_pin_requested">已发起添加，请到桌面查看</string>
-    <string name="widget_pin_miui_tip">小米桌面需要「桌面快捷方式」权限才能添加：系统设置 → 应用设置 → 应用管理 → PalmNote → 权限管理 → 桌面快捷方式，选择允许。</string>
-    <string name="widget_pin_open_settings">前往权限设置</string>
+    <string name="widget_pin_added">已添加到桌面</string>
+    <string name="widget_pin_not_added">没有添加成功，请检查桌面权限后重试</string>
+    <!-- 组件配置页：账本段只有账单组件有，透明度对所有组件都有 -->
+    <string name="widget_config_title">选择账本</string>
+    <string name="widget_config_title_generic">组件设置</string>
+    <string name="widget_config_desc">这个组件只显示所选账本的收支。</string>
+    <string name="widget_config_desc_opacity">这个组件的透明度只影响它自己，其他组件不变。</string>
+    <string name="widget_config_budget_note">预算按月设置、不分账本，所以选中具体账本时组件显示该账本本月净收入。</string>
+    <string name="widget_config_confirm">完成</string>
+    <!-- 单组件透明度：默认跟随全局，可改为只影响这一个组件 -->
+    <string name="widget_config_opacity_label">透明度</string>
+    <string name="widget_config_opacity_customize">改为自定义</string>
+    <string name="widget_config_opacity_follow">恢复跟随默认</string>
+    <string name="widget_config_opacity_following">跟随默认（%1$d%%）</string>
+    <string name="widget_config_opacity_only_this">只影响这一个组件，其他组件仍按默认值。</string>
     <string name="widget_days_unit">天</string>
     <string name="widget_tomorrow">明天</string>
     <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
@@ -2074,7 +2095,7 @@
     <string name="life_stats_empty_hint">去生活页记一条，这里的图表就会开始生长</string>
     <string tools:ignore="PluralsCandidate" name="life_board_overdue_total">逾期 %1$d 条</string>
     <string tools:ignore="PluralsCandidate" name="life_route_board_desc">路线图，共 %1$d 个途经点</string>
-    <!-- 模板编辑页 v1.41 重设计（iOS 分组式） -->
+    <!-- 模板编辑页 v1.41 重设计（分组内嵌式） -->
     <string tools:ignore="PluralsCandidate" name="life_template_edit_field_count">%1$d 个在用 · 共 %2$d 个</string>
     <string name="life_template_no_fields">还没有字段</string>
     <string name="life_template_no_fields_hint">模板至少要有一个字段才能新建记录</string>
