@@ -937,12 +937,14 @@ fun GridAssetCard(
 
                     Spacer(modifier = Modifier.height(2.dp))
 
-                    Row(
+                    // 徽标行用 FlowRow：两列窄卡里「到期 + 持有中」放不下时**换行**，
+                    // 而不是把最后一个徽标的文字挤成一条缝（真机截图 16:00：持有中被压成绿细条）。
+                    // 放得下时仍是单行右对齐，观感不变。
+                    FlowRow(
                         modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End),
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
-                        Spacer(modifier = Modifier.weight(1f))
                         // 窄卡只放一个到期徽标：取质保 / 保质期里更紧迫的那个，按紧迫度着色。
                         // 加第三个徽标在英文（"Warranty" + "Shelf life"）下会顶出两列卡片宽度。
                         val deadline = asset.nearestExpiryDate

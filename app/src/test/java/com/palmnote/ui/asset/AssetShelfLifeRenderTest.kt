@@ -1,13 +1,18 @@
 package com.palmnote.ui.asset
 
 import android.app.Application
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.unit.dp
 import com.palmnote.data.db.entity.Asset
 import com.palmnote.domain.model.ShelfLifeUnit
 import com.palmnote.ui.theme.PalmNoteTheme
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -120,5 +125,29 @@ class AssetShelfLifeRenderTest {
             )
         )
         compose.onNodeWithText("保质期3天").assertExists()
+    }
+
+    /**
+     * 真机两列网格下卡片的文字列只有约 90dp：「保质期21天」+「持有中」两个徽标放不下。
+     * 此前徽标行是一个带 `weight(1f)` 撑杆的 `Row`——放不下时最后一个徽标（状态）的文字会被挤成
+     * 零宽（真机截图 16:00 的绿色细条）。现在改用 FlowRow，放不下就换行。
+     *
+     * 注意：Robolectric 的文字度量是桩值（每字约 1px），真机 186dp 窄卡里的真实溢出在这里复现不出来，
+     * 所以把容器再收窄到 120dp 人为制造「放不下」，验证的是**换行**而不是被压扁。
+     */
+    @Test
+    fun `网格卡徽标放不下时换行而不是压扁状态徽标`() {
+        compose.setContent {
+            PalmNoteTheme {
+                Box(Modifier.width(120.dp)) {
+                    GridAssetCard(asset = assetExpiringIn(21), onClick = {})
+                }
+            }
+        }
+        val expiry = compose.onNodeWithText("保质期21天", useUnmergedTree = true).getBoundsInRoot()
+        val status = compose.onNodeWithText("持有中", useUnmergedTree = true).getBoundsInRoot()
+        println("DIAG expiry=$expiry status=$status")
+        assertTrue("状态徽标被压成零宽", status.right - status.left > 0.dp)
+        assertTrue("状态徽标应换到下一行，而不是与到期徽标挤在同一行", status.top > expiry.top)
     }
 }
