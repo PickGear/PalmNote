@@ -38,8 +38,10 @@ android {
         // targetSdk 34：自用侧载，禁用 Android 15+ 强制 predictive back，恢复传统返回动画；
         // compileSdk 保持 36 不损失编译能力。上 Play 时需升回 35+。
         targetSdk = 34
-        // versionCode 单调递增：1.4.1 取 7（1.4.0 正式发布为 6，覆盖安装需更大）
-        versionCode = 7
+        // versionCode 单调递增：1.4.1 取 8。1.4.0 正式发布为 6；1.4.1 曾以 7 出过一版
+        // （10-10 17:02 构建的 PalmNote-1.4.1.apk，只含首批修复）。其后又并入报销功能
+        // 与日历重构，需重新出包，故跳过 7 直接取 8，保证任何装过旧 1.4.1 的设备都能覆盖安装。
+        versionCode = 8
         versionName = libs.versions.palmnote.get()
         // 版本号的单一事实来源就是 `libs.versions.toml` 的 palmnote 键：
         // 界面取 `BuildConfig.VERSION_NAME`（AboutScreen 就是这么读的）。

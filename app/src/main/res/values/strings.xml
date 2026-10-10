@@ -77,7 +77,7 @@
     <string name="bill_default">默认</string>
     <string name="bill_import">导入</string>
     <string name="bill_all_books">全账本</string>
-    <string name="bill_report">报告</string>
+    <string name="bill_report">统计</string>
     <string name="bill_budget_tab">预算</string>
     <string name="bill_balance">结余</string>
     <string name="bill_calendar">日历</string>
@@ -1072,6 +1072,44 @@
     <string name="bill_reimbursement_status">报销状态</string>
     <string name="bill_reimbursed">已报销</string>
     <string name="bill_pending_reimbursement">待报销</string>
+    <!-- 报销管理 -->
+    <string name="reimbursement_title">报销管理</string>
+    <string name="reimbursement_tab_pending">待报销</string>
+    <string name="reimbursement_tab_done">已报销</string>
+    <string name="reimbursement_pending_total">待报销金额</string>
+    <string name="reimbursement_pending_count">共 %1$d 笔</string>
+    <string name="reimbursement_pending_card_subtitle">%1$d 笔 · 剩余 %2$s</string>
+    <string name="reimbursement_received_total">累计已报回</string>
+    <string name="reimbursement_empty_pending">没有待报销的支出</string>
+    <string name="reimbursement_empty_pending_hint">记账时打开「可报销」，这笔支出就会出现在这里</string>
+    <string name="reimbursement_empty_done">还没有报完的支出</string>
+    <string name="reimbursement_empty_done_hint">标记报销后，记录会留在这里备查</string>
+    <string name="reimbursement_mark">报销</string>
+    <string name="reimbursement_mark_title">标记报销</string>
+    <string name="reimbursement_amount_label">本次报销金额</string>
+    <string name="reimbursement_remaining">剩余可报 %1$s</string>
+    <string name="reimbursement_remaining_short">剩余 %1$s</string>
+    <string name="reimbursement_partial">已报 %1$s / %2$s</string>
+    <string name="reimbursement_done_amount">已报销 %1$s</string>
+    <string name="reimbursement_record_income">同时记一笔报销收入</string>
+    <string name="reimbursement_record_income_hint">新增一条「报销」分类的收入，当天收支才不会看着多花了钱</string>
+    <string name="reimbursement_date">报销日期</string>
+    <string name="reimbursement_confirm">确认报销</string>
+    <string name="reimbursement_revoke">撤销报销</string>
+    <string name="reimbursement_revoke_title">撤销这笔报销？</string>
+    <string name="reimbursement_revoke_message">这笔支出会退回「待报销」，系统代记的那笔报销收入也一并删除（可在回收站恢复）。</string>
+    <string name="reimbursement_error_amount">请输入报销金额</string>
+    <string name="reimbursement_error_exceed">报销金额不能超过剩余可报 %1$s</string>
+    <string name="reimbursement_error_failed">报销操作失败，请重试</string>
+    <string name="reimbursement_linked_income">关联收入</string>
+    <string name="reimbursement_covered_expenses">本笔报销涵盖 %1$d 笔支出</string>
+    <string name="reimbursement_income_section">报销关联</string>
+    <string name="reimbursement_select_expense">选择要报销的支出</string>
+    <string name="reimbursement_select_expense_hint">这笔收入会分摊到选中的支出上，单笔可以只报一部分</string>
+    <string name="reimbursement_no_pending_expense">暂无可关联的待报销支出</string>
+    <string name="reimbursement_selected_total">已选 %1$d 笔，共 %2$s</string>
+    <string name="report_net_expense">净支出</string>
+    <string name="report_reimbursed">其中已报销 %1$s</string>
     <string name="bill_created_at">创建时间</string>
     <string name="bill_updated_at">更新时间</string>
     <!-- Bill Import -->
@@ -1227,7 +1265,7 @@
     <string name="account_book_empty">暂无账本</string>
     <string name="account_book_empty_hint">点击右下角按钮添加账本</string>
     <string name="account_book_delete_title">删除账本</string>
-    <string name="account_book_delete_confirm">确定要删除「%s」吗？账本下的所有账单数据将被一并删除。</string>
+    <string name="account_book_delete_confirm">确定要删除「%s」吗？账本删除后无法恢复；该账本下的账单会移入回收站，可随时恢复。</string>
     <string name="account_book_set_default">设为默认</string>
     <string name="account_book_edit">编辑账本</string>
     <string name="account_book_new">新建账本</string>
@@ -1312,7 +1350,7 @@
     <string name="wallet_empty">暂无账户</string>
     <string name="wallet_empty_hint">点击右下角按钮添加账户</string>
     <string name="wallet_delete_title">删除账户</string>
-    <string name="wallet_delete_confirm">确定要删除「%s」吗？该账户下的所有账单数据将被一并删除。</string>
+    <string name="wallet_delete_confirm">确定要删除「%s」吗？账户删除后无法恢复；该账户下的账单会移入回收站，可随时恢复。</string>
     <string name="wallet_edit">编辑账户</string>
     <string name="wallet_name">账户名称</string>
     <string name="wallet_type">账户类型</string>
@@ -1683,8 +1721,8 @@
         <item quantity="other">%1$d 个物品</item>
     </plurals>
     <string name="category_delete_all">删除全部</string>
-    <string name="category_delete_all_desc">删除分类及所有关联记录</string>
-    <string name="category_delete_related_hint">删除分类将同时删除该分类下的所有记录，此操作不可逆。</string>
+    <string name="category_delete_all_desc">删除分类，关联的账单与物品移入回收站</string>
+    <string name="category_delete_related_hint">分类删除后无法恢复；该分类下的 %1$s 会移入回收站，可随时恢复。</string>
     <string name="category_delete_title">删除分类</string>
     <string name="category_keep_records">保留记录</string>
     <string name="category_keep_records_desc">仅删除分类，保留其记录</string>
