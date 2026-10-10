@@ -80,7 +80,7 @@
     <string name="bill_default">Default</string>
     <string name="bill_import">Import</string>
     <string name="bill_all_books">All Books</string>
-    <string name="bill_report">Report</string>
+    <string name="bill_report">Statistics</string>
     <string name="bill_budget_tab">Budget</string>
     <string name="bill_balance">Balance</string>
     <string name="bill_calendar">Calendar</string>
@@ -909,6 +909,44 @@
     <string name="bill_reimbursement_status">Reimbursement Status</string>
     <string name="bill_reimbursed">Reimbursed</string>
     <string name="bill_pending_reimbursement">Pending</string>
+    <!-- Reimbursement management -->
+    <string name="reimbursement_title">Reimbursement</string>
+    <string name="reimbursement_tab_pending">Pending</string>
+    <string name="reimbursement_tab_done">Reimbursed</string>
+    <string name="reimbursement_pending_total">Awaiting reimbursement</string>
+    <string name="reimbursement_pending_count">%1$d items</string>
+    <string name="reimbursement_pending_card_subtitle">%1$d items · %2$s left</string>
+    <string name="reimbursement_received_total">Received back</string>
+    <string name="reimbursement_empty_pending">Nothing awaiting reimbursement</string>
+    <string name="reimbursement_empty_pending_hint">Turn on "Reimbursable" when recording an expense and it will show up here</string>
+    <string name="reimbursement_empty_done">No fully reimbursed expenses yet</string>
+    <string name="reimbursement_empty_done_hint">Expenses you mark as reimbursed stay here for reference</string>
+    <string name="reimbursement_mark">Reimburse</string>
+    <string name="reimbursement_mark_title">Mark reimbursed</string>
+    <string name="reimbursement_amount_label">Amount this time</string>
+    <string name="reimbursement_remaining">%1$s left to claim</string>
+    <string name="reimbursement_remaining_short">%1$s left</string>
+    <string name="reimbursement_partial">%1$s of %2$s claimed</string>
+    <string name="reimbursement_done_amount">Reimbursed %1$s</string>
+    <string name="reimbursement_record_income">Also record a reimbursement income</string>
+    <string name="reimbursement_record_income_hint">Adds an income under the "Reimbursement" category so the day\'s balance is not overstated</string>
+    <string name="reimbursement_date">Reimbursement date</string>
+    <string name="reimbursement_confirm">Confirm</string>
+    <string name="reimbursement_revoke">Undo reimbursement</string>
+    <string name="reimbursement_revoke_title">Undo this reimbursement?</string>
+    <string name="reimbursement_revoke_message">The expense goes back to pending, and the reimbursement income recorded for it is deleted too (restorable from the recycle bin).</string>
+    <string name="reimbursement_error_amount">Enter the amount</string>
+    <string name="reimbursement_error_exceed">Cannot exceed the remaining %1$s</string>
+    <string name="reimbursement_error_failed">Reimbursement failed, please retry</string>
+    <string name="reimbursement_linked_income">Linked income</string>
+    <string name="reimbursement_covered_expenses">Covers %1$d expense(s)</string>
+    <string name="reimbursement_income_section">Reimbursement link</string>
+    <string name="reimbursement_select_expense">Select expenses to reimburse</string>
+    <string name="reimbursement_select_expense_hint">The income is allocated across the selected expenses; partial claims are fine</string>
+    <string name="reimbursement_no_pending_expense">No pending expenses to link</string>
+    <string name="reimbursement_selected_total">%1$d selected, %2$s total</string>
+    <string name="report_net_expense">Net expense</string>
+    <string name="report_reimbursed">%1$s reimbursed</string>
     <string name="bill_created_at">Created At</string>
     <string name="bill_updated_at">Updated At</string>
     <!-- Bill Import -->
@@ -1066,7 +1104,7 @@
     <string name="account_book_empty">No Books</string>
     <string name="account_book_empty_hint">Tap the button to add a book</string>
     <string name="account_book_delete_title">Delete Book</string>
-    <string name="account_book_delete_confirm">Delete "%s"? All bill data in this book will also be deleted.</string>
+    <string name="account_book_delete_confirm">Delete "%s"? The book cannot be restored once deleted. Its bills will be moved to the recycle bin, where they can be restored anytime.</string>
     <string name="account_book_set_default">Set as Default</string>
     <string name="account_book_edit">Edit Book</string>
     <string name="account_book_new">New Book</string>
@@ -1152,7 +1190,7 @@
     <string name="wallet_empty">No Accounts</string>
     <string name="wallet_empty_hint">Tap the button to add an account</string>
     <string name="wallet_delete_title">Delete Account</string>
-    <string name="wallet_delete_confirm">Delete "%s"? All bill records under this account will also be deleted.</string>
+    <string name="wallet_delete_confirm">Delete "%s"? The account cannot be restored once deleted. Its bills will be moved to the recycle bin, where they can be restored anytime.</string>
     <string name="wallet_edit">Edit Account</string>
     <string name="wallet_name">Account Name</string>
     <string name="wallet_type">Account Type</string>
@@ -1621,8 +1659,8 @@
         <item quantity="other">%1$d items</item>
     </plurals>
     <string name="category_delete_all">Delete all</string>
-    <string name="category_delete_all_desc">Delete category and all related records</string>
-    <string name="category_delete_related_hint">Deleting a category also deletes all its records. This cannot be undone.</string>
+    <string name="category_delete_all_desc">Delete the category; its bills and items go to the recycle bin</string>
+    <string name="category_delete_related_hint">The category cannot be restored once deleted. The %1$s under it will be moved to the recycle bin, where they can be restored anytime.</string>
     <string name="category_delete_title">Delete category</string>
     <string name="category_keep_records">Keep records</string>
     <string name="category_keep_records_desc">Delete category only, keep its records</string>
