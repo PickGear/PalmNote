@@ -52,7 +52,13 @@ internal fun PillToggle(
     /** 单个选项的左右内边距。 */
     optionHorizontalPadding: Dp = PILL_OPTION_H_PADDING,
     /** 选项字号。 */
-    labelFontSize: TextUnit = TypeScale.labelM
+    labelFontSize: TextUnit = TypeScale.labelM,
+    /**
+     * 选中片底色：默认跟主题主色（生活页各处）；账单页日历的「周 | 月」按用户要求
+     * 改用品牌橙 AccentOrange —— 账单页顶栏到「记一笔」都是橙色系，蓝色胶囊夹在
+     * 中间突兀（用户 2026-10-11 截图反馈）。
+     */
+    selectedColor: Color = MaterialTheme.colorScheme.primary
 ) {
     Row(
         modifier = modifier
@@ -69,7 +75,8 @@ internal fun PillToggle(
                 onClick = { onSelect(index) },
                 optionHeight = optionHeight,
                 optionHorizontalPadding = optionHorizontalPadding,
-                labelFontSize = labelFontSize
+                labelFontSize = labelFontSize,
+                selectedColor = selectedColor
             )
         }
     }
@@ -83,13 +90,14 @@ private fun PillToggleOption(
     onClick: () -> Unit,
     optionHeight: Dp,
     optionHorizontalPadding: Dp,
-    labelFontSize: TextUnit
+    labelFontSize: TextUnit,
+    selectedColor: Color
 ) {
     Box(
         modifier = Modifier
             .height(optionHeight)
             .clip(CircleShape)
-            .background(if (selected) MaterialTheme.colorScheme.primary else Color.Transparent)
+            .background(if (selected) selectedColor else Color.Transparent)
             .clickable(onClick = onClick, onClickLabel = contentDescription)
             .padding(horizontal = optionHorizontalPadding),
         contentAlignment = Alignment.Center

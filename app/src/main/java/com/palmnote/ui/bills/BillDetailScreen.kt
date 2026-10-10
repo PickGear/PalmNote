@@ -48,9 +48,11 @@ fun BillDetailScreen(
     billId: Long,
     onNavigateBack: () -> Unit = {},
     onNavigateToEdit: (Long) -> Unit = {},
+    onNavigateToBill: (Long) -> Unit = {},
     viewModel: BillDetailViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
     val billPresetOverrides by viewModel.presetCategoryOverrides
         .collectAsStateWithLifecycle()
     val billCustomCfg by viewModel.categoryConfigs
@@ -66,7 +68,18 @@ fun BillDetailScreen(
             .map { com.palmnote.ui.components.CategoryItem(it.name, it.icon.imageVector, it.color.toComposeColor()) }
     }
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val linkedIncome by viewModel.linkedIncome.collectAsStateWithLifecycle()
+    val isReimbursementSaving by viewModel.isReimbursementSaving.collectAsStateWithLifecycle()
+    val coveredExpenses by viewModel.coveredExpenses.collectAsStateWithLifecycle()
+    val reimbursementError by viewModel.errorMessage.collectAsStateWithLifecycle()
     LaunchedEffect(billId) { viewModel.loadBill(billId) }
+    // 报销落库失败：早先既没 catch（直接崩）也没提示，现在统一弹一条 Snackbar
+    LaunchedEffect(reimbursementError) {
+        reimbursementError?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.consumeErrorMessage()
+        }
+    }
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -82,6 +95,7 @@ fun BillDetailScreen(
     val imageList = remember(bill) { bill?.images?.toImageList().orEmpty() }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             CompactTopAppBar(
                 title = stringResource(R.string.bill_detail_title),
@@ -226,17 +240,23 @@ fun BillDetailScreen(
                     }
                 }
 
-                if (bill.isReimbursable) {
-                    ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
-                        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Outlined.Receipt, null, tint = AccentOrange, modifier = Modifier.size(20.dp))
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Column {
-                                Text(stringResource(R.string.bill_reimbursement_status), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
-                                Text(if (bill.isReimbursed) stringResource(R.string.bill_reimbursed) else stringResource(R.string.bill_pending_reimbursement), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
-                        }
-                    }
+                // 只有支出才有报销这回事：历史数据里可能残留「收入 + 可报销」的组合，一并排掉
+                if (bill.isReimbursable && bill.type == BillType.EXPENSE) {
+                    ReimbursementSection(
+                        bill = bill,
+                        linkedIncome = linkedIncome,
+                        isSaving = isReimbursementSaving,
+                        onMark = { amount, date, createIncome ->
+                            viewModel.markReimbursed(amount, date, createIncome)
+                        },
+                        onRevoke = { viewModel.revokeReimbursement() },
+                        onOpenIncome = onNavigateToBill
+                    )
+                } else if (coveredExpenses.isNotEmpty()) {
+                    ReimbursementCoveredSection(
+                        expenses = coveredExpenses,
+                        onOpenExpense = onNavigateToBill
+                    )
                 }
 
                 Button(
@@ -281,4 +301,200 @@ fun BillDetailScreen(
         onClose = { previewIndex = -1 },
         onSaveImage = { com.palmnote.ui.components.saveImageToGallery(context, imageList[it]) }
     )
+}
+
+/**
+ * 详情页的报销区块：状态 + 关联收入 + 标记/撤销。
+ *
+ * 只在账单开了「可报销」时由调用方渲染；没开报销的普通支出不会出现这一块。
+ * 状态文案走金额而不是布尔：部分报销时「已报 500 / 1000」比「待报销」有用得多。
+ */
+@Composable
+private fun ReimbursementSection(
+    bill: Bill,
+    linkedIncome: Bill?,
+    isSaving: Boolean,
+    onMark: (amount: Long, date: Long, createIncome: Boolean) -> Unit,
+    onRevoke: () -> Unit,
+    onOpenIncome: (Long) -> Unit
+) {
+    val context = LocalContext.current
+    val remaining = (bill.amount - bill.reimbursedAmount).coerceAtLeast(0L)
+    var showMarkDialog by remember { mutableStateOf(false) }
+    var showRevokeDialog by remember { mutableStateOf(false) }
+
+    val statusText = when {
+        bill.reimbursedAmount <= 0L -> stringResource(R.string.bill_pending_reimbursement)
+        remaining > 0L -> stringResource(
+            R.string.reimbursement_partial,
+            CurrencyUtils.formatCurrency(context, bill.reimbursedAmount.toMoney()),
+            CurrencyUtils.formatCurrency(context, bill.amount.toMoney())
+        )
+        else -> stringResource(
+            R.string.reimbursement_done_amount,
+            CurrencyUtils.formatCurrency(context, bill.reimbursedAmount.toMoney())
+        )
+    }
+
+    ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Outlined.Receipt, null, tint = AccentOrange, modifier = Modifier.size(20.dp))
+                Spacer(modifier = Modifier.width(12.dp))
+                Column {
+                    Text(
+                        text = stringResource(R.string.bill_reimbursement_status),
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        text = statusText,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            linkedIncome?.let { income ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(MaterialTheme.shapes.medium)
+                        .clickable { onOpenIncome(income.id) }
+                        .padding(vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = stringResource(R.string.reimbursement_linked_income),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "+" + CurrencyUtils.formatCurrency(context, income.amount.toMoney()),
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium,
+                        color = IncomeGreen
+                    )
+                }
+            }
+
+            if (remaining > 0L || bill.reimbursedAmount > 0L) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (remaining > 0L) {
+                        Button(onClick = { showMarkDialog = true }, enabled = !isSaving) {
+                            Text(stringResource(R.string.reimbursement_mark))
+                        }
+                    }
+                    if (bill.reimbursedAmount > 0L) {
+                        TextButton(onClick = { showRevokeDialog = true }, enabled = !isSaving) {
+                            Text(
+                                text = stringResource(R.string.reimbursement_revoke),
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (showMarkDialog) {
+        ReimbursementMarkDialog(
+            expense = bill,
+            isSaving = isSaving,
+            onDismiss = { showMarkDialog = false },
+            onConfirm = { amount, date, createIncome ->
+                showMarkDialog = false
+                onMark(amount, date, createIncome)
+            }
+        )
+    }
+
+    if (showRevokeDialog) {
+        AlertDialog(
+            onDismissRequest = { showRevokeDialog = false },
+            title = { Text(stringResource(R.string.reimbursement_revoke_title)) },
+            text = { Text(stringResource(R.string.reimbursement_revoke_message)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showRevokeDialog = false
+                    onRevoke()
+                }) {
+                    Text(stringResource(R.string.reimbursement_revoke))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRevokeDialog = false }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            }
+        )
+    }
+}
+
+/**
+ * 报销收入侧的区块：这笔收入分摊到了哪些支出上。
+ *
+ * 关联只存在支出一侧（`reimbursedByBillId`），这里靠反查补上另一半视角，
+ * 否则从收入看不出钱是替谁垫的。点击某条支出可直接跳过去。
+ */
+@Composable
+private fun ReimbursementCoveredSection(
+    expenses: List<Bill>,
+    onOpenExpense: (Long) -> Unit
+) {
+    val context = LocalContext.current
+    ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Outlined.Receipt, null, tint = IncomeGreen, modifier = Modifier.size(20.dp))
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(
+                text = stringResource(R.string.reimbursement_covered_expenses, expenses.size),
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium
+            )
+        }
+        Spacer(modifier = Modifier.height(4.dp))
+        expenses.forEach { expense ->
+            Column(modifier = Modifier.fillMaxWidth()) {
+                HorizontalDivider(
+                    modifier = Modifier.padding(vertical = 8.dp),
+                    color = MaterialTheme.colorScheme.outlineVariant
+                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(MaterialTheme.shapes.medium)
+                        .clickable { onOpenExpense(expense.id) }
+                        .padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = expense.note.ifBlank { expense.category },
+                            style = MaterialTheme.typography.bodyMedium,
+                            maxLines = 1
+                        )
+                        Text(
+                            text = DateUtils.formatDisplayDate(context, expense.date),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    // 该笔支出从这条收入拿到的金额（部分报销时小于支出原额）
+                    Text(
+                        text = "+" + CurrencyUtils.formatCurrency(
+                            context,
+                            expense.reimbursedAmount.coerceAtMost(expense.amount).toMoney()
+                        ),
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium,
+                        color = IncomeGreen
+                    )
+                }
+            }
+        }
+    }
 }

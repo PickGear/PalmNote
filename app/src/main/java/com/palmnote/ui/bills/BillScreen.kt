@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.*
@@ -50,6 +51,7 @@ import com.palmnote.domain.model.toMoney
 import com.palmnote.domain.util.CurrencyUtils
 import com.palmnote.domain.util.DateUtils
 import com.palmnote.ui.components.*
+import com.palmnote.ui.life.PillToggle
 import com.palmnote.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -61,6 +63,7 @@ fun BillScreen(
     onNavigateToReport: (Long, String) -> Unit = { _, _ -> },
     onNavigateToImportCsv: () -> Unit = {},
     onNavigateToAccountBook: () -> Unit = {},
+    onNavigateToReimbursement: () -> Unit = {},
     viewModel: BillViewModel = hiltViewModel()
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -70,12 +73,20 @@ fun BillScreen(
     val allCustomExpenseCategories by viewModel.allCustomExpenseCategories.collectAsStateWithLifecycle()
     val allCustomIncomeCategories by viewModel.allCustomIncomeCategories.collectAsStateWithLifecycle()
     val billPresetOverrides by viewModel.presetCategoryOverrides.collectAsStateWithLifecycle()
-    
+    // 待报销支出（含只报了一部分的）。空列表即隐藏列表顶部那张提示卡。
+    val pendingReimbursements by viewModel.pendingReimbursements.collectAsStateWithLifecycle()
+    val pendingReimburseRemaining = remember(pendingReimbursements) {
+        pendingReimbursements.sumOf { it.amount - it.reimbursedAmount }
+    }
+
     DisposableEffect(Unit) {
         onDispose { viewModel.clearFilter() }
     }
     
     var calendarExpanded by remember { mutableStateOf(false) }
+    // 「回今天」令牌：点卡片左上的「日历」时写一个新时间戳。不能只靠 setMonth 触发 —— 已经在
+    // 当月浏览别的周时，setMonth 写进去的是同一个值，StateFlow 不会重发，周视图也就等不到这一跳。
+    var calendarTodayJump by remember { mutableLongStateOf(0L) }
     val selectedFilter = state.currentFilter.type?.value ?: "ALL"
     // 无 key 的 remember(derivedStateOf)：状态字段变化时只重算本块，避免整个过滤器随任意 state 发射重建
     val filteredBills by remember {
@@ -97,6 +108,7 @@ fun BillScreen(
 
     var showBookMenu by remember { mutableStateOf(false) }
     var showSearch by remember { mutableStateOf(false) }
+    var showOverflowMenu by remember { mutableStateOf(false) }
     
     BackHandler(enabled = showSearch) { showSearch = false; viewModel.clearSearch() }
     val currentBook = state.accountBooks.find { it.id == state.selectedBookId }
@@ -151,7 +163,14 @@ fun BillScreen(
                                         color = MaterialTheme.colorScheme.background,
                                         shadowElevation = 3.dp
                                     ) {
-                                        Column(modifier = Modifier.width(260.dp).padding(vertical = 4.dp)) {
+                                        // 账本数无上界（用户可自建）：菜单封顶可滚，否则账本一多下半截就点不到
+                                        Column(
+                                            modifier = Modifier
+                                                .width(260.dp)
+                                                .heightIn(max = 320.dp)
+                                                .verticalScroll(rememberScrollState())
+                                                .padding(vertical = 4.dp)
+                                        ) {
                                             Text(stringResource(R.string.bill_book_list), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 8.dp, top = 4.dp, bottom = 4.dp))
                                             state.accountBooks.forEach { book ->
                                                 Row(
@@ -164,9 +183,12 @@ fun BillScreen(
                                                         }
                                                         .padding(horizontal = 12.dp, vertical = 10.dp)
                                                 ) {
-                                                    Surface(shape = CircleShape, color = book.color.toComposeColor(Color.Gray), modifier = Modifier.size(32.dp)) {
-                                                        Box(contentAlignment = Alignment.Center) { Icon(book.icon.imageVector, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color.White) }
-                                                    }
+                                                    AccountBookBadge(
+                                                        icon = book.icon,
+                                                        colorHex = book.color,
+                                                        size = 32.dp,
+                                                        iconSize = 16.dp
+                                                    )
                                                     Spacer(Modifier.width(10.dp))
                                                     Column(modifier = Modifier.weight(1f)) {
                                                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -230,7 +252,7 @@ fun BillScreen(
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                        IconButton(onClick = onNavigateToImportCsv) {
+                        IconButton(onClick = { onNavigateToImportCsv() }) {
                             Icon(
                                 Icons.Outlined.FileDownload,
                                 contentDescription = stringResource(R.string.bill_import),
@@ -245,12 +267,49 @@ fun BillScreen(
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                        IconButton(onClick = onNavigateToBudget) {
-                            Icon(
-                                Icons.Outlined.AccountBalance,
-                                contentDescription = stringResource(R.string.bill_budget_tab),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                        // 顶栏放高频动作：搜索 / 导入 / 统计（报表）。
+                        // 预算与报销属低频配置，收进溢出菜单，菜单项带文字标签更好认。
+                        Box {
+                            IconButton(onClick = { showOverflowMenu = true }) {
+                                Icon(
+                                    Icons.Outlined.MoreVert,
+                                    contentDescription = stringResource(R.string.more),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            DropdownMenu(
+                                expanded = showOverflowMenu,
+                                onDismissRequest = { showOverflowMenu = false }
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.bill_budget_tab)) },
+                                    leadingIcon = {
+                                        Icon(
+                                            Icons.Outlined.AccountBalance,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    },
+                                    onClick = {
+                                        showOverflowMenu = false
+                                        onNavigateToBudget()
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.reimbursement_title)) },
+                                    leadingIcon = {
+                                        Icon(
+                                            Icons.Outlined.ReceiptLong,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    },
+                                    onClick = {
+                                        showOverflowMenu = false
+                                        onNavigateToReimbursement()
+                                    }
+                                )
+                            }
                         }
                     }
                 }
@@ -290,19 +349,70 @@ fun BillScreen(
                 ) {
                     AnimatedCard(index = 1) {
                     ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
-                        Row(modifier = Modifier.fillMaxWidth().height(40.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                            Text(stringResource(R.string.bill_calendar), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                if (state.selectedDay != DateUtils.getDayOfMonth(System.currentTimeMillis()) || state.currentYearMonth != DateUtils.getCurrentYearMonth()) {
-                                    TextButton(onClick = { viewModel.setMonth(DateUtils.getCurrentYearMonth()) }, modifier = Modifier.height(32.dp)) {
-                                        Text(stringResource(R.string.common_today), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                        // 头部一行三元素：左「日历」（点击 = 回今天）、中月份（相对整卡居中）、右「周 | 月」。
+                        // 月份用 Box 叠放而非 Row + weight：左右元素宽度天然不等（中文「日历」窄、
+                        // 英文 "Calendar" 宽），weight 版会把月份挤得偏离中心；叠放才是真正的整行居中。
+                        // 切月仍只靠左右滑动，滑动落定后才回写 currentYearMonth，故这里取外部当前月。
+                        val isOnToday = state.selectedDay == DateUtils.getDayOfMonth(System.currentTimeMillis()) &&
+                            state.currentYearMonth == DateUtils.getCurrentYearMonth()
+                        val todayLabel = stringResource(R.string.common_today)
+                        Box(modifier = Modifier.fillMaxWidth().height(40.dp)) {
+                            Text(
+                                text = DateUtils.formatDisplayMonth(LocalContext.current, state.currentYearMonth),
+                                fontSize = TypeScale.metricValue,
+                                fontWeight = FontWeight.Medium,
+                                // 与生活页月历标题（LifeMonthCalendar 的 displayMonth）同款：onSurface
+                                // 才是正文色。原先误用 onSurfaceVariant（#7A7570 次要灰）→ 15sp Medium
+                                // 的小字在白卡上对比度仅 4.6:1，看着「发虚」（用户 2026-10-10 截图指出）。
+                                color = MaterialTheme.colorScheme.onSurface,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.align(Alignment.Center)
+                            )
+                            // 左：点「日历」= 回到今天（切回当月并选中今日），取代原「今天」按钮；
+                            // 已在今天用常规色、离开后转主色，兼作「可点回今天」的提示。
+                            Row(
+                                modifier = Modifier
+                                    .align(Alignment.CenterStart)
+                                    .clip(CircleShape)
+                                    .clickable(onClickLabel = todayLabel) {
+                                        viewModel.setMonth(DateUtils.getCurrentYearMonth())
+                                        // 周视图下 month 可能本来就是当月，只靠上面这行不会引起任何
+                                        // 状态变化；补一个令牌，保证「回今天」在周视图里也真的跳回本周。
+                                        calendarTodayJump = System.currentTimeMillis()
                                     }
-                                }
-                                TextButton(onClick = { calendarExpanded = !calendarExpanded }) {
-                                    Text(if (calendarExpanded) stringResource(R.string.bill_collapse) else stringResource(R.string.bill_expand), style = MaterialTheme.typography.labelMedium, color = AccentOrange)
-                                }
+                                    // 上下 8dp 把点击区撑到整行 40dp（titleMedium 行高约 24dp）
+                                    .padding(horizontal = 6.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    stringResource(R.string.bill_calendar),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isOnToday) MaterialTheme.colorScheme.onSurface
+                                    else MaterialTheme.colorScheme.primary
+                                )
                             }
+                            // 右：周 / 月 —— 沿用生活页月历同款 PillToggle（胶囊轨道 + 选中侧圆片），
+                            // 与原来的「展开 / 收起」是同一个状态，只是换成了全 App 统一的分段控件。
+                            // 选中片传品牌橙：账单页从顶栏到「记一笔」都是橙色系，默认主色（蓝）
+                            // 的胶囊夹在日历卡里突兀（用户 2026-10-11 截图反馈改橙）。
+                            PillToggle(
+                                options = listOf(
+                                    stringResource(R.string.life_calendar_view_week),
+                                    stringResource(R.string.life_calendar_view_month)
+                                ),
+                                selectedIndex = if (calendarExpanded) 1 else 0,
+                                onSelect = { calendarExpanded = it == 1 },
+                                selectedColor = AccentOrange,
+                                contentDescriptions = listOf(
+                                    stringResource(R.string.life_calendar_toggle_week),
+                                    stringResource(R.string.life_calendar_toggle_month)
+                                ),
+                                modifier = Modifier.align(Alignment.CenterEnd)
+                            )
                         }
+                        Spacer(modifier = Modifier.height(4.dp))
                         CalendarView(
                             yearMonth = state.currentYearMonth,
                             dailyData = state.dailySummary,
@@ -311,7 +421,8 @@ fun BillScreen(
                                 viewModel.setSelectedDay(if (state.selectedDay == day) null else day)
                             },
                             collapsed = !calendarExpanded,
-                            onMonthChanged = { newMonth -> viewModel.setMonth(newMonth) }
+                            onMonthChanged = { newMonth -> viewModel.setMonth(newMonth) },
+                            todayJumpSignal = calendarTodayJump
                         )
                     }
                     }
@@ -439,6 +550,22 @@ fun BillScreen(
                     state = billListState,
                     contentPadding = PaddingValues(horizontal = 16.dp)
                 ) {
+                    // 待报销提示卡（列表首项，随列表滚走，不占固定高度）。
+                    // 报销管理在顶栏只是溢出菜单里的二级入口，靠这张卡补上「进账单页就能看见」的曝光。
+                    if (pendingReimbursements.isNotEmpty()) {
+                        item {
+                            AnimatedCard(index = 3, instant = isListScrolling) {
+                                ReimbursementPendingCard(
+                                    count = pendingReimbursements.size,
+                                    remaining = pendingReimburseRemaining,
+                                    // 列表 contentPadding 已给 16dp 页边距；不再加内边距，
+                                    // 让卡片与上方日历卡左右对齐（列表行才缩进 12dp）。
+                                    modifier = Modifier.padding(top = 4.dp, bottom = 4.dp),
+                                    onClick = onNavigateToReimbursement
+                                )
+                            }
+                        }
+                    }
                     item {
                         AnimatedCard(index = 3, instant = billListState.isScrollInProgress) {
                         Row(modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 4.dp, start = 12.dp, end = 12.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -577,6 +704,72 @@ fun BillScreen(
     }
 }
 
+/**
+ * 账单列表首项的「待报销」提示卡，只在存在未报完的支出时渲染（调用方判空）。
+ * 数字口径与报销页一致：笔数 = 待报销条数，金额 = 各笔「原额 − 已报额」之和。
+ */
+@Composable
+private fun ReimbursementPendingCard(
+    count: Int,
+    remaining: Long,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    val context = LocalContext.current
+    ModuleCard(
+        tint = billTint(),
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.large)
+            .clickable(onClick = onClick)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(AccentOrange.copy(alpha = 0.12f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Outlined.ReceiptLong,
+                    contentDescription = null,
+                    tint = AccentOrange,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.reimbursement_tab_pending),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium
+                )
+                Text(
+                    text = stringResource(
+                        R.string.reimbursement_pending_card_subtitle,
+                        count,
+                        CurrencyUtils.formatCurrency(context, remaining.toMoney())
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+            }
+            Icon(
+                Icons.Outlined.ChevronRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
 @Composable
 fun BillListItem(bill: Bill, wallets: Map<Long, String> = emptyMap(), onDetail: () -> Unit, onDelete: () -> Unit,
     customExpenseItems: List<CategoryItem>? = null, customIncomeItems: List<CategoryItem>? = null,
@@ -589,6 +782,8 @@ fun BillListItem(bill: Bill, wallets: Map<Long, String> = emptyMap(), onDetail: 
             it.copy(color = ColorResolver.resolve(it.name, it.color))
         } ?: (if (isExpense) customExpenseItems else customIncomeItems)?.find { it.name == bill.category }
     }
+    // 孤儿分类兜底（预设/自定义都匹配不上 = 分类已被删除，多见于回收站恢复后）
+    // 红 ✕ 是有意的产品决策：当「分类已失效」的警示信号，提醒用户及时重挂分类
     val catColor = categoryItem?.color ?: ErrorLight
     val displayName = remember(bill.category, bill.type, presetOverrides) {
         resolvePresetCategoryName(presetOverrides, bill.category, bill.type.value, context)
@@ -661,7 +856,14 @@ fun BillListItem(bill: Bill, wallets: Map<Long, String> = emptyMap(), onDetail: 
                         }
                     }
                 }
-                Column(horizontalAlignment = Alignment.End, modifier = Modifier.width(100.dp)) {
+                // 尾部列：金额 + 钱包名。银行卡的显示名是「招商银行 ****6214」，比普通钱包名长得多。
+                // 原先这里写死 `width(100.dp)`，那个长度正好比它短一点点，于是字符串在空格处折成两行，
+                // 白占一行高度（用户 2026-10-10 反馈：右边明明还有空位却折了行）。
+                // 现改为「下限 100dp、上限 180dp」：普通行仍是 100dp、外观与原先完全一致；
+                // 名字偏长的行按内容撑开，一行放得下就不再折行。
+                // 注意两个子项都不再 `fillMaxWidth()` —— 列宽要按内容撑开，右对齐交给
+                // Column 的 horizontalAlignment = End（带 fillMaxWidth 的子项会把列直接撑到行满宽）。
+                Column(horizontalAlignment = Alignment.End, modifier = Modifier.widthIn(min = 100.dp, max = 180.dp)) {
                     val prefix = if (bill.type == BillType.EXPENSE) "-"
                     else if (bill.type == BillType.TRANSFER) "" else "+"
                     val amountText = "$prefix${CurrencyUtils.formatCompact(context, bill.amount.toMoney())}"
@@ -672,21 +874,20 @@ fun BillListItem(bill: Bill, wallets: Map<Long, String> = emptyMap(), onDetail: 
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold,
                         color = amountColor,
-                        textAlign = TextAlign.End,
-                        modifier = Modifier.fillMaxWidth()
+                        textAlign = TextAlign.End
                     )
                     bill.walletId?.let { walletId ->
                         wallets[walletId]?.let { walletName ->
-                            // 银行卡显示名是「招商银行 ****6214」，尾部列只有 100dp 宽，会在空格处折成两行；
-                            // 不设 textAlign 的话第二行按左对齐排，看起来"没有靠右"（真机截图即此）。
+                            // 单行显示：撑开列宽就是为了这一行不折行；真的长到 180dp 还放不下
+                            // （银行名起得很长的用户）才退化为省略号，此时至少不会挤掉金额。
                             Text(
                                 walletName,
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 textAlign = TextAlign.End,
-                                maxLines = 2,
+                                maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.fillMaxWidth().padding(top = 2.dp)
+                                modifier = Modifier.padding(top = 2.dp)
                             )
                         }
                     }

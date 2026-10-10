@@ -449,7 +449,7 @@ private fun MonthDayCell(
         val hasDots = inMonth && info != null
         Text(
             date.dayOfMonth.toString(),
-            fontSize = TypeScale.heroUnit,
+            fontSize = TypeScale.calDay,
             fontWeight = if (isToday || isSelected) FontWeight.Bold else FontWeight.Normal,
             color = textColor,
             modifier = Modifier
