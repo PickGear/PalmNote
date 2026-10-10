@@ -944,11 +944,11 @@ private fun ImportHelpCard(onTutorial: () -> Unit) {
  * 内容按**平台分卡 + 编号步骤**组织。原先两条 60/53 字的「→ 长路径」折行后就断了步骤层次，
  * 用户得自己数箭头才知道走到哪一步；拆成编号步骤后每一步都是一个可对照的动作，
  * 关键的那一步（用途选「用于个人对账」）还能单独着色。结尾用 [TutorialNote] 补上
- * 全篇最实用的一条：邮件里发来的是**压缩包**，App 能直接读，不必先手动解压。
+ * 全篇最实用的一条：微信导出的是**表格文件**、支付宝的是**加密压缩包**，两者都能直接选中导入。
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ImportTutorialSheet(onDismiss: () -> Unit) {
+internal fun ImportTutorialSheet(onDismiss: () -> Unit) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -959,44 +959,7 @@ private fun ImportTutorialSheet(onDismiss: () -> Unit) {
         dragHandle = { BottomSheetDefaults.DragHandle() }
     ) {
         SheetHeader(title = stringResource(R.string.bill_import_tutorial_title), onDismiss = onDismiss)
-        Column(
-            modifier = Modifier
-                .weight(1f, fill = false)
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Text(
-                stringResource(R.string.bill_import_tutorial_lead),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                lineHeight = 20.sp
-            )
-            TutorialChannelCard(
-                title = stringResource(R.string.bill_import_wechat_bill),
-                accent = ImportChannelWechat,
-                highlightIndex = 2,
-                steps = listOf(
-                    stringResource(R.string.bill_import_tutorial_wechat_step1),
-                    stringResource(R.string.bill_import_tutorial_wechat_step2),
-                    stringResource(R.string.bill_import_tutorial_use_reconcile),
-                    stringResource(R.string.bill_import_tutorial_send)
-                )
-            )
-            TutorialChannelCard(
-                title = stringResource(R.string.bill_import_alipay_bill),
-                accent = ImportChannelAlipay,
-                highlightIndex = 2,
-                steps = listOf(
-                    stringResource(R.string.bill_import_tutorial_alipay_step1),
-                    stringResource(R.string.bill_import_tutorial_alipay_step2),
-                    stringResource(R.string.bill_import_tutorial_use_reconcile),
-                    stringResource(R.string.bill_import_tutorial_send)
-                )
-            )
-            TutorialNote(stringResource(R.string.bill_import_tutorial_note))
-        }
+        ImportTutorialBody()
         Spacer(modifier = Modifier.height(8.dp))
         Button(
             onClick = onDismiss,
@@ -1009,6 +972,49 @@ private fun ImportTutorialSheet(onDismiss: () -> Unit) {
         ) {
             Text(stringResource(R.string.bill_import_tutorial_ack), fontWeight = FontWeight.Bold)
         }
+    }
+}
+
+/** 教程正文（可滚动）：简介 + 两条平台的分卡步骤 + 结尾说明。 */
+@Composable
+private fun ColumnScope.ImportTutorialBody() {
+    Column(
+        modifier = Modifier
+            .weight(1f, fill = false)
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Text(
+            stringResource(R.string.bill_import_tutorial_lead),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            lineHeight = 20.sp
+        )
+        TutorialChannelCard(
+            title = stringResource(R.string.bill_import_wechat_bill),
+            accent = ImportChannelWechat,
+            highlightIndex = 2,
+            steps = listOf(
+                stringResource(R.string.bill_import_tutorial_wechat_step1),
+                stringResource(R.string.bill_import_tutorial_wechat_step2),
+                stringResource(R.string.bill_import_tutorial_use_reconcile),
+                stringResource(R.string.bill_import_tutorial_wechat_send)
+            )
+        )
+        TutorialChannelCard(
+            title = stringResource(R.string.bill_import_alipay_bill),
+            accent = ImportChannelAlipay,
+            highlightIndex = 2,
+            steps = listOf(
+                stringResource(R.string.bill_import_tutorial_alipay_step1),
+                stringResource(R.string.bill_import_tutorial_alipay_step2),
+                stringResource(R.string.bill_import_tutorial_use_reconcile),
+                stringResource(R.string.bill_import_tutorial_alipay_send)
+            )
+        )
+        TutorialNote(stringResource(R.string.bill_import_tutorial_note))
     }
 }
 

@@ -920,7 +920,7 @@
     <string name="bill_import_failed">Import Failed</string>
     <string name="bill_import_hero_title">Add External Bill Statements</string>
     <string name="bill_import_hero_desc">Import a file or recognize images; entries are organized automatically</string>
-    <string name="bill_import_file_desc_short">Batch import WeChat/Alipay CSV</string>
+    <string name="bill_import_file_desc_short">Batch import WeChat/Alipay statements</string>
     <string name="bill_import_ocr_desc_short">Recognize bills from screenshots or photos</string>
     <string name="bill_import_step_1">Export official statement</string>
     <string name="bill_import_step_2">Upload file or image</string>
@@ -929,14 +929,15 @@
     <string name="bill_import_help_desc">Export the statement file from WeChat or Alipay</string>
     <string name="bill_import_help_tutorial">View tutorial</string>
     <string name="bill_import_tutorial_title">How to export official statements</string>
-    <string name="bill_import_tutorial_lead">Only an officially exported statement carries the full history. Both apps email you the file — just pick the attachment from that email.</string>
+    <string name="bill_import_tutorial_lead">Only an officially exported statement carries the full history. WeChat delivers it as a WeChat Pay message; Alipay emails it — download the file, then select it to import.</string>
     <string name="bill_import_tutorial_wechat_step1">Me → Services → Wallet → Bills</string>
     <string name="bill_import_tutorial_wechat_step2">Tap "FAQ" in the top right → "Download statement"</string>
     <string name="bill_import_tutorial_alipay_step1">Me → Bills → "…" in the top right</string>
     <string name="bill_import_tutorial_alipay_step2">Transaction statement</string>
     <string name="bill_import_tutorial_use_reconcile">Set the purpose to "For personal reconciliation"</string>
-    <string name="bill_import_tutorial_send">Pick a date range, enter your email, wait for it to arrive</string>
-    <string name="bill_import_tutorial_note">No need to unzip the attachment — select the archive itself. If it asks for a password, just enter it.</string>
+    <string name="bill_import_tutorial_wechat_send">Pick a date range — the statement arrives as a WeChat Pay message; download it there</string>
+    <string name="bill_import_tutorial_alipay_send">Pick a date range, enter your email, wait for it to arrive</string>
+    <string name="bill_import_tutorial_note">WeChat exports a spreadsheet (xlsx) — select it directly. Alipay exports an encrypted archive — select it without unzipping, and enter the password if asked.</string>
     <string name="bill_import_tutorial_ack">Got it</string>
     <string name="bill_import_duplicate_existing">Already imported</string>
     <string name="bill_import_unrecognized">Unrecognized</string>

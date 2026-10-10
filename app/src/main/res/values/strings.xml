@@ -1083,7 +1083,7 @@
     <string name="bill_import_failed">导入失败</string>
     <string name="bill_import_hero_title">添加外部账单流水</string>
     <string name="bill_import_hero_desc">选择文件导入或图片识别，自动整理为记账记录</string>
-    <string name="bill_import_file_desc_short">微信/支付宝CSV批量导入</string>
+    <string name="bill_import_file_desc_short">微信/支付宝账单批量导入</string>
     <string name="bill_import_ocr_desc_short">截图或拍照识别账单</string>
     <string name="bill_import_step_1">导出官方账单</string>
     <string name="bill_import_step_2">上传文件或图片</string>
@@ -1092,14 +1092,15 @@
     <string name="bill_import_help_desc">在微信/支付宝账单页导出账单文件</string>
     <string name="bill_import_help_tutorial">查看教程</string>
     <string name="bill_import_tutorial_title">如何导出官方账单</string>
-    <string name="bill_import_tutorial_lead">官方导出的账单才有完整流水。两家都会把文件发到你的邮箱，从邮件里选附件导入即可。</string>
+    <string name="bill_import_tutorial_lead">官方导出的账单才有完整流水。微信的账单通过「微信支付」消息下发，支付宝的发到邮箱；下载后选中文件导入即可。</string>
     <string name="bill_import_tutorial_wechat_step1">我 → 服务 → 钱包 → 账单</string>
     <string name="bill_import_tutorial_wechat_step2">右上角「常见问题」→「下载账单」</string>
     <string name="bill_import_tutorial_alipay_step1">我的 → 账单 → 右上角「…」</string>
     <string name="bill_import_tutorial_alipay_step2">开具交易流水证明</string>
     <string name="bill_import_tutorial_use_reconcile">用途选「用于个人对账」</string>
-    <string name="bill_import_tutorial_send">选好时间段、填邮箱，等邮件送达</string>
-    <string name="bill_import_tutorial_note">邮件里的压缩包不用手动解压，直接选中它导入；带密码的输入密码即可。</string>
+    <string name="bill_import_tutorial_wechat_send">选好时间段，账单会通过「微信支付」消息发给你，在消息里下载保存到手机</string>
+    <string name="bill_import_tutorial_alipay_send">选好时间段、填邮箱，等邮件送达</string>
+    <string name="bill_import_tutorial_note">微信导出的是表格文件（xlsx），直接选中导入；支付宝的是加密压缩包，不用手动解压，选中后输入密码即可。</string>
     <string name="bill_import_tutorial_ack">知道了</string>
     <string name="bill_import_duplicate_existing">已存在</string>
     <string name="bill_import_unrecognized">未识别</string>
