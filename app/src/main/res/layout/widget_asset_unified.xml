@@ -58,64 +58,183 @@
             android:textColor="@color/widget_v2_text_tertiary" />
     </LinearLayout>
 
+    <!-- 24 段等宽槽位：宽度由「占用几段」决定，于是段的宽度就是分类占比 -->
     <LinearLayout
         android:id="@+id/widget_asset_bar"
         android:layout_width="match_parent"
-        android:layout_height="10dp"
+        android:layout_height="14dp"
         android:orientation="horizontal"
-        android:layout_marginTop="6dp">
+        android:layout_marginTop="6dp"
+        android:background="@drawable/widget_bar_round_bg"
+        android:clipToOutline="true">
 
         <ImageView
             android:id="@+id/widget_asset_seg_1"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:layout_marginEnd="3dp"
-            android:src="@drawable/widget_seg_slot"
+            android:src="@drawable/widget_seg_slot_flat"
             android:contentDescription="@null" />
-
         <ImageView
             android:id="@+id/widget_asset_seg_2"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:layout_marginEnd="3dp"
-            android:src="@drawable/widget_seg_slot"
+            android:src="@drawable/widget_seg_slot_flat"
             android:contentDescription="@null" />
-
         <ImageView
             android:id="@+id/widget_asset_seg_3"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:layout_marginEnd="3dp"
-            android:src="@drawable/widget_seg_slot"
+            android:src="@drawable/widget_seg_slot_flat"
             android:contentDescription="@null" />
-
         <ImageView
             android:id="@+id/widget_asset_seg_4"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:layout_marginEnd="3dp"
-            android:src="@drawable/widget_seg_slot"
+            android:src="@drawable/widget_seg_slot_flat"
             android:contentDescription="@null" />
-
         <ImageView
             android:id="@+id/widget_asset_seg_5"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:layout_marginEnd="3dp"
-            android:src="@drawable/widget_seg_slot"
+            android:src="@drawable/widget_seg_slot_flat"
             android:contentDescription="@null" />
-
         <ImageView
             android:id="@+id/widget_asset_seg_6"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:src="@drawable/widget_seg_slot"
+            android:src="@drawable/widget_seg_slot_flat"
+            android:contentDescription="@null" />
+        <ImageView
+            android:id="@+id/widget_asset_seg_7"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:src="@drawable/widget_seg_slot_flat"
+            android:contentDescription="@null" />
+        <ImageView
+            android:id="@+id/widget_asset_seg_8"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:src="@drawable/widget_seg_slot_flat"
+            android:contentDescription="@null" />
+        <ImageView
+            android:id="@+id/widget_asset_seg_9"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:src="@drawable/widget_seg_slot_flat"
+            android:contentDescription="@null" />
+        <ImageView
+            android:id="@+id/widget_asset_seg_10"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:src="@drawable/widget_seg_slot_flat"
+            android:contentDescription="@null" />
+        <ImageView
+            android:id="@+id/widget_asset_seg_11"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:src="@drawable/widget_seg_slot_flat"
+            android:contentDescription="@null" />
+        <ImageView
+            android:id="@+id/widget_asset_seg_12"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:src="@drawable/widget_seg_slot_flat"
+            android:contentDescription="@null" />
+        <ImageView
+            android:id="@+id/widget_asset_seg_13"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:src="@drawable/widget_seg_slot_flat"
+            android:contentDescription="@null" />
+        <ImageView
+            android:id="@+id/widget_asset_seg_14"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:src="@drawable/widget_seg_slot_flat"
+            android:contentDescription="@null" />
+        <ImageView
+            android:id="@+id/widget_asset_seg_15"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:src="@drawable/widget_seg_slot_flat"
+            android:contentDescription="@null" />
+        <ImageView
+            android:id="@+id/widget_asset_seg_16"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:src="@drawable/widget_seg_slot_flat"
+            android:contentDescription="@null" />
+        <ImageView
+            android:id="@+id/widget_asset_seg_17"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:src="@drawable/widget_seg_slot_flat"
+            android:contentDescription="@null" />
+        <ImageView
+            android:id="@+id/widget_asset_seg_18"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:src="@drawable/widget_seg_slot_flat"
+            android:contentDescription="@null" />
+        <ImageView
+            android:id="@+id/widget_asset_seg_19"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:src="@drawable/widget_seg_slot_flat"
+            android:contentDescription="@null" />
+        <ImageView
+            android:id="@+id/widget_asset_seg_20"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:src="@drawable/widget_seg_slot_flat"
+            android:contentDescription="@null" />
+        <ImageView
+            android:id="@+id/widget_asset_seg_21"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:src="@drawable/widget_seg_slot_flat"
+            android:contentDescription="@null" />
+        <ImageView
+            android:id="@+id/widget_asset_seg_22"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:src="@drawable/widget_seg_slot_flat"
+            android:contentDescription="@null" />
+        <ImageView
+            android:id="@+id/widget_asset_seg_23"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:src="@drawable/widget_seg_slot_flat"
+            android:contentDescription="@null" />
+        <ImageView
+            android:id="@+id/widget_asset_seg_24"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:src="@drawable/widget_seg_slot_flat"
             android:contentDescription="@null" />
     </LinearLayout>
 
@@ -125,7 +244,7 @@
         android:layout_height="0dp"
         android:layout_weight="1"
         android:orientation="vertical"
-        android:gravity="top"
+        android:gravity="center_vertical"
         android:layout_marginTop="6dp" />
 
     <TextView

@@ -94,6 +94,28 @@ class WidgetRemoteViewsRenderTest {
         assertNotNull(findById<View>(root, R.id.widget_todo_empty))
     }
 
+    @Test
+    fun `待办组件清单含非今日条目、进度轴只算今日`() {
+        // 稿子里的清单是「今天 / 明天 / 3 天后 / …」——只查今天到期会让用户记的待办一条都不显示
+        val today = System.currentTimeMillis()
+        val tomorrow = today + 86_400_000L
+        val board = WidgetData.TodoBoard(
+            items = listOf(
+                LifeItem(templateId = 1, title = "今天的活", dueDate = today),
+                LifeItem(templateId = 1, title = "明天的活", dueDate = tomorrow)
+            ),
+            todayDone = 1,
+            todayTotal = 2
+        )
+        val root = render(TodoWidgetProvider().bindViews(context, 1, board))
+
+        // 进度轴 = 今日完成 1/2
+        assertEquals("1", findById<TextView>(root, R.id.widget_todo_done)?.text)
+        assertEquals("/2", findById<TextView>(root, R.id.widget_todo_total)?.text)
+        // 有条目就摆出进度轴（清单本身由桌面按需取行，测试里拿不到）
+        assertEquals(View.VISIBLE, findById<View>(root, R.id.widget_todo_progress_col)?.visibility)
+    }
+
     // ── 习惯组件 ──
 
     @Test
@@ -325,6 +347,21 @@ class WidgetRemoteViewsRenderTest {
     }
 
     @Test
+    fun `总资产涨跌胶囊给带符号的净收入金额`() {
+        // 曾经按稿子做百分比（净收入 ÷ 期初总资产），真机上算出 +175.8% 这种没有意义的数，
+        // 改成直接给本月净收入的金额，涨 + 跌 -
+        val up = render(NetWorthWidgetProvider().bindViews(context, 1, 1_285_000L, 110, 26_400L))
+        assertEquals(View.VISIBLE, findById<View>(up, R.id.widget_net_worth_delta)?.visibility)
+        assertEquals("+¥264", findById<TextView>(up, R.id.widget_net_worth_delta)?.text)
+
+        val down = render(NetWorthWidgetProvider().bindViews(context, 1, 1_285_000L, 110, -26_400L))
+        assertEquals("-¥264", findById<TextView>(down, R.id.widget_net_worth_delta)?.text)
+
+        val flat = render(NetWorthWidgetProvider().bindViews(context, 1, 1_285_000L, 110, 0L))
+        assertEquals(View.GONE, findById<View>(flat, R.id.widget_net_worth_delta)?.visibility)
+    }
+
+    @Test
     fun `金额折叠阈值是 5 位整数`() {
         // 不到 5 位保留原值
         assertEquals("¥9999", WidgetData.formatMoneyCompact(context, 999_900))
@@ -395,10 +432,11 @@ class WidgetRemoteViewsRenderTest {
 
     @Test
     fun `物品组件按分类渲染色片与占比条`() {
+        // 传 DB 里的规范代码：组件会用 getCategoryName 翻成中文
         val categories = listOf(
-            HeldCategoryCount("数码", 3),
-            HeldCategoryCount("运动", 2),
-            HeldCategoryCount("图书", 1)
+            HeldCategoryCount("DIGITAL", 3),
+            HeldCategoryCount("SPORTS", 2),
+            HeldCategoryCount("BOOKS", 1)
         )
         val root = render(AssetWidgetProvider().bindViews(context, 1, categories))
 
@@ -408,20 +446,30 @@ class WidgetRemoteViewsRenderTest {
             findById<TextView>(root, R.id.widget_asset_total)?.text
         )
         // 每个分类一张色片，写清名称与件数
-        assertTrue(texts(root).any { it == "数码" })
-        assertTrue(texts(root).any { it == "运动" })
-        assertTrue(texts(root).any { it == "图书" })
+        // 名称走应用同一套翻译，断言也用同一函数（测试机 locale 不是 zh）
+        assertTrue(texts(root).any { it == com.palmnote.ui.components.getCategoryName("DIGITAL", context) })
+        assertTrue(texts(root).any { it == com.palmnote.ui.components.getCategoryName("SPORTS", context) })
+        assertTrue(texts(root).any { it == com.palmnote.ui.components.getCategoryName("BOOKS", context) })
         assertTrue(texts(root).any { it == context.resources.getQuantityString(R.plurals.widget_asset_item_count, 3, 3) })
         assertNotNull("色片底应着淡彩色", findById<ImageView>(root, R.id.widget_asset_chip_bg)?.colorFilter)
         assertNotNull("色片色点应着同族色", findById<ImageView>(root, R.id.widget_asset_chip_dot)?.colorFilter)
-        // 占比条段数 = 分类数，多出来的段隐藏（GONE 不占权重，剩下的段等分整条）
-        listOf(R.id.widget_asset_seg_1, R.id.widget_asset_seg_2, R.id.widget_asset_seg_3).forEach { id ->
+        // 占比条 24 段等宽槽位，按件数占比着色：3/2/1 共 6 件 → 累计边界 12 / 20 / 24，
+        // 于是第 1 类占 1-11 段、第 2 类 12-19、第 3 类 20-24（段宽即比例）
+        listOf(R.id.widget_asset_seg_1, R.id.widget_asset_seg_12, R.id.widget_asset_seg_20).forEach { id ->
             assertEquals(View.VISIBLE, findById<ImageView>(root, id)?.visibility)
             assertNotNull("占比条段 $id 应着色族色", findById<ImageView>(root, id)?.colorFilter)
         }
-        listOf(R.id.widget_asset_seg_4, R.id.widget_asset_seg_5, R.id.widget_asset_seg_6).forEach { id ->
-            assertEquals(View.GONE, findById<ImageView>(root, id)?.visibility)
+        listOf(R.id.widget_asset_seg_1, R.id.widget_asset_seg_24).forEach { id ->
+            assertNotNull("占比条段 $id 应着色族色", findById<ImageView>(root, id)?.colorFilter)
         }
+        // 段宽 = 比例：3/2/1 共 6 件 → 24 段切成 12 / 8 / 4
+        val owners = AssetWidgetProvider().slotOwners(listOf(3, 2, 1), 24)
+        assertEquals("第一类占前 12 段", 0, owners[0])
+        assertEquals(0, owners[11])
+        assertEquals("第二类从第 13 段起", 1, owners[12])
+        assertEquals(1, owners[19])
+        assertEquals("第三类占最后 4 段", 2, owners[20])
+        assertEquals(2, owners[23])
         assertEquals(View.GONE, findById<View>(root, R.id.widget_asset_empty)?.visibility)
     }
 
@@ -463,6 +511,63 @@ class WidgetRemoteViewsRenderTest {
         assertTrue(texts(root).any { it.contains("爸爸生日") })
     }
 
+
+    // ── 真机自适应：摆得高/条目少时元素放大 ──
+
+    @Test
+    fun `倒计时摆得高时数字与日历条放大`() {
+        val event = LifeCounterWidgetProvider.CounterEvent(1, "爸爸生日", 22, LocalDate.of(2026, 11, 1))
+        val tall = render(
+            LifeCounterWidgetProvider().counterViews(context, 1, listOf(event), isLarge = false, heightDp = 284)
+        )
+        val short = render(
+            LifeCounterWidgetProvider().counterViews(context, 1, listOf(event), isLarge = false, heightDp = 190)
+        )
+        // 摆到 3 格高（≈284dp）时数字与日历条各放大一档，否则卡片上下会空三分之一
+        assertEquals(sp(46f), findById<TextView>(tall, R.id.widget_days_count)?.textSize?.toDouble() ?: 0.0, 0.5)
+        assertEquals(sp(38f), findById<TextView>(short, R.id.widget_days_count)?.textSize?.toDouble() ?: 0.0, 0.5)
+        assertEquals(sp(15f), findById<TextView>(tall, R.id.widget_counter_date_0)?.textSize?.toDouble() ?: 0.0, 0.5)
+    }
+
+    @Test
+    fun `习惯只有一两条时连击数字放大`() {
+        val one = render(
+            HabitWidgetProvider().bindViews(
+                context, 1,
+                listOf(HabitWidgetProvider.HabitRow(templateId = 1, name = "跑步", checked = true, streak = 12))
+            )
+        )
+        assertEquals(sp(64f), findById<TextView>(one, R.id.widget_habit_streak)?.textSize?.toDouble() ?: 0.0, 0.5)
+    }
+
+    @Test
+    fun `概览圆环中心在无预算时退到目标百分比`() {
+        val views = RemoteViews(context.packageName, R.layout.widget_dashboard_unified)
+        DashboardWidgetProvider().bindSnapshot(
+            context,
+            views,
+            DashboardWidgetProvider.DashboardSnapshot(
+                dateText = "10月10日",
+                budgetCardAmount = "¥470",
+                budgetCardSub = context.getString(R.string.widget_net_income),
+                goalPct = "58%",
+                goalName = "读书",
+                todoRemaining = 0,
+                anniversaryTitle = null,
+                anniversaryDays = -1L,
+                budgetPercent = null,
+                goalPercent = 58
+            )
+        )
+        val root = render(views)
+
+        assertEquals("58%", findById<TextView>(root, R.id.widget_dashboard_ring_text)?.text)
+    }
+
+    /** sp → px（测试机密度）。 */
+    private fun sp(value: Float): Double = android.util.TypedValue
+        .applyDimension(android.util.TypedValue.COMPLEX_UNIT_SP, value, context.resources.displayMetrics)
+        .toDouble()
 
     // ── 整卡透明度（设置页「组件透明度」） ──
 

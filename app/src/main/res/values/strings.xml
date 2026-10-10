@@ -632,6 +632,10 @@
     <string name="widget_preview_todo_2">整理物品库存</string>
     <string name="widget_preview_todo_3">完成月度周报</string>
     <string name="widget_preview_todo_due_3">3 天后</string>
+    <string name="widget_preview_todo_4">给妈妈打电话</string>
+    <string name="widget_preview_todo_5">续费域名</string>
+    <string name="widget_preview_todo_due_4">本周日</string>
+    <string name="widget_preview_todo_due_5">11/02</string>
     <string name="widget_habit_title">今日打卡</string>
     <string name="widget_habit_streak_label">连续打卡</string>
     <string name="widget_habit_empty">暂无习惯</string>

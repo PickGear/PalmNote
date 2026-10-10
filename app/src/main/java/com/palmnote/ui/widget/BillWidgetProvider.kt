@@ -215,9 +215,11 @@ class BillWidgetProvider : ScopedWidgetProvider() {
         val primary = WidgetData.colorFamily(context, 0)
         val secondary = WidgetData.colorFamily(context, 1)
 
+        // 大数字走不带分的紧凑格式：左栏只有 96dp，`¥5290.50` 这种带分的会被省略号截断
+        // （真机实测截成 `¥529…`）；稿子里也是 `¥8200` 这种整数
         views.setTextViewText(
             R.id.widget_expense_amount,
-            WidgetData.formatMoneyCompact(context, snapshot.monthlyExpense)
+            "¥${WidgetData.formatAmountCompact(context, snapshot.monthlyExpense)}"
         )
         views.setInt(R.id.widget_bill_badge, "setColorFilter", primary.hue)
         views.setTextColor(R.id.widget_add_btn, primary.hue)
