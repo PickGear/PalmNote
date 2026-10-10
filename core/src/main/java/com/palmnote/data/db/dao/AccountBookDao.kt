@@ -18,6 +18,13 @@ interface AccountBookDao {
     @Query("SELECT * FROM account_books WHERE id = :id")
     suspend fun getBookById(id: Long): AccountBook?
 
+    /**
+     * 按类型取账本（一次性）。目前只服务于「预设账本出厂色刷新」：
+     * 那种场景拿不到 Flow 也无所谓，要的就是当下这一份快照。
+     */
+    @Query("SELECT * FROM account_books WHERE bookType = :bookType")
+    suspend fun getBooksByType(bookType: String): List<AccountBook>
+
     @Query("SELECT * FROM account_books WHERE isDefault = 1 AND isHidden = 0 LIMIT 1")
     suspend fun getDefaultBook(): AccountBook?
 

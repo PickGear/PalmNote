@@ -22,6 +22,7 @@ import com.palmnote.domain.model.toYuanString
 import com.palmnote.domain.repository.AccountBookRepository
 import com.palmnote.domain.repository.BillRepository
 import com.palmnote.domain.repository.BudgetRepository
+import com.palmnote.domain.repository.ReimbursementAllocation
 import com.palmnote.domain.util.DateUtils
 import com.palmnote.ui.components.CategoryItem
 import com.palmnote.ui.components.saveImageToInternalStorage
@@ -92,6 +93,11 @@ data class AddBillFormState(
     val images: String = "",
     val isReimbursable: Boolean = false,
     val isTaxDeductible: Boolean = false,
+    /**
+     * 收入侧的报销关联：这条收入覆盖了哪些待报销支出。
+     * 只在 type=INCOME 且 category=「报销」时有意义，保存时按待报额顺序分摊收入金额。
+     */
+    val linkedExpenseIds: List<Long> = emptyList(),
     val latitude: Double? = null,
     val longitude: Double? = null,
     val createdAt: Long = System.currentTimeMillis(),
@@ -118,6 +124,11 @@ class BillViewModel @Inject constructor(
 
     private val _formState = MutableStateFlow(AddBillFormState())
     val formState: StateFlow<AddBillFormState> = _formState.asStateFlow()
+
+    /** 待报销支出：录入「报销」分类的收入时供勾选关联。 */
+    val pendingReimbursements: StateFlow<List<Bill>> =
+        billRepository.getUnreimbursedBills()
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     // 本次会话新建的图片文件（保存成功后统一清理，避免取消编辑留下孤儿文件）
     private val pendingNewFiles = mutableSetOf<String>()
@@ -534,7 +545,8 @@ class BillViewModel @Inject constructor(
                     location = form.location.trim(),
                     tags = form.tags,
                     images = form.images,
-                    isReimbursable = form.isReimbursable,
+                    // 兜底：收入/转账不该带报销标记（录入页已隐藏开关，防止旧表单状态带过去）
+                    isReimbursable = form.type == BillType.EXPENSE && form.isReimbursable,
                     isTaxDeductible = form.isTaxDeductible,
                     latitude = form.latitude,
                     longitude = form.longitude,
@@ -544,6 +556,12 @@ class BillViewModel @Inject constructor(
 
                 if (form.isEditing) {
                     billRepository.updateBillWithWalletAdjustment(bill)
+                } else if (form.type == BillType.INCOME && form.category == REIMBURSEMENT_CATEGORY && form.linkedExpenseIds.isNotEmpty()) {
+                    // 报销收入：记收入与分摊到各支出在同一事务里完成
+                    billRepository.createReimbursementIncome(
+                        income = bill,
+                        allocations = buildReimbursementAllocations(form.linkedExpenseIds, amount)
+                    )
                 } else {
                     billRepository.createBillWithWalletAdjustment(bill)
                 }
@@ -554,6 +572,33 @@ class BillViewModel @Inject constructor(
                 _formState.value = _formState.value.copy(isSaving = false)
             }
         }
+    }
+
+    /**
+     * 把收入金额分摊到选中的待报销支出上：按支出日期先后依次吃满，直到收入分完。
+     *
+     * 收入金额可能小于待报总额（只报回来一部分），所以是「按顺序分配、用尽即停」，
+     * 而不是按比例摊 —— 按比例会产生分币误差，且勾选顺序本身就是一种优先级表达。
+     */
+    private suspend fun buildReimbursementAllocations(
+        expenseIds: List<Long>,
+        incomeAmount: Long
+    ): List<ReimbursementAllocation> {
+        val pendingById = billRepository.getUnreimbursedBills().first().associateBy { it.id }
+        val allocations = mutableListOf<ReimbursementAllocation>()
+        var left = incomeAmount
+        expenseIds.mapNotNull { pendingById[it] }
+            .sortedBy { it.date }
+            .forEach { expense ->
+                if (left <= 0L) return@forEach
+                val need = (expense.amount - expense.reimbursedAmount).coerceAtLeast(0L)
+                val alloc = minOf(need, left)
+                if (alloc > 0L) {
+                    allocations += ReimbursementAllocation(expense.id, alloc)
+                    left -= alloc
+                }
+            }
+        return allocations
     }
 
     fun saveBudget(budget: Budget) {

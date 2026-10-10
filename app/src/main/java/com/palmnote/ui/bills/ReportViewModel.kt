@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.palmnote.data.db.dao.CategoryTotal
 import com.palmnote.data.db.dao.DailySummary
+import com.palmnote.data.db.dao.ExpenseBreakdown
 import com.palmnote.data.db.dao.MonthTotal
 import com.palmnote.data.db.entity.CategoryConfig
 import com.palmnote.domain.repository.BillRepository
@@ -26,8 +27,13 @@ data class ReportData(
     val avgDaily: Double = 0.0,
     val categories: List<CategoryTotal> = emptyList(),
     val dailySummary: List<DailySummary> = emptyList(),
-    val monthlyTrend: List<MonthTotal> = emptyList()
-)
+    val monthlyTrend: List<MonthTotal> = emptyList(),
+    /** 其中已报销回来的金额（分）。净支出 = [totalExpense] - [reimbursed]。 */
+    val reimbursed: Long = 0
+) {
+    /** 真正自己掏的钱：垫付的报销款不该算进个人支出。 */
+    val netExpense: Long get() = (totalExpense - reimbursed).coerceAtLeast(0L)
+}
 
 @Stable
 data class ReportState(
@@ -151,7 +157,11 @@ class ReportViewModel @Inject constructor(
         try {
             combine(
                 if (isAllBooks) billRepository.getWeeklyBillCount(s, e) else billRepository.getWeeklyBillCountByBook(bookId, s, e),
-                if (isAllBooks) billRepository.getWeeklyExpense(s, e) else billRepository.getWeeklyExpenseByBook(bookId, s, e),
+                if (isAllBooks) {
+                    billRepository.getWeeklyExpenseBreakdown(s, e)
+                } else {
+                    billRepository.getWeeklyExpenseBreakdownByBook(bookId, s, e)
+                },
                 if (isAllBooks) billRepository.getWeeklyIncome(s, e) else billRepository.getWeeklyIncomeByBook(bookId, s, e),
                 if (isAllBooks) {
                     if (isExpense) billRepository.getWeeklyExpenseByCategory(s, e) else billRepository.getWeeklyIncomeByCategory(s, e)
@@ -159,12 +169,13 @@ class ReportViewModel @Inject constructor(
                     if (isExpense) billRepository.getWeeklyExpenseByCategoryByBook(bookId, s, e) else billRepository.getWeeklyIncomeByCategoryByBook(bookId, s, e)
                 },
                 if (isAllBooks) billRepository.getBillsByDateRange(s, e) else billRepository.getBillsByDateRangeByBook(bookId, s, e)
-            ) { billCount, expense, income, categories, bills ->
+            ) { billCount, expenseBd, income, categories, bills ->
                 val daily = bills.groupToDailySummaries()
+                val expense = expenseBd?.expense ?: 0L
                 // 日均按自然日（周 = 7 天）算：按有账单的天数除会把数字抬高
-                val total = if (isExpense) expense ?: 0L else income ?: 0L
+                val total = if (isExpense) expense else income ?: 0L
                 val avg = total.toDouble() / ((e - s) / com.palmnote.domain.util.DateUtils.MILLIS_PER_DAY + 1)
-                ReportData(expense ?: 0L, income ?: 0L, billCount, avg, categories, daily)
+                ReportData(expense, income ?: 0L, billCount, avg, categories, daily, reimbursed = expenseBd?.reimbursed ?: 0L)
             }.collect { reportData ->
                 hasLoadedOnce = true
                 _state.update { it.copy(data = reportData, isLoading = false) }
@@ -183,7 +194,11 @@ class ReportViewModel @Inject constructor(
         try {
             combine(
                 if (isAllBooks) billRepository.getMonthlyBillCount(ym) else billRepository.getMonthlyBillCountByBook(bookId, ym),
-                if (isAllBooks) billRepository.getMonthlyExpense(ym) else billRepository.getMonthlyExpenseByBook(bookId, ym),
+                if (isAllBooks) {
+                    billRepository.getMonthlyExpenseBreakdown(ym)
+                } else {
+                    billRepository.getMonthlyExpenseBreakdownByBook(bookId, ym)
+                },
                 if (isAllBooks) billRepository.getMonthlyIncome(ym) else billRepository.getMonthlyIncomeByBook(bookId, ym),
                 if (isAllBooks) {
                     if (isExpense) billRepository.getExpenseByCategory(ym) else billRepository.getIncomeByCategory(ym)
@@ -191,10 +206,11 @@ class ReportViewModel @Inject constructor(
                     if (isExpense) billRepository.getExpenseByCategoryByBook(bookId, ym) else billRepository.getIncomeByCategoryByBook(bookId, ym)
                 },
                 if (isAllBooks) billRepository.getBillsByMonth(ym) else billRepository.getBillsByBookAndMonth(bookId, ym)
-            ) { billCount, expense, income, categories, bills ->
+            ) { billCount, expenseBd, income, categories, bills ->
                 val daily = bills.groupToDailySummaries()
+                val expense = expenseBd?.expense ?: 0L
                 // 日均按已过自然日算：当前月取本月已过天数，历史月取整月天数，未来月为 0
-                val total = if (isExpense) expense ?: 0L else income ?: 0L
+                val total = if (isExpense) expense else income ?: 0L
                 val parsedYm = java.time.YearMonth.parse(ym)
                 val elapsedDays = when {
                     parsedYm.isAfter(java.time.YearMonth.now()) -> 0
@@ -202,7 +218,7 @@ class ReportViewModel @Inject constructor(
                     else -> parsedYm.lengthOfMonth()
                 }
                 val avg = if (elapsedDays > 0) total.toDouble() / elapsedDays else 0.0
-                ReportData(expense ?: 0L, income ?: 0L, billCount, avg, categories, daily)
+                ReportData(expense, income ?: 0L, billCount, avg, categories, daily, reimbursed = expenseBd?.reimbursed ?: 0L)
             }.collect { reportData ->
                 hasLoadedOnce = true
                 _state.update { it.copy(data = reportData, isLoading = false) }
@@ -220,7 +236,11 @@ class ReportViewModel @Inject constructor(
         val isAllBooks = bookId == -1L
         try {
             combine(
-                if (isAllBooks) billRepository.getYearlyExpense(year) else billRepository.getYearlyExpenseByBook(bookId, year),
+                if (isAllBooks) {
+                    billRepository.getYearlyExpenseBreakdown(year)
+                } else {
+                    billRepository.getYearlyExpenseBreakdownByBook(bookId, year)
+                },
                 if (isAllBooks) billRepository.getYearlyIncome(year) else billRepository.getYearlyIncomeByBook(bookId, year),
                 if (isAllBooks) billRepository.getYearlyExpenseTrend(year) else billRepository.getYearlyExpenseTrendByBook(bookId, year),
                 if (isAllBooks) billRepository.getYearlyIncomeTrend(year) else billRepository.getYearlyIncomeTrendByBook(bookId, year),
@@ -229,12 +249,13 @@ class ReportViewModel @Inject constructor(
                 } else {
                     if (isExpense) billRepository.getYearlyExpenseByCategoryByBook(bookId, year) else billRepository.getYearlyIncomeByCategoryByBook(bookId, year)
                 }
-            ) { expense, income, expTrend, incTrend, categories ->
+            ) { expenseBd, income, expTrend, incTrend, categories ->
                 ReportData(
-                    expense ?: 0L, income ?: 0L, 0, 0.0,
+                    expenseBd?.expense ?: 0L, income ?: 0L, 0, 0.0,
                     categories.map { CategoryTotal(it.category, it.total) },
                     emptyList(),
-                    if (isExpense) expTrend else incTrend
+                    if (isExpense) expTrend else incTrend,
+                    reimbursed = expenseBd?.reimbursed ?: 0L
                 )
             }.collect { reportData ->
                 hasLoadedOnce = true

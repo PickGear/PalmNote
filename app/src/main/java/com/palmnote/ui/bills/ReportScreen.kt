@@ -294,6 +294,38 @@ private fun SummarySection(state: ReportState) {
                 )
             }
         }
+
+        // 净支出：垫付的报销款最终不是自己出的钱，单列一行比悄悄改总数更好解释
+        if (isExpense && state.data.reimbursed > 0L) {
+            Spacer(Modifier.height(10.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = stringResource(R.string.report_net_expense),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = stringResource(
+                            R.string.report_reimbursed,
+                            CurrencyUtils.formatCompact(context, state.data.reimbursed.toMoney())
+                        ),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Text(
+                    text = CurrencyUtils.formatCompact(context, state.data.netExpense.toMoney()),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = ExpenseRed
+                )
+            }
+        }
     }
 }
 

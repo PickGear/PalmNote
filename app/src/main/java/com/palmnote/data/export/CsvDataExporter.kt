@@ -66,7 +66,8 @@ class CsvDataExporter(
         )
         private val MONEY_FIELDS = setOf(
             "amount", "purchasePrice", "currentValue", "soldPrice",
-            "initialBalance", "currentBalance", "totalBudget", "unitPrice"
+            "initialBalance", "currentBalance", "totalBudget", "unitPrice",
+            "reimbursedAmount"
         )
         private val LIST_FIELDS = setOf("tags", "applicableTypes", "multiRemindJson")
         private const val IMAGE_PREFIX = "img_"
@@ -175,6 +176,7 @@ class CsvDataExporter(
             "splitGroupId" to "拆分组ID",
             "isReimbursable" to "可报销", "isReimbursed" to "已报销",
             "reimbursedDate" to "报销日期", "isTaxDeductible" to "可抵税",
+            "reimbursedAmount" to "已报销金额", "reimbursedByBillId" to "关联报销收入ID",
             "latitude" to "纬度", "longitude" to "经度",
             "bankName" to "银行名称", "cardNumber" to "卡号",
             "initialBalance" to "初始余额", "currentBalance" to "当前余额",
@@ -1185,6 +1187,9 @@ class CsvDataExporter(
                 isReimbursable = row["isReimbursable"].toBoolean(),
                 isReimbursed = row["isReimbursed"].toBoolean(),
                 reimbursedDate = parseDateOrNull(row["reimbursedDate"]),
+                // 累计已报金额按元字符串存取，与 amount 同一套换算；关联 id 直接沿用原值
+                reimbursedAmount = row["reimbursedAmount"]?.let { Money.parse(it)?.cents } ?: 0L,
+                reimbursedByBillId = row["reimbursedByBillId"]?.toLongOrNull(),
                 isTaxDeductible = row["isTaxDeductible"].toBoolean(),
                 latitude = row["latitude"]?.toDoubleOrNull(),
                 longitude = row["longitude"]?.toDoubleOrNull(),
@@ -1587,6 +1592,13 @@ class CsvDataExporter(
                 if (updated) {
                     db.assetDao().updateAsset(asset.copy(linkedBillId = newLinkedBillId))
                 }
+            }
+            // 支出上的 reimbursedByBillId 指向它的报销收入账单，同样是本机自增 id。
+            // 包内账单被改派新 id（或映射到本机既有 id）时不重写，这个引用会落到本机
+            // 另一条无关账单上 —— 那条被删时会顺着它静默清空这笔记账的报销状态。
+            db.billDao().getAllBills().first().filter { it.id in billIds }.forEach { bill ->
+                val remapped = bill.reimbursedByBillId?.let { billMap[it] } ?: return@forEach
+                db.billDao().updateBill(bill.copy(reimbursedByBillId = remapped))
             }
         }
 

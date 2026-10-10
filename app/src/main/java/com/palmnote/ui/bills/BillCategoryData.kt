@@ -147,6 +147,12 @@ private val categoryNameMap = mapOf(
 fun getLocalizedCategoryName(name: String): Int? = categoryNameMap[name]
 
 /**
+ * 收入预设分类里「报销」的 key。
+ * 报销管理补记回来那笔收入时按它归类，与用户在录入页选到的分类是同一个。
+ */
+const val REIMBURSEMENT_CATEGORY = "报销"
+
+/**
  * 解析预设分类的显示名：优先读 preset 覆盖 JSON 中的 "name"，
  * 否则用本地化名称，最后 fallback 到原始 key。
  */

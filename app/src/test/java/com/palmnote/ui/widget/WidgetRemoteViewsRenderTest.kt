@@ -483,6 +483,42 @@ class WidgetRemoteViewsRenderTest {
     }
 
     @Test
+    fun `物品组件分类超过 6 个时并成其他而非丢弃`() {
+        // 分类数无上界（20 个预设 + 用户自建），组件只有 3×2 个格位：超出的必须并成「其他」。
+        // 直接截断会有两处错：第 7 名往后的分类在桌面上消失；占比条按前 6 项归一化，比例失真。
+        val categories = (1..9).map { HeldCategoryCount("CAT$it", 10 - it) }
+        val collapsed = AssetWidgetProvider().collapseToSlots(categories, 6)
+
+        assertEquals("格位固定 6 个", 6, collapsed.size)
+        assertEquals("件数只搬家不丢弃", categories.sumOf { it.count }, collapsed.sumOf { it.count })
+        assertEquals("末尾是聚合项「其他」", "OTHER", collapsed.last().category)
+        // 前 5 名原样保留，其余（4+3+2+1）并入「其他」
+        assertEquals(listOf("CAT1", "CAT2", "CAT3", "CAT4", "CAT5"), collapsed.dropLast(1).map { it.category })
+        assertEquals(10, collapsed.last().count)
+        // 不满 6 类时不凭空多出「其他」
+        assertEquals(3, AssetWidgetProvider().collapseToSlots(categories.take(3), 6).size)
+
+        val root = render(AssetWidgetProvider().bindViews(context, 1, categories))
+        assertTrue(texts(root).any { it == com.palmnote.ui.components.getCategoryName("OTHER", context) })
+        assertTrue(
+            texts(root).any {
+                it == context.resources.getQuantityString(R.plurals.widget_asset_item_count, 10, 10)
+            }
+        )
+        // 占比条仍按**全部**件数归一化：聚合项占到最后一段，不再把第 6 名拉伸成「填满剩余」
+        val owners = AssetWidgetProvider().slotOwners(collapsed.map { it.count }, 24)
+        assertEquals("末段归聚合项「其他」", 5, owners[23])
+    }
+
+    @Test
+    fun `物品组件自定义分类原样显示不被翻成其他`() {
+        // 自定义分类直接以名字入库，getCategoryName 认不出会落 else 分支 → 桌面上全变「其他」
+        val root = render(AssetWidgetProvider().bindViews(context, 1, listOf(HeldCategoryCount("玩具", 2))))
+
+        assertTrue(texts(root).any { it == "玩具" })
+    }
+
+    @Test
     fun `物品静态预览布局能被 RemoteViews 解析`() {
         // previewLayout 会被 WidgetPin 包成 RemoteViews 交给桌面（确认框预览），
         // 所以静态布局里不能出现 RemoteViews 放行的类之外的东西（如纯 android.view.View）。

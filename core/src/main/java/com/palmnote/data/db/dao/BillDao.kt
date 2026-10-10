@@ -38,7 +38,12 @@ interface BillDao {
     @Query("SELECT * FROM bills WHERE merchant LIKE '%' || :merchant || '%' ORDER BY date DESC")
     fun getBillsByMerchant(merchant: String): Flow<List<Bill>>
 
-    @Query("SELECT * FROM bills WHERE isReimbursable = 1 AND isReimbursed = 0 ORDER BY date DESC")
+    /**
+     * 待报销的支出（含只报了一部分的，只要没报完就算待报销）。
+     * 必须带 `type = 'EXPENSE'`：v1.4.0 的「可报销」开关是无条件显示的，历史数据里可能
+     * 存在被标了可报销的收入/转账账单，不排掉会混进报销列表。
+     */
+    @Query("SELECT * FROM bills WHERE isReimbursable = 1 AND isReimbursed = 0 AND type = 'EXPENSE' ORDER BY date DESC")
     fun getUnreimbursedBills(): Flow<List<Bill>>
 
     @Query("SELECT * FROM bills WHERE recurringId IS NOT NULL ORDER BY date DESC")
@@ -52,6 +57,22 @@ interface BillDao {
 
     @Query("SELECT SUM(amount) FROM bills WHERE yearMonth = :yearMonth AND type = 'EXPENSE'")
     fun getMonthlyExpense(yearMonth: String): Flow<Long?>
+
+    /**
+     * 月度支出 + 其中已报销部分。一次查询拿两个数，报表不必为「净支出」再挂一条流
+     * （Kotlin 的 combine 只到 5 个参数，报表页已经把额度用满了）。
+     */
+    @Query(
+        "SELECT SUM(amount) AS expense, SUM(reimbursedAmount) AS reimbursed FROM bills " +
+            "WHERE yearMonth = :yearMonth AND type = 'EXPENSE'"
+    )
+    fun getMonthlyExpenseBreakdown(yearMonth: String): Flow<ExpenseBreakdown?>
+
+    @Query(
+        "SELECT SUM(amount) AS expense, SUM(reimbursedAmount) AS reimbursed FROM bills " +
+            "WHERE accountBookId = :bookId AND yearMonth = :yearMonth AND type = 'EXPENSE'"
+    )
+    fun getMonthlyExpenseBreakdownByBook(bookId: Long, yearMonth: String): Flow<ExpenseBreakdown?>
 
     /**
      * 近一段时间的每日支出合计（组件里的「近 7 天柱状图」用；`date` 是毫秒时间戳）。
@@ -219,6 +240,19 @@ interface BillDao {
     @Query("SELECT SUM(amount) FROM bills WHERE type = 'EXPENSE' AND yearMonth >= :year || '-01' AND yearMonth <= :year || '-12'")
     fun getYearlyExpense(year: String): Flow<Long?>
 
+    @Query(
+        "SELECT SUM(amount) AS expense, SUM(reimbursedAmount) AS reimbursed FROM bills " +
+            "WHERE type = 'EXPENSE' AND yearMonth >= :year || '-01' " +
+            "AND yearMonth <= :year || '-12'"
+    )
+    fun getYearlyExpenseBreakdown(year: String): Flow<ExpenseBreakdown?>
+
+    @Query(
+        "SELECT SUM(amount) AS expense, SUM(reimbursedAmount) AS reimbursed FROM bills " +
+            "WHERE type = 'EXPENSE' AND substr(yearMonth,1,4) = :year AND accountBookId = :bookId"
+    )
+    fun getYearlyExpenseBreakdownByBook(bookId: Long, year: String): Flow<ExpenseBreakdown?>
+
     @Query("SELECT SUM(amount) FROM bills WHERE type = 'INCOME' AND yearMonth >= :year || '-01' AND yearMonth <= :year || '-12'")
     fun getYearlyIncome(year: String): Flow<Long?>
 
@@ -256,11 +290,76 @@ interface BillDao {
 
 
 
-    @Query("UPDATE bills SET isReimbursed = 1, reimbursedDate = :date, updatedAt = :now WHERE id = :id")
-    suspend fun markReimbursed(id: Long, date: Long = System.currentTimeMillis(), now: Long = System.currentTimeMillis())
+    /**
+     * 写入报销进度。
+     *
+     * [paid] 是**累计**已报金额（调用方按「原值 + 本次」算好，支持分次部分报销）；
+     * [done] 由 Kotlin 侧判定 `paid >= amount` 后传入 —— 不写在 SQL 表达式里是为了避免
+     * 参数名与列名 `amount` 在 UPDATE 语句中产生歧义。
+     */
+    @Query(
+        "UPDATE bills SET reimbursedAmount = :paid, isReimbursed = :done, " +
+            "reimbursedDate = :date, reimbursedByBillId = :byBillId, updatedAt = :now WHERE id = :id"
+    )
+    suspend fun applyReimbursement(
+        id: Long,
+        paid: Long,
+        done: Boolean,
+        date: Long?,
+        byBillId: Long?,
+        now: Long = System.currentTimeMillis()
+    )
+
+    /** 撤销报销：整笔退回未报销状态（含解绑收入）。 */
+    @Query(
+        "UPDATE bills SET reimbursedAmount = 0, isReimbursed = 0, reimbursedDate = NULL, " +
+            "reimbursedByBillId = NULL, updatedAt = :now WHERE id = :id"
+    )
+    suspend fun clearReimbursement(id: Long, now: Long = System.currentTimeMillis())
+
+    /** 已报完的支出，按最近报销时间倒序（报销管理页「已报销」分页）。 */
+    @Query("SELECT * FROM bills WHERE isReimbursable = 1 AND isReimbursed = 1 AND type = 'EXPENSE' ORDER BY reimbursedDate DESC, date DESC")
+    fun getReimbursedBills(): Flow<List<Bill>>
+
+    /**
+     * 待报销汇总：剩余可报总额 + 笔数。
+     * 剩余额按 `amount - reimbursedAmount` 逐笔累加，所以部分报销的只贡献差额。
+     * WHERE 必须与 [getUnreimbursedBills] 完全一致，否则卡片数字与列表条数会对不上。
+     */
+    @Query(
+        "SELECT SUM(amount - reimbursedAmount) AS remaining, COUNT(*) AS count FROM bills " +
+            "WHERE isReimbursable = 1 AND isReimbursed = 0 AND type = 'EXPENSE'"
+    )
+    fun getPendingReimbursementSummary(): Flow<ReimbursementSummary?>
+
+    /** 累计已报回金额（含部分报销部分），报销页统计用。 */
+    @Query("SELECT SUM(reimbursedAmount) FROM bills WHERE isReimbursable = 1 AND type = 'EXPENSE'")
+    fun getTotalReimbursedAmount(): Flow<Long?>
+
+    /** 某笔报销收入覆盖了哪些支出。 */
+    @Query("SELECT * FROM bills WHERE reimbursedByBillId = :billId ORDER BY date DESC")
+    suspend fun getBillsReimbursedBy(billId: Long): List<Bill>
+
+    /**
+     * 报销收入被删除/移入回收站时解绑：把指向它的支出整体退回未报销。
+     *
+     * 语义刻意从简 —— 支出上只记「最近一次报销来源」，所以删掉该来源等价于撤销那次报销。
+     * 不做按份额回扣，是因为记录里没有分次明细，硬算只会得到更不可解释的数字。
+     */
+    @Query(
+        "UPDATE bills SET reimbursedByBillId = NULL, reimbursedAmount = 0, isReimbursed = 0, " +
+            "reimbursedDate = NULL, updatedAt = :now WHERE reimbursedByBillId = :billId"
+    )
+    suspend fun clearReimbursementBySource(billId: Long, now: Long = System.currentTimeMillis())
 
     @Query("SELECT SUM(amount) FROM bills WHERE type = 'EXPENSE' AND date >= :startDate AND date <= :endDate")
     fun getWeeklyExpense(startDate: Long, endDate: Long): Flow<Long?>
+
+    @Query(
+        "SELECT SUM(amount) AS expense, SUM(reimbursedAmount) AS reimbursed FROM bills " +
+            "WHERE type = 'EXPENSE' AND date >= :startDate AND date <= :endDate"
+    )
+    fun getWeeklyExpenseBreakdown(startDate: Long, endDate: Long): Flow<ExpenseBreakdown?>
 
     @Query("SELECT SUM(amount) FROM bills WHERE type = 'INCOME' AND date >= :startDate AND date <= :endDate")
     fun getWeeklyIncome(startDate: Long, endDate: Long): Flow<Long?>
@@ -312,6 +411,13 @@ interface BillDao {
 
     @Query("SELECT SUM(amount) FROM bills WHERE type = 'EXPENSE' AND date >= :startDate AND date <= :endDate AND accountBookId = :bookId")
     fun getWeeklyExpenseByBook(bookId: Long, startDate: Long, endDate: Long): Flow<Long?>
+
+    @Query(
+        "SELECT SUM(amount) AS expense, SUM(reimbursedAmount) AS reimbursed FROM bills " +
+            "WHERE type = 'EXPENSE' AND date >= :startDate AND date <= :endDate " +
+            "AND accountBookId = :bookId"
+    )
+    fun getWeeklyExpenseBreakdownByBook(bookId: Long, startDate: Long, endDate: Long): Flow<ExpenseBreakdown?>
 
     @Query("SELECT SUM(amount) FROM bills WHERE type = 'INCOME' AND date >= :startDate AND date <= :endDate AND accountBookId = :bookId")
     fun getWeeklyIncomeByBook(bookId: Long, startDate: Long, endDate: Long): Flow<Long?>
@@ -459,4 +565,20 @@ data class DailySummary(
     val date: Long,
     val expense: Long,
     val income: Long
+)
+
+/**
+ * 支出 + 其中已报销部分。字段可空是因为无匹配行时 `SUM` 返回 NULL —— 调用方统一按
+ * `?: 0L` 收敛，不要把「查不到」压成业务上的 0。
+ * 净支出（真正自己花的钱）= `expense - reimbursed`。
+ */
+data class ExpenseBreakdown(
+    val expense: Long? = null,
+    val reimbursed: Long? = null
+)
+
+/** 待报销汇总：剩余可报总额（分）+ 待报销笔数。无待报销项时 [remaining] 为 null。 */
+data class ReimbursementSummary(
+    val remaining: Long? = null,
+    val count: Int? = null
 )

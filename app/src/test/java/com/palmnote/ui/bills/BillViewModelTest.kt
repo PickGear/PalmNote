@@ -64,6 +64,8 @@ class BillViewModelTest {
         every { billRepository.getBillsByMonth(any()) } returns flowOf(emptyList())
         every { billRepository.getBillsByBookAndMonth(any(), any()) } returns flowOf(emptyList())
         every { billRepository.getMonthlyExpense(any()) } returns flowOf(null)
+        // 报销关联：VM 构造时即订阅待报销列表，未打桩会抛 no answer found
+        every { billRepository.getUnreimbursedBills() } returns flowOf(emptyList())
         every { billRepository.getMonthlyIncome(any()) } returns flowOf(null)
         every { billRepository.getMonthlyExpenseByBook(any(), any()) } returns flowOf(null)
         every { billRepository.getMonthlyIncomeByBook(any(), any()) } returns flowOf(null)
