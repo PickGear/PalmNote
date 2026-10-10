@@ -163,6 +163,9 @@ interface AssetDao {
     suspend fun linkBill(id: Long, billId: Long, now: Long = System.currentTimeMillis())
 
 
+    @Query("SELECT * FROM assets WHERE category = :category")
+    suspend fun getByCategoryOnce(category: String): List<Asset>
+
     @Query("DELETE FROM assets WHERE category = :category")
     suspend fun deleteByCategory(category: String)
 

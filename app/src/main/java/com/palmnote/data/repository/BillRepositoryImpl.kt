@@ -7,7 +7,9 @@ import com.palmnote.data.db.dao.BillDao
 import com.palmnote.data.db.dao.BillRecycleBinDao
 import com.palmnote.data.db.dao.CategoryTotal
 import com.palmnote.data.db.dao.CategoryTotalWithCount
+import com.palmnote.data.db.dao.ExpenseBreakdown
 import com.palmnote.data.db.dao.MonthTotal
+import com.palmnote.data.db.dao.ReimbursementSummary
 import com.palmnote.data.db.dao.WalletDao
 import com.palmnote.data.db.entity.Bill
 import com.palmnote.data.db.entity.BillRecycleBin
@@ -16,6 +18,7 @@ import com.palmnote.data.db.entity.toRecycleBin
 import com.palmnote.domain.model.BillType
 import kotlinx.coroutines.flow.Flow
 import com.palmnote.domain.repository.BillRepository
+import com.palmnote.domain.repository.ReimbursementAllocation
 import kotlinx.serialization.json.Json
 import java.io.File
 
@@ -135,9 +138,22 @@ class BillRepositoryImpl @Inject constructor(
 
     override suspend fun deleteBill(id: Long) = appDatabase.withTransaction {
         val bill = billDao.getBillById(id) ?: return@withTransaction
+        detachReimbursementOnDelete(bill)
         recycleBinDao.insert(bill.toRecycleBin())
         billDao.deleteById(id)
         revertOldBalance(bill)
+    }
+
+    /**
+     * 账单移入回收站前的连带处理：删掉的是报销收入时，把指向它的支出整体退回待报销。
+     *
+     * 不必先判断这笔收入「是不是报销收入」—— [BillDao.clearReimbursementBySource] 的
+     * WHERE 已按 `reimbursedByBillId = :billId` 收窄，没有支出指向它就是空操作。
+     */
+    private suspend fun detachReimbursementOnDelete(bill: Bill) {
+        if (bill.type == BillType.INCOME) {
+            billDao.clearReimbursementBySource(bill.id)
+        }
     }
 
     override suspend fun restoreBill(id: Long) = appDatabase.withTransaction {
@@ -153,6 +169,96 @@ class BillRepositoryImpl @Inject constructor(
         deleteImageFiles(item.images)
         recycleBinDao.deleteById(id)
     }
+
+    // ---------------- 报销管理 ----------------
+
+    override fun getUnreimbursedBills(): Flow<List<Bill>> = billDao.getUnreimbursedBills()
+
+    override fun getReimbursedBills(): Flow<List<Bill>> = billDao.getReimbursedBills()
+
+    override fun getPendingReimbursementSummary(): Flow<ReimbursementSummary?> =
+        billDao.getPendingReimbursementSummary()
+
+    override fun getTotalReimbursedAmount(): Flow<Long?> = billDao.getTotalReimbursedAmount()
+
+    override suspend fun getBillsReimbursedBy(billId: Long): List<Bill> =
+        billDao.getBillsReimbursedBy(billId)
+
+    override suspend fun applyReimbursement(expenseId: Long, paid: Long, date: Long, byBillId: Long?) {
+        val expense = billDao.getBillById(expenseId) ?: return
+        // 累计额封顶到原金额：多报出来的钱不属于这笔支出，不能让它溢出成负的待报额
+        val capped = paid.coerceAtMost(expense.amount)
+        billDao.applyReimbursement(
+            id = expenseId,
+            paid = capped,
+            done = capped >= expense.amount,
+            date = date,
+            byBillId = byBillId
+        )
+    }
+
+    /**
+     * 撤销整笔报销：支出退回待报销，**并删掉系统代记的那笔报销收入**（进回收站，可恢复）。
+     *
+     * 那笔收入只是这笔支出的账面投影 —— 只清标记不删收入，收支就被凭空抬高了一笔
+     * （2026-10-10 用户反馈：「记账报销撤销后，记账的报销收入记录没有撤销」）。
+     * 这条路径与 [detachReimbursementOnDelete]（删报销收入 → 关联支出退回待报销）
+     * 互为一对反向操作，两边保持对称。
+     *
+     * 例外：这笔收入若还分摊给了别的支出（录入页勾多笔时会出现「一收入对多支出」），
+     * 删掉会连带抹掉那些支出的已报销状态 —— 此时只解绑本笔，收入留给用户自己处置。
+     */
+    override suspend fun clearReimbursement(expenseId: Long) = appDatabase.withTransaction {
+        val expense = billDao.getBillById(expenseId) ?: return@withTransaction
+        // 顺序要紧：先解绑本笔（清掉 reimbursedByBillId），再回头看那笔收入是否还有别的支出指着
+        billDao.clearReimbursement(expenseId)
+
+        val incomeId = expense.reimbursedByBillId ?: return@withTransaction
+        if (billDao.getBillsReimbursedBy(incomeId).isEmpty()) {
+            deleteBill(incomeId)
+        }
+    }
+
+    override suspend fun createReimbursementIncome(
+        income: Bill,
+        allocations: List<ReimbursementAllocation>
+    ): Long = appDatabase.withTransaction {
+        val incomeId = billDao.insertBill(income)
+        applyNewBalance(income)
+        // 分摊与记收入同一事务：中途失败不会留下「收入记了、支出没标」的半截状态
+        allocations.forEach { allocation ->
+            val expense = billDao.getBillById(allocation.expenseId) ?: return@forEach
+            val paid = (expense.reimbursedAmount + allocation.amount).coerceAtMost(expense.amount)
+            if (paid > 0) {
+                billDao.applyReimbursement(
+                    id = expense.id,
+                    paid = paid,
+                    done = paid >= expense.amount,
+                    date = income.date,
+                    byBillId = incomeId
+                )
+            }
+        }
+        incomeId
+    }
+
+    override fun getMonthlyExpenseBreakdown(yearMonth: String): Flow<ExpenseBreakdown?> =
+        billDao.getMonthlyExpenseBreakdown(yearMonth)
+
+    override fun getMonthlyExpenseBreakdownByBook(bookId: Long, yearMonth: String): Flow<ExpenseBreakdown?> =
+        billDao.getMonthlyExpenseBreakdownByBook(bookId, yearMonth)
+
+    override fun getWeeklyExpenseBreakdown(startDate: Long, endDate: Long): Flow<ExpenseBreakdown?> =
+        billDao.getWeeklyExpenseBreakdown(startDate, endDate)
+
+    override fun getWeeklyExpenseBreakdownByBook(bookId: Long, startDate: Long, endDate: Long): Flow<ExpenseBreakdown?> =
+        billDao.getWeeklyExpenseBreakdownByBook(bookId, startDate, endDate)
+
+    override fun getYearlyExpenseBreakdown(year: String): Flow<ExpenseBreakdown?> =
+        billDao.getYearlyExpenseBreakdown(year)
+
+    override fun getYearlyExpenseBreakdownByBook(bookId: Long, year: String): Flow<ExpenseBreakdown?> =
+        billDao.getYearlyExpenseBreakdownByBook(bookId, year)
 
     override suspend fun search(query: String): List<Bill> = billDao.search(query)
 
@@ -260,6 +366,7 @@ class BillRepositoryImpl @Inject constructor(
         val bills = appDatabase.withTransaction {
             val selected = select()
             selected.forEach { bill ->
+                detachReimbursementOnDelete(bill)
                 recycleBinDao.insert(bill.toRecycleBin())
                 revertOldBalance(bill)
             }

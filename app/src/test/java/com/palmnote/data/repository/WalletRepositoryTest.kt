@@ -3,6 +3,7 @@ package com.palmnote.data.repository
 import com.palmnote.data.db.AppDatabase
 import com.palmnote.data.db.dao.WalletDao
 import com.palmnote.data.db.entity.Wallet
+import com.palmnote.domain.repository.BillRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -31,8 +32,13 @@ class WalletRepositoryTest {
         every { context.getString(any()) } returns ""
         every { context.getString(any(), any()) } returns ""
 
-        // appDatabase 仅占位：withTransaction 类方法不在本单测覆盖（迁移测试在 androidTest 层）
-        walletRepository = WalletRepositoryImpl(walletDao, mockk(), mockk<AppDatabase>(relaxUnitFun = true), context)
+        // appDatabase 仅占位：withTransaction 类方法不在本单测覆盖（级联删除的真实 DB 行为见 CascadeDeleteRecycleBinTest）
+        walletRepository = WalletRepositoryImpl(
+            walletDao,
+            mockk<BillRepository>(relaxUnitFun = true),
+            mockk<AppDatabase>(relaxUnitFun = true),
+            context
+        )
     }
 
     @Test

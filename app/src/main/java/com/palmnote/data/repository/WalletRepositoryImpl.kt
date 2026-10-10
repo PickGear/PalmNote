@@ -5,16 +5,16 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import android.content.Context
 import androidx.room.withTransaction
 import com.palmnote.data.db.AppDatabase
-import com.palmnote.data.db.dao.BillDao
 import com.palmnote.data.db.dao.WalletDao
 import com.palmnote.data.db.entity.Wallet
 import com.palmnote.ui.bills.walletPresets
 import kotlinx.coroutines.flow.Flow
+import com.palmnote.domain.repository.BillRepository
 import com.palmnote.domain.repository.WalletRepository
 
 class WalletRepositoryImpl @Inject constructor(
     private val walletDao: WalletDao,
-    private val billDao: BillDao,
+    private val billRepository: BillRepository,
     private val appDatabase: AppDatabase,
     @ApplicationContext private val context: Context
 ) : WalletRepository {
@@ -53,9 +53,18 @@ class WalletRepositoryImpl @Inject constructor(
     override suspend fun delete(id: Long) = walletDao.deleteWallet(id)
 
 
-    override suspend fun deleteWalletWithData(walletId: Long) = appDatabase.withTransaction {
-        billDao.deleteByWallet(walletId)
-        walletDao.deleteWallet(walletId)
+    /**
+     * 删除钱包及其全部账单。账单部分**必须**走 [BillRepository.deleteByWallet]：
+     * 进回收站、回滚钱包余额、解绑报销关联、事务提交后清理图片文件——
+     * 此前这里直调 `billDao.deleteByWallet` 硬删，用户删错钱包连反悔的机会都没有
+     * （2026-10-11 回收站覆盖度审计发现；BillRepository 里现成的包装版一直没被调用）。
+     *
+     * 两步各自成事务：账单先进回收站（失败则原样不动），钱包本体随后删。
+     * 账单回滚余额动作发生在即将被删的钱包行上，随后随行一起消失，无副作用。
+     */
+    override suspend fun deleteWalletWithData(walletId: Long) {
+        billRepository.deleteByWallet(walletId)
+        appDatabase.withTransaction { walletDao.deleteWallet(walletId) }
     }
 
     override suspend fun initDefaultWallets() = appDatabase.withTransaction {

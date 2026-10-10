@@ -15,7 +15,7 @@ interface AccountBookRepository {
     suspend fun setHidden(id: Long, hidden: Boolean)
     suspend fun deleteBook(id: Long)
 
-    /** 事务：软删关联账单 + 软删账本 */
+    /** 账单进回收站（回滚余额 + 解绑报销），随后删除账本本体；账本不可恢复。 */
     suspend fun deleteAccountBookWithData(bookId: Long)
     suspend fun initDefaultBooks()
 }
