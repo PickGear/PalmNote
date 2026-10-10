@@ -130,34 +130,6 @@ fun DataStorageScreen(
                 }
             }
 
-            // ── 示例数据：演示模式（示例记录的载入/移除，关闭即物理删除）。
-            // 它是 app 级的数据操作（影响生活/记账/物品/习惯四个模块），故与「数据」同域；
-            // 排序上置于「存储与清理」之前 —— 清理是危险操作，应排在最后。
-            item { SectionHeader(stringResource(R.string.settings_demo_section), Icons.Outlined.AutoAwesome, DopamineViolet) }
-            item {
-                // 单行卡：去掉上下内边距，整卡高度与多行卡里的单行一致（否则 12dp×2 只包这一行，会比别行显高）。
-                ModuleCard(
-                    tint = MaterialTheme.colorScheme.surface,
-                    modifier = Modifier.fillMaxWidth(),
-                    contentPadding = PaddingValues(horizontal = 12.dp)
-                ) {
-                    SettingsMenuItem(
-                        icon = Icons.Outlined.AutoAwesome,
-                        title = stringResource(R.string.settings_demo_mode),
-                        subtitle = stringResource(R.string.settings_demo_mode_subtitle),
-                        tint = DopamineViolet,
-                        // 不传 onClick：整行不可点，只有右侧开关响应（避免整卡出现按下态）。
-                        trailing = {
-                            CapsuleSwitch(
-                                checked = state.demoModeEnabled,
-                                onCheckedChange = { viewModel.setDemoModeEnabled(it) },
-                                checkedTrackColor = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    )
-                }
-            }
-
             // ── 存储与清理 ──
             item { SectionHeader(stringResource(R.string.settings_data_cleanup), Icons.Outlined.CleaningServices, Amber) }
             item {
@@ -182,6 +154,34 @@ fun DataStorageScreen(
                             crashLogCount = CrashLogStore.count(context)
                             crashLogBytes = CrashLogStore.totalBytes(context)
                             showCrashLogDialog = true
+                        }
+                    )
+                }
+            }
+
+            // ── 示例数据：演示模式（示例记录的载入/移除，关闭即物理删除）。
+            // 它是 app 级的数据操作（影响生活/记账/物品/习惯四个模块），故与「数据」同域；
+            // 排序上收在最后：备份与清理都是对「自己的数据」动手，演示模式只切展示来源，风险最低。
+            item { SectionHeader(stringResource(R.string.settings_demo_section), Icons.Outlined.AutoAwesome, DopamineViolet) }
+            item {
+                // 单行卡：去掉上下内边距，整卡高度与多行卡里的单行一致（否则 12dp×2 只包这一行，会比别行显高）。
+                ModuleCard(
+                    tint = MaterialTheme.colorScheme.surface,
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = PaddingValues(horizontal = 12.dp)
+                ) {
+                    SettingsMenuItem(
+                        icon = Icons.Outlined.AutoAwesome,
+                        title = stringResource(R.string.settings_demo_mode),
+                        subtitle = stringResource(R.string.settings_demo_mode_subtitle),
+                        tint = DopamineViolet,
+                        // 不传 onClick：整行不可点，只有右侧开关响应（避免整卡出现按下态）。
+                        trailing = {
+                            CapsuleSwitch(
+                                checked = state.demoModeEnabled,
+                                onCheckedChange = { viewModel.setDemoModeEnabled(it) },
+                                checkedTrackColor = MaterialTheme.colorScheme.primary
+                            )
                         }
                     )
                 }

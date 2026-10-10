@@ -2064,7 +2064,11 @@ private fun SelectionSquare(
                 label,
                 style = MaterialTheme.typography.labelSmall,
                 color = if (selected) Color.White else MaterialTheme.colorScheme.onSurface,
-                maxLines = 1
+                // 与记账页账户/账本方块同款修法：长名也要居中，超宽省略号
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }

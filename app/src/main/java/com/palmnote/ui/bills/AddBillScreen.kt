@@ -19,12 +19,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.palmnote.app.R
+import com.palmnote.data.db.entity.Bill
 import com.palmnote.domain.model.toMoney
 import com.palmnote.domain.util.CurrencyUtils
 import com.palmnote.domain.util.DateUtils
@@ -82,6 +86,9 @@ fun AddBillScreen(
         base.sortedByDescending { categoryUsageCounts[it.name] ?: 0 }
     }
 
+    var showExpensePicker by remember { mutableStateOf(false) }
+    val pendingReimbursements by viewModel.pendingReimbursements.collectAsStateWithLifecycle()
+
     Scaffold(
         topBar = {
             CompactTopAppBar(
@@ -123,7 +130,16 @@ fun AddBillScreen(
                             .clickable(
                                 indication = null,
                                 interactionSource = remember { MutableInteractionSource() }
-                            ) { viewModel.updateForm { copy(type = BillType.EXPENSE, category = "", toWalletId = null) } }
+                            ) {
+                                viewModel.updateForm {
+                                    copy(
+                                        type = BillType.EXPENSE,
+                                        category = "",
+                                        toWalletId = null,
+                                        linkedExpenseIds = emptyList()
+                                    )
+                                }
+                            }
                             .padding(vertical = 10.dp),
                         contentAlignment = Alignment.Center
                     ) {
@@ -142,7 +158,17 @@ fun AddBillScreen(
                             .clickable(
                                 indication = null,
                                 interactionSource = remember { MutableInteractionSource() }
-                            ) { viewModel.updateForm { copy(type = BillType.INCOME, category = "", toWalletId = null) } }
+                            ) {
+                                viewModel.updateForm {
+                                    copy(
+                                        type = BillType.INCOME,
+                                        category = "",
+                                        toWalletId = null,
+                                        isReimbursable = false,
+                                        linkedExpenseIds = emptyList()
+                                    )
+                                }
+                            }
                             .padding(vertical = 10.dp),
                         contentAlignment = Alignment.Center
                     ) {
@@ -161,7 +187,17 @@ fun AddBillScreen(
                             .clickable(
                                 indication = null,
                                 interactionSource = remember { MutableInteractionSource() }
-                            ) { viewModel.updateForm { copy(type = BillType.TRANSFER, category = "", toWalletId = null) } }
+                            ) {
+                                viewModel.updateForm {
+                                    copy(
+                                        type = BillType.TRANSFER,
+                                        category = "",
+                                        toWalletId = null,
+                                        isReimbursable = false,
+                                        linkedExpenseIds = emptyList()
+                                    )
+                                }
+                            }
                             .padding(vertical = 10.dp),
                         contentAlignment = Alignment.Center
                     ) {
@@ -269,7 +305,13 @@ fun AddBillScreen(
                                         getLocalizedWalletDisplayName(wallet, context),
                                         style = MaterialTheme.typography.labelSmall,
                                         color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface,
-                                        maxLines = 1
+                                        // 长名（如银行户名）超出 72dp 方块时：无 textAlign 默认从左起排被裁，
+                                        // 短名却由 Column 包裹居中，两者不一致（真机截图「招商银行」顶满左缘）。
+                                        // 填满方块宽 + 居中对齐 + 超宽省略号，长短名都居中。
+                                        modifier = Modifier.fillMaxWidth(),
+                                        textAlign = TextAlign.Center,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                 }
                             }
@@ -365,7 +407,11 @@ fun AddBillScreen(
                                             getLocalizedWalletDisplayName(wallet, context),
                                             style = MaterialTheme.typography.labelSmall,
                                             color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface,
-                                            maxLines = 1
+                                            // 同上：长名也要居中（转账转入账户方块）
+                                            modifier = Modifier.fillMaxWidth(),
+                                            textAlign = TextAlign.Center,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
                                         )
                                     }
                                 }
@@ -576,30 +622,77 @@ fun AddBillScreen(
                 }
             }
 
-            // Reimbursable Toggle
-            item {
-                ModuleCard(tint = MaterialTheme.colorScheme.surface) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
-                            Text(
-                                text = stringResource(R.string.bill_reimbursable),
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                text = stringResource(R.string.bill_reimbursable_hint),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+            // 可报销开关：只有支出有「报不报销」这回事，收入/转账不该出现
+            if (formState.type == BillType.EXPENSE) {
+                item {
+                    ModuleCard(tint = MaterialTheme.colorScheme.surface) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text(
+                                    text = stringResource(R.string.bill_reimbursable),
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = stringResource(R.string.bill_reimbursable_hint),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            CapsuleSwitch(
+                                checked = formState.isReimbursable,
+                                onCheckedChange = { viewModel.updateForm { copy(isReimbursable = it) } }
                             )
                         }
-                        CapsuleSwitch(
-                            checked = formState.isReimbursable,
-                            onCheckedChange = { viewModel.updateForm { copy(isReimbursable = it) } }
-                        )
+                    }
+                }
+            }
+
+            // 报销收入：勾选要报销的支出，保存时按待报额顺序把收入金额分摊下去
+            if (formState.type == BillType.INCOME && formState.category == REIMBURSEMENT_CATEGORY) {
+                item {
+                    // 选中项的待报总额：用户据此决定收入金额该填多少（填更多也不会多分摊）
+                    val selectedPendingTotal = pendingReimbursements
+                        .filter { it.id in formState.linkedExpenseIds }
+                        .sumOf { (it.amount - it.reimbursedAmount).coerceAtLeast(0L) }
+                    ModuleCard(tint = MaterialTheme.colorScheme.surface) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = stringResource(R.string.reimbursement_income_section),
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = if (formState.linkedExpenseIds.isEmpty()) {
+                                        stringResource(R.string.reimbursement_select_expense_hint)
+                                    } else {
+                                        stringResource(
+                                            R.string.reimbursement_selected_total,
+                                            formState.linkedExpenseIds.size,
+                                            CurrencyUtils.formatCurrency(
+                                                context,
+                                                selectedPendingTotal.toMoney()
+                                            )
+                                        )
+                                    },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            TextButton(onClick = { showExpensePicker = true }) {
+                                Text(stringResource(R.string.reimbursement_select_expense))
+                            }
+                        }
                     }
                 }
             }
@@ -628,4 +721,116 @@ fun AddBillScreen(
             }
         }
     }
+
+    if (showExpensePicker) {
+        ReimbursementExpensePickerDialog(
+            expenses = pendingReimbursements,
+            selectedIds = formState.linkedExpenseIds,
+            onDismiss = { showExpensePicker = false },
+            onConfirm = { ids ->
+                viewModel.updateForm { copy(linkedExpenseIds = ids) }
+                showExpensePicker = false
+            }
+        )
+    }
+}
+
+/**
+ * 报销收入「选择要报销的支出」对话框。
+ *
+ * 只列待报销的（含部分未报完的），多选。收入金额与选中总额不要求相等 ——
+ * 差额在保存时按日期顺序分摊，剩余部分仍留在待报销里。
+ */
+@Composable
+private fun ReimbursementExpensePickerDialog(
+    expenses: List<Bill>,
+    selectedIds: List<Long>,
+    onDismiss: () -> Unit,
+    onConfirm: (List<Long>) -> Unit
+) {
+    val context = LocalContext.current
+    // 不带 key：对话框是条件组合的，每次打开都是一次全新的 remember，
+    // 带 key 反而会在待报销列表刷新时把用户已勾的选择清掉
+    var selection by remember { mutableStateOf(selectedIds.toSet()) }
+    val selectedTotal = expenses.filter { it.id in selection }
+        .sumOf { (it.amount - it.reimbursedAmount).coerceAtLeast(0L) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.reimbursement_select_expense)) },
+        text = {
+            if (expenses.isEmpty()) {
+                Text(stringResource(R.string.reimbursement_no_pending_expense))
+            } else {
+                Column {
+                    Text(
+                        text = stringResource(
+                            R.string.reimbursement_selected_total,
+                            selection.size,
+                            CurrencyUtils.formatCurrency(context, selectedTotal.toMoney())
+                        ),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    LazyColumn(modifier = Modifier.heightIn(max = 320.dp)) {
+                        items(expenses, key = { it.id }) { expense ->
+                            val remaining = (expense.amount - expense.reimbursedAmount).coerceAtLeast(0L)
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        selection = if (expense.id in selection) {
+                                            selection - expense.id
+                                        } else {
+                                            selection + expense.id
+                                        }
+                                    }
+                                    .padding(vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Checkbox(
+                                    checked = expense.id in selection,
+                                    onCheckedChange = { checked ->
+                                        selection = if (checked) selection + expense.id else selection - expense.id
+                                    }
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = expense.note.ifBlank { expense.category },
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        maxLines = 1
+                                    )
+                                    Text(
+                                        text = DateUtils.formatDisplayDate(context, expense.date),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                Text(
+                                    text = CurrencyUtils.formatCurrency(context, remaining.toMoney()),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onConfirm(expenses.filter { it.id in selection }.map { it.id }) },
+                enabled = expenses.isNotEmpty()
+            ) {
+                Text(stringResource(R.string.confirm))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel))
+            }
+        }
+    )
 }
