@@ -76,23 +76,80 @@ object WidgetData {
         return if (cents == 0L) "$sign¥$whole" else "$sign¥$whole.${cents.toString().padStart(2, '0')}"
     }
 
-    // 卡片场景的金额缩写：超过 6 位整数时万/千单位折叠，避免窄卡截断（zh 用万，其他用 k/M）
+    // 卡片场景的金额缩写：5 位整数（≥¥10,000）起万/千单位折叠 —— 最窄的统计卡只放得下 4-5 个字符，
+    // 再大的数不折就会被省略号截断（zh 用万，其他用 k/M）。低于此值保留原值，不做无谓的精度损失。
     fun formatMoneyCompact(context: Context, amount: Long): String {
-        val whole = Math.abs(amount) / 100
-        if (whole < 1_000_000) return formatMoneyShort(amount)
-        val isZh = context.resources.configuration.locales.get(0).language == "zh"
+        if (Math.abs(amount) / 100 < 10_000) return formatMoneyShort(amount)
         val sign = if (amount < 0) "-" else ""
+        return "$sign¥${formatAmountCompact(context, amount)}"
+    }
+
+    /** 色族序号 → (淡底, 饱和前景)。按条目取不同族，组件里不要只用主题色。 */
+    data class ColorFamily(val tint: Int, val hue: Int)
+
+    /** 第 index 个色族的淡底与前景（循环取，条目数超过族数也能用）。 */
+    fun colorFamily(context: Context, index: Int): ColorFamily {
+        val i = ((index % TINT_IDS.size) + TINT_IDS.size) % TINT_IDS.size
+        return ColorFamily(context.getColor(TINT_IDS[i]), context.getColor(HUE_IDS[i]))
+    }
+
+    private val TINT_IDS = intArrayOf(
+        R.color.widget_tint_1, R.color.widget_tint_2, R.color.widget_tint_3,
+        R.color.widget_tint_4, R.color.widget_tint_5, R.color.widget_tint_6
+    )
+
+    private val HUE_IDS = intArrayOf(
+        R.color.widget_hue_1, R.color.widget_hue_2, R.color.widget_hue_3,
+        R.color.widget_hue_4, R.color.widget_hue_5, R.color.widget_hue_6
+    )
+
+    /**
+     * 组件调色板：按条目区分用 —— 一个习惯一个色、一块瓷片一个色。
+     * 参考稿里正是这样（运动健身青、餐饮橙、每支车队一色），不局限在单一强调色上。
+     * 深浅两套色值由 `values` / `values-night` 分别给。
+     */
+    fun widgetPalette(context: Context): IntArray =
+        PALETTE_COLOR_IDS.map { context.getColor(it) }.toIntArray()
+
+    private val PALETTE_COLOR_IDS = intArrayOf(
+        R.color.widget_palette_1,
+        R.color.widget_palette_2,
+        R.color.widget_palette_3,
+        R.color.widget_palette_4,
+        R.color.widget_palette_5,
+        R.color.widget_palette_6
+    )
+
+    /**
+     * 窄格子里的金额：**不带货币符号、只到元、不带正负号**（返回绝对值）。
+     *
+     * 账单组件那三格在 3 格宽时每格只有约 47dp 放文字（格子 67dp 减去 20dp 内边距），
+     * 而 `-¥5290.50` 这种值要 66dp —— 真机上实测被省略号截成了 `-¥529…`，金额直接看不全。
+     * 格子标签（收入/支出/净收入）已经说明方向，货币符号由调用方按格子给，正负号同理
+     * （净收入可正可负，收入/支出不带号），免得拼出 `+-` 这种东西。
+     * 结果最长 5 个字符：`9999` 或 `2.7万` / `13k`，加上 `¥` 也放得下。
+     */
+    fun formatAmountCompact(context: Context, amount: Long): String {
+        val abs = Math.abs(amount)
+        if (abs / 100 < 10_000) return (abs / 100).toString()
+        val isZh = context.resources.configuration.locales.get(0).language == "zh"
         return if (isZh) {
-            val wan = Math.abs(amount) / 100.0 / 10_000
-            val text = if (wan >= 100) "${wan.toInt()}万" else String.format(java.util.Locale.CHINA, "%.1f万", wan)
-            "$sign¥$text"
-        } else {
-            val value = Math.abs(amount) / 100.0
-            val text = when {
-                value >= 1_000_000 -> String.format(java.util.Locale.US, "%.1fM", value / 1_000_000)
-                else -> String.format(java.util.Locale.US, "%.0fk", value / 1_000)
+            val wan = abs / 100.0 / 10_000
+            // 整数倍不带小数（5万 / 128万），非整数保留一位（1.3万）
+            if (wan >= 100 || wan == wan.toInt().toDouble()) {
+                "${wan.toInt()}万"
+            } else {
+                String.format(java.util.Locale.CHINA, "%.1f万", wan)
             }
-            "$sign¥$text"
+        } else {
+            val value = abs / 100.0
+            // 同样：整数倍不带小数（13k / 2M）
+            when {
+                value >= 1_000_000 && value % 1_000_000 == 0.0 -> "${(value / 1_000_000).toInt()}M"
+                value >= 1_000_000 -> String.format(java.util.Locale.US, "%.1fM", value / 1_000_000)
+                value % 1_000 == 0.0 -> "${(value / 1_000).toInt()}k"
+                else -> String.format(java.util.Locale.US, "%.1fk", value / 1_000)
+            }
         }
     }
 

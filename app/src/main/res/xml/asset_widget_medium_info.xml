@@ -12,4 +12,5 @@
     android:description="@string/widget_asset_desc"
     android:previewImage="@drawable/widget_preview_asset"
     android:previewLayout="@layout/widget_asset_preview"
+    android:configure="com.palmnote.ui.widget.WidgetConfigActivity"
     android:resizeMode="horizontal|vertical" />

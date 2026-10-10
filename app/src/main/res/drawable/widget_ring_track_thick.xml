@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 大号仪表用的粗轨道（118dp 直径配 7dp 环）（恒显整圈） -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="ring"
+    android:thickness="7dp"
+    android:useLevel="false">
+    <solid android:color="@color/widget_v2_ring" />
+</shape>

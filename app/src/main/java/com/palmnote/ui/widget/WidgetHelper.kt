@@ -1,7 +1,6 @@
 package com.palmnote.ui.widget
 
 import android.app.PendingIntent
-import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.Intent
 import android.view.View
@@ -15,6 +14,37 @@ import java.time.format.DateTimeFormatter
 
 
 object WidgetHelper {
+
+    /**
+     * 组件透明度落到**卡片底色**上：RemoteViews 不允许调用 `View.setAlpha`
+     * （`can't use method with RemoteViews: setAlpha(float)`，框架只放行
+     * `@RemotableViewMethod`），所以只能换成对应档位的半透明圆角底图。
+     * 档位固定 4 档，滑块也按这 4 档吸附，所见即所得。
+     */
+    fun cardBackgroundFor(opacity: Float): Int = when {
+        opacity >= 0.9f -> R.drawable.widget_card_round
+        opacity >= 0.7f -> R.drawable.widget_card_round_80
+        opacity >= 0.5f -> R.drawable.widget_card_round_60
+        else -> R.drawable.widget_card_round_40
+    }
+
+    /** 整卡底色。不透明档不写入，省掉每次刷新的一次 RemoteViews 动作。 */
+    fun applyWidgetOpacity(views: RemoteViews, opacity: Float) {
+        if (opacity < 0.9f) {
+            views.setInt(R.id.widget_layout, "setBackgroundResource", cardBackgroundFor(opacity))
+        }
+    }
+
+    /**
+     * 卡片内部的大块实底（概览的预算/目标卡、账单横幅、倒计时焦点卡、快捷入口的记一笔格）。
+     * 底色变透但内层实底不动的话，只有卡片留白透出壁纸、看起来像没生效；
+     * 这几块用 `setImageAlpha`（ImageView 的 @RemotableViewMethod）跟着一起变透。
+     */
+    fun applySurfaceAlpha(views: RemoteViews, viewId: Int, opacity: Float) {
+        if (opacity < 0.9f) {
+            views.setInt(viewId, "setImageAlpha", (opacity * 255f).toInt().coerceIn(0, 255))
+        }
+    }
 
     fun formatMoney(amount: Long): String {
         val yuan = amount / 100.0
@@ -62,11 +92,11 @@ object WidgetHelper {
     fun createLifeEventPendingIntent(context: Context, itemId: Long): PendingIntent {
         val intent = Intent(context, com.palmnote.MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            putExtra("WIDGET_TAB", "life")
-            putExtra("WIDGET_ITEM_ID", itemId.toString())
+            putExtra(WidgetDeepLink.KEY_TAB, WidgetDeepLink.TAB_LIFE)
+            putExtra(WidgetDeepLink.KEY_ITEM_ID, itemId.toString())
         }
         return PendingIntent.getActivity(
-            context, (400_000_000L + itemId).toInt(), intent,
+            context, (WidgetDeepLink.SEG_EVENT_DETAIL.toLong() + itemId).toInt(), intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
     }
@@ -75,20 +105,20 @@ object WidgetHelper {
     fun createLifeListPendingIntent(context: Context, requestCode: Int, mode: String): PendingIntent {
         val intent = Intent(context, com.palmnote.MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            putExtra("WIDGET_TAB", "life")
-            putExtra("WIDGET_LIST_MODE", mode)
+            putExtra(WidgetDeepLink.KEY_TAB, WidgetDeepLink.TAB_LIFE)
+            putExtra(WidgetDeepLink.KEY_LIST_MODE, mode)
         }
         return PendingIntent.getActivity(
-            context, (500_000_000 + requestCode).toInt(), intent,
+            context, (WidgetDeepLink.SEG_LIFE_LIST + requestCode).toInt(), intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
     }
 
-    /** 账单横幅深链：到报表页（MainActivity 把 "report" 转 pendingNavigation）。 */
+    /** 账单横幅深链：到报表页（MainActivity 把 TAB_REPORT 转 pendingNavigation）。 */
     fun createReportPendingIntent(context: Context, widgetId: Int): PendingIntent {
         val intent = Intent(context, com.palmnote.MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            putExtra("WIDGET_TAB", WidgetDeepLink.TAB_REPORT)
+            putExtra(WidgetDeepLink.KEY_TAB, WidgetDeepLink.TAB_REPORT)
         }
         return PendingIntent.getActivity(
             context, WidgetDeepLink.SEG_BILL_REPORT + widgetId, intent,
@@ -99,8 +129,9 @@ object WidgetHelper {
     fun createPendingIntent(context: Context, requestCode: Int, tab: String): PendingIntent {
         val intent = Intent(context, com.palmnote.MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, requestCode)
-            putExtra("WIDGET_TAB", tab)
+            // 不写 EXTRA_APPWIDGET_ID：这里没有组件 id，消费端（handleWidgetIntent）也不读它，
+            // 塞个号段进去只会让人误以为那是组件 id
+            putExtra(WidgetDeepLink.KEY_TAB, tab)
         }
         return PendingIntent.getActivity(
             context, requestCode, intent,
@@ -108,16 +139,17 @@ object WidgetHelper {
         )
     }
 
-    fun addTodoItemView(
+    /** 待办行：整行点击走 fill-in intent —— 集合里的行不能各自持有 PendingIntent，由模板补全。 */
+    fun todoRowViews(
         context: Context,
-        views: RemoteViews,
-        containerId: Int,
         item: com.palmnote.data.db.entity.LifeItem,
-        accentColor: Int,
-        togglePendingIntent: android.app.PendingIntent? = null
-    ) {
+        accentColor: Int
+    ): RemoteViews {
         val itemView = RemoteViews(context.packageName, R.layout.widget_todo_item)
         val completed = item.status == "COMPLETED"
+        // 左侧色条按条目 id 取调色板色：同一个条目每次刷新都是同一个颜色
+        val palette = WidgetData.widgetPalette(context)
+        itemView.setInt(R.id.widget_todo_bar, "setColorFilter", palette[(item.id % palette.size).toInt()])
         // 圆圈三层结构（灰环/可着色圆底/对勾）：主题色经 setColorFilter 运行时着色，全主题生效
         itemView.setViewVisibility(R.id.widget_item_check_ring, if (completed) View.GONE else View.VISIBLE)
         itemView.setViewVisibility(R.id.widget_item_check_fill, if (completed) View.VISIBLE else View.GONE)
@@ -125,8 +157,6 @@ object WidgetHelper {
             itemView.setInt(R.id.widget_item_check_fill, "setColorFilter", accentColor)
         }
         itemView.setViewVisibility(R.id.widget_item_check, if (completed) View.VISIBLE else View.GONE)
-        // 整行可点：桌面直接勾选/取消（传入 PendingIntent 时）
-        togglePendingIntent?.let { itemView.setOnClickPendingIntent(R.id.widget_todo_row, it) }
         // 无障碍：行内容描述（API 30+ RemoteViews 支持，低版本自动忽略）
         if (android.os.Build.VERSION.SDK_INT >= 30) {
             itemView.setContentDescription(R.id.widget_todo_row, item.title)
@@ -149,7 +179,12 @@ object WidgetHelper {
             }
         } ?: ""
         itemView.setTextViewText(R.id.widget_item_due, dueText)
-        views.addView(containerId, itemView)
+        // 行内点击：只带条目 id，action 与组件由集合的 template 补全
+        itemView.setOnClickFillInIntent(
+            R.id.widget_todo_row,
+            android.content.Intent().putExtra(TodoToggleReceiver.EXTRA_ITEM_ID, item.id)
+        )
+        return itemView
     }
 
     fun addCounterItemView(context: Context, views: RemoteViews, containerId: Int, title: String, dateMillis: Long) {

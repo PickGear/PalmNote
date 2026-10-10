@@ -14,6 +14,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
 /**
@@ -27,10 +28,10 @@ import org.robolectric.annotation.Config
 class TodoToggleReceiverTest {
 
     private lateinit var db: AppDatabase
+    private val context = InstrumentationRegistry.getInstrumentation().targetContext
 
     @Before
     fun setUp() {
-        val context = InstrumentationRegistry.getInstrumentation().targetContext
         db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java)
             .allowMainThreadQueries()
             .build()
@@ -75,5 +76,29 @@ class TodoToggleReceiverTest {
     @Test
     fun `不存在的 id 返回 false`() = runBlocking {
         assertFalse(TodoToggleReceiver.toggle(db.lifeItemDao(), 9999L))
+    }
+
+    // ── 集合模板与 fill-in 的约定 ──
+
+    @Test
+    fun `集合模板不带条目 id，避免顶掉行内 fill-in`() {
+        val template = TodoToggleReceiver.toggleTemplatePendingIntent(context)
+
+        val saved = shadowOf(template).savedIntent
+        assertEquals(TodoToggleReceiver.ACTION_TOGGLE, saved.action)
+        // fill-in 只补模板里「空着」的字段：模板自带一个 0 会把行的真实 id 顶掉，
+        // 点哪一行都变成 id=0 的空动作
+        assertFalse(
+            "集合模板不能带 EXTRA_ITEM_ID",
+            saved.hasExtra(TodoToggleReceiver.EXTRA_ITEM_ID)
+        )
+    }
+
+    @Test
+    fun `逐条目 PendingIntent 仍带自己的 id（通知动作在用）`() {
+        val pending = TodoToggleReceiver.togglePendingIntent(context, 42L)
+
+        val saved = shadowOf(pending).savedIntent
+        assertEquals(42L, saved.getLongExtra(TodoToggleReceiver.EXTRA_ITEM_ID, -1L))
     }
 }

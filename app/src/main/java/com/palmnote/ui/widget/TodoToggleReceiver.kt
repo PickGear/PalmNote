@@ -61,6 +61,7 @@ class TodoToggleReceiver : BroadcastReceiver() {
             return true
         }
 
+        /** 逐条目 PendingIntent（通知动作等直接持有一份的场景用）。 */
         fun togglePendingIntent(context: Context, itemId: Long): PendingIntent {
             val intent = Intent(context, TodoToggleReceiver::class.java)
                 .setAction(ACTION_TOGGLE)
@@ -72,5 +73,19 @@ class TodoToggleReceiver : BroadcastReceiver() {
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
         }
+
+        /**
+         * 集合模板：只带 action 与组件，**条目 id 一律由行内的 fill-in intent 提供**。
+         * 模板里绝不能预置 [EXTRA_ITEM_ID]：fill-in 只补模板里「空着」的字段
+         * （Intent#fillIn 对 extras 是 `newb.putAll(mExtras)`，模板的值覆盖 fill-in 的值），
+         * 模板自带一个 0 会把行的真实 id 顶掉，点哪一行都变成空动作。
+         */
+        fun toggleTemplatePendingIntent(context: Context): PendingIntent =
+            PendingIntent.getBroadcast(
+                context,
+                WidgetDeepLink.SEG_TODO_TOGGLE,
+                Intent(context, TodoToggleReceiver::class.java).setAction(ACTION_TOGGLE),
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
     }
 }

@@ -281,7 +281,7 @@ class SettingsViewModel @Inject constructor(
             // Use Activity context if provided, otherwise fall back to Application context
             // MIUI launcher requires Activity context for setComponentEnabledSetting to trigger icon refresh
             val ctx = activityContext ?: context
-            // Apply first, save only on success (same pattern as ZhishengWeather)
+            // Apply first, save only on success: a failed apply must not be persisted as the current style
             if (AppIconManager.apply(ctx, style)) {
                 preferencesManager.setAppIconStyle(style)
             }

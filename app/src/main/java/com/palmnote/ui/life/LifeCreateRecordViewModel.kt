@@ -52,7 +52,7 @@ data class CreateRecordUiState(
     val templateRepeatYearly: Boolean = false,
     /** 编辑已有记录（itemId > 0）。 */
     val isEdit: Boolean = false,
-    /** 保存时缺值的必填字段 key：表单内联标红（对标 Things/Notion 的字段级校验）。 */
+    /** 保存时缺值的必填字段 key：表单内联标红，错在哪一格一眼可见。 */
     val missingRequiredKey: String? = null,
     /** 用户动过表单（供返回拦截）。 */
     val dirty: Boolean = false,

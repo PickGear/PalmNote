@@ -65,7 +65,7 @@ private const val BYTES_PER_MB = BYTES_PER_KB * 1024
 private const val BYTES_PER_GB = BYTES_PER_MB * 1024
 
 /**
- * 备份与恢复：数据安全的唯一页面（对标 WhatsApp「聊天备份」/ 一木「数据备份」）。
+ * 备份与恢复：数据安全的唯一页面（备份与恢复收在一处，不再散到别处）。
  *
  * 只有**一种备份**：「立即备份」（本机）与「备份到文件夹」（同一份备份另存一处），
  * 且自动/手动共用。加密与否由「备份密码」一行统一决定：设了密码 → 全部备份加密并
@@ -114,7 +114,7 @@ fun BackupScreen(
     var showIntervalPicker by remember { mutableStateOf(false) }
     var showKeepPicker by remember { mutableStateOf(false) }
 
-    // 「备份频率」选项与当前值：0 表示不自动备份（含「关」的选项 = 与 WhatsApp 同构，不再单设开关）
+    // 「备份频率」选项与当前值：0 表示不自动备份（选项里含「关」就不必再单设开关）
     val autoIntervalOptions = remember { listOf(0) + PreferencesManager.AUTO_BACKUP_INTERVAL_OPTIONS }
     val selectedInterval = if (autoBackupSettings.enabled) autoBackupSettings.intervalDays else 0
 
@@ -232,7 +232,7 @@ fun BackupScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             // ── 状态 + 动作，同一张卡 ──
-            // 页面标题已是「备份与恢复」；WhatsApp / iCloud 的备份页在这一层从不另立
+            // 页面标题已是「备份与恢复」；这一层不再另立标题
             // 分区标题——状态行和「立即备份」按钮自己就能说明这块是什么。
             item {
                 ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
@@ -291,7 +291,7 @@ fun BackupScreen(
                 }
             }
 
-            // 自动备份照搬 WhatsApp：一行「备份频率」，选项里含「不自动备份」= 关，
+            // 自动备份只留一行「备份频率」，选项里含「不自动备份」= 关，
             // 不再单设开关——少一个概念、少一行；「备份计划」这类造词主流产品不用。
             item {
                 ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
@@ -715,7 +715,7 @@ private fun BackupStatusRow(
     // 从未正常备份过的用户看到一条乐观的时间 —— 那恰好掩盖了唯一要暴露的问题。
     val protectedBackups = remember(candidates) { candidates.filter { !it.isSnapshot } }
     val lastBackupAt = remember(protectedBackups) { protectedBackups.maxOfOrNull { it.date } ?: 0L }
-    // 备份体积是「我一共占了多少空间」的唯一答案，主流备份页（WhatsApp / Google One）都在
+    // 备份体积是「我一共占了多少空间」的唯一答案，备份页就该给这个数
     // 状态行给出。这里给的是全部留存备份之和，与左侧「最近一次」互补，不是重复。
     val totalBytes = remember(protectedBackups) { protectedBackups.sumOf { it.size } }
 
@@ -900,7 +900,7 @@ private fun formatWithSkeleton(date: Long, skeleton: String): String = SimpleDat
     Locale.getDefault()
 ).format(Date(date))
 
-/** 频率选项文案：0 = 不自动；1 = 每天；其余「每 N 天」——与 WhatsApp 的 Off / Daily / Every N days 同构。 */
+/** 频率选项文案：0 = 不自动；1 = 每天；其余「每 N 天」。 */
 @Composable
 private fun autoIntervalLabel(days: Int): String = when (days) {
     0 -> stringResource(R.string.backup_auto_off)

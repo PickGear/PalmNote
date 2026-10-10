@@ -29,6 +29,10 @@
          小组件布局在桌面进程内以桌面 uiMode 解析，跟随系统深色模式）
          ═══════════════════════════════════════════════════════════════ -->
     <color name="widget_v2_card_bg">#FFFFFFFF</color>
+    <!-- 组件「透明度」档位底色：alpha 直接写在色值里，RemoteViews 无法改 alpha，只能换底图 -->
+    <color name="widget_v2_card_bg_80">#CCFFFFFF</color>
+    <color name="widget_v2_card_bg_60">#99FFFFFF</color>
+    <color name="widget_v2_card_bg_40">#66FFFFFF</color>
     <color name="widget_v2_soft_mint">#FFEEF5F3</color>
     <color name="widget_v2_soft_gray">#FFF5F7F7</color>
     <color name="widget_v2_pill_soft">#FFE3F1EF</color>
@@ -38,4 +42,34 @@
     <color name="widget_v2_text_footer">#FF8A9693</color>
     <color name="widget_v2_accent">#FF0891B2</color>
     <color name="widget_v2_ring">#FFC4CFCC</color>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         组件调色板：按条目区分（一个习惯一个色、一块瓷片一个色）。
+         参考稿里正是这样——运动健身青、餐饮橙、每支车队一色。
+         这些色只做填充（圆点/徽章/图形），不做正文，所以深浅两套各自微调亮度即可。
+         ═══════════════════════════════════════════════════════════════ -->
+    <color name="widget_palette_1">#FF0891B2</color>
+    <color name="widget_palette_2">#FFF59E0B</color>
+    <color name="widget_palette_3">#FFEF4444</color>
+    <color name="widget_palette_4">#FF8B5CF6</color>
+    <color name="widget_palette_5">#FF3B82F6</color>
+    <color name="widget_palette_6">#FF10B981</color>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         色族：一族 = 淡底（widget_tint_N，做圆角砖/胶囊底）+ 饱和前景（widget_hue_N，做图标/色点/数字）。
+         参考主页那两张卡片就是这套用法：图标砖淡底 + 饱和图标、色片清单淡底 + 同色圆点。
+         组件里不要只用主题色 —— 按条目取不同色族。
+         ═══════════════════════════════════════════════════════════════ -->
+    <color name="widget_tint_1">#FFFDEBE3</color>
+    <color name="widget_hue_1">#FFF97316</color>
+    <color name="widget_tint_2">#FFE3F0FA</color>
+    <color name="widget_hue_2">#FF3B82F6</color>
+    <color name="widget_tint_3">#FFE4F5E9</color>
+    <color name="widget_hue_3">#FF22C55E</color>
+    <color name="widget_tint_4">#FFFBE7F0</color>
+    <color name="widget_hue_4">#FFEC4899</color>
+    <color name="widget_tint_5">#FFEDE9FE</color>
+    <color name="widget_hue_5">#FF8B5CF6</color>
+    <color name="widget_tint_6">#FFFEF3C7</color>
+    <color name="widget_hue_6">#FFEAB308</color>
 </resources>

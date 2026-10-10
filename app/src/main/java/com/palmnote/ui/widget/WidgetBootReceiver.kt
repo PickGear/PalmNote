@@ -11,8 +11,8 @@ class WidgetBootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != Intent.ACTION_BOOT_COMPLETED) return
         try {
+            // refreshAllWidgets 末尾已经刷过概览，不再单独再发一次概览广播
             WidgetUpdateHelper.refreshAllWidgets()
-            WidgetUpdateHelper.refreshDashboardWidgets()
             WidgetUpdateHelper.scheduleMidnightRefresh(context)
         } catch (e: Exception) {
             AppLogger.e("WidgetBootReceiver", "Boot widget refresh failed", e)

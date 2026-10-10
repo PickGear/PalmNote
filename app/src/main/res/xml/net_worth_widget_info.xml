@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 2×1：minWidth/minHeight 与 targetCell 同口径，缩小/放大都用 minResize* / maxResize* 控制 -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="110dp"
+    android:minHeight="40dp"
+    android:minResizeWidth="110dp"
+    android:minResizeHeight="40dp"
+    android:targetCellWidth="2"
+    android:targetCellHeight="1"
+    android:maxResizeWidth="250dp"
+    android:maxResizeHeight="110dp"
+    android:updatePeriodMillis="1800000"
+    android:initialLayout="@layout/widget_net_worth_unified"
+    android:widgetCategory="home_screen"
+    android:description="@string/widget_net_worth_desc"
+    android:previewImage="@drawable/widget_preview_net_worth"
+    android:previewLayout="@layout/widget_net_worth_unified"
+    android:configure="com.palmnote.ui.widget.WidgetConfigActivity"
+    android:resizeMode="horizontal|vertical" />

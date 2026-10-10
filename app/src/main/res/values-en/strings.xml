@@ -311,9 +311,8 @@
     <string name="dashboard_habit_today_progress">Today %1$d/%2$d</string>
     <string name="dashboard_habit_check">Check in</string>
     <string name="dashboard_habit_checked">Done</string>
+    <!-- Check-in templates are inherently daily — the weekly/monthly labels went away with the Goal model -->
     <string name="dashboard_habit_period_daily">Daily</string>
-    <string name="dashboard_habit_period_weekly">Weekly</string>
-    <string name="dashboard_habit_period_monthly">Monthly</string>
     <string name="dashboard_habit_go_all">Check in all</string>
     <string tools:ignore="PluralsCandidate" name="dashboard_subscription_due_count">%1$d due</string>
     <string name="dashboard_subscription_price">¥%1$s</string>
@@ -398,28 +397,32 @@
     <string name="bill_import_error_ocr_invalid">No valid transactions recognized</string>
     <string name="bill_import_error_ocr_failed">Recognition failed: %s</string>
     <string name="bill_import_error_invalid_amount">Please enter a valid amount</string>
-    <string name="widget_bill_desc">Bill Overview Widget - Monthly income and expense overview</string>
+    <string name="widget_bill_desc">"This month's spending and what's left of the budget"</string>
     <string name="widget_todo_title">Todo List</string>
     <string name="widget_overdue">Overdue</string>
     <string name="widget_completed">Completed</string>
-    <string name="widget_todo_desc">Life Todo Widget - Today\'s todo and overdue reminders</string>
+    <string name="widget_todo_desc">"Today's to-dos — tap a row to tick it off"</string>
     <string name="widget_counter_title">Life Counter</string>
     <string name="widget_upcoming_events">Upcoming</string>
-    <string name="widget_counter_desc">Life Counter Widget - Countdown, birthday, anniversary</string>
+    <string name="widget_counter_desc">Days until a birthday or anniversary</string>
     <string name="widget_asset_title">Assets</string>
     <string name="widget_asset_held">In Use</string>
     <string name="widget_asset_value_label">Total value</string>
-    <string name="widget_asset_desc">Asset Widget - Asset statistics and category distribution</string>
+    <string name="widget_asset_desc">"What you own and what it's worth"</string>
+    <string name="widget_net_worth_desc">Balances added up across all accounts</string>
+    <string name="widget_subscription_title">Renewals</string>
+    <string name="widget_subscription_desc">The next charges and how many days away</string>
+    <string name="widget_subscription_empty">No subscriptions</string>
     <string name="widget_vault_title">Vault</string>
     <string name="widget_vault_entries">entries</string>
     <string name="widget_vault_hint">Tap to open vault</string>
-    <string name="widget_vault_desc">Vault Widget - Password entry count</string>
+    <string name="widget_vault_desc">Just a lock — nothing from the vault shows</string>
     <string name="widget_dashboard_title">Overview</string>
-    <string name="widget_dashboard_desc">Dashboard Widget - Overview of all modules</string>
-    <string name="widget_goals_label">Goals</string>
+    <string name="widget_dashboard_desc">Spending, to-dos and check-ins at a glance</string>
     <string name="widget_todos_label">Todos</string>
     <string name="widget_add_bill">Add Bill</string>
     <string name="widget_vault_empty">No entries</string>
+    <string name="widget_bill_week_label">Last 7 days</string>
     <string name="widget_bill_empty">No bills yet</string>
     <string name="widget_todo_empty">All clear!</string>
     <string name="widget_counter_empty">No events</string>
@@ -435,16 +438,15 @@
     <string name="widget_add">Add</string>
     <string name="widget_income_label">Income</string>
     <string name="widget_expense_label">Expense</string>
-    <string name="widget_budget_label">Budget</string>
-    <string name="widget_budget_used_format">Budget %1$d%% used</string>
-    <string name="widget_budget_top_format">%1$s budget %2$d%% used</string>
-    <string name="widget_month_balance_format">Balance %1$s</string>
-    <string tools:ignore="PluralsCandidate" name="widget_todo_remaining_format">%1$d pending</string>
     <string tools:ignore="PluralsCandidate" name="widget_todo_footer_format">%1$d today · %2$d to go</string>
     <string name="widget_goal_all_done">All done</string>
     <string name="widget_no_goals">No goals</string>
     <string name="widget_no_anniversary">No anniversaries</string>
     <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
+    <plurals name="widget_days_unit">
+        <item quantity="one">day</item>
+        <item quantity="other">days</item>
+    </plurals>
     <plurals name="widget_days_remaining_format">
         <item quantity="one">%1$d day left</item>
         <item quantity="other">%1$d days left</item>
@@ -454,6 +456,7 @@
     <string name="widget_preview_todo_3">Monthly report</string>
     <string name="widget_todo_footer_preview">3 today · 2 to go</string>
     <string name="widget_habit_title">Check-in</string>
+    <string name="widget_habit_week_label">Last 7 days</string>
     <string name="widget_habit_empty">No habits</string>
     <string name="widget_streak_format">%1$dd</string>
     <string name="widget_preview_streak_1">12d</string>
@@ -462,20 +465,37 @@
     <string name="widget_preview_habit_3">Drink 8 cups</string>
     <string name="widget_preview_asset_name">MacBook Pro</string>
     <string name="widget_shortcut_bills">Bills</string>
-    <string name="widget_habit_desc">Check-in Widget - Check in from home screen and track streaks</string>
-    <string name="widget_shortcuts_desc">Shortcuts Widget - One-tap access to key features</string>
+    <string name="widget_habit_desc">Tap a circle to check in and see your streak</string>
+    <string name="widget_shortcuts_desc">Quick add, bills, to-dos, vault</string>
     <string name="widget_shortcuts_title">Quick Access</string>
     <string name="settings_widget_title">Home Screen Widgets</string>
     <string name="settings_widget_subtitle">Pin widgets to your home screen and see added counts</string>
+    <!-- Add page: headline / groups / permission strip / default look -->
+    <string name="widget_page_perm_title">One permission first, then it\'s one tap</string>
+    <string name="widget_page_perm_desc">MIUI requires the “Desktop shortcuts” permission. Without it, adding will not succeed.</string>
+    <string name="widget_page_perm_action">Open settings ›</string>
+    <string name="widget_page_unsupported">This launcher doesn\'t support adding from inside the app — add it from the launcher\'s widget list instead.</string>
+    <string name="widget_page_footer">After placing, long-press a widget to change its settings.</string>
+    <string name="widget_page_add_again">Add another</string>
     <string name="widget_pin_add">Add to home screen</string>
     <string name="widget_pin_none">Not added</string>
     <string name="widget_pin_count">%1$d on home screen</string>
-    <string name="widget_pin_tip">Tap "Add to home screen" and confirm in the system dialog to place the widget.</string>
-    <string name="widget_pin_unsupported_tip">Your home screen app doesn\'t support in-app pinning. Long-press an empty spot on the home screen and find PalmNote in the widget list.</string>
     <string name="widget_pin_failed">Couldn\'t start pinning. Add from your home screen\'s widget list instead.</string>
-    <string name="widget_pin_requested">Pin request sent — check your home screen</string>
-    <string name="widget_pin_miui_tip">MIUI requires the "Desktop shortcuts" permission to pin widgets: Settings → Apps → Manage apps → PalmNote → Permissions → Desktop shortcuts → Allow.</string>
-    <string name="widget_pin_open_settings">Open permission settings</string>
+    <string name="widget_pin_added">Added to your home screen</string>
+    <string name="widget_pin_not_added">Not added. Check permissions and try again.</string>
+    <!-- Widget config: the book section exists only for the bill widget; opacity is for all -->
+    <string name="widget_config_title">Choose a book</string>
+    <string name="widget_config_title_generic">Widget settings</string>
+    <string name="widget_config_desc">This widget shows income and spending from the selected book only.</string>
+    <string name="widget_config_desc_opacity">This widget\'s opacity affects it alone — other widgets stay as they are.</string>
+    <string name="widget_config_budget_note">Budgets are set per month, not per book — so a specific book shows that book\'s net income for the month.</string>
+    <string name="widget_config_confirm">Done</string>
+    <!-- Per-widget opacity: follows the global default unless overridden -->
+    <string name="widget_config_opacity_label">Opacity</string>
+    <string name="widget_config_opacity_customize">Customize</string>
+    <string name="widget_config_opacity_follow">Follow default</string>
+    <string name="widget_config_opacity_following">Following the default (%1$d%%)</string>
+    <string name="widget_config_opacity_only_this">Affects this widget only — others keep the default.</string>
     <string name="widget_days_unit">days</string>
     <string name="widget_tomorrow">tomorrow</string>
     <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->

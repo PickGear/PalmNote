@@ -2,6 +2,9 @@
 <resources>
     <!-- V2 小组件令牌的深色覆盖：桌面在系统深色模式下解析这些值 -->
     <color name="widget_v2_card_bg">#FF1C211F</color>
+    <color name="widget_v2_card_bg_80">#CC1C211F</color>
+    <color name="widget_v2_card_bg_60">#991C211F</color>
+    <color name="widget_v2_card_bg_40">#661C211F</color>
     <color name="widget_v2_soft_mint">#FF22322D</color>
     <color name="widget_v2_soft_gray">#FF262C2A</color>
     <color name="widget_v2_pill_soft">#FF1E3A3C</color>
@@ -11,4 +14,26 @@
     <color name="widget_v2_text_footer">#FF8A9994</color>
     <color name="widget_v2_accent">#FF2EC0D6</color>
     <color name="widget_v2_ring">#FF47524F</color>
+
+    <!-- 组件调色板（夜间）：同色相、略提亮，保证深色卡上够清楚 -->
+    <color name="widget_palette_1">#FF2EC0D6</color>
+    <color name="widget_palette_2">#FFFBBF24</color>
+    <color name="widget_palette_3">#FFF87171</color>
+    <color name="widget_palette_4">#FFA78BFA</color>
+    <color name="widget_palette_5">#FF60A5FA</color>
+    <color name="widget_palette_6">#FF34D399</color>
+
+    <!-- 色族（夜间）：淡底压到深色卡上不刺眼，前景提亮保证对比 -->
+    <color name="widget_tint_1">#FF3A2A1C</color>
+    <color name="widget_hue_1">#FFFB923C</color>
+    <color name="widget_tint_2">#FF1B2A3A</color>
+    <color name="widget_hue_2">#FF60A5FA</color>
+    <color name="widget_tint_3">#FF1A2E22</color>
+    <color name="widget_hue_3">#FF4ADE80</color>
+    <color name="widget_tint_4">#FF3A1F2C</color>
+    <color name="widget_hue_4">#FFF472B6</color>
+    <color name="widget_tint_5">#FF2A2440</color>
+    <color name="widget_hue_5">#FFA78BFA</color>
+    <color name="widget_tint_6">#FF3A3218</color>
+    <color name="widget_hue_6">#FFFACC15</color>
 </resources>

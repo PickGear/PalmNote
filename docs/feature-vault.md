@@ -901,25 +901,11 @@ val AUTO_LOCK_MODE = stringPreferencesKey("auto_lock_mode")
 
 **安全性说明：** App 在上传前已完成 AES-256-GCM 加密，无论使用 WebDAV 还是 SFTP，第三方服务器只能看到密文，无法解读密码内容。
 
-**自建方案推荐（无需第三方）：**
+**自建 WebDAV**：任意支持 WebDAV 的服务器 / NAS / 电脑都行，开一个 WebDAV 端点即可。
 
-| 方案 | 成本 | 难度 | 说明 |
-|------|------|------|------|
-| **Alist** | 服务器 5 元/月起 | ⭐ 低 | 单文件二进制，一键启动 WebDAV 服务 |
-| **Windows IIS** | **免费** | ⭐ 低 | Windows 自带，开启 WebDAV 发布即可 |
-| **rclone serve webdav** | **免费** | ⭐ 低 | 任何电脑运行一条命令：`rclone serve webdav remote:` |
-| **NAS（群晖/QNAP）** | 已有设备则免费 | ⭐ 低 | 自带 WebDAV 服务，开关开启即可 |
+**托管 WebDAV 存储**：也可以选一家支持 WebDAV 的网盘，容量与限速各家不同，按需自选。
 
-**免费托管服务（数据已加密，可放心使用）：**
-
-| 服务 | 免费容量 | 备注 |
-|------|---------|------|
-| InfiniCloud | 10GB | 最推荐，注册即用 |
-| Koofr | 10GB | 稳定可靠 |
-| TeraCloud | 10GB | 速度快 |
-| 坚果云 | 免费版有限速 | 国内用户首选 |
-
-> 不论自建还是使用托管服务，上传前数据均已加密，提供商无法获取明文密码。
+> 不论自建还是托管服务，上传前数据均已加密，提供商无法获取明文密码。
 
 **GitHub 仓库方案（可选 Provider）：**
 
@@ -966,19 +952,6 @@ feature/cloud/provider/
 | v1.2.x | — | — | — | 单版本 |
 | v1.3.x | ✅ 已实现（离线/字段级加密/锁定/剪贴板/设置） | — | — | 单版本 |
 | v2.0+ | ✅ | 🔜 可选端点 | 🔜 可选 WebDAV / SFTP / GitHub | 单版本 |
-
----
-
-## 十二、参考项目
-
-本设计参考了以下开源项目的架构与实现经验：
-
-| 项目 | Stars | 技术栈 | 重点学习 |
-|------|-------|--------|---------|
-| [Monica](https://github.com/JoyinJoester/Monica) | 858 | Kotlin + Compose + Room + Koin | Keystore 加密架构、TOTP、Autofill 服务 |
-| [enclave](https://github.com/paoloronco/enclave) | — | Kotlin 2.0.21 + Compose + Room，无 DI | 字段级 AES-256-GCM 加密、手动 DI 下的密码本 CRUD |
-| [KeyPass](https://github.com/yogeshpaliyal/KeyPass) | 770 | Kotlin + Compose + Material 3 + MVI | 密码生成器、安全审计、MVI 状态管理 |
-| [Cent](https://github.com/glink25/Cent) | 1.1k | PWA + GitHub API | GitHub 仓库作为备份后端验证、增量同步机制、可扩展同步端点 |
 
 ---
 

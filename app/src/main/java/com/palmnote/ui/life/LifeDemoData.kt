@@ -10,7 +10,7 @@ package com.palmnote.ui.life
  *
  * ⚠️ **内容取自设计稿**（2026-09-22 照抄）：
  * 买房首付 / 周末囤货 / 待办 / 杭州 4 日 /《置身事内》/ Kotlin 进阶课 / 妈妈生日 / 戒烟 /
- * 爸爸 / 在一起 / 晨跑 / 心情 / 日记 / iCloud+ —— 每个模板的示例就是设计稿里那一屏的内容，
+ * 爸爸 / 在一起 / 晨跑 / 心情 / 日记 / 云盘会员 —— 每个模板的示例就是设计稿里那一屏的内容，
  * 这样用户第一次进来看到的就是「设计稿的样子」，而不是另一套自造的假数据。
  *
  * 合计 **61 条**（一次性记录 13 + 日常记录 48）；全部落在**今天及之前**（`daysAgo ≥ 0`），不出现「未来日期已有记录」。
@@ -171,9 +171,9 @@ internal object LifeDemoData {
         // dtl_14 订阅：¥25 / 月，下次扣费 4 天后
         LifeDemoItem(
             "subscriptions",
-            "iCloud+",
+            "云盘会员",
             """{"price":21,"billingCycle":"monthly","nextBilling":"+4d",""" +
-                """"url":"https://www.icloud.com/settings/","billingHistory":{"v":1,""" +
+                """"url":"https://example.com/account/","billingHistory":{"v":1,""" +
                 """"columns":[{"key":"date","label":"扣费日","type":"DATE"},""" +
                 """{"key":"amount","label":"金额","type":"CURRENCY"}],""" +
                 """"rows":[["2026-08-26","21"],["2026-07-26","21"],["2026-06-26","21"]]}}""",
