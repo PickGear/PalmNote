@@ -8,6 +8,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
@@ -74,6 +76,9 @@ import com.palmnote.ui.theme.ColorResolver
 fun getCategoryIcon(category: String, customItems: List<CategoryItem>? = null): CategoryItem {
     val item = assetCategoryItems.find { it.name == category }
         ?: customItems?.find { it.name == category }
+        // 兜底（预设/自定义分类都匹配不上）= 分类已被删除的「孤儿物品」，多发生在回收站恢复之后。
+        // 红色 ✕ 是**有意的产品决策**（2026-10-11 用户定稿）：当作「分类已失效，该去编辑重挂」的
+        // 警示信号，提醒用户及时调整。曾试改中性 Category 图标 + Gray400，被用户否掉换回。
         ?: CategoryItem(category, Icons.Outlined.Cancel, ErrorLight)
     val resolved = ColorResolver.resolve(category, item.color)
     return if (resolved != item.color) item.copy(color = resolved) else item
@@ -373,7 +378,9 @@ fun AssetScreen(
                                         .wrapContentWidth()
                                         .border(1.dp, MaterialTheme.colorScheme.outlineVariant, MaterialTheme.shapes.large),
                                     shape = MaterialTheme.shapes.large,
-                                    color = MaterialTheme.colorScheme.background
+                                    // 弹层底色与它下方的筛选按钮同为 surface（浅色下即纯白 #FFFFFF）：
+                                    // 原来用 background（#F8F6F3 米白）会和按钮差出一个色阶，看着像两块拼接。
+                                    color = MaterialTheme.colorScheme.surface
                                 ) {
                                     Column(Modifier.wrapContentWidth()) {
                                         statusFilters.forEach { (filter, label) ->
@@ -438,9 +445,18 @@ fun AssetScreen(
                                         .wrapContentWidth()
                                         .border(1.dp, MaterialTheme.colorScheme.outlineVariant, MaterialTheme.shapes.large),
                                     shape = MaterialTheme.shapes.large,
-                                    color = MaterialTheme.colorScheme.background
+                                    // 弹层底色与它下方的筛选按钮同为 surface（浅色下即纯白 #FFFFFF）：
+                                    // 原来用 background（#F8F6F3 米白）会和按钮差出一个色阶，看着像两块拼接。
+                                    color = MaterialTheme.colorScheme.surface
                                 ) {
-                                    Column(Modifier.wrapContentWidth()) {
+                                    // 分类数无上界（20 个预设 + 用户自建），弹层必须封顶可滚：
+                                    // 不限高的话条目一多就撑出屏幕，排在下面的分类永远点不到
+                                    Column(
+                                        Modifier
+                                            .wrapContentWidth()
+                                            .heightIn(max = 320.dp)
+                                            .verticalScroll(rememberScrollState())
+                                    ) {
                                         Text(
                                             text = stringResource(R.string.asset_all_categories),
                                             modifier = Modifier
@@ -520,7 +536,9 @@ fun AssetScreen(
                                         .wrapContentWidth()
                                         .border(1.dp, MaterialTheme.colorScheme.outlineVariant, MaterialTheme.shapes.large),
                                     shape = MaterialTheme.shapes.large,
-                                    color = MaterialTheme.colorScheme.background
+                                    // 弹层底色与它下方的筛选按钮同为 surface（浅色下即纯白 #FFFFFF）：
+                                    // 原来用 background（#F8F6F3 米白）会和按钮差出一个色阶，看着像两块拼接。
+                                    color = MaterialTheme.colorScheme.surface
                                 ) {
                                     Column(Modifier.wrapContentWidth()) {
                                         sortOptions.forEach { (option, label) ->
@@ -565,10 +583,12 @@ fun AssetScreen(
 
             // **错落网格（瀑布流）**：列表态 1 列 = 普通列表，网格态 2 列各自按内容高度堆叠。
             //
-            // 为什么不是等高网格：标题长度天然不等（"Yoga mat" 一行 / "Levoit LV-H133" 两行），
+            // 为什么不用等高网格：标题长度天然不等（"Yoga mat" 一行 / "Levoit LV-H133" 两行），
             // 等高只有两条路——**预留两行**（短名留一行空白，用户否掉）或**砍成一行**（长名被截，
             // 用户也否掉）。错落是唯一既不空白也不截字的排法；代价是同一横排的
             // 「日期 / 价格」不再横向对齐，这是瀑布流的固有取舍而不是缺陷。
+            // 奇数张时最后一张会落进较矮的列（可能居右）——2026-10-11 曾试过换
+            // LazyVerticalGrid 等宽网格解决，用户权衡后仍要瀑布流的自然高度，放弃。
             LazyVerticalStaggeredGrid(
                 columns = StaggeredGridCells.Fixed(if (isGridView) 2 else 1),
                 state = listState,
@@ -922,10 +942,9 @@ fun GridAssetCard(
                     // 与列表卡同一处理：名称独占整行、允许两行。两列网格下名称只剩半宽，
                     // 一行放不下长名，全被截成「IKEA MA…」「Logitech…」（真机截图 15-09-04）。
                     //
-                    // minLines = 2：**固定两行高**。短名（Yoga mat）也占两行，
-                    // 否则同一行两张卡因为标题行数不同而高低不齐（真机截图 17:25 物品页）。
-                    // 与其上瀑布流（两列错落会打散「日期 / 价格」的横向对齐，用户扫视靠它），
-                    // 不如把结构钉死：标题 2 行 + 徽标 + 已用天数 + 分类/日均 + 日期/价格。
+                    // 不加 minLines：瀑布流里各卡独立按内容堆叠，短名占一行天经地义；
+                    // 强制两行只会给「机械键盘」这类一行名平白添一行空白
+                    // （2026-10-11 等宽网格实验的残留曾导致「和之前不一样」，已撤）。
                     Text(
                         text = asset.name,
                         style = MaterialTheme.typography.titleMedium,

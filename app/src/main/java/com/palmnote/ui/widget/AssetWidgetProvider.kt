@@ -37,7 +37,7 @@ class AssetWidgetProvider : ScopedWidgetProvider() {
 
     internal fun bindViews(context: Context, appWidgetId: Int, categories: List<HeldCategoryCount>): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.widget_asset_unified)
-        val shown = categories.take(MAX_CATEGORIES)
+        val shown = collapseToSlots(categories, MAX_CATEGORIES)
         val total = categories.sumOf { it.count }
 
         views.setInt(R.id.widget_asset_badge, "setColorFilter", WidgetData.colorFamily(context, BADGE_FAMILY).hue)
@@ -105,6 +105,35 @@ class AssetWidgetProvider : ScopedWidgetProvider() {
         return owners
     }
 
+    /**
+     * 分类数超过组件格位（3×2 = 6）时**不丢弃**：位次靠后的并成一项「其他」。
+     *
+     * 直接 `take(6)` 会有两处错：① 第 7 名往后的分类在桌面上彻底消失；
+     * ② 占比条按「留下的 6 项」归一化，等于把第 6 名拉伸到填满剩余槽位，比例失真、
+     * 与头部「共 N 件」也对不上。合并后列出的件数之和仍等于全部件数，两条同时成立。
+     *
+     * 结果恰好 `slots` 项；若原「其他」本来就在前 5，按件数一并合进来，不会出现两个「其他」。
+     */
+    internal fun collapseToSlots(categories: List<HeldCategoryCount>, slots: Int): List<HeldCategoryCount> {
+        if (categories.size <= slots) return categories
+        val kept = categories.filter { it.category != OTHER_CATEGORY }.take(slots - 1)
+        val keptKeys = kept.map { it.category }
+        val mergedCount = categories.filter { it.category !in keptKeys }.sumOf { it.count }
+        return kept + HeldCategoryCount(OTHER_CATEGORY, mergedCount)
+    }
+
+    /**
+     * 分类名的组件版解析（对齐 `AssetScreen.getCategoryDisplayName`）：
+     * 预设分类库里存的是代码（DIGITAL…），走 `getCategoryName` 本地化；**自定义分类直接以名字入库**，
+     * 必须原样显示 —— `getCategoryName` 认不出就落 else 分支，会让所有自定义分类在桌面上都变成「其他」。
+     */
+    internal fun assetCategoryLabel(key: String, context: Context): String =
+        if (com.palmnote.ui.asset.assetCategoryItems.any { it.name == key }) {
+            com.palmnote.ui.components.getCategoryName(key, context)
+        } else {
+            key
+        }
+
     /** 一个分类色片：淡彩胶囊底 + 同族色点 + 分类名 + 件数。 */
     private fun chipViews(context: Context, category: HeldCategoryCount, index: Int): RemoteViews {
         val chip = RemoteViews(context.packageName, R.layout.widget_asset_chip)
@@ -115,7 +144,7 @@ class AssetWidgetProvider : ScopedWidgetProvider() {
         // 组件必须走同一套翻译，否则桌面上显示的是英文代码
         chip.setTextViewText(
             R.id.widget_asset_chip_name,
-            com.palmnote.ui.components.getCategoryName(category.category, context)
+            assetCategoryLabel(category.category, context)
         )
         chip.setTextViewText(
             R.id.widget_asset_chip_count,
@@ -125,8 +154,11 @@ class AssetWidgetProvider : ScopedWidgetProvider() {
     }
 
     private companion object {
-        /** 3×2 放得下 6 个分类（3 行色片），占比条也最多 6 段。 */
+        /** 3×2 放得下 6 个分类（3 行色片），占比条也最多 6 段。超出部分并成「其他」，见 [collapseToSlots]。 */
         const val MAX_CATEGORIES = 6
+
+        /** 聚合项用的分类键：预设里就有 OTHER（名字/图标/颜色都齐），直接借用。 */
+        const val OTHER_CATEGORY = "OTHER"
 
         /** 头部徽章取的色族（稿子里物品是蓝色）—— 装饰色不占全局强调色。 */
         const val BADGE_FAMILY = 1

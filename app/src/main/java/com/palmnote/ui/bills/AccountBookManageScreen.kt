@@ -22,6 +22,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import com.palmnote.ui.theme.AppIcon
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.palmnote.app.R
@@ -191,6 +192,34 @@ fun AccountBookManageScreen(
     }
 }
 
+/**
+ * 账本图标徽标：**全 App 唯一渲染口径** —— 圆形底、账本色实底、白色图标。
+ *
+ * 列表卡片、详情弹窗、新建时的模板选择、账单页的账本菜单统一走这里。此前四处各画一遍，
+ * 详情弹窗那处漂成了「圆角方块 + 15% 透明底 + 图标自带色」，同一个账本点开前后长得不一样。
+ *
+ * @param size 圆底边长
+ * @param iconSize 图标边长（各调用点沿用各自的原有尺寸，免得顺带改版式）
+ */
+@Composable
+fun AccountBookBadge(
+    icon: AppIcon,
+    colorHex: String,
+    size: Dp,
+    iconSize: Dp,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .size(size)
+            .clip(CircleShape)
+            .background(colorHex.toComposeColor(Color.Gray)),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(icon.imageVector, contentDescription = null, modifier = Modifier.size(iconSize), tint = Color.White)
+    }
+}
+
 @Composable
 private fun AccountBookItem(
     book: AccountBook,
@@ -198,9 +227,6 @@ private fun AccountBookItem(
     onToggleHidden: () -> Unit
 ) {
     val context = LocalContext.current
-    val bookColor = try {
-        Color(android.graphics.Color.parseColor(book.color))
-    } catch (_: Exception) { Color.Gray }
 
     ModuleCard(
         tint = MaterialTheme.colorScheme.surface,
@@ -213,16 +239,7 @@ private fun AccountBookItem(
                 .padding(2.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
-                modifier = Modifier
-                    .size(44.dp)
-                    .clip(CircleShape)
-                    .background(bookColor),
-                contentAlignment = Alignment.Center
-            ) {
-                val bookIcon = book.icon.imageVector
-                Icon(bookIcon, contentDescription = null, modifier = Modifier.size(24.dp), tint = Color.White)
-            }
+            AccountBookBadge(icon = book.icon, colorHex = book.color, size = 44.dp, iconSize = 24.dp)
 
             Spacer(Modifier.width(12.dp))
 
@@ -267,9 +284,6 @@ private fun AccountBookDetailDialog(
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
-    val bookColor = try {
-        Color(android.graphics.Color.parseColor(book.color))
-    } catch (_: Exception) { Color.Gray }
 
     AppDialog(
         onDismissRequest = onDismiss,
@@ -277,12 +291,7 @@ private fun AccountBookDetailDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Box(
-                        modifier = Modifier.size(56.dp).clip(MaterialTheme.shapes.large).background(bookColor.copy(alpha = 0.15f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(book.icon.imageVector, contentDescription = null, modifier = Modifier.size(28.dp), tint = book.icon.tint)
-                    }
+                    AccountBookBadge(icon = book.icon, colorHex = book.color, size = 56.dp, iconSize = 28.dp)
                     Column {
                         Text(book.getDisplayName(context), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         Text(book.bookType, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -320,7 +329,7 @@ private fun AccountBookEditBottomSheet(
     val context = LocalContext.current
     var name by remember { mutableStateOf(book?.name ?: "") }
     var icon by remember { mutableStateOf(book?.icon ?: AppIcon.MenuBook) }
-    var color by remember { mutableStateOf(book?.color ?: "#2D4A3E") }
+    var color by remember { mutableStateOf(book?.color ?: AccountBook.DEFAULT_COLOR) }
     var description by remember { mutableStateOf(book?.description ?: "") }
     var nameError by remember { mutableStateOf<String?>(null) }
     var showTemplatePicker by remember { mutableStateOf(book == null) }
@@ -354,10 +363,7 @@ private fun AccountBookEditBottomSheet(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Surface(shape = CircleShape, color = template.color.toComposeColor(Color.Gray), modifier = Modifier.size(40.dp)) {
-                            val templateIcon = template.icon.imageVector
-                        Box(contentAlignment = Alignment.Center) { Icon(templateIcon, contentDescription = null, modifier = Modifier.size(24.dp), tint = Color.White) }
-                        }
+                        AccountBookBadge(icon = template.icon, colorHex = template.color, size = 40.dp, iconSize = 24.dp)
                         Column {
                             Text(template.getDisplayName(context), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                             Text(template.getDisplayDescription(context), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

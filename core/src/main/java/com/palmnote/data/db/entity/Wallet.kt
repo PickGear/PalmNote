@@ -36,13 +36,4 @@ data class Wallet(
     val createdAt: Long = System.currentTimeMillis(),
 
     val updatedAt: Long = System.currentTimeMillis()
-) {
-    val displayCardNumber: String
-        get() = if (cardNumber.isNotEmpty()) "****$cardNumber" else ""
-
-    val displayName: String
-        get() = when {
-            bankName.isNotEmpty() && cardNumber.isNotEmpty() -> "$bankName $displayCardNumber"
-            else -> name
-        }
-}
+)

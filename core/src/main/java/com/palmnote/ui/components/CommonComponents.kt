@@ -1098,7 +1098,10 @@ fun getLocalizedWalletDisplayName(wallet: com.palmnote.data.db.entity.Wallet, co
             else -> localizedName
         }
     } else {
-        wallet.displayName
+        // 直接显示账户名称（wallet.name）。曾用 wallet.displayName（= 银行名 + ****尾号），
+        // 2026-10-11 用户定稿：标题不带尾号，尾号只在钱包管理列表的类型行显示
+        // （银行卡 ****6214），其余处（记账方块 / 明细 / 导入摘要）一律干净名称。
+        wallet.name
     }
 }
 

@@ -5,12 +5,14 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
+/** 首页卡片类型。**枚举声明顺序 = 未自定义时的首页卡片排列顺序**（`defaults` 直接按 entries 展开），
+ *  调整顺序前先对照卡片管理弹窗的既定排布（2026-10-11 定稿：物品分布紧随预算预警、纪念日其后）。 */
 enum class CardType {
     NET_WORTH,
     QUICK_ACTIONS,
     BUDGET_ALERT,
-    ANNIVERSARIES,
     ASSET_DISTRIBUTION,
+    ANNIVERSARIES,
     TODAY,
     VAULT,
     HABIT_TODAY,

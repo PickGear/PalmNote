@@ -143,6 +143,19 @@ fun GeneralSettingsScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             // 分区色用设置页多巴胺装饰色；「记账」分区归属记账模块 → 保留 ModuleBill
+            item { SectionHeader(stringResource(R.string.settings_general), Icons.Default.Tune, DopamineMint) }
+            item {
+                ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
+                    SettingRow(clickable = { showLanguagePicker = true }) {
+                        SettingRowContent(title = stringResource(R.string.settings_language), subtitle = stringResource(R.string.settings_language_subtitle), value = languageLabels[state.language], showChevron = true)
+                    }
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                    SettingRow(clickable = { showStartPagePicker = true }) {
+                        SettingRowContent(title = stringResource(R.string.settings_default_start_page), value = startPages[state.defaultStartPage], showChevron = true)
+                    }
+                }
+            }
+
             item { SectionHeader(stringResource(R.string.settings_appearance), Icons.Default.Palette, DopamineCoral) }
             item {
                 ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
@@ -217,19 +230,6 @@ fun GeneralSettingsScreen(
                             onCheckedChange = { viewModel.setCategoryCompact(it) },
                             checkedTrackColor = MaterialTheme.colorScheme.primary
                         )
-                    }
-                }
-            }
-
-            item { SectionHeader(stringResource(R.string.settings_general), Icons.Default.Tune, DopamineMint) }
-            item {
-                ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
-                    SettingRow(clickable = { showLanguagePicker = true }) {
-                        SettingRowContent(title = stringResource(R.string.settings_language), subtitle = stringResource(R.string.settings_language_subtitle), value = languageLabels[state.language], showChevron = true)
-                    }
-                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-                    SettingRow(clickable = { showStartPagePicker = true }) {
-                        SettingRowContent(title = stringResource(R.string.settings_default_start_page), value = startPages[state.defaultStartPage], showChevron = true)
                     }
                 }
             }

@@ -246,7 +246,11 @@ private fun WalletItem(
                         }
                     }
                 }
-                Text(stringResource(walletTypeResIds[wallet.type] ?: R.string.wallet_type_other),
+                // 卡号尾号与类型同行显示（银行卡 ****6214）；标题保持纯账户名，
+                // 不再拼接尾号（2026-10-11 用户定稿，曾显示「招商银行 ****6214」）
+                Text(
+                    stringResource(walletTypeResIds[wallet.type] ?: R.string.wallet_type_other) +
+                        if (wallet.cardNumber.isNotEmpty()) " ****${wallet.cardNumber}" else "",
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
 
