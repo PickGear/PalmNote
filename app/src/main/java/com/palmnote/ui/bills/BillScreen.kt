@@ -232,7 +232,7 @@ fun BillScreen(
                         }
                         IconButton(onClick = onNavigateToImportCsv) {
                             Icon(
-                                Icons.Outlined.FileUpload,
+                                Icons.Outlined.FileDownload,
                                 contentDescription = stringResource(R.string.bill_import),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
