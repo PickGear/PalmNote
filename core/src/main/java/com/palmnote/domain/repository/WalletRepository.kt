@@ -22,7 +22,7 @@ interface WalletRepository {
     suspend fun setEnabled(id: Long, enabled: Boolean)
     suspend fun delete(id: Long)
 
-    /** 事务：软删关联账单 + 软删钱包 */
+    /** 账单进回收站（回滚余额 + 解绑报销），随后删除钱包本体；钱包不可恢复。 */
     suspend fun deleteWalletWithData(walletId: Long)
     suspend fun initDefaultWallets()
 }

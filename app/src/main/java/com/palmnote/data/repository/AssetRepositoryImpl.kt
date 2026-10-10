@@ -98,6 +98,16 @@ class AssetRepositoryImpl @Inject constructor(
     override suspend fun countByCategory(category: String): Int =
         assetDao.countByCategory(category)
 
-    override suspend fun deleteByCategory(category: String) =
+    /**
+     * 删除某分类下全部物品：与单条 [deleteAsset] 保持一致——进回收站、事务内先查后删。
+     * 此前这里直调 `assetDao.deleteByCategory` 硬删，分类管理里删分类时物品全没、无法恢复
+     * （2026-10-11 回收站覆盖度审计发现；账单侧的 deleteByCategory 早就有包装，物品侧漏了）。
+     */
+    override suspend fun deleteByCategory(category: String) = appDatabase.withTransaction {
+        // 查询必须在事务内：先查后删的两段式会让"查询之后、删除之前"新写入的
+        // 目标物品被硬删（无回收站行）——与账单批量删除 deleteBillsToRecycleBin 同一保证
+        val assets = assetDao.getByCategoryOnce(category)
+        assets.forEach { assetRecycleBinDao.insert(it.toRecycleBin()) }
         assetDao.deleteByCategory(category)
+    }
 }

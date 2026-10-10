@@ -37,6 +37,8 @@ interface AssetRepository {
     suspend fun search(query: String): List<Asset>
     suspend fun updateCategoryNameInAssets(oldName: String, newName: String)
     suspend fun countByCategory(category: String): Int
+
+    /** 删除某分类下全部物品，逐条进回收站（事务内先查后删），可恢复。 */
     suspend fun deleteByCategory(category: String)
     suspend fun restoreAsset(id: Long)
     suspend fun hardDeleteAsset(id: Long)
