@@ -11,6 +11,14 @@ import androidx.compose.ui.graphics.Color
 val PrimaryGreen = Color(0xFF2D4A3E)
 val AccentOrange = Color(0xFFFF8C42)
 
+/**
+ * 日历「选中日」圆底的配色变迁（账单页 `CalendarView` 的 DayCell）：
+ * 初始 = AccentOrange 实色 + 白字；期间试过浅橙底（#FFD9C4 / #FFC6A1，两轮校准）
+ * + 深橙数字、白描边、深色圆点变体，均被用户否掉。2026-10-11 定稿＝**回归初始**：
+ * AccentOrange 实色底 + 白字（用户「恢复到初始差不多的状态」），圆点恒用红/绿原色。
+ * 用**实色**而非 alpha：深色主题下 alpha 叠的是暗卡底，会变成浑浊的深棕。
+ */
+
 // ----- Status Colors -----
 val StatusHeld = Color(0xFF34A853)
 val StatusAway = Color(0xFFFF9800)

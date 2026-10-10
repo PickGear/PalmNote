@@ -40,6 +40,18 @@ object TypeScale {
     /** 巨字右侧的单位（「/ ¥300,000」13sp）。 */
     val heroUnit: TextUnit = 13.sp
 
+    /**
+     * 日历日格里的日期数字（**账单页 `CalendarView` + 生活页 `LifeMonthCalendar` 共用**）13sp。
+     *
+     * 与 [heroUnit] 数值相同但**语义独立**：日历格是一处独立场景，日后若要整体调大/调小，
+     * 只改这里即可（不要去改 [heroUnit]，那是详情页巨字右侧单位的专用档）。
+     *
+     * 2026-10-10 定档：账单页原先误用 `typography.bodySmall`（12sp），而它的格子比生活页更宽
+     * （7 列无列间距 + 卡片内边距 12dp vs 20dp），「字号 ÷ 格子边长」只有生活页的 82%，
+     * 肉眼看着数字偏小（用户反馈）。统一到本档后两页同源。
+     */
+    val calDay: TextUnit = 13.sp
+
     /** ③ 结构区的正文与表格右值（12.5sp）。 */
     val bodyRead: TextUnit = 12.5.sp
 
