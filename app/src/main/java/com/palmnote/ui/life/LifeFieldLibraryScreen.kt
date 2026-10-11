@@ -843,7 +843,8 @@ fun LifeFieldLibraryScreen(
             filtered.forEach { (group, types) ->
                 item(key = "head-${group.name}") {
                     Text(
-                        group.name,
+                        // 组名 + 组内种数（E05）：与顶部「N 种字段」同一计数口径
+                        stringResource(R.string.life_template_field_group_title, group.name, types.size),
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,

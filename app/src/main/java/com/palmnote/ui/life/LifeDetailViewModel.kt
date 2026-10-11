@@ -104,6 +104,7 @@ data class DetailAggregates(
     val bookPhotoCount: Int? = null,
     val schoolTotalMinutes: Double? = null,
     val schoolCompletedLessons: Double? = null,
+    val schoolAvgRating: Double? = null,
     val moodMonthAverage: Double? = null,
     val moodStreak: Int? = null,
     val focusTodayMs: Long? = null,
@@ -167,7 +168,9 @@ class LifeDetailViewModel @Inject constructor(
                 flowOf(DetailUiState.NotFound)
             } else {
                 templateDao.getTemplateByIdFlow(item.templateId).flatMapLatest { template ->
-                    if (template == null) {
+                    // 模板已关闭（isHidden）＝全出口关闭：列表/搜索/日历都看不见它，
+                    // 按 id 的深链入口同样不放行，否则关闭模板后旧通知/入口还能打开它的详情页。
+                    if (template == null || template.isHidden) {
                         flowOf(DetailUiState.NotFound)
                     } else {
                         // 语义身份只读一次（收敛入口，行为与逐处 icon 比较等价）
@@ -331,6 +334,7 @@ class LifeDetailViewModel @Inject constructor(
                                             .takeIf { kind == LifeTemplateKind.JOURNAL },
                                         schoolTotalMinutes = schoolMetrics?.totalMinutes,
                                         schoolCompletedLessons = schoolMetrics?.completedLessons,
+                                        schoolAvgRating = schoolMetrics?.avgRating,
                                         moodMonthAverage = moodFields.mapNotNull { energyOf(it) }
                                             .takeIf { it.isNotEmpty() }
                                             ?.average()
@@ -736,9 +740,9 @@ internal fun todoMetricsOf(rows: List<LifeItemDao.TodoMetricRow>, today: LocalDa
     return TodoMetrics(todayCount, overdue, doneThisWeek)
 }
 
-internal data class SchoolMetrics(val totalMinutes: Double?, val completedLessons: Double?)
+internal data class SchoolMetrics(val totalMinutes: Double?, val completedLessons: Double?, val avgRating: Double? = null)
 
-/** 学习聚合：累计时长与完成节数；没有对应字段的记录不参与汇总。 */
+/** 学习聚合：累计时长、完成节数与跨记录平均评分；没有对应字段的记录不参与汇总。 */
 internal fun schoolMetricsOf(rows: List<String>): SchoolMetrics {
     val objects = rows.map(::detailJsonObject)
     val durations = objects.mapNotNull { obj ->
@@ -747,9 +751,13 @@ internal fun schoolMetricsOf(rows: List<String>): SchoolMetrics {
     val completedLessons = objects.mapNotNull { obj ->
         (obj["completedLessons"] as? JsonPrimitive)?.content?.toDoubleOrNull()
     }
+    val ratings = objects.mapNotNull { obj ->
+        (obj["rating"] as? JsonPrimitive)?.content?.toDoubleOrNull()
+    }
     return SchoolMetrics(
         totalMinutes = durations.takeIf { it.isNotEmpty() }?.sum(),
-        completedLessons = completedLessons.takeIf { it.isNotEmpty() }?.max()
+        completedLessons = completedLessons.takeIf { it.isNotEmpty() }?.max(),
+        avgRating = ratings.takeIf { it.isNotEmpty() }?.average()
     )
 }
 
@@ -1012,20 +1020,24 @@ object DetailAssembler {
                     }
                 )
             )
-            // dtl_06 学习：单次时长 / 累计时长 / 评分（稿第三格是评分；完成节数由英雄区承担）
-            "school" -> listOfNotNull(
-                m("duration", withUnit(ctx, "duration")),
-                d(
-                    "totalDuration",
-                    R.string.life_metric_total_duration,
-                    ctx.aggregates.schoolTotalMinutes?.let { v ->
-                        // 单位与「单次时长」一致：真机截图里一格是「45 分钟」、另一格只有「45」
-                        ctx.cfg("duration")?.let { c -> ctx.format(c, v.toString()) } ?: fmtNumber(v)
-                    }
-                ),
-                // 与 ③ 结构区的评分行口径一致（那里是「4 / 5」）：指标行不能只给一个「4」
-                m("rating", ctx.num("rating")?.let { "${fmtNumber(it)} / 5" })
-            )
+                // dtl_06 学习：单次时长 / 累计时长 / 平均评分（稿 D06 三格；本条评分在 ③ 结构区看）
+                "school" -> listOfNotNull(
+                    m("duration", withUnit(ctx, "duration")),
+                    d(
+                        "totalDuration",
+                        R.string.life_metric_total_duration,
+                        ctx.aggregates.schoolTotalMinutes?.let { v ->
+                            // 单位与「单次时长」一致：真机截图里一格是「45 分钟」、另一格只有「45」
+                            ctx.cfg("duration")?.let { c -> ctx.format(c, v.toString()) } ?: fmtNumber(v)
+                        }
+                    ),
+                    // 跨记录平均评分，与 ③ 结构区的单条评分（「4 / 5」）口径互补
+                    d(
+                        "avgRating",
+                        R.string.life_metric_avg_rating,
+                        ctx.aggregates.schoolAvgRating?.let { "${fmtNumber(it)} / 5" }
+                    )
+                )
             // dtl_11 打卡：本月 / 最长 / 累计
             "calendar_month" -> listOfNotNull(
                 d("month", R.string.life_metric_month, ctx.aggregates.checkInMonthCount?.toString(), R.string.life_metric_count_times),

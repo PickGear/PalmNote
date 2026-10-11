@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
+import com.palmnote.ui.widget.WidgetUpdateHelper
 import javax.inject.Inject
 
 /**
@@ -83,7 +84,12 @@ class LifeTemplateManageViewModel @Inject constructor(
 
     /** 关闭 / 开启（硬开关）。零数据风险：不删记录、不动布局配置。 */
     fun setHidden(id: Long, hidden: Boolean) {
-        viewModelScope.launch { templateRepo.setTemplateHidden(id, hidden) }
+        viewModelScope.launch {
+            templateRepo.setTemplateHidden(id, hidden)
+            // 开关即时生效：组件查询已按可见模板过滤，这里只是把「下次无关刷新」提前到现在，
+            // 否则桌面计数/待办在打开别的页面之前一直显示旧数字。
+            WidgetUpdateHelper.refreshAllWidgets()
+        }
     }
 
     /** 恢复出厂：只重写模板内容（`fieldsConfig` 等），**不碰记录、也不改开关状态**。 */

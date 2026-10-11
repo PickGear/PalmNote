@@ -1519,6 +1519,7 @@
     <string name="life_metric_overdue">Overdue</string>
     <string name="life_metric_done_this_week">Done this week</string>
     <string name="life_metric_total_duration">Total time</string>
+    <string name="life_metric_avg_rating">Avg rating</string>
     <string name="life_metric_month_average">Monthly avg</string>
     <string name="life_detail_delete_title">Delete this record?</string>
     <string name="life_detail_delete_message">This cannot be undone.</string>
@@ -2208,6 +2209,7 @@
     <string name="life_template_field_derived_auto">Counted automatically; no source needed</string>
     <string name="life_template_field_derived_missing">Not configured</string>
     <string tools:ignore="PluralsCandidate" name="life_template_field_library_result">%1$d field types</string>
+    <string tools:ignore="PluralsCandidate" name="life_template_field_group_title">%1$s · %2$d</string>
     <string name="life_template_field_library_empty">No matching fields</string>
     <string name="life_field_hint_number">Any number, for counting or stats</string>
     <string name="life_field_hint_currency">Amount with a currency sign</string>

@@ -106,7 +106,8 @@ class LifeCreateRecordViewModel @Inject constructor(
         // 按 **id** 认模板：图标只是长相，用户可以从内置图标里随便挑，
         // 撞图标时按 icon 查会打开另一个模板（见 LifeRoute.LifeCreateRecord 的说明）。
         val template = templateDao.getTemplateById(templateId)
-        if (template == null) {
+        // 已关闭的模板不放行：FAB 面板看不见它，按 id 的深链入口同样不放行（M13 出口对账）。
+        if (template == null || template.isHidden) {
             _state.update { it.copy(error = appContext.getString(R.string.life_record_error_template_not_found)) }
             return
         }
@@ -142,7 +143,8 @@ class LifeCreateRecordViewModel @Inject constructor(
             return
         }
         val template = templateDao.getTemplateById(item.templateId)
-        if (template == null) {
+        // 记录还在但模板已关闭：详情页入口已拦（NotFound），编辑入口同口径不放行。
+        if (template == null || template.isHidden) {
             _state.update { it.copy(error = appContext.getString(R.string.life_record_error_template_not_found)) }
             return
         }

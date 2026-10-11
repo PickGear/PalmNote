@@ -374,6 +374,21 @@ class LifeDetailAggregatesTest {
     }
 
     @Test
+    fun `school metrics average rating across records and ignore missing ratings`() {
+        val withRatings = schoolMetricsOf(
+            listOf(
+                """{"duration":45,"rating":4}""",
+                """{"duration":30,"rating":5}""",
+                """{"duration":20}"""
+            )
+        )
+        assertEquals(4.5, withRatings.avgRating ?: 0.0, 0.001)
+
+        val withoutRatings = schoolMetricsOf(listOf("""{"duration":45}"""))
+        assertEquals(null, withoutRatings.avgRating)
+    }
+
+    @Test
     fun `relation counts include only bills and notes`() {
         val counts = relationCountsOf(
             listOf(

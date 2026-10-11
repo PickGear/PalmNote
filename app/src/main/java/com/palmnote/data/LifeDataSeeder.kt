@@ -28,7 +28,7 @@ class LifeDataSeeder(
 ) {
     companion object {
         /** 当前种子版本；每次重写种子默认值时 +1（§7.3 seedVersion 投递）。 */
-        const val SEED_VERSION = 7
+        const val SEED_VERSION = 8
         private const val KEY_SEED_VERSION = "life_seed_version"
         private const val KEY_CUSTOMIZED = "customized_template_ids"
 
@@ -381,7 +381,13 @@ class LifeDataSeeder(
         // ── 9 生日：person + avatar + lunar ──
         buildTemplate(
             "生日", "时间", "cake", "记录重要日期", 13,
-            """[{"key":"date","label":"日期","type":"DATE","required":true,"showInCard":true,"sortOrder":1},{"key":"reminder","label":"提醒","type":"BOOLEAN","required":false,"defaultValue":"true","showInCard":true,"sortOrder":2},{"key":"person","label":"人物","type":"PERSON","showInCard":false,"sortOrder":3},{"key":"avatar","label":"头像","type":"IMAGE","showInCard":false,"sortOrder":4},{"key":"lunar","label":"农历","type":"BOOLEAN","showInCard":false,"sortOrder":5}]""",
+            """[{"key":"date","label":"日期","type":"DATE","required":true,"showInCard":true,"sortOrder":1},""" +
+                """{"key":"reminder","label":"提醒","type":"BOOLEAN","required":false,""" +
+                    """"defaultValue":"true","showInCard":true,"sortOrder":2},""" +
+                """{"key":"person","label":"人物","type":"PERSON","showInCard":false,"sortOrder":3},""" +
+                """{"key":"avatar","label":"头像","type":"IMAGE","showInCard":false,"sortOrder":4},""" +
+                """{"key":"lunar","label":"农历","type":"BOOLEAN","showInCard":false,"sortOrder":5},""" +
+                """{"key":"note","label":"备注","type":"TEXT","required":false,"showInCard":false,"sortOrder":6}]""",
             """["card","list"]""", flowJson("ARCHIVED" to "已归档"),
             """{"allowCrossLink":false,"targetTypes":[]}""",
             reminderConfig = ReminderSpec(ReminderSpec.Kind.BIRTHDAY, dateKey = "date"),
