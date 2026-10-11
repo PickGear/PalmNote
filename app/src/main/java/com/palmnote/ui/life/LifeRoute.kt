@@ -20,6 +20,16 @@ data class LifeDayRead(
 @Serializable
 data object LifeStats
 
+/** 目标列表（总纲 P5d）：累计型 / 目标值型目标的管理入口。 */
+@Serializable
+data object LifeGoals
+
+/** 目标新建 / 编辑：[goalId] = 0 表示新建。 */
+@Serializable
+data class LifeGoalEdit(
+    val goalId: Long = 0L
+)
+
 /**
  * 月度回顾页：回顾**上一个完整月份**——总记录数、活跃天数、最常记录、心情分布。
  * 叙事式只读页；今日视角由今日看板/统计页承担。

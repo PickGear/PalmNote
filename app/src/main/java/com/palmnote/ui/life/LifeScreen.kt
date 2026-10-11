@@ -74,6 +74,7 @@ import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Event
 import androidx.compose.material.icons.outlined.EventBusy
+import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.School
 import androidx.compose.material.icons.outlined.Search
@@ -180,6 +181,8 @@ fun LifeScreen(
     /** 打开某条记录的详情页（按 itemId，详情页自己查库）。 */
     onOpenDetail: (itemId: Long) -> Unit,
     onOpenStats: () -> Unit,
+    /** 打开目标列表（顶栏旗子图标，总纲 P5d）。 */
+    onOpenGoals: () -> Unit = {},
     onOpenManageTemplates: () -> Unit,
     /** 点击首页分类卡：跳转到对应分类详情页（计划/时间/记录）。 */
     onOpenCategory: (category: String) -> Unit,
@@ -294,6 +297,7 @@ fun LifeScreen(
                     },
                     onOpenSearch = { showSearch = true },
                     onOpenStats = onOpenStats,
+                    onOpenGoals = onOpenGoals,
                     onOpenManage = onOpenManageTemplates
                 )
             },
@@ -410,6 +414,7 @@ private fun LifeTopBar(
     onCancelSearch: () -> Unit,
     onOpenSearch: () -> Unit,
     onOpenStats: () -> Unit,
+    onOpenGoals: () -> Unit,
     onOpenManage: () -> Unit
 ) {
     CompactTopAppBar(
@@ -442,6 +447,13 @@ private fun LifeTopBar(
                     Icon(
                         Icons.Outlined.BarChart,
                         stringResource(R.string.life_home_stats),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                IconButton(onClick = onOpenGoals) {
+                    Icon(
+                        Icons.Outlined.Flag,
+                        stringResource(R.string.life_goal_title),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }

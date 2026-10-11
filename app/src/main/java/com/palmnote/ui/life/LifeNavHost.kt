@@ -93,6 +93,7 @@ fun LifeNavHost(
             LifeScreen(
                 onOpenDetail = { itemId -> navController.navigate(LifeDetail(itemId = itemId)) },
                 onOpenStats = { navController.navigate(LifeStats) },
+                onOpenGoals = { navController.navigate(LifeGoals) },
                 onOpenManageTemplates = { navController.navigate(LifeTemplateManage) },
                 onOpenCategory = { category -> navController.navigate(LifeCategoryDetail(category = category)) },
                 onOpenFullList = { mode, dateEpochDay ->
@@ -219,6 +220,18 @@ fun LifeNavHost(
                 onBack = { navController.popBackStack() },
                 onOpenMonthlyReview = { navController.navigate(LifeMonthlyReview) }
             )
+        }
+
+        composable<LifeGoals> {
+            GoalListScreen(
+                onBack = { navController.popBackStack() },
+                onEditGoal = { goalId -> navController.navigate(LifeGoalEdit(goalId = goalId)) },
+                onCreateGoal = { navController.navigate(LifeGoalEdit(goalId = 0L)) }
+            )
+        }
+
+        composable<LifeGoalEdit> {
+            GoalEditScreen(onBack = { navController.popBackStack() })
         }
 
         composable<LifeMonthlyReview> {

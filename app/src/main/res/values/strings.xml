@@ -2219,4 +2219,27 @@
     <string name="life_field_hint_formula">由其他字段算出的值，只读；需写表达式（字段 key 与 + − × ÷）</string>
     <string name="life_field_hint_remaining">目标减去当前，只读；需选「被减 / 减数」字段</string>
     <string name="life_field_hint_streak">连续记录的天数，自动统计（无需参考字段）</string>
-    <string name="life_field_hint_elapsed">距某天已过 / 还剩多少天；需选一个日期字段</string></resources>
+    <string name="life_field_hint_elapsed">距某天已过 / 还剩多少天；需选一个日期字段</string>    <string name="life_goal_title">目标</string>
+    <string name="life_goal_new">新建目标</string>
+    <string name="life_goal_edit">编辑</string>
+    <string name="life_goal_empty">还没有目标</string>
+    <string name="life_goal_empty_hint">用「+ 新建」立一个目标</string>
+    <string name="life_goal_name">名称</string>
+    <string name="life_goal_type">类型</string>
+    <string name="life_goal_type_cumulative">累计</string>
+    <string name="life_goal_type_target">目标值</string>
+    <string name="life_goal_type_cumulative_hint">如「今年读 12 本书」，做一次加一次</string>
+    <string name="life_goal_type_target_hint">如「体重降到 65」，一个要到达的数值</string>
+    <string name="life_goal_target">目标值</string>
+    <string name="life_goal_unit">单位</string>
+    <string name="life_goal_direction">方向</string>
+    <string name="life_goal_direction_increase">递增</string>
+    <string name="life_goal_direction_decrease">递减</string>
+    <string name="life_goal_initial_value">当前值</string>
+    <string name="life_goal_initial_value_hint">现在的读数，从它往目标值走</string>
+    <string name="life_goal_progress">%1$d / %2$d %3$s</string>
+    <string name="life_goal_step_forward">向目标前进一步</string>
+    <string name="life_goal_step_back">回退一步</string>
+    <string name="life_goal_delete_title">删除这个目标？</string>
+    <string name="life_goal_delete_message">目标与其打卡记录会一并删除，无法恢复</string>
+</resources>
