@@ -570,6 +570,10 @@ class LifeDetailViewModel @Inject constructor(
     /** 从零起跑（计时归属 = 当前详情页这条记录）。 */
     fun startFocusTimer() {
         viewModelScope.launch {
+            // 别的条目正在计时/暂停时不抢占：此处静默落空（saveFocusSession 同款兜底），
+            // 否则 A 的 startAt/accumMs 会被整体重写、已走时长丢失
+            val owner = preferences.lifeFocusTimerItemId.first()
+            if (owner != 0L && owner != itemId) return@launch
             preferences.setFocusTimer(startAt = System.currentTimeMillis(), accumMs = 0L, itemId = itemId)
         }
     }

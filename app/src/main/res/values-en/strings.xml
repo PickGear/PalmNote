@@ -2244,7 +2244,8 @@
     <string name="life_field_hint_formula">Computed from other fields, read-only; needs an expression (field keys with + − × ÷)</string>
     <string name="life_field_hint_remaining">Target minus current, read-only; pick the minuend / subtrahend fields</string>
     <string name="life_field_hint_streak">Consecutive days, counted automatically (no source needed)</string>
-    <string name="life_field_hint_elapsed">Days since or until a date; pick a date field</string>    <string name="life_goal_title">Goals</string>
+    <string name="life_field_hint_elapsed">Days since or until a date; pick a date field</string>
+    <string name="life_goal_title">Goals</string>
     <string name="life_goal_new">New goal</string>
     <string name="life_goal_edit">Edit</string>
     <string name="life_goal_empty">No goals yet</string>

@@ -35,8 +35,14 @@ interface FieldValueDao {
     @Query("DELETE FROM field_values WHERE itemId IN (SELECT id FROM life_items WHERE meta = :demoMeta)")
     suspend fun deleteByItemMeta(demoMeta: String)
 
-    @Query("DELETE FROM field_values WHERE itemId IN (SELECT id FROM life_items WHERE templateId = :templateId)")
-    suspend fun deleteByTemplate(templateId: Long)
+    /** 模板级联删除用：与 LifeItemDao.deleteItemsByTemplate 同一 meta 口径——
+     *  演示期自建条目的主行会存活，它们的统计副本不能被先行删成孤儿。 */
+    @Query(
+        """DELETE FROM field_values WHERE itemId IN (
+            SELECT id FROM life_items WHERE templateId = :templateId AND (meta IS NULL OR meta <> :demoMeta)
+        )"""
+    )
+    suspend fun deleteByTemplate(templateId: Long, demoMeta: String = LIFE_DEMO_META)
 
     // ---- 数值聚合（NUMERIC 组） ----
 

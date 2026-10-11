@@ -188,7 +188,9 @@ private fun GoalDirectionSection(viewModel: GoalEditViewModel, state: GoalEditVi
 private fun GoalSaveButton(viewModel: GoalEditViewModel, state: GoalEditViewModel.UiState, onBack: () -> Unit) {
     Button(
         onClick = { viewModel.save(onBack) },
-        enabled = state.title.isNotBlank() && state.target > 0,
+        enabled = state.title.isNotBlank() && state.target > 0 &&
+            // 递减型要求当前值高于目标值（区间不退化）
+            (state.cumulative || !state.decrease || state.initialValue > state.target),
         modifier = Modifier.fillMaxWidth().height(48.dp)
     ) {
         Text(stringResource(R.string.save), fontWeight = FontWeight.SemiBold)

@@ -2219,7 +2219,8 @@
     <string name="life_field_hint_formula">由其他字段算出的值，只读；需写表达式（字段 key 与 + − × ÷）</string>
     <string name="life_field_hint_remaining">目标减去当前，只读；需选「被减 / 减数」字段</string>
     <string name="life_field_hint_streak">连续记录的天数，自动统计（无需参考字段）</string>
-    <string name="life_field_hint_elapsed">距某天已过 / 还剩多少天；需选一个日期字段</string>    <string name="life_goal_title">目标</string>
+    <string name="life_field_hint_elapsed">距某天已过 / 还剩多少天；需选一个日期字段</string>
+    <string name="life_goal_title">目标</string>
     <string name="life_goal_new">新建目标</string>
     <string name="life_goal_edit">编辑</string>
     <string name="life_goal_empty">还没有目标</string>

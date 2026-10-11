@@ -15,7 +15,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -134,7 +133,6 @@ class LifeDataSafetyRoomTest {
         // 被删的是真实条目的副本；示例行本来就没有副本。
         assertEquals(0, db.fieldValueDao().countBy("amount").first())
         assertNull(db.lifeTemplateDao().getTemplateById(templateId))
-        assertNotNull(remaining.single())
     }
 
     // ── 回收站往返（S3）──
@@ -179,7 +177,8 @@ class LifeDataSafetyRoomTest {
 
         val bin = db.lifeRecycleBinDao()
         assertEquals(1, bin.getTopLevel().first().size)
-        assertEquals(1, bin.getChildrenOf(parentId).size)
+        val parentBinRow = bin.getTopLevel().first().single()
+        assertEquals(1, bin.getChildrenOf(parentId, parentBinRow.deletedAt).size)
         assertTrue(db.lifeItemDao().getAllItemsIncludingHidden().first().none { it.id == childId })
 
         itemRepo.restoreRecycled(bin.getTopLevel().first().single().id)
@@ -218,5 +217,57 @@ class LifeDataSafetyRoomTest {
 
         assertEquals(0, db.lifeRecycleBinDao().getTopLevel().first().size)
         assertNull(db.lifeTemplateDao().getTemplateById(templateId))
+    }
+
+    @Test
+    fun `restore skips rows whose id collides with a live row`() = runBlocking {
+        val templateId = templateRepo.insertTemplate(template(numberConfig))
+        val itemId = itemRepo.insertItem(
+            LifeItem(templateId = templateId, title = "旧记录", fieldsData = """{"amount":1}""")
+        )
+        itemRepo.delete(itemId)
+
+        // 模拟 CSV 导入带同一显式 id 的另一条记录（活行）
+        db.lifeItemDao().insertItem(
+            LifeItem(id = itemId, templateId = templateId, title = "导入的新行", fieldsData = """{"amount":99}""")
+        )
+
+        val binId = db.lifeRecycleBinDao().getTopLevel().first().single().id
+        itemRepo.restoreRecycled(binId)
+
+        // 活行不被快照覆盖，快照留在站内
+        val live = db.lifeItemDao().getAllItemsIncludingHidden().first().single()
+        assertEquals("导入的新行", live.title)
+        assertEquals("""{"amount":99}""", live.fieldsData)
+        assertEquals(1, db.lifeRecycleBinDao().getTopLevel().first().size)
+    }
+
+    @Test
+    fun `separately deleted child keeps its own bin entry across the parent's group operations`() = runBlocking {
+        val templateId = templateRepo.insertTemplate(template(numberConfig))
+        val parentId = itemRepo.insertItem(LifeItem(templateId = templateId, title = "父", fieldsData = "{}"))
+        val childId = itemRepo.insertItem(
+            LifeItem(templateId = templateId, title = "子", fieldsData = "{}", parentId = parentId)
+        )
+
+        // 先单独删子任务（自己的批次），再删父（新批次）
+        itemRepo.delete(childId)
+        itemRepo.delete(parentId)
+
+        val bin = db.lifeRecycleBinDao()
+        // 两次删除各自成顶层组：子任务不因父条目后来也被删而并进父的组
+        val topLevel = bin.getTopLevel().first().map { it.originalId }.toSet()
+        assertEquals(setOf(parentId, childId), topLevel)
+
+        // 恢复父组：只带回父（同批次没有子任务），单独删掉的子任务保持删除状态
+        itemRepo.restoreRecycled(bin.getTopLevel().first().single { it.originalId == parentId }.id)
+        val liveIds = db.lifeItemDao().getAllItemsIncludingHidden().first().map { it.id }
+        assertTrue(parentId in liveIds)
+        assertTrue(childId !in liveIds)
+        assertTrue(bin.getTopLevel().first().any { it.originalId == childId })
+
+        // 彻底删除子任务只清它自己的快照
+        itemRepo.hardDeleteRecycled(bin.getTopLevel().first().single { it.originalId == childId }.id)
+        assertTrue(bin.getTopLevel().first().isEmpty())
     }
 }

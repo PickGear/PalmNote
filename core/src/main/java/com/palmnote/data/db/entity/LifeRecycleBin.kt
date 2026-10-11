@@ -45,7 +45,7 @@ data class LifeRecycleBin(
     val deletedAt: Long = System.currentTimeMillis()
 )
 
-fun LifeItem.toRecycleBin(templateName: String) = LifeRecycleBin(
+fun LifeItem.toRecycleBin(templateName: String, deletedAt: Long) = LifeRecycleBin(
     originalId = id, templateId = templateId, templateName = templateName,
     title = title, fieldsData = fieldsData, status = status, note = note,
     sortOrder = sortOrder, isFavorite = isFavorite,
@@ -54,7 +54,8 @@ fun LifeItem.toRecycleBin(templateName: String) = LifeRecycleBin(
     recurring = recurring, recurringEndType = recurringEndType,
     recurringEndCount = recurringEndCount, recurringEndDate = recurringEndDate,
     parentId = parentId, remindAt = remindAt, meta = meta, isSeedSample = isSeedSample,
-    deletedAt = System.currentTimeMillis()
+    // 同一次删除的整组共享同一时间戳：它是组桶标识，组内恢复/彻底删除按它圈定范围
+    deletedAt = deletedAt
 )
 
 fun LifeRecycleBin.toLifeItem() = LifeItem(

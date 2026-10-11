@@ -316,7 +316,10 @@ class LifeItemRepositoryImpl @Inject constructor(
             val rows = listOf(item) + children
             // 模板名快照仅供回收站列表展示；模板随后被删时名字仍在。
             val templateName = templateRepo.getTemplateById(item.templateId)?.name ?: ""
-            recycleBinDao.insertAll(rows.map { it.toRecycleBin(templateName) })
+            // 同一次删除共享同一 deletedAt（组桶标识）：组内恢复/彻底删除按它圈定范围，
+            // 此前单独删掉的子任务快照（更早的批次）不会被并进这一次的组。
+            val batch = System.currentTimeMillis()
+            recycleBinDao.insertAll(rows.map { it.toRecycleBin(templateName, batch) })
             // 统计副本与主行同事务清掉；副本反查依赖条目行，必须先于条目删除（同 deleteTemplateCascade）
             rows.forEach { fieldValueDao.deleteByItem(it.id) }
             dao.deleteItemCascade(id)
@@ -332,12 +335,15 @@ class LifeItemRepositoryImpl @Inject constructor(
             // 模板已删的行不可恢复：恢复出来是看不见的孤儿。模板删除时会清掉站内该模板的行，
             // 这里只是双保险。
             templateRepo.getTemplateById(row.templateId) ?: return@withTransaction
-            val children = recycleBinDao.getChildrenOf(row.originalId)
-            dao.insertItem(row.toLifeItem())
-            children.forEach { dao.insertItem(it.toLifeItem()) }
+            val children = recycleBinDao.getChildrenOf(row.originalId, row.deletedAt)
+            // insertItem 是 REPLACE 冲突策略：id 撞上活行（CSV 导入会带显式 id）会把活行整行覆盖。
+            // 撞了的行跳过不恢复、快照保留在站内。
+            val group = (listOf(row) + children).filter { dao.getItemById(it.originalId) == null }
+            group.forEach { dao.insertItem(it.toLifeItem()) }
             // 统计副本按当前 fieldsConfig 重建——fieldsData 完整在快照里，不会丢数据
-            (listOf(row) + children).forEach { syncFieldValues(it.originalId, it.templateId, it.fieldsData) }
-            recycleBinDao.deleteByOriginalId(row.originalId)
+            group.forEach { syncFieldValues(it.originalId, it.templateId, it.fieldsData) }
+            // 只清真正恢复掉的行：被跳过的行留在站里，用户保留知情与重试机会
+            group.forEach { recycleBinDao.deleteByOriginalId(it.originalId, row.deletedAt) }
         }
     } catch (e: Exception) {
         AppLogger.e("LifeItemRepo", "restoreRecycled failed", e)
@@ -347,7 +353,7 @@ class LifeItemRepositoryImpl @Inject constructor(
     override suspend fun hardDeleteRecycled(binId: Long) = try {
         appDatabase.withTransaction {
             val row = recycleBinDao.getById(binId) ?: return@withTransaction
-            recycleBinDao.deleteByOriginalId(row.originalId)
+            recycleBinDao.deleteByOriginalId(row.originalId, row.deletedAt)
         }
     } catch (e: Exception) {
         AppLogger.e("LifeItemRepo", "hardDeleteRecycled failed", e)

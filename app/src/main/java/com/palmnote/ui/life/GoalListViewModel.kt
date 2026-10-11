@@ -146,29 +146,47 @@ class GoalEditViewModel @Inject constructor(
     fun save(onSaved: () -> Unit) {
         val s = _state.value
         if (s.title.isBlank() || s.target <= 0) return
+        // 递减型的当前值必须高于目标值，否则区间退化、± 都无效
+        if (!s.cumulative && s.decrease && s.initialValue <= s.target) return
         viewModelScope.launch {
             val demo = preferences.lifeDemoMode.first()
             val direction = if (!s.cumulative && s.decrease) GoalListViewModel.DIRECTION_DECREASE else "INCREASE"
             val existing = if (goalId > 0L) goalRepository.getGoalById(goalId) else null
-            val now = System.currentTimeMillis()
-            val goal = Goal(
-                id = goalId,
-                title = s.title.trim(),
-                goalType = if (s.cumulative) "CUMULATIVE" else "TARGET",
-                totalCount = s.target,
-                currentCount = existing?.currentCount
-                    ?: if (direction == GoalListViewModel.DIRECTION_DECREASE) s.initialValue.toInt() else 0,
-                unit = s.unit.ifBlank { "次" },
-                direction = direction,
-                initialValue = if (direction == GoalListViewModel.DIRECTION_DECREASE) s.initialValue else 0L,
-                icon = existing?.icon ?: com.palmnote.ui.theme.AppIcon.Flag,
-                isDemo = existing?.isDemo ?: demo,
-                createdAt = existing?.createdAt ?: now,
-                updatedAt = now
-            )
+            val goal = existing?.let { buildEditedGoal(it, s, direction) } ?: buildNewGoal(s, direction, demo)
             if (goalId > 0L) goalRepository.updateGoal(goal) else goalRepository.insertGoal(goal)
             _state.value = s.copy(saved = true)
             onSaved()
         }
     }
+
+    /** 编辑：在存量行上 copy，没在表单里的 20+ 列（截止日/打卡统计/关联资产…）原样保留。 */
+    private fun buildEditedGoal(existing: Goal, s: UiState, direction: String): Goal = existing.copy(
+        title = s.title.trim(),
+        goalType = if (s.cumulative) "CUMULATIVE" else "TARGET",
+        totalCount = s.target,
+        unit = s.unit.ifBlank { "次" },
+        direction = direction,
+        initialValue = if (direction == GoalListViewModel.DIRECTION_DECREASE) s.initialValue else 0L,
+        // 切成递减型且还没有进度时，当前值从起点起算
+        currentCount = if (direction == GoalListViewModel.DIRECTION_DECREASE && existing.currentCount == 0) {
+            s.initialValue.toInt()
+        } else {
+            existing.currentCount
+        },
+        updatedAt = System.currentTimeMillis()
+    )
+
+    private fun buildNewGoal(s: UiState, direction: String, demo: Boolean): Goal = Goal(
+        title = s.title.trim(),
+        goalType = if (s.cumulative) "CUMULATIVE" else "TARGET",
+        totalCount = s.target,
+        currentCount = if (direction == GoalListViewModel.DIRECTION_DECREASE) s.initialValue.toInt() else 0,
+        unit = s.unit.ifBlank { "次" },
+        direction = direction,
+        initialValue = if (direction == GoalListViewModel.DIRECTION_DECREASE) s.initialValue else 0L,
+        icon = com.palmnote.ui.theme.AppIcon.Flag,
+        isDemo = demo,
+        createdAt = System.currentTimeMillis(),
+        updatedAt = System.currentTimeMillis()
+    )
 }

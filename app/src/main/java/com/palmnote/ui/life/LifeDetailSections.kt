@@ -1019,13 +1019,13 @@ private fun GalleryRow(row: DetailRowModel.Gallery, accent: Color, groupFieldKey
         var expanded by remember(groupFieldKey) { mutableStateOf(false) }
         val visible = if (expanded) row.photos else row.photos.take(4)
         Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
-            visible.chunked(4).forEach { chunk ->
+            visible.withIndex().chunked(4).forEach { chunk ->
                 Row(
                     modifier = Modifier.fillMaxWidth().height(66.dp),
                     horizontalArrangement = Arrangement.spacedBy(7.dp)
                 ) {
-                    chunk.forEach { photo ->
-                        GalleryCell(photo, accent, Modifier.weight(1f), onOpen = { previewIndex = row.photos.indexOf(photo) })
+                    chunk.forEach { (index, photo) ->
+                        GalleryCell(photo, accent, Modifier.weight(1f), onOpen = { previewIndex = index })
                     }
                     repeat(4 - chunk.size) {
                         Spacer(modifier = Modifier.weight(1f))
