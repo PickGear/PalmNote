@@ -827,7 +827,8 @@ private fun HeroCover(
     onSetProgress: ((String, Double) -> Unit)?,
     onNudgeProgress: ((String, Double, Double?, Double?) -> Unit)?
 ) {
-    val cover = ctx.cfgByType(FieldType.IMAGE)?.let { ctx.str(it.key) }
+    // 封面 = 相册字段第一张（§3.7(2) 相册升级：多图载荷取「封面/首张」；旧单图载荷原样兼容）
+    val cover = ctx.cfgByType(FieldType.IMAGE)?.let { parsePhotos(ctx.raw(it.key)).firstOrNull()?.path }
     val p = ctx.progressOf(ctx.configs.firstOrNull { it.showAsProgress })
     // 磁盘 IO 只在封面路径变化时做一次，不跟重组走
     val coverExists = remember(cover) { cover != null && (cover.startsWith("content:") || File(cover).exists()) }

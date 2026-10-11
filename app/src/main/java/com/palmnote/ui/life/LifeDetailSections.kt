@@ -3,6 +3,8 @@ package com.palmnote.ui.life
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -38,6 +40,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import coil3.compose.AsyncImage
 import com.palmnote.app.R
 import com.palmnote.domain.model.FieldConfig
@@ -706,6 +710,8 @@ fun DetailRowView(
             }
         }
 
+        is DetailRowModel.Gallery -> GalleryRow(row, accent, groupFieldKey)
+
         is DetailRowModel.StackBar -> StackShareRow(row, accent)
 
         is DetailRowModel.Heat -> HeatGrid(row, accent)
@@ -991,6 +997,126 @@ private fun FocusWeekBars(row: DetailRowModel.WeekBars, accent: Color) {
  * [modifier] 传尺寸：相册用 `weight(1f).fillMaxHeight()` 均分，
  * 其它单图入口传固定 `size(width, height)`。
  */
+
+/**
+ * 相册行（IMAGE，§3.7(2) 升级）：沿用 dtl_04 等宽网格，补两件能力——
+ * 缩略图可点（进大图预览，Pager 左右翻页）、有标题时在格下显示。
+ */
+@Composable
+private fun GalleryRow(row: DetailRowModel.Gallery, accent: Color, groupFieldKey: String?) {
+    Column(modifier = Modifier.fillMaxWidth().padding(Spacing.sm)) {
+        Text(row.label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(Modifier.height(6.dp))
+        if (row.photos.isEmpty()) {
+            Text(
+                stringResource(R.string.life_detail_no_value),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            return@Column
+        }
+        var previewIndex by remember(row.photos) { mutableStateOf(-1) }
+        var expanded by remember(groupFieldKey) { mutableStateOf(false) }
+        val visible = if (expanded) row.photos else row.photos.take(4)
+        Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
+            visible.chunked(4).forEach { chunk ->
+                Row(
+                    modifier = Modifier.fillMaxWidth().height(66.dp),
+                    horizontalArrangement = Arrangement.spacedBy(7.dp)
+                ) {
+                    chunk.forEach { photo ->
+                        GalleryCell(photo, accent, Modifier.weight(1f), onOpen = { previewIndex = row.photos.indexOf(photo) })
+                    }
+                    repeat(4 - chunk.size) {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
+                }
+            }
+        }
+        if (row.photos.size > 4) {
+            ExpandToggle(shown = 4, total = row.photos.size, expanded = expanded) { expanded = !expanded }
+        }
+        if (previewIndex >= 0) {
+            PhotoPreviewDialog(row.photos, previewIndex) { previewIndex = -1 }
+        }
+    }
+}
+
+/** 相册格：缩略图（点开大图预览）+ 可选标题一行。 */
+@Composable
+private fun GalleryCell(photo: LifePhoto, accent: Color, modifier: Modifier = Modifier, onOpen: () -> Unit) {
+    Column(modifier) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(accent.copy(alpha = 0.10f))
+                .clickable(onClick = onOpen)
+        ) {
+            AsyncImage(
+                model = photo.path,
+                contentDescription = photo.title.ifBlank { null },
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+        if (photo.title.isNotBlank()) {
+            Text(
+                photo.title,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+/** 大图预览：全屏黑底 + Pager 左右翻页 + 标题/序号，点按任意处关闭。 */
+@Composable
+private fun PhotoPreviewDialog(photos: List<LifePhoto>, initialIndex: Int, onDismiss: () -> Unit) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        val pagerState = rememberPagerState(initialPage = initialIndex.coerceIn(0, (photos.size - 1).coerceAtLeast(0))) {
+            photos.size
+        }
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black)
+                .clickable(onClick = onDismiss),
+            verticalArrangement = Arrangement.Center
+        ) {
+            HorizontalPager(state = pagerState) { page ->
+                AsyncImage(
+                    model = photos[page].path,
+                    contentDescription = photos[page].title.ifBlank { null },
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+            val current = photos.getOrNull(pagerState.currentPage)
+            if (current?.title?.isNotBlank() == true || photos.size > 1) {
+                Text(
+                    listOfNotNull(
+                        current?.title?.takeIf { it.isNotBlank() },
+                        if (photos.size > 1) "${pagerState.currentPage + 1} / ${photos.size}" else null
+                    ).joinToString("  "),
+                    color = Color.White,
+                    style = MaterialTheme.typography.labelMedium,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 32.dp)
+                )
+            }
+        }
+    }
+}
+
 @Composable
 private fun Thumb(path: String, accent: Color, modifier: Modifier) {
     // content://（相册选图）直接可用；文件路径才需要存在性检查

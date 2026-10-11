@@ -69,6 +69,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -1034,58 +1035,6 @@ internal fun dateTimePattern(): DateTimeFormatter =
     } else {
         DateTimeFormatter.ofPattern("MMM d, yyyy")
     }
-@Composable
-internal fun ImagePickField(value: String, onValueChange: (String) -> Unit) {
-    val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        uri?.let { onValueChange(it.toString()) }
-    }
-    Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-        if (value.isNotBlank()) {
-            AsyncImage(
-                model = value,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(160.dp)
-                    .clip(RoundedCornerShape(10.dp))
-            )
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-                OutlinedButton(
-                    onClick = {
-                        picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                    },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(Icons.Filled.Add, null, modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.width(4.dp))
-                    Text("更换", style = MaterialTheme.typography.bodySmall)
-                }
-                OutlinedButton(
-                    onClick = { onValueChange("") },
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                ) {
-                    Icon(Icons.Filled.Close, null, modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.width(4.dp))
-                    Text("移除", style = MaterialTheme.typography.bodySmall)
-                }
-            }
-        } else {
-            OutlinedButton(
-                onClick = {
-                    picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Icon(Icons.Filled.Add, null, modifier = Modifier.size(16.dp))
-                Spacer(Modifier.width(Spacing.xs))
-                Text("选择图片")
-            }
-        }
-    }
-}
-
 /**
  * 已选文件的**用户可读名字**（`OpenableColumns.DISPLAY_NAME`）。
  *
@@ -1109,7 +1058,7 @@ internal fun displayNameOf(context: android.content.Context, uriString: String):
  * 存 **URI 字符串**（与 IMAGE 同形态：`buildFieldsData` 的 `else` 分支原样落库，
  * `decodeValue` 原样读回，所以 ViewModel 无需改动）。
  *
- * 与 [ImagePickField] 的区别：不做预览（视频帧 / 音频波形要额外解码器），改为显示**文件名**；
+ * 与相册字段（ImageSection）的区别：不做预览（视频帧 / 音频波形要额外解码器），改为显示**文件名**；
  * 整行可点即「换一个」，右侧 × 清除。
  */
 @Composable
@@ -1222,23 +1171,115 @@ internal fun ChecklistField(value: String, onValueChange: (String) -> Unit) {
 }
 
 
+/**
+ * 相册字段编辑（总纲 §3.7(2) 相册升级）：多选（最多 9 张）+ 每张标题 + 移除。
+ * 载荷经 [parsePhotos]/[serializePhotos] 往返，旧单图（裸路径）照常读出。
+ */
 @Composable
 private fun ImageSection(cfg: FieldConfig, state: CreateRecordUiState, host: FieldFormHost) {
-    val value = state.values[cfg.key].orEmpty()
-    if (value.isBlank()) {
+    val photos = parsePhotos(state.values[cfg.key])
+    val maxPhotos = 9
+    val commit: (List<LifePhoto>) -> Unit = { host.updateValue(cfg.key, serializePhotos(it)) }
+
+    val picker = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickMultipleVisualMedia(maxPhotos)
+    ) { uris ->
+        if (uris.isEmpty()) return@rememberLauncherForActivityResult
+        // 追加不覆盖；容量截断到上限。content:// 原样存（展示端直接可用）
+        val existing = photos.take(maxPhotos)
+        val additions = uris.map { it.toString() }
+            .filterNot { uri -> existing.any { it.path == uri } }
+            .take((maxPhotos - existing.size).coerceAtLeast(0))
+            .map { LifePhoto(it) }
+        commit(existing + additions)
+    }
+    val launch = {
+        picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+    }
+
+    if (photos.isEmpty()) {
         DashedArea {
             Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("添加图片", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                Text(
+                    stringResource(R.string.life_photo_add),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium
+                )
                 Spacer(Modifier.height(4.dp))
-                Text("选一张照片放在最显眼的位置", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    stringResource(R.string.life_photo_add_hint),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
                 Spacer(Modifier.height(8.dp))
-                ImagePickField(value = "", onValueChange = { host.updateValue(cfg.key, it) })
+                PickPhotosButton(launch, R.string.life_photo_pick)
             }
         }
     } else {
-        ImagePickField(value = value, onValueChange = { host.updateValue(cfg.key, it) })
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+            photos.forEachIndexed { index, photo ->
+                PhotoEditRow(
+                    photo = photo,
+                    onTitleChange = { title ->
+                        commit(photos.toMutableList().apply { set(index, photo.copy(title = title.take(40))) })
+                    },
+                    onRemove = { commit(photos.filterIndexed { i, _ -> i != index }) }
+                )
+            }
+            if (photos.size < maxPhotos) {
+                PickPhotosButton(launch, R.string.life_photo_add_more)
+            }
+        }
     }
 }
+
+/** 拉起系统相册多选（上限张数由 [ActivityResultContracts.PickMultipleVisualMedia] 截断）。 */
+@Composable
+private fun PickPhotosButton(launch: () -> Unit, labelRes: Int) {
+    OutlinedButton(onClick = launch, modifier = Modifier.fillMaxWidth()) {
+        Icon(Icons.Filled.Add, null, modifier = Modifier.size(16.dp))
+        Spacer(Modifier.width(4.dp))
+        Text(stringResource(labelRes))
+    }
+}
+
+/** 相册编辑行：缩略图 + 标题输入（可选，≤40 字）+ 移除。 */
+@Composable
+private fun PhotoEditRow(photo: LifePhoto, onTitleChange: (String) -> Unit, onRemove: () -> Unit) {
+    Surface(
+        shape = RoundedCornerShape(10.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+    ) {
+        Row(Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            AsyncImage(
+                model = photo.path,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .size(64.dp)
+                    .clip(RoundedCornerShape(8.dp))
+            )
+            Spacer(Modifier.width(8.dp))
+            OutlinedTextField(
+                value = photo.title,
+                onValueChange = onTitleChange,
+                placeholder = {
+                    Text(
+                        stringResource(R.string.life_photo_title_hint),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                },
+                singleLine = true,
+                textStyle = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.weight(1f)
+            )
+            IconButton(onClick = onRemove) {
+                Icon(Icons.Filled.Close, stringResource(R.string.delete), modifier = Modifier.size(16.dp))
+            }
+        }
+    }
+}
+
 
 /**
  * E 组复合字段（清单 / 地图 / 明细表 / 区间）的共用分派。

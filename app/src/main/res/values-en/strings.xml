@@ -2267,4 +2267,9 @@
     <string name="life_goal_step_back">Step back</string>
     <string name="life_goal_delete_title">Delete this goal?</string>
     <string name="life_goal_delete_message">The goal and its check-ins will be deleted permanently</string>
+    <string name="life_photo_add">Add photos</string>
+    <string name="life_photo_add_hint">Up to 9; the first one is the detail cover</string>
+    <string name="life_photo_pick">Pick photos</string>
+    <string name="life_photo_add_more">Add more</string>
+    <string name="life_photo_title_hint">Caption (optional)</string>
 </resources>

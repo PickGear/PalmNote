@@ -2242,4 +2242,9 @@
     <string name="life_goal_step_back">回退一步</string>
     <string name="life_goal_delete_title">删除这个目标？</string>
     <string name="life_goal_delete_message">目标与其打卡记录会一并删除，无法恢复</string>
+    <string name="life_photo_add">添加照片</string>
+    <string name="life_photo_add_hint">最多 9 张，第一张用作详情页封面</string>
+    <string name="life_photo_pick">选择照片</string>
+    <string name="life_photo_add_more">继续添加</string>
+    <string name="life_photo_title_hint">照片说明（可选）</string>
 </resources>

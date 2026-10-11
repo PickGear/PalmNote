@@ -352,8 +352,11 @@ sealed interface DetailRowModel {
     /** 人物堆叠（PERSON）。 */
     data class Persons(val label: String, val names: List<String>) : DetailRowModel
 
-    /** 媒体缩略（IMAGE / VIDEO / AUDIO / FILE）。 */
+    /** 媒体缩略（VIDEO / AUDIO / FILE）。 */
     data class Media(val label: String, val paths: List<String>) : DetailRowModel
+
+    /** 相册（IMAGE，§3.7(2) 升级）：每张带可选标题，点按进大图预览。 */
+    data class Gallery(val label: String, val photos: List<com.palmnote.ui.life.LifePhoto>) : DetailRowModel
 
     /** 分类占比堆叠条（MULTI_SELECT 的只读统计形态）。 */
     data class StackBar(val label: String, val segments: List<StackSegment>) : DetailRowModel
@@ -516,7 +519,8 @@ fun buildRows(ctx: DetailCtx, config: FieldConfig): List<DetailRowModel> {
             )
         }
         FieldType.PERSON -> listOf(DetailRowModel.Persons(config.label, ctx.list(key).ifEmpty { listOfNotNull(ctx.str(key)) }))
-        FieldType.IMAGE, FieldType.VIDEO, FieldType.AUDIO, FieldType.FILE ->
+        FieldType.IMAGE -> listOf(DetailRowModel.Gallery(config.label, parsePhotos(ctx.raw(key))))
+        FieldType.VIDEO, FieldType.AUDIO, FieldType.FILE ->
             listOf(DetailRowModel.Media(config.label, ctx.list(key).ifEmpty { listOfNotNull(ctx.str(key)) }))
         FieldType.MAP -> {
             val model = parseMap(ctx.raw(key))
