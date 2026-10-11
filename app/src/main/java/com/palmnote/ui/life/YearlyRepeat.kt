@@ -38,3 +38,13 @@ internal fun nextYearlyOccurrence(anchor: LocalDate, today: LocalDate, lunar: Bo
     }
     return if (thisYear.isBefore(today)) thisYear.plusYears(1) else thisYear
 }
+
+/**
+ * 条目 fieldsData 里的 `lunar` 开关（生日 / 纪念日模板才有）；解析不出按公历。
+ * 仪表盘倒数卡与计数器组件共用这一个解析，口径不再各写各的。
+ */
+internal fun fieldsDataLunarFlag(fieldsData: String): Boolean = runCatching {
+    val obj = kotlinx.serialization.json.Json.parseToJsonElement(fieldsData)
+        .let { it as? kotlinx.serialization.json.JsonObject }
+    parseLunarFlag((obj?.get("lunar") as? kotlinx.serialization.json.JsonPrimitive)?.content)
+}.getOrDefault(false)

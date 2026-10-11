@@ -97,4 +97,27 @@ class YearlyRepeatTest {
             .first { it.label == "剩余天数" }
         assertEquals(360L, rolled.days)
     }
+
+    @Test
+    fun `lunar 开关解析覆盖真值与兜底`() {
+        assertTrue(fieldsDataLunarFlag("""{"lunar":"true"}"""))
+        assertTrue(fieldsDataLunarFlag("""{"lunar":"1"}"""))
+        assertTrue(!fieldsDataLunarFlag("""{"lunar":"false"}"""))
+        assertTrue(!fieldsDataLunarFlag("""{}"""))
+        assertTrue(!fieldsDataLunarFlag("not json"))
+    }
+
+    @Test
+    fun `滚动幂等——倒数卡把已滚日期再交给 daysUntil 不会双滚`() {
+        // 仪表盘倒数卡先滚一次（nextYearlyOccurrence）再喂给 Anniversary.daysUntil
+        //（内部按 withYear 再滚一次）。两次滚动必须等价于一次，否则农历条目会跳年。
+        val anchor = LocalDate.of(1995, 5, 8)
+        val once = nextYearlyOccurrence(anchor, today, lunar = false)
+        val twice = nextYearlyOccurrence(once, today, lunar = false)
+        assertEquals(once, twice)
+
+        val lunarAnchor = LocalDate.of(1995, 8, 15)
+        val lunarOnce = nextYearlyOccurrence(lunarAnchor, today, lunar = true)
+        assertEquals(lunarOnce, nextYearlyOccurrence(lunarOnce, today, lunar = true))
+    }
 }

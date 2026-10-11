@@ -31,13 +31,29 @@ class AssetWidgetProvider : ScopedWidgetProvider() {
         val categories = entryPoint.assetDao().getHeldCategoryCounts().first()
 
         publish(context, appWidgetManager, appWidgetIds) { appWidgetId, _ ->
-            bindViews(context, appWidgetId, categories)
+            sizedRemoteViews(
+                appWidgetManager.getAppWidgetOptions(appWidgetId),
+                DEFAULT_WIDTH_DP,
+                DEFAULT_HEIGHT_DP
+            ) { _, height ->
+                bindViews(
+                    context, appWidgetId, categories,
+                    // 高度不足 2 格（160dp）时收起次要元素：占比条藏掉、色片只留一行
+                    compactHeight = height < COMPACT_HEIGHT_DP
+                )
+            }
         }
     }
 
-    internal fun bindViews(context: Context, appWidgetId: Int, categories: List<HeldCategoryCount>): RemoteViews {
+    internal fun bindViews(
+        context: Context,
+        appWidgetId: Int,
+        categories: List<HeldCategoryCount>,
+        compactHeight: Boolean = false
+    ): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.widget_asset_unified)
-        val shown = collapseToSlots(categories, MAX_CATEGORIES)
+        val maxCategories = if (compactHeight) 2 else MAX_CATEGORIES
+        val shown = collapseToSlots(categories, maxCategories)
         val total = categories.sumOf { it.count }
 
         views.setInt(R.id.widget_asset_badge, "setColorFilter", WidgetData.colorFamily(context, BADGE_FAMILY).hue)
@@ -48,10 +64,14 @@ class AssetWidgetProvider : ScopedWidgetProvider() {
 
         // 占比条：24 段等宽槽位，按各分类件数占比分配段数 —— 段的宽度于是就是比例
         // （RemoteViews 改不了子控件宽度，只能靠「占几段」表达比例）
-        val owners = slotOwners(shown.map { it.count }, BAR_SLOTS)
-        SEGMENT_IDS.forEachIndexed { slot, id ->
-            views.setViewVisibility(id, View.VISIBLE)
-            views.setInt(id, "setColorFilter", WidgetData.colorFamily(context, owners[slot]).hue)
+        if (compactHeight) {
+            views.setViewVisibility(R.id.widget_asset_bar, View.GONE)
+        } else {
+            val owners = slotOwners(shown.map { it.count }, BAR_SLOTS)
+            SEGMENT_IDS.forEachIndexed { slot, id ->
+                views.setViewVisibility(id, View.VISIBLE)
+                views.setInt(id, "setColorFilter", WidgetData.colorFamily(context, owners[slot]).hue)
+            }
         }
 
         // 两列色片网格：每行两个，条目数为奇数时补一个等宽占位
@@ -72,7 +92,7 @@ class AssetWidgetProvider : ScopedWidgetProvider() {
 
         val empty = categories.isEmpty()
         views.setViewVisibility(R.id.widget_asset_empty, if (empty) View.VISIBLE else View.GONE)
-        views.setViewVisibility(R.id.widget_asset_bar, if (empty) View.GONE else View.VISIBLE)
+        views.setViewVisibility(R.id.widget_asset_bar, if (empty || compactHeight) View.GONE else View.VISIBLE)
         views.setViewVisibility(R.id.widget_asset_grid, if (empty) View.GONE else View.VISIBLE)
 
         views.setOnClickPendingIntent(
@@ -156,6 +176,13 @@ class AssetWidgetProvider : ScopedWidgetProvider() {
     private companion object {
         /** 3×2 放得下 6 个分类（3 行色片），占比条也最多 6 段。超出部分并成「其他」，见 [collapseToSlots]。 */
         const val MAX_CATEGORIES = 6
+
+        /** 默认摆上去的尺寸（res/xml info 里的 minWidth/minHeight 口径）。 */
+        const val DEFAULT_WIDTH_DP = 250
+        const val DEFAULT_HEIGHT_DP = 180
+
+        /** 高度不足 2 格（160dp）时收起占比条、色片只留一行（与计数器组件同一档位）。 */
+        const val COMPACT_HEIGHT_DP = 160
 
         /** 聚合项用的分类键：预设里就有 OTHER（名字/图标/颜色都齐），直接借用。 */
         const val OTHER_CATEGORY = "OTHER"

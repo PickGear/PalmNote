@@ -474,6 +474,26 @@ class WidgetRemoteViewsRenderTest {
     }
 
     @Test
+    fun `物品组件矮卡收起占比条并只留一行色片`() {
+        val categories = listOf(
+            HeldCategoryCount("DIGITAL", 3),
+            HeldCategoryCount("SPORTS", 2),
+            HeldCategoryCount("BOOKS", 1)
+        )
+        val root = render(AssetWidgetProvider().bindViews(context, 1, categories, compactHeight = true))
+
+        // 次要元素收起：占比条（连同 24 段）整个 GONE；头部总数仍在
+        assertEquals(View.GONE, findById<View>(root, R.id.widget_asset_bar)?.visibility)
+        assertEquals(
+            context.resources.getQuantityString(R.plurals.widget_asset_total_count, 6, 6),
+            findById<TextView>(root, R.id.widget_asset_total)?.text
+        )
+        // 色片只留一行两个：第一分类在、第三分类不再单独出现（并入「其他」或被截断）
+        assertTrue(texts(root).any { it == com.palmnote.ui.components.getCategoryName("DIGITAL", context) })
+        assertTrue(texts(root).none { it == com.palmnote.ui.components.getCategoryName("BOOKS", context) })
+    }
+
+    @Test
     fun `物品组件空态`() {
         val root = render(AssetWidgetProvider().bindViews(context, 1, emptyList()))
 

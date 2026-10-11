@@ -18,6 +18,8 @@ import com.palmnote.data.db.entity.CategoryConfig
 import com.palmnote.domain.model.SubscriptionDueItem
 import com.palmnote.domain.repository.*
 import com.palmnote.domain.util.DateUtils
+import com.palmnote.ui.life.fieldsDataLunarFlag
+import com.palmnote.ui.life.nextYearlyOccurrence
 import com.palmnote.domain.util.HabitCheckIn
 import com.palmnote.domain.util.LifeTemplateKind
 import com.palmnote.domain.util.getKind
@@ -346,10 +348,17 @@ class DashboardViewModel @Inject constructor(
                             // 于是卡片上出现「01月01日 / 已过 20716 天」（总纲 §13 A 档同一缺陷类）。
                             val date = item.dueDate ?: DateUtils.dateFromFieldsDataOrNull(item.fieldsData)
                                 ?: return@mapNotNull null
+                            // 农历生日/纪念日按农历滚到下一次周年（与提醒/详情页同一口径 nextYearlyOccurrence），
+                            // 此前按公历直算，农历条目在倒数卡上的「还有几天」是错的。
+                            // nextYearlyOccurrence 幂等（结果恒 ≥ 今天），daysUntil 再滚一次结果不变。
+                            val anchor = DateUtils.millisToLocalDate(date)
+                            val next = nextYearlyOccurrence(
+                                anchor, LocalDate.now(), fieldsDataLunarFlag(item.fieldsData)
+                            )
                             Anniversary(
                                 id = -item.id - 1_000_000L,
                                 title = item.title,
-                                solarDate = date,
+                                solarDate = next.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli(),
                                 // 生日 / 纪念日都是**按年复现**的日子，用户要看的是「还有几天」。
                                 // 用 COUNT_UP 会拿一个未来日期去算天数差，得负数 —— 生活页样板卡也是「还有 N 天」。
                                 displayMode = "COUNT_DOWN",

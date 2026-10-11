@@ -215,13 +215,9 @@ class LifeCounterWidgetProvider : ScopedWidgetProvider() {
         )
     }
 
-    /** 条目字段里的 `lunar` 开关（生日模板才有）；解析不出按公历。 */
-    private fun lunarFlagOf(fieldsData: String): Boolean = runCatching {
-        val obj = kotlinx.serialization.json.Json.parseToJsonElement(fieldsData)
-            .let { it as? kotlinx.serialization.json.JsonObject }
-        val raw = (obj?.get("lunar") as? kotlinx.serialization.json.JsonPrimitive)?.content
-        com.palmnote.ui.life.parseLunarFlag(raw)
-    }.getOrDefault(false)
+    /** 条目字段里的 `lunar` 开关（生日模板才有）；解析不出按公历。与仪表盘倒数卡共用同一解析。 */
+    private fun lunarFlagOf(fieldsData: String): Boolean =
+        com.palmnote.ui.life.fieldsDataLunarFlag(fieldsData)
 
     internal data class CounterEvent(
         val itemId: Long,
