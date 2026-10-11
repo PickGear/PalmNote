@@ -42,8 +42,16 @@ object WidgetData {
     @Volatile
     private var cachedAccent: Pair<AccentCacheKey, AccentTheme>? = null
 
-    suspend fun readAccentTheme(context: Context, preferencesManager: PreferencesManager): AccentTheme {
-        val themeId = preferencesManager.themeColor.first()
+    /**
+     * 读某实例的强调色：[overrideThemeId] 非空时强制用该主题包的主色（逐实例配色覆盖），
+     * null 跟随应用当前主题包。
+     */
+    suspend fun readAccentTheme(
+        context: Context,
+        preferencesManager: PreferencesManager,
+        overrideThemeId: String? = null
+    ): AccentTheme {
+        val themeId = overrideThemeId ?: preferencesManager.themeColor.first()
         val isNight = (
             context.resources.configuration.uiMode and
                 android.content.res.Configuration.UI_MODE_NIGHT_MASK

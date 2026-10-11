@@ -56,7 +56,7 @@ class SubscriptionWidgetProvider : ScopedWidgetProvider() {
     /** 一条待扣费：名称、价格原文、还有几天。 */
     internal data class Renewal(val name: String, val price: String, val daysLeft: Long)
 
-    private suspend fun fetchRenewals(
+    internal suspend fun fetchRenewals(
         lifeItemDao: LifeItemDao,
         templateId: Long,
         includeDemo: Boolean

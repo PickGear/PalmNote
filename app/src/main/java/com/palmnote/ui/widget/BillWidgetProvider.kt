@@ -33,10 +33,11 @@ class BillWidgetProvider : ScopedWidgetProvider() {
             WidgetEntryPoint::class.java
         )
         val prefs = entryPoint.preferencesManager()
-        val accent = WidgetData.readAccentTheme(context, prefs)
 
-        // 账本是**按组件实例**选的：每个实例各自取一次数，不能几个实例共用一个快照
+        // 账本是**按组件实例**选的：每个实例各自取一次数，不能几个实例共用一个快照。
+        // 强调色同样逐实例：该实例配置了配色覆盖就用它，否则跟随应用主题包。
         publish(context, appWidgetManager, appWidgetIds) { appWidgetId, _ ->
+            val accent = WidgetData.readAccentTheme(context, prefs, prefs.widgetAccentThemeFor(appWidgetId).first())
             val snapshot = fetchSnapshot(entryPoint, prefs.widgetBook(appWidgetId).first())
             sizedRemoteViews(
                 appWidgetManager.getAppWidgetOptions(appWidgetId),

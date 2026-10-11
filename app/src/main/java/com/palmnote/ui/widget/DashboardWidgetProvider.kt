@@ -33,9 +33,13 @@ class DashboardWidgetProvider : ScopedWidgetProvider() {
             WidgetEntryPoint::class.java
         )
         val snapshot = fetchSnapshot(context, entryPoint)
-        val accent = WidgetData.readAccentTheme(context, entryPoint.preferencesManager())
 
         publish(context, appWidgetManager, appWidgetIds) { appWidgetId, opacity ->
+            // 强调色逐实例：配置了配色覆盖就用它，否则跟随应用主题包
+            val accent = WidgetData.readAccentTheme(
+                context, entryPoint.preferencesManager(),
+                entryPoint.preferencesManager().widgetAccentThemeFor(appWidgetId).first()
+            )
             // 版式不再随尺寸分档（大档那一行已并进「待办 + 纪念日」），直接一份 RemoteViews
             bindDashboard(context, appWidgetId, snapshot, accent)
         }

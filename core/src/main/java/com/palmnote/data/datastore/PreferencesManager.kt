@@ -231,6 +231,28 @@ class PreferencesManager @Inject constructor(
 
     private fun widgetOpacityKey(appWidgetId: Int) = floatPreferencesKey("widget_opacity_$appWidgetId")
 
+    private fun widgetAccentThemeKey(appWidgetId: Int) = stringPreferencesKey("widget_accent_theme_$appWidgetId")
+
+    /**
+     * 某个组件实例的强调色覆盖：null = 跟随应用主题包；非 null = 强制用指定主题包的主色
+     * （值是 ThemePackages 的 id，如 "cyan"）。让单个组件的配色独立于应用当前主题。
+     */
+    fun widgetAccentThemeFor(appWidgetId: Int): Flow<String?> = prefsFlow.map { prefs ->
+        prefs[widgetAccentThemeKey(appWidgetId)]
+    }
+
+    /** 传 null = 取消覆盖、回到跟随应用。 */
+    suspend fun setWidgetAccentThemeFor(appWidgetId: Int, themeId: String?) {
+        context.dataStore.edit { prefs ->
+            val key = widgetAccentThemeKey(appWidgetId)
+            if (themeId == null) {
+                prefs.remove(key)
+            } else {
+                prefs[key] = themeId
+            }
+        }
+    }
+
     /**
      * 某个组件实例的**实际**透明度：有按实例的覆盖就用它，没有就跟随全局默认。
      * 「全局默认 + 单组件覆盖」是刻意的模型——多数人只想调一次，少数人想给某个组件特殊处理。

@@ -2248,4 +2248,16 @@
     <string name="life_photo_pick">选择照片</string>
     <string name="life_photo_add_more">继续添加</string>
     <string name="life_photo_title_hint">照片说明（可选）</string>
+    <string name="widget_config_accent_title">配色</string>
+    <string name="widget_config_accent_desc">只改这个组件的强调色，应用内主题不变。</string>
+    <string name="widget_config_accent_follow">跟随应用</string>
+    <string name="widget_next_up_title">接下来</string>
+    <string name="widget_next_up_desc">一张卡只管一件事：今天的待办、快扣费的订阅、临近的日子，完成自动换下一件。</string>
+    <string name="widget_next_up_empty">没有接下来要做的事</string>
+    <string name="widget_next_up_kind_todo">待办</string>
+    <string name="widget_next_up_kind_renewal">待扣费</string>
+    <string name="widget_next_up_kind_countdown">倒数</string>
+    <string name="widget_next_up_due_today">今天</string>
+    <string name="widget_next_up_done">完成</string>
+    <string name="widget_next_up_days_unit">天</string>
 </resources>

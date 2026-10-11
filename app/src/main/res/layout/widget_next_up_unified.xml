@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  「接下来」焦点卡（3×2）：一张卡只放一件事——徽标 + 类型标签 + 标题 + 次要说明 + 大字数值，
+  待办类型带勾选动作 chip。行内容全部由 Provider 填充。
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="12dp"
+    android:background="@drawable/widget_card_round">
+
+    <LinearLayout
+        android:id="@+id/widget_next_up_content"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <FrameLayout
+                android:layout_width="@dimen/widget_icon_badge"
+                android:layout_height="@dimen/widget_icon_badge">
+
+                <ImageView
+                    android:id="@+id/widget_next_up_badge"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/widget_shape_circle"
+                    android:contentDescription="@null" />
+
+                <ImageView
+                    android:id="@+id/widget_next_up_badge_icon"
+                    android:layout_width="11dp"
+                    android:layout_height="11dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/widget_ic_clock_accent"
+                    android:contentDescription="@null" />
+            </FrameLayout>
+
+            <TextView
+                android:id="@+id/widget_next_up_kind"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:textSize="@dimen/widget_text_micro"
+                android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/widget_next_up_action"
+                android:layout_width="wrap_content"
+                android:layout_height="32dp"
+                android:minWidth="0dp"
+                android:paddingHorizontal="12dp"
+                android:text="@string/widget_next_up_done"
+                android:textSize="@dimen/widget_text_micro"
+                android:contentDescription="@string/widget_next_up_done" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/widget_next_up_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:maxLines="2"
+            android:ellipsize="end"
+            android:textSize="@dimen/widget_text_title"
+            android:textColor="@color/widget_v2_text_primary"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/widget_next_up_meta"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:textSize="@dimen/widget_text_micro"
+            android:textColor="@color/widget_v2_text_tertiary" />
+
+        <TextView
+            android:id="@+id/widget_next_up_value"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:gravity="bottom|end"
+            android:textSize="@dimen/widget_text_title"
+            android:textColor="@color/widget_v2_text_primary"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/widget_next_up_empty"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:text="@string/widget_next_up_empty"
+        android:textSize="@dimen/widget_text_micro"
+        android:textColor="@color/widget_v2_text_secondary"
+        android:visibility="gone" />
+</LinearLayout>

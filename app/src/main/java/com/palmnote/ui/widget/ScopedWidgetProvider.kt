@@ -56,6 +56,7 @@ abstract class ScopedWidgetProvider : AppWidgetProvider() {
             appWidgetIds.forEach {
                 preferences.setWidgetBook(it, null)
                 preferences.setWidgetOpacityFor(it, null)
+                preferences.setWidgetAccentThemeFor(it, null)
             }
             if (cachedScope == null) scope.cancel()
         }

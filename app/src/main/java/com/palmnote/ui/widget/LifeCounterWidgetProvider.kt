@@ -48,7 +48,7 @@ class LifeCounterWidgetProvider : ScopedWidgetProvider() {
         }
     }
 
-    private suspend fun collectCounterEvents(context: Context): List<CounterEvent> {
+    internal suspend fun collectCounterEvents(context: Context): List<CounterEvent> {
         val entryPoint = EntryPointAccessors.fromApplication(
             context.applicationContext,
             WidgetEntryPoint::class.java

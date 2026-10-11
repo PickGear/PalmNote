@@ -3,6 +3,7 @@ package com.palmnote.ui.widget
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -24,6 +25,13 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
+import com.palmnote.ui.theme.ThemePackages
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.draw.clip
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -49,6 +57,7 @@ import com.palmnote.data.db.entity.AccountBook
 import com.palmnote.data.db.entity.getDisplayName
 import com.palmnote.ui.components.CompactTopAppBar
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.first
 
 /** 透明度档位间隔数：两端之外再插 2 个，共 4 档（40/60/80/100%），与添加页同一套档位。 */
@@ -71,6 +80,8 @@ internal fun WidgetConfigScreen(
     opacityOverrideFlow: Flow<Float?>,
     /** 全局默认透明度（「跟随默认」那行要显示它）。 */
     defaultOpacityFlow: Flow<Float>,
+    /** 该实例的强调色覆盖；null = 跟随应用主题包。 */
+    accentThemeOverrideFlow: Flow<String?> = flowOf(null),
     onConfirm: (WidgetConfigResult) -> Unit,
     onCancel: () -> Unit
 ) {
@@ -86,16 +97,26 @@ internal fun WidgetConfigScreen(
     // 用户直接点「完成」就把设置清了。
     var selected by remember { mutableStateOf<Long?>(null) }
     var override by remember { mutableStateOf<Float?>(null) }
+    var accentTheme by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(Unit) {
         selected = selectedBookFlow.first()
         override = opacityOverrideFlow.first()
+        accentTheme = accentThemeOverrideFlow.first()
     }
 
     Scaffold(
         topBar = { ConfigTopBar(showBooks = showBooks, onCancel = onCancel) },
         bottomBar = {
             ConfigConfirmBar(
-                onConfirm = { onConfirm(WidgetConfigResult(bookId = selected, opacityOverride = override)) }
+                onConfirm = {
+                    onConfirm(
+                        WidgetConfigResult(
+                            bookId = selected,
+                            opacityOverride = override,
+                            accentThemeId = accentTheme
+                        )
+                    )
+                }
             )
         }
     ) { innerPadding ->
@@ -108,12 +129,15 @@ internal fun WidgetConfigScreen(
             override = override,
             defaultOpacity = defaultOpacity,
             onOverrideChange = { override = it },
+            accentTheme = accentTheme,
+            onAccentThemeChange = { accentTheme = it },
             context = context
         )
     }
 }
 
-/** 配置项列表：说明 + （账单才有的）账本 + 透明度 + 预算口径提示。 */
+/** 配置项列表：说明 + （账单才有的）账本 + 透明度 + 配色 + 预算口径提示。 */
+@Suppress("LongParameterList")
 @Composable
 private fun ConfigList(
     modifier: Modifier,
@@ -124,6 +148,8 @@ private fun ConfigList(
     override: Float?,
     defaultOpacity: Float,
     onOverrideChange: (Float?) -> Unit,
+    accentTheme: String?,
+    onAccentThemeChange: (String?) -> Unit,
     context: android.content.Context
 ) {
     LazyColumn(
@@ -150,6 +176,9 @@ private fun ConfigList(
         item {
             OpacityCard(override = override, defaultOpacity = defaultOpacity, onChange = onOverrideChange)
         }
+        item {
+            AccentThemeCard(selected = accentTheme, onSelect = onAccentThemeChange)
+        }
         if (showBooks) {
             item {
                 Text(
@@ -160,6 +189,85 @@ private fun ConfigList(
                 )
                 Spacer(Modifier.height(16.dp))
             }
+        }
+    }
+}
+
+/**
+ * 配色卡：「跟随应用」在最前（null），随后是各主题包的色点。
+ * 覆盖只改这一个组件的强调色，应用内主题不变。
+ */
+@Composable
+private fun AccentThemeCard(selected: String?, onSelect: (String?) -> Unit) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surface
+    ) {
+        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+            Text(
+                stringResource(R.string.widget_config_accent_title),
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                stringResource(R.string.widget_config_accent_desc),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(Modifier.height(10.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                AccentChip(
+                    selected = selected == null,
+                    color = MaterialTheme.colorScheme.primary,
+                    label = stringResource(R.string.widget_config_accent_follow),
+                    onClick = { onSelect(null) }
+                )
+                ThemePackages.packages.forEach { pkg ->
+                    val isDark = (LocalConfiguration.current.uiMode and
+                        android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
+                        android.content.res.Configuration.UI_MODE_NIGHT_YES
+                    AccentChip(
+                        selected = selected == pkg.id,
+                        color = if (isDark) pkg.darkPrimary else pkg.lightPrimary,
+                        label = null,
+                        onClick = { onSelect(pkg.id) }
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** 配色选项：色点圆 + 选中描边；「跟随应用」带文字，主题包只有色点。 */
+@Composable
+private fun AccentChip(selected: Boolean, color: androidx.compose.ui.graphics.Color, label: String?, onClick: () -> Unit) {
+    Surface(
+        shape = MaterialTheme.shapes.large,
+        color = if (selected) {
+            MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+        } else {
+            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        },
+        border = if (selected) {
+            androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+        } else {
+            null
+        },
+        onClick = onClick
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(16.dp)
+                    .clip(androidx.compose.foundation.shape.CircleShape)
+                    .background(color)
+            )
+            label?.let { Text(it, style = MaterialTheme.typography.labelMedium) }
         }
     }
 }

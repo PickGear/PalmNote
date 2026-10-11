@@ -79,6 +79,7 @@ class WidgetPreviewPngGenerator {
         render("shortcuts", 516, 570, shortcutsViews())
         // 总资产是 2×1：按真实格子给画布
         render("net_worth", 516, 285, netWorthViews())
+        render("next_up", 774, 570, nextUpViews())
         render("subscription", 774, 570, subscriptionViews())
         render("vault", 258, 285, vaultViews())
     }
@@ -247,4 +248,15 @@ class WidgetPreviewPngGenerator {
         FileOutputStream(file).use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
         println("widget preview -> ${file.absolutePath} (${file.length()} bytes)")
     }
+
+    private fun nextUpViews(): RemoteViews = NextUpWidgetProvider().bindViews(
+        context,
+        1,
+        NextUpWidgetProvider.NextUpFocus(
+            kind = NextUpWidgetProvider.Kind.RENEWAL,
+            title = "视频会员",
+            meta = "10/23",
+            bigValue = "¥25"
+        )
+    )
 }

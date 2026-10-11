@@ -154,6 +154,16 @@
                 android:resource="@xml/counter_widget_medium_info" />
         </receiver>
         <receiver
+            android:name="com.palmnote.ui.widget.NextUpWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/next_up_widget_info" />
+        </receiver>
+        <receiver
             android:name="com.palmnote.ui.widget.AssetWidgetProvider"
             android:exported="true">
             <intent-filter>

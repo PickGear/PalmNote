@@ -48,6 +48,7 @@ class BillWidgetConfigActivity : ComponentActivity() {
                     selectedBookFlow = preferencesManager.widgetBook(widgetId),
                     opacityOverrideFlow = preferencesManager.widgetOpacityOverride(widgetId),
                     defaultOpacityFlow = preferencesManager.widgetOpacity,
+                    accentThemeOverrideFlow = preferencesManager.widgetAccentThemeFor(widgetId),
                     onConfirm = ::confirm,
                     onCancel = { finish() }
                 )
@@ -59,6 +60,7 @@ class BillWidgetConfigActivity : ComponentActivity() {
         lifecycleScope.launch {
             preferencesManager.setWidgetBook(widgetId, result.bookId)
             preferencesManager.setWidgetOpacityFor(widgetId, result.opacityOverride)
+            preferencesManager.setWidgetAccentThemeFor(widgetId, result.accentThemeId)
             // 立刻按新设置重出内容：桌面拿到 RESULT_OK 后也会刷新一次，这里先动避免看到旧数据
             WidgetUpdateHelper.refreshBillWidgets()
             setResult(RESULT_OK, WidgetConfigContract.okResult(widgetId))

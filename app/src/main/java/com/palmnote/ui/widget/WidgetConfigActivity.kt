@@ -47,6 +47,7 @@ class WidgetConfigActivity : ComponentActivity() {
                     selectedBookFlow = flowOf(null),
                     opacityOverrideFlow = preferencesManager.widgetOpacityOverride(widgetId),
                     defaultOpacityFlow = preferencesManager.widgetOpacity,
+                    accentThemeOverrideFlow = preferencesManager.widgetAccentThemeFor(widgetId),
                     onConfirm = ::confirm,
                     onCancel = { finish() }
                 )
@@ -57,6 +58,7 @@ class WidgetConfigActivity : ComponentActivity() {
     private fun confirm(result: WidgetConfigResult) {
         lifecycleScope.launch {
             preferencesManager.setWidgetOpacityFor(widgetId, result.opacityOverride)
+            preferencesManager.setWidgetAccentThemeFor(widgetId, result.accentThemeId)
             // 这类组件只改了外观：整轮刷新一次最省事，不必按 provider 细分
             WidgetUpdateHelper.refreshAllWidgets()
             setResult(RESULT_OK, WidgetConfigContract.okResult(widgetId))

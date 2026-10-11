@@ -2273,4 +2273,16 @@
     <string name="life_photo_pick">Pick photos</string>
     <string name="life_photo_add_more">Add more</string>
     <string name="life_photo_title_hint">Caption (optional)</string>
+    <string name="widget_config_accent_title">Accent color</string>
+    <string name="widget_config_accent_desc">Changes this widget only; the in-app theme stays as is.</string>
+    <string name="widget_config_accent_follow">Follow app</string>
+    <string name="widget_next_up_title">Next up</string>
+    <string name="widget_next_up_desc">One thing at a time: today’s todo, an upcoming charge, or the nearest date — done means next.</string>
+    <string name="widget_next_up_empty">Nothing coming up</string>
+    <string name="widget_next_up_kind_todo">Todo</string>
+    <string name="widget_next_up_kind_renewal">Due</string>
+    <string name="widget_next_up_kind_countdown">Countdown</string>
+    <string name="widget_next_up_due_today">Today</string>
+    <string name="widget_next_up_done">Done</string>
+    <string name="widget_next_up_days_unit">d</string>
 </resources>

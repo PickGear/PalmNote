@@ -70,6 +70,13 @@ object WidgetPin {
             R.string.widget_counter_desc,
         ),
         Entry(
+            NextUpWidgetProvider::class.java,
+            R.drawable.widget_preview_next_up,
+            R.layout.widget_next_up_unified,
+            R.string.widget_next_up_title,
+            R.string.widget_next_up_desc,
+        ),
+        Entry(
             SubscriptionWidgetProvider::class.java,
             R.drawable.widget_preview_subscription,
             R.layout.widget_subscription_unified,
@@ -117,6 +124,7 @@ object WidgetPin {
         TodoWidgetProvider::class.java to "4×3",
         HabitWidgetProvider::class.java to "4×3",
         LifeCounterWidgetProvider::class.java to "4×3",
+        NextUpWidgetProvider::class.java to "3×2",
         SubscriptionWidgetProvider::class.java to "3×2",
         DashboardWidgetProvider::class.java to "4×3",
         AssetWidgetProvider::class.java to "3×2",

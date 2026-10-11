@@ -29,7 +29,7 @@ import org.robolectric.annotation.Config
 
 /**
  * 添加页（**只在应用内一键添加**，不再讲系统手动添加路径）：
- * - 目录覆盖全部 10 个组件、Provider 不重复、标题/描述/预览资源可解析，且每组都非空；
+ * - 目录覆盖全部 11 个组件、Provider 不重复、标题/描述/预览资源可解析，且每组都非空；
  * - 两个分支都显式锁定（不依赖阴影默认值）：启动器支持 pin → 按钮可用；不支持 → 按钮禁用 + 整页兜底文案；
  * - 透明度是「默认外观」，改的是全局默认值。
  */
@@ -51,9 +51,9 @@ class WidgetPinTest {
         compose.onAllNodesWithText(context.getString(R.string.widget_pin_add)).fetchSemanticsNodes()
 
     @Test
-    fun `目录覆盖 10 个组件且资源都存在`() {
-        assertEquals(10, WidgetPin.entries.size)
-        assertEquals(10, WidgetPin.entries.map { it.providerClass }.distinct().size)
+    fun `目录覆盖 11 个组件且资源都存在`() {
+        assertEquals(11, WidgetPin.entries.size)
+        assertEquals(11, WidgetPin.entries.map { it.providerClass }.distinct().size)
         WidgetPin.entries.forEach { entry ->
             // 引用不存在会直接抛 NotFoundException
             context.getString(entry.titleRes)
