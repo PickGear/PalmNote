@@ -78,6 +78,7 @@ import com.palmnote.data.db.dao.LifeItemDao
 import com.palmnote.data.db.dao.LifeTemplateDao
 import com.palmnote.data.db.entity.LifeItem
 import com.palmnote.data.db.entity.LifeTemplate
+import com.palmnote.ui.components.AppDialog
 import com.palmnote.data.db.entity.getDisplayDescription
 import com.palmnote.data.db.entity.getDisplayName
 import com.palmnote.domain.model.FieldConfig
@@ -257,6 +258,9 @@ fun CategoryDetailScreen(
     var showPicker by remember { mutableStateOf(false) }
     // 长按条目弹出的快捷操作（模板 + 条目成对保存，推迟的年度重复守卫要读模板）
     var quickAction by remember { mutableStateOf<Pair<LifeTemplate, LifeItem>?>(null) }
+    // 删除走二次确认（与首页滑动删除 / 详情页删除同一套文案）：长按菜单一步直删且是级联删，
+    // 误触没有回头路。
+    var pendingDelete by remember { mutableStateOf<LifeItem?>(null) }
     val accent = categoryAccent(state.category)
     val tint = categoryTint(state.category)
 
@@ -359,8 +363,38 @@ fun CategoryDetailScreen(
                 quickAction = null
             },
             onDelete = {
-                viewModel.deleteItem(item.id)
+                pendingDelete = item
                 quickAction = null
+            }
+        )
+    }
+
+    pendingDelete?.let { item ->
+        AppDialog(
+            onDismissRequest = { pendingDelete = null },
+            title = {
+                Text(
+                    stringResource(R.string.life_detail_delete_title),
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = { Text(stringResource(R.string.life_detail_delete_message)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.deleteItem(item.id)
+                    pendingDelete = null
+                }) {
+                    Text(
+                        stringResource(R.string.life_detail_delete_confirm),
+                        color = MaterialTheme.colorScheme.error,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingDelete = null }) {
+                    Text(stringResource(R.string.settings_cancel))
+                }
             }
         )
     }

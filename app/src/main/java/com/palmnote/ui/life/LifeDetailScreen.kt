@@ -136,7 +136,11 @@ fun LifeDetailScreen(
                 ),
                 onToggleCheckIn = { viewModel.toggleCheckIn() },
                 onFocusSessionSaved = { viewModel.saveFocusSession(it) },
-                focusTimer = viewModel.focusTimerState.collectAsStateWithLifecycle().value,
+                // 计时归属：全局只有一份计时态，只在这条记录上显示；别的记录看到的是空态，
+                // 否则 A 记录开始计时、B 记录停止就会把时长记错账。
+                focusTimer = viewModel.focusTimerState.collectAsStateWithLifecycle()
+                    .value
+                    .takeIf { it.itemId == s.ui.ctx.item.id } ?: LifeDetailViewModel.FocusTimerState(),
                 onFocusStart = viewModel::startFocusTimer,
                 onFocusResume = viewModel::resumeFocusTimer,
                 onFocusPause = viewModel::pauseFocusTimer

@@ -54,6 +54,8 @@ class PreferencesManager @Inject constructor(
         val DEMO_SEED_LANGUAGE = stringPreferencesKey("demo_seed_language")
         val LIFE_FOCUS_TIMER_START_AT = longPreferencesKey("life_focus_timer_start_at")
         val LIFE_FOCUS_TIMER_ACCUM_MS = longPreferencesKey("life_focus_timer_accum_ms")
+        /** 计时归属的条目 id（0 = 旧版遗留/无归属）：会话必须记回开始计时的那条记录。 */
+        val LIFE_FOCUS_TIMER_ITEM_ID = longPreferencesKey("life_focus_timer_item_id")
         val LIFE_CALENDAR_SELECTED_DATE = longPreferencesKey("life_calendar_selected_date")
         val LIFE_CALENDAR_WEEK_MODE = booleanPreferencesKey("life_calendar_week_mode")
         val LIFE_CATEGORY_COMPACT = booleanPreferencesKey("life_category_compact")
@@ -173,15 +175,18 @@ class PreferencesManager @Inject constructor(
 
     // ── 专注计时持久化：离屏/杀进程后计时继续 ──
     // startAt > 0 = 计时中；accumMs = 暂停前累计。elapsed = accumMs + (now - startAt)。
+    // itemId = 归属条目；计时是全局单份的，没有归属就会把会话记到「恰好打开的那条」记录上。
     val lifeFocusTimerStartAt: Flow<Long> = prefsFlow.map { it[LIFE_FOCUS_TIMER_START_AT] ?: 0L }
     val lifeFocusTimerAccumMs: Flow<Long> = prefsFlow.map { it[LIFE_FOCUS_TIMER_ACCUM_MS] ?: 0L }
+    val lifeFocusTimerItemId: Flow<Long> = prefsFlow.map { it[LIFE_FOCUS_TIMER_ITEM_ID] ?: 0L }
 
-    suspend fun setFocusTimerRunning(startAt: Long) {
-        context.dataStore.edit { it[LIFE_FOCUS_TIMER_START_AT] = startAt }
-    }
-
-    suspend fun setFocusTimerAccum(accumMs: Long) {
-        context.dataStore.edit { it[LIFE_FOCUS_TIMER_ACCUM_MS] = accumMs }
+    /** 三键一次写入：计时状态与归属成对，分开写会出现「计时中但无归属」的中间态。 */
+    suspend fun setFocusTimer(startAt: Long, accumMs: Long, itemId: Long) {
+        context.dataStore.edit {
+            it[LIFE_FOCUS_TIMER_START_AT] = startAt
+            it[LIFE_FOCUS_TIMER_ACCUM_MS] = accumMs
+            it[LIFE_FOCUS_TIMER_ITEM_ID] = itemId
+        }
     }
 
     val themeColor: Flow<String> = prefsFlow.map { it[THEME_COLOR] ?: DEFAULT_THEME_COLOR }

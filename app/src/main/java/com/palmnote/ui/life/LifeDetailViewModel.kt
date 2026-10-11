@@ -539,40 +539,59 @@ class LifeDetailViewModel @Inject constructor(
      * 专注计时写会话：停止计时时由英雄区回调，插一条会话记录（duration = 毫秒）。
      * 专注模板无字段（§5.1），会话时长即它的全部数据；统计页按此聚合今日 / 本周时长。
      */
-    /** 专注计时器持久状态：startAt > 0 = 计时中（离屏/杀进程后仍在走）。 */
-    data class FocusTimerState(val startAt: Long = 0L, val accumMs: Long = 0L) {
+    /** 专注计时器持久状态：startAt > 0 = 计时中（离屏/杀进程后仍在走）；itemId = 归属条目。 */
+    data class FocusTimerState(val startAt: Long = 0L, val accumMs: Long = 0L, val itemId: Long = 0L) {
         val running: Boolean get() = startAt > 0
     }
 
     val focusTimerState: StateFlow<FocusTimerState> = combine(
         preferences.lifeFocusTimerStartAt,
-        preferences.lifeFocusTimerAccumMs
-    ) { startAt, accum -> FocusTimerState(startAt, accum) }
+        preferences.lifeFocusTimerAccumMs,
+        preferences.lifeFocusTimerItemId
+    ) { startAt, accum, ownerId -> FocusTimerState(startAt, accum, ownerId) }
         .catchLife("detail.focusTimer", FocusTimerState())
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), FocusTimerState())
 
-    /** 从零起跑。 */
+    init {
+        // 升级兼容：旧版计时只有全局 startAt/accumMs、没有归属键（itemId = 0）。
+        // 归属已不可考——按「不猜归属」丢弃，防止孤儿计时被记到任意一条记录上。
+        viewModelScope.launch {
+            val startAt = preferences.lifeFocusTimerStartAt.first()
+            if (startAt > 0L && preferences.lifeFocusTimerItemId.first() == 0L) {
+                preferences.setFocusTimer(startAt = 0L, accumMs = 0L, itemId = 0L)
+            }
+        }
+    }
+
+    /** 从零起跑（计时归属 = 当前详情页这条记录）。 */
     fun startFocusTimer() {
         viewModelScope.launch {
-            preferences.setFocusTimerAccum(0L)
-            preferences.setFocusTimerRunning(System.currentTimeMillis())
+            preferences.setFocusTimer(startAt = System.currentTimeMillis(), accumMs = 0L, itemId = itemId)
         }
     }
 
     /** 暂停后继续（累计时长保留）。 */
     fun resumeFocusTimer() {
         viewModelScope.launch {
-            preferences.setFocusTimerRunning(System.currentTimeMillis())
+            // 直接读持久层（stateIn 无人订阅时 first() 只拿得到初始默认值，不新鲜）
+            preferences.setFocusTimer(
+                startAt = System.currentTimeMillis(),
+                accumMs = preferences.lifeFocusTimerAccumMs.first(),
+                itemId = preferences.lifeFocusTimerItemId.first()
+            )
         }
     }
 
     /** 暂停：把当前一段并入累计、清 startAt。 */
     fun pauseFocusTimer() {
         viewModelScope.launch {
-            val s = focusTimerState.value
-            if (s.running) {
-                preferences.setFocusTimerAccum(s.accumMs + (System.currentTimeMillis() - s.startAt))
-                preferences.setFocusTimerRunning(0L)
+            val startAt = preferences.lifeFocusTimerStartAt.first()
+            if (startAt > 0L) {
+                preferences.setFocusTimer(
+                    startAt = 0L,
+                    accumMs = preferences.lifeFocusTimerAccumMs.first() + (System.currentTimeMillis() - startAt),
+                    itemId = preferences.lifeFocusTimerItemId.first()
+                )
             }
         }
     }
@@ -580,9 +599,14 @@ class LifeDetailViewModel @Inject constructor(
     fun saveFocusSession(durationMs: Long) {
         if (durationMs <= 0) return
         viewModelScope.launch {
+            if (preferences.lifeFocusTimerItemId.first() != itemId) {
+                // 计时挂的是别的条目（UI 已按归属隐藏按钮，这里是兜底）：
+                // 归属无法确认就不落库——宁可不记，也不能把时长记错账。清掉残留状态。
+                preferences.setFocusTimer(startAt = 0L, accumMs = 0L, itemId = 0L)
+                return@launch
+            }
             // 落会话即归零计时器（持久层：防离屏后残留 startAt）
-            preferences.setFocusTimerRunning(0L)
-            preferences.setFocusTimerAccum(0L)
+            preferences.setFocusTimer(startAt = 0L, accumMs = 0L, itemId = 0L)
             val item = itemDao.getItemById(itemId) ?: return@launch
             val template = templateDao.getTemplateById(item.templateId) ?: return@launch
             val demo = preferences.lifeDemoMode.first()

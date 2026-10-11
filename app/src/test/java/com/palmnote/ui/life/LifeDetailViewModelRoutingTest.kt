@@ -69,6 +69,7 @@ class LifeDetailViewModelRoutingTest {
         every { preferences.lifeDemoMode } returns flowOf(false)
         every { preferences.lifeFocusTimerStartAt } returns flowOf(0L)
         every { preferences.lifeFocusTimerAccumMs } returns flowOf(0L)
+        every { preferences.lifeFocusTimerItemId } returns flowOf(0L)
         coEvery { repository.insertItem(any()) } returns 100L
         // VM 构造期就会急切调用一次（flatMapLatest 的实参求值）；state 是 WhileSubscribed，
         // 测试里没人订阅，流本体不会被收集，给个空流即可。
@@ -146,6 +147,7 @@ class LifeDetailViewModelRoutingTest {
     @Test
     fun `saveFocusSession inserts through the repository write path`() = runTest(testDispatcher.scheduler) {
         stubItem("{}")
+        every { preferences.lifeFocusTimerItemId } returns flowOf(1L)
 
         createViewModel().saveFocusSession(60_000L)
         testDispatcher.scheduler.advanceUntilIdle()
@@ -155,6 +157,18 @@ class LifeDetailViewModelRoutingTest {
         coVerify(exactly = 0) { itemDao.insertItem(any()) }
         assertEquals("""{"duration":60000}""", slot.captured.fieldsData)
         assertNull(slot.captured.meta)
+    }
+
+    @Test
+    fun `saveFocusSession rejects a timer bound to another item`() = runTest(testDispatcher.scheduler) {
+        stubItem("{}")
+        every { preferences.lifeFocusTimerItemId } returns flowOf(999L)
+
+        createViewModel().saveFocusSession(60_000L)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify(exactly = 0) { repository.insertItem(any()) }
+        coVerify { preferences.setFocusTimer(0L, 0L, 0L) }
     }
 
     // ── 防御：清单字段不可解析时不动库 ──

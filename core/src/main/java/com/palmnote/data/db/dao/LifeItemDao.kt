@@ -269,6 +269,8 @@ interface LifeItemDao {
         WHERE id = :id
     """
     )
+    // 可空列一律**必传**：UPDATE 是全列覆写，调用方漏传一个参数就会把该列无声清成 NULL
+    //（此前带 null 默认值，全靠调用方人工对齐，无编译期保护）。
     @Suppress("LongParameterList")
     suspend fun updateItem(
         id: Long,
@@ -279,15 +281,15 @@ interface LifeItemDao {
         sortOrder: Int,
         isFavorite: Boolean,
         now: Long = System.currentTimeMillis(),
-        dueDate: Long? = null,
-        dueTime: Int? = null,
-        recurring: String? = null,
-        recurringEndType: String? = null,
-        recurringEndCount: Int? = null,
-        recurringEndDate: Long? = null,
-        parentId: Long? = null,
-        remindAt: Int? = null,
-        meta: String? = null
+        dueDate: Long?,
+        dueTime: Int?,
+        recurring: String?,
+        recurringEndType: String?,
+        recurringEndCount: Int?,
+        recurringEndDate: Long?,
+        parentId: Long?,
+        remindAt: Int?,
+        meta: String?
     )
 
     /** 导入收尾专用：把记录重新挂到改派后的模板 id 上（跨设备合并时会撞 id）。 */
