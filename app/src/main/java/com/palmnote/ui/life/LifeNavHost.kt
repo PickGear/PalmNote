@@ -76,6 +76,8 @@ fun LifeNavHost(
             val boardRows by calendarVm.boardRows.collectAsStateWithLifecycle()
             val calendarDayMap by calendarVm.calendarDayMap.collectAsStateWithLifecycle()
             val allTemplatesClosed by calendarVm.allTemplatesClosed.collectAsStateWithLifecycle()
+            val boardLoading by calendarVm.boardLoading.collectAsStateWithLifecycle()
+            val searchSnippets by calendarVm.searchSnippets.collectAsStateWithLifecycle()
             val visibleTemplates by calendarVm.visibleTemplates.collectAsStateWithLifecycle()
             val scheduledItems by calendarVm.scheduledItems.collectAsStateWithLifecycle()
             val overdueItems by calendarVm.overdueItems.collectAsStateWithLifecycle()
@@ -105,6 +107,8 @@ fun LifeNavHost(
                 onQuickAddOutcomeShown = calendarVm::consumeQuickAddOutcome,
                 onDisableDemoMode = calendarVm::disableDemoMode,
                 allTemplatesClosed = allTemplatesClosed,
+                boardLoading = boardLoading,
+                searchSnippets = searchSnippets,
                 boardRows = boardRows,
                 calendarDayMap = calendarDayMap,
                 scheduledItems = scheduledItems,

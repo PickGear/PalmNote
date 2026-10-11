@@ -91,6 +91,23 @@ class LifeCalendarViewModel @Inject constructor(
         boardRowsSource.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     /**
+     * 首条看板数据尚未到达（冷启动 / 演示模式异步播种期间）。空看板与「还没加载完」
+     * 对用户是两种状态：没有这个门，首启会先闪一帧空看板再被数据填上。
+     */
+    val boardLoading: StateFlow<Boolean> =
+        boardRowsSource.map { false }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
+
+    /**
+     * 页内搜索的可搜文本（itemId → snippet）：解析每行 fieldsData 提取字符串值与清单行。
+     * 与 [boardRows] 同源、放 Default——此前在组合期 remember 里对全部行逐个解析，搜索面板
+     * 一打开就把主线程占满。
+     */
+    val searchSnippets: StateFlow<Map<Long, String>> =
+        boardRowsSource.map { rows -> rows.associate { it.itemId to searchSnippetOf(it) } }
+            .flowOn(Dispatchers.Default)
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
+
+    /**
      * 今天的本地日期，跨零点自动再发射：逾期判定 / 「今日新增」/ 那年今天 都以此为准。
      * 此前 `LocalDate.now()` 在 map 求值时固化，挂机过夜后这些读数全是昨天的。
      */
@@ -287,6 +304,8 @@ class LifeCalendarViewModel @Inject constructor(
         combine(selectedDate, boardRows, todayFlow) { date, rows, today ->
             rows.scheduledOn(date, today)
         }
+            // 投影要遍历整份看板行（每行带双份 JSON），与 [calendarDayMap] 同样放 Default
+            .flowOn(Dispatchers.Default)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     /** 月历格子信息：每日事件总数 + 出现的分类集合（A 版粉阶热力 + 三色点所需）。 */
@@ -335,6 +354,7 @@ class LifeCalendarViewModel @Inject constructor(
      */
     val overdueItems: StateFlow<List<LifeItemDao.LifeBoardItemRow>> =
         combine(boardRows, todayFlow) { rows, today -> rows.overdueOn(today) }
+            .flowOn(Dispatchers.Default)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     /**
@@ -347,7 +367,7 @@ class LifeCalendarViewModel @Inject constructor(
         rows.filter { r ->
             r.status != "COMPLETED" && r.status != "ARCHIVED" && r.dueDate == null
         }.sortedBy { it.createdAt }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     // ───────── 分类卡 ─────────
 
@@ -364,16 +384,17 @@ class LifeCalendarViewModel @Inject constructor(
             val zone = ZoneId.systemDefault()
             val todayStart = today.atStartOfDay(zone).toInstant().toEpochMilli()
             val todayEnd = today.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
-            rows.groupBy { it.category }.mapValues { (_, list) ->
-                CategoryCount(
-                    total = list.size,
-                    today = list.count { r ->
-                        val ts = r.dueDate ?: r.createdAt
-                        ts >= todayStart && ts < todayEnd
-                    }
-                )
-            }
-        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
+                rows.groupBy { it.category }.mapValues { (_, list) ->
+                    CategoryCount(
+                        total = list.size,
+                        today = list.count { r ->
+                            val ts = r.dueDate ?: r.createdAt
+                            ts >= todayStart && ts < todayEnd
+                        }
+                    )
+                }
+            // 整份看板行分组计数：放 Default，别在组合期占主线程（同 [calendarDayMap]）
+        }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
 
     // ───────── 就地操作 ─────────
 

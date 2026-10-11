@@ -80,6 +80,7 @@ import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Swipe
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DatePickerDialog
@@ -202,6 +203,10 @@ fun LifeScreen(
     onDisableDemoMode: () -> Unit = {},
     /** 所有模板都被关闭：显示轻量空态 + 「去模板管理」。 */
     allTemplatesClosed: Boolean = false,
+    /** 首条看板数据未到（冷启动 / 演示异步播种）：显示转圈而不是空看板。 */
+    boardLoading: Boolean = false,
+    /** 页内搜索可搜文本（itemId → snippet），VM 侧后台解析。 */
+    searchSnippets: Map<Long, String> = emptyMap(),
     /** 全量条目行（条目 + 模板元数据；演示感知已下沉到查询端）。 */
     boardRows: List<LifeItemDao.LifeBoardItemRow> = emptyList(),
     /** 选中日的安排（今日看板时段桶；看板行投影，含 dueTime）。 */
@@ -334,6 +339,7 @@ fun LifeScreen(
                 showSearch -> LifeSearchContent(
                     query = searchQuery,
                     rows = boardRows,
+                    snippets = searchSnippets,
                     onOpenDetail = onOpenDetail,
                     modifier = Modifier
                         .fillMaxSize()
@@ -341,6 +347,10 @@ fun LifeScreen(
                 )
                 allTemplatesClosed -> Box(Modifier.fillMaxSize().padding(innerPadding)) {
                     AllTemplatesClosedState(onOpenManage = onOpenManageTemplates)
+                }
+                // 首条看板数据未到（冷启动 / 演示异步播种）：转圈而不是闪一帧空看板
+                boardLoading -> Box(Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                 }
                 else -> HomeContent(
                     innerPadding = innerPadding,
@@ -460,14 +470,13 @@ private fun LifeTopBar(
 private fun LifeSearchContent(
     query: String,
     rows: List<LifeItemDao.LifeBoardItemRow>,
+    /** 可搜文本（itemId → snippet），由 ViewModel 在 Default 线程按 boardRows 预解析。 */
+    snippets: Map<Long, String>,
     onOpenDetail: (Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // 可搜文本按 rows 变化构建一次（解析 fieldsData 取字符串值与清单行），
-    // 不再拿原始 JSON 匹配 —— 否则会命中 "duration"/"weather" 这类键名噪音（审计 #29）
-    val snippets = remember(rows) {
-        rows.associate { it.itemId to searchSnippetOf(it) }
-    }
+    // 不再拿原始 JSON 匹配 —— 否则会命中 "duration"/"weather" 这类键名噪音（审计 #29）；
+    // snippet 解析在 VM 侧后台做，组合期只剩轻量的字符串过滤。
     val filtered = remember(snippets, query) {
         if (query.isBlank()) {
             emptyList()
@@ -528,7 +537,7 @@ private fun FlowCard(row: LifeItemDao.LifeBoardItemRow, showDoneState: Boolean =
 }
 
 /** 行的可搜文本：标题/模板名之外，把 fieldsData 里的字符串值与清单行文提取出来（键名与数值不参与）。 */
-private fun searchSnippetOf(row: LifeItemDao.LifeBoardItemRow): String {
+internal fun searchSnippetOf(row: LifeItemDao.LifeBoardItemRow): String {
     val obj = runCatching { Json.decodeFromString<JsonObject>(row.fieldsData) }.getOrNull()
         ?: return ""
     val parts = buildList {

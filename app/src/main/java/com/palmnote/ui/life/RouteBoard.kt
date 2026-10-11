@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -141,6 +142,10 @@ private fun RouteCanvas(
 ) {
     // 全 Canvas 内容对读屏不可见（审计 #27）：补一条路线概要语义
     val boardDesc = stringResource(R.string.life_route_board_desc, route.size)
+    // 归一化与 Chaikin 平滑只依赖 track，预计算一次：此前在 DrawScope 里每帧重跑
+    // 两轮平滑 + 两次归一化，Canvas 任何重绘（尺寸/状态变化）都要重新付这笔账。
+    val normalized = remember(track) { normalizeTrack(track.map { it.lat to it.lng }) }
+    val smoothed = remember(normalized) { chaikin(chaikin(normalized, closed = false), closed = false) }
     Canvas(
         modifier = modifier
             .fillMaxWidth()
@@ -149,7 +154,7 @@ private fun RouteCanvas(
     ) {
         drawGrid(gridColor)
         val placed = normalize(route)
-        if (track.size >= 2) drawTrack(track, accent)
+        if (track.size >= 2) drawTrack(smoothed, accent)
         if (placed.size >= 2) drawRoute(placed, connect, accent)
         drawCompass(accent)
         // 图例：实测轨迹 / 计划路线 各自出现时才画（不出现就不占位）
@@ -161,7 +166,7 @@ private fun RouteCanvas(
             planLabel = legendPlan
         )
         drawLabels(placed, nameColor, noteColor)
-        drawTrackEndpoints(track, nameColor, startLabel, endLabel)
+        if (track.size >= 2) drawTrackEndpoints(normalized, nameColor, startLabel, endLabel)
         drawScaleBar(accent, track, nameColor, scaleKm, scale500m)
     }
 }
@@ -229,9 +234,9 @@ private fun DrawScope.drawRoute(placed: List<Placed>, connect: Boolean, accent: 
 }
 
 /** 实测轨迹：实线 sw3.2 / @0.9；起终点用光晕强调。 */
-private fun DrawScope.drawTrack(track: List<MapTrackPoint>, accent: Color) {
-    // Chaikin 平滑**仅作用于渲染**（M14 第 ④ 步：只影响画出来的线，不写回数据）。
-    val pts = chaikin(chaikin(normalizeTrack(track.map { it.lat to it.lng }), closed = false), closed = false)
+private fun DrawScope.drawTrack(smoothed: List<Pair<Float, Float>>, accent: Color) {
+    // 入参即平滑后的归一化点（RouteCanvas 里 remember 预计算），这里只负责画。
+    val pts = smoothed
     for (i in 0 until pts.size - 1) {
         drawLine(
             color = accent.copy(alpha = 0.9f),
@@ -465,14 +470,14 @@ private fun DrawScope.drawLegend(
  * 只在轨迹存在时画；名称与尺寸与板内其它标注一致。
  */
 private fun DrawScope.drawTrackEndpoints(
-    track: List<MapTrackPoint>,
+    normalized: List<Pair<Float, Float>>,
     nameColor: Int,
     startLabel: String,
     endLabel: String
 ) {
-    if (track.size < 2) return
-    val pts = normalizeTrack(track.map { it.lat to it.lng })
-    if (pts.isEmpty()) return
+    // 入参即归一化后的轨迹点（RouteCanvas 里 remember 预计算，与画线共用一份）
+    if (normalized.isEmpty()) return
+    val pts = normalized
     val paint = NativePaint().apply {
         isAntiAlias = true
         textSize = 10.dp.toPx()
