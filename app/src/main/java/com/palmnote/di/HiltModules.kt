@@ -348,8 +348,13 @@ object RepositoryModule {
         LifeMomentRepositoryImpl(dao)
 
     @Provides @Singleton
-    fun provideLifeTemplateRepository(dao: LifeTemplateDao, itemDao: LifeItemDao): LifeTemplateRepository =
-        LifeTemplateRepositoryImpl(dao, itemDao)
+    fun provideLifeTemplateRepository(
+        dao: LifeTemplateDao,
+        itemDao: LifeItemDao,
+        fieldValueDao: FieldValueDao,
+        appDatabase: AppDatabase
+    ): LifeTemplateRepository =
+        LifeTemplateRepositoryImpl(dao, itemDao, fieldValueDao, appDatabase)
 
     @Provides @Singleton
     fun provideLifeItemRepository(

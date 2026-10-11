@@ -369,7 +369,9 @@ class LifeDetailViewModel @Inject constructor(
             val row = rows.getOrNull(index) ?: return@launch
             rows[index] = row.copy(done = !row.done)
             val updated = JsonObject(obj.toMutableMap().apply { put(fieldKey, JsonPrimitive(encodeChecklist(rows))) })
-            itemDao.updateFieldsData(itemId, updated.toString())
+            // 与 [toggleTableCell] 同一条仓储路径：勾选可能就是进度分子（CHECKLIST 字段），
+            // 绕过双写会让统计副本与主表分叉，也会漏掉存钱达标事件。
+            repository.updateFieldsData(itemId, updated.toString())
             WidgetUpdateHelper.refreshTodoWidgets()
         }
     }
@@ -377,9 +379,8 @@ class LifeDetailViewModel @Inject constructor(
     /**
      * 进度**就地推进**（详情页与 hero 的 −/+ 按钮）：把 [fieldKey] 的数值设为 [value]。
      *
-     * 走**仓储**而不是像 [toggleChecklist] 那样直连 DAO：仓储那条路径会带上执行列镜像与
-     * `field_values` 双写（总纲 §7.1），而这里改的正是「被当作进度分子」的数值字段，
-     * 绕过双写会留下统计表与主表不一致的快照。
+     * 走**仓储**：那条路径会带上执行列镜像与 `field_values` 双写（总纲 §7.1），而这里改的
+     * 正是「被当作进度分子」的数值字段，绕过双写会留下统计表与主表不一致的快照。
      *
      * 与 [nudgeProgress] 共用一把锁：详情页上"点数值就地编辑"与 `±` 是两条相邻入口，
      * 写入必须**排序**，否则后写的会用旧值覆盖前一笔。
@@ -487,7 +488,9 @@ class LifeDetailViewModel @Inject constructor(
                     WidgetUpdateHelper.refreshHabitWidgets()
                 } else {
                     val now = System.currentTimeMillis()
-                    itemDao.insertItem(
+                    // 打卡行也走仓储插入：与所有写路径同规（事务 + field_values 双写），
+                    // 直连 DAO 会留下「主表有行、统计副本没有」的快照。
+                    repository.insertItem(
                         LifeItem(
                             templateId = item.templateId,
                             // 新建记录的标题取自模板名：内置模板要走 getDisplayName，
@@ -584,7 +587,8 @@ class LifeDetailViewModel @Inject constructor(
             val template = templateDao.getTemplateById(item.templateId) ?: return@launch
             val demo = preferences.lifeDemoMode.first()
             val now = System.currentTimeMillis()
-            itemDao.insertItem(
+            // 会话行走仓储插入：duration 进 field_values 统计副本，与主表同事务。
+            repository.insertItem(
                 LifeItem(
                     templateId = item.templateId,
                     title = item.title,
