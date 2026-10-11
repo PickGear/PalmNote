@@ -448,10 +448,10 @@ class LifeDetailViewModel @Inject constructor(
         }
     }
 
-    /** 删除这条记录（「⋯」菜单里唯一动作；调用方负责二次确认与返回）。 */
+    /** 删除这条记录（「⋯」菜单里唯一动作；调用方负责二次确认与返回）。走仓储快照入回收站。 */
     fun delete(onDeleted: () -> Unit) {
         viewModelScope.launch {
-            itemDao.deleteItemCascade(itemId)
+            repository.delete(itemId)
             WidgetUpdateHelper.refreshTodoWidgets()
             WidgetUpdateHelper.refreshCounterWidgets()
             onDeleted()

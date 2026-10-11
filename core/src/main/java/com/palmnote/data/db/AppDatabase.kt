@@ -15,9 +15,9 @@ import com.palmnote.data.db.entity.*
         AccountBook::class, PlanList::class, PlanListItem::class, Plan::class,
         LifeTemplate::class, LifeItem::class, CrossLink::class, Achievement::class,
         LifeReport::class, TodoItem::class, LifeMoment::class, MoodDiary::class, FocusRecord::class,
-        BillRecycleBin::class, AssetRecycleBin::class, FieldValue::class
+        BillRecycleBin::class, AssetRecycleBin::class, FieldValue::class, LifeRecycleBin::class
     ],
-    version = 16,
+    version = 17,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -53,6 +53,7 @@ abstract class AppDatabase : RoomDatabase() {
 
     abstract fun billRecycleBinDao(): BillRecycleBinDao
     abstract fun assetRecycleBinDao(): AssetRecycleBinDao
+    abstract fun lifeRecycleBinDao(): LifeRecycleBinDao
 
     companion object {
         const val DATABASE_NAME = "palmnote_db"

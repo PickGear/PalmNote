@@ -20,7 +20,15 @@ interface LifeItemRepository {
     suspend fun updateStatus(id: Long, status: String)
     suspend fun updateFieldsData(id: Long, fieldsData: String)
     suspend fun setFavorite(id: Long, favorite: Boolean)
+    /**
+     * 删除条目：快照（含子任务）入回收站后物理删除。与账单/物品同一语义，
+     * 可从回收站恢复；模板级联删除不走这里（见 LifeTemplateRepository.deleteTemplateCascade）。
+     */
     suspend fun delete(id: Long)
+    /** 从回收站恢复（[binId] 是回收站行 id，连带整组子任务）。 */
+    suspend fun restoreRecycled(binId: Long)
+    /** 彻底删除（回收站行 id）：清掉该行与其子任务行，不回主表。 */
+    suspend fun hardDeleteRecycled(binId: Long)
 
     /**
      * 订阅提醒:近 [days] 天内到期的 ACTIVE 订阅,按到期日升序。

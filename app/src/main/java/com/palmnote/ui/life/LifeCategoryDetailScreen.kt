@@ -227,7 +227,7 @@ class CategoryDetailViewModel @Inject constructor(
 
     fun deleteItem(itemId: Long) {
         viewModelScope.launch {
-            lifeItemDao.deleteItemCascade(itemId)
+            itemRepo.delete(itemId)
             WidgetUpdateHelper.refreshTodoWidgets()
         }
     }

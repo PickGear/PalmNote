@@ -31,6 +31,10 @@ interface FieldValueDao {
     @Query("DELETE FROM field_values WHERE itemId = :itemId")
     suspend fun deleteByItem(itemId: Long)
 
+    /** 演示清理用：演示期自建条目（meta 带演示标记）也走过双写，随主行一起清副本。 */
+    @Query("DELETE FROM field_values WHERE itemId IN (SELECT id FROM life_items WHERE meta = :demoMeta)")
+    suspend fun deleteByItemMeta(demoMeta: String)
+
     @Query("DELETE FROM field_values WHERE itemId IN (SELECT id FROM life_items WHERE templateId = :templateId)")
     suspend fun deleteByTemplate(templateId: Long)
 

@@ -6,8 +6,11 @@ import com.palmnote.data.datastore.PreferencesManager
 import com.palmnote.data.db.dao.FieldValueDao
 import com.palmnote.data.db.dao.LIFE_DEMO_META
 import com.palmnote.data.db.dao.LifeItemDao
+import com.palmnote.data.db.dao.LifeRecycleBinDao
 import com.palmnote.data.db.entity.FieldValue
 import com.palmnote.data.db.entity.LifeItem
+import com.palmnote.data.db.entity.toLifeItem
+import com.palmnote.data.db.entity.toRecycleBin
 import com.palmnote.domain.model.FieldConfig
 import com.palmnote.domain.model.FieldType
 import com.palmnote.domain.model.SubscriptionDueItem
@@ -39,7 +42,8 @@ class LifeItemRepositoryImpl @Inject constructor(
     private val templateRepo: LifeTemplateRepository,
     private val preferences: PreferencesManager,
     /** 存钱达标规则的事件源（见 [publishSavingDepositIfGrew]）。 */
-    private val eventBus: EventBus
+    private val eventBus: EventBus,
+    private val recycleBinDao: LifeRecycleBinDao
 ) : LifeItemRepository {
     private val permissiveJson = Json { ignoreUnknownKeys = true }
     override fun getAllItems(): Flow<List<LifeItem>> = dao.getAllItemsIncludingHidden()
@@ -305,9 +309,48 @@ class LifeItemRepositoryImpl @Inject constructor(
 
     private val zone: ZoneId = ZoneId.systemDefault()
     override suspend fun delete(id: Long) = try {
-        dao.deleteItemCascade(id)
+        appDatabase.withTransaction {
+            val item = dao.getItemById(id) ?: return@withTransaction
+            // 顶层删除连子任务一起入站；单独删子任务时它自成一行，父行不在站内所以照常可见可恢复。
+            val children = if (item.parentId == null) dao.getSubtaskRows(id) else emptyList()
+            val rows = listOf(item) + children
+            // 模板名快照仅供回收站列表展示；模板随后被删时名字仍在。
+            val templateName = templateRepo.getTemplateById(item.templateId)?.name ?: ""
+            recycleBinDao.insertAll(rows.map { it.toRecycleBin(templateName) })
+            // 统计副本与主行同事务清掉；副本反查依赖条目行，必须先于条目删除（同 deleteTemplateCascade）
+            rows.forEach { fieldValueDao.deleteByItem(it.id) }
+            dao.deleteItemCascade(id)
+        }
     } catch (e: Exception) {
         AppLogger.e("LifeItemRepo", "softDelete failed", e)
+        throw e
+    }
+
+    override suspend fun restoreRecycled(binId: Long) = try {
+        appDatabase.withTransaction {
+            val row = recycleBinDao.getById(binId) ?: return@withTransaction
+            // 模板已删的行不可恢复：恢复出来是看不见的孤儿。模板删除时会清掉站内该模板的行，
+            // 这里只是双保险。
+            templateRepo.getTemplateById(row.templateId) ?: return@withTransaction
+            val children = recycleBinDao.getChildrenOf(row.originalId)
+            dao.insertItem(row.toLifeItem())
+            children.forEach { dao.insertItem(it.toLifeItem()) }
+            // 统计副本按当前 fieldsConfig 重建——fieldsData 完整在快照里，不会丢数据
+            (listOf(row) + children).forEach { syncFieldValues(it.originalId, it.templateId, it.fieldsData) }
+            recycleBinDao.deleteByOriginalId(row.originalId)
+        }
+    } catch (e: Exception) {
+        AppLogger.e("LifeItemRepo", "restoreRecycled failed", e)
+        throw e
+    }
+
+    override suspend fun hardDeleteRecycled(binId: Long) = try {
+        appDatabase.withTransaction {
+            val row = recycleBinDao.getById(binId) ?: return@withTransaction
+            recycleBinDao.deleteByOriginalId(row.originalId)
+        }
+    } catch (e: Exception) {
+        AppLogger.e("LifeItemRepo", "hardDeleteRecycled failed", e)
         throw e
     }
 

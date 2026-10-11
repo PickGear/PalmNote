@@ -5,6 +5,7 @@ import javax.inject.Inject
 import com.palmnote.data.db.AppDatabase
 import com.palmnote.data.db.dao.FieldValueDao
 import com.palmnote.data.db.dao.LifeItemDao
+import com.palmnote.data.db.dao.LifeRecycleBinDao
 import com.palmnote.data.db.dao.LifeTemplateDao
 import com.palmnote.data.db.entity.LifeTemplate
 import com.palmnote.domain.repository.LifeTemplateRepository
@@ -13,6 +14,7 @@ class LifeTemplateRepositoryImpl @Inject constructor(
     private val dao: LifeTemplateDao,
     private val itemDao: LifeItemDao,
     private val fieldValueDao: FieldValueDao,
+    private val recycleBinDao: LifeRecycleBinDao,
     private val appDatabase: AppDatabase
 ) : LifeTemplateRepository {
     override fun getAllVisibleTemplates(): Flow<List<LifeTemplate>> = dao.getAllVisibleTemplates()
@@ -31,9 +33,12 @@ class LifeTemplateRepositoryImpl @Inject constructor(
         // 否则模板删了、聚合查询还在喂孤儿行。副本必须**先删**——deleteByTemplate 靠
         // life_items 反查 itemId，条目先删就查不到要删的副本了。
         // 示例条目不写 field_values，无对应副本可清。
+        // 模板删除是**不可恢复**的硬删：条目没了模板就恢复不回来，站内该模板的历史
+        // 快照行一并清掉，不给回收站留下永远恢复不了的行。
         appDatabase.withTransaction {
             fieldValueDao.deleteByTemplate(id)
             itemDao.deleteItemsByTemplate(id)
+            recycleBinDao.deleteByTemplate(id)
             dao.deleteTemplate(id)
         }
     }

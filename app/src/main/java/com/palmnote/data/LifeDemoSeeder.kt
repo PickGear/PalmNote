@@ -3,6 +3,8 @@ package com.palmnote.data
 import com.palmnote.data.datastore.PreferencesManager
 import com.palmnote.data.db.dao.LIFE_DEMO_META
 import com.palmnote.data.db.dao.LifeItemDao
+import com.palmnote.data.db.dao.LifeRecycleBinDao
+import com.palmnote.data.db.dao.FieldValueDao
 import android.content.Context
 import com.palmnote.data.db.dao.LifeTemplateDao
 import com.palmnote.data.db.entity.LifeItem
@@ -38,7 +40,9 @@ import javax.inject.Singleton
 class LifeDemoSeeder @Inject constructor(
     @ApplicationContext private val context: Context,
     private val itemDao: LifeItemDao,
-    private val templateDao: LifeTemplateDao
+    private val templateDao: LifeTemplateDao,
+    private val recycleBinDao: LifeRecycleBinDao,
+    private val fieldValueDao: FieldValueDao
 ) {
 
     /** [clearAll] 的结果：移除的示例条数 / 保留（毕业）的用户自建条数。 */
@@ -156,8 +160,12 @@ class LifeDemoSeeder @Inject constructor(
             itemDao.graduateDemoCreatedItems(LIFE_DEMO_META)
             clear()
         } else {
+            // 演示期自建条目走过双写、有统计副本：先删副本再删主行（副本反查依赖条目行）
+            fieldValueDao.deleteByItemMeta(LIFE_DEMO_META)
             itemDao.deleteAllByDemoMeta(LIFE_DEMO_META)
         }
+        // 回收站里随原行进站的示例行一并清掉（备份是整库拷贝，留在站里同样不干净）
+        recycleBinDao.clearDemoRows(LIFE_DEMO_META)
         // 示例图一并清掉（只删 demo_ 前缀，用户图片不受影响）
         DemoImageStore.clear(context)
         preferences.setLifeDemoSeeded(false)

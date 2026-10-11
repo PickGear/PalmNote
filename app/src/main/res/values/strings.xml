@@ -1399,6 +1399,7 @@
     <string name="recycle_bin_restore">恢复</string>
     <string name="recycle_tab_assets">物品</string>
     <string name="recycle_tab_bills">账单</string>
+    <string name="recycle_tab_life">生活</string>
     <string name="recycle_tab_goals">目标</string>
     <string name="recycle_tab_anniversaries">纪念日</string>
     <string name="recycle_tab_moments">瞬间</string>

@@ -383,6 +383,10 @@ interface LifeItemDao {
     )
     fun getSubtasks(parentId: Long): Flow<List<LifeItem>>
 
+    /** 删除快照用：子任务一次性读出（[getSubtasks] 的 suspend 版）。 */
+    @Query("SELECT * FROM life_items WHERE parentId = :parentId")
+    suspend fun getSubtaskRows(parentId: Long): List<LifeItem>
+
     /**
      * 纪念日类条目（生日/纪念日模板创建），供仪表盘纪念日卡与日历同步使用。
      * 演示感知（**互斥**）：includeDemo=true 只看示例；false 只看用户自己的。

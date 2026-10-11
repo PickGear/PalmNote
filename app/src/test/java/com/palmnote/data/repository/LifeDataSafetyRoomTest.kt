@@ -30,8 +30,9 @@ import org.robolectric.annotation.Config
  *
  * 钉住的都是「主表与统计副本（field_values）不许分叉」的口径：
  * - 插入即双写（后续 VM 收口依赖这个前提）；
- * - 删模板级联必须同事务清掉统计副本，不留孤儿行；
- * - 级联删除按既有口径放过示例条目（示例行本就没有统计副本）。
+ * - 删模板级联必须同事务清掉统计副本与站内快照，不留孤儿行；
+ * - 级联删除按既有口径放过示例条目（示例行本就没有统计副本）；
+ * - 条目删除走回收站（快照入站 → 恢复重建副本 / 彻底删除），子任务整组进出。
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [30], application = Application::class)
@@ -48,11 +49,12 @@ class LifeDataSafetyRoomTest {
             .allowMainThreadQueries()
             .build()
         templateRepo = LifeTemplateRepositoryImpl(
-            db.lifeTemplateDao(), db.lifeItemDao(), db.fieldValueDao(), db
+            db.lifeTemplateDao(), db.lifeItemDao(), db.fieldValueDao(), db.lifeRecycleBinDao(), db
         )
         itemRepo = LifeItemRepositoryImpl(
             db.lifeItemDao(), db.fieldValueDao(), db, templateRepo,
-            PreferencesManager(context, CoroutineScope(Dispatchers.IO)), EventBusImpl()
+            PreferencesManager(context, CoroutineScope(Dispatchers.IO)), EventBusImpl(),
+            db.lifeRecycleBinDao()
         )
     }
 
@@ -133,5 +135,88 @@ class LifeDataSafetyRoomTest {
         assertEquals(0, db.fieldValueDao().countBy("amount").first())
         assertNull(db.lifeTemplateDao().getTemplateById(templateId))
         assertNotNull(remaining.single())
+    }
+
+    // ── 回收站往返（S3）──
+
+    private val numberConfig = """[{"key":"amount","label":"金额","type":"NUMBER"}]"""
+
+    @Test
+    fun `delete snapshots to recycle bin and restore rebuilds the statistics copy`() = runBlocking {
+        val templateId = templateRepo.insertTemplate(template(numberConfig))
+        val itemId = itemRepo.insertItem(
+            LifeItem(templateId = templateId, title = "记录", fieldsData = """{"amount":42}""")
+        )
+
+        itemRepo.delete(itemId)
+
+        assertTrue(db.lifeItemDao().getAllItemsIncludingHidden().first().isEmpty())
+        assertEquals(0, db.fieldValueDao().countBy("amount").first())
+        val binRows = db.lifeRecycleBinDao().getTopLevel().first()
+        assertEquals(1, binRows.size)
+        assertEquals(itemId, binRows.single().originalId)
+
+        itemRepo.restoreRecycled(binRows.single().id)
+
+        val restored = db.lifeItemDao().getAllItemsIncludingHidden().first().single()
+        assertEquals(itemId, restored.id)
+        assertEquals("""{"amount":42}""", restored.fieldsData)
+        assertEquals("恢复时按快照 fieldsData 重建统计副本", 1, db.fieldValueDao().countBy("amount").first())
+        assertEquals(0, db.lifeRecycleBinDao().getTopLevel().first().size)
+    }
+
+    @Test
+    fun `delete of a parent takes its subtasks to the bin and back as a group`() = runBlocking {
+        val templateId = templateRepo.insertTemplate(template(numberConfig))
+        val parentId = itemRepo.insertItem(
+            LifeItem(templateId = templateId, title = "父", fieldsData = "{}")
+        )
+        val childId = itemRepo.insertItem(
+            LifeItem(templateId = templateId, title = "子", fieldsData = "{}", parentId = parentId)
+        )
+
+        itemRepo.delete(parentId)
+
+        val bin = db.lifeRecycleBinDao()
+        assertEquals(1, bin.getTopLevel().first().size)
+        assertEquals(1, bin.getChildrenOf(parentId).size)
+        assertTrue(db.lifeItemDao().getAllItemsIncludingHidden().first().none { it.id == childId })
+
+        itemRepo.restoreRecycled(bin.getTopLevel().first().single().id)
+
+        val items = db.lifeItemDao().getAllItemsIncludingHidden().first().map { it.id }
+        assertEquals(listOf(parentId, childId), items.sorted())
+        assertEquals(0, bin.getTopLevel().first().size)
+    }
+
+    @Test
+    fun `hardDeleteRecycled removes the group without bringing rows back`() = runBlocking {
+        val templateId = templateRepo.insertTemplate(template(numberConfig))
+        val itemId = itemRepo.insertItem(
+            LifeItem(templateId = templateId, title = "记录", fieldsData = "{}")
+        )
+        itemRepo.delete(itemId)
+        val binId = db.lifeRecycleBinDao().getTopLevel().first().single().id
+
+        itemRepo.hardDeleteRecycled(binId)
+
+        assertEquals(0, db.lifeRecycleBinDao().getTopLevel().first().size)
+        assertTrue(db.lifeItemDao().getAllItemsIncludingHidden().first().isEmpty())
+    }
+
+    @Test
+    fun `deleteTemplateCascade also purges stale bin rows of that template`() = runBlocking {
+        val templateId = templateRepo.insertTemplate(template(numberConfig))
+        val itemId = itemRepo.insertItem(
+            LifeItem(templateId = templateId, title = "记录", fieldsData = "{}")
+        )
+        itemRepo.delete(itemId)
+        assertEquals(1, db.lifeRecycleBinDao().getTopLevel().first().size)
+
+        // 模板删除后快照永远恢复不回来，留在站里只会误导
+        templateRepo.deleteTemplateCascade(templateId)
+
+        assertEquals(0, db.lifeRecycleBinDao().getTopLevel().first().size)
+        assertNull(db.lifeTemplateDao().getTemplateById(templateId))
     }
 }

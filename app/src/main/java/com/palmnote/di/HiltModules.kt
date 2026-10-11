@@ -165,7 +165,8 @@ object DatabaseModule {
                 com.palmnote.data.db.migration.MIGRATION_12_13,
                 com.palmnote.data.db.migration.MIGRATION_13_14,
                 com.palmnote.data.db.migration.MIGRATION_14_15,
-                com.palmnote.data.db.migration.MIGRATION_15_16
+                com.palmnote.data.db.migration.MIGRATION_15_16,
+                com.palmnote.data.db.migration.MIGRATION_16_17
             )
             .addCallback(object : androidx.room.RoomDatabase.Callback() {
                 override fun onCreate(db: SupportSQLiteDatabase) {
@@ -216,6 +217,7 @@ object DatabaseModule {
     @Provides fun provideFieldValueDao(db: AppDatabase): FieldValueDao = db.fieldValueDao()
     @Provides fun provideBillRecycleBinDao(db: AppDatabase): BillRecycleBinDao = db.billRecycleBinDao()
     @Provides fun provideAssetRecycleBinDao(db: AppDatabase): AssetRecycleBinDao = db.assetRecycleBinDao()
+    @Provides fun provideLifeRecycleBinDao(db: AppDatabase): LifeRecycleBinDao = db.lifeRecycleBinDao()
 }
 
 @Module
@@ -352,9 +354,10 @@ object RepositoryModule {
         dao: LifeTemplateDao,
         itemDao: LifeItemDao,
         fieldValueDao: FieldValueDao,
+        recycleBinDao: LifeRecycleBinDao,
         appDatabase: AppDatabase
     ): LifeTemplateRepository =
-        LifeTemplateRepositoryImpl(dao, itemDao, fieldValueDao, appDatabase)
+        LifeTemplateRepositoryImpl(dao, itemDao, fieldValueDao, recycleBinDao, appDatabase)
 
     @Provides @Singleton
     fun provideLifeItemRepository(
@@ -363,9 +366,10 @@ object RepositoryModule {
         appDatabase: AppDatabase,
         templateRepo: LifeTemplateRepository,
         preferences: PreferencesManager,
-        eventBus: com.palmnote.domain.event.EventBus
+        eventBus: com.palmnote.domain.event.EventBus,
+        recycleBinDao: LifeRecycleBinDao
     ): LifeItemRepository =
-        LifeItemRepositoryImpl(dao, fieldValueDao, appDatabase, templateRepo, preferences, eventBus)
+        LifeItemRepositoryImpl(dao, fieldValueDao, appDatabase, templateRepo, preferences, eventBus, recycleBinDao)
 
     @Provides @Singleton
     fun provideCrossLinkRepository(dao: CrossLinkDao): CrossLinkRepository =

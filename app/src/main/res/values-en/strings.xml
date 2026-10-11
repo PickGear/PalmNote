@@ -1239,6 +1239,7 @@
     <string name="recycle_bin_restore">Restore</string>
     <string name="recycle_tab_assets">Assets</string>
     <string name="recycle_tab_bills">Bills</string>
+    <string name="recycle_tab_life">Life</string>
     <string name="recycle_tab_goals">Goals</string>
     <string name="recycle_tab_anniversaries">Anniversaries</string>
     <string name="recycle_tab_moments">Moments</string>

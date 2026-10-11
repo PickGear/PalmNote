@@ -449,10 +449,10 @@ class LifeCalendarViewModel @Inject constructor(
         }
     }
 
-    /** 看板左滑删除（确认弹窗通过后才调用）。 */
+    /** 看板左滑删除（确认弹窗通过后才调用）；走仓储快照入回收站，可恢复。 */
     fun deleteItem(itemId: Long) {
         viewModelScope.launch {
-            lifeItemDao.deleteItemCascade(itemId)
+            itemRepository.delete(itemId)
             WidgetUpdateHelper.refreshTodoWidgets()
         }
     }
