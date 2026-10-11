@@ -257,6 +257,7 @@ class WidgetPreviewPngGenerator {
             title = "视频会员",
             meta = "10/23",
             bigValue = "¥25"
-        )
+        ),
+        accent
     )
 }

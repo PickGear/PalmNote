@@ -37,6 +37,8 @@ class TodoToggleReceiver : BroadcastReceiver() {
                 toggle(dao, itemId)
                 WidgetUpdateHelper.refreshTodoWidgets()
                 WidgetUpdateHelper.refreshDashboardWidgets()
+                // 焦点卡的第一候选是今天的待办，勾掉要立刻换下一件
+                WidgetUpdateHelper.refreshNextUpWidgets()
             } catch (e: Exception) {
                 AppLogger.e("TodoToggleReceiver", "Widget todo toggle failed", e)
             } finally {

@@ -97,6 +97,12 @@ object WidgetUpdateHelper {
         refreshDashboardWidgets()
     }
 
+    fun refreshNextUpWidgets() {
+        val manager = AppWidgetManager.getInstance(appContext)
+        val ids = manager.getAppWidgetIds(ComponentName(appContext, NextUpWidgetProvider::class.java))
+        sendUpdate(NextUpWidgetProvider::class.java, ids)
+    }
+
     fun refreshDashboardWidgets() {
         val manager = AppWidgetManager.getInstance(appContext)
         val dashIds = manager.getAppWidgetIds(ComponentName(appContext, DashboardWidgetProvider::class.java))
@@ -126,6 +132,8 @@ object WidgetUpdateHelper {
             manager.getAppWidgetIds(ComponentName(appContext, NetWorthWidgetProvider::class.java)))
         sendUpdate(SubscriptionWidgetProvider::class.java,
             manager.getAppWidgetIds(ComponentName(appContext, SubscriptionWidgetProvider::class.java)))
+        sendUpdate(NextUpWidgetProvider::class.java,
+            manager.getAppWidgetIds(ComponentName(appContext, NextUpWidgetProvider::class.java)))
         sendUpdate(ShortcutsWidgetProvider::class.java,
             manager.getAppWidgetIds(ComponentName(appContext, ShortcutsWidgetProvider::class.java)))
         refreshDashboardWidgets()

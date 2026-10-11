@@ -192,6 +192,7 @@ class WidgetConfigTest {
                 booksFlow = flowOf(books),
                 selectedBookFlow = flowOf(null),
                 opacityOverrideFlow = flowOf(null),
+                    showAccent = false,
                 defaultOpacityFlow = flowOf(PreferencesManager.DEFAULT_WIDGET_OPACITY),
                 onConfirm = onConfirm,
                 onCancel = onCancel
@@ -227,6 +228,7 @@ class WidgetConfigTest {
                     booksFlow = flowOf(books),
                     selectedBookFlow = flowOf(3L),
                     opacityOverrideFlow = flowOf(0.6f),
+                    showAccent = false,
                     defaultOpacityFlow = flowOf(PreferencesManager.DEFAULT_WIDGET_OPACITY),
                     onConfirm = { result = it },
                     onCancel = {}

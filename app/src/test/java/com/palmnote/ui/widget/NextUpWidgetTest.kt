@@ -6,6 +6,9 @@ import android.widget.TextView
 import androidx.test.platform.app.InstrumentationRegistry
 import com.palmnote.app.R
 import com.palmnote.data.db.entity.LifeItem
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import org.junit.Assert.assertEquals
@@ -99,7 +102,10 @@ class NextUpWidgetTest {
 
     @Test
     fun `待办焦点渲染标题与完成动作`() {
-        val root = render(provider.bindViews(context, 1, provider.pickFocus(listOf(todo(9)), emptyList(), emptyList())))
+        val root = render(provider.bindViews(
+            context, 1, provider.pickFocus(listOf(todo(9)), emptyList(), emptyList()),
+            WidgetData.AccentTheme(0xFF0891B2.toInt(), 0xFFFFFFFF.toInt())
+        ))
         assertTrue(texts(root).contains("交房租"))
         assertTrue(texts(root).contains(context.getString(R.string.widget_next_up_kind_todo)))
         assertTrue(texts(root).contains(context.getString(R.string.widget_next_up_due_today)))
@@ -108,7 +114,7 @@ class NextUpWidgetTest {
 
     @Test
     fun `空焦点渲染空态并藏内容`() {
-        val root = render(provider.bindViews(context, 1, null))
+        val root = render(provider.bindViews(context, 1, null, WidgetData.AccentTheme(0xFF0891B2.toInt(), 0xFFFFFFFF.toInt())))
         assertEquals(View.VISIBLE, root.findViewById<View>(R.id.widget_next_up_empty)?.visibility)
         assertEquals(View.GONE, root.findViewById<View>(R.id.widget_next_up_content)?.visibility)
     }
@@ -117,11 +123,14 @@ class NextUpWidgetTest {
 
     @Test
     fun `readAccentTheme 覆盖参数强制指定主题包`() = kotlinx.coroutines.test.runTest {
-        val prefs = com.palmnote.data.datastore.PreferencesManager(
-            context, kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO)
-        )
-        val overridden = WidgetData.readAccentTheme(context, prefs, overrideThemeId = "red")
-        // 红色主题包的亮色主色；默认主题是青色（0xFF0891B2），两者必不相等
-        assertEquals(0xFFC62828.toInt(), overridden.accent)
+        val scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO)
+        val prefs = com.palmnote.data.datastore.PreferencesManager(context, scope)
+        try {
+            val overridden = WidgetData.readAccentTheme(context, prefs, overrideThemeId = "red")
+            // 红色主题包的亮色主色；默认主题是青色（0xFF0891B2），两者必不相等
+            assertEquals(0xFFC62828.toInt(), overridden.accent)
+        } finally {
+            scope.cancel()
+        }
     }
 }

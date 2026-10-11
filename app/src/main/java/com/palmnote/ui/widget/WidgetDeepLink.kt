@@ -43,6 +43,7 @@ object WidgetDeepLink {
     const val SEG_HABIT_TOGGLE = 810_000
     const val SEG_NET_WORTH = 900_000
     const val SEG_SUBSCRIPTION = 910_000
+    const val SEG_NEXT_UP = 920_000
     const val SEG_SHORTCUT_ROOT = 650_000
     const val SEG_SHORTCUT_ADD = 11_000_000
     const val SEG_SHORTCUT_ASSET = 12_000_000

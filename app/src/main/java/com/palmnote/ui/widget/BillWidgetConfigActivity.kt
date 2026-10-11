@@ -44,6 +44,7 @@ class BillWidgetConfigActivity : ComponentActivity() {
             PalmNoteTheme {
                 WidgetConfigScreen(
                     showBooks = true,
+                    showAccent = true,
                     booksFlow = accountBookDao.getAllBooks(),
                     selectedBookFlow = preferencesManager.widgetBook(widgetId),
                     opacityOverrideFlow = preferencesManager.widgetOpacityOverride(widgetId),

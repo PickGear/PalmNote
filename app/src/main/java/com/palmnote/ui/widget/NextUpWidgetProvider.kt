@@ -54,7 +54,9 @@ class NextUpWidgetProvider : ScopedWidgetProvider() {
         val counters = LifeCounterWidgetProvider().collectCounterEvents(context)
 
         publish(context, appWidgetManager, appWidgetIds) { appWidgetId, _ ->
-            bindViews(context, appWidgetId, pickFocus(todos, renewals, counters))
+            // 大字数值吃逐实例强调色（配置页「配色」覆盖，null 跟随应用主题包）
+            val accent = WidgetData.readAccentTheme(context, prefs, prefs.widgetAccentThemeFor(appWidgetId).first())
+            bindViews(context, appWidgetId, pickFocus(todos, renewals, counters), accent)
         }
     }
 
@@ -93,7 +95,12 @@ class NextUpWidgetProvider : ScopedWidgetProvider() {
         return null
     }
 
-    internal fun bindViews(context: Context, appWidgetId: Int, focus: NextUpFocus?): RemoteViews {
+    internal fun bindViews(
+        context: Context,
+        appWidgetId: Int,
+        focus: NextUpFocus?,
+        accent: WidgetData.AccentTheme
+    ): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.widget_next_up_unified)
         if (focus == null) {
             views.setViewVisibility(R.id.widget_next_up_content, View.GONE)
@@ -101,13 +108,13 @@ class NextUpWidgetProvider : ScopedWidgetProvider() {
         } else {
             views.setViewVisibility(R.id.widget_next_up_content, View.VISIBLE)
             views.setViewVisibility(R.id.widget_next_up_empty, View.GONE)
-            bindFocus(context, views, focus)
+            bindFocus(context, views, focus, accent)
         }
         views.setOnClickPendingIntent(
             R.id.widget_layout,
             WidgetHelper.createPendingIntent(
                 context,
-                WidgetDeepLink.SEG_SUBSCRIPTION + appWidgetId,
+                WidgetDeepLink.SEG_NEXT_UP + appWidgetId,
                 WidgetDeepLink.TAB_LIFE
             )
         )
@@ -115,7 +122,7 @@ class NextUpWidgetProvider : ScopedWidgetProvider() {
     }
 
     /** 焦点内容：徽标/类型标签按 kind 取色族，勾选动作只对待办有意义。 */
-    private fun bindFocus(context: Context, views: RemoteViews, focus: NextUpFocus) {
+    private fun bindFocus(context: Context, views: RemoteViews, focus: NextUpFocus, accent: WidgetData.AccentTheme) {
         val familyIndex = when (focus.kind) {
             Kind.TODO -> 2
             Kind.RENEWAL -> 4
@@ -150,6 +157,8 @@ class NextUpWidgetProvider : ScopedWidgetProvider() {
                 Kind.RENEWAL -> focus.bigValue
             }
         )
+        // 主角数值用强调色（逐实例可覆盖）
+        views.setTextColor(R.id.widget_next_up_value, accent.accent)
         if (focus.kind == Kind.TODO && focus.itemId != null) {
             views.setViewVisibility(R.id.widget_next_up_action, View.VISIBLE)
             views.setOnClickPendingIntent(

@@ -52,6 +52,8 @@ class WidgetRefreshConsumer @Inject constructor() : EventConsumer {
                 is DomainEvent.HabitCheckedIn -> {
                     WidgetUpdateHelper.refreshTodoWidgets()
                     WidgetUpdateHelper.refreshCounterWidgets()
+                    // 焦点卡吃待办/订阅/倒数三路数据，生活条目一变就跟着切
+                    WidgetUpdateHelper.refreshNextUpWidgets()
                 }
 
                 // 数据导入

@@ -39,10 +39,19 @@ class WidgetConfigActivity : ComponentActivity() {
             return
         }
 
+        // 「配色」只对渲染吃强调色的组件显示：账单/概览/接下来，其余组件配了也不生效
+        val providerClass = android.appwidget.AppWidgetManager.getInstance(this)
+            .getAppWidgetInfo(widgetId)?.provider?.className
+        val showAccent = providerClass in setOf(
+            BillWidgetProvider::class.java.name,
+            DashboardWidgetProvider::class.java.name,
+            NextUpWidgetProvider::class.java.name
+        )
         setContent {
             PalmNoteTheme {
                 WidgetConfigScreen(
                     showBooks = false,
+                    showAccent = showAccent,
                     booksFlow = flowOf(emptyList()),
                     selectedBookFlow = flowOf(null),
                     opacityOverrideFlow = preferencesManager.widgetOpacityOverride(widgetId),

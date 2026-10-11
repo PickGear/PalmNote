@@ -4,6 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -82,6 +84,8 @@ internal fun WidgetConfigScreen(
     defaultOpacityFlow: Flow<Float>,
     /** 该实例的强调色覆盖；null = 跟随应用主题包。 */
     accentThemeOverrideFlow: Flow<String?> = flowOf(null),
+    /** 是否显示「配色」卡：只有渲染吃强调色的组件（账单/概览/接下来）才显示。 */
+    showAccent: Boolean,
     onConfirm: (WidgetConfigResult) -> Unit,
     onCancel: () -> Unit
 ) {
@@ -131,6 +135,7 @@ internal fun WidgetConfigScreen(
             onOverrideChange = { override = it },
             accentTheme = accentTheme,
             onAccentThemeChange = { accentTheme = it },
+            showAccent = showAccent,
             context = context
         )
     }
@@ -150,6 +155,7 @@ private fun ConfigList(
     onOverrideChange: (Float?) -> Unit,
     accentTheme: String?,
     onAccentThemeChange: (String?) -> Unit,
+    showAccent: Boolean,
     context: android.content.Context
 ) {
     LazyColumn(
@@ -176,8 +182,10 @@ private fun ConfigList(
         item {
             OpacityCard(override = override, defaultOpacity = defaultOpacity, onChange = onOverrideChange)
         }
-        item {
-            AccentThemeCard(selected = accentTheme, onSelect = onAccentThemeChange)
+        if (showAccent) {
+            item {
+                AccentThemeCard(selected = accentTheme, onSelect = onAccentThemeChange)
+            }
         }
         if (showBooks) {
             item {
@@ -197,6 +205,7 @@ private fun ConfigList(
  * 配色卡：「跟随应用」在最前（null），随后是各主题包的色点。
  * 覆盖只改这一个组件的强调色，应用内主题不变。
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun AccentThemeCard(selected: String?, onSelect: (String?) -> Unit) {
     Surface(
@@ -216,7 +225,7 @@ private fun AccentThemeCard(selected: String?, onSelect: (String?) -> Unit) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(Modifier.height(10.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 AccentChip(
                     selected = selected == null,
                     color = MaterialTheme.colorScheme.primary,
@@ -241,7 +250,7 @@ private fun AccentThemeCard(selected: String?, onSelect: (String?) -> Unit) {
 
 /** 配色选项：色点圆 + 选中描边；「跟随应用」带文字，主题包只有色点。 */
 @Composable
-private fun AccentChip(selected: Boolean, color: androidx.compose.ui.graphics.Color, label: String?, onClick: () -> Unit) {
+private fun AccentChip(selected: Boolean, color: Color, label: String?, onClick: () -> Unit) {
     Surface(
         shape = MaterialTheme.shapes.large,
         color = if (selected) {
@@ -250,7 +259,7 @@ private fun AccentChip(selected: Boolean, color: androidx.compose.ui.graphics.Co
             MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
         },
         border = if (selected) {
-            androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+            BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
         } else {
             null
         },
@@ -264,7 +273,7 @@ private fun AccentChip(selected: Boolean, color: androidx.compose.ui.graphics.Co
             Box(
                 modifier = Modifier
                     .size(16.dp)
-                    .clip(androidx.compose.foundation.shape.CircleShape)
+                    .clip(CircleShape)
                     .background(color)
             )
             label?.let { Text(it, style = MaterialTheme.typography.labelMedium) }
