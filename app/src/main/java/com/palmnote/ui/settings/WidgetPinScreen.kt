@@ -68,8 +68,16 @@ private val PREVIEW_STAGE_HEIGHT = 272.dp
 private val PAGE_H_PADDING = 24.dp
 private val PREVIEW_STAGE_PADDING = 16.dp
 
-/** 取不到图片比例时的兜底（组件预览图多是 3:2）。 */
-private const val FALLBACK_RATIO = 1.5f
+/**
+ * 全目录统一的缩放基准：设计稿里最大的卡（4×3 = 340×268dp，见 design-v4.html 的 `.s43`）。
+ * 所有卡片乘同一个系数 —— 1×1 就摆成小方块、4×3 摆成大块，相对大小等于桌面占格比例；
+ * 旧实现是每张各自拉满预览区宽度，于是 1×1 和 4×3 一样宽、比例完全失真。
+ */
+private const val DESIGN_MAX_WIDTH = 340f
+private const val DESIGN_MAX_HEIGHT = 268f
+
+/** 组件没登记设计尺寸时的兜底：按 3×2 卡摆。 */
+private val FALLBACK_SIZE = 245 to 148
 
 /** 预览图的测试标签：单测靠它量 dp 尺寸，锁住「不随屏幕密度变」。 */
 internal const val PREVIEW_IMAGE_TAG = "widget_preview_image"
@@ -252,40 +260,37 @@ private fun PreviewPage(entry: WidgetPin.Entry) {
                 .padding(PREVIEW_STAGE_PADDING),
             contentAlignment = Alignment.Center
         ) {
-            PreviewImage(entry.previewImageRes)
+            PreviewImage(entry.previewImageRes, WidgetPin.designSizeOf(entry))
         }
     }
 }
 
 /**
- * 预览图：**宽度撑满预览区，高度按图片自身比例算**，预览区就贴着图。
+ * 预览图：按组件在**桌面上的真实占格尺寸**等比摆放。
  *
- * 不能只写 `fillMaxWidth()` 让 Image 自己定尺寸 —— 那样画出来的是「PNG 像素 ÷ 屏幕密度」dp，
- * 同一个组件在 3x 屏上 240dp、2x 屏上 318dp，大小随机型变（而且缩在预览区中间显得很小）。
- * 这里显式按比例定尺寸，尺寸只跟页面宽度有关，任何机型都一样。
+ * 关键是一套**统一**缩放系数（以最大的卡 4×3 为基准），这样 1×1 是小方块、2×1 是矮条、
+ * 4×3 是大块 —— 相对大小就等于它们占的格数。尺寸只跟预览区宽度有关，不随屏幕密度变。
  */
 @Composable
-private fun PreviewImage(imageRes: Int) {
+private fun PreviewImage(imageRes: Int, designSize: Pair<Int, Int>?) {
     val painter = painterResource(imageRes)
-    val intrinsic = painter.intrinsicSize
-    val ratio = if (intrinsic.width > 0f && intrinsic.height > 0f) {
-        intrinsic.width / intrinsic.height
-    } else {
-        FALLBACK_RATIO
-    }
+    val (designW, designH) = designSize ?: FALLBACK_SIZE
     BoxWithConstraints(
         modifier = Modifier.fillMaxWidth(),
         contentAlignment = Alignment.Center
     ) {
-        val width = maxWidth
-        // 正方形那种太高的按可用高度封顶，免得把预览区撑爆
-        val height = minOf(width / ratio, maxHeight)
+        // 最大的卡（4×3）恰好装进预览区，其余按同一系数缩小 —— 各自 fit 会让小卡也撑满，
+        // 看上去尺寸都一样（旧实现的毛病）。
+        val scale = minOf(
+            maxWidth.value / DESIGN_MAX_WIDTH,
+            maxHeight.value / DESIGN_MAX_HEIGHT
+        )
         Image(
             painter = painter,
             contentDescription = null,
             modifier = Modifier
-                .width(width)
-                .height(height)
+                .width((designW * scale).dp)
+                .height((designH * scale).dp)
                 .testTag(PREVIEW_IMAGE_TAG),
             contentScale = ContentScale.Fit
         )

@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  订阅 3×2（定稿）：时间轴 —— 左侧一条竖线串起每个待扣费（色点 + 日期 + 名称 + 金额），
-  头部右侧给本月要扣的笔数。行由 Provider 动态添加，色点与金额同族上色。
+  订阅 3×2（v4 定稿）：头部右侧「本月 N 笔 + ¥合计」Hero Number，下面 4 行
+  「独立日期列 + 色底 chip 行」（色点 + 名称 + 即将扣费标签 + 金额）。
+  行由 Provider 动态添加：chip 淡底与色点/金额同族上色，最近一笔（≤3 天）整行提色高亮。
+  v3 的时间轴竖线已随 chip 化移除（行自带底色，竖线成了多余引导）。
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_layout"
@@ -47,39 +49,41 @@
             android:textStyle="bold"
             android:layout_marginStart="8dp" />
 
-        <TextView
-            android:id="@+id/widget_subscription_month_count"
+        <!-- Hero：本月笔数（小）+ 本月合计（大，放后面 —— 用户定稿） -->
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="@dimen/widget_text_micro"
-            android:textColor="@color/widget_v2_text_tertiary" />
+            android:orientation="horizontal"
+            android:gravity="bottom">
+
+            <TextView
+                android:id="@+id/widget_subscription_month_count"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="@dimen/widget_text_micro"
+                android:textColor="@color/widget_v2_text_tertiary"
+                android:layout_marginBottom="2dp"
+                android:layout_marginEnd="5dp" />
+
+            <TextView
+                android:id="@+id/widget_subscription_month_sum"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="20sp"
+                android:textColor="@color/widget_v2_text_primary"
+                android:textStyle="bold"
+                android:maxLines="1" />
+        </LinearLayout>
     </LinearLayout>
 
-    <FrameLayout
+    <LinearLayout
+        android:id="@+id/widget_subscription_list"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:layout_marginTop="8dp">
-
-        <!-- 时间轴的竖线：色点的圆心落在它上面 -->
-        <ImageView
-            android:id="@+id/widget_subscription_line"
-            android:layout_width="2dp"
-            android:layout_height="match_parent"
-            android:layout_gravity="start"
-            android:layout_marginStart="4dp"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="8dp"
-            android:background="@color/widget_v2_ring"
-            android:contentDescription="@null" />
-
-        <LinearLayout
-            android:id="@+id/widget_subscription_list"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical"
-            android:gravity="center_vertical" />
-    </FrameLayout>
+        android:orientation="vertical"
+        android:gravity="center_vertical"
+        android:layout_marginTop="4dp" />
 
     <TextView
         android:id="@+id/widget_subscription_empty"

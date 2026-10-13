@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  密码本 1×1（定稿）：淡彩方块里的锁 + 条数（隐私口径不变，不显示任何条目内容）。
+  密码本 1×1（v4 定稿）：纯入口 —— 淡彩方块 + 锁 + 名称，不放计数（隐私口径不变）。
   方块底与锁字形都是占位，运行时 setColorFilter 上色族色。
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -9,7 +9,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:gravity="center"
-    android:padding="5dp"
+    android:padding="10dp"
     android:background="@drawable/widget_card_round">
 
     <FrameLayout
@@ -20,7 +20,7 @@
             android:id="@+id/widget_vault_small_bg"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:src="@drawable/widget_chip_round"
+            android:src="@drawable/widget_shape_circle"
             android:contentDescription="@null" />
 
         <ImageView
@@ -33,20 +33,13 @@
     </FrameLayout>
 
     <TextView
-        android:id="@+id/widget_vault_small_count"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
-        android:text="0"
-        android:textSize="16sp"
-        android:textColor="@color/widget_v2_text_primary"
-        android:textStyle="bold" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/widget_vault_entries"
-        android:textSize="9sp"
-        android:textColor="@color/widget_v2_text_secondary" />
+        android:layout_marginTop="5dp"
+        android:text="@string/widget_vault_title"
+        android:textSize="10sp"
+        android:textStyle="bold"
+        android:textColor="@color/widget_v2_text_secondary"
+        android:maxLines="1" />
 
 </LinearLayout>

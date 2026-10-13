@@ -103,8 +103,7 @@ class NextUpWidgetTest {
     @Test
     fun `待办焦点渲染标题与完成动作`() {
         val root = render(provider.bindViews(
-            context, 1, provider.pickFocus(listOf(todo(9)), emptyList(), emptyList()),
-            WidgetData.AccentTheme(0xFF0891B2.toInt(), 0xFFFFFFFF.toInt())
+            context, 1, provider.pickFocus(listOf(todo(9)), emptyList(), emptyList())
         ))
         assertTrue(texts(root).contains("交房租"))
         assertTrue(texts(root).contains(context.getString(R.string.widget_next_up_kind_todo)))
@@ -114,7 +113,7 @@ class NextUpWidgetTest {
 
     @Test
     fun `空焦点渲染空态并藏内容`() {
-        val root = render(provider.bindViews(context, 1, null, WidgetData.AccentTheme(0xFF0891B2.toInt(), 0xFFFFFFFF.toInt())))
+        val root = render(provider.bindViews(context, 1, null))
         assertEquals(View.VISIBLE, root.findViewById<View>(R.id.widget_next_up_empty)?.visibility)
         assertEquals(View.GONE, root.findViewById<View>(R.id.widget_next_up_content)?.visibility)
     }

@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  待办 4×3（定稿）：左侧竖进度轴（今日完成 N/M + 一条完成度条），右侧色片清单
-  （可滚动，行由 TodoWidgetService 提供）。进度条的填充是 clip，宽度由 level 定。
+  待办 4×3（v4 设计稿）：左侧竖进度轴（今日完成 N/M + 完成度条 + 已完成明细），
+  右侧「分段议程」（今天/逾期/明天/之后，行由 TodoWidgetService 分段提供），
+  底部「本周已完成 N 项」。头部逾期时显示警示 pill（替代旧「新增」色片，设计稿如此）。
+  进度条的填充是 clip，宽度由 level 定。
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/widget_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -49,27 +52,19 @@
             android:textStyle="bold"
             android:layout_marginStart="8dp" />
 
-        <FrameLayout
+        <!-- v4 设计稿：头部放「逾期 N」警示 pill（新增入口由卡片点按承担） -->
+        <TextView
+            android:id="@+id/widget_todo_overdue_pill"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content">
-
-            <ImageView
-                android:id="@+id/widget_todo_add_bg"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:src="@drawable/widget_chip_round"
-                android:contentDescription="@null" />
-
-            <TextView
-                android:id="@+id/widget_todo_add"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/widget_add"
-                android:textSize="12sp"
-                android:textStyle="bold"
-                android:paddingHorizontal="12dp"
-                android:paddingVertical="4dp" />
-        </FrameLayout>
+            android:layout_height="wrap_content"
+            android:background="@drawable/widget_pill_warn"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:textColor="@color/widget_risk_red"
+            android:paddingHorizontal="10dp"
+            android:paddingVertical="3dp"
+            android:visibility="gone"
+            tools:ignore="SmallSp" />
     </LinearLayout>
 
     <LinearLayout
@@ -79,10 +74,11 @@
         android:orientation="horizontal"
         android:layout_marginTop="10dp">
 
-        <!-- 竖进度轴：今日完成 N/M + 完成度条，点它进「今日安排」完整清单 -->
+        <!-- 完成度栏（v4）：今日完成 N/M + 完成度条 + 已完成明细 + 查看全部，
+             点它进「今日安排」完整清单 -->
         <LinearLayout
             android:id="@+id/widget_todo_progress_col"
-            android:layout_width="86dp"
+            android:layout_width="110dp"
             android:layout_height="match_parent"
             android:orientation="vertical"
             android:gravity="center_horizontal|center_vertical">
@@ -98,7 +94,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="0"
-                    android:textSize="32sp"
+                    android:textSize="30sp"
                     android:textColor="@color/widget_v2_text_primary"
                     android:textStyle="bold"
                     android:maxLines="1" />
@@ -124,7 +120,7 @@
 
             <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="5dp"
+                android:layout_height="8dp"
                 android:layout_marginTop="8dp">
 
                 <ImageView
@@ -140,6 +136,34 @@
                     android:src="@drawable/widget_bar_fill"
                     android:contentDescription="@null" />
             </FrameLayout>
+
+            <!-- v4 设计稿：明细前给「已完成 N 项」计数标签 -->
+            <TextView
+                android:id="@+id/widget_todo_done_count"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="10sp"
+                android:textColor="@color/widget_v2_text_tertiary"
+                android:layout_marginTop="10dp"
+                tools:ignore="SmallSp" />
+
+            <!-- v4：今日已完成明细（Provider 动态添加，✓ 前缀 + 三级色） -->
+            <LinearLayout
+                android:id="@+id/widget_todo_done_list"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginTop="8dp" />
+
+            <TextView
+                android:id="@+id/widget_todo_done_more"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/widget_todo_done_more"
+                android:textSize="@dimen/widget_text_micro"
+                android:textStyle="bold"
+                android:layout_marginTop="4dp"
+                android:maxLines="1" />
         </LinearLayout>
 
         <ImageView
@@ -159,9 +183,10 @@
             <ListView
                 android:id="@+id/widget_todo_list"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
                 android:divider="@android:color/transparent"
-                android:dividerHeight="4dp"
+                android:dividerHeight="3dp"
                 android:scrollbars="none" />
 
             <TextView
@@ -174,6 +199,24 @@
                 android:gravity="center"
                 android:paddingVertical="12dp"
                 android:visibility="gone" />
+
+            <!-- v4 设计稿：议程底部「本周已完成 N 项」固定页脚 -->
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="4dp"
+                android:background="@color/widget_v2_ring"
+                android:contentDescription="@null"
+                tools:ignore="ContentDescription" />
+
+            <TextView
+                android:id="@+id/widget_todo_week_done"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="10sp"
+                android:textColor="@color/widget_v2_text_secondary"
+                android:layout_marginTop="5dp"
+                tools:ignore="SmallSp" />
         </LinearLayout>
     </LinearLayout>
 

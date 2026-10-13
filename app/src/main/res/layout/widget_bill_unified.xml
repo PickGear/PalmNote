@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  账单 3×2（定稿）：左栏「本月支出」大数字 + 预算用量条，右栏近 7 天支出柱状图（图形当主角）。
+  账单 3×2（v4 定稿）：左栏「本月支出」大数字（33sp 主数字）+ 预算用量条（10dp 加粗），
+  右栏近 7 天支出柱状图（图形当主角，占满剩余高度）。
   柱高与用量条都靠 clip 的 level 定（RemoteViews 改不了控件尺寸）：用量条是「轨道 + clip 填充」
   叠在 FrameLayout 里，颜色运行时 setColorFilter，所以两层的默认白色都不是最终色。
 -->
@@ -74,7 +75,7 @@
         android:visibility="gone">
 
         <LinearLayout
-            android:layout_width="96dp"
+            android:layout_width="100dp"
             android:layout_height="match_parent"
             android:orientation="vertical"
             android:gravity="center_vertical">
@@ -91,7 +92,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="0"
-                android:textSize="26sp"
+                android:textSize="33sp"
                 android:textColor="@color/widget_v2_text_primary"
                 android:textStyle="bold"
                 android:layout_marginTop="1dp"
@@ -102,7 +103,7 @@
             <FrameLayout
                 android:id="@+id/widget_bill_budget_bar"
                 android:layout_width="match_parent"
-                android:layout_height="9dp"
+                android:layout_height="10dp"
                 android:layout_marginTop="8dp">
 
                 <ImageView

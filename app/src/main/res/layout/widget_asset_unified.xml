@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  物品 3×2（定稿）：头部（徽章 + 物品分布 + 共 N 件）→ 顶部占比条（一段一族色，段数 = 分类数）
-  → 两列色片网格（淡彩胶囊底 + 同族色点 + 分类名 + 件数）。
+  物品 3×2（v4 定稿）：头部（徽章 + 物品分布 + Hero「N 件」——20sp 大数字 + 小单位）
+  → 顶部占比条（10dp，一段一族色，段数 = 分类数）
+  → 两列色片网格（淡彩胶囊底 + 同族色点 + 分类名 + 纯数字件数，件数着同族色）。
 
   RemoteViews 不能运行时改子控件宽度，所以占比条的各段只能等宽：段数按分类数显隐，
   段色按色族给；每类到底几件，由下面的色片写清楚。
@@ -50,19 +51,40 @@
             android:textStyle="bold"
             android:layout_marginStart="8dp" />
 
-        <TextView
-            android:id="@+id/widget_asset_total"
+        <!-- Hero Number：总数大字 + 单位（v4：总数是这张卡的主信息） -->
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="@dimen/widget_text_micro"
-            android:textColor="@color/widget_v2_text_tertiary" />
+            android:orientation="horizontal"
+            android:gravity="bottom">
+
+            <TextView
+                android:id="@+id/widget_asset_total"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="20sp"
+                android:textColor="@color/widget_v2_text_primary"
+                android:textStyle="bold"
+                android:lineSpacingExtra="0dp"
+                android:maxLines="1" />
+
+            <TextView
+                android:id="@+id/widget_asset_total_unit"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/widget_asset_unit"
+                android:textSize="@dimen/widget_text_micro"
+                android:textColor="@color/widget_v2_text_tertiary"
+                android:layout_marginStart="3dp"
+                android:layout_marginBottom="1dp" />
+        </LinearLayout>
     </LinearLayout>
 
     <!-- 24 段等宽槽位：宽度由「占用几段」决定，于是段的宽度就是分类占比 -->
     <LinearLayout
         android:id="@+id/widget_asset_bar"
         android:layout_width="match_parent"
-        android:layout_height="14dp"
+        android:layout_height="10dp"
         android:orientation="horizontal"
         android:layout_marginTop="6dp"
         android:background="@drawable/widget_bar_round_bg"

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 待办议程行的待办方框（v4 设计稿 .ck）：圆角描边空心方块，颜色运行时上 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <corners android:radius="4dp" />
+    <stroke
+        android:width="1.5dp"
+        android:color="@color/widget_v2_text_tertiary" />
+    <solid android:color="#00000000" />
+</shape>

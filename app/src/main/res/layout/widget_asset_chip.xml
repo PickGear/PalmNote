@@ -22,7 +22,7 @@
         android:orientation="horizontal"
         android:gravity="center_vertical"
         android:paddingHorizontal="8dp"
-        android:paddingVertical="7dp">
+        android:paddingVertical="3dp">
 
         <ImageView
             android:id="@+id/widget_asset_chip_dot"
@@ -36,18 +36,19 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:textSize="13sp"
+            android:textSize="12sp"
             android:textColor="@color/widget_v2_text_primary"
             android:layout_marginStart="6dp"
             android:maxLines="1"
             android:ellipsize="end" />
 
+        <!-- 件数：纯数字着同族色（稿子如此；总数单位在头部，片内不重复「件」） -->
         <TextView
             android:id="@+id/widget_asset_chip_count"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="@dimen/widget_text_micro"
-            android:textColor="@color/widget_v2_text_secondary"
+            android:textSize="12sp"
+            android:textStyle="bold"
             android:layout_marginStart="4dp"
             android:maxLines="1" />
     </LinearLayout>

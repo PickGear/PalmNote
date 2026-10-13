@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 习惯周历的方柱（v4）：近 7 天一格一柱，白底占位，运行时 setColorFilter 上色 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <corners android:radius="5dp" />
+    <solid android:color="#FFFFFFFF" />
+</shape>

@@ -11,16 +11,18 @@ import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 import kotlinx.coroutines.flow.first
 
 /**
- * 总资产 2×1 组件：各账户余额合计（与应用内钱包页同一口径）+ 一枚涨跌胶囊。
+ * 总资产 2×1 组件：各账户余额合计（与应用内钱包页同一口径）+ 涨跌胶囊 + 本月净收入。
  * 点卡片进记账页看明细；尺寸变化只影响字号，不做分档。
  *
- * 胶囊口径：**本月净收入（本月收入 − 支出）的金额**，涨绿跌红。
- * 一开始按稿子做的是百分比（净收入 ÷ 期初总资产），但真机上算出来是 +175.8% —— 基数是
- * 期初总资产，收入远大于余额时这个比例毫无意义；应用也不存总资产历史，做不了真正的环比。
- * 金额是现有数据能如实表达的，本月没有进出就整枚隐藏。
+ * 三段口径（全部来自已有账单数据，无额外字段）：
+ * - Hero 数字：各账户余额合计（钱包页 getTotalBalance() 同源）；
+ * - 胶囊：本月净收入 ÷ 期初总资产，一位小数百分比，涨绿跌红。期初 = 当前合计 − 本月净收入；
+ *   期初 ≤ 0（新账户第一个月没有基数）算不出有意义比率，整枚隐藏；
+ * - 底行：同一笔本月净收入的**金额**（设计稿「本月 +¥680」），本月没有进出时给中性的「本月 ¥0」。
  */
 class NetWorthWidgetProvider : ScopedWidgetProvider() {
 
@@ -45,7 +47,7 @@ class NetWorthWidgetProvider : ScopedWidgetProvider() {
                 appWidgetManager.getAppWidgetOptions(appWidgetId),
                 MIN_WIDTH_DP,
                 MIN_HEIGHT_DP
-            ) { width, _ -> bindViews(context, appWidgetId, total, width, delta) }
+            ) { width, height -> bindViews(context, appWidgetId, total, width, delta, height) }
         }
     }
 
@@ -57,13 +59,18 @@ class NetWorthWidgetProvider : ScopedWidgetProvider() {
         return income - expense
     }
 
-    /** 2 格宽起字号大一号；再宽也不换布局，只放大数字。 */
+    /**
+     * 2 格宽起字号大一号；再宽也不换布局，只放大数字。
+     * [heightDp] 是桌面给的实际高度：矮到放不下第三行时收起「本月 ±¥X」
+     * （设计稿三段式只在 2×1 的完整高度下成立，缩到最小格还硬塞会截断）。
+     */
     internal fun bindViews(
         context: Context,
         appWidgetId: Int,
         totalBalance: Long,
         widthDp: Int,
-        monthDelta: Long = 0L
+        monthDelta: Long = 0L,
+        heightDp: Int = MIN_HEIGHT_DP
     ): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.widget_net_worth_unified)
         views.setTextViewText(
@@ -76,7 +83,13 @@ class NetWorthWidgetProvider : ScopedWidgetProvider() {
             android.util.TypedValue.COMPLEX_UNIT_SP,
             if (wide) 26f else 22f
         )
-        bindDelta(context, views, monthDelta)
+        // 期初总资产 = 当前合计 − 本月净收入：胶囊吃这个基数算比率
+        bindDelta(context, views, monthDelta, totalBalance - monthDelta)
+        bindMonthSub(context, views, monthDelta)
+        views.setViewVisibility(
+            R.id.widget_net_worth_sub,
+            if (heightDp < SUB_MIN_HEIGHT_DP) View.GONE else View.VISIBLE
+        )
 
         views.setOnClickPendingIntent(
             R.id.widget_layout,
@@ -89,9 +102,9 @@ class NetWorthWidgetProvider : ScopedWidgetProvider() {
         return views
     }
 
-    /** 涨跌胶囊：本月没有进出就整枚隐藏，否则给带符号的净收入金额。 */
-    private fun bindDelta(context: Context, views: RemoteViews, monthDelta: Long) {
-        if (monthDelta == 0L) {
+    /** 涨跌胶囊：本月净收入 ÷ 期初总资产，一位小数百分比；期初 ≤ 0 或没有进出就整枚隐藏。 */
+    private fun bindDelta(context: Context, views: RemoteViews, monthDelta: Long, opening: Long) {
+        if (monthDelta == 0L || opening <= 0L) {
             views.setViewVisibility(R.id.widget_net_worth_delta, View.GONE)
             return
         }
@@ -103,15 +116,42 @@ class NetWorthWidgetProvider : ScopedWidgetProvider() {
             "setBackgroundResource",
             if (up) R.drawable.widget_delta_pill_up else R.drawable.widget_delta_pill_down
         )
-        // 金额格式函数返回绝对值，符号在这里补（涨 +、跌 -）
+        // 先按千分之一取整再除 10 得到一位小数，避免浮点误差（金额格式函数返回绝对值）
+        val permille = monthDelta * PERCENT_MILLI / opening
         views.setTextViewText(
             R.id.widget_net_worth_delta,
-            (if (up) "+" else "-") + "¥" + WidgetData.formatAmountCompact(context, monthDelta)
+            (if (up) "+" else "-") + String.format(
+                Locale.getDefault(),
+                "%.1f%%",
+                kotlin.math.abs(permille) / PERCENT_DIVISOR
+            )
         )
         views.setTextColor(
             R.id.widget_net_worth_delta,
             context.getColor(if (up) R.color.widget_delta_up else R.color.widget_delta_down)
         )
+    }
+
+    /** 第三行：本月净收入金额（设计稿「本月 +¥680」），涨跌同色；没有进出给中性色的「本月 ¥0」。 */
+    private fun bindMonthSub(context: Context, views: RemoteViews, monthDelta: Long) {
+        val sign = when {
+            monthDelta > 0 -> "+"
+            monthDelta < 0 -> "-"
+            else -> ""
+        }
+        views.setTextViewText(
+            R.id.widget_net_worth_sub,
+            context.getString(
+                R.string.widget_net_worth_month_sub,
+                "$sign¥" + WidgetData.formatAmountCompact(context, monthDelta)
+            )
+        )
+        val colorRes = when {
+            monthDelta > 0 -> R.color.widget_delta_up
+            monthDelta < 0 -> R.color.widget_delta_down
+            else -> R.color.widget_v2_text_secondary
+        }
+        views.setTextColor(R.id.widget_net_worth_sub, context.getColor(colorRes))
     }
 
     private companion object {
@@ -121,5 +161,12 @@ class NetWorthWidgetProvider : ScopedWidgetProvider() {
 
         /** 4 格宽起数字放大一号。 */
         const val WIDE_WIDTH_DP = 250
+
+        /** 矮于这个高度放不下三段，收起第三行。 */
+        const val SUB_MIN_HEIGHT_DP = 60
+
+        /** 百分比取一位小数：千分之一取整后除以 10。 */
+        const val PERCENT_MILLI = 1000L
+        const val PERCENT_DIVISOR = 10.0
     }
 }

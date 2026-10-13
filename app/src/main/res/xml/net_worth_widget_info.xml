@@ -14,6 +14,6 @@
     android:widgetCategory="home_screen"
     android:description="@string/widget_net_worth_desc"
     android:previewImage="@drawable/widget_preview_net_worth"
-    android:previewLayout="@layout/widget_net_worth_unified"
+    android:previewLayout="@layout/widget_net_worth_preview"
     android:configure="com.palmnote.ui.widget.WidgetConfigActivity"
     android:resizeMode="horizontal|vertical" />

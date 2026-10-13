@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  选择器预览（Android 12+ 的 previewLayout）：静置一张已按设计稿网格出好的预览图。
+
+  previewLayout 由系统在选择器里 inflate，**不会运行应用代码**，所以不能指向运行时布局
+  （widget_*_unified 的文本要靠 setTextViewText 填，inflate 出来是空壳 + 截断）。
+  这里放 previewImage 同源的图，选择器 / 确认框 / App 内目录三处所见一致。
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="fitCenter"
+        android:src="@drawable/widget_preview_shortcuts"
+        android:contentDescription="@null" />
+
+</FrameLayout>

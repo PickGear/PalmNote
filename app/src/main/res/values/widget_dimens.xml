@@ -11,10 +11,12 @@
   间距三档：pad 卡片内边距 / gap 块与块之间 / inner_pad 子卡内边距。
 -->
 <resources>
-    <dimen name="widget_text_title">14sp</dimen>
+    <!-- 标题与徽章按设计稿量值给（design-v4.html 的 `.ttl` 11px / `.bdg` 16px）：
+         头部是紧凑的辅助标签，不是大标题，做大了整张卡的头就压住了内容区。 -->
+    <dimen name="widget_text_title">11sp</dimen>
     <dimen name="widget_text_micro">10sp</dimen>
 
     <dimen name="widget_pad">14dp</dimen>
     <dimen name="widget_gap">8dp</dimen>
-    <dimen name="widget_icon_badge">20dp</dimen>
+    <dimen name="widget_icon_badge">16dp</dimen>
 </resources>

@@ -28,14 +28,14 @@ class VaultWidgetProvider : ScopedWidgetProvider() {
         val hasEntries = totalCount > 0
 
         publish(context, appWidgetManager, appWidgetIds) { appWidgetId, _ ->
-            // 1×1 缩档：只显示锁 + 条数（拖大到 ≥110dp 恢复完整布局）
+            // 1×1 缩档：纯入口（图标 + 名称，v4 定稿不放计数）；拖大到 ≥110dp 恢复完整布局
             sizedRemoteViews(
                 appWidgetManager.getAppWidgetOptions(appWidgetId),
                 SMALL_WIDTH_DP,
                 SMALL_WIDTH_DP
             ) { width, _ ->
                 if (width < FULL_MIN_WIDTH_DP) {
-                    bindSmallViews(context, appWidgetId, totalCount)
+                    bindSmallViews(context, appWidgetId)
                 } else {
                     bindViews(context, appWidgetId, totalCount, hasEntries)
                 }
@@ -66,13 +66,13 @@ class VaultWidgetProvider : ScopedWidgetProvider() {
         return views
     }
 
-    internal fun bindSmallViews(context: Context, appWidgetId: Int, totalCount: Int): RemoteViews {
+    /** 1×1 缩档：纯入口，图标 + 名称（不显示任何条目内容，v4 起也不再放条数）。 */
+    internal fun bindSmallViews(context: Context, appWidgetId: Int): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.widget_vault_small)
         // 淡彩方块 + 同族饱和锁字形（装饰色不占全局强调色）
         val family = WidgetData.colorFamily(context, 4)
         views.setInt(R.id.widget_vault_small_bg, "setColorFilter", family.tint)
         views.setInt(R.id.widget_vault_small_icon, "setColorFilter", family.hue)
-        views.setTextViewText(R.id.widget_vault_small_count, "$totalCount")
         views.setOnClickPendingIntent(
             R.id.widget_layout,
             WidgetHelper.createPendingIntent(context, WidgetDeepLink.SEG_VAULT + appWidgetId, WidgetDeepLink.TAB_VAULT)

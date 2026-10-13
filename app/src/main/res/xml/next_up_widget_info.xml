@@ -14,6 +14,6 @@
     android:widgetCategory="home_screen"
     android:description="@string/widget_next_up_desc"
     android:previewImage="@drawable/widget_preview_next_up"
-    android:previewLayout="@layout/widget_next_up_unified"
+    android:previewLayout="@layout/widget_next_up_preview"
     android:configure="com.palmnote.ui.widget.WidgetConfigActivity"
     android:resizeMode="horizontal|vertical" />

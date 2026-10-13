@@ -17,6 +17,9 @@
     <color name="widget_delta_down">#FFF87171</color>
     <color name="widget_delta_up_tint">#FF14301F</color>
     <color name="widget_delta_down_tint">#FF3A1F1F</color>
+    <color name="widget_risk_red">#FFFCA5A5</color>
+    <!-- 警示胶囊底：夜间红 20%（design-v4 .dark .warn 同源） -->
+    <color name="widget_warn_bg">#33EF4444</color>
 
 
     <!-- 色族（夜间）：淡底压到深色卡上不刺眼，前景提亮保证对比 -->

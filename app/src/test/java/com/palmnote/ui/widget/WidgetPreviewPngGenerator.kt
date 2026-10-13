@@ -15,6 +15,7 @@ import com.palmnote.data.db.entity.LifeItem
 import java.io.File
 import java.io.FileOutputStream
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import org.junit.Assume.assumeTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -33,9 +34,13 @@ import org.robolectric.annotation.GraphicsMode
  * 逐张目检后分别拷进 `app/src/main/res/drawable-nodpi/` 与 `app/src/main/res/drawable-night-nodpi/`。
  * 两份同名，系统按当前明暗自动挑一份，页面代码不用管。
  *
- * 画布按**真机实测尺寸**给（3× 密度）：393dp 宽的机器上 1 格宽 ≈ 82dp、1 格高 ≈ 74dp，
- * 所以 4 格宽 = 340dp、3 格宽 = 245dp、2 格宽 = 160dp、1 格宽 = 82dp。
- * 之前一律用 240×160dp，比真机窄得多，预览里的文字会被挤到截断、大档那一行还会被判成小档。
+ * 画布按**设计稿网格**给（3× 密度，与 `dist/widget-design-v2/design-v4.html` 的
+ * `.s11/.s21/.s22/.s32/.s41/.s43` 一一对应：1 格宽 82dp、1 格高 74dp），
+ * 这样选择器里看到的预览比例和设计稿完全一致：
+ * 3 格宽 = 245dp、4 格宽 = 340dp、2 格宽 = 160dp、1 格 = 82dp；
+ * 3×2 = 245×148、4×3 = 340×268、2×1 = 160×74、2×2 = 160×160、1×1 = 82×82、4×1 = 340×74。
+ * 之前用过 240×160dp 和 258×190dp 两版，前者窄到挤截断文字，后者比设计稿矮胖
+ * （1.36 vs 1.66 宽高比），用户对比设计稿一眼就看出比例不对。
  * 语言取 zh：预览文案是用户看到的界面文案，不跟测试机 locale 走。
  */
 @RunWith(RobolectricTestRunner::class)
@@ -66,22 +71,26 @@ class WidgetPreviewPngGenerator {
         outDir = dir
         outDir.mkdirs()
 
-        render("bill", 774, 570, billViews())
-        // 迷你档不进选择器（没有 previewImage），这里出图只为目检
-        render("bill_mini", 516, 285, billMiniViews())
-        // 概览是 4×3：真机格子比 240×160dp 画布高，画布加高，否则第二行会被裁掉
-        render("dashboard", 1035, 852, dashboardViews())
-        render("todo", 1035, 852, todoViews())
-        render("habit", 1035, 852, habitViews())
+        // 3×2 = 245×148dp：设计稿 s32 网格（下同，×3 密度换算成 px）
+        render("bill", 735, 444, billViews())
+        // 迷你档不进选择器（没有 previewImage），这里出图只为目检（2×1 = 160×74dp）
+        render("bill_mini", 480, 222, billMiniViews())
+        // 4×3 = 340×268dp：设计稿 s43 网格
+        render("dashboard", 1020, 804, dashboardViews())
+        render("todo", 1020, 804, todoViews())
+        render("habit", 1020, 804, habitViews())
         // 倒计时是 3×2（稿子口径）：画布按 3 格宽给
-        render("counter", 774, 570, counterViews())
-        render("asset", 774, 570, assetViews())
-        render("shortcuts", 516, 570, shortcutsViews())
-        // 总资产是 2×1：按真实格子给画布
-        render("net_worth", 516, 285, netWorthViews())
-        render("next_up", 774, 570, nextUpViews())
-        render("subscription", 774, 570, subscriptionViews())
-        render("vault", 258, 285, vaultViews())
+        render("counter", 735, 444, counterViews())
+        render("asset", 735, 444, assetViews())
+        // 2×2 = 160×160dp、4×1 = 340×74dp：设计稿 s22 / s41
+        render("shortcuts", 480, 480, shortcutsViews())
+        render("shortcuts_wide", 1020, 222, shortcutsWideViews())
+        // 总资产是 2×1 = 160×74dp：设计稿 s21
+        render("net_worth", 480, 222, netWorthViews())
+        render("next_up", 735, 444, nextUpViews())
+        render("subscription", 735, 444, subscriptionViews())
+        // 1×1 = 82×82dp：设计稿 s11
+        render("vault", 246, 246, vaultViews())
     }
 
     // ── 各组件：与线上 onUpdateAsync 同源（同样的 bind + 同样的运行时着色） ──
@@ -105,20 +114,24 @@ class WidgetPreviewPngGenerator {
             context,
             views,
             DashboardWidgetProvider.DashboardSnapshot(
-                dateText = "10月6日 周二",
-                budgetCardAmount = WidgetData.formatMoneyCompact(context, 172_000),
+                weekTodoCount = 5,
+                budgetCardAmount = WidgetData.formatMoneyCompact(context, 180_000),
                 budgetCardSub = context.getString(R.string.widget_budget_remaining),
                 goalPct = "64%",
                 goalName = "跑步 5km",
+                goalCounts = "今日 3.2 / 5 km",
                 todoRemaining = 2,
-                anniversaryTitle = "妈妈生日",
-                anniversaryDays = 12,
-                budgetPercent = 82,
-                goalPercent = 64
+                todoDoneToday = 2,
+                overdueCount = 1,
+                anniversaryTitle = "爸爸生日",
+                anniversaryDays = 20,
+                anniversaryDateText = "11/1 · 周日",
+                budgetPercent = 82
             )
         )
         val families = (0..3).map { WidgetData.colorFamily(context, it) }
         views.setInt(R.id.widget_dashboard_icon_bg, "setColorFilter", accent.accent)
+        views.setTextColor(R.id.widget_dashboard_week_todo, families[0].hue)
         listOf(
             Triple(R.id.widget_dashboard_budget_tint, R.id.widget_dashboard_budget_dot, R.id.widget_dashboard_budget),
             Triple(R.id.widget_dashboard_goal_tint, R.id.widget_dashboard_goal_dot, R.id.widget_dashboard_goal_pct),
@@ -129,18 +142,16 @@ class WidgetPreviewPngGenerator {
             views.setInt(dotId, "setColorFilter", families[index].hue)
             views.setTextColor(valueId, families[index].hue)
         }
-        // 三层环：轨道同色相淡化、进度弧实色（样例 82 / 64 / 67）
-        listOf(
-            Triple(R.id.widget_dashboard_budget_ring_track, R.id.widget_dashboard_budget_ring, 82),
-            Triple(R.id.widget_dashboard_goal_ring_track, R.id.widget_dashboard_goal_ring, 64),
-            Triple(R.id.widget_dashboard_todo_ring_track, R.id.widget_dashboard_todo_ring, 67)
-        ).forEachIndexed { index, (trackId, arcId, percent) ->
-            val hue = families[index].hue
-            views.setInt(trackId, "setColorFilter", (hue and 0x00FFFFFF) or (0x42 shl 24))
-            views.setInt(arcId, "setColorFilter", hue)
-            views.setInt(arcId, "setImageLevel", percent * 100)
-        }
-        views.setTextViewText(R.id.widget_dashboard_ring_text, "82%")
+        // 预算 tile 的迷你用量条（样例 82%）
+        views.setInt(R.id.widget_dashboard_budget_bar_track, "setColorFilter", families[0].hue)
+        views.setInt(R.id.widget_dashboard_budget_bar_track, "setImageLevel", 10_000 / 4)
+        views.setInt(R.id.widget_dashboard_budget_bar_fill, "setColorFilter", families[0].hue)
+        views.setInt(R.id.widget_dashboard_budget_bar_fill, "setImageLevel", 82 * 100)
+        // 目标 tile 的迷你进度条（样例 64%），与运行时 bindViews 同款着色
+        views.setInt(R.id.widget_dashboard_goal_bar_track, "setColorFilter", families[1].hue)
+        views.setInt(R.id.widget_dashboard_goal_bar_track, "setImageLevel", 10_000 / 4)
+        views.setInt(R.id.widget_dashboard_goal_bar_fill, "setColorFilter", families[1].hue)
+        views.setInt(R.id.widget_dashboard_goal_bar_fill, "setImageLevel", 64 * 100)
         return views
     }
 
@@ -156,25 +167,33 @@ class WidgetPreviewPngGenerator {
         context,
         1,
         listOf(
-            HabitWidgetProvider.HabitRow(
+            // 样例必须自洽：recent 图案 ↔ streak（从今天往回连着的格数）、
+            // weekHits（今天周一 → 本周只有今天）、monthCount/longest ≥ 可信下限，
+            // 否则预览里会出现「方柱亮着却写 0/7」这类穿帮
+            HabitWidgetProvider.            HabitRow(
                 templateId = 11, name = "跑步 5km", checked = true, streak = 12,
-                recent = listOf(true, true, false, true, true, true, true)
+                recent = listOf(true, true, false, true, true, true, true),
+                monthCount = 18, longest = 21, weekHits = 1
             ),
             HabitWidgetProvider.HabitRow(
-                templateId = 12, name = "阅读 30min", checked = false, streak = 3,
-                recent = listOf(false, true, false, true, true, false, false)
+                templateId = 12, name = "阅读 30min", checked = false, streak = 2,
+                recent = listOf(false, false, false, true, true, true, false),
+                monthCount = 8, longest = 5, weekHits = 0
             ),
             HabitWidgetProvider.HabitRow(
                 templateId = 13, name = "喝水 8 杯", checked = false, streak = 0,
-                recent = listOf(false, false, false, true, false, false, false)
+                recent = listOf(false, false, false, true, false, false, false),
+                monthCount = 4, longest = 1, weekHits = 0
             ),
             HabitWidgetProvider.HabitRow(
                 templateId = 14, name = "早睡", checked = true, streak = 6,
-                recent = listOf(true, true, false, true, true, true, true)
+                recent = listOf(false, true, true, true, true, true, true),
+                monthCount = 15, longest = 9, weekHits = 1
             ),
             HabitWidgetProvider.HabitRow(
                 templateId = 15, name = "冥想 10 分钟", checked = false, streak = 2,
-                recent = listOf(true, false, true, false, true, true, false)
+                recent = listOf(true, false, true, false, true, true, false),
+                monthCount = 7, longest = 3, weekHits = 0
             )
         )
     )
@@ -187,49 +206,62 @@ class WidgetPreviewPngGenerator {
             context,
             1,
             listOf(
-                LifeCounterWidgetProvider.CounterEvent(1, "妈妈生日", 12, today.plusDays(12)),
-                LifeCounterWidgetProvider.CounterEvent(2, "结婚纪念日", 48, today.plusDays(48))
+                // 爸爸生日 20 天：与概览卡同一事件同一数（设计稿跨卡对齐）
+                LifeCounterWidgetProvider.CounterEvent(1, "爸爸生日", 20, today.plusDays(20)),
+                LifeCounterWidgetProvider.CounterEvent(2, "妈妈生日", 40, today.plusDays(40))
             ),
             isLarge = false
         )
         return views
     }
 
-    /** 物品 3×2：样例与静态预览布局同源（6 个分类、共 11 件）。 */
+    /** 物品 3×2：样例与静态预览布局同源（6 个分类、共 11 件，分布对齐设计稿 4/3/1/1/1/1）。 */
     private fun assetViews(): RemoteViews = AssetWidgetProvider().bindViews(
         context,
         1,
         listOf(
             // 用 DB 里的规范代码（组件按 getCategoryName 翻译成中文，写中文名会落成「其他」）
-            HeldCategoryCount("DIGITAL", 3),
-            HeldCategoryCount("SPORTS", 2),
-            HeldCategoryCount("FURNITURE", 2),
-            HeldCategoryCount("BOOKS", 2),
+            HeldCategoryCount("DIGITAL", 4),
+            HeldCategoryCount("SPORTS", 3),
+            HeldCategoryCount("FURNITURE", 1),
+            HeldCategoryCount("BOOKS", 1),
             HeldCategoryCount("MUSICAL", 1),
             HeldCategoryCount("PHOTOGRAPHY", 1)
         )
     )
 
-    /** 总资产 2×1：样例值取「账户余额合计」。 */
-    private fun netWorthViews(): RemoteViews =
-        NetWorthWidgetProvider().bindViews(context, 1, totalBalance = 1_285_000, widthDp = 110, monthDelta = 26_400)
+    /**
+     * 总资产 2×1：样例值取「账户余额合计」；画布 160×74dp（设计稿 s21），
+     * 高度要按设计稿给足，否则三段式的第三行会被当成「缩到最小格」收起。
+     */
+    private fun netWorthViews(): RemoteViews = NetWorthWidgetProvider().bindViews(
+        context,
+        1,
+        totalBalance = 1_285_000,
+        widthDp = 160,
+        monthDelta = 26_400,
+        heightDp = 74
+    )
 
-    /** 订阅提醒 3×2：样例取三条近期扣费。 */
+    /** 订阅提醒 3×2：样例取四笔近期扣费（首笔当天 → 红色「即将扣费」，与设计稿一致）。 */
     private fun subscriptionViews(): RemoteViews = SubscriptionWidgetProvider().bindViews(
         context,
         1,
         listOf(
-            SubscriptionWidgetProvider.Renewal("云盘会员", "25", 4),
-            SubscriptionWidgetProvider.Renewal("视频会员", "15", 12),
-            SubscriptionWidgetProvider.Renewal("音乐会员", "8", 23),
-            SubscriptionWidgetProvider.Renewal("云存储", "6", 29)
+            SubscriptionWidgetProvider.Renewal("云盘会员", "25", 0),
+            SubscriptionWidgetProvider.Renewal("视频会员", "15", 5),
+            SubscriptionWidgetProvider.Renewal("音乐会员", "8", 9),
+            SubscriptionWidgetProvider.Renewal("云存储", "6", 13)
         )
     )
 
     private fun shortcutsViews(): RemoteViews = ShortcutsWidgetProvider().bindViews(context, 1)
 
-    /** 密码本已缩为 1×1，预览出的是缩档布局（与 info 的 previewLayout 同源）。 */
-    private fun vaultViews(): RemoteViews = VaultWidgetProvider().bindSmallViews(context, 1, totalCount = 24)
+    /** 快捷入口 4×1 横条：同一批数据，只切布局档（目检用）。 */
+    private fun shortcutsWideViews(): RemoteViews = ShortcutsWidgetProvider().bindViews(context, 1, wide = true)
+
+    /** 密码本已缩为 1×1 纯入口（图标 + 名称），预览出的是缩档布局（与 info 的 previewLayout 同源）。 */
+    private fun vaultViews(): RemoteViews = VaultWidgetProvider().bindSmallViews(context, 1)
 
     private fun render(name: String, width: Int, height: Int, views: RemoteViews) {
         val parent = FrameLayout(context)
@@ -254,10 +286,10 @@ class WidgetPreviewPngGenerator {
         1,
         NextUpWidgetProvider.NextUpFocus(
             kind = NextUpWidgetProvider.Kind.RENEWAL,
-            title = "视频会员",
-            meta = "10/23",
+            // 与订阅卡首笔同源（云盘会员 ¥25、当天扣费，设计稿「待扣费」卡口径）
+            title = "云盘会员",
+            meta = LocalDate.now().format(DateTimeFormatter.ofPattern("M/d")),
             bigValue = "¥25"
-        ),
-        accent
+        )
     )
 }

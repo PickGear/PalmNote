@@ -1,81 +1,102 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 习惯点阵的一行：近 7 天（从 6 天前排到今天）各一个圆点，整行可点＝给这个习惯打今天的卡；
-     今天（第 7 格）多一圈描边 -->
+<!--
+  习惯周历的一行（v4 方柱版）：左习惯名（64dp 省略）+ 近 7 天方柱（18dp，从 6 天前排到今天，
+  今天那格多一圈方环）+ 行尾本周完成 x/7。整行可点 = 给这个习惯打今天的卡。
+-->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_habit_dots_row"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
     android:gravity="center_vertical"
-    android:paddingVertical="5dp">
+    android:paddingVertical="2dp">
+
+    <TextView
+        android:id="@+id/widget_habit_row_name"
+        android:layout_width="64dp"
+        android:layout_height="wrap_content"
+        android:textSize="11sp"
+        android:textColor="@color/widget_v2_text_secondary"
+        android:maxLines="1"
+        android:ellipsize="end" />
 
     <ImageView
         android:id="@+id/widget_habit_dot_0"
-        android:layout_width="16dp"
-        android:layout_height="16dp"
-        android:src="@drawable/widget_shape_circle"
+        android:layout_width="18dp"
+        android:layout_height="18dp"
+        android:layout_marginStart="6dp"
+        android:src="@drawable/widget_sq_dot"
         android:contentDescription="@null" />
 
     <ImageView
         android:id="@+id/widget_habit_dot_1"
-        android:layout_width="16dp"
-        android:layout_height="16dp"
-        android:layout_marginStart="8dp"
-        android:src="@drawable/widget_shape_circle"
+        android:layout_width="18dp"
+        android:layout_height="18dp"
+        android:layout_marginStart="6dp"
+        android:src="@drawable/widget_sq_dot"
         android:contentDescription="@null" />
 
     <ImageView
         android:id="@+id/widget_habit_dot_2"
-        android:layout_width="16dp"
-        android:layout_height="16dp"
-        android:layout_marginStart="8dp"
-        android:src="@drawable/widget_shape_circle"
+        android:layout_width="18dp"
+        android:layout_height="18dp"
+        android:layout_marginStart="6dp"
+        android:src="@drawable/widget_sq_dot"
         android:contentDescription="@null" />
 
     <ImageView
         android:id="@+id/widget_habit_dot_3"
-        android:layout_width="16dp"
-        android:layout_height="16dp"
-        android:layout_marginStart="8dp"
-        android:src="@drawable/widget_shape_circle"
+        android:layout_width="18dp"
+        android:layout_height="18dp"
+        android:layout_marginStart="6dp"
+        android:src="@drawable/widget_sq_dot"
         android:contentDescription="@null" />
 
     <ImageView
         android:id="@+id/widget_habit_dot_4"
-        android:layout_width="16dp"
-        android:layout_height="16dp"
-        android:layout_marginStart="8dp"
-        android:src="@drawable/widget_shape_circle"
+        android:layout_width="18dp"
+        android:layout_height="18dp"
+        android:layout_marginStart="6dp"
+        android:src="@drawable/widget_sq_dot"
         android:contentDescription="@null" />
 
     <ImageView
         android:id="@+id/widget_habit_dot_5"
-        android:layout_width="16dp"
-        android:layout_height="16dp"
-        android:layout_marginStart="8dp"
-        android:src="@drawable/widget_shape_circle"
+        android:layout_width="18dp"
+        android:layout_height="18dp"
+        android:layout_marginStart="6dp"
+        android:src="@drawable/widget_sq_dot"
         android:contentDescription="@null" />
 
     <FrameLayout
-        android:layout_width="22dp"
-        android:layout_height="22dp"
-        android:layout_marginStart="5dp">
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_marginStart="4dp">
 
         <ImageView
             android:id="@+id/widget_habit_dot_6"
-            android:layout_width="16dp"
-            android:layout_height="16dp"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
             android:layout_gravity="center"
-            android:src="@drawable/widget_shape_circle"
+            android:src="@drawable/widget_sq_dot"
             android:contentDescription="@null" />
 
-        <!-- 今天那格多一圈描边（运行时着该行的色族色） -->
+        <!-- 今天那格多一圈方环（运行时着该行的色族色） -->
         <ImageView
             android:id="@+id/widget_habit_dot_today_ring"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:src="@drawable/widget_dot_ring"
+            android:src="@drawable/widget_sq_ring"
             android:contentDescription="@null" />
     </FrameLayout>
 
+    <TextView
+        android:id="@+id/widget_habit_row_week"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:textSize="10sp"
+        android:textStyle="bold"
+        android:textColor="@color/widget_v2_text_secondary"
+        android:maxLines="1" />
 </LinearLayout>

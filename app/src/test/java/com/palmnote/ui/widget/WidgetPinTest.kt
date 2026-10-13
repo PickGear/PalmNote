@@ -142,33 +142,43 @@ class WidgetPinTest {
         assertEquals("数到就该立刻返回，不必跑满全部轮次", 2, polls)
     }
 
-    // ── 预览尺寸：只跟页面宽度有关，不随屏幕密度变 ──
-    // 以前 Image 不给固定尺寸时，画出来的是「PNG 像素 ÷ 密度」dp：3x 屏 240dp、2x 屏 318dp，
-    // 同一个组件在不同机型上大小不一样。下面两条在两种密度下量同一个宽度，锁住这个行为。
-    // 393dp 屏：393 - 24×2（页边距）- 16×2（预览区留白）= 313dp
+    // ── 预览尺寸：按组件设计尺寸**等比**摆放 ──
+    // 目录里的卡不再各自拉满预览区宽度（那样 1×1 和 4×3 一样宽、比例失真），而是全部乘
+    // 同一个系数：maxScale = min(可用宽/340, 可用高/268)。断言值按这个式子算出来，
+    // 同时锁住「尺寸不随屏幕密度变」（同一条在 2x / 3x 两种密度下量，结果必须一致）。
+    // 393dp 屏：可用宽 = 393 - 24×2（页边距）- 16×2（预览区留白）= 313dp；可用高 = 272 - 32 = 240dp
 
     @Test
     @Config(sdk = [30], application = Application::class, qualifiers = "zh-rCN-w393dp-h852dp-xxhdpi")
-    fun `预览宽度按页面算 3x 屏`() {
+    fun `预览按设计尺寸等比摆放 3x 屏`() {
         setPinSupported(true)
         compose.setContent { PalmNoteTheme { WidgetPinScreen() } }
-        val preview = compose.onNodeWithTag(PREVIEW_IMAGE_TAG)
-        preview.assertWidthIsEqualTo(PREVIEW_WIDTH_DP.dp)
-        // 高度 = 宽度 ÷ 图片自身比例（比例从预览图实际尺寸算，换画布不用改这条断言）
-        val drawable = context.getDrawable(WidgetPin.entries.first().previewImageRes)!!
-        val ratio = drawable.intrinsicWidth.toFloat() / drawable.intrinsicHeight
-        preview.assertHeightIsEqualTo((PREVIEW_WIDTH_DP / ratio).dp)
+        val (designW, designH) = WidgetPin.designSizeOf(WidgetPin.entries.first())!!
+        val scale = previewScale()
+        compose.onNodeWithTag(PREVIEW_IMAGE_TAG)
+            .assertWidthIsEqualTo((designW * scale).dp)
+            .assertHeightIsEqualTo((designH * scale).dp)
     }
 
     @Test
     @Config(sdk = [30], application = Application::class, qualifiers = "zh-rCN-w393dp-h852dp-xhdpi")
-    fun `预览宽度按页面算 2x 屏`() {
+    fun `预览尺寸不随屏幕密度变 2x 屏`() {
         setPinSupported(true)
         compose.setContent { PalmNoteTheme { WidgetPinScreen() } }
-        compose.onNodeWithTag(PREVIEW_IMAGE_TAG).assertWidthIsEqualTo(PREVIEW_WIDTH_DP.dp)
+        val (designW, _) = WidgetPin.designSizeOf(WidgetPin.entries.first())!!
+        compose.onNodeWithTag(PREVIEW_IMAGE_TAG).assertWidthIsEqualTo((designW * previewScale()).dp)
     }
 
     private companion object {
-        const val PREVIEW_WIDTH_DP = 313
+        const val PREVIEW_WIDTH_DP = 313f
+        const val PREVIEW_HEIGHT_DP = 240f
+
+        /** 设计稿最大卡（4×3）的尺寸，全目录统一缩放基准。 */
+        const val DESIGN_MAX_WIDTH = 340f
+        const val DESIGN_MAX_HEIGHT = 268f
+
+        /** 预览卡实际的统一缩放系数（与 WidgetPinScreen 里的算法一致）。 */
+        fun previewScale(): Float =
+            minOf(PREVIEW_WIDTH_DP / DESIGN_MAX_WIDTH, PREVIEW_HEIGHT_DP / DESIGN_MAX_HEIGHT)
     }
 }

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 待办 4×3 分段议程的段头（v4 设计稿 .seghd）：左段名右计数，颜色运行时上（逾期段红） -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingTop="6dp">
+
+    <TextView
+        android:id="@+id/widget_todo_seghd_label"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:textSize="10sp"
+        android:textStyle="bold"
+        android:textColor="@color/widget_v2_text_tertiary"
+        tools:ignore="SmallSp" />
+
+    <TextView
+        android:id="@+id/widget_todo_seghd_count"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="10sp"
+        android:textStyle="bold"
+        android:textColor="@color/widget_v2_text_secondary"
+        tools:ignore="SmallSp" />
+</LinearLayout>

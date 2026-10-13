@@ -1,16 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  待办组件的选择器/确认框静态预览（`previewLayout`）：内容写死，结构跟运行时布局一致
-  （左竖进度轴 + 右色片清单）。运行时靠 setColorFilter 上色、清单行由桌面填充，静态下都没法跑，
-  所以这里用 backgroundTint 上色族色、色片直接写在布局里。
+  待办组件的选择器/确认框静态预览（`previewLayout`，v4 设计稿 · 分段议程）：
+  内容写死，结构与运行时 4×3 布局一致——左「今日完成 + 已完成明细」、
+  右「今天/逾期/明天 分段议程 + 本周已完成」、头部「逾期 1」警示 pill。
+  运行时行是桌面填充的，静态下直接把设计稿样例写死（数字与 design-v4.html 对齐）。
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:padding="12dp"
     android:background="@drawable/widget_card_round">
 
+    <!-- Header：色族徽章 + 标题 + 逾期警示 pill -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -48,27 +51,17 @@
             android:textStyle="bold"
             android:layout_marginStart="8dp" />
 
-        <FrameLayout
+        <TextView
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content">
-
-            <ImageView
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:background="@drawable/widget_chip_round"
-                android:backgroundTint="@color/widget_tint_3"
-                android:contentDescription="@null" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/widget_add"
-                android:textSize="12sp"
-                android:textStyle="bold"
-                android:textColor="@color/widget_hue_3"
-                android:paddingHorizontal="12dp"
-                android:paddingVertical="4dp" />
-        </FrameLayout>
+            android:layout_height="wrap_content"
+            android:text="@string/widget_preview_overdue_1"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:textColor="@color/widget_risk_red"
+            android:background="@drawable/widget_pill_warn"
+            android:paddingHorizontal="10dp"
+            android:paddingVertical="3dp"
+            tools:ignore="SmallSp" />
     </LinearLayout>
 
     <LinearLayout
@@ -76,13 +69,20 @@
         android:layout_height="0dp"
         android:layout_weight="1"
         android:orientation="horizontal"
-        android:layout_marginTop="10dp">
+        android:layout_marginTop="8dp">
 
+        <!-- 左栏：今日完成 Hero + 进度条 + 已完成明细 -->
         <LinearLayout
-            android:layout_width="86dp"
+            android:layout_width="96dp"
             android:layout_height="match_parent"
-            android:orientation="vertical"
-            android:gravity="center_horizontal|center_vertical">
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/widget_todo_done_label"
+                android:textSize="@dimen/widget_text_micro"
+                android:textColor="@color/widget_v2_text_tertiary" />
 
             <LinearLayout
                 android:layout_width="wrap_content"
@@ -94,50 +94,140 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="2"
-                    android:textSize="32sp"
+                    android:textSize="30sp"
                     android:textColor="@color/widget_v2_text_primary"
                     android:textStyle="bold" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="/3"
-                    android:textSize="12sp"
-                    android:textColor="@color/widget_v2_text_secondary"
-                    android:layout_marginStart="1dp" />
+                    android:text="/4"
+                    android:textSize="13sp"
+                    android:textColor="@color/widget_v2_text_tertiary"
+                    android:textStyle="bold"
+                    android:layout_marginStart="2dp" />
+            </LinearLayout>
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="8dp"
+                android:layout_marginTop="8dp">
+
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/widget_bar_track"
+                    android:contentDescription="@null" />
+
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/widget_seg_slot"
+                    android:backgroundTint="@color/widget_hue_3"
+                    android:contentDescription="@null" />
+            </FrameLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/widget_preview_done_cnt"
+                android:textSize="10sp"
+                android:textColor="@color/widget_v2_text_tertiary"
+                android:layout_marginTop="10dp"
+                tools:ignore="SmallSp" />
+
+            <!-- 已完成明细 ×2：实心勾选框 + 三级色文本（划线过不了 RemoteViews，用三级色代偿） -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="6dp">
+
+                <FrameLayout
+                    android:layout_width="13dp"
+                    android:layout_height="13dp">
+
+                    <ImageView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:src="@drawable/widget_todo_check_done"
+                        android:contentDescription="@null" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:text="&#10003;"
+                        android:textSize="9sp"
+                        android:textStyle="bold"
+                        android:textColor="#FFFFFFFF"
+                        android:gravity="center"
+                        tools:ignore="SmallSp" />
+                </FrameLayout>
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/widget_preview_todo_done_1"
+                    android:textSize="10sp"
+                    android:textColor="@color/widget_v2_text_tertiary"
+                    android:layout_marginStart="6dp"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    tools:ignore="SmallSp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="6dp">
+
+                <FrameLayout
+                    android:layout_width="13dp"
+                    android:layout_height="13dp">
+
+                    <ImageView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:src="@drawable/widget_todo_check_done"
+                        android:contentDescription="@null" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:text="&#10003;"
+                        android:textSize="9sp"
+                        android:textStyle="bold"
+                        android:textColor="#FFFFFFFF"
+                        android:gravity="center"
+                        tools:ignore="SmallSp" />
+                </FrameLayout>
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/widget_preview_todo_done_2"
+                    android:textSize="10sp"
+                    android:textColor="@color/widget_v2_text_tertiary"
+                    android:layout_marginStart="6dp"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    tools:ignore="SmallSp" />
             </LinearLayout>
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/widget_todo_done_label"
-                android:textSize="@dimen/widget_text_micro"
-                android:textColor="@color/widget_v2_text_secondary"
-                android:layout_marginTop="2dp" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="5dp"
-                android:orientation="horizontal"
-                android:baselineAligned="false"
-                android:layout_marginTop="8dp">
-
-                <ImageView
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="2"
-                    android:layout_marginEnd="2dp"
-                    android:background="@drawable/widget_seg_slot"
-                    android:backgroundTint="@color/widget_hue_2"
-                    android:contentDescription="@null" />
-
-                <ImageView
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:background="@drawable/widget_bar_track"
-                    android:contentDescription="@null" />
-            </LinearLayout>
+                android:text="@string/widget_todo_done_more"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:textColor="@color/widget_hue_3"
+                android:layout_marginTop="6dp"
+                tools:ignore="SmallSp" />
         </LinearLayout>
 
         <ImageView
@@ -146,248 +236,251 @@
             android:background="@color/widget_v2_ring"
             android:contentDescription="@null" />
 
+        <!-- 右栏：分段议程（今天/逾期/明天）+ 本周已完成 -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:orientation="vertical"
             android:layout_marginStart="10dp">
-            <FrameLayout
+
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp">
+                android:orientation="horizontal">
 
-                <ImageView
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:background="@drawable/widget_chip_round"
-                    android:backgroundTint="@color/widget_tint_1"
-                    android:contentDescription="@null" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
+                <TextView
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:paddingHorizontal="8dp"
-                    android:paddingVertical="6dp">
+                    android:layout_weight="1"
+                    android:text="@string/widget_today"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/widget_hue_1"
+                    tools:ignore="SmallSp" />
 
-                    <ImageView
-                        android:layout_width="8dp"
-                        android:layout_height="8dp"
-                        android:background="@drawable/widget_shape_circle"
-                        android:backgroundTint="@color/widget_hue_1"
-                        android:contentDescription="@null" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/widget_preview_cnt_2"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/widget_v2_text_secondary"
+                    tools:ignore="SmallSp" />
+            </LinearLayout>
 
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="@string/widget_preview_todo_1"
-                        android:textSize="13sp"
-                        android:textColor="@color/widget_v2_text_tertiary"
-                        android:layout_marginStart="6dp"
-                        android:maxLines="1"
-                        android:ellipsize="end" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/widget_today"
-                        android:textSize="@dimen/widget_text_micro"
-                        android:textColor="@color/widget_v2_text_tertiary"
-                        android:layout_marginStart="4dp" />
-                </LinearLayout>
-            </FrameLayout>
-            <FrameLayout
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp">
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingVertical="4dp">
 
                 <ImageView
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:background="@drawable/widget_chip_round"
-                    android:backgroundTint="@color/widget_tint_2"
+                    android:layout_width="13dp"
+                    android:layout_height="13dp"
+                    android:src="@drawable/widget_todo_check_box"
                     android:contentDescription="@null" />
 
-                <LinearLayout
-                    android:layout_width="match_parent"
+                <TextView
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:paddingHorizontal="8dp"
-                    android:paddingVertical="6dp">
+                    android:layout_weight="1"
+                    android:text="@string/widget_preview_todo_2"
+                    android:textSize="12sp"
+                    android:textColor="@color/widget_v2_text_primary"
+                    android:layout_marginStart="6dp"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
 
-                    <ImageView
-                        android:layout_width="8dp"
-                        android:layout_height="8dp"
-                        android:background="@drawable/widget_shape_circle"
-                        android:backgroundTint="@color/widget_hue_2"
-                        android:contentDescription="@null" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="18:00"
+                    android:textSize="9sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/widget_v2_text_secondary"
+                    android:layout_marginStart="4dp"
+                    tools:ignore="SmallSp" />
+            </LinearLayout>
 
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="@string/widget_preview_todo_2"
-                        android:textSize="13sp"
-                        android:textColor="@color/widget_v2_text_primary"
-                        android:layout_marginStart="6dp"
-                        android:maxLines="1"
-                        android:ellipsize="end" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/widget_tomorrow"
-                        android:textSize="@dimen/widget_text_micro"
-                        android:textColor="@color/widget_v2_text_tertiary"
-                        android:layout_marginStart="4dp" />
-                </LinearLayout>
-            </FrameLayout>
-            <FrameLayout
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp">
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingVertical="4dp">
 
                 <ImageView
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:background="@drawable/widget_chip_round"
-                    android:backgroundTint="@color/widget_tint_3"
+                    android:layout_width="13dp"
+                    android:layout_height="13dp"
+                    android:src="@drawable/widget_todo_check_box"
                     android:contentDescription="@null" />
 
-                <LinearLayout
-                    android:layout_width="match_parent"
+                <TextView
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:paddingHorizontal="8dp"
-                    android:paddingVertical="6dp">
+                    android:layout_weight="1"
+                    android:text="@string/widget_preview_todo_3"
+                    android:textSize="12sp"
+                    android:textColor="@color/widget_v2_text_primary"
+                    android:layout_marginStart="6dp"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
 
-                    <ImageView
-                        android:layout_width="8dp"
-                        android:layout_height="8dp"
-                        android:background="@drawable/widget_shape_circle"
-                        android:backgroundTint="@color/widget_hue_3"
-                        android:contentDescription="@null" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="1/3"
+                    android:textSize="9sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/widget_v2_text_secondary"
+                    android:layout_marginStart="4dp"
+                    tools:ignore="SmallSp" />
+            </LinearLayout>
 
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="@string/widget_preview_todo_3"
-                        android:textSize="13sp"
-                        android:textColor="@color/widget_v2_text_primary"
-                        android:layout_marginStart="6dp"
-                        android:maxLines="1"
-                        android:ellipsize="end" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/widget_preview_todo_due_3"
-                        android:textSize="@dimen/widget_text_micro"
-                        android:textColor="@color/widget_v2_text_tertiary"
-                        android:layout_marginStart="4dp" />
-                </LinearLayout>
-            </FrameLayout>
-            <FrameLayout
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:orientation="horizontal"
                 android:layout_marginTop="4dp">
 
-                <ImageView
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:background="@drawable/widget_chip_round"
-                    android:backgroundTint="@color/widget_tint_4"
-                    android:contentDescription="@null" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
+                <TextView
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:paddingHorizontal="8dp"
-                    android:paddingVertical="6dp">
+                    android:layout_weight="1"
+                    android:text="@string/widget_overdue"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/widget_risk_red"
+                    tools:ignore="SmallSp" />
 
-                    <ImageView
-                        android:layout_width="8dp"
-                        android:layout_height="8dp"
-                        android:background="@drawable/widget_shape_circle"
-                        android:backgroundTint="@color/widget_hue_4"
-                        android:contentDescription="@null" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/widget_preview_cnt_1"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/widget_v2_text_secondary"
+                    tools:ignore="SmallSp" />
+            </LinearLayout>
 
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="@string/widget_preview_todo_4"
-                        android:textSize="13sp"
-                        android:textColor="@color/widget_v2_text_primary"
-                        android:layout_marginStart="6dp"
-                        android:maxLines="1"
-                        android:ellipsize="end" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/widget_preview_todo_due_4"
-                        android:textSize="@dimen/widget_text_micro"
-                        android:textColor="@color/widget_v2_text_tertiary"
-                        android:layout_marginStart="4dp" />
-                </LinearLayout>
-            </FrameLayout>
-            <FrameLayout
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp">
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingVertical="4dp">
 
                 <ImageView
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:background="@drawable/widget_chip_round"
-                    android:backgroundTint="@color/widget_tint_5"
+                    android:layout_width="13dp"
+                    android:layout_height="13dp"
+                    android:src="@drawable/widget_todo_check_box"
                     android:contentDescription="@null" />
 
-                <LinearLayout
-                    android:layout_width="match_parent"
+                <TextView
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:paddingHorizontal="8dp"
-                    android:paddingVertical="6dp">
+                    android:layout_weight="1"
+                    android:text="@string/widget_preview_todo_od"
+                    android:textSize="12sp"
+                    android:textColor="@color/widget_v2_text_primary"
+                    android:layout_marginStart="6dp"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
 
-                    <ImageView
-                        android:layout_width="8dp"
-                        android:layout_height="8dp"
-                        android:background="@drawable/widget_shape_circle"
-                        android:backgroundTint="@color/widget_hue_5"
-                        android:contentDescription="@null" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/widget_yesterday"
+                    android:textSize="9sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/widget_risk_red"
+                    android:layout_marginStart="4dp"
+                    tools:ignore="SmallSp" />
+            </LinearLayout>
 
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="@string/widget_preview_todo_5"
-                        android:textSize="13sp"
-                        android:textColor="@color/widget_v2_text_primary"
-                        android:layout_marginStart="6dp"
-                        android:maxLines="1"
-                        android:ellipsize="end" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="4dp">
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/widget_preview_todo_due_5"
-                        android:textSize="@dimen/widget_text_micro"
-                        android:textColor="@color/widget_v2_text_tertiary"
-                        android:layout_marginStart="4dp" />
-                </LinearLayout>
-            </FrameLayout>
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/widget_tomorrow"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/widget_v2_text_tertiary"
+                    tools:ignore="SmallSp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/widget_preview_cnt_1"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/widget_v2_text_secondary"
+                    tools:ignore="SmallSp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingVertical="4dp">
+
+                <ImageView
+                    android:layout_width="13dp"
+                    android:layout_height="13dp"
+                    android:src="@drawable/widget_todo_check_box"
+                    android:contentDescription="@null" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/widget_preview_todo_tmr"
+                    android:textSize="12sp"
+                    android:textColor="@color/widget_v2_text_primary"
+                    android:layout_marginStart="6dp"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="10/13"
+                    android:textSize="9sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/widget_v2_text_secondary"
+                    android:layout_marginStart="4dp"
+                    tools:ignore="SmallSp" />
+            </LinearLayout>
+
+            <!-- 底部页脚：分隔线 + 本周已完成 -->
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/widget_v2_ring"
+                android:contentDescription="@null" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/widget_preview_week_done"
+                android:textSize="10sp"
+                android:textColor="@color/widget_v2_text_secondary"
+                android:layout_marginTop="5dp"
+                tools:ignore="SmallSp" />
         </LinearLayout>
     </LinearLayout>
-
 </LinearLayout>

@@ -2,6 +2,8 @@
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:minWidth="180dp"
     android:minHeight="110dp"
+    android:minResizeWidth="110dp"
+    android:minResizeHeight="110dp"
     android:targetCellWidth="3"
     android:targetCellHeight="2"
     android:maxResizeWidth="400dp"
@@ -11,6 +13,6 @@
     android:widgetCategory="home_screen"
     android:description="@string/widget_counter_desc"
     android:previewImage="@drawable/widget_preview_counter"
-    android:previewLayout="@layout/widget_counter_unified"
+    android:previewLayout="@layout/widget_counter_preview"
     android:configure="com.palmnote.ui.widget.WidgetConfigActivity"
     android:resizeMode="horizontal|vertical" />

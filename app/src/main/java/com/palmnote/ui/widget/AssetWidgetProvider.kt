@@ -57,10 +57,8 @@ class AssetWidgetProvider : ScopedWidgetProvider() {
         val total = categories.sumOf { it.count }
 
         views.setInt(R.id.widget_asset_badge, "setColorFilter", WidgetData.colorFamily(context, BADGE_FAMILY).hue)
-        views.setTextViewText(
-            R.id.widget_asset_total,
-            context.resources.getQuantityString(R.plurals.widget_asset_total_count, total, total)
-        )
+        // 头部 Hero Number：总数大字，单位「件」在布局里写死，不用 plurals
+        views.setTextViewText(R.id.widget_asset_total, total.toString())
 
         // 占比条：24 段等宽槽位，按各分类件数占比分配段数 —— 段的宽度于是就是比例
         // （RemoteViews 改不了子控件宽度，只能靠「占几段」表达比例）
@@ -154,7 +152,7 @@ class AssetWidgetProvider : ScopedWidgetProvider() {
             key
         }
 
-    /** 一个分类色片：淡彩胶囊底 + 同族色点 + 分类名 + 件数。 */
+    /** 一个分类色片：淡彩胶囊底 + 同族色点 + 分类名 + 纯数字件数（着同族色）。 */
     private fun chipViews(context: Context, category: HeldCategoryCount, index: Int): RemoteViews {
         val chip = RemoteViews(context.packageName, R.layout.widget_asset_chip)
         val family = WidgetData.colorFamily(context, index)
@@ -166,10 +164,8 @@ class AssetWidgetProvider : ScopedWidgetProvider() {
             R.id.widget_asset_chip_name,
             assetCategoryLabel(category.category, context)
         )
-        chip.setTextViewText(
-            R.id.widget_asset_chip_count,
-            context.resources.getQuantityString(R.plurals.widget_asset_item_count, category.count, category.count)
-        )
+        chip.setTextViewText(R.id.widget_asset_chip_count, "${category.count}")
+        chip.setTextColor(R.id.widget_asset_chip_count, family.hue)
         return chip
     }
 

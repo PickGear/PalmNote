@@ -36,7 +36,7 @@ object WidgetPin {
         Entry(
             BillWidgetProvider::class.java,
             R.drawable.widget_preview_bill,
-            R.layout.widget_bill_unified,
+            R.layout.widget_bill_preview,
             R.string.widget_bill_title,
             R.string.widget_bill_desc,
             configureActivity = BillWidgetConfigActivity::class.java
@@ -44,7 +44,7 @@ object WidgetPin {
         Entry(
             NetWorthWidgetProvider::class.java,
             R.drawable.widget_preview_net_worth,
-            R.layout.widget_net_worth_unified,
+            R.layout.widget_net_worth_preview,
             R.string.wallet_total_assets,
             R.string.widget_net_worth_desc,
         ),
@@ -65,28 +65,28 @@ object WidgetPin {
         Entry(
             LifeCounterWidgetProvider::class.java,
             R.drawable.widget_preview_counter,
-            R.layout.widget_counter_unified,
+            R.layout.widget_counter_preview,
             R.string.widget_counter_title,
             R.string.widget_counter_desc,
         ),
         Entry(
             NextUpWidgetProvider::class.java,
             R.drawable.widget_preview_next_up,
-            R.layout.widget_next_up_unified,
+            R.layout.widget_next_up_preview,
             R.string.widget_next_up_title,
             R.string.widget_next_up_desc,
         ),
         Entry(
             SubscriptionWidgetProvider::class.java,
             R.drawable.widget_preview_subscription,
-            R.layout.widget_subscription_unified,
+            R.layout.widget_subscription_preview,
             R.string.widget_subscription_title,
             R.string.widget_subscription_desc,
         ),
         Entry(
             DashboardWidgetProvider::class.java,
             R.drawable.widget_preview_dashboard,
-            R.layout.widget_dashboard_unified,
+            R.layout.widget_dashboard_preview,
             R.string.widget_dashboard_title,
             R.string.widget_dashboard_desc,
         ),
@@ -100,14 +100,14 @@ object WidgetPin {
         Entry(
             VaultWidgetProvider::class.java,
             R.drawable.widget_preview_vault,
-            R.layout.widget_vault_small,
+            R.layout.widget_vault_preview,
             R.string.widget_vault_title,
             R.string.widget_vault_desc,
         ),
         Entry(
             ShortcutsWidgetProvider::class.java,
             R.drawable.widget_preview_shortcuts,
-            R.layout.widget_shortcuts_unified,
+            R.layout.widget_shortcuts_preview,
             R.string.widget_shortcuts_title,
             R.string.widget_shortcuts_desc,
         )
@@ -123,7 +123,7 @@ object WidgetPin {
         NetWorthWidgetProvider::class.java to "2×1",
         TodoWidgetProvider::class.java to "4×3",
         HabitWidgetProvider::class.java to "4×3",
-        LifeCounterWidgetProvider::class.java to "4×3",
+        LifeCounterWidgetProvider::class.java to "3×2",
         NextUpWidgetProvider::class.java to "3×2",
         SubscriptionWidgetProvider::class.java to "3×2",
         DashboardWidgetProvider::class.java to "4×3",
@@ -134,6 +134,29 @@ object WidgetPin {
 
     /** 尺寸标签（如 `3×2`）；没登记就返回空串，标签自动隐藏。 */
     fun cellsOf(entry: Entry): String = CELLS[entry.providerClass].orEmpty()
+
+    /**
+     * 各组件的**设计尺寸**（dp，宽 to 高），取自 `dist/widget-design-v2/design-v4.html`
+     * 的 `.s11/.s21/.s22/.s32/.s41/.s43` —— 就是它们在桌面上的真实占格大小。
+     * 目录里的预览卡按这套尺寸**同比缩放**（不是各自拉满），比例才和真机一致：
+     * 1×1 是小方块、2×1 是矮条、4×3 是大块。
+     */
+    private val DESIGN_SIZE_DP: Map<Class<*>, Pair<Int, Int>> = mapOf(
+        BillWidgetProvider::class.java to (245 to 148),
+        NetWorthWidgetProvider::class.java to (160 to 74),
+        TodoWidgetProvider::class.java to (340 to 268),
+        HabitWidgetProvider::class.java to (340 to 268),
+        LifeCounterWidgetProvider::class.java to (245 to 148),
+        NextUpWidgetProvider::class.java to (245 to 148),
+        SubscriptionWidgetProvider::class.java to (245 to 148),
+        DashboardWidgetProvider::class.java to (340 to 268),
+        AssetWidgetProvider::class.java to (245 to 148),
+        VaultWidgetProvider::class.java to (82 to 82),
+        ShortcutsWidgetProvider::class.java to (160 to 160)
+    )
+
+    /** 组件的设计尺寸（dp，宽 to 高）；没登记返回 null，预览走兜底比例。 */
+    fun designSizeOf(entry: Entry): Pair<Int, Int>? = DESIGN_SIZE_DP[entry.providerClass]
 
     /** 一屏要展示的全部状态：通道是否可用 + 各组件桌面绑定数。 */
     data class Snapshot(

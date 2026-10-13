@@ -1,51 +1,63 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  总资产 2×1（定稿）：余额合计 + 一枚涨跌胶囊（本月净收入相对期初总资产的涨幅）。
-  胶囊底是白底占位，运行时 setColorFilter 上「涨绿跌红」；数字点进记账页看明细。
+  总资产 2×1（v4 定稿）：三段式 —— 顶行「标签 + 涨跌胶囊」、中间 Hero 大数字、底行「本月 +¥680」。
+  胶囊给百分比（本月净收入 ÷ 期初总资产），底行给同一笔净收入的金额；两处都是已有账单数据算出来的，
+  没有额外口径。期初 = 当前余额合计 − 本月净收入，期初算不出（≤0，新账户第一个月）时整枚胶囊隐藏。
+  数字点进记账页看明细。桌面缩到最小格、高度放不下三段时由 Provider 收起底行（不会截断）。
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:gravity="center_vertical"
-    android:padding="10dp"
+    android:paddingHorizontal="14dp"
+    android:paddingVertical="10dp"
     android:background="@drawable/widget_card_round">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/wallet_total_assets"
-        android:textSize="@dimen/widget_text_micro"
-        android:textColor="@color/widget_v2_text_secondary" />
-
     <LinearLayout
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:gravity="bottom"
-        android:layout_marginTop="4dp">
+        android:gravity="center_vertical">
 
         <TextView
-            android:id="@+id/widget_net_worth_amount"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="0"
-            android:textSize="26sp"
-            android:textColor="@color/widget_v2_text_primary"
-            android:textStyle="bold"
-            android:maxLines="1"
-            android:ellipsize="end" />
+            android:layout_weight="1"
+            android:text="@string/wallet_total_assets"
+            android:textSize="@dimen/widget_text_micro"
+            android:textColor="@color/widget_v2_text_secondary" />
 
         <TextView
             android:id="@+id/widget_net_worth_delta"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="6dp"
             android:textSize="@dimen/widget_text_micro"
             android:textStyle="bold"
-            android:paddingHorizontal="8dp"
-            android:paddingVertical="4dp" />
+            android:paddingHorizontal="7dp"
+            android:paddingVertical="2dp" />
     </LinearLayout>
+
+    <!-- Hero 数字吃掉剩余高度并垂直居中：上方胶囊与下方第三行都是定高，中间自适应 -->
+    <TextView
+        android:id="@+id/widget_net_worth_amount"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="center_vertical"
+        android:text="0"
+        android:textSize="21sp"
+        android:textColor="@color/widget_v2_text_primary"
+        android:textStyle="bold"
+        android:maxLines="1"
+        android:ellipsize="end" />
+
+    <TextView
+        android:id="@+id/widget_net_worth_sub"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="@dimen/widget_text_micro"
+        android:maxLines="1"
+        android:ellipsize="end" />
 
 </LinearLayout>

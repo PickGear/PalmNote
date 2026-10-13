@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  待办 4×1 横条（v4）：左「今日待办 · 周N + 2 / 4」，中「完成度条 + 下一项」，右「逾期胶囊」。
+  多出的宽度给进度与状态。高度 <100dp 且宽度 ≥200dp 时由 Provider 切到此布局。
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingHorizontal="16dp"
+    android:paddingVertical="10dp"
+    android:background="@drawable/widget_card_round">
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/widget_todo_wide_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/widget_todo_today"
+            android:textSize="@dimen/widget_text_micro"
+            android:textColor="@color/widget_v2_text_secondary"
+            android:maxLines="1" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="bottom"
+            android:layout_marginTop="2dp">
+
+            <TextView
+                android:id="@+id/widget_todo_wide_done"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:textColor="@color/widget_v2_text_primary"
+                android:maxLines="1" />
+
+            <TextView
+                android:id="@+id/widget_todo_wide_total"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="/0"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:textColor="@color/widget_v2_text_tertiary"
+                android:maxLines="1" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:layout_marginStart="14dp">
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="10dp">
+
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:src="@drawable/widget_bar_track"
+                android:contentDescription="@null" />
+
+            <ImageView
+                android:id="@+id/widget_todo_wide_bar"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:src="@drawable/widget_bar_fill"
+                android:contentDescription="@null" />
+        </FrameLayout>
+
+        <TextView
+            android:id="@+id/widget_todo_wide_next"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="@dimen/widget_text_micro"
+            android:textColor="@color/widget_v2_text_secondary"
+            android:layout_marginTop="5dp"
+            android:visibility="gone"
+            android:maxLines="1"
+            android:ellipsize="end" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/widget_todo_wide_overdue"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="14dp"
+        android:background="@drawable/widget_pill_tint1"
+        android:paddingHorizontal="8dp"
+        android:paddingVertical="2dp"
+        android:textSize="@dimen/widget_text_micro"
+        android:textStyle="bold"
+        android:visibility="gone"
+        android:maxLines="1" />
+
+</LinearLayout>

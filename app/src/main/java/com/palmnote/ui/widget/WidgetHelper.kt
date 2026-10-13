@@ -139,50 +139,33 @@ object WidgetHelper {
         )
     }
 
-    /** 待办行（色片）：整行点击走 fill-in intent —— 集合里的行不能各自持有 PendingIntent，由模板补全。 */
-    fun todoRowViews(
+    /**
+     * 待办议程行（v4 设计稿 .tdrow2）：方框 + 名称 + 时间。
+     * 时间文案由 [TodoWidgetService] 按段算好传入（今天 HH:mm、其余 M/d、逾期可给「昨天」），
+     * 逾期行的时间转警示红；整行点击走 fill-in intent——集合里的行不能各自持有 PendingIntent。
+     */
+    fun todoAgendaRowViews(
         context: Context,
-        item: com.palmnote.data.db.entity.LifeItem
+        item: com.palmnote.data.db.entity.LifeItem,
+        timeText: String,
+        isOverdue: Boolean
     ): RemoteViews {
-        val itemView = RemoteViews(context.packageName, R.layout.widget_todo_item)
-        val completed = item.status == "COMPLETED"
-        // 一个条目一个色族：按条目 id 取，同一个条目每次刷新都是同一族色
-        val family = WidgetData.colorFamily(context, item.id.toInt())
-        itemView.setInt(R.id.widget_todo_chip_bg, "setColorFilter", family.tint)
-        itemView.setInt(R.id.widget_todo_dot, "setColorFilter", family.hue)
-        // 完成的行加勾前缀：RemoteViews 既没有划线 API，Spannable 的 StrikethroughSpan
-        // 也过不了 RemoteViews（跨进程只传文本、span 会丢），只能用可见前缀表状态
-        itemView.setTextViewText(
-            R.id.widget_item_text,
-            if (completed) "✓ ${item.title}" else item.title
-        )
+        val views = RemoteViews(context.packageName, R.layout.widget_todo_agenda_row)
+        views.setTextViewText(R.id.widget_todo_agenda_name, item.title)
+        views.setTextViewText(R.id.widget_todo_agenda_time, timeText)
+        if (isOverdue) {
+            views.setTextColor(R.id.widget_todo_agenda_time, context.getColor(R.color.widget_risk_red))
+        }
         // 无障碍：行内容描述（API 30+ RemoteViews 支持，低版本自动忽略）
         if (android.os.Build.VERSION.SDK_INT >= 30) {
-            itemView.setContentDescription(R.id.widget_todo_row, item.title)
+            views.setContentDescription(R.id.widget_todo_agenda_row, item.title)
         }
-        itemView.setTextColor(
-            R.id.widget_item_text,
-            if (completed) context.getColor(R.color.widget_v2_text_tertiary) else context.getColor(R.color.widget_v2_text_primary)
-        )
-        val dueText = item.dueDate?.let { due ->
-            val days = daysUntil(due)
-            when {
-                days < 0 -> context.getString(R.string.widget_overdue)
-                days == 0L -> context.getString(R.string.widget_today)
-                days == 1L -> context.getString(R.string.widget_tomorrow)
-                // 复数走 getQuantityString（quantity 要 Int，格式化参数仍用 Long）
-                else -> context.resources.getQuantityString(
-                    R.plurals.widget_days_later, days.toInt(), days
-                )
-            }
-        } ?: ""
-        itemView.setTextViewText(R.id.widget_item_due, dueText)
         // 行内点击：只带条目 id，action 与组件由集合的 template 补全
-        itemView.setOnClickFillInIntent(
-            R.id.widget_todo_row,
-            android.content.Intent().putExtra(TodoToggleReceiver.EXTRA_ITEM_ID, item.id)
+        views.setOnClickFillInIntent(
+            R.id.widget_todo_agenda_row,
+            Intent().putExtra(TodoToggleReceiver.EXTRA_ITEM_ID, item.id)
         )
-        return itemView
+        return views
     }
 
     fun addCounterItemView(context: Context, views: RemoteViews, containerId: Int, title: String, dateMillis: Long) {

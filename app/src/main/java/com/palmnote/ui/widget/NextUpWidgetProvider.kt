@@ -54,9 +54,7 @@ class NextUpWidgetProvider : ScopedWidgetProvider() {
         val counters = LifeCounterWidgetProvider().collectCounterEvents(context)
 
         publish(context, appWidgetManager, appWidgetIds) { appWidgetId, _ ->
-            // 大字数值吃逐实例强调色（配置页「配色」覆盖，null 跟随应用主题包）
-            val accent = WidgetData.readAccentTheme(context, prefs, prefs.widgetAccentThemeFor(appWidgetId).first())
-            bindViews(context, appWidgetId, pickFocus(todos, renewals, counters), accent)
+            bindViews(context, appWidgetId, pickFocus(todos, renewals, counters))
         }
     }
 
@@ -64,7 +62,7 @@ class NextUpWidgetProvider : ScopedWidgetProvider() {
     internal data class NextUpFocus(
         val kind: Kind,
         val title: String,
-        /** 次要说明行（扣费日 / 事件日期），可为空。 */
+        /** 次要说明行原始值：订阅是「M/d」，倒数是目标日 ISO 文本；待办为空（bindFocus 落「今天到期」）。 */
         val meta: String?,
         /** 大字数值：待办是「今天」，订阅是金额，倒数是天数。 */
         val bigValue: String,
@@ -90,7 +88,12 @@ class NextUpWidgetProvider : ScopedWidgetProvider() {
             )
         }
         counters.minByOrNull { it.daysLeft }?.let { counter ->
-            return NextUpFocus(Kind.COUNTDOWN, counter.name, null, "${counter.daysLeft}")
+            return NextUpFocus(
+                Kind.COUNTDOWN, counter.name,
+                // 目标日按 ISO 落进 meta，渲染时再按 locale 格式化（pickFocus 无 Context）
+                meta = counter.targetDate.toString(),
+                bigValue = "${counter.daysLeft}"
+            )
         }
         return null
     }
@@ -98,8 +101,7 @@ class NextUpWidgetProvider : ScopedWidgetProvider() {
     internal fun bindViews(
         context: Context,
         appWidgetId: Int,
-        focus: NextUpFocus?,
-        accent: WidgetData.AccentTheme
+        focus: NextUpFocus?
     ): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.widget_next_up_unified)
         if (focus == null) {
@@ -108,7 +110,7 @@ class NextUpWidgetProvider : ScopedWidgetProvider() {
         } else {
             views.setViewVisibility(R.id.widget_next_up_content, View.VISIBLE)
             views.setViewVisibility(R.id.widget_next_up_empty, View.GONE)
-            bindFocus(context, views, focus, accent)
+            bindFocus(context, views, focus)
         }
         views.setOnClickPendingIntent(
             R.id.widget_layout,
@@ -121,44 +123,26 @@ class NextUpWidgetProvider : ScopedWidgetProvider() {
         return views
     }
 
-    /** 焦点内容：徽标/类型标签按 kind 取色族，勾选动作只对待办有意义。 */
-    private fun bindFocus(context: Context, views: RemoteViews, focus: NextUpFocus, accent: WidgetData.AccentTheme) {
-        val familyIndex = when (focus.kind) {
-            Kind.TODO -> 2
-            Kind.RENEWAL -> 4
-            Kind.COUNTDOWN -> 0
-        }
-        val family = WidgetData.colorFamily(context, familyIndex)
+    /**
+     * 焦点内容（v4）：整卡按 kind 取一套色族 —— 徽章/图标/标签/大字数值同族上色，
+     * 主体是一张色族淡底的大 chip；时效说明按 kind 落「今天到期 / M/d 扣费 / 目标日期」。
+     */
+    private fun bindFocus(context: Context, views: RemoteViews, focus: NextUpFocus) {
+        val family = WidgetData.colorFamily(context, familyIndexOf(focus.kind))
+        // 徽章图标随 kind 换：待办=勾、订阅=刷新、倒数=日历（稿子如此）
         views.setInt(R.id.widget_next_up_badge, "setColorFilter", family.hue)
-        views.setInt(R.id.widget_next_up_badge_icon, "setColorFilter", android.graphics.Color.WHITE)
-        views.setTextViewText(
-            R.id.widget_next_up_kind,
-            context.getString(
-                when (focus.kind) {
-                    Kind.TODO -> R.string.widget_next_up_kind_todo
-                    Kind.RENEWAL -> R.string.widget_next_up_kind_renewal
-                    Kind.COUNTDOWN -> R.string.widget_next_up_kind_countdown
-                }
-            )
-        )
+        views.setImageViewResource(R.id.widget_next_up_badge_icon, badgeIconOf(focus.kind))
+        // 主体大 chip：色族淡底 + 同族色点
+        views.setInt(R.id.widget_next_up_chip_bg, "setColorFilter", family.tint)
+        views.setInt(R.id.widget_next_up_chip_dot, "setColorFilter", family.hue)
+        views.setTextViewText(R.id.widget_next_up_kind, context.getString(kindLabelOf(focus.kind)))
         views.setTextColor(R.id.widget_next_up_kind, family.hue)
         views.setTextViewText(R.id.widget_next_up_title, focus.title)
-        views.setTextViewText(R.id.widget_next_up_meta, focus.meta.orEmpty())
-        views.setViewVisibility(
-            R.id.widget_next_up_meta,
-            if (focus.meta.isNullOrBlank()) View.GONE else View.VISIBLE
-        )
         // 待办的大字是「今天」，倒数带单位（pickFocus 无 Context，文案在这里落）
-        views.setTextViewText(
-            R.id.widget_next_up_value,
-            when (focus.kind) {
-                Kind.TODO -> context.getString(R.string.widget_next_up_due_today)
-                Kind.COUNTDOWN -> "${focus.bigValue} ${context.getString(R.string.widget_next_up_days_unit)}"
-                Kind.RENEWAL -> focus.bigValue
-            }
-        )
-        // 主角数值用强调色（逐实例可覆盖）
-        views.setTextColor(R.id.widget_next_up_value, accent.accent)
+        views.setTextViewText(R.id.widget_next_up_value, resolveValue(context, focus))
+        // 主角数值用类型族色（稿子如此，同族才成体系）
+        views.setTextColor(R.id.widget_next_up_value, family.hue)
+        bindMeta(context, views, focus)
         if (focus.kind == Kind.TODO && focus.itemId != null) {
             views.setViewVisibility(R.id.widget_next_up_action, View.VISIBLE)
             views.setOnClickPendingIntent(
@@ -168,6 +152,46 @@ class NextUpWidgetProvider : ScopedWidgetProvider() {
         } else {
             views.setViewVisibility(R.id.widget_next_up_action, View.GONE)
         }
+    }
+
+    /** 时效说明行：待办=今天到期；订阅=M/d 扣费；倒数=目标日期（解析不出就原样展示 ISO 文本）。 */
+    private fun bindMeta(context: Context, views: RemoteViews, focus: NextUpFocus) {
+        val metaText = when (focus.kind) {
+            Kind.TODO -> context.getString(R.string.widget_next_up_today_due)
+            Kind.RENEWAL -> context.getString(R.string.widget_next_up_renewal_date, focus.meta.orEmpty())
+            Kind.COUNTDOWN -> focus.meta?.let { raw ->
+                runCatching { java.time.LocalDate.parse(raw) }.getOrNull()
+                    ?.format(java.time.format.DateTimeFormatter.ofPattern(context.getString(R.string.widget_date_format_cn)))
+                    ?: raw
+            }.orEmpty()
+        }
+        views.setTextViewText(R.id.widget_next_up_meta, metaText)
+        views.setViewVisibility(R.id.widget_next_up_meta, if (metaText.isBlank()) View.GONE else View.VISIBLE)
+    }
+
+    private fun familyIndexOf(kind: Kind): Int = when (kind) {
+        Kind.TODO -> 1
+        Kind.RENEWAL -> 4
+        Kind.COUNTDOWN -> 0
+    }
+
+    private fun badgeIconOf(kind: Kind): Int = when (kind) {
+        Kind.TODO -> R.drawable.widget_ic_check_white
+        Kind.RENEWAL -> R.drawable.widget_ic_refresh_white
+        Kind.COUNTDOWN -> R.drawable.widget_ic_calendar_white
+    }
+
+    private fun kindLabelOf(kind: Kind): Int = when (kind) {
+        Kind.TODO -> R.string.widget_next_up_kind_todo
+        Kind.RENEWAL -> R.string.widget_next_up_kind_renewal
+        Kind.COUNTDOWN -> R.string.widget_next_up_kind_countdown
+    }
+
+    /** 大字数值文案：待办=今天；倒数=N 天；订阅=金额原文。 */
+    private fun resolveValue(context: Context, focus: NextUpFocus): String = when (focus.kind) {
+        Kind.TODO -> context.getString(R.string.widget_next_up_due_today)
+        Kind.COUNTDOWN -> "${focus.bigValue} ${context.getString(R.string.widget_next_up_days_unit)}"
+        Kind.RENEWAL -> focus.bigValue
     }
 
     internal companion object {

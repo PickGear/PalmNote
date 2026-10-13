@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  概览 4×3（定稿）：左侧**三层同心环**（预算 82% / 目标 64% / 待办完成度，苹果活动环做法），
-  右侧四张两行色片（上行色点 + 标签，下行大数值）。环的半径由控件尺寸定（140/110/82dp），
-  粗细 11dp 写在 drawable 里，进度用 setImageLevel、颜色用 setColorFilter（轨道用同色相低透明度）。
+  概览 4×3（v4 定稿）：2×2 大色块 tile，每块「标签上、大数值下」再加一行与数据语义匹配的
+  二级信息——预算=迷你用量条+已用百分比、目标=进度计数、待办=逾期红字（或已完成数）、
+  纪念日=目标日期+星期。四块 tile 各自是深链热区（进预算/生活页）。
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_layout"
@@ -48,330 +48,352 @@
             android:layout_marginStart="8dp" />
 
         <TextView
-            android:id="@+id/widget_dashboard_date"
+            android:id="@+id/widget_dashboard_week_todo"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textSize="@dimen/widget_text_micro"
-            android:textColor="@color/widget_v2_text_tertiary" />
+            android:textStyle="bold"
+            android:maxLines="1" />
     </LinearLayout>
 
+    <!-- 2×2 tile：上排 = 预算 / 目标 -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
         android:orientation="horizontal"
-        android:gravity="center_vertical"
         android:layout_marginTop="@dimen/widget_gap">
 
         <FrameLayout
-            android:layout_width="140dp"
-            android:layout_height="140dp">
+            android:id="@+id/widget_dashboard_budget_card"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1">
 
-            <FrameLayout
-                android:layout_width="140dp"
-                android:layout_height="140dp"
-                android:layout_gravity="center">
-
-                <ImageView
-                    android:id="@+id/widget_dashboard_budget_ring_track"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:src="@drawable/widget_ring_track_11"
-                    android:contentDescription="@null" />
-
-                <ImageView
-                    android:id="@+id/widget_dashboard_budget_ring"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:src="@drawable/widget_ring_arc_11"
-                    android:contentDescription="@null" />
-            </FrameLayout>
-
-            <FrameLayout
-                android:layout_width="110dp"
-                android:layout_height="110dp"
-                android:layout_gravity="center">
-
-                <ImageView
-                    android:id="@+id/widget_dashboard_goal_ring_track"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:src="@drawable/widget_ring_track_11"
-                    android:contentDescription="@null" />
-
-                <ImageView
-                    android:id="@+id/widget_dashboard_goal_ring"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:src="@drawable/widget_ring_arc_11"
-                    android:contentDescription="@null" />
-            </FrameLayout>
-
-            <FrameLayout
-                android:layout_width="82dp"
-                android:layout_height="82dp"
-                android:layout_gravity="center">
-
-                <ImageView
-                    android:id="@+id/widget_dashboard_todo_ring_track"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:src="@drawable/widget_ring_track_11"
-                    android:contentDescription="@null" />
-
-                <ImageView
-                    android:id="@+id/widget_dashboard_todo_ring"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:src="@drawable/widget_ring_arc_11"
-                    android:contentDescription="@null" />
-            </FrameLayout>
-
-            <TextView
-                android:id="@+id/widget_dashboard_ring_text"
+            <ImageView
+                android:id="@+id/widget_dashboard_budget_tint"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:gravity="center"
-                android:textSize="20sp"
-                android:textStyle="bold"
-                android:textColor="@color/widget_v2_text_primary" />
+                android:src="@drawable/widget_chip_round"
+                android:contentDescription="@null" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:padding="10dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <ImageView
+                        android:id="@+id/widget_dashboard_budget_dot"
+                        android:layout_width="8dp"
+                        android:layout_height="8dp"
+                        android:src="@drawable/widget_shape_circle"
+                        android:contentDescription="@null" />
+
+                    <TextView
+                        android:id="@+id/widget_dashboard_budget_sub"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:textSize="@dimen/widget_text_micro"
+                        android:textColor="@color/widget_v2_text_secondary"
+                        android:layout_marginStart="6dp"
+                        android:maxLines="1"
+                        android:ellipsize="end" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/widget_dashboard_budget"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:textSize="26sp"
+                    android:textStyle="bold"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
+
+                <FrameLayout
+                    android:id="@+id/widget_dashboard_budget_bar_wrap"
+                    android:layout_width="match_parent"
+                    android:layout_height="4dp"
+                    android:layout_marginTop="6dp">
+
+                    <ImageView
+                        android:id="@+id/widget_dashboard_budget_bar_track"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:src="@drawable/widget_bar_track"
+                        android:contentDescription="@null" />
+
+                    <ImageView
+                        android:id="@+id/widget_dashboard_budget_bar_fill"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:src="@drawable/widget_bar_fill"
+                        android:contentDescription="@null" />
+                </FrameLayout>
+
+                <TextView
+                    android:id="@+id/widget_dashboard_budget_used"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:textSize="@dimen/widget_text_micro"
+                    android:textColor="@color/widget_v2_text_tertiary"
+                    android:maxLines="1" />
+            </LinearLayout>
         </FrameLayout>
 
-        <LinearLayout
+        <FrameLayout
+            android:id="@+id/widget_dashboard_goal_card"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="center_vertical"
-            android:layout_marginStart="14dp">
+            android:layout_marginStart="7dp">
 
-            <FrameLayout
-                android:id="@+id/widget_dashboard_budget_card"
+            <ImageView
+                android:id="@+id/widget_dashboard_goal_tint"
                 android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1">
+                android:layout_height="match_parent"
+                android:src="@drawable/widget_chip_round"
+                android:contentDescription="@null" />
 
-                <ImageView
-                    android:id="@+id/widget_dashboard_budget_tint"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:src="@drawable/widget_chip_round"
-                    android:contentDescription="@null" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:padding="10dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:orientation="vertical"
-                    android:gravity="center_vertical"
-                    android:paddingHorizontal="10dp">
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
 
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical">
-
-                        <ImageView
-                            android:id="@+id/widget_dashboard_budget_dot"
-                            android:layout_width="8dp"
-                            android:layout_height="8dp"
-                            android:src="@drawable/widget_shape_circle"
-                            android:contentDescription="@null" />
-
-                        <TextView
-                            android:id="@+id/widget_dashboard_budget_sub"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:textSize="@dimen/widget_text_micro"
-                            android:textColor="@color/widget_v2_text_secondary"
-                            android:layout_marginStart="6dp"
-                            android:maxLines="1"
-                            android:ellipsize="end" />
-                    </LinearLayout>
+                    <ImageView
+                        android:id="@+id/widget_dashboard_goal_dot"
+                        android:layout_width="8dp"
+                        android:layout_height="8dp"
+                        android:src="@drawable/widget_shape_circle"
+                        android:contentDescription="@null" />
 
                     <TextView
-                        android:id="@+id/widget_dashboard_budget"
-                        android:layout_width="wrap_content"
+                        android:id="@+id/widget_dashboard_goal_name"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
+                        android:layout_weight="1"
+                        android:textSize="@dimen/widget_text_micro"
+                        android:textColor="@color/widget_v2_text_secondary"
+                        android:layout_marginStart="6dp"
                         android:maxLines="1"
                         android:ellipsize="end" />
                 </LinearLayout>
-            </FrameLayout>
 
-            <FrameLayout
-                android:id="@+id/widget_dashboard_goal_card"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1"
-                android:layout_marginTop="7dp">
+                <TextView
+                    android:id="@+id/widget_dashboard_goal_pct"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:textSize="26sp"
+                    android:textStyle="bold"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
 
-                <ImageView
-                    android:id="@+id/widget_dashboard_goal_tint"
+                <!-- 目标进度条：与预算 tile 同一根（track + clip 填充，level 定宽度） -->
+                <FrameLayout
+                    android:id="@+id/widget_dashboard_goal_bar_wrap"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:src="@drawable/widget_chip_round"
-                    android:contentDescription="@null" />
+                    android:layout_height="4dp"
+                    android:layout_marginTop="6dp">
+
+                    <ImageView
+                        android:id="@+id/widget_dashboard_goal_bar_track"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:src="@drawable/widget_bar_track"
+                        android:contentDescription="@null" />
+
+                    <ImageView
+                        android:id="@+id/widget_dashboard_goal_bar_fill"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:src="@drawable/widget_bar_fill"
+                        android:contentDescription="@null" />
+                </FrameLayout>
+
+                <TextView
+                    android:id="@+id/widget_dashboard_goal_counts"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:textSize="@dimen/widget_text_micro"
+                    android:textColor="@color/widget_v2_text_tertiary"
+                    android:maxLines="1" />
+
+                <!-- 弹性占位：RemoteViews 白名单没有 Space/裸 View，用 FrameLayout 撑开 -->
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1" />
+            </LinearLayout>
+        </FrameLayout>
+    </LinearLayout>
+
+    <!-- 下排 = 今日待办 / 纪念日 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="horizontal"
+        android:layout_marginTop="7dp">
+
+        <FrameLayout
+            android:id="@+id/widget_dashboard_todo_card"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1">
+
+            <ImageView
+                android:id="@+id/widget_dashboard_todo_tint"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:src="@drawable/widget_chip_round"
+                android:contentDescription="@null" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:padding="10dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:orientation="vertical"
-                    android:gravity="center_vertical"
-                    android:paddingHorizontal="10dp">
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
 
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical">
-
-                        <ImageView
-                            android:id="@+id/widget_dashboard_goal_dot"
-                            android:layout_width="8dp"
-                            android:layout_height="8dp"
-                            android:src="@drawable/widget_shape_circle"
-                            android:contentDescription="@null" />
-
-                        <TextView
-                            android:id="@+id/widget_dashboard_goal_name"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:textSize="@dimen/widget_text_micro"
-                            android:textColor="@color/widget_v2_text_secondary"
-                            android:layout_marginStart="6dp"
-                            android:maxLines="1"
-                            android:ellipsize="end" />
-                    </LinearLayout>
+                    <ImageView
+                        android:id="@+id/widget_dashboard_todo_dot"
+                        android:layout_width="8dp"
+                        android:layout_height="8dp"
+                        android:src="@drawable/widget_shape_circle"
+                        android:contentDescription="@null" />
 
                     <TextView
-                        android:id="@+id/widget_dashboard_goal_pct"
-                        android:layout_width="wrap_content"
+                        android:text="@string/widget_todos_label"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
+                        android:layout_weight="1"
+                        android:textSize="@dimen/widget_text_micro"
+                        android:textColor="@color/widget_v2_text_secondary"
+                        android:layout_marginStart="6dp"
                         android:maxLines="1"
                         android:ellipsize="end" />
                 </LinearLayout>
-            </FrameLayout>
 
-            <FrameLayout
-                android:id="@+id/widget_dashboard_todo_card"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1"
-                android:layout_marginTop="7dp">
+                <TextView
+                    android:id="@+id/widget_dashboard_todo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:textSize="26sp"
+                    android:textStyle="bold"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
 
-                <ImageView
-                    android:id="@+id/widget_dashboard_todo_tint"
+                <!-- 弹性占位：RemoteViews 白名单没有 Space/裸 View，用 FrameLayout 撑开 -->
+                <FrameLayout
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:src="@drawable/widget_chip_round"
-                    android:contentDescription="@null" />
+                    android:layout_height="0dp"
+                    android:layout_weight="1" />
+
+                <TextView
+                    android:id="@+id/widget_dashboard_todo_overdue"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="@dimen/widget_text_micro"
+                    android:textStyle="bold"
+                    android:maxLines="1" />
+            </LinearLayout>
+        </FrameLayout>
+
+        <FrameLayout
+            android:id="@+id/widget_dashboard_anniversary_card"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginStart="7dp">
+
+            <ImageView
+                android:id="@+id/widget_dashboard_anniversary_tint"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:src="@drawable/widget_chip_round"
+                android:contentDescription="@null" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:padding="10dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:orientation="vertical"
-                    android:gravity="center_vertical"
-                    android:paddingHorizontal="10dp">
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
 
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical">
-
-                        <ImageView
-                            android:id="@+id/widget_dashboard_todo_dot"
-                            android:layout_width="8dp"
-                            android:layout_height="8dp"
-                            android:src="@drawable/widget_shape_circle"
-                            android:contentDescription="@null" />
-
-                        <TextView
-                            android:text="@string/widget_todos_label"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:textSize="@dimen/widget_text_micro"
-                            android:textColor="@color/widget_v2_text_secondary"
-                            android:layout_marginStart="6dp"
-                            android:maxLines="1"
-                            android:ellipsize="end" />
-                    </LinearLayout>
+                    <ImageView
+                        android:id="@+id/widget_dashboard_anniversary_dot"
+                        android:layout_width="8dp"
+                        android:layout_height="8dp"
+                        android:src="@drawable/widget_shape_circle"
+                        android:contentDescription="@null" />
 
                     <TextView
-                        android:id="@+id/widget_dashboard_todo"
-                        android:layout_width="wrap_content"
+                        android:id="@+id/widget_dashboard_days_title"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
+                        android:layout_weight="1"
+                        android:textSize="@dimen/widget_text_micro"
+                        android:textColor="@color/widget_v2_text_secondary"
+                        android:layout_marginStart="6dp"
                         android:maxLines="1"
                         android:ellipsize="end" />
                 </LinearLayout>
-            </FrameLayout>
 
-            <FrameLayout
-                android:id="@+id/widget_dashboard_anniversary_card"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1"
-                android:layout_marginTop="7dp">
+                <TextView
+                    android:id="@+id/widget_dashboard_days"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:textSize="26sp"
+                    android:textStyle="bold"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
 
-                <ImageView
-                    android:id="@+id/widget_dashboard_anniversary_tint"
+                <!-- 弹性占位：RemoteViews 白名单没有 Space/裸 View，用 FrameLayout 撑开 -->
+                <FrameLayout
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:src="@drawable/widget_chip_round"
-                    android:contentDescription="@null" />
+                    android:layout_height="0dp"
+                    android:layout_weight="1" />
 
-                <LinearLayout
+                <TextView
+                    android:id="@+id/widget_dashboard_anniv_date"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:orientation="vertical"
-                    android:gravity="center_vertical"
-                    android:paddingHorizontal="10dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical">
-
-                        <ImageView
-                            android:id="@+id/widget_dashboard_anniversary_dot"
-                            android:layout_width="8dp"
-                            android:layout_height="8dp"
-                            android:src="@drawable/widget_shape_circle"
-                            android:contentDescription="@null" />
-
-                        <TextView
-                            android:id="@+id/widget_dashboard_days_title"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:textSize="@dimen/widget_text_micro"
-                            android:textColor="@color/widget_v2_text_secondary"
-                            android:layout_marginStart="6dp"
-                            android:maxLines="1"
-                            android:ellipsize="end" />
-                    </LinearLayout>
-
-                    <TextView
-                        android:id="@+id/widget_dashboard_days"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:maxLines="1"
-                        android:ellipsize="end" />
-                </LinearLayout>
-            </FrameLayout>
-        </LinearLayout>
+                    android:layout_height="wrap_content"
+                    android:textSize="@dimen/widget_text_micro"
+                    android:textColor="@color/widget_v2_text_tertiary"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
+            </LinearLayout>
+        </FrameLayout>
     </LinearLayout>
 
 </LinearLayout>

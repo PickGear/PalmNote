@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 警示胶囊底（v4 设计稿 .warn）：红 12% 圆角底，文字用 widget_risk_red（夜间在 values-night 提亮） -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <corners android:radius="99dp" />
+    <solid android:color="@color/widget_warn_bg" />
+</shape>

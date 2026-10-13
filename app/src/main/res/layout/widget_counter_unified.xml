@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  倒计时 3×2（定稿）：焦点事件给「还有几天 + 名称 + 目标日期」，下面一条横向日历条把目标日
-  高亮出来（前 5 天到后 1 天）。日历条格子等宽，高亮那格由 Provider 上色族色、文字转白。
+  倒计时 3×2（v4 定稿）：焦点事件给「大数字 + 名称/目标日期列」，第二条事件给一行色底 chip
+  （色点 + 名称 + 剩余天数），下面一条横向日历条把目标日高亮出来（前 5 天到后 1 天）。
+  日历条格子等宽，高亮那格由 Provider 上色族色、文字转白。
   宽到 4 格以上仍走多事件列表（widget_more_events）。
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -65,58 +66,106 @@
         android:gravity="center_vertical"
         android:visibility="gone">
 
+        <!-- Hero：大数字 + 右侧「名称 / 目标日期」两行（稿子如此，单位天并入 chip 行的表述） -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
+            android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical">
 
-            <LinearLayout
+            <TextView
+                android:id="@+id/widget_days_count"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="bottom">
+                android:text="0"
+                android:textSize="33sp"
+                android:textStyle="bold"
+                android:maxLines="1" />
 
-                <TextView
-                    android:id="@+id/widget_days_count"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="0"
-                    android:textSize="38sp"
-                    android:textStyle="bold"
-                    android:maxLines="1" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/widget_days_label"
-                    android:textSize="11sp"
-                    android:textColor="@color/widget_v2_text_secondary"
-                    android:layout_marginStart="2dp" />
-            </LinearLayout>
-
-            <TextView
-                android:id="@+id/widget_event_name"
+            <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:textSize="13sp"
-                android:textStyle="bold"
-                android:textColor="@color/widget_v2_text_primary"
-                android:layout_marginStart="8dp"
-                android:maxLines="1"
-                android:ellipsize="end" />
+                android:orientation="vertical"
+                android:layout_marginStart="10dp">
 
-            <TextView
-                android:id="@+id/widget_event_date"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textSize="@dimen/widget_text_micro"
-                android:textColor="@color/widget_v2_text_tertiary"
-                android:layout_marginStart="6dp"
-                android:maxLines="1" />
+                <TextView
+                    android:id="@+id/widget_event_name"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/widget_v2_text_primary"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
+
+                <TextView
+                    android:id="@+id/widget_event_date"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="@dimen/widget_text_micro"
+                    android:textColor="@color/widget_v2_text_tertiary"
+                    android:layout_marginTop="1dp"
+                    android:maxLines="1" />
+            </LinearLayout>
         </LinearLayout>
+
+        <!-- 弹性空档：把第二条事件与日历条压到底部，卡片高时中间不留死白 -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <!-- 第二条事件：一行色底 chip（底色/色点/天数由 Provider 着族色） -->
+        <FrameLayout
+            android:id="@+id/widget_second_event"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone">
+
+            <ImageView
+                android:id="@+id/widget_second_event_bg"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:src="@drawable/widget_chip_round"
+                android:contentDescription="@null" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingHorizontal="9dp"
+                android:paddingVertical="4dp">
+
+                <ImageView
+                    android:id="@+id/widget_second_event_dot"
+                    android:layout_width="8dp"
+                    android:layout_height="8dp"
+                    android:src="@drawable/widget_shape_circle"
+                    android:contentDescription="@null" />
+
+                <TextView
+                    android:id="@+id/widget_second_event_name"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textSize="11sp"
+                    android:textColor="@color/widget_v2_text_primary"
+                    android:layout_marginStart="6dp"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
+
+                <TextView
+                    android:id="@+id/widget_second_event_days"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:layout_marginStart="6dp"
+                    android:maxLines="1" />
+            </LinearLayout>
+        </FrameLayout>
 
         <!-- 横向日历条：目标日高亮（7 格等宽，前 5 天到后 1 天） -->
         <LinearLayout
@@ -155,8 +204,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center"
-                    android:paddingVertical="12dp"
-                    android:textSize="13sp"
+                    android:paddingVertical="4dp"
+                    android:textSize="11sp"
                     android:textColor="@color/widget_v2_text_secondary"
                     android:maxLines="1" />
             </FrameLayout>
@@ -190,8 +239,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center"
-                    android:paddingVertical="12dp"
-                    android:textSize="13sp"
+                    android:paddingVertical="4dp"
+                    android:textSize="11sp"
                     android:textColor="@color/widget_v2_text_secondary"
                     android:maxLines="1" />
             </FrameLayout>
@@ -225,8 +274,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center"
-                    android:paddingVertical="12dp"
-                    android:textSize="13sp"
+                    android:paddingVertical="4dp"
+                    android:textSize="11sp"
                     android:textColor="@color/widget_v2_text_secondary"
                     android:maxLines="1" />
             </FrameLayout>
@@ -260,8 +309,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center"
-                    android:paddingVertical="12dp"
-                    android:textSize="13sp"
+                    android:paddingVertical="4dp"
+                    android:textSize="11sp"
                     android:textColor="@color/widget_v2_text_secondary"
                     android:maxLines="1" />
             </FrameLayout>
@@ -295,8 +344,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center"
-                    android:paddingVertical="12dp"
-                    android:textSize="13sp"
+                    android:paddingVertical="4dp"
+                    android:textSize="11sp"
                     android:textColor="@color/widget_v2_text_secondary"
                     android:maxLines="1" />
             </FrameLayout>
@@ -330,8 +379,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center"
-                    android:paddingVertical="12dp"
-                    android:textSize="13sp"
+                    android:paddingVertical="4dp"
+                    android:textSize="11sp"
                     android:textColor="@color/widget_v2_text_secondary"
                     android:maxLines="1" />
             </FrameLayout>
@@ -364,8 +413,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center"
-                    android:paddingVertical="12dp"
-                    android:textSize="13sp"
+                    android:paddingVertical="4dp"
+                    android:textSize="11sp"
                     android:textColor="@color/widget_v2_text_secondary"
                     android:maxLines="1" />
             </FrameLayout>

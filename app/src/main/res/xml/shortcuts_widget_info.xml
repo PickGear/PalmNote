@@ -4,6 +4,8 @@
     android:minHeight="110dp"
     android:targetCellWidth="2"
     android:targetCellHeight="2"
+    android:minResizeWidth="110dp"
+    android:minResizeHeight="40dp"
     android:maxResizeWidth="300dp"
     android:maxResizeHeight="220dp"
     android:updatePeriodMillis="0"
@@ -11,6 +13,6 @@
     android:previewImage="@drawable/widget_preview_shortcuts"
     android:widgetCategory="home_screen"
     android:description="@string/widget_shortcuts_desc"
-    android:previewLayout="@layout/widget_shortcuts_unified"
+    android:previewLayout="@layout/widget_shortcuts_preview"
     android:configure="com.palmnote.ui.widget.WidgetConfigActivity"
     android:resizeMode="horizontal|vertical" />

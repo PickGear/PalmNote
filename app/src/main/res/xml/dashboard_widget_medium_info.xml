@@ -11,6 +11,6 @@
     android:widgetCategory="home_screen"
     android:description="@string/widget_dashboard_desc"
     android:previewImage="@drawable/widget_preview_dashboard"
-    android:previewLayout="@layout/widget_dashboard_unified"
+    android:previewLayout="@layout/widget_dashboard_preview"
     android:configure="com.palmnote.ui.widget.WidgetConfigActivity"
     android:resizeMode="horizontal|vertical" />

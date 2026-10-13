@@ -415,6 +415,8 @@
     <string name="widget_asset_title">Assets</string>
     <string name="widget_asset_desc">What you own, grouped by category</string>
     <string name="widget_net_worth_desc">Balances added up across all accounts</string>
+    <!-- Net worth 2x1 third row (v4): this month\'s net income, %1$s like "+¥680" -->
+    <string name="widget_net_worth_month_sub">This month %1$s</string>
     <string name="widget_subscription_title">Renewals</string>
     <string name="widget_subscription_desc">The next charges, laid out by date</string>
     <string name="widget_subscription_empty">No subscriptions</string>
@@ -435,6 +437,21 @@
     <string name="widget_budget_remaining">Budget Left</string>
     <string name="widget_budget_used">Budget used</string>
     <string name="widget_net_income">Net Income</string>
+    <!-- Dashboard 4x3 (v4): header / tile secondary info -->
+    <string name="widget_week_todo_count">%1$d todos this week</string>
+    <string name="widget_budget_used_pct">%1$d%% used</string>
+    <string name="widget_overdue_count">%1$d overdue</string>
+    <string name="widget_todo_done_today">%1$d done today</string>
+    <string name="widget_date_md_week">M/d · E</string>
+    <string name="widget_todo_done_more">View all ›</string>
+    <string name="widget_done_prefix">✓ %1$s</string>
+    <!-- v4 agenda sections (design: today/overdue/tomorrow/later + week-done footer) -->
+    <string name="widget_todo_done_count">%1$d done</string>
+    <string name="widget_todo_week_done">%1$d done this week</string>
+    <string name="widget_todo_sect_count">%1$d items</string>
+    <string name="widget_todo_sect_later">Later</string>
+    <string name="widget_overdue_short">Overdue %1$d</string>
+    <string name="widget_yesterday">Yesterday</string>
     <string name="widget_days_label">days</string>
     <string name="widget_date_format_cn">MMM d, yyyy</string>
     <string name="widget_days_ago">days ago</string>
@@ -454,21 +471,11 @@
         <item quantity="one">%1$d this month</item>
         <item quantity="other">%1$d this month</item>
     </plurals>
-    <!-- 物品组件：头部总数与每个分类的件数 -->
-    <plurals name="widget_asset_total_count">
-        <item quantity="one">%1$d item</item>
-        <item quantity="other">%1$d items</item>
-    </plurals>
-    <plurals name="widget_asset_item_count">
-        <item quantity="one">%1$d item</item>
-        <item quantity="other">%1$d items</item>
-    </plurals>
-    <string name="widget_preview_todo_1">Buy accessories</string>
+    <!-- 物品组件：头部 Hero 数字的单位（数字本体在 Provider 里填，件数片内是纯数字） -->
+    <string name="widget_asset_unit">items</string>
     <string name="widget_preview_todo_2">Inventory check</string>
     <string name="widget_preview_todo_3">Monthly report</string>
     <string name="widget_preview_todo_due_3">in 3 days</string>
-    <string name="widget_preview_todo_4">Call mom</string>
-    <string name="widget_preview_todo_5">Renew domain</string>
     <string name="widget_preview_todo_due_4">Sunday</string>
     <string name="widget_preview_todo_due_5">11/02</string>
     <string name="widget_habit_title">Check-in</string>
@@ -493,7 +500,38 @@
     <string name="widget_shortcut_asset">Assets</string>
     <string name="widget_shortcut_goal">Goals</string>
     <string name="widget_shortcut_anniversary">Dates</string>
-    <string name="widget_habit_desc">Tap a circle to check in and see your streak</string>
+    <string name="widget_habit_desc">Tap a square to check in and see your streak</string>
+    <!-- Habit weekly grid (v4): hero sub / header sub / footer stats -->
+    <string name="widget_this_week_label">This week</string>
+    <string name="widget_habit_hero_sub">%1$d days to your best</string>
+    <string name="widget_habit_hero_max">Personal best</string>
+    <string name="widget_habit_done_label">Completed today</string>
+    <string name="widget_habit_month_label">This month</string>
+    <string name="widget_habit_month_days">%1$d days</string>
+    <string name="widget_habit_row_week">%1$d/7</string>
+    <string name="widget_habit_stat_longest">Longest %1$d</string>
+    <string name="widget_habit_stat_week">Week %1$d%%</string>
+    <string name="widget_habit_stat_todo">%1$d to check in</string>
+    <string name="widget_preview_todo_done_1">Buy parts</string>
+    <string name="widget_preview_todo_done_2">Call mom</string>
+    <string name="widget_preview_todo_od">Submit expense report</string>
+    <string name="widget_preview_todo_tmr">Pick up package</string>
+    <string name="widget_preview_cnt_2">2 items</string>
+    <string name="widget_preview_cnt_1">1 item</string>
+    <string name="widget_preview_overdue_1">Overdue 1</string>
+    <string name="widget_preview_done_cnt">2 done</string>
+    <string name="widget_preview_week_done">9 done this week</string>
+    <!-- New size variants (v4): 2×1 minimal / 4×1 strip / 1×2·1×3 column -->
+    <string name="widget_todo_today">Today\'s todos</string>
+    <string name="widget_todo_today_week">Today · %1$s</string>
+    <string name="widget_todo_next">Next %1$s</string>
+    <string name="widget_subscription_recent">Recent renewal</string>
+    <string name="widget_subscription_month_brief">%1$d this month</string>
+    <string name="widget_life_count_title">Life counter</string>
+    <string name="widget_habit_count_label">%1$d habits</string>
+    <string name="widget_habit_today_fmt">Today %1$d/%2$d</string>
+    <string name="widget_habit_week_brief">Week %1$d%%</string>
+    <string name="widget_longest_label">Longest</string>
     <string name="widget_shortcuts_desc">Four shortcuts: record, assets, goals, dates</string>
     <string name="widget_shortcuts_title">Quick Access</string>
     <string name="settings_widget_title">Home Screen Widgets</string>
@@ -2285,4 +2323,11 @@
     <string name="widget_next_up_due_today">Today</string>
     <string name="widget_next_up_done">Done</string>
     <string name="widget_next_up_days_unit">d</string>
+    <!-- 小组件 v4（3×2 家族）：接下来/订阅/倒计时的时效状态与 Hero 信息 -->
+    <string name="widget_next_up_rotate">Auto</string>
+    <string name="widget_next_up_today_due">Due today</string>
+    <string name="widget_next_up_renewal_date">Billed %1$s</string>
+    <string name="widget_subscription_upcoming">Due soon</string>
+    <string name="widget_counter_total_fmt">%1$d total</string>
+    <string name="widget_counter_second_days">%1$d days</string>
 </resources>

@@ -45,6 +45,10 @@
     <color name="widget_delta_down">#FFDC2626</color>
     <color name="widget_delta_up_tint">#FFDCFCE7</color>
     <color name="widget_delta_down_tint">#FFFEE2E2</color>
+    <!-- 语义警示（逾期红字等，design-v4 .warn 同源）：夜间在 values-night 提亮 -->
+    <color name="widget_risk_red">#FFC62828</color>
+    <!-- 警示胶囊底：红 12%（design-v4 .warn 背景），夜间换红 20% -->
+    <color name="widget_warn_bg">#1FDC2626</color>
 
 
     <!-- ═══════════════════════════════════════════════════════════════

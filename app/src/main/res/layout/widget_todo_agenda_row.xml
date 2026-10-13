@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 待办 4×3 分段议程行（v4 设计稿 .tdrow2）：方框 + 名称 + 时间；方框颜色运行时上 -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/widget_todo_agenda_row"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingVertical="4dp">
+
+    <ImageView
+        android:id="@+id/widget_todo_agenda_box"
+        android:layout_width="13dp"
+        android:layout_height="13dp"
+        android:src="@drawable/widget_todo_check_box"
+        android:contentDescription="@null" />
+
+    <TextView
+        android:id="@+id/widget_todo_agenda_name"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:textSize="12sp"
+        android:textColor="@color/widget_v2_text_primary"
+        android:layout_marginStart="6dp"
+        android:maxLines="1"
+        android:ellipsize="end" />
+
+    <TextView
+        android:id="@+id/widget_todo_agenda_time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="9sp"
+        android:textStyle="bold"
+        android:textColor="@color/widget_v2_text_secondary"
+        android:layout_marginStart="4dp"
+        tools:ignore="SmallSp" />
+</LinearLayout>

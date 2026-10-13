@@ -65,24 +65,32 @@ class WidgetRemoteViewsRenderTest {
     // ── 待办组件 ──
 
     @Test
-    fun `待办行渲染条目标题`() {
+    fun `议程行渲染标题与时间`() {
         val item = LifeItem(templateId = 1, title = "买牛奶", dueDate = System.currentTimeMillis())
-        val root = render(WidgetHelper.todoRowViews(context, item))
+        val root = render(WidgetHelper.todoAgendaRowViews(context, item, timeText = "18:00", isOverdue = false))
 
         assertTrue(texts(root).any { it.contains("买牛奶") })
-        assertNotNull("色片底应着淡彩色", findById<ImageView>(root, R.id.widget_todo_chip_bg)?.colorFilter)
-        assertNotNull("色点应着同族色", findById<ImageView>(root, R.id.widget_todo_dot)?.colorFilter)
+        assertEquals("18:00", findById<TextView>(root, R.id.widget_todo_agenda_time)?.text)
+        assertNotNull("行应带待办方框", findById<ImageView>(root, R.id.widget_todo_agenda_box))
     }
 
     @Test
-    fun `待办已完成的行加勾前缀且用三级色`() {
-        // 稿子里完成的行是划线；RemoteViews 传不了 span（跨进程只传文本），改用可见的勾前缀 + 三级色
-        val item = LifeItem(templateId = 1, title = "买牛奶", status = "COMPLETED")
-        val root = render(WidgetHelper.todoRowViews(context, item))
+    fun `议程逾期行时间转警示红`() {
+        // 设计稿 .rd：逾期段时间与日期都走警示红（跨进程传不了 span，颜色用 setTextColor 补）
+        val item = LifeItem(
+            templateId = 1,
+            title = "交房租",
+            dueDate = System.currentTimeMillis() - 86_400_000L
+        )
+        val root = render(WidgetHelper.todoAgendaRowViews(context, item, timeText = "昨天", isOverdue = true))
 
-        val text = findById<TextView>(root, R.id.widget_item_text)
-        assertTrue("完成的行应带勾前缀，实际=${text?.text}", text?.text?.startsWith("✓") == true)
-        assertTrue("完成的行标题要保留", text?.text?.contains("买牛奶") == true)
+        val time = findById<TextView>(root, R.id.widget_todo_agenda_time)
+        assertEquals("昨天", time?.text)
+        assertEquals(
+            "逾期行时间应为警示红",
+            context.getColor(R.color.widget_risk_red),
+            time?.currentTextColor
+        )
     }
 
     @Test
@@ -134,11 +142,56 @@ class WidgetRemoteViewsRenderTest {
     }
 
     @Test
+    fun `习惯组件 Hero 给距最长记录与本月打卡`() {
+        // 设计稿 Hero：12 连击 / 「距离最长记录还差 9 天」/ 右侧「本月打卡 18 天」；
+        // 头部右上角「1/1」下面挂「今日已完成」
+        val rows = listOf(
+            HabitWidgetProvider.HabitRow(
+                templateId = 11, name = "跑步", checked = true, streak = 12,
+                monthCount = 18, longest = 21
+            )
+        )
+        val root = render(HabitWidgetProvider().bindViews(context, 1, rows))
+
+        assertEquals(
+            context.getString(R.string.widget_habit_hero_sub, 9),
+            findById<TextView>(root, R.id.widget_habit_streak_sub)?.text
+        )
+        assertEquals(
+            context.getString(R.string.widget_habit_month_days, 18),
+            findById<TextView>(root, R.id.widget_habit_month_days)?.text
+        )
+        assertEquals(View.VISIBLE, findById<View>(root, R.id.widget_habit_month_box)?.visibility)
+        assertEquals(
+            context.getString(R.string.widget_habit_done_label),
+            findById<TextView>(root, R.id.widget_habit_count_label)?.text
+        )
+    }
+
+    @Test
+    fun `习惯组件已是最长记录时换副标文案`() {
+        // 当前连击就是历史最长：不能写「还差 0 天」
+        val rows = listOf(
+            HabitWidgetProvider.HabitRow(
+                templateId = 11, name = "跑步", checked = true, streak = 12, longest = 12
+            )
+        )
+        val root = render(HabitWidgetProvider().bindViews(context, 1, rows))
+
+        assertEquals(
+            context.getString(R.string.widget_habit_hero_max),
+            findById<TextView>(root, R.id.widget_habit_streak_sub)?.text
+        )
+    }
+
+    @Test
     fun `习惯组件空态`() {
         val root = render(HabitWidgetProvider().bindViews(context, 1, emptyList()))
 
         assertEquals(View.VISIBLE, findById<View>(root, R.id.widget_habit_empty)?.visibility)
         assertEquals(View.GONE, findById<View>(root, R.id.widget_habit_count)?.visibility)
+        assertEquals(View.GONE, findById<View>(root, R.id.widget_habit_count_label)?.visibility)
+        assertEquals(View.GONE, findById<View>(root, R.id.widget_habit_month_box)?.visibility)
     }
 
     // ── 账单组件 ──
@@ -259,14 +312,18 @@ class WidgetRemoteViewsRenderTest {
             context,
             views,
             DashboardWidgetProvider.DashboardSnapshot(
-                dateText = "10月7日",
+                weekTodoCount = 5,
                 budgetCardAmount = "¥1,800",
                 budgetCardSub = context.getString(R.string.widget_budget_remaining),
                 goalPct = "40%",
                 goalName = "读书",
+                goalCounts = "4/10",
                 todoRemaining = 2,
+                todoDoneToday = 1,
+                overdueCount = 0,
                 anniversaryTitle = "恋爱纪念日",
-                anniversaryDays = 12
+                anniversaryDays = 12,
+                anniversaryDateText = "10/19 · 周一"
             )
         )
         val root = render(views)
@@ -277,35 +334,41 @@ class WidgetRemoteViewsRenderTest {
     }
 
     @Test
-    fun `概览三层同心环与四张色片按快照显示`() {
+    fun `概览2×2色块与预算用量条按快照显示`() {
         val views = android.widget.RemoteViews(context.packageName, R.layout.widget_dashboard_unified)
         DashboardWidgetProvider().bindSnapshot(
             context,
             views,
             DashboardWidgetProvider.DashboardSnapshot(
-                dateText = "10月7日",
-                budgetCardAmount = "¥1,720",
+                weekTodoCount = 5,
+                budgetCardAmount = "¥1,800",
                 budgetCardSub = context.getString(R.string.widget_budget_remaining),
                 goalPct = "64%",
                 goalName = "跑步 5km",
+                goalCounts = "32/50",
                 todoRemaining = 2,
+                todoDoneToday = 2,
+                overdueCount = 0,
                 anniversaryTitle = "妈妈生日",
                 anniversaryDays = 12,
-                budgetPercent = 82,
-                goalPercent = 64
+                anniversaryDateText = "10/19 · 周一",
+                budgetPercent = 82
             )
         )
-        views.setInt(R.id.widget_dashboard_budget_ring, "setColorFilter", 0xFFF97316.toInt())
-        views.setInt(R.id.widget_dashboard_budget_ring, "setImageLevel", 82 * 100)
+        views.setInt(R.id.widget_dashboard_budget_bar_fill, "setColorFilter", 0xFFF97316.toInt())
+        views.setInt(R.id.widget_dashboard_budget_bar_fill, "setImageLevel", 82 * 100)
         val root = render(views)
 
-        assertEquals("¥1,720", findById<TextView>(root, R.id.widget_dashboard_budget)?.text)
+        assertEquals("¥1,800", findById<TextView>(root, R.id.widget_dashboard_budget)?.text)
         assertEquals("64%", findById<TextView>(root, R.id.widget_dashboard_goal_pct)?.text)
-        assertEquals("2", findById<TextView>(root, R.id.widget_dashboard_todo)?.text)
+        assertEquals(context.getString(R.string.widget_todo_sect_count, 2), findById<TextView>(root, R.id.widget_dashboard_todo)?.text)
         assertTrue(findById<TextView>(root, R.id.widget_dashboard_days)?.text?.startsWith("12") == true)
-        // 三层环的进度弧各按数据扫过
-        assertEquals(82 * 100, findById<ImageView>(root, R.id.widget_dashboard_budget_ring)?.drawable?.level)
-        assertNotNull(findById<ImageView>(root, R.id.widget_dashboard_budget_ring)?.colorFilter)
+        // 预算用量条按数据填充（v4 用迷你条取代旧的三层同心环）
+        assertEquals(82 * 100, findById<ImageView>(root, R.id.widget_dashboard_budget_bar_fill)?.drawable?.level)
+        assertNotNull(findById<ImageView>(root, R.id.widget_dashboard_budget_bar_fill)?.colorFilter)
+        // 右上角本周待办、待办 tile 的二级信息都落位
+        assertTrue(findById<TextView>(root, R.id.widget_dashboard_week_todo)?.text?.contains("5") == true)
+        assertTrue(findById<TextView>(root, R.id.widget_dashboard_todo_overdue)?.text?.contains("2") == true)
     }
 
     @Test
@@ -315,14 +378,18 @@ class WidgetRemoteViewsRenderTest {
             context,
             views,
             DashboardWidgetProvider.DashboardSnapshot(
-                dateText = "10月7日",
+                weekTodoCount = 0,
                 budgetCardAmount = "¥470",
                 budgetCardSub = context.getString(R.string.widget_net_income),
                 goalPct = "--",
                 goalName = context.getString(R.string.widget_no_goals),
+                goalCounts = "--",
                 todoRemaining = 0,
+                todoDoneToday = 0,
+                overdueCount = 0,
                 anniversaryTitle = null,
-                anniversaryDays = -1L
+                anniversaryDays = -1L,
+                anniversaryDateText = null
             )
         )
         val root = render(views)
@@ -347,18 +414,53 @@ class WidgetRemoteViewsRenderTest {
     }
 
     @Test
-    fun `总资产涨跌胶囊给带符号的净收入金额`() {
-        // 曾经按稿子做百分比（净收入 ÷ 期初总资产），真机上算出 +175.8% 这种没有意义的数，
-        // 改成直接给本月净收入的金额，涨 + 跌 -
+    fun `总资产涨跌胶囊给本月百分比`() {
+        // 口径：本月净收入 ÷ 期初总资产（期初 = 余额合计 − 本月净收入），一位小数百分比。
+        // 1_285_000 / 26_400 → 期初 1_258_600 → +2.0%（正好是设计稿「+2.0%」那组数）
         val up = render(NetWorthWidgetProvider().bindViews(context, 1, 1_285_000L, 110, 26_400L))
         assertEquals(View.VISIBLE, findById<View>(up, R.id.widget_net_worth_delta)?.visibility)
-        assertEquals("+¥264", findById<TextView>(up, R.id.widget_net_worth_delta)?.text)
+        assertEquals("+2.0%", findById<TextView>(up, R.id.widget_net_worth_delta)?.text)
 
         val down = render(NetWorthWidgetProvider().bindViews(context, 1, 1_285_000L, 110, -26_400L))
-        assertEquals("-¥264", findById<TextView>(down, R.id.widget_net_worth_delta)?.text)
+        assertEquals("-2.0%", findById<TextView>(down, R.id.widget_net_worth_delta)?.text)
 
+        // 本月没有进出：0% 没有信息量，整枚隐藏
         val flat = render(NetWorthWidgetProvider().bindViews(context, 1, 1_285_000L, 110, 0L))
         assertEquals(View.GONE, findById<View>(flat, R.id.widget_net_worth_delta)?.visibility)
+    }
+
+    @Test
+    fun `总资产第三行给本月净收入金额`() {
+        // 设计稿第三行「本月 +¥680」：与胶囊同一笔钱，这里给绝对值金额
+        val up = render(NetWorthWidgetProvider().bindViews(context, 1, 1_285_000L, 110, 26_400L))
+        assertEquals(
+            context.getString(R.string.widget_net_worth_month_sub, "+¥264"),
+            findById<TextView>(up, R.id.widget_net_worth_sub)?.text
+        )
+
+        val down = render(NetWorthWidgetProvider().bindViews(context, 1, 1_285_000L, 110, -26_400L))
+        assertEquals(
+            context.getString(R.string.widget_net_worth_month_sub, "-¥264"),
+            findById<TextView>(down, R.id.widget_net_worth_sub)?.text
+        )
+
+        // 没有进出时底行仍在（卡片结构恒定），给中性的「¥0」
+        val flat = render(NetWorthWidgetProvider().bindViews(context, 1, 1_285_000L, 110, 0L))
+        assertEquals(
+            context.getString(R.string.widget_net_worth_month_sub, "¥0"),
+            findById<TextView>(flat, R.id.widget_net_worth_sub)?.text
+        )
+    }
+
+    @Test
+    fun `总资产期初算不出时胶囊隐藏第三行照常`() {
+        // 新账户第一个月：余额合计就等于本月净收入，期初 0 → 比率没有意义，只留金额
+        val root = render(NetWorthWidgetProvider().bindViews(context, 1, 26_400L, 110, 26_400L))
+        assertEquals(View.GONE, findById<View>(root, R.id.widget_net_worth_delta)?.visibility)
+        assertEquals(
+            context.getString(R.string.widget_net_worth_month_sub, "+¥264"),
+            findById<TextView>(root, R.id.widget_net_worth_sub)?.text
+        )
     }
 
     @Test
@@ -440,17 +542,14 @@ class WidgetRemoteViewsRenderTest {
         )
         val root = render(AssetWidgetProvider().bindViews(context, 1, categories))
 
-        // 头部总数 = 各分类件数之和
-        assertEquals(
-            context.resources.getQuantityString(R.plurals.widget_asset_total_count, 6, 6),
-            findById<TextView>(root, R.id.widget_asset_total)?.text
-        )
-        // 每个分类一张色片，写清名称与件数
+        // 头部 Hero Number = 各分类件数之和（纯数字，单位在旁边的静态 TextView 上）
+        assertEquals("6", findById<TextView>(root, R.id.widget_asset_total)?.text)
+        // 每个分类一张色片，写清名称与件数（件数是纯数字，着色断言靠 colorFilter）
         // 名称走应用同一套翻译，断言也用同一函数（测试机 locale 不是 zh）
         assertTrue(texts(root).any { it == com.palmnote.ui.components.getCategoryName("DIGITAL", context) })
         assertTrue(texts(root).any { it == com.palmnote.ui.components.getCategoryName("SPORTS", context) })
         assertTrue(texts(root).any { it == com.palmnote.ui.components.getCategoryName("BOOKS", context) })
-        assertTrue(texts(root).any { it == context.resources.getQuantityString(R.plurals.widget_asset_item_count, 3, 3) })
+        assertTrue(texts(root).any { it == "3" })
         assertNotNull("色片底应着淡彩色", findById<ImageView>(root, R.id.widget_asset_chip_bg)?.colorFilter)
         assertNotNull("色片色点应着同族色", findById<ImageView>(root, R.id.widget_asset_chip_dot)?.colorFilter)
         // 占比条 24 段等宽槽位，按件数占比着色：3/2/1 共 6 件 → 累计边界 12 / 20 / 24，
@@ -482,12 +581,9 @@ class WidgetRemoteViewsRenderTest {
         )
         val root = render(AssetWidgetProvider().bindViews(context, 1, categories, compactHeight = true))
 
-        // 次要元素收起：占比条（连同 24 段）整个 GONE；头部总数仍在
+        // 次要元素收起：占比条（连同 24 段）整个 GONE；头部 Hero Number 仍在
         assertEquals(View.GONE, findById<View>(root, R.id.widget_asset_bar)?.visibility)
-        assertEquals(
-            context.resources.getQuantityString(R.plurals.widget_asset_total_count, 6, 6),
-            findById<TextView>(root, R.id.widget_asset_total)?.text
-        )
+        assertEquals("6", findById<TextView>(root, R.id.widget_asset_total)?.text)
         // 色片只留一行两个：第一分类在、第三分类不再单独出现（并入「其他」或被截断）
         assertTrue(texts(root).any { it == com.palmnote.ui.components.getCategoryName("DIGITAL", context) })
         assertTrue(texts(root).none { it == com.palmnote.ui.components.getCategoryName("BOOKS", context) })
@@ -520,11 +616,7 @@ class WidgetRemoteViewsRenderTest {
 
         val root = render(AssetWidgetProvider().bindViews(context, 1, categories))
         assertTrue(texts(root).any { it == com.palmnote.ui.components.getCategoryName("OTHER", context) })
-        assertTrue(
-            texts(root).any {
-                it == context.resources.getQuantityString(R.plurals.widget_asset_item_count, 10, 10)
-            }
-        )
+        assertTrue(texts(root).any { it == "10" })
         // 占比条仍按**全部**件数归一化：聚合项占到最后一段，不再把第 6 名拉伸成「填满剩余」
         val owners = AssetWidgetProvider().slotOwners(collapsed.map { it.count }, 24)
         assertEquals("末段归聚合项「其他」", 5, owners[23])
@@ -545,7 +637,9 @@ class WidgetRemoteViewsRenderTest {
         val root = render(RemoteViews(context.packageName, R.layout.widget_asset_preview))
 
         assertTrue(texts(root).any { it == context.getString(R.string.widget_preview_asset_cat_1) })
-        assertTrue(texts(root).any { it == context.getString(R.string.widget_preview_asset_total) })
+        // v4：头部是 Hero Number「11」+ 单位「件」（各分类件数 3+2+2+2+1+1 = 11，自洽）
+        assertTrue(texts(root).any { it == "11" })
+        assertTrue(texts(root).any { it == context.getString(R.string.widget_asset_unit) })
     }
 
     // ── 倒计时组件：周年滚动进度环 ──
@@ -580,8 +674,8 @@ class WidgetRemoteViewsRenderTest {
             LifeCounterWidgetProvider().counterViews(context, 1, listOf(event), isLarge = false, heightDp = 190)
         )
         // 摆到 3 格高（≈284dp）时数字与日历条各放大一档，否则卡片上下会空三分之一
-        assertEquals(sp(46f), findById<TextView>(tall, R.id.widget_days_count)?.textSize?.toDouble() ?: 0.0, 0.5)
-        assertEquals(sp(38f), findById<TextView>(short, R.id.widget_days_count)?.textSize?.toDouble() ?: 0.0, 0.5)
+        assertEquals(sp(40f), findById<TextView>(tall, R.id.widget_days_count)?.textSize?.toDouble() ?: 0.0, 0.5)
+        assertEquals(sp(33f), findById<TextView>(short, R.id.widget_days_count)?.textSize?.toDouble() ?: 0.0, 0.5)
         assertEquals(sp(15f), findById<TextView>(tall, R.id.widget_counter_date_0)?.textSize?.toDouble() ?: 0.0, 0.5)
     }
 
@@ -597,27 +691,32 @@ class WidgetRemoteViewsRenderTest {
     }
 
     @Test
-    fun `概览圆环中心在无预算时退到目标百分比`() {
+    fun `概览无预算时用量条整块隐藏`() {
         val views = RemoteViews(context.packageName, R.layout.widget_dashboard_unified)
         DashboardWidgetProvider().bindSnapshot(
             context,
             views,
             DashboardWidgetProvider.DashboardSnapshot(
-                dateText = "10月10日",
+                weekTodoCount = 0,
                 budgetCardAmount = "¥470",
                 budgetCardSub = context.getString(R.string.widget_net_income),
                 goalPct = "58%",
                 goalName = "读书",
+                goalCounts = "--",
                 todoRemaining = 0,
+                todoDoneToday = 0,
+                overdueCount = 0,
                 anniversaryTitle = null,
                 anniversaryDays = -1L,
-                budgetPercent = null,
-                goalPercent = 58
+                anniversaryDateText = null,
+                budgetPercent = null
             )
         )
         val root = render(views)
 
-        assertEquals("58%", findById<TextView>(root, R.id.widget_dashboard_ring_text)?.text)
+        assertEquals(View.GONE, findById<View>(root, R.id.widget_dashboard_budget_bar_wrap)?.visibility)
+        // 目标百分比文案照常显示（tile 数值）
+        assertEquals("58%", findById<TextView>(root, R.id.widget_dashboard_goal_pct)?.text)
     }
 
     /** sp → px（测试机密度）。 */

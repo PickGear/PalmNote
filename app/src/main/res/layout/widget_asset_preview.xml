@@ -47,12 +47,29 @@
             android:textStyle="bold"
             android:layout_marginStart="8dp" />
 
-        <TextView
+        <!-- v4：头部右侧是 Hero Number（大数字 + 单位），不再是「共 N 件」 -->
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/widget_preview_asset_total"
-            android:textSize="@dimen/widget_text_micro"
-            android:textColor="@color/widget_v2_text_tertiary" />
+            android:orientation="horizontal"
+            android:gravity="bottom">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="11"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:textColor="@color/widget_v2_text_primary" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/widget_asset_unit"
+                android:textSize="@dimen/widget_text_micro"
+                android:textColor="@color/widget_v2_text_tertiary"
+                android:layout_marginStart="1dp" />
+        </LinearLayout>
     </LinearLayout>
 
     <LinearLayout
@@ -65,7 +82,7 @@
         <ImageView
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight="1"
+            android:layout_weight="4"
             android:layout_marginEnd="3dp"
             android:background="@drawable/widget_seg_slot"
             android:backgroundTint="@color/widget_hue_1"
@@ -74,7 +91,7 @@
         <ImageView
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight="1"
+            android:layout_weight="3"
             android:layout_marginEnd="3dp"
             android:background="@drawable/widget_seg_slot"
             android:backgroundTint="@color/widget_hue_2"
@@ -166,9 +183,10 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/widget_preview_asset_cnt_1"
-                    android:textSize="@dimen/widget_text_micro"
-                    android:textColor="@color/widget_v2_text_secondary"
+                    android:text="4"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/widget_hue_1"
                     android:layout_marginStart="4dp"
                     android:maxLines="1" />
             </LinearLayout>
@@ -217,9 +235,10 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/widget_preview_asset_cnt_2"
-                    android:textSize="@dimen/widget_text_micro"
-                    android:textColor="@color/widget_v2_text_secondary"
+                    android:text="3"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/widget_hue_2"
                     android:layout_marginStart="4dp"
                     android:maxLines="1" />
             </LinearLayout>
@@ -276,9 +295,10 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/widget_preview_asset_cnt_3"
-                    android:textSize="@dimen/widget_text_micro"
-                    android:textColor="@color/widget_v2_text_secondary"
+                    android:text="1"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/widget_hue_3"
                     android:layout_marginStart="4dp"
                     android:maxLines="1" />
             </LinearLayout>
@@ -327,9 +347,10 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/widget_preview_asset_cnt_4"
-                    android:textSize="@dimen/widget_text_micro"
-                    android:textColor="@color/widget_v2_text_secondary"
+                    android:text="1"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/widget_hue_4"
                     android:layout_marginStart="4dp"
                     android:maxLines="1" />
             </LinearLayout>
@@ -386,9 +407,10 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/widget_preview_asset_cnt_5"
-                    android:textSize="@dimen/widget_text_micro"
-                    android:textColor="@color/widget_v2_text_secondary"
+                    android:text="1"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/widget_hue_5"
                     android:layout_marginStart="4dp"
                     android:maxLines="1" />
             </LinearLayout>
@@ -437,9 +459,10 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/widget_preview_asset_cnt_6"
-                    android:textSize="@dimen/widget_text_micro"
-                    android:textColor="@color/widget_v2_text_secondary"
+                    android:text="1"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/widget_hue_6"
                     android:layout_marginStart="4dp"
                     android:maxLines="1" />
             </LinearLayout>

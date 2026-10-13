@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 待办 4×3 左栏的已完成明细行（v4）：✓ 前缀 + 三级色（RemoteViews 无划线 API 的替代方案） -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_todo_done_text"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:textSize="10sp"
+    android:textColor="@color/widget_v2_text_tertiary"
+    android:maxLines="1"
+    android:ellipsize="end" />

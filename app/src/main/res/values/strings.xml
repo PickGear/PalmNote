@@ -579,7 +579,7 @@
     <string name="widget_bill_desc">看本月收支，和预算还剩多少</string>
     <string name="widget_todo_title">待办清单</string>
     <string name="widget_todo_done_label">今日完成</string>
-    <string name="widget_overdue">已逾期</string>
+    <string name="widget_overdue">逾期</string>
     <string name="widget_completed">已完成</string>
     <string name="widget_todo_desc">今天的待办，点一行就勾掉</string>
     <string name="widget_counter_title">生活计数器</string>
@@ -587,6 +587,8 @@
     <string name="widget_asset_title">物品分布</string>
     <string name="widget_asset_desc">在用的物品按分类分布</string>
     <string name="widget_net_worth_desc">各账户余额合计</string>
+    <!-- 总资产 2×1 第三行（v4）：本月净收入金额，%1$s 形如「+¥680」 -->
+    <string name="widget_net_worth_month_sub">本月 %1$s</string>
     <string name="widget_subscription_title">订阅提醒</string>
     <string name="widget_subscription_desc">最近要扣的几笔，按日期排开</string>
     <string name="widget_subscription_empty">暂无订阅</string>
@@ -607,6 +609,21 @@
     <string name="widget_budget_remaining">预算剩余</string>
     <string name="widget_budget_used">预算已用</string>
     <string name="widget_net_income">净收入</string>
+    <!-- 概览 4×3（v4）：右上角/二级信息 -->
+    <string name="widget_week_todo_count">本周待办 %1$d 项</string>
+    <string name="widget_budget_used_pct">本月已用 %1$d%%</string>
+    <string name="widget_overdue_count">逾期 %1$d 项</string>
+    <string name="widget_todo_done_today">今日已完成 %1$d 项</string>
+    <string name="widget_date_md_week">M/d · E</string>
+    <string name="widget_todo_done_more">查看全部 ›</string>
+    <string name="widget_done_prefix">✓ %1$s</string>
+    <!-- v4 分段议程（设计稿：今天/逾期/明天/之后 + 底部本周完成） -->
+    <string name="widget_todo_done_count">已完成 %1$d 项</string>
+    <string name="widget_todo_week_done">本周已完成 %1$d 项</string>
+    <string name="widget_todo_sect_count">%1$d 项</string>
+    <string name="widget_todo_sect_later">之后</string>
+    <string name="widget_overdue_short">逾期 %1$d</string>
+    <string name="widget_yesterday">昨天</string>
     <string name="widget_days_label">天</string>
     <string name="widget_date_format_cn">yyyy年M月d日</string>
     <string name="widget_days_ago">天前</string>
@@ -620,28 +637,18 @@
     <!-- 概览瓷片：大数字下面只写单位词，不再重复数字本身（参考「大数字 + 小单位」的排版） -->
     <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
     <plurals name="widget_days_unit">
-        <item quantity="one">天后</item>
-        <item quantity="other">天后</item>
+        <item quantity="one">天</item>
+        <item quantity="other">天</item>
     </plurals>
     <plurals name="widget_subscription_month_count">
         <item quantity="one">本月 %1$d 笔</item>
         <item quantity="other">本月 %1$d 笔</item>
     </plurals>
-    <!-- 物品组件：头部总数与每个分类的件数 -->
-    <plurals name="widget_asset_total_count">
-        <item quantity="one">共 %1$d 件</item>
-        <item quantity="other">共 %1$d 件</item>
-    </plurals>
-    <plurals name="widget_asset_item_count">
-        <item quantity="one">%1$d 件</item>
-        <item quantity="other">%1$d 件</item>
-    </plurals>
-    <string name="widget_preview_todo_1">采购配件</string>
+    <!-- 物品组件：头部 Hero 数字的单位（数字本体在 Provider 里填，件数片内是纯数字） -->
+    <string name="widget_asset_unit">件</string>
     <string name="widget_preview_todo_2">整理物品库存</string>
     <string name="widget_preview_todo_3">完成月度周报</string>
     <string name="widget_preview_todo_due_3">3 天后</string>
-    <string name="widget_preview_todo_4">给妈妈打电话</string>
-    <string name="widget_preview_todo_5">续费域名</string>
     <string name="widget_preview_todo_due_4">本周日</string>
     <string name="widget_preview_todo_due_5">11/02</string>
     <string name="widget_habit_title">今日打卡</string>
@@ -666,7 +673,39 @@
     <string name="widget_shortcut_asset">物品</string>
     <string name="widget_shortcut_goal">目标</string>
     <string name="widget_shortcut_anniversary">纪念日</string>
-    <string name="widget_habit_desc">点圆圈打卡，看连续多少天</string>
+    <string name="widget_habit_desc">点方格打卡，看连续多少天</string>
+    <!-- 习惯周历（v4）：Hero 副标 / 头部右上角副标 / 底部三指标 -->
+    <string name="widget_this_week_label">本周</string>
+    <string name="widget_habit_hero_sub">距离最长记录还差 %1$d 天</string>
+    <string name="widget_habit_hero_max">已是最长记录</string>
+    <string name="widget_habit_done_label">今日已完成</string>
+    <string name="widget_habit_month_label">本月打卡</string>
+    <string name="widget_habit_month_days">%1$d 天</string>
+    <string name="widget_habit_row_week">%1$d/7</string>
+    <string name="widget_habit_stat_longest">最长连击 %1$d 天</string>
+    <string name="widget_habit_stat_week">本周完成率 %1$d%%</string>
+    <string name="widget_habit_stat_todo">今日待打卡 %1$d 项</string>
+    <string name="widget_preview_todo_done_1">采购配件</string>
+    <string name="widget_preview_todo_done_2">给妈妈打电话</string>
+    <string name="widget_preview_todo_od">提交报销单</string>
+    <string name="widget_preview_todo_tmr">取快递</string>
+    <!-- v4 待办静态预览的计数/页脚样例（设计稿数字写死） -->
+    <string name="widget_preview_cnt_2">2 项</string>
+    <string name="widget_preview_cnt_1">1 项</string>
+    <string name="widget_preview_overdue_1">逾期 1</string>
+    <string name="widget_preview_done_cnt">已完成 2 项</string>
+    <string name="widget_preview_week_done">本周已完成 9 项</string>
+    <!-- 新形态档位（v4）：2×1 极简 / 4×1 横条 / 1×2·1×3 竖条 -->
+    <string name="widget_todo_today">今日待办</string>
+    <string name="widget_todo_today_week">今日待办 · %1$s</string>
+    <string name="widget_todo_next">下一项 %1$s</string>
+    <string name="widget_subscription_recent">最近订阅</string>
+    <string name="widget_subscription_month_brief">本月 %1$d 笔</string>
+    <string name="widget_life_count_title">生活计数</string>
+    <string name="widget_habit_count_label">%1$d 项习惯</string>
+    <string name="widget_habit_today_fmt">今日 %1$d/%2$d</string>
+    <string name="widget_habit_week_brief">本周 %1$d%%</string>
+    <string name="widget_longest_label">最长记录</string>
     <string name="widget_shortcuts_desc">记账、物品、目标、纪念日四个入口</string>
     <string name="widget_shortcuts_title">快捷入口</string>
     <string name="settings_widget_title">桌面小组件</string>
@@ -2260,4 +2299,11 @@
     <string name="widget_next_up_due_today">今天</string>
     <string name="widget_next_up_done">完成</string>
     <string name="widget_next_up_days_unit">天</string>
+    <!-- 小组件 v4（3×2 家族）：接下来/订阅/倒计时的时效状态与 Hero 信息 -->
+    <string name="widget_next_up_rotate">自动轮转</string>
+    <string name="widget_next_up_today_due">今天到期</string>
+    <string name="widget_next_up_renewal_date">%1$s 扣费</string>
+    <string name="widget_subscription_upcoming">即将扣费</string>
+    <string name="widget_counter_total_fmt">共 %1$d 个</string>
+    <string name="widget_counter_second_days">%1$d 天</string>
 </resources>
