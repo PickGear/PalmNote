@@ -84,7 +84,7 @@ class NextUpWidgetProvider : ScopedWidgetProvider() {
                 Kind.RENEWAL, renewal.name,
                 java.time.LocalDate.now().plusDays(renewal.daysLeft)
                     .format(java.time.format.DateTimeFormatter.ofPattern("M/d")),
-                renewal.price.ifBlank { "—" }
+                WidgetHelper.moneyText(renewal.price).ifBlank { "—" }
             )
         }
         counters.minByOrNull { it.daysLeft }?.let { counter ->

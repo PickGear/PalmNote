@@ -176,7 +176,7 @@ open class SubscriptionWidgetProvider : ScopedWidgetProvider() {
             views.setTextViewText(R.id.widget_subscription_min_meta, context.getString(R.string.widget_subscription_empty))
         } else {
             views.setViewVisibility(R.id.widget_subscription_min_amount, View.VISIBLE)
-            views.setTextViewText(R.id.widget_subscription_min_amount, first.price)
+            views.setTextViewText(R.id.widget_subscription_min_amount, WidgetHelper.moneyText(first.price))
             views.setTextViewText(
                 R.id.widget_subscription_min_meta,
                 "${first.name} · ${today.plusDays(first.daysLeft).format(DateTimeFormatter.ofPattern("M/d"))}"
@@ -224,7 +224,7 @@ open class SubscriptionWidgetProvider : ScopedWidgetProvider() {
             views.setTextViewText(R.id.widget_subscription_narrow_name, first.name)
             views.setTextViewText(
                 R.id.widget_subscription_narrow_next,
-                "${today.plusDays(first.daysLeft).format(DateTimeFormatter.ofPattern("M/d"))} · ${first.price}"
+                "${today.plusDays(first.daysLeft).format(DateTimeFormatter.ofPattern("M/d"))} · ${WidgetHelper.moneyText(first.price)}"
             )
         }
         views.setOnClickPendingIntent(
@@ -260,7 +260,7 @@ open class SubscriptionWidgetProvider : ScopedWidgetProvider() {
         )
         row.setTextColor(R.id.widget_subscription_item_date, if (upcoming) family.hue else secondary)
         row.setTextViewText(R.id.widget_subscription_item_name, renewal.name)
-        row.setTextViewText(R.id.widget_subscription_item_price, renewal.price)
+        row.setTextViewText(R.id.widget_subscription_item_price, WidgetHelper.moneyText(renewal.price))
         row.setViewVisibility(R.id.widget_subscription_item_upcoming, if (upcoming) View.VISIBLE else View.GONE)
         if (upcoming) row.setTextColor(R.id.widget_subscription_item_upcoming, family.hue)
         return row

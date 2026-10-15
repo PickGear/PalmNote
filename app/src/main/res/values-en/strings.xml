@@ -426,7 +426,7 @@
     <string name="widget_vault_desc">Just a lock — nothing from the vault shows</string>
     <string name="widget_dashboard_title">Overview</string>
     <string name="widget_dashboard_desc">Spending, to-dos and check-ins at a glance</string>
-    <string name="widget_todos_label">Todos</string>
+    <string name="widget_todos_label">Today</string>
     <string name="widget_add_bill">Add Bill</string>
     <string name="widget_vault_empty">No entries</string>
     <string name="widget_bill_week_label">Last 7 days</string>
@@ -446,6 +446,7 @@
     <string name="widget_todo_done_more">View all ›</string>
     <string name="widget_date_format_cn_weekday">MMM d, yyyy · EEE</string>
     <!-- v4 agenda sections (design: today/overdue/tomorrow/later + week-done footer) -->
+    <string name="widget_tomorrow_count">%1$D due tomorrow</string>
     <string name="widget_todo_done_count">%1$d done</string>
     <string name="widget_todo_week_done">%1$d done this week</string>
     <string name="widget_todo_sect_count">%1$d items</string>

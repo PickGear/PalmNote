@@ -152,6 +152,8 @@ class DashboardWidgetProvider : ScopedWidgetProvider() {
         val todoDoneToday: Int,
         /** 逾期未完成数（二级信息红字）。 */
         val overdueCount: Int,
+        /** 明日到期未完成数（二级信息；有逾期时与逾期数合并展示）。 */
+        val tomorrowCount: Int = 0,
         /** 纪念日 tile：目标日期与星期（如 11/1 · 周日）。 */
         val anniversaryDateText: String?,
         val anniversaryTitle: String?,
@@ -182,6 +184,7 @@ class DashboardWidgetProvider : ScopedWidgetProvider() {
             todoRemaining = todoStats.remaining,
             todoDoneToday = todoStats.doneToday,
             overdueCount = todoStats.overdue,
+            tomorrowCount = todoStats.tomorrow,
             anniversaryTitle = anniversary?.first,
             anniversaryDays = anniversary?.second ?: -1L,
             anniversaryDateText = anniversary?.third,
@@ -220,6 +223,7 @@ class DashboardWidgetProvider : ScopedWidgetProvider() {
         val remaining: Int,
         val doneToday: Int,
         val overdue: Int,
+        val tomorrow: Int,
         val weekTodo: Int
     )
 
@@ -245,10 +249,17 @@ class DashboardWidgetProvider : ScopedWidgetProvider() {
             val due = it.dueDate
             it.status != "COMPLETED" && due != null && due < weekEnd
         }
+        // 明日到期（与逾期同口径：未完成且落在明天）——二级信息「明日 N 项」用
+        val tomorrowStart = todayStart + 86_400_000L
+        val tomorrow = active.count {
+            val due = it.dueDate
+            it.status != "COMPLETED" && due != null && due >= tomorrowStart && due < tomorrowStart + 86_400_000L
+        }
         return TodoStats(
             remaining = (board.todayTotal - board.todayDone).coerceAtLeast(0),
             doneToday = board.todayDone,
             overdue = overdue,
+            tomorrow = tomorrow,
             weekTodo = weekTodo
         )
     }
@@ -318,13 +329,21 @@ class DashboardWidgetProvider : ScopedWidgetProvider() {
             R.id.widget_dashboard_todo,
             context.getString(R.string.widget_todo_sect_count, snapshot.todoRemaining)
         )
-        // 待办二级信息：有逾期给红字逾期数，否则给今日已完成数
-        if (snapshot.overdueCount > 0) {
-            views.setTextViewText(
+        // 待办二级信息（稿 .micro）：逾期与明日合并展示「逾期 1 项 · 明日 1 项」；
+        // 都没有时退回今日已完成数
+        val overdue = snapshot.overdueCount
+        val tomorrow = snapshot.tomorrowCount
+        val parts = buildList {
+            if (overdue > 0) add(context.getString(R.string.widget_overdue_count, overdue))
+            if (tomorrow > 0) add(context.getString(R.string.widget_tomorrow_count, tomorrow))
+        }
+        if (parts.isNotEmpty()) {
+            views.setTextViewText(R.id.widget_dashboard_todo_overdue, parts.joinToString(" · "))
+            views.setTextColor(
                 R.id.widget_dashboard_todo_overdue,
-                context.getString(R.string.widget_overdue_count, snapshot.overdueCount)
+                if (overdue > 0) context.getColor(R.color.widget_risk_red)
+                else context.getColor(R.color.widget_v2_text_tertiary)
             )
-            views.setTextColor(R.id.widget_dashboard_todo_overdue, context.getColor(R.color.widget_risk_red))
         } else {
             views.setTextViewText(
                 R.id.widget_dashboard_todo_overdue,

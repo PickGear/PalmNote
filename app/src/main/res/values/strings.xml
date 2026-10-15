@@ -598,7 +598,7 @@
     <string name="widget_vault_desc">只显示一把锁，内容不上桌面</string>
     <string name="widget_dashboard_title">概览</string>
     <string name="widget_dashboard_desc">收支、待办、打卡一屏看完</string>
-    <string name="widget_todos_label">待办</string>
+    <string name="widget_todos_label">今日待办</string>
     <string name="widget_add_bill">记一笔</string>
     <string name="widget_vault_empty">暂无记录</string>
     <string name="widget_bill_week_label">近 7 天</string>
@@ -613,6 +613,7 @@
     <string name="widget_week_todo_count">本周待办 %1$d 项</string>
     <string name="widget_budget_used_pct">本月已用 %1$d%%</string>
     <string name="widget_overdue_count">逾期 %1$d 项</string>
+    <string name="widget_tomorrow_count">明日 %1$d 项</string>
     <string name="widget_todo_done_today">今日已完成 %1$d 项</string>
     <string name="widget_date_md_week">M/d · E</string>
     <string name="widget_todo_done_more">查看全部 ›</string>

@@ -55,6 +55,20 @@ object WidgetHelper {
         return String.format("¥%.2f", amount)
     }
 
+    /**
+     * 条目价格原文 → 带货币符号的展示文案：原文已带 ¥/$ 等符号就原样，否则补 ¥。
+     * 设计稿金额一律带符号（订阅行「¥25」），而条目 price 字段是裸数字串。
+     */
+    fun moneyText(raw: String?): String {
+        val text = raw?.trim().orEmpty()
+        if (text.isEmpty()) return ""
+        return if (text.startsWith("¥") || text.startsWith("$") || text.startsWith("€")) {
+            text
+        } else {
+            "¥$text"
+        }
+    }
+
     fun daysUntil(dateMillis: Long): Long {
         val now = LocalDate.now()
         val target = Instant.ofEpochMilli(dateMillis).atZone(ZoneId.systemDefault()).toLocalDate()

@@ -88,6 +88,11 @@ class WidgetPreviewPngGenerator {
         render("net_worth", 480, 222, netWorthViews())
         render("next_up", 735, 444, nextUpViews())
         render("subscription", 735, 444, subscriptionViews())
+        // 迷你档 / 竖条档同样挂在选择器里（info 的 previewImage），一并重出与线上一致
+        render("todo_mini", 480, 222, todoMinimalViews())
+        render("habit_mini", 480, 222, habitMinimalViews())
+        render("subscription_mini", 480, 222, subscriptionMinimalViews())
+        render("subscription_narrow", 246, 480, subscriptionNarrowViews())
         // 1×1 = 82×82dp：设计稿 s11
         render("vault", 246, 246, vaultViews())
     }
@@ -122,6 +127,7 @@ class WidgetPreviewPngGenerator {
                 todoRemaining = 2,
                 todoDoneToday = 2,
                 overdueCount = 1,
+                tomorrowCount = 1,
                 anniversaryTitle = "爸爸生日",
                 anniversaryDays = 20,
                 anniversaryDateText = "11/1 · 周日",
@@ -252,6 +258,67 @@ class WidgetPreviewPngGenerator {
             SubscriptionWidgetProvider.Renewal("音乐会员", "8", 9),
             SubscriptionWidgetProvider.Renewal("云存储", "6", 13)
         )
+    )
+
+    /** 今天 18:00 的 epoch 毫秒（预览「下一项 … · 18:00」用）。 */
+    private fun todayAt18(): Long =
+        LocalDate.now().atTime(18, 0).atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
+
+    /** 待办 2×1 极简：今日 2/1 + 下一项「整理物品库存 · 18:00」（设计稿 s21）。 */
+    private fun todoMinimalViews(): RemoteViews = TodoWidgetProvider().bindMinimalViews(
+        context,
+        1,
+        WidgetData.TodoBoard(
+            items = listOf(
+                LifeItem(templateId = 1, title = "采购配件", status = "COMPLETED"),
+                LifeItem(templateId = 1, title = "整理物品库存", status = "ACTIVE", dueDate = todayAt18())
+            ),
+            todayDone = 1,
+            todayTotal = 2
+        ),
+        LocalDate.now()
+    )
+
+    /** 习惯 2×1 极简：今日 1/4 + 本周完成率 50%（4 条样例，本周命中合计 14/28）。 */
+    private fun habitMinimalViews(): RemoteViews = HabitWidgetProvider().bindMinimalViews(
+        context,
+        1,
+        listOf(
+            HabitWidgetProvider.HabitRow(
+                templateId = 11, name = "跑步 5km", checked = true, streak = 12,
+                recent = listOf(true, true, false, true, true, false, true),
+                monthCount = 18, longest = 21, weekHits = 4
+            ),
+            HabitWidgetProvider.HabitRow(
+                templateId = 12, name = "阅读 30min", checked = false, streak = 2,
+                recent = listOf(false, false, false, true, true, true, false),
+                monthCount = 8, longest = 5, weekHits = 4
+            ),
+            HabitWidgetProvider.HabitRow(
+                templateId = 13, name = "喝水 8 杯", checked = false, streak = 0,
+                recent = listOf(false, false, false, true, false, false, false),
+                monthCount = 4, longest = 1, weekHits = 3
+            ),
+            HabitWidgetProvider.HabitRow(
+                templateId = 14, name = "早睡", checked = false, streak = 6,
+                recent = listOf(false, true, true, true, true, true, true),
+                monthCount = 15, longest = 9, weekHits = 3
+            )
+        )
+    )
+
+    /** 订阅 2×1 极简：最近一笔 Hero「¥25」+ 名称与日期（设计稿 s21）。 */
+    private fun subscriptionMinimalViews(): RemoteViews = SubscriptionWidgetProvider().minimalViews(
+        context,
+        1,
+        listOf(SubscriptionWidgetProvider.Renewal("云盘会员", "25", 0))
+    )
+
+    /** 订阅 1×2 竖条：本月合计 + 最近一笔「M/d · ¥25」（设计稿 s12）。 */
+    private fun subscriptionNarrowViews(): RemoteViews = SubscriptionWidgetProvider().narrowViews(
+        context,
+        1,
+        listOf(SubscriptionWidgetProvider.Renewal("云盘会员", "25", 0))
     )
 
     private fun shortcutsViews(): RemoteViews = ShortcutsWidgetProvider().bindViews(context, 1)

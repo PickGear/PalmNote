@@ -10,7 +10,7 @@
     android:orientation="vertical"
     android:gravity="center_vertical"
     android:paddingHorizontal="14dp"
-    android:paddingVertical="12dp"
+    android:paddingVertical="8dp"
     android:background="@drawable/widget_card_round">
 
     <LinearLayout
@@ -37,10 +37,13 @@
             android:maxLines="1" />
     </LinearLayout>
 
+    <!-- 连击数 weight=1 撑开剩余高度并垂直居中（稿 .w.s21 flex 列 space-between） -->
     <TextView
         android:id="@+id/widget_habit_min_streak"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="center_vertical"
         android:textSize="21sp"
         android:textStyle="bold"
         android:layout_marginTop="2dp"
