@@ -10,7 +10,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="12dp"
+    android:padding="@dimen/widget_pad"
     android:background="@drawable/widget_card_round">
 
     <!-- Header：色族徽章 + 标题 + 新增色片 -->
@@ -56,7 +56,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/widget_add"
-            android:textSize="12sp"
+            android:textSize="10sp"
             android:textStyle="bold"
             android:background="@drawable/widget_pill_tint1"
             android:paddingHorizontal="12dp"
@@ -71,7 +71,7 @@
         android:layout_weight="1"
         android:orientation="horizontal"
         android:gravity="bottom"
-        android:layout_marginTop="9dp"
+        android:layout_marginTop="6dp"
         android:visibility="gone">
 
         <LinearLayout
@@ -84,8 +84,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/widget_expense_label"
-                android:textSize="@dimen/widget_text_micro"
-                android:textColor="@color/widget_v2_text_secondary" />
+                android:textSize="@dimen/widget_text_label"
+                android:textColor="@color/widget_v2_text_tertiary" />
 
             <TextView
                 android:id="@+id/widget_expense_amount"
@@ -93,6 +93,7 @@
                 android:layout_height="wrap_content"
                 android:text="0"
                 android:textSize="33sp"
+                android:lineSpacingMultiplier="0.75"
                 android:textColor="@color/widget_v2_text_primary"
                 android:textStyle="bold"
                 android:layout_marginTop="1dp"
@@ -104,7 +105,7 @@
                 android:id="@+id/widget_bill_budget_bar"
                 android:layout_width="match_parent"
                 android:layout_height="10dp"
-                android:layout_marginTop="8dp">
+                android:layout_marginTop="6dp">
 
                 <ImageView
                     android:layout_width="match_parent"
@@ -125,15 +126,15 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:layout_marginTop="4dp">
+                android:layout_marginTop="2dp">
 
                 <TextView
                     android:id="@+id/widget_budget_card_label"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/widget_budget_used"
-                    android:textSize="@dimen/widget_text_micro"
-                    android:textColor="@color/widget_v2_text_secondary" />
+                    android:textSize="@dimen/widget_text_label"
+                    android:textColor="@color/widget_v2_text_tertiary" />
 
                 <TextView
                     android:id="@+id/widget_budget_amount"
@@ -141,9 +142,8 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="0"
-                    android:textSize="@dimen/widget_text_micro"
-                    android:textColor="@color/widget_v2_text_primary"
-                    android:textStyle="bold"
+                    android:textSize="@dimen/widget_text_label"
+                    android:textColor="@color/widget_v2_text_tertiary"
                     android:layout_marginStart="4dp"
                     android:maxLines="1"
                     android:ellipsize="end" />
@@ -232,7 +232,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/widget_bill_week_label"
-                android:textSize="@dimen/widget_text_micro"
+                android:textSize="@dimen/widget_text_label"
                 android:textColor="@color/widget_v2_text_tertiary"
                 android:gravity="center"
                 android:layout_marginTop="3dp" />

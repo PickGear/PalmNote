@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
   物品 3×2（v4 定稿）：头部（徽章 + 物品分布 + Hero「N 件」——20sp 大数字 + 小单位）
-  → 顶部占比条（10dp，一段一族色，段数 = 分类数）
+  → 顶部占比条（10dp，按分类占比分组，组间 3dp 缝 + 4dp 圆头）
   → 两列色片网格（淡彩胶囊底 + 同族色点 + 分类名 + 纯数字件数，件数着同族色）。
 
-  RemoteViews 不能运行时改子控件宽度，所以占比条的各段只能等宽：段数按分类数显隐，
-  段色按色族给；每类到底几件，由下面的色片写清楚。
+  RemoteViews 不能运行时改子控件宽度，所以占比条的各段只能等宽：段数 = 24 个固定槽位，
+  「占几段」表达比例，组的首/末段换圆头 drawable、组首段内缩出缝；
+  每类到底几件，由下面的色片写清楚。
   色片的淡彩底与色点都是白底占位，运行时 setColorFilter 上色（静态默认不可见，别删这两层）。
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -13,7 +14,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="12dp"
+    android:padding="@dimen/widget_pad"
     android:background="@drawable/widget_card_round">
 
     <LinearLayout
@@ -73,22 +74,22 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/widget_asset_unit"
-                android:textSize="@dimen/widget_text_micro"
+                android:textSize="@dimen/widget_text_label"
                 android:textColor="@color/widget_v2_text_tertiary"
                 android:layout_marginStart="3dp"
                 android:layout_marginBottom="1dp" />
         </LinearLayout>
     </LinearLayout>
 
-    <!-- 24 段等宽槽位：宽度由「占用几段」决定，于是段的宽度就是分类占比 -->
+    <!-- 占比条：24 段等宽槽位，按件数占比分给各分类 —— 段的宽度于是就是比例；
+         分组首/末段用圆头 drawable 出 4dp 圆角，非首组首段左内缩 3dp 形成分组间的缝
+         （容器无底色，缝里露出的是卡底，与设计 .seg 的 gap 一致） -->
     <LinearLayout
         android:id="@+id/widget_asset_bar"
         android:layout_width="match_parent"
         android:layout_height="10dp"
         android:orientation="horizontal"
-        android:layout_marginTop="6dp"
-        android:background="@drawable/widget_bar_round_bg"
-        android:clipToOutline="true">
+        android:layout_marginTop="6dp">
 
         <ImageView
             android:id="@+id/widget_asset_seg_1"

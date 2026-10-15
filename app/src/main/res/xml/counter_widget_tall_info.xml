@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 计数器 1×3 竖条（设计卡 30）：minWidth 按格数口径 宽1→40 / 高3→180 -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="40dp"
+    android:minHeight="180dp"
+    android:minResizeWidth="110dp"
+    android:minResizeHeight="110dp"
+    android:targetCellWidth="1"
+    android:targetCellHeight="3"
+    android:maxResizeWidth="400dp"
+    android:maxResizeHeight="250dp"
+    android:updatePeriodMillis="1800000"
+    android:initialLayout="@layout/widget_counter_tall"
+    android:widgetCategory="home_screen"
+    android:description="@string/widget_counter_desc"
+    android:previewImage="@drawable/widget_preview_counter_tall"
+    android:previewLayout="@layout/widget_counter_tall_preview"
+    android:configure="com.palmnote.ui.widget.WidgetConfigActivity"
+    android:resizeMode="horizontal|vertical" />

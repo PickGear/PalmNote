@@ -107,7 +107,8 @@
         </activity-alias>
         <receiver
             android:name="com.palmnote.ui.widget.BillWidgetProvider"
-            android:exported="true">
+            android:exported="true"
+            android:label="@string/widget_bill_title">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -135,7 +136,8 @@
         </activity>
         <receiver
             android:name="com.palmnote.ui.widget.TodoWidgetProvider"
-            android:exported="true">
+            android:exported="true"
+            android:label="@string/widget_todo_title">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -145,7 +147,8 @@
         </receiver>
         <receiver
             android:name="com.palmnote.ui.widget.LifeCounterWidgetProvider"
-            android:exported="true">
+            android:exported="true"
+            android:label="@string/widget_counter_title">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -155,7 +158,8 @@
         </receiver>
         <receiver
             android:name="com.palmnote.ui.widget.NextUpWidgetProvider"
-            android:exported="true">
+            android:exported="true"
+            android:label="@string/widget_next_up_title">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -165,7 +169,8 @@
         </receiver>
         <receiver
             android:name="com.palmnote.ui.widget.AssetWidgetProvider"
-            android:exported="true">
+            android:exported="true"
+            android:label="@string/widget_asset_title">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -175,7 +180,8 @@
         </receiver>
         <receiver
             android:name="com.palmnote.ui.widget.VaultWidgetProvider"
-            android:exported="true">
+            android:exported="true"
+            android:label="@string/widget_vault_title">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -185,7 +191,8 @@
         </receiver>
         <receiver
             android:name="com.palmnote.ui.widget.NetWorthWidgetProvider"
-            android:exported="true">
+            android:exported="true"
+            android:label="@string/wallet_total_assets">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -195,7 +202,8 @@
         </receiver>
         <receiver
             android:name="com.palmnote.ui.widget.SubscriptionWidgetProvider"
-            android:exported="true">
+            android:exported="true"
+            android:label="@string/widget_subscription_title">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -205,7 +213,8 @@
         </receiver>
         <receiver
             android:name="com.palmnote.ui.widget.DashboardWidgetProvider"
-            android:exported="true">
+            android:exported="true"
+            android:label="@string/widget_dashboard_title">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -215,7 +224,8 @@
         </receiver>
         <receiver
             android:name="com.palmnote.ui.widget.HabitWidgetProvider"
-            android:exported="true">
+            android:exported="true"
+            android:label="@string/widget_habit_title">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -245,13 +255,139 @@
         </receiver>
         <receiver
             android:name="com.palmnote.ui.widget.ShortcutsWidgetProvider"
-            android:exported="true">
+            android:exported="true"
+            android:label="@string/widget_shortcuts_title">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/shortcuts_widget_info" />
+        </receiver>
+        <!-- —— 11 个尺寸形态（薄子类见 WidgetSizeProviders.kt）——
+             各自独立 receiver + info（targetCell 声明目标格数），label 与基类族同名，
+             选择器里靠缩略图 + 格数标区分；系统选择器行名只认 receiver 的 label（AOSP
+             parseProviderInfoXml: info.label = activityInfo.loadLabel()，info 里的 label 会被忽略） -->
+        <receiver
+            android:name="com.palmnote.ui.widget.TodoMini"
+            android:exported="true"
+            android:label="@string/widget_todo_title">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/todo_widget_minimal_info" />
+        </receiver>
+        <receiver
+            android:name="com.palmnote.ui.widget.TodoWide"
+            android:exported="true"
+            android:label="@string/widget_todo_title">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/todo_widget_wide_info" />
+        </receiver>
+        <receiver
+            android:name="com.palmnote.ui.widget.HabitMini"
+            android:exported="true"
+            android:label="@string/widget_habit_title">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/habit_widget_minimal_info" />
+        </receiver>
+        <receiver
+            android:name="com.palmnote.ui.widget.HabitWide"
+            android:exported="true"
+            android:label="@string/widget_habit_title">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/habit_widget_wide_info" />
+        </receiver>
+        <receiver
+            android:name="com.palmnote.ui.widget.HabitNarrow"
+            android:exported="true"
+            android:label="@string/widget_habit_title">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/habit_widget_narrow_info" />
+        </receiver>
+        <receiver
+            android:name="com.palmnote.ui.widget.CounterNarrow"
+            android:exported="true"
+            android:label="@string/widget_counter_title">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/counter_widget_narrow_info" />
+        </receiver>
+        <receiver
+            android:name="com.palmnote.ui.widget.CounterTall"
+            android:exported="true"
+            android:label="@string/widget_counter_title">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/counter_widget_tall_info" />
+        </receiver>
+        <receiver
+            android:name="com.palmnote.ui.widget.SubscriptionMini"
+            android:exported="true"
+            android:label="@string/widget_subscription_title">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/subscription_widget_minimal_info" />
+        </receiver>
+        <receiver
+            android:name="com.palmnote.ui.widget.SubscriptionNarrow"
+            android:exported="true"
+            android:label="@string/widget_subscription_title">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/subscription_widget_narrow_info" />
+        </receiver>
+        <receiver
+            android:name="com.palmnote.ui.widget.ShortcutsSmall"
+            android:exported="true"
+            android:label="@string/widget_shortcuts_title">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/shortcuts_widget_small_info" />
+        </receiver>
+        <receiver
+            android:name="com.palmnote.ui.widget.ShortcutsWide"
+            android:exported="true"
+            android:label="@string/widget_shortcuts_title">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/shortcuts_widget_wide_info" />
         </receiver>
     </application>
 </manifest>

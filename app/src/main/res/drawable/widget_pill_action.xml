@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  「完成」动作实底胶囊（v4 设计稿 355 行）：背景 h2 色族 + 白字 + 99px 圆角。
+  只有待办 kind 才有这个动作，而待办色族恒为 index 1 → widget_hue_2
+  （colorFamily 直读颜色资源，values-night 自带夜间变体，静态引用即可昼夜自适应）。
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <corners android:radius="99dp" />
+    <solid android:color="@color/widget_hue_2" />
+</shape>

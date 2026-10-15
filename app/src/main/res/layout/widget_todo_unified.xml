@@ -11,7 +11,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="12dp"
+    android:padding="@dimen/widget_pad"
     android:background="@drawable/widget_card_round">
 
     <!-- Header：色族徽章 + 标题 + 新增色片 -->
@@ -78,16 +78,26 @@
              点它进「今日安排」完整清单 -->
         <LinearLayout
             android:id="@+id/widget_todo_progress_col"
-            android:layout_width="110dp"
+            android:layout_width="0dp"
+            android:layout_weight="1"
             android:layout_height="match_parent"
-            android:orientation="vertical"
-            android:gravity="center_horizontal|center_vertical">
+            android:orientation="vertical">
+
+            <!-- 设计稿/预览均为「标签在上、大数字在下」（design-v4 426-430 行），
+                 运行时布局曾把标签放数字下方，与选择器预览图分叉 -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/widget_todo_done_label"
+                android:textSize="@dimen/widget_text_label"
+                android:textColor="@color/widget_v2_text_tertiary" />
 
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:gravity="bottom">
+                android:gravity="bottom"
+                android:layout_marginTop="2dp">
 
                 <TextView
                     android:id="@+id/widget_todo_done"
@@ -104,24 +114,19 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="/0"
-                    android:textSize="12sp"
-                    android:textColor="@color/widget_v2_text_secondary"
-                    android:layout_marginStart="1dp"
+                    android:textSize="13sp"
+                    android:textColor="@color/widget_v2_text_tertiary"
+                    android:textStyle="bold"
+                    android:layout_marginStart="3dp"
                     android:maxLines="1" />
             </LinearLayout>
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/widget_todo_done_label"
-                android:textSize="@dimen/widget_text_micro"
-                android:textColor="@color/widget_v2_text_secondary"
-                android:layout_marginTop="2dp" />
-
+            <!-- 完成度条右缘离竖分隔线留 10dp（用户反馈「离太近」，与右栏 10dp 起步对称） -->
             <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="8dp"
-                android:layout_marginTop="8dp">
+                android:layout_height="10dp"
+                android:layout_marginTop="8dp"
+                android:layout_marginEnd="10dp">
 
                 <ImageView
                     android:layout_width="match_parent"
@@ -142,7 +147,7 @@
                 android:id="@+id/widget_todo_done_count"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textSize="10sp"
+                android:textSize="@dimen/widget_text_label"
                 android:textColor="@color/widget_v2_text_tertiary"
                 android:layout_marginTop="10dp"
                 tools:ignore="SmallSp" />
@@ -168,7 +173,7 @@
 
         <ImageView
             android:id="@+id/widget_todo_divider"
-            android:layout_width="2dp"
+            android:layout_width="1dp"
             android:layout_height="match_parent"
             android:background="@color/widget_v2_ring"
             android:contentDescription="@null" />

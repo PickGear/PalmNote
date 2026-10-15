@@ -136,7 +136,7 @@ class NextUpWidgetProvider : ScopedWidgetProvider() {
         views.setInt(R.id.widget_next_up_chip_bg, "setColorFilter", family.tint)
         views.setInt(R.id.widget_next_up_chip_dot, "setColorFilter", family.hue)
         views.setTextViewText(R.id.widget_next_up_kind, context.getString(kindLabelOf(focus.kind)))
-        views.setTextColor(R.id.widget_next_up_kind, family.hue)
+        // 类目文字是稿子的 .lbl 三级灰（色点已经标了族色，文字不再上色）
         views.setTextViewText(R.id.widget_next_up_title, focus.title)
         // 待办的大字是「今天」，倒数带单位（pickFocus 无 Context，文案在这里落）
         views.setTextViewText(R.id.widget_next_up_value, resolveValue(context, focus))

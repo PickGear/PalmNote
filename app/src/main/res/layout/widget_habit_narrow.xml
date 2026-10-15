@@ -22,8 +22,8 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:textSize="@dimen/widget_text_micro"
-            android:textColor="@color/widget_v2_text_secondary"
+            android:textSize="@dimen/widget_text_label"
+            android:textColor="@color/widget_v2_text_tertiary"
             android:maxLines="1"
             android:ellipsize="end" />
 
@@ -55,8 +55,8 @@
         android:layout_height="wrap_content"
         android:gravity="center"
         android:paddingTop="6dp"
-        android:textSize="@dimen/widget_text_micro"
-        android:textColor="@color/widget_v2_text_secondary"
+        android:textSize="@dimen/widget_text_label"
+        android:textColor="@color/widget_v2_text_tertiary"
         android:maxLines="1" />
 
 </LinearLayout>

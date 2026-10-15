@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 习惯 2×1 极简（设计卡 24）：minWidth/minHeight 按格数口径 宽2→110 / 高1→40 -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="110dp"
+    android:minHeight="40dp"
+    android:minResizeWidth="110dp"
+    android:minResizeHeight="40dp"
+    android:targetCellWidth="2"
+    android:targetCellHeight="1"
+    android:maxResizeWidth="500dp"
+    android:maxResizeHeight="400dp"
+    android:updatePeriodMillis="1800000"
+    android:initialLayout="@layout/widget_habit_minimal"
+    android:widgetCategory="home_screen"
+    android:description="@string/widget_habit_desc"
+    android:previewImage="@drawable/widget_preview_habit_mini"
+    android:previewLayout="@layout/widget_habit_mini_preview"
+    android:configure="com.palmnote.ui.widget.WidgetConfigActivity"
+    android:resizeMode="horizontal|vertical" />

@@ -8,10 +8,12 @@ import com.palmnote.app.R
 /**
  * 快捷入口（v4）：四个直达入口（记账 / 物品 / 目标 / 纪念日），
  * 每块一个色族的淡彩方块 + 同族饱和字形。
+ * 尺寸三档：窄过 2 格（宽 <110dp）缩成 1×1 纯入口（稿子只画了「记一笔」）；
  * 默认 2×2 田字格；拖成横条（宽 ≥250dp 且高 <110dp）铺成 4×1 一字排开 ——
- * 两个布局复用同一套控件 id，绑定逻辑不分叉。
+ * 两档布局复用同一套控件 id，绑定逻辑不分叉。
  */
-class ShortcutsWidgetProvider : ScopedWidgetProvider() {
+// open：尺寸变体（ShortcutsSmall/ShortcutsWide）薄子类继承，复用同一套取数与切档逻辑
+open class ShortcutsWidgetProvider : ScopedWidgetProvider() {
 
     override suspend fun onUpdateAsync(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
         publish(context, appWidgetManager, appWidgetIds) { appWidgetId, _ ->
@@ -20,9 +22,26 @@ class ShortcutsWidgetProvider : ScopedWidgetProvider() {
                 DEFAULT_WIDTH_DP,
                 DEFAULT_HEIGHT_DP
             ) { width, height ->
-                bindViews(context, appWidgetId, wide = width >= WIDE_WIDTH_DP && height < TALL_HEIGHT_DP)
+                when {
+                    width < SMALL_WIDTH_DP -> bindSmallViews(context, appWidgetId)
+                    else -> bindViews(context, appWidgetId, wide = width >= WIDE_WIDTH_DP && height < TALL_HEIGHT_DP)
+                }
             }
         }
+    }
+
+    /** 1×1 缩档：纯入口「记一笔」（稿子 s11：30dp 圆底 + 加号 + 名称，不放计数）。 */
+    internal fun bindSmallViews(context: Context, appWidgetId: Int): RemoteViews {
+        val views = RemoteViews(context.packageName, R.layout.widget_shortcuts_small)
+        // 淡彩圆底 + 同族饱和加号（装饰色不占全局强调色），与 2×2 的记账格同族（第一色族）
+        val family = WidgetData.colorFamily(context, 0)
+        views.setInt(R.id.widget_sc_small_bg, "setColorFilter", family.tint)
+        views.setInt(R.id.widget_sc_small_icon, "setColorFilter", family.hue)
+        views.setOnClickPendingIntent(
+            R.id.widget_layout,
+            WidgetHelper.createPendingIntent(context, WidgetDeepLink.SEG_SHORTCUT_ADD + appWidgetId, WidgetDeepLink.TAB_ADD_BILL)
+        )
+        return views
     }
 
     internal fun bindViews(context: Context, appWidgetId: Int, wide: Boolean = false): RemoteViews {
@@ -76,5 +95,8 @@ class ShortcutsWidgetProvider : ScopedWidgetProvider() {
         /** 宽到 4 格（≈250dp）且矮过 2 格才切横条，2×2 拉宽不算。 */
         const val WIDE_WIDTH_DP = 250
         const val TALL_HEIGHT_DP = 110
+
+        /** 窄过 2 格（2×2 放不下）即缩成 1×1 纯入口，与密码本同口径。 */
+        const val SMALL_WIDTH_DP = 110
     }
 }

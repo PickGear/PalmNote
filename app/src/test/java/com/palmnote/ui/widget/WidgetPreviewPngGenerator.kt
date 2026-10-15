@@ -102,7 +102,7 @@ class WidgetPreviewPngGenerator {
         dailyExpense = listOf(12_000, 4_500, 38_000, 0, 21_500, 62_000, 15_800)
     )
 
-    private fun billViews(): RemoteViews = BillWidgetProvider().bindViews(context, 1, billSnapshot())
+    private fun billViews(): RemoteViews = BillWidgetProvider().bindViews(context, 1, billSnapshot(), accent)
 
     private fun billMiniViews(): RemoteViews =
         BillWidgetProvider().bindMiniViews(context, 1, billSnapshot(), accent)

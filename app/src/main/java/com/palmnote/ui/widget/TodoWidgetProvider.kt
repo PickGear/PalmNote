@@ -20,7 +20,8 @@ import kotlinx.coroutines.flow.first
  * （今天/逾期/明天/之后，由 [TodoWidgetService] 分段提供），底部「本周已完成」。
  * 这里只管轴、逾期 pill 与页脚的绑定。
  */
-class TodoWidgetProvider : ScopedWidgetProvider() {
+// open：尺寸变体（TodoMini/TodoWide）薄子类继承，复用同一套取数与切档逻辑
+open class TodoWidgetProvider : ScopedWidgetProvider() {
 
     @EntryPoint
     @InstallIn(SingletonComponent::class)
@@ -61,8 +62,8 @@ class TodoWidgetProvider : ScopedWidgetProvider() {
         }
     }
 
-    /** 2×1 极简档：「今日待办 + 逾期胶囊 / 2 / 4 / 下一项」。 */
-    private fun bindMinimalViews(
+    /** 2×1 极简档：「今日待办 + 逾期胶囊 / 2 / 4 / 下一项」。internal = 预览图生成器复用（见 WidgetPreviewPngGenerator）。 */
+    internal fun bindMinimalViews(
         context: Context,
         appWidgetId: Int,
         board: WidgetData.TodoBoard,
@@ -77,8 +78,8 @@ class TodoWidgetProvider : ScopedWidgetProvider() {
         return views
     }
 
-    /** 4×1 横条：左「今日待办 · 周N + 2 / 4」，中「完成度条 + 下一项」，右「逾期胶囊」。 */
-    private fun bindWideViews(
+    /** 4×1 横条：左「今日待办 · 周N + 2 / 4」，中「完成度条 + 下一项」，右「逾期胶囊」。internal = 预览图生成器复用。 */
+    internal fun bindWideViews(
         context: Context,
         appWidgetId: Int,
         board: WidgetData.TodoBoard,
@@ -98,7 +99,8 @@ class TodoWidgetProvider : ScopedWidgetProvider() {
             )
         )
         // 完成度条与 4×3 左轴同一根（track + clip 填充，level 定宽度）
-        val progressFamily = WidgetData.colorFamily(context, 1)
+        // 填充用第三色族绿（设计稿 var(--h3)）
+        val progressFamily = WidgetData.colorFamily(context, 2)
         val percent = if (board.todayTotal == 0) 0 else board.todayDone * 100 / board.todayTotal
         views.setInt(R.id.widget_todo_wide_bar, "setColorFilter", progressFamily.hue)
         views.setInt(R.id.widget_todo_wide_bar, "setImageLevel", percent * 100)
@@ -129,7 +131,8 @@ class TodoWidgetProvider : ScopedWidgetProvider() {
         views.setViewVisibility(overdueId, if (overdue > 0) View.VISIBLE else View.GONE)
         if (overdue > 0) {
             views.setTextViewText(overdueId, context.getString(R.string.widget_overdue_count, overdue))
-            views.setTextColor(overdueId, WidgetData.colorFamily(context, 0).hue)
+            // 逾期 = 风险红（设计稿 .pill.warn），不再用第一色族橙
+            views.setTextColor(overdueId, context.getColor(R.color.widget_risk_red))
         }
     }
 
@@ -162,9 +165,9 @@ class TodoWidgetProvider : ScopedWidgetProvider() {
         board: WidgetData.TodoBoard
     ): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.widget_todo_unified)
-        // 装饰色走色族（不占全局强调色）：徽章用绿，进度条用蓝（稿子如此）
+        // 装饰色走色族（不占全局强调色）：徽章与进度条同用第三色族绿（设计稿 var(--h3)）
         val badgeFamily = WidgetData.colorFamily(context, 2)
-        val progressFamily = WidgetData.colorFamily(context, 1)
+        val progressFamily = WidgetData.colorFamily(context, 2)
         views.setInt(R.id.widget_todo_badge, "setColorFilter", badgeFamily.hue)
 
         // 进度轴是「今日完成」（清单本身是全部活跃待办，两者口径不同，与稿子一致）
@@ -250,12 +253,40 @@ class TodoWidgetProvider : ScopedWidgetProvider() {
         }
         views.setTextViewText(
             R.id.widget_todo_week_done,
-            context.getString(R.string.widget_todo_week_done, weekDone)
+            statSpanned(
+                context.getString(R.string.widget_todo_week_done, weekDone),
+                weekDone,
+                context.getColor(R.color.widget_v2_text_primary)
+            )
         )
     }
 
     /**
-     * v4：已完成明细重新可见（✓ 前缀 + 三级色，与滚动清单同款状态语言），
+     * 统计行数值段加粗 + 上色:稿内「本周已完成 9 项」的数值是 <b> 加粗主色。
+     * 与 [HabitWidgetProvider.statSpanned] 同款技法(RemoteViews 无局部样式只能用 span)。
+     */
+    private fun statSpanned(full: String, value: Int, valueColor: Int): CharSequence {
+        val start = full.indexOf(value.toString())
+        if (start < 0) return full
+        return android.text.SpannableString(full).apply {
+            setSpan(
+                android.text.style.StyleSpan(android.graphics.Typeface.BOLD),
+                start,
+                full.length,
+                android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+            setSpan(
+                android.text.style.ForegroundColorSpan(valueColor),
+                start,
+                full.length,
+                android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+        }
+    }
+
+    /**
+     * v4：已完成明细重新可见 —— 绿勾盒（固定第三色族绿，静态资源无需着色）
+     * + 三级色删除线（paintFlags 反射，与计数器 FAKE_BOLD 同款技法），
      * 最多 [DONE_PREVIEW_ROWS] 行；放不下时给「查看全部」入口。
      */
     private fun bindDonePreview(
@@ -264,13 +295,12 @@ class TodoWidgetProvider : ScopedWidgetProvider() {
         board: WidgetData.TodoBoard
     ) {
         val doneItems = board.items.filter { it.status == "COMPLETED" }.take(DONE_PREVIEW_ROWS)
+        val strikeFlag = android.graphics.Paint.STRIKE_THRU_TEXT_FLAG
         views.removeAllViews(R.id.widget_todo_done_list)
         doneItems.forEach { item ->
             val row = RemoteViews(context.packageName, R.layout.widget_todo_done_row)
-            row.setTextViewText(
-                R.id.widget_todo_done_text,
-                context.getString(R.string.widget_done_prefix, item.title)
-            )
+            row.setTextViewText(R.id.widget_todo_done_text, item.title)
+            row.setInt(R.id.widget_todo_done_text, "setPaintFlags", strikeFlag)
             views.addView(R.id.widget_todo_done_list, row)
         }
         views.setViewVisibility(

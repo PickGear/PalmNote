@@ -10,7 +10,7 @@
     android:orientation="horizontal"
     android:gravity="center_vertical"
     android:paddingHorizontal="16dp"
-    android:paddingVertical="10dp"
+    android:paddingVertical="12dp"
     android:background="@drawable/widget_card_round">
 
     <LinearLayout
@@ -22,8 +22,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/widget_habit_streak_label"
-            android:textSize="@dimen/widget_text_micro"
-            android:textColor="@color/widget_v2_text_secondary"
+            android:textSize="@dimen/widget_text_label"
+            android:textColor="@color/widget_v2_text_tertiary"
             android:maxLines="1" />
 
         <TextView
@@ -97,8 +97,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/widget_longest_label"
-            android:textSize="@dimen/widget_text_micro"
-            android:textColor="@color/widget_v2_text_secondary"
+            android:textSize="@dimen/widget_text_label"
+            android:textColor="@color/widget_v2_text_tertiary"
             android:maxLines="1" />
 
         <TextView

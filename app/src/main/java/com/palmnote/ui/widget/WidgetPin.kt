@@ -55,6 +55,21 @@ object WidgetPin {
             R.string.widget_todo_title,
             R.string.widget_todo_desc,
         ),
+        // 11 个尺寸形态：与基类同 title/desc（不加新字符串），靠尺寸标 + 缩略图区分
+        Entry(
+            TodoMini::class.java,
+            R.drawable.widget_preview_todo_mini,
+            R.layout.widget_todo_mini_preview,
+            R.string.widget_todo_title,
+            R.string.widget_todo_desc,
+        ),
+        Entry(
+            TodoWide::class.java,
+            R.drawable.widget_preview_todo_wide,
+            R.layout.widget_todo_wide_preview,
+            R.string.widget_todo_title,
+            R.string.widget_todo_desc,
+        ),
         Entry(
             HabitWidgetProvider::class.java,
             R.drawable.widget_preview_habit,
@@ -63,9 +78,44 @@ object WidgetPin {
             R.string.widget_habit_desc,
         ),
         Entry(
+            HabitMini::class.java,
+            R.drawable.widget_preview_habit_mini,
+            R.layout.widget_habit_mini_preview,
+            R.string.widget_habit_title,
+            R.string.widget_habit_desc,
+        ),
+        Entry(
+            HabitWide::class.java,
+            R.drawable.widget_preview_habit_wide,
+            R.layout.widget_habit_wide_preview,
+            R.string.widget_habit_title,
+            R.string.widget_habit_desc,
+        ),
+        Entry(
+            HabitNarrow::class.java,
+            R.drawable.widget_preview_habit_narrow,
+            R.layout.widget_habit_narrow_preview,
+            R.string.widget_habit_title,
+            R.string.widget_habit_desc,
+        ),
+        Entry(
             LifeCounterWidgetProvider::class.java,
             R.drawable.widget_preview_counter,
             R.layout.widget_counter_preview,
+            R.string.widget_counter_title,
+            R.string.widget_counter_desc,
+        ),
+        Entry(
+            CounterNarrow::class.java,
+            R.drawable.widget_preview_counter_narrow,
+            R.layout.widget_counter_narrow_preview,
+            R.string.widget_counter_title,
+            R.string.widget_counter_desc,
+        ),
+        Entry(
+            CounterTall::class.java,
+            R.drawable.widget_preview_counter_tall,
+            R.layout.widget_counter_tall_preview,
             R.string.widget_counter_title,
             R.string.widget_counter_desc,
         ),
@@ -80,6 +130,20 @@ object WidgetPin {
             SubscriptionWidgetProvider::class.java,
             R.drawable.widget_preview_subscription,
             R.layout.widget_subscription_preview,
+            R.string.widget_subscription_title,
+            R.string.widget_subscription_desc,
+        ),
+        Entry(
+            SubscriptionMini::class.java,
+            R.drawable.widget_preview_subscription_mini,
+            R.layout.widget_subscription_mini_preview,
+            R.string.widget_subscription_title,
+            R.string.widget_subscription_desc,
+        ),
+        Entry(
+            SubscriptionNarrow::class.java,
+            R.drawable.widget_preview_subscription_narrow,
+            R.layout.widget_subscription_narrow_preview,
             R.string.widget_subscription_title,
             R.string.widget_subscription_desc,
         ),
@@ -110,6 +174,20 @@ object WidgetPin {
             R.layout.widget_shortcuts_preview,
             R.string.widget_shortcuts_title,
             R.string.widget_shortcuts_desc,
+        ),
+        Entry(
+            ShortcutsWide::class.java,
+            R.drawable.widget_preview_shortcuts_wide,
+            R.layout.widget_shortcuts_wide_preview,
+            R.string.widget_shortcuts_title,
+            R.string.widget_shortcuts_desc,
+        ),
+        Entry(
+            ShortcutsSmall::class.java,
+            R.drawable.widget_preview_shortcuts_small,
+            R.layout.widget_shortcuts_small_preview,
+            R.string.widget_shortcuts_title,
+            R.string.widget_shortcuts_desc,
         )
     )
 
@@ -122,14 +200,25 @@ object WidgetPin {
         BillWidgetProvider::class.java to "3×2",
         NetWorthWidgetProvider::class.java to "2×1",
         TodoWidgetProvider::class.java to "4×3",
+        TodoMini::class.java to "2×1",
+        TodoWide::class.java to "4×1",
         HabitWidgetProvider::class.java to "4×3",
+        HabitMini::class.java to "2×1",
+        HabitWide::class.java to "4×1",
+        HabitNarrow::class.java to "1×3",
         LifeCounterWidgetProvider::class.java to "3×2",
+        CounterNarrow::class.java to "1×2",
+        CounterTall::class.java to "1×3",
         NextUpWidgetProvider::class.java to "3×2",
         SubscriptionWidgetProvider::class.java to "3×2",
+        SubscriptionMini::class.java to "2×1",
+        SubscriptionNarrow::class.java to "1×2",
         DashboardWidgetProvider::class.java to "4×3",
         AssetWidgetProvider::class.java to "3×2",
         VaultWidgetProvider::class.java to "1×1",
-        ShortcutsWidgetProvider::class.java to "2×2"
+        ShortcutsWidgetProvider::class.java to "2×2",
+        ShortcutsWide::class.java to "4×1",
+        ShortcutsSmall::class.java to "1×1"
     )
 
     /** 尺寸标签（如 `3×2`）；没登记就返回空串，标签自动隐藏。 */
@@ -145,31 +234,63 @@ object WidgetPin {
         BillWidgetProvider::class.java to (245 to 148),
         NetWorthWidgetProvider::class.java to (160 to 74),
         TodoWidgetProvider::class.java to (340 to 268),
+        TodoMini::class.java to (160 to 74),
+        TodoWide::class.java to (340 to 74),
         HabitWidgetProvider::class.java to (340 to 268),
+        HabitMini::class.java to (160 to 74),
+        HabitWide::class.java to (340 to 74),
+        HabitNarrow::class.java to (82 to 268),
         LifeCounterWidgetProvider::class.java to (245 to 148),
+        CounterNarrow::class.java to (82 to 160),
+        CounterTall::class.java to (82 to 268),
         NextUpWidgetProvider::class.java to (245 to 148),
         SubscriptionWidgetProvider::class.java to (245 to 148),
+        SubscriptionMini::class.java to (160 to 74),
+        SubscriptionNarrow::class.java to (82 to 160),
         DashboardWidgetProvider::class.java to (340 to 268),
         AssetWidgetProvider::class.java to (245 to 148),
         VaultWidgetProvider::class.java to (82 to 82),
-        ShortcutsWidgetProvider::class.java to (160 to 160)
+        ShortcutsWidgetProvider::class.java to (160 to 160),
+        ShortcutsWide::class.java to (340 to 74),
+        ShortcutsSmall::class.java to (82 to 82)
     )
 
     /** 组件的设计尺寸（dp，宽 to 高）；没登记返回 null，预览走兜底比例。 */
     fun designSizeOf(entry: Entry): Pair<Int, Int>? = DESIGN_SIZE_DP[entry.providerClass]
 
-    /** 一屏要展示的全部状态：通道是否可用 + 各组件桌面绑定数。 */
+    /** 一屏要展示的全部状态：通道是否可用 + 各组件桌面绑定数 + 是否成功落桌过。 */
     data class Snapshot(
         val pinSupported: Boolean,
-        val bound: Map<Class<*>, Int>
+        val bound: Map<Class<*>, Int>,
+        val pinOk: Boolean
     ) {
         fun boundCount(entry: Entry): Int = bound[entry.providerClass] ?: 0
     }
 
     fun snapshot(context: Context): Snapshot = Snapshot(
         pinSupported = pinSupported(context),
-        bound = entries.associate { it.providerClass to boundCount(context, it.providerClass) }
+        bound = entries.associate { it.providerClass to boundCount(context, it.providerClass) },
+        pinOk = pinSucceededBefore(context)
     )
+
+    /**
+     * 系统桌面权限条的出现条件：启动器支持应用内添加 + 是系统桌面 + **还没成功落桌过**。
+     * 「桌面快捷方式」权限没有公开查询法，但成功落桌过就是权限已开的实证——之后再常驻
+     * 提示只会制造焦虑；后来被关掉权限时，添加失败的 toast 里已有引导文案兜底。
+     */
+    internal fun showMiuiPermStrip(pinSupported: Boolean, isMiui: Boolean, pinOk: Boolean): Boolean =
+        pinSupported && isMiui && !pinOk
+
+    /** 成功落桌过一次的记录（本地存，只增不删）：用于收起小米权限条。 */
+    fun pinSucceededBefore(context: Context): Boolean =
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .getBoolean(KEY_PIN_OK, false)
+
+    /** [awaitPinned] 数到实例变多时记一笔；测试可直接调它铺路。 */
+    internal fun recordPinSuccess(context: Context) {
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .edit().putBoolean(KEY_PIN_OK, true).apply()
+    }
 
     fun pinSupported(context: Context): Boolean {
         val manager = AppWidgetManager.getInstance(context) ?: return false
@@ -191,8 +312,11 @@ object WidgetPin {
      *
      * 成功会在数到的那一刻立即返回；一直没数到才等到最后一轮结束，此时返回 false（未确认）。
      */
-    suspend fun awaitPinned(context: Context, entry: Entry, before: Int): Boolean =
-        awaitIncrease(before) { boundCount(context, entry.providerClass) }
+    suspend fun awaitPinned(context: Context, entry: Entry, before: Int): Boolean {
+        val added = awaitIncrease(before) { boundCount(context, entry.providerClass) }
+        if (added) recordPinSuccess(context)
+        return added
+    }
 
     /** [awaitPinned] 的核对逻辑本体：每轮重新取一次数量，比 [before] 多就算落桌了。 */
     internal suspend fun awaitIncrease(before: Int, count: () -> Int): Boolean {
@@ -256,6 +380,10 @@ object WidgetPin {
 
     /** pin 成功回调的 requestCode；组件级共用，回调内容由系统按落桌实例补全。 */
     private const val CONFIGURE_REQUEST_CODE = 424_243
+
+    /** 「成功落桌过」的本地记录（见 [pinSucceededBefore]）。 */
+    private const val PREFS_NAME = "widget_pin"
+    private const val KEY_PIN_OK = "pin_ok"
 
     /** 核对落桌结果：最多数 [PIN_VERIFY_ATTEMPTS] 次，每次间隔 [PIN_VERIFY_INTERVAL_MS]。 */
     private const val PIN_VERIFY_ATTEMPTS = 5

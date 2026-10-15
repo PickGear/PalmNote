@@ -27,7 +27,7 @@
         android:layout_width="7dp"
         android:layout_height="7dp"
         android:layout_marginStart="2dp"
-        android:src="@drawable/widget_sq_dot"
+        android:src="@drawable/widget_sq_dot_small"
         android:contentDescription="@null" />
 
     <ImageView
@@ -35,7 +35,7 @@
         android:layout_width="7dp"
         android:layout_height="7dp"
         android:layout_marginStart="2dp"
-        android:src="@drawable/widget_sq_dot"
+        android:src="@drawable/widget_sq_dot_small"
         android:contentDescription="@null" />
 
     <ImageView
@@ -43,7 +43,7 @@
         android:layout_width="7dp"
         android:layout_height="7dp"
         android:layout_marginStart="2dp"
-        android:src="@drawable/widget_sq_dot"
+        android:src="@drawable/widget_sq_dot_small"
         android:contentDescription="@null" />
 
     <ImageView
@@ -51,7 +51,7 @@
         android:layout_width="7dp"
         android:layout_height="7dp"
         android:layout_marginStart="2dp"
-        android:src="@drawable/widget_sq_dot"
+        android:src="@drawable/widget_sq_dot_small"
         android:contentDescription="@null" />
 
     <ImageView
@@ -59,7 +59,7 @@
         android:layout_width="7dp"
         android:layout_height="7dp"
         android:layout_marginStart="2dp"
-        android:src="@drawable/widget_sq_dot"
+        android:src="@drawable/widget_sq_dot_small"
         android:contentDescription="@null" />
 
     <ImageView
@@ -67,7 +67,7 @@
         android:layout_width="7dp"
         android:layout_height="7dp"
         android:layout_marginStart="2dp"
-        android:src="@drawable/widget_sq_dot"
+        android:src="@drawable/widget_sq_dot_small"
         android:contentDescription="@null" />
 
     <ImageView
@@ -75,7 +75,7 @@
         android:layout_width="7dp"
         android:layout_height="7dp"
         android:layout_marginStart="2dp"
-        android:src="@drawable/widget_sq_dot"
+        android:src="@drawable/widget_sq_dot_small"
         android:contentDescription="@null" />
 
 </LinearLayout>

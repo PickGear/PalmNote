@@ -30,7 +30,8 @@ import kotlinx.coroutines.flow.first
  * ARCHIVED 的行；连击用 [StreakEngine] 按 [LifeItemDao.getDistinctCheckInDays] 的天数算，
  * 与详情页/统计页口径一致。
  */
-class HabitWidgetProvider : ScopedWidgetProvider() {
+// open：尺寸变体（HabitMini/HabitWide/HabitNarrow）薄子类继承，复用同一套取数与切档逻辑
+open class HabitWidgetProvider : ScopedWidgetProvider() {
 
     @EntryPoint
     @InstallIn(SingletonComponent::class)
@@ -141,15 +142,15 @@ class HabitWidgetProvider : ScopedWidgetProvider() {
 
         bindHero(context, views, rows)
 
-        // 列头：近 7 天的「日」数字，今天上色族胶囊 + 白字
-        // （TextView 没有 setColorFilter，胶囊底落在独立 ImageView 上）
+        // 列头：近 7 天的「日」数字；今天那格是列头顶 —— 上圆角淡底（.tct）+ 色族色数字
+        // （TextView 没有 setColorFilter，淡底落在独立 ImageView 上）
         bindWeekHead(views, today, widgetFamily)
 
         // 方柱矩阵：一行一个习惯，行本身是打卡热区
         views.removeAllViews(R.id.widget_habit_grid)
         val shown = rows.take(MAX_ROWS)
         shown.forEachIndexed { index, row ->
-            views.addView(R.id.widget_habit_grid, dotsRow(context, row, index))
+            views.addView(R.id.widget_habit_grid, dotsRow(context, row, index, isLast = index == shown.lastIndex))
         }
 
         // 底部三指标：最长连击 / 本周完成率 / 今日待打卡
@@ -163,9 +164,9 @@ class HabitWidgetProvider : ScopedWidgetProvider() {
     }
 
     /**
-     * 左栏 Hero：连击最长的那个习惯（数字与习惯名同色），副标给「距离最长记录还差 X 天」
-     * （当前连击本身就是记录时改说「已是最长记录」），最右侧挂同一习惯的本月打卡天数；
-     * 一个习惯都没有时收起本月块，Hero 交给布局里的空态文案。
+     * 左栏 Hero：连击最长的那个习惯（数字着族色，名字跟稿子走主文字色并补「· 连续打卡」后缀），
+     * 副标给「距离最长记录还差 X 天」（当前连击本身就是记录时改说「已是最长记录」），
+     * 最右侧挂同一习惯的本月打卡天数；一个习惯都没有时收起本月块，Hero 交给布局里的空态文案。
      */
     private fun bindHero(context: Context, views: RemoteViews, rows: List<HabitRow>) {
         val topIndex = rows.indices.maxByOrNull { rows[it].streak }
@@ -187,8 +188,10 @@ class HabitWidgetProvider : ScopedWidgetProvider() {
                 else -> STREAK_SP_MANY
             }
         )
-        views.setTextViewText(R.id.widget_habit_streak_name, top.name)
-        views.setTextColor(R.id.widget_habit_streak_name, topFamily.hue)
+        views.setTextViewText(
+            R.id.widget_habit_streak_name,
+            "${top.name} · ${context.getString(R.string.widget_habit_streak_label)}"
+        )
         val gap = (top.longest - top.streak).coerceAtLeast(0)
         views.setTextViewText(
             R.id.widget_habit_streak_sub,
@@ -230,7 +233,8 @@ class HabitWidgetProvider : ScopedWidgetProvider() {
     }
 
     /** 2×1 极简档：「连续打卡 + 今日 1/4 / 12 天 / 本周完成率」。 */
-    private fun bindMinimalViews(context: Context, appWidgetId: Int, rows: List<HabitRow>): RemoteViews {
+    /** 2×1 极简档：左连击大数 + 今日「2 / 4」，右本周完成率。internal = 预览图生成器复用。 */
+    internal fun bindMinimalViews(context: Context, appWidgetId: Int, rows: List<HabitRow>): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.widget_habit_minimal)
         val summary = summarize(rows)
         val family = WidgetData.colorFamily(context, 0)
@@ -257,7 +261,8 @@ class HabitWidgetProvider : ScopedWidgetProvider() {
     }
 
     /** 4×1 横条：左连击 / 中今日与完成率 + 完成度条 / 右最长记录。 */
-    private fun bindWideViews(context: Context, appWidgetId: Int, rows: List<HabitRow>): RemoteViews {
+    /** 4×1 横条：左连击 / 中今日与完成率 + 完成度条 / 右最长记录。internal = 预览图生成器复用。 */
+    internal fun bindWideViews(context: Context, appWidgetId: Int, rows: List<HabitRow>): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.widget_habit_wide)
         val summary = summarize(rows)
         val family = WidgetData.colorFamily(context, 0)
@@ -270,11 +275,20 @@ class HabitWidgetProvider : ScopedWidgetProvider() {
                 "${summary.top.streak} ${context.getString(R.string.widget_days_label)}"
             }
         )
+        val hue = family.hue
+        val primary = context.getColor(R.color.widget_v2_text_primary)
         views.setTextViewText(
             R.id.widget_habit_wide_today,
-            context.getString(R.string.widget_habit_today_fmt, summary.todayDone, summary.total)
+            statSpanned(
+                context.getString(R.string.widget_habit_today_fmt, summary.todayDone, summary.total),
+                summary.todayDone,
+                hue
+            )
         )
-        views.setTextViewText(R.id.widget_habit_wide_week, context.getString(R.string.widget_habit_stat_week, summary.weekRate))
+        views.setTextViewText(
+            R.id.widget_habit_wide_week,
+            statSpanned(context.getString(R.string.widget_habit_stat_week, summary.weekRate), summary.weekRate, primary)
+        )
         val percent = if (summary.total == 0) 0 else summary.todayDone * 100 / summary.total
         views.setInt(R.id.widget_habit_wide_bar, "setColorFilter", family.hue)
         views.setInt(R.id.widget_habit_wide_bar, "setImageLevel", percent * 100)
@@ -286,7 +300,7 @@ class HabitWidgetProvider : ScopedWidgetProvider() {
     }
 
     /** 1×3 竖条：「N 项习惯 + 1/4」→ 每行名称 + 近 7 天方柱 → 底部本周完成率。 */
-    private fun bindNarrowViews(context: Context, appWidgetId: Int, rows: List<HabitRow>): RemoteViews {
+    internal fun bindNarrowViews(context: Context, appWidgetId: Int, rows: List<HabitRow>): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.widget_habit_narrow)
         val summary = summarize(rows)
         val family = WidgetData.colorFamily(context, 0)
@@ -296,12 +310,20 @@ class HabitWidgetProvider : ScopedWidgetProvider() {
             else context.getString(R.string.widget_habit_count_label, rows.size)
         )
         views.setTextColor(R.id.widget_habit_narrow_count, family.hue)
-        // 头部计数是「今日 x/y」（设计稿「N 项习惯 + 1/4」），别用 /7 的周口径
+        // 头部计数是「今日 x/y」的纯比值（设计稿窄卡头部只有 1/4，不带「今日」前缀），
+        // 口径仍是今日，别用 /7 的周口径
         views.setTextViewText(
             R.id.widget_habit_narrow_count,
-            context.getString(R.string.widget_habit_today_fmt, summary.todayDone, summary.total)
+            context.getString(R.string.widget_habit_today_ratio, summary.todayDone, summary.total)
         )
-        views.setTextViewText(R.id.widget_habit_narrow_week, context.getString(R.string.widget_habit_week_brief, summary.weekRate))
+        views.setTextViewText(
+            R.id.widget_habit_narrow_week,
+            statSpanned(
+                context.getString(R.string.widget_habit_week_brief, summary.weekRate),
+                summary.weekRate,
+                context.getColor(R.color.widget_v2_text_primary)
+            )
+        )
         views.removeAllViews(R.id.widget_habit_narrow_rows)
         rows.take(MAX_ROWS).forEachIndexed { index, row ->
             views.addView(R.id.widget_habit_narrow_rows, narrowRow(context, row, index))
@@ -316,7 +338,17 @@ class HabitWidgetProvider : ScopedWidgetProvider() {
         val emptyDot = context.getColor(R.color.widget_v2_ring)
         rowView.setTextViewText(R.id.widget_habit_narrow_name, row.name)
         narrowDotIds.forEachIndexed { dotIndex, dotId ->
-            rowView.setInt(dotId, "setColorFilter", if (row.recent.getOrElse(dotIndex) { false }) family.hue else emptyDot)
+            val checked = row.recent.getOrElse(dotIndex) { false }
+            val isToday = dotIndex == narrowDotIds.lastIndex
+            // 稿子窄条：今天未打卡是色族色描边空心（border 1.5px solid var(--h1)），
+            // 不是轨道灰实心 —— 与 4×3 的三级色虚线环同一「空心＝没打」语言、不同色
+            if (isToday && !checked) {
+                rowView.setImageViewResource(dotId, R.drawable.widget_sq_hue_ring)
+                rowView.setInt(dotId, "setColorFilter", family.hue)
+            } else {
+                rowView.setImageViewResource(dotId, R.drawable.widget_sq_dot)
+                rowView.setInt(dotId, "setColorFilter", if (checked) family.hue else emptyDot)
+            }
         }
         rowView.setOnClickPendingIntent(
             R.id.widget_habit_narrow_row,
@@ -344,17 +376,17 @@ class HabitWidgetProvider : ScopedWidgetProvider() {
         R.id.widget_habit_narrow_dot_6
     )
 
-    /** 近 7 天列头：日期数字逐格落位，今天那格上色族胶囊底 + 白字。 */
+    /** 近 7 天列头：日期数字逐格落位；今天那格是列头顶 —— 上圆角淡底（.tc/.tct）+ 色族色数字（.wkh.on）。 */
     private fun bindWeekHead(views: RemoteViews, today: LocalDate, widgetFamily: WidgetData.ColorFamily) {
         habitHeadIds.forEachIndexed { index, headId ->
             val date = today.minusDays((RECENT_DAYS - 1 - index).toLong())
             views.setTextViewText(headId, "${date.dayOfMonth}")
         }
-        views.setInt(R.id.widget_habit_head_6_bg, "setColorFilter", widgetFamily.hue)
-        views.setTextColor(R.id.widget_habit_head_6, -0x1)
+        views.setInt(R.id.widget_habit_head_6_bg, "setColorFilter", widgetFamily.tint)
+        views.setTextColor(R.id.widget_habit_head_6, widgetFamily.hue)
     }
 
-    /** 底部三指标：全量最长连击 / 本周完成率 / 今日待打卡数。 */
+    /** 底部三指标：全量最长连击 / 本周完成率 / 今日待打卡数。数值部分加粗着色（稿 .micro + b）。 */
     private fun bindFooterStats(
         context: Context,
         views: RemoteViews,
@@ -365,22 +397,51 @@ class HabitWidgetProvider : ScopedWidgetProvider() {
         val weekHits = shown.sumOf { it.weekHits }
         val weekTotal = shown.size * RECENT_DAYS
         val weekRate = if (weekTotal == 0) 0 else weekHits * 100 / weekTotal
+        val primary = context.getColor(R.color.widget_v2_text_primary)
+        val hue = WidgetData.colorFamily(context, 0).hue
         views.setTextViewText(
             R.id.widget_habit_stat_longest,
-            context.getString(R.string.widget_habit_stat_longest, longest)
+            statSpanned(context.getString(R.string.widget_habit_stat_longest, longest), longest, primary)
         )
         views.setTextViewText(
             R.id.widget_habit_stat_week,
-            context.getString(R.string.widget_habit_stat_week, weekRate)
+            statSpanned(context.getString(R.string.widget_habit_stat_week, weekRate), weekRate, primary)
         )
         views.setTextViewText(
             R.id.widget_habit_stat_todo,
-            context.getString(R.string.widget_habit_stat_todo, rows.count { !it.checked })
+            statSpanned(
+                context.getString(R.string.widget_habit_stat_todo, rows.count { !it.checked }),
+                rows.count { !it.checked },
+                hue
+            )
         )
     }
 
-    /** 方柱矩阵的一行：左习惯名 + 近 7 天方柱（今天多一圈方环）+ 行尾本周 x/7。 */
-    private fun dotsRow(context: Context, row: HabitRow, index: Int): RemoteViews {
+    /**
+     * 指标值 span：从格式化好的串里找到数值起点，把「数值 + 单位」整段加粗着色
+     * （标签留在 TextView 默认的次级色）。找不到数值时原样返回。
+     */
+    private fun statSpanned(full: String, value: Int, valueColor: Int): CharSequence {
+        val start = full.indexOf(value.toString())
+        if (start < 0) return full
+        return android.text.SpannableString(full).apply {
+            setSpan(
+                android.text.style.StyleSpan(android.graphics.Typeface.BOLD),
+                start,
+                full.length,
+                android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+            setSpan(
+                android.text.style.ForegroundColorSpan(valueColor),
+                start,
+                full.length,
+                android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+        }
+    }
+
+    /** 方柱矩阵的一行：左习惯名 + 近 7 天方柱 + 行尾本周 x/7，今天列带贯穿淡底。 */
+    private fun dotsRow(context: Context, row: HabitRow, index: Int, isLast: Boolean): RemoteViews {
         val rowView = RemoteViews(context.packageName, R.layout.widget_habit_dots)
         val family = WidgetData.colorFamily(context, index)
         val emptyDot = context.getColor(R.color.widget_v2_ring)
@@ -389,12 +450,18 @@ class HabitWidgetProvider : ScopedWidgetProvider() {
             R.id.widget_habit_row_week,
             context.getString(R.string.widget_habit_row_week, row.weekHits)
         )
+        // 行尾 x/7：一周没打过是三级色（稿 0/7 用 --txt3），有记录用二级色
+        rowView.setTextColor(
+            R.id.widget_habit_row_week,
+            context.getColor(
+                if (row.weekHits == 0) R.color.widget_v2_text_tertiary else R.color.widget_v2_text_secondary
+            )
+        )
         habitDotIds.forEachIndexed { dotIndex, dotId ->
             val done = row.recent.getOrElse(dotIndex) { false }
             rowView.setInt(dotId, "setColorFilter", if (done) family.hue else emptyDot)
         }
-        // 今天（最后一格）的描边方环跟该行的色族色走
-        rowView.setInt(R.id.widget_habit_dot_today_ring, "setColorFilter", family.hue)
+        bindTodayColumn(context, rowView, row, isLast)
         if (android.os.Build.VERSION.SDK_INT >= 30) {
             val state = if (row.checked) context.getString(R.string.widget_completed) else ""
             rowView.setContentDescription(R.id.widget_habit_dots_row, "${row.name} $state".trim())
@@ -404,6 +471,26 @@ class HabitWidgetProvider : ScopedWidgetProvider() {
             HabitCheckInReceiver.checkInPendingIntent(context, row.templateId)
         )
         return rowView
+    }
+
+    /**
+     * 今天列（稿子「今天列贯穿淡底」）：满行高淡底 .tc（中段直角，最后一行下圆角 .tcb），
+     * 颜色取第一色族的淡底（稿子 .tc 恒为 var(--t1)，不随行的色族变）；
+     * 打了卡露出色族色方柱，没打卡方柱让位给同位虚线环（border:1.5px dashed var(--txt3)）。
+     */
+    private fun bindTodayColumn(context: Context, rowView: RemoteViews, row: HabitRow, isLast: Boolean) {
+        val done = row.recent.getOrElse(RECENT_DAYS - 1) { false }
+        rowView.setInt(R.id.widget_habit_dot_today_bg, "setColorFilter", WidgetData.colorFamily(context, 0).tint)
+        if (isLast) rowView.setImageViewResource(R.id.widget_habit_dot_today_bg, R.drawable.widget_col_bottom)
+        rowView.setViewVisibility(R.id.widget_habit_dot_6, if (done) View.VISIBLE else View.GONE)
+        rowView.setViewVisibility(R.id.widget_habit_dot_today_ring, if (done) View.GONE else View.VISIBLE)
+        if (!done) {
+            rowView.setInt(
+                R.id.widget_habit_dot_today_ring,
+                "setColorFilter",
+                context.getColor(R.color.widget_v2_text_tertiary)
+            )
+        }
     }
 
     private val habitDotIds = listOf(
@@ -447,15 +534,24 @@ class HabitWidgetProvider : ScopedWidgetProvider() {
         /** 点阵一行 7 格，从 6 天前排到今天。 */
         private const val RECENT_DAYS = 7
 
+        /**
+         * 习惯一族全量刷新：基类 + 3 个尺寸形态（HabitMini/HabitWide/HabitNarrow）。
+         * 从目录条目派生（isAssignableFrom），每个类只广播自己实例的 id ——
+         * 框架不校验 id 归属，混发会把一种形态覆盖成另一种的界面。
+         */
         fun requestUpdateAll(context: Context) {
             val manager = AppWidgetManager.getInstance(context)
-            val ids = manager.getAppWidgetIds(ComponentName(context, HabitWidgetProvider::class.java))
-            if (ids.isEmpty()) return
-            context.sendBroadcast(
-                android.content.Intent(context, HabitWidgetProvider::class.java)
-                    .setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE)
-                    .putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids)
-            )
+            WidgetPin.entries.map { it.providerClass }
+                .filter { HabitWidgetProvider::class.java.isAssignableFrom(it) }
+                .forEach { provider ->
+                    val ids = manager.getAppWidgetIds(ComponentName(context, provider))
+                    if (ids.isEmpty()) return@forEach
+                    context.sendBroadcast(
+                        android.content.Intent(context, provider)
+                            .setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE)
+                            .putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids)
+                    )
+                }
         }
     }
 }

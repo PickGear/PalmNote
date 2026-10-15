@@ -47,7 +47,7 @@ class BillWidgetProvider : ScopedWidgetProvider() {
                 if (isCompactSize(width, height)) {
                     bindMiniViews(context, appWidgetId, snapshot, accent)
                 } else {
-                    bindViews(context, appWidgetId, snapshot)
+                    bindViews(context, appWidgetId, snapshot, accent)
                 }
             }
         }
@@ -208,12 +208,14 @@ class BillWidgetProvider : ScopedWidgetProvider() {
     internal fun bindViews(
         context: Context,
         appWidgetId: Int,
-        snapshot: BillSnapshot
+        snapshot: BillSnapshot,
+        accent: WidgetData.AccentTheme
     ): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.widget_bill_unified)
 
-        // 装饰色走色族（不占全局强调色）：徽章与用量条用橙，柱子用蓝、最高的一天换回橙
-        val primary = WidgetData.colorFamily(context, 0)
+        // 稿子「卡片主题」一节：整卡染主题包时 --h1 跟着主色走 —— 徽章、「新增」、用量条填充、
+        // 最高柱都是 var(--h1)，即组件强调色 accent（逐实例覆盖 / 应用主题包）；
+        // 普通柱子走色族蓝（--h2 不随主题包变），轨道保持灰
         val secondary = WidgetData.colorFamily(context, 1)
 
         // 大数字走不带分的紧凑格式：左栏只有 96dp，`¥5290.50` 这种带分的会被省略号截断
@@ -222,20 +224,20 @@ class BillWidgetProvider : ScopedWidgetProvider() {
             R.id.widget_expense_amount,
             "¥${WidgetData.formatAmountCompact(context, snapshot.monthlyExpense)}"
         )
-        views.setInt(R.id.widget_bill_badge, "setColorFilter", primary.hue)
-        views.setTextColor(R.id.widget_add_btn, primary.hue)
+        views.setInt(R.id.widget_bill_badge, "setColorFilter", accent.accent)
+        views.setTextColor(R.id.widget_add_btn, accent.accent)
         bindDailyBars(
             views,
             snapshot.dailyExpense,
             normalColor = secondary.hue,
-            highlightColor = primary.hue,
+            highlightColor = accent.accent,
             trackColor = context.getColor(R.color.widget_v2_ring)
         )
 
         // 用量条与图下说明：有预算给「预算已用 N%」，没预算就给本月净收入（与迷你档同口径）
         val budget = snapshot.budget?.takeIf { it.totalBudget > 0 }
         if (budget != null) {
-            bindBudgetUsage(context, views, snapshot, budget, primary.hue)
+            bindBudgetUsage(context, views, snapshot, budget, accent.accent)
         } else {
             bindBalanceCard(context, views, snapshot)
         }

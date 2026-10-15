@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- 习惯周历「今天」格的空心方环（v4）：2dp 描边白底占位，运行时 setColorFilter 上色 -->
-<shape xmlns:android="http://schemas.android.com/apk/res/android"
-    android:shape="rectangle">
-    <corners android:radius="6dp" />
-    <stroke
-        android:width="2dp"
-        android:color="#FFFFFFFF" />
-</shape>

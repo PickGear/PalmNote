@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  选择器预览（Android 12+ 的 previewLayout）：快捷入口 4×1 横条，静置运行时渲染的预览图。
+  图由生成器调 ShortcutsWidgetProvider.bindViews(wide = true) 离屏渲染。
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="fitCenter"
+        android:src="@drawable/widget_preview_shortcuts_wide"
+        android:contentDescription="@null" />
+
+</FrameLayout>

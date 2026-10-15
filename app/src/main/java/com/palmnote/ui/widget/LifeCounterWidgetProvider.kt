@@ -17,7 +17,8 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 
-class LifeCounterWidgetProvider : ScopedWidgetProvider() {
+// open：尺寸变体（CounterNarrow/CounterTall）薄子类继承，复用同一套取数与切档逻辑
+open class LifeCounterWidgetProvider : ScopedWidgetProvider() {
 
     @EntryPoint
     @InstallIn(SingletonComponent::class)
@@ -120,13 +121,14 @@ class LifeCounterWidgetProvider : ScopedWidgetProvider() {
                 android.util.TypedValue.COMPLEX_UNIT_SP,
                 if (roomy) DAYS_SP_ROOMY else DAYS_SP_NORMAL
             )
-            val datePattern = context.getString(R.string.widget_date_format_cn)
+            val datePattern = context.getString(R.string.widget_date_format_cn_weekday)
             views.setTextViewText(
                 R.id.widget_event_date,
                 firstEvent.targetDate.format(DateTimeFormatter.ofPattern(datePattern))
             )
-            // 高度不足时收起日期行（次要信息），天数与日历条保留
-            views.setViewVisibility(R.id.widget_event_date, if (compactHeight) View.GONE else View.VISIBLE)
+            // 高度不足时收起日历条（装饰），「目标日期」这行说明保留 —— 稿子 2×1 极简＝
+            // 一行主数据 + 一行说明，之前反过来收说明留装饰，信息价值取反了
+            views.setViewVisibility(R.id.widget_counter_dates, if (compactHeight) View.GONE else View.VISIBLE)
             bindSecondEvent(context, views, events.getOrNull(1), family, compactHeight)
             bindDateStrip(context, views, firstEvent.targetDate, family.hue, roomy)
             // 点焦点事件 → 直达该记录详情页（深链）
@@ -262,8 +264,9 @@ class LifeCounterWidgetProvider : ScopedWidgetProvider() {
     }
 
     /**
-     * 横向日历条：目标日前后各几天，目标日那格上色族色、文字转白并放大一号。
-     * 格子等宽（布局里写死的 weight），只换颜色与字号 —— RemoteViews 改不了格子宽度。
+     * 横向日历条：目标日前后各几天。稿子 `.dates .on` 是 **2px 同色描边环 + 同色加粗文字**
+     * （不是实色填充 + 白字，也没有外发光）——底环由 [bgId] 出，运行时着色族色。
+     * 格子等宽（布局里写死的 weight），只换颜色与描边 —— RemoteViews 改不了格子宽度。
      */
     private fun bindDateStrip(
         context: Context,
@@ -274,35 +277,35 @@ class LifeCounterWidgetProvider : ScopedWidgetProvider() {
     ) {
         val secondary = context.getColor(R.color.widget_v2_text_secondary)
         val normalSp = if (roomy) DATE_SP_ROOMY else DATE_SP_NORMAL
-        val highlightSp = normalSp + 2f
-        dateCellIds.forEachIndexed { index, (glowId, bgId, textId) ->
+        // 稿子：加粗靠 paint flag（RemoteViews 没有 setTextStyle），目标日开、其余关
+        val boldFlag = android.graphics.Paint.FAKE_BOLD_TEXT_FLAG
+        dateCellIds.forEachIndexed { index, (bgId, textId) ->
             val date = target.plusDays((index - STRIP_LEAD).toLong())
             views.setTextViewText(textId, "${date.dayOfMonth}")
             val isTarget = date == target
             views.setViewVisibility(bgId, if (isTarget) View.VISIBLE else View.GONE)
-            views.setViewVisibility(glowId, if (isTarget) View.VISIBLE else View.GONE)
+            // 稿子 .on 不改字号（只改描边/颜色/字重），roomy 档两态一起放大
+            views.setTextViewTextSize(textId, android.util.TypedValue.COMPLEX_UNIT_SP, normalSp)
             if (isTarget) {
-                // 外发光 = 同色相压到约 20% 透明度（RemoteViews 改不了 alpha，只能换色值）
-                views.setInt(glowId, "setColorFilter", (highlight and 0x00FFFFFF) or (0x33 shl 24))
                 views.setInt(bgId, "setColorFilter", highlight)
-                views.setTextColor(textId, android.graphics.Color.WHITE)
-                views.setTextViewTextSize(textId, android.util.TypedValue.COMPLEX_UNIT_SP, highlightSp)
+                views.setTextColor(textId, highlight)
+                views.setInt(textId, "setPaintFlags", boldFlag)
             } else {
                 views.setTextColor(textId, secondary)
-                views.setTextViewTextSize(textId, android.util.TypedValue.COMPLEX_UNIT_SP, normalSp)
+                views.setInt(textId, "setPaintFlags", 0)
             }
         }
     }
 
-    /** 每个日期格：(发光层, 高亮块, 数字)。 */
+    /** 每个日期格：(描边环, 数字)。 */
     private val dateCellIds = listOf(
-        Triple(R.id.widget_counter_date_glow_0, R.id.widget_counter_date_bg_0, R.id.widget_counter_date_0),
-        Triple(R.id.widget_counter_date_glow_1, R.id.widget_counter_date_bg_1, R.id.widget_counter_date_1),
-        Triple(R.id.widget_counter_date_glow_2, R.id.widget_counter_date_bg_2, R.id.widget_counter_date_2),
-        Triple(R.id.widget_counter_date_glow_3, R.id.widget_counter_date_bg_3, R.id.widget_counter_date_3),
-        Triple(R.id.widget_counter_date_glow_4, R.id.widget_counter_date_bg_4, R.id.widget_counter_date_4),
-        Triple(R.id.widget_counter_date_glow_5, R.id.widget_counter_date_bg_5, R.id.widget_counter_date_5),
-        Triple(R.id.widget_counter_date_glow_6, R.id.widget_counter_date_bg_6, R.id.widget_counter_date_6)
+        Pair(R.id.widget_counter_date_bg_0, R.id.widget_counter_date_0),
+        Pair(R.id.widget_counter_date_bg_1, R.id.widget_counter_date_1),
+        Pair(R.id.widget_counter_date_bg_2, R.id.widget_counter_date_2),
+        Pair(R.id.widget_counter_date_bg_3, R.id.widget_counter_date_3),
+        Pair(R.id.widget_counter_date_bg_4, R.id.widget_counter_date_4),
+        Pair(R.id.widget_counter_date_bg_5, R.id.widget_counter_date_5),
+        Pair(R.id.widget_counter_date_bg_6, R.id.widget_counter_date_6)
     )
 
     private fun com.palmnote.data.db.entity.LifeItem.toCounterEvent(
@@ -367,7 +370,7 @@ class LifeCounterWidgetProvider : ScopedWidgetProvider() {
         // v4 主数字 33sp（稿子口径）；摆到 3 格高以上再放大一档
         private const val DAYS_SP_NORMAL = 33f
         private const val DAYS_SP_ROOMY = 40f
-        private const val DATE_SP_NORMAL = 13f
+        private const val DATE_SP_NORMAL = 11f
         private const val DATE_SP_ROOMY = 15f
     }
 }

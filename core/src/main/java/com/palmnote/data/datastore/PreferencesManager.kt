@@ -454,8 +454,9 @@ class PreferencesManager @Inject constructor(
     /**
      * **一次性提示的永久关闭集合**（按消息 id 记）。
      *
-     * 统一原则：状态类提示不可关闭（状态就该可见）；教学类提示可永久关闭，
-     * 关闭状态必须持久化——"关掉下次又冒出来"是用户眼里的骚扰。
+     * 统一原则：教学类提示可永久关闭，关闭状态必须持久化——"关掉下次又冒出来"是骚扰；
+     * 状态类提示（示例模式横幅）只可**本次会话**收起（进程内存态，不走本集合），
+     * 重启复现——关闭不是"永久同意"，状态还开着就再提醒一次（2026-10-15 用户决定）。
      */
     val dismissedBannerIds: Flow<Set<String>> =
         prefsFlow.map { it[DISMISSED_BANNER_IDS] ?: emptySet() }

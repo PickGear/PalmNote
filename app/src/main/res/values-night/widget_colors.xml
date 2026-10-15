@@ -11,7 +11,7 @@
     <color name="widget_v2_text_secondary">#FF9DB0AB</color>
     <color name="widget_v2_text_tertiary">#FF74857F</color>
     <color name="widget_v2_accent">#FF2EC0D6</color>
-    <color name="widget_v2_ring">#FF47524F</color>
+    <color name="widget_v2_ring">#FF2A312E</color>
     <!-- 涨跌（总资产胶囊）：夜间同色相提亮 -->
     <color name="widget_delta_up">#FF34D399</color>
     <color name="widget_delta_down">#FFF87171</color>

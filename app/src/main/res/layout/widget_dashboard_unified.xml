@@ -51,7 +51,7 @@
             android:id="@+id/widget_dashboard_week_todo"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="@dimen/widget_text_micro"
+            android:textSize="@dimen/widget_text_label"
             android:textStyle="bold"
             android:maxLines="1" />
     </LinearLayout>
@@ -74,7 +74,7 @@
                 android:id="@+id/widget_dashboard_budget_tint"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:src="@drawable/widget_chip_round"
+                android:src="@drawable/widget_sq_round"
                 android:contentDescription="@null" />
 
             <LinearLayout
@@ -101,8 +101,8 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:textSize="@dimen/widget_text_micro"
-                        android:textColor="@color/widget_v2_text_secondary"
+                        android:textSize="@dimen/widget_text_label"
+                        android:textColor="@color/widget_v2_text_tertiary"
                         android:layout_marginStart="6dp"
                         android:maxLines="1"
                         android:ellipsize="end" />
@@ -121,7 +121,7 @@
                 <FrameLayout
                     android:id="@+id/widget_dashboard_budget_bar_wrap"
                     android:layout_width="match_parent"
-                    android:layout_height="4dp"
+                    android:layout_height="5dp"
                     android:layout_marginTop="6dp">
 
                     <ImageView
@@ -145,7 +145,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="3dp"
                     android:textSize="@dimen/widget_text_micro"
-                    android:textColor="@color/widget_v2_text_tertiary"
+                    android:textColor="@color/widget_v2_text_secondary"
                     android:maxLines="1" />
             </LinearLayout>
         </FrameLayout>
@@ -161,7 +161,7 @@
                 android:id="@+id/widget_dashboard_goal_tint"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:src="@drawable/widget_chip_round"
+                android:src="@drawable/widget_sq_round"
                 android:contentDescription="@null" />
 
             <LinearLayout
@@ -188,8 +188,8 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:textSize="@dimen/widget_text_micro"
-                        android:textColor="@color/widget_v2_text_secondary"
+                        android:textSize="@dimen/widget_text_label"
+                        android:textColor="@color/widget_v2_text_tertiary"
                         android:layout_marginStart="6dp"
                         android:maxLines="1"
                         android:ellipsize="end" />
@@ -209,7 +209,7 @@
                 <FrameLayout
                     android:id="@+id/widget_dashboard_goal_bar_wrap"
                     android:layout_width="match_parent"
-                    android:layout_height="4dp"
+                    android:layout_height="5dp"
                     android:layout_marginTop="6dp">
 
                     <ImageView
@@ -233,7 +233,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="3dp"
                     android:textSize="@dimen/widget_text_micro"
-                    android:textColor="@color/widget_v2_text_tertiary"
+                    android:textColor="@color/widget_v2_text_secondary"
                     android:maxLines="1" />
 
                 <!-- 弹性占位：RemoteViews 白名单没有 Space/裸 View，用 FrameLayout 撑开 -->
@@ -263,7 +263,7 @@
                 android:id="@+id/widget_dashboard_todo_tint"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:src="@drawable/widget_chip_round"
+                android:src="@drawable/widget_sq_round"
                 android:contentDescription="@null" />
 
             <LinearLayout
@@ -290,8 +290,8 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:textSize="@dimen/widget_text_micro"
-                        android:textColor="@color/widget_v2_text_secondary"
+                        android:textSize="@dimen/widget_text_label"
+                        android:textColor="@color/widget_v2_text_tertiary"
                         android:layout_marginStart="6dp"
                         android:maxLines="1"
                         android:ellipsize="end" />
@@ -334,7 +334,7 @@
                 android:id="@+id/widget_dashboard_anniversary_tint"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:src="@drawable/widget_chip_round"
+                android:src="@drawable/widget_sq_round"
                 android:contentDescription="@null" />
 
             <LinearLayout
@@ -361,8 +361,8 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:textSize="@dimen/widget_text_micro"
-                        android:textColor="@color/widget_v2_text_secondary"
+                        android:textSize="@dimen/widget_text_label"
+                        android:textColor="@color/widget_v2_text_tertiary"
                         android:layout_marginStart="6dp"
                         android:maxLines="1"
                         android:ellipsize="end" />
@@ -389,7 +389,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:textSize="@dimen/widget_text_micro"
-                    android:textColor="@color/widget_v2_text_tertiary"
+                    android:textColor="@color/widget_v2_text_secondary"
                     android:maxLines="1"
                     android:ellipsize="end" />
             </LinearLayout>

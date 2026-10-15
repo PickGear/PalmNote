@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
   习惯 4×3（v4 方柱周历）：Hero 连击（连击最长的习惯）+ 近 7 天方柱矩阵
-  （列头日期、今天列方环、行尾本周 x/7）+ 底部三指标（最长连击/本周完成率/今日待打卡）。
+  （列头日期、今天列贯穿淡底 + 方柱/虚线环、行尾本周 x/7）+ 底部三指标（最长连击/本周完成率/今日待打卡）。
   点阵行仍是打卡热区，行由 Provider 动态添加。
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -67,8 +67,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/widget_habit_done_label"
-                android:textSize="@dimen/widget_text_micro"
-                android:textColor="@color/widget_v2_text_secondary"
+                android:textSize="@dimen/widget_text_label"
+                android:textColor="@color/widget_v2_text_tertiary"
                 android:layout_marginTop="1dp"
                 android:maxLines="1" />
         </LinearLayout>
@@ -114,8 +114,8 @@
                 android:id="@+id/widget_habit_streak_sub"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textSize="@dimen/widget_text_micro"
-                android:textColor="@color/widget_v2_text_secondary"
+                android:textSize="@dimen/widget_text_label"
+                android:textColor="@color/widget_v2_text_tertiary"
                 android:layout_marginTop="1dp"
                 android:maxLines="1"
                 android:ellipsize="end" />
@@ -136,8 +136,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/widget_habit_month_label"
-                android:textSize="@dimen/widget_text_micro"
-                android:textColor="@color/widget_v2_text_secondary"
+                android:textSize="@dimen/widget_text_label"
+                android:textColor="@color/widget_v2_text_tertiary"
                 android:maxLines="1" />
 
             <TextView

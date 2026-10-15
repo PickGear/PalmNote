@@ -51,7 +51,7 @@ class TodoWidgetService : RemoteViewsService() {
 
 /** 议程的一行：段头或待办行（列表扁平化后逐行出 RemoteViews）。 */
 internal sealed class AgendaRow {
-    data class Header(val label: String, val count: Int, val isOverdue: Boolean) : AgendaRow()
+    data class Header(val label: String, val count: Int, val section: AgendaSection) : AgendaRow()
     data class Item(val item: LifeItem, val section: AgendaSection) : AgendaRow()
 }
 
@@ -125,7 +125,7 @@ internal class TodoViewsFactory(
         val rows = mutableListOf<AgendaRow>()
         for ((section, list) in buckets(pending, todayStart, tomorrowStart, dayAfter)) {
             if (list.isEmpty()) continue
-            rows += AgendaRow.Header(context.getString(sectionLabelRes(section)), list.size, section == AgendaSection.OVERDUE)
+            rows += AgendaRow.Header(context.getString(sectionLabelRes(section)), list.size, section)
             list.forEach { rows += AgendaRow.Item(it, section) }
         }
         return rows
@@ -169,8 +169,13 @@ internal class TodoViewsFactory(
             R.id.widget_todo_seghd_count,
             context.getString(R.string.widget_todo_sect_count, row.count)
         )
-        if (row.isOverdue) {
-            views.setTextColor(R.id.widget_todo_seghd_label, context.getColor(R.color.widget_risk_red))
+        // 段头配色按稿子：逾期段红（.seghd.rd），今天段 var(--h1)（计数 .em 恒为次级色，不跟着变）
+        when (row.section) {
+            AgendaSection.OVERDUE ->
+                views.setTextColor(R.id.widget_todo_seghd_label, context.getColor(R.color.widget_risk_red))
+            AgendaSection.TODAY ->
+                views.setTextColor(R.id.widget_todo_seghd_label, WidgetData.colorFamily(context, 0).hue)
+            else -> Unit
         }
         return views
     }

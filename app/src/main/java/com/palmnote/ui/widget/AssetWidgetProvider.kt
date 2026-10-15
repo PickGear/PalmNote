@@ -62,15 +62,7 @@ class AssetWidgetProvider : ScopedWidgetProvider() {
 
         // 占比条：24 段等宽槽位，按各分类件数占比分配段数 —— 段的宽度于是就是比例
         // （RemoteViews 改不了子控件宽度，只能靠「占几段」表达比例）
-        if (compactHeight) {
-            views.setViewVisibility(R.id.widget_asset_bar, View.GONE)
-        } else {
-            val owners = slotOwners(shown.map { it.count }, BAR_SLOTS)
-            SEGMENT_IDS.forEachIndexed { slot, id ->
-                views.setViewVisibility(id, View.VISIBLE)
-                views.setInt(id, "setColorFilter", WidgetData.colorFamily(context, owners[slot]).hue)
-            }
-        }
+        bindShareBar(context, views, shown, compactHeight)
 
         // 两列色片网格：每行两个，条目数为奇数时补一个等宽占位
         views.removeAllViews(R.id.widget_asset_grid)
@@ -98,6 +90,41 @@ class AssetWidgetProvider : ScopedWidgetProvider() {
             WidgetHelper.createPendingIntent(context, WidgetDeepLink.SEG_ASSET + appWidgetId, WidgetDeepLink.TAB_ASSET)
         )
         return views
+    }
+
+    /**
+     * 顶部占比条：组的首/末段换圆头 drawable（单段组用四角圆的整段），非首组首段左内缩 3dp
+     * 形成组间的缝 —— 容器无底色，缝里露出卡底，对应设计稿 `.seg` 的 `gap:3px`。
+     * 矮卡（compactHeight）整条藏起。
+     */
+    private fun bindShareBar(
+        context: Context,
+        views: RemoteViews,
+        shown: List<HeldCategoryCount>,
+        compactHeight: Boolean
+    ) {
+        if (compactHeight) {
+            views.setViewVisibility(R.id.widget_asset_bar, View.GONE)
+            return
+        }
+        val owners = slotOwners(shown.map { it.count }, BAR_SLOTS)
+        val gapPx = Math.round(3 * context.resources.displayMetrics.density)
+        SEGMENT_IDS.forEachIndexed { slot, id ->
+            views.setViewVisibility(id, View.VISIBLE)
+            val isGroupStart = slot == 0 || owners[slot] != owners[slot - 1]
+            val isGroupEnd = slot == BAR_SLOTS - 1 || owners[slot] != owners[slot + 1]
+            views.setImageViewResource(
+                id,
+                when {
+                    isGroupStart && isGroupEnd -> R.drawable.widget_seg_slot
+                    isGroupStart -> R.drawable.widget_seg_slot_start
+                    isGroupEnd -> R.drawable.widget_seg_slot_end
+                    else -> R.drawable.widget_seg_slot_flat
+                }
+            )
+            views.setViewPadding(id, if (isGroupStart && slot > 0) gapPx else 0, 0, 0, 0)
+            views.setInt(id, "setColorFilter", WidgetData.colorFamily(context, owners[slot]).hue)
+        }
     }
 
     /**

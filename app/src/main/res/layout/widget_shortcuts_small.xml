@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  快捷入口 1×1（v4 定稿）：纯入口 —— 淡彩圆底 + 加号 + 「记一笔」，不放其余三个入口
+  （稿子 1×1 只画了这一个；要开别的入口就摆 2×2）。方块底与加号都是白底占位，
+  运行时 setColorFilter 上色族色。
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="10dp"
+    android:background="@drawable/widget_card_round">
+
+    <FrameLayout
+        android:layout_width="30dp"
+        android:layout_height="30dp">
+
+        <ImageView
+            android:id="@+id/widget_sc_small_bg"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:src="@drawable/widget_shape_circle"
+            android:contentDescription="@null" />
+
+        <ImageView
+            android:id="@+id/widget_sc_small_icon"
+            android:layout_width="15dp"
+            android:layout_height="15dp"
+            android:layout_gravity="center"
+            android:src="@drawable/widget_ic_plus_white"
+            android:contentDescription="@null" />
+    </FrameLayout>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="5dp"
+        android:text="@string/widget_add_bill"
+        android:textSize="10sp"
+        android:textStyle="bold"
+        android:textColor="@color/widget_v2_text_secondary"
+        android:maxLines="1" />
+
+</LinearLayout>

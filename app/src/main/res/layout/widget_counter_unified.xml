@@ -2,7 +2,7 @@
 <!--
   倒计时 3×2（v4 定稿）：焦点事件给「大数字 + 名称/目标日期列」，第二条事件给一行色底 chip
   （色点 + 名称 + 剩余天数），下面一条横向日历条把目标日高亮出来（前 5 天到后 1 天）。
-  日历条格子等宽，高亮那格由 Provider 上色族色、文字转白。
+  日历条格子等宽，高亮那格由 Provider 上色族色描边环、文字同色加粗（稿子 .dates .on）。
   宽到 4 格以上仍走多事件列表（widget_more_events）。
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -10,7 +10,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="12dp"
+    android:padding="@dimen/widget_pad_compact"
     android:background="@drawable/widget_card_round">
 
     <LinearLayout
@@ -53,7 +53,7 @@
             android:id="@+id/widget_counter_count"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="@dimen/widget_text_micro"
+            android:textSize="@dimen/widget_text_label"
             android:textColor="@color/widget_v2_text_tertiary" />
     </LinearLayout>
 
@@ -103,7 +103,7 @@
                     android:id="@+id/widget_event_date"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:textSize="@dimen/widget_text_micro"
+                    android:textSize="@dimen/widget_text_label"
                     android:textColor="@color/widget_v2_text_tertiary"
                     android:layout_marginTop="1dp"
                     android:maxLines="1" />
@@ -127,7 +127,7 @@
                 android:id="@+id/widget_second_event_bg"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:src="@drawable/widget_chip_round"
+                android:src="@drawable/widget_row_round"
                 android:contentDescription="@null" />
 
             <LinearLayout
@@ -151,6 +151,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:textSize="11sp"
+                    android:textStyle="bold"
                     android:textColor="@color/widget_v2_text_primary"
                     android:layout_marginStart="6dp"
                     android:maxLines="1"
@@ -181,21 +182,13 @@
                 android:layout_weight="1"
                 android:layout_marginEnd="4dp">
 
-                <!-- 外发光：目标日那格显示，色相同、透明度低 -->
-                <ImageView
-                    android:id="@+id/widget_counter_date_glow_0"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:src="@drawable/widget_date_glow"
-                    android:visibility="gone"
-                    android:contentDescription="@null" />
 
                 <ImageView
                     android:id="@+id/widget_counter_date_bg_0"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:layout_margin="3dp"
-                    android:src="@drawable/widget_chip_round"
+                    android:src="@drawable/widget_date_ring"
                     android:visibility="gone"
                     android:contentDescription="@null" />
 
@@ -216,21 +209,13 @@
                 android:layout_weight="1"
                 android:layout_marginEnd="4dp">
 
-                <!-- 外发光：目标日那格显示，色相同、透明度低 -->
-                <ImageView
-                    android:id="@+id/widget_counter_date_glow_1"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:src="@drawable/widget_date_glow"
-                    android:visibility="gone"
-                    android:contentDescription="@null" />
 
                 <ImageView
                     android:id="@+id/widget_counter_date_bg_1"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:layout_margin="3dp"
-                    android:src="@drawable/widget_chip_round"
+                    android:src="@drawable/widget_date_ring"
                     android:visibility="gone"
                     android:contentDescription="@null" />
 
@@ -251,21 +236,13 @@
                 android:layout_weight="1"
                 android:layout_marginEnd="4dp">
 
-                <!-- 外发光：目标日那格显示，色相同、透明度低 -->
-                <ImageView
-                    android:id="@+id/widget_counter_date_glow_2"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:src="@drawable/widget_date_glow"
-                    android:visibility="gone"
-                    android:contentDescription="@null" />
 
                 <ImageView
                     android:id="@+id/widget_counter_date_bg_2"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:layout_margin="3dp"
-                    android:src="@drawable/widget_chip_round"
+                    android:src="@drawable/widget_date_ring"
                     android:visibility="gone"
                     android:contentDescription="@null" />
 
@@ -286,21 +263,13 @@
                 android:layout_weight="1"
                 android:layout_marginEnd="4dp">
 
-                <!-- 外发光：目标日那格显示，色相同、透明度低 -->
-                <ImageView
-                    android:id="@+id/widget_counter_date_glow_3"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:src="@drawable/widget_date_glow"
-                    android:visibility="gone"
-                    android:contentDescription="@null" />
 
                 <ImageView
                     android:id="@+id/widget_counter_date_bg_3"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:layout_margin="3dp"
-                    android:src="@drawable/widget_chip_round"
+                    android:src="@drawable/widget_date_ring"
                     android:visibility="gone"
                     android:contentDescription="@null" />
 
@@ -321,21 +290,13 @@
                 android:layout_weight="1"
                 android:layout_marginEnd="4dp">
 
-                <!-- 外发光：目标日那格显示，色相同、透明度低 -->
-                <ImageView
-                    android:id="@+id/widget_counter_date_glow_4"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:src="@drawable/widget_date_glow"
-                    android:visibility="gone"
-                    android:contentDescription="@null" />
 
                 <ImageView
                     android:id="@+id/widget_counter_date_bg_4"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:layout_margin="3dp"
-                    android:src="@drawable/widget_chip_round"
+                    android:src="@drawable/widget_date_ring"
                     android:visibility="gone"
                     android:contentDescription="@null" />
 
@@ -356,21 +317,13 @@
                 android:layout_weight="1"
                 android:layout_marginEnd="4dp">
 
-                <!-- 外发光：目标日那格显示，色相同、透明度低 -->
-                <ImageView
-                    android:id="@+id/widget_counter_date_glow_5"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:src="@drawable/widget_date_glow"
-                    android:visibility="gone"
-                    android:contentDescription="@null" />
 
                 <ImageView
                     android:id="@+id/widget_counter_date_bg_5"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:layout_margin="3dp"
-                    android:src="@drawable/widget_chip_round"
+                    android:src="@drawable/widget_date_ring"
                     android:visibility="gone"
                     android:contentDescription="@null" />
 
@@ -390,21 +343,13 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1">
 
-                <!-- 外发光：目标日那格显示，色相同、透明度低 -->
-                <ImageView
-                    android:id="@+id/widget_counter_date_glow_6"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:src="@drawable/widget_date_glow"
-                    android:visibility="gone"
-                    android:contentDescription="@null" />
 
                 <ImageView
                     android:id="@+id/widget_counter_date_bg_6"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:layout_margin="3dp"
-                    android:src="@drawable/widget_chip_round"
+                    android:src="@drawable/widget_date_ring"
                     android:visibility="gone"
                     android:contentDescription="@null" />
 

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  选择器预览（Android 12+ 的 previewLayout）：待办 2×1 极简档，静置运行时渲染的预览图。
+  previewLayout 由系统 inflate，**不跑应用代码**（运行时布局的文本要靠 setTextViewText 填，
+  inflate 出来是空壳），所以贴 widget_preview_todo_mini（由生成器调 bindMinimalViews 离屏渲染）。
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="fitCenter"
+        android:src="@drawable/widget_preview_todo_mini"
+        android:contentDescription="@null" />
+
+</FrameLayout>

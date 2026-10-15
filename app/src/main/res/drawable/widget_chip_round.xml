@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 色片底：白底胶囊，运行时 setColorFilter 上色族淡色 -->
-<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+<!-- 色片/大 chip 底（设计稿 .chip{border-radius:12px}）：白底，运行时 setColorFilter 上色族淡色 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
     <solid android:color="#FFFFFFFF" />
-    <corners android:radius="10dp" />
+    <corners android:radius="12dp" />
 </shape>

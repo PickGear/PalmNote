@@ -444,7 +444,7 @@
     <string name="widget_todo_done_today">%1$d done today</string>
     <string name="widget_date_md_week">M/d · E</string>
     <string name="widget_todo_done_more">View all ›</string>
-    <string name="widget_done_prefix">✓ %1$s</string>
+    <string name="widget_date_format_cn_weekday">MMM d, yyyy · EEE</string>
     <!-- v4 agenda sections (design: today/overdue/tomorrow/later + week-done footer) -->
     <string name="widget_todo_done_count">%1$d done</string>
     <string name="widget_todo_week_done">%1$d done this week</string>
@@ -520,7 +520,7 @@
     <string name="widget_preview_cnt_1">1 item</string>
     <string name="widget_preview_overdue_1">Overdue 1</string>
     <string name="widget_preview_done_cnt">2 done</string>
-    <string name="widget_preview_week_done">9 done this week</string>
+    <string name="widget_preview_week_done"><b>9</b> done this week</string>
     <!-- New size variants (v4): 2×1 minimal / 4×1 strip / 1×2·1×3 column -->
     <string name="widget_todo_today">Today\'s todos</string>
     <string name="widget_todo_today_week">Today · %1$s</string>
@@ -530,6 +530,8 @@
     <string name="widget_life_count_title">Life counter</string>
     <string name="widget_habit_count_label">%1$d habits</string>
     <string name="widget_habit_today_fmt">Today %1$d/%2$d</string>
+    <!-- 窄卡头部的纯比值（design-v4 窄卡只有 1/4，不带「今日」） -->
+    <string name="widget_habit_today_ratio">%1$d/%2$d</string>
     <string name="widget_habit_week_brief">Week %1$d%%</string>
     <string name="widget_longest_label">Longest</string>
     <string name="widget_shortcuts_desc">Four shortcuts: record, assets, goals, dates</string>
@@ -542,6 +544,7 @@
     <string name="widget_page_perm_action">Open settings ›</string>
     <string name="widget_page_unsupported">This launcher doesn\'t support adding from inside the app — add it from the launcher\'s widget list instead.</string>
     <string name="widget_page_footer">After placing, long-press a widget to change its settings.</string>
+    <string name="widget_page_add_confirming">Confirming…</string>
     <string name="widget_page_add_again">Add another</string>
     <string name="widget_pin_add">Add to home screen</string>
     <string name="widget_pin_none">Not added</string>
@@ -2285,7 +2288,7 @@
     <string name="widget_config_accent_desc">Changes this widget only; the in-app theme stays as is.</string>
     <string name="widget_config_accent_follow">Follow app</string>
     <string name="widget_next_up_title">Next up</string>
-    <string name="widget_next_up_desc">One thing at a time: today’s todo, an upcoming charge, or the nearest date — done means next.</string>
+    <string name="widget_next_up_desc">One thing at a time — done means next</string>
     <string name="widget_next_up_empty">Nothing coming up</string>
     <string name="widget_next_up_kind_todo">Todo</string>
     <string name="widget_next_up_kind_renewal">Due</string>

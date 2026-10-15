@@ -28,7 +28,7 @@
                 android:id="@+id/widget_counter_narrow_badge"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:src="@drawable/widget_chip_round"
+                android:src="@drawable/widget_sq_round"
                 android:contentDescription="@null" />
 
             <ImageView
@@ -52,7 +52,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="0"
-                android:textSize="30sp"
+                android:textSize="32sp"
                 android:textStyle="bold"
                 android:maxLines="1" />
 
@@ -60,8 +60,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/widget_days_label"
-                android:textSize="@dimen/widget_text_micro"
-                android:textColor="@color/widget_v2_text_secondary"
+                android:textSize="@dimen/widget_text_label"
+                android:textColor="@color/widget_v2_text_tertiary"
                 android:layout_marginStart="2dp"
                 android:maxLines="1" />
         </LinearLayout>
@@ -82,8 +82,8 @@
             android:id="@+id/widget_counter_narrow_date"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="@dimen/widget_text_micro"
-            android:textColor="@color/widget_v2_text_secondary"
+            android:textSize="@dimen/widget_text_label"
+            android:textColor="@color/widget_v2_text_tertiary"
             android:layout_marginTop="2dp"
             android:maxLines="1" />
     </LinearLayout>

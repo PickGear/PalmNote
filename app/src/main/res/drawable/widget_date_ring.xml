@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 倒计时日历条「目标日」的描边环（v4 .dates .on：2dp 同色描边、无填充）：
+     白底占位，运行时 setColorFilter 上色族色（替代旧的实色填充 + 外发光） -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <corners android:radius="10dp" />
+    <!-- 显式空填充:省略 solid 时渲染器会按实心填充(仓库里 widget_todo_check_box 同款写法) -->
+    <solid android:color="#00000000" />
+    <stroke
+        android:width="2dp"
+        android:color="#FFFFFFFF" />
+</shape>

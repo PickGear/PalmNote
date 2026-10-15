@@ -35,11 +35,12 @@
     <color name="widget_v2_card_bg_40">#66FFFFFF</color>
     <color name="widget_v2_soft_mint">#FFEEF5F3</color>
     <color name="widget_v2_soft_gray">#FFF5F7F7</color>
-    <color name="widget_v2_text_primary">#FF1A1A1A</color>
-    <color name="widget_v2_text_secondary">#FF7C8A86</color>
-    <color name="widget_v2_text_tertiary">#FF9AABA6</color>
+    <color name="widget_v2_text_primary">#FF15181A</color>
+    <color name="widget_v2_text_secondary">#FF6B7B77</color>
+    <color name="widget_v2_text_tertiary">#FF9AA8A4</color>
     <color name="widget_v2_accent">#FF0891B2</color>
-    <color name="widget_v2_ring">#FFC4CFCC</color>
+    <!-- 轨道/空位灰：design-v4 的 track 变量（bar 轨道、未打卡格、分隔线同源） -->
+    <color name="widget_v2_ring">#FFE9EDEC</color>
     <!-- 涨跌（总资产胶囊）：涨绿跌红 -->
     <color name="widget_delta_up">#FF16A34A</color>
     <color name="widget_delta_down">#FFDC2626</color>

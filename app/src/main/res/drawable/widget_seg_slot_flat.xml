@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 占比条的一段（平头）：段与段紧挨，整条的圆头由容器的 clipToOutline 给 -->
+<!-- 占比条的中段（平头）：段与段之间无缝，圆头只在分组的首/末段上（seg_slot_start/end） -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
     <solid android:color="#FFFFFFFF" />

@@ -62,51 +62,53 @@ object WidgetUpdateHelper {
     // 各 provider 只能收到自己的 widgetId：框架不校验广播里的 id 属于哪个 provider，
     // 把 Dashboard 的 id 拼进别的 provider 的更新广播会把 Dashboard 界面覆盖成账单/待办布局
 
-    fun refreshBillWidgets() {
+    /**
+     * 一族 = 目录条目里以 [base] 为基类的全部类（基类本尊 + 同族的尺寸薄子类，
+     * 如 TodoWidgetProvider / TodoMini / TodoWide）。从 WidgetPin.entries 派生，
+     * 新增尺寸形态时刷新链路自动纳入，不再逐类硬编码。
+     */
+    private fun familyOf(base: Class<*>): List<Class<*>> =
+        WidgetPin.entries.map { it.providerClass }.filter { base.isAssignableFrom(it) }
+
+    /** 给一族的每个类各发一条只含自己实例 id 的更新广播（见上方 id 归属注释）。 */
+    private fun sendFamily(base: Class<*>) {
         val manager = AppWidgetManager.getInstance(appContext)
-        val billIds = manager.getAppWidgetIds(ComponentName(appContext, BillWidgetProvider::class.java))
-        sendUpdate(BillWidgetProvider::class.java, billIds)
+        familyOf(base).forEach { provider ->
+            sendUpdate(provider, manager.getAppWidgetIds(ComponentName(appContext, provider)))
+        }
+    }
+
+    fun refreshBillWidgets() {
+        sendFamily(BillWidgetProvider::class.java)
         refreshDashboardWidgets()
     }
 
     fun refreshTodoWidgets() {
-        val manager = AppWidgetManager.getInstance(appContext)
-        val todoIds = manager.getAppWidgetIds(ComponentName(appContext, TodoWidgetProvider::class.java))
-        sendUpdate(TodoWidgetProvider::class.java, todoIds)
+        sendFamily(TodoWidgetProvider::class.java)
         refreshDashboardWidgets()
     }
 
     fun refreshCounterWidgets() {
-        val manager = AppWidgetManager.getInstance(appContext)
-        val counterIds = manager.getAppWidgetIds(ComponentName(appContext, LifeCounterWidgetProvider::class.java))
-        sendUpdate(LifeCounterWidgetProvider::class.java, counterIds)
+        sendFamily(LifeCounterWidgetProvider::class.java)
         refreshDashboardWidgets()
     }
 
     fun refreshAssetWidgets() {
-        val manager = AppWidgetManager.getInstance(appContext)
-        val assetIds = manager.getAppWidgetIds(ComponentName(appContext, AssetWidgetProvider::class.java))
-        sendUpdate(AssetWidgetProvider::class.java, assetIds)
+        sendFamily(AssetWidgetProvider::class.java)
         refreshDashboardWidgets()
     }
 
     fun refreshVaultWidgets() {
-        val manager = AppWidgetManager.getInstance(appContext)
-        val vaultIds = manager.getAppWidgetIds(ComponentName(appContext, VaultWidgetProvider::class.java))
-        sendUpdate(VaultWidgetProvider::class.java, vaultIds)
+        sendFamily(VaultWidgetProvider::class.java)
         refreshDashboardWidgets()
     }
 
     fun refreshNextUpWidgets() {
-        val manager = AppWidgetManager.getInstance(appContext)
-        val ids = manager.getAppWidgetIds(ComponentName(appContext, NextUpWidgetProvider::class.java))
-        sendUpdate(NextUpWidgetProvider::class.java, ids)
+        sendFamily(NextUpWidgetProvider::class.java)
     }
 
     fun refreshDashboardWidgets() {
-        val manager = AppWidgetManager.getInstance(appContext)
-        val dashIds = manager.getAppWidgetIds(ComponentName(appContext, DashboardWidgetProvider::class.java))
-        sendUpdate(DashboardWidgetProvider::class.java, dashIds)
+        sendFamily(DashboardWidgetProvider::class.java)
     }
 
     fun refreshHabitWidgets() {
@@ -114,30 +116,13 @@ object WidgetUpdateHelper {
     }
 
     fun refreshAllWidgets() {
-        // 各 refresh* 内部会附带刷新 Dashboard，这里手动展开避免连发 5 次 Dashboard 广播
+        // 直接遍历目录条目（22 类 = 11 基类 + 11 尺寸形态），每类只发自己实例的 id。
+        // 此前逐类硬编码时漏过 NetWorth/Subscription/NextUp/Shortcuts，
+        // 改按目录派生后「全量」与目录天然一致，新增组件不会再漏。
         val manager = AppWidgetManager.getInstance(appContext)
-        sendUpdate(BillWidgetProvider::class.java,
-            manager.getAppWidgetIds(ComponentName(appContext, BillWidgetProvider::class.java)))
-        sendUpdate(TodoWidgetProvider::class.java,
-            manager.getAppWidgetIds(ComponentName(appContext, TodoWidgetProvider::class.java)))
-        sendUpdate(LifeCounterWidgetProvider::class.java,
-            manager.getAppWidgetIds(ComponentName(appContext, LifeCounterWidgetProvider::class.java)))
-        sendUpdate(AssetWidgetProvider::class.java,
-            manager.getAppWidgetIds(ComponentName(appContext, AssetWidgetProvider::class.java)))
-        sendUpdate(VaultWidgetProvider::class.java,
-            manager.getAppWidgetIds(ComponentName(appContext, VaultWidgetProvider::class.java)))
-        // 这三个此前漏在「全量刷新」之外：改账单会动钱包余额、改生活条目会动订阅，
-        // 却要等系统轮询才更新。设置页改透明度也走这里，必须一个不落。
-        sendUpdate(NetWorthWidgetProvider::class.java,
-            manager.getAppWidgetIds(ComponentName(appContext, NetWorthWidgetProvider::class.java)))
-        sendUpdate(SubscriptionWidgetProvider::class.java,
-            manager.getAppWidgetIds(ComponentName(appContext, SubscriptionWidgetProvider::class.java)))
-        sendUpdate(NextUpWidgetProvider::class.java,
-            manager.getAppWidgetIds(ComponentName(appContext, NextUpWidgetProvider::class.java)))
-        sendUpdate(ShortcutsWidgetProvider::class.java,
-            manager.getAppWidgetIds(ComponentName(appContext, ShortcutsWidgetProvider::class.java)))
-        refreshDashboardWidgets()
-        refreshHabitWidgets()
+        WidgetPin.entries.map { it.providerClass }.distinct().forEach { provider ->
+            sendUpdate(provider, manager.getAppWidgetIds(ComponentName(appContext, provider)))
+        }
     }
 
     // Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND 是隐藏 API（0x01000000），只能以字面量使用

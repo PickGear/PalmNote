@@ -10,7 +10,7 @@
     android:orientation="horizontal"
     android:gravity="center_vertical"
     android:paddingHorizontal="16dp"
-    android:paddingVertical="10dp"
+    android:paddingVertical="12dp"
     android:background="@drawable/widget_card_round">
 
     <LinearLayout
@@ -23,8 +23,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/widget_todo_today"
-            android:textSize="@dimen/widget_text_micro"
-            android:textColor="@color/widget_v2_text_secondary"
+            android:textSize="@dimen/widget_text_label"
+            android:textColor="@color/widget_v2_text_tertiary"
             android:maxLines="1" />
 
         <LinearLayout
@@ -85,8 +85,8 @@
             android:id="@+id/widget_todo_wide_next"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textSize="@dimen/widget_text_micro"
-            android:textColor="@color/widget_v2_text_secondary"
+            android:textSize="@dimen/widget_text_label"
+            android:textColor="@color/widget_v2_text_tertiary"
             android:layout_marginTop="5dp"
             android:visibility="gone"
             android:maxLines="1"
@@ -98,7 +98,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="14dp"
-        android:background="@drawable/widget_pill_tint1"
+        android:background="@drawable/widget_pill_warn"
+        android:textColor="@color/widget_risk_red"
         android:paddingHorizontal="8dp"
         android:paddingVertical="2dp"
         android:textSize="@dimen/widget_text_micro"

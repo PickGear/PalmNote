@@ -198,7 +198,7 @@ class WidgetRemoteViewsRenderTest {
     @Test
     fun `账单组件有预算时渲染预算用量`() {
         val snapshot = BillWidgetProviderBillSnapshotFixture.withBudget()
-        val root = render(BillWidgetProvider().bindViews(context, 1, snapshot))
+        val root = render(BillWidgetProvider().bindViews(context, 1, snapshot, accent))
 
         // 左栏大数字是本月支出（紧凑格式，窄栏也放得下）
         assertEquals("¥82", findById<TextView>(root, R.id.widget_expense_amount)?.text)
@@ -227,7 +227,7 @@ class WidgetRemoteViewsRenderTest {
     @Test
     fun `账单组件无预算时图下说明改为净收入`() {
         val snapshot = BillWidgetProviderBillSnapshotFixture.withoutBudget()
-        val root = render(BillWidgetProvider().bindViews(context, 1, snapshot))
+        val root = render(BillWidgetProvider().bindViews(context, 1, snapshot, accent))
 
         assertEquals(context.getString(R.string.widget_net_income), findById<TextView>(root, R.id.widget_budget_card_label)?.text)
         assertTrue(texts(root).any { it.contains("¥") })
@@ -492,18 +492,21 @@ class WidgetRemoteViewsRenderTest {
     }
 
     @Test
-    fun `倒计时焦点卡高度不足时收起日期`() {
+    fun `倒计时焦点卡高度不足时收起日历条`() {
         val event = LifeCounterWidgetProvider.CounterEvent(1, "妈妈生日", 12, LocalDate.now().plusDays(12))
 
         val compact = render(
             LifeCounterWidgetProvider().counterViews(context, 1, listOf(event), isLarge = false, compactHeight = true)
         )
-        assertEquals(View.GONE, findById<View>(compact, R.id.widget_event_date)?.visibility)
+        // 高度不足时收起的是**日历条**（装饰），「目标日期」这行说明保留 —— 2×1 极简档
+        // 的信息口径是「一行主数据 + 一行说明」，反过来收说明留装饰就把信息价值取反了
+        assertEquals(View.GONE, findById<View>(compact, R.id.widget_counter_dates)?.visibility)
+        assertEquals(View.VISIBLE, findById<View>(compact, R.id.widget_event_date)?.visibility)
         // 名称与天数保留
         assertTrue(texts(compact).any { it.contains("妈妈生日") })
 
         val full = render(LifeCounterWidgetProvider().counterViews(context, 1, listOf(event), isLarge = false))
-        assertEquals(View.VISIBLE, findById<View>(full, R.id.widget_event_date)?.visibility)
+        assertEquals(View.VISIBLE, findById<View>(full, R.id.widget_counter_dates)?.visibility)
     }
 
     // ── 订阅提醒组件 ──

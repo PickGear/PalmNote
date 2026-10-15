@@ -80,8 +80,7 @@ class DashboardWidgetProvider : ScopedWidgetProvider() {
         if (snapshot.budgetPercent != null) {
             views.setInt(R.id.widget_dashboard_budget_bar_fill, "setColorFilter", families[0].hue)
             views.setInt(R.id.widget_dashboard_budget_bar_fill, "setImageLevel", snapshot.budgetPercent * 100)
-            views.setInt(R.id.widget_dashboard_budget_bar_track, "setColorFilter", families[0].hue)
-            views.setInt(R.id.widget_dashboard_budget_bar_track, "setImageLevel", 10_000 / 4)
+            // track 保持 widget_v2_ring 灰色，不随色族染色（设计稿 --track 是中性灰底）
         } else {
             views.setViewVisibility(R.id.widget_dashboard_budget_bar_wrap, View.GONE)
         }
@@ -93,8 +92,6 @@ class DashboardWidgetProvider : ScopedWidgetProvider() {
             "setImageLevel",
             snapshot.goalPct.removeSuffix("%").toIntOrNull()?.times(100) ?: 0
         )
-        views.setInt(R.id.widget_dashboard_goal_bar_track, "setColorFilter", families[1].hue)
-        views.setInt(R.id.widget_dashboard_goal_bar_track, "setImageLevel", 10_000 / 4)
         views.setOnClickPendingIntent(
             R.id.widget_layout,
             WidgetHelper.createPendingIntent(context, WidgetDeepLink.SEG_DASHBOARD + appWidgetId, WidgetDeepLink.TAB_DASHBOARD)

@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
   习惯周历列头（v4）：近 7 天的「日」数字，与下方方柱逐列对齐（64dp 名列 + 18dp 柱 + 6dp 隙，
-  今天列 24dp）。今天那格运行时上色族胶囊底 + 白字；行尾「本周」占位与 x/7 列对齐。
+  今天列 24dp）。今天那格是列头顶：上圆角淡底（.tc/.tct）+ 色族色数字（.wkh.on），白字废止；
+  行尾「本周」占位与 x/7 列对齐。
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_habit_weekhead"
@@ -81,7 +82,7 @@
         android:textColor="@color/widget_v2_text_tertiary"
         android:maxLines="1" />
 
-    <!-- 今天列：胶囊底（ImageView 支持 setColorFilter）+ 日期数字 -->
+    <!-- 今天列的列头顶：上圆角淡底（.tct，运行时着色族淡色）+ 日期数字 -->
     <FrameLayout
         android:layout_width="24dp"
         android:layout_height="18dp"
@@ -91,7 +92,7 @@
             android:id="@+id/widget_habit_head_6_bg"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:src="@drawable/widget_chip_round"
+            android:src="@drawable/widget_col_top"
             android:contentDescription="@null" />
 
         <TextView

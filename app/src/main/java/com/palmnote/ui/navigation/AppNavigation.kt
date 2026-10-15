@@ -85,7 +85,7 @@ data class BottomNavItem(
 )
 
 // README 截图用 `-PhideDemoBanner=true` 构建时隐藏「示例模式」状态条（见 build.gradle.kts）。
-// 发布包必须是 false —— 状态条是产品刻意做成不可关闭的状态指示，别把它关掉。
+// 发布包必须是 false —— 状态条是产品刻意保留的状态指示（本次会话内可关，重启复现），别把它关掉。
 
 private val bottomNavItems = listOf(
     BottomNavItem(R.string.nav_dashboard, Icons.Filled.Home, Icons.Outlined.Home, ModuleHome, iconSize = 26.dp),
@@ -674,19 +674,20 @@ private fun MainTabs(
                     .padding(innerPadding)
                     .statusBarsPadding()
             ) {
-                // 「示例模式」状态条：固定槽位（布局流里）、**不可关闭**、极薄一行。
-                // 状态不做成可关闭的消息（关掉又冒出来=骚扰），也不浮动（浮动会压标题）。
+                // 「示例模式」状态条：固定槽位（布局流里）、极薄一行；可关，
+                // 关闭只记本次会话（进程内存态，下次冷启动复现 —— 见 AppBanner KDoc）。
                 //
                 // 文案随 tab 变：生活页是**互斥**口径（演示开启时自己的记录不可见），
                 // 那句"本页只显示示例、你的记录关闭演示后恢复"就并进这同一条里 ——
                 // 此前生活页另有一条内联说明，两条都在说"示例模式"，冗余（用户指出）。
-                if (demoModeOn && !BuildConfig.HIDE_DEMO_BANNER) {
+                if (demoModeOn && !demoModeVm.bannerDismissed && !BuildConfig.HIDE_DEMO_BANNER) {
                     com.palmnote.ui.components.AppBanner(
                         text = stringResource(
                             if (isTabSelected(3)) R.string.life_demo_banner_life_tab else R.string.life_demo_banner
                         ),
                         // 用主题主色：与引导页示例页同一语义同一色，且跟随用户选的主题包
-                        accent = MaterialTheme.colorScheme.primary
+                        accent = MaterialTheme.colorScheme.primary,
+                        onClose = demoModeVm::onBannerDismissed
                     )
                 }
                 Box(modifier = Modifier.weight(1f)) {

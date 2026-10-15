@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 快捷入口 4×1 横条（设计卡 27）：minWidth 按格数口径 宽4→250 / 高1→40 -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="250dp"
+    android:minHeight="40dp"
+    android:minResizeWidth="40dp"
+    android:minResizeHeight="40dp"
+    android:targetCellWidth="4"
+    android:targetCellHeight="1"
+    android:maxResizeWidth="300dp"
+    android:maxResizeHeight="220dp"
+    android:updatePeriodMillis="0"
+    android:initialLayout="@layout/widget_shortcuts_wide"
+    android:widgetCategory="home_screen"
+    android:description="@string/widget_shortcuts_desc"
+    android:previewImage="@drawable/widget_preview_shortcuts_wide"
+    android:previewLayout="@layout/widget_shortcuts_wide_preview"
+    android:configure="com.palmnote.ui.widget.WidgetConfigActivity"
+    android:resizeMode="horizontal|vertical" />

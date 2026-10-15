@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  选择器预览（Android 12+ 的 previewLayout）：待办 4×1 横条，静置运行时渲染的预览图。
+  见 widget_todo_mini_preview 的说明：图由生成器调 bindWideViews 离屏渲染。
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="fitCenter"
+        android:src="@drawable/widget_preview_todo_wide"
+        android:contentDescription="@null" />
+
+</FrameLayout>

@@ -4,13 +4,16 @@
   + 色底 chip 行（色点 + 名称 + 「即将扣费」标签 + 金额）。
   chip 底、色点、标签与金额运行时着该行色族色；「即将扣费」只在 ≤3 天时显示。
 -->
+<!-- 行高走 weight 均分（稿 .trow{flex:1;min-height:0}）：4 行等分卡内余高，
+     不会因头部 Hero 行高把最后一行挤出卡外 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_subscription_row"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="0dp"
+    android:layout_weight="1"
     android:orientation="horizontal"
     android:gravity="center_vertical"
-    android:paddingVertical="1dp">
+    android:paddingVertical="2dp">
 
     <TextView
         android:id="@+id/widget_subscription_item_date"
@@ -24,7 +27,7 @@
 
     <FrameLayout
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:layout_weight="1"
         android:layout_marginStart="6dp">
 
@@ -32,16 +35,17 @@
             android:id="@+id/widget_subscription_item_bg"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:src="@drawable/widget_chip_round"
+            android:src="@drawable/widget_row_round"
             android:contentDescription="@null" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
             android:orientation="horizontal"
             android:gravity="center_vertical"
             android:paddingHorizontal="9dp"
-            android:paddingVertical="3dp">
+            android:paddingVertical="1dp">
 
             <ImageView
                 android:id="@+id/widget_subscription_item_dot"
@@ -55,7 +59,9 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:textSize="11sp"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:includeFontPadding="false"
                 android:textColor="@color/widget_v2_text_primary"
                 android:layout_marginStart="6dp"
                 android:maxLines="1"
@@ -65,7 +71,7 @@
                 android:id="@+id/widget_subscription_item_upcoming"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textSize="@dimen/widget_text_micro"
+                android:textSize="@dimen/widget_text_label"
                 android:textStyle="bold"
                 android:text="@string/widget_subscription_upcoming"
                 android:layout_marginStart="4dp"
@@ -76,7 +82,8 @@
                 android:id="@+id/widget_subscription_item_price"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textSize="11sp"
+                android:textSize="12sp"
+                android:includeFontPadding="false"
                 android:textStyle="bold"
                 android:layout_marginStart="4dp"
                 android:maxLines="1" />

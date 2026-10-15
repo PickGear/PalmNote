@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 订阅 1×2 竖条（设计卡 29）：minWidth 按格数口径 宽1→40 / 高2→110 -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="40dp"
+    android:minHeight="110dp"
+    android:minResizeWidth="110dp"
+    android:minResizeHeight="40dp"
+    android:targetCellWidth="1"
+    android:targetCellHeight="2"
+    android:maxResizeWidth="400dp"
+    android:maxResizeHeight="250dp"
+    android:updatePeriodMillis="1800000"
+    android:initialLayout="@layout/widget_subscription_narrow"
+    android:widgetCategory="home_screen"
+    android:description="@string/widget_subscription_desc"
+    android:previewImage="@drawable/widget_preview_subscription_narrow"
+    android:previewLayout="@layout/widget_subscription_narrow_preview"
+    android:configure="com.palmnote.ui.widget.WidgetConfigActivity"
+    android:resizeMode="horizontal|vertical" />

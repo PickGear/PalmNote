@@ -11,7 +11,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="12dp"
+    android:padding="@dimen/widget_pad"
     android:background="@drawable/widget_card_round">
 
     <LinearLayout
@@ -60,7 +60,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/widget_next_up_rotate"
-                android:textSize="@dimen/widget_text_micro"
+                android:textSize="@dimen/widget_text_label"
                 android:textColor="@color/widget_v2_text_tertiary" />
         </LinearLayout>
 
@@ -105,17 +105,22 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:layout_marginStart="6dp"
-                        android:textSize="@dimen/widget_text_micro"
-                        android:textStyle="bold" />
+                        android:textSize="@dimen/widget_text_label"
+                        android:textColor="@color/widget_v2_text_tertiary" />
 
                     <Button
                         android:id="@+id/widget_next_up_action"
                         android:layout_width="wrap_content"
-                        android:layout_height="28dp"
+                        android:layout_height="wrap_content"
                         android:minWidth="0dp"
-                        android:paddingHorizontal="12dp"
+                        android:minHeight="0dp"
+                        android:background="@drawable/widget_pill_action"
+                        android:paddingHorizontal="14dp"
+                        android:paddingVertical="4dp"
                         android:text="@string/widget_next_up_done"
                         android:textSize="@dimen/widget_text_micro"
+                        android:textColor="#FFFFFFFF"
+                        android:textStyle="bold"
                         android:visibility="gone"
                         android:contentDescription="@string/widget_next_up_done" />
                 </LinearLayout>
@@ -155,7 +160,7 @@
                     android:layout_marginTop="2dp"
                     android:maxLines="1"
                     android:ellipsize="end"
-                    android:textSize="@dimen/widget_text_micro"
+                    android:textSize="@dimen/widget_text_label"
                     android:textColor="@color/widget_v2_text_tertiary" />
             </LinearLayout>
         </FrameLayout>

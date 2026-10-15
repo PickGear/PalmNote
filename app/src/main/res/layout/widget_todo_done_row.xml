@@ -1,10 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 待办 4×3 左栏的已完成明细行（v4）：✓ 前缀 + 三级色（RemoteViews 无划线 API 的替代方案） -->
-<TextView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/widget_todo_done_text"
+<!-- 待办 4×3 左栏的已完成明细行（v4）：绿色勾盒（.ck 完成态）+ 三级色删除线文字。
+     删除线由 Provider 用 setPaintFlags(STRIKE_THRU_TEXT_FLAG) 运行时加
+     （RemoteViews 的 paintFlags 反射与计数器加粗同款技法） -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:textSize="10sp"
-    android:textColor="@color/widget_v2_text_tertiary"
-    android:maxLines="1"
-    android:ellipsize="end" />
+    android:orientation="horizontal"
+    android:gravity="center_vertical">
+
+    <FrameLayout
+        android:layout_width="14dp"
+        android:layout_height="14dp">
+
+        <ImageView
+            android:id="@+id/widget_todo_done_check_bg"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:src="@drawable/widget_todo_check_done"
+            android:contentDescription="@null" />
+
+        <ImageView
+            android:layout_width="9dp"
+            android:layout_height="9dp"
+            android:layout_gravity="center"
+            android:src="@drawable/widget_ic_check_white"
+            android:contentDescription="@null" />
+    </FrameLayout>
+
+    <TextView
+        android:id="@+id/widget_todo_done_text"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginStart="6dp"
+        android:textSize="11sp"
+        android:textColor="@color/widget_v2_text_tertiary"
+        android:maxLines="1"
+        android:ellipsize="end" />
+</LinearLayout>

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 已完成勾选框（v4 设计稿 .ck 选中态）：实心圆角方块，静态预览专用（运行时行没有勾选框） -->
+<!-- 已完成勾选框（v4 设计稿 .ck 选中态）：实心圆角方块，静态绿（第三色族）——
+     设计稿完成态是固定绿不是色族色，预览与运行时共用，不需要运行时着色 -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
     <corners android:radius="4dp" />

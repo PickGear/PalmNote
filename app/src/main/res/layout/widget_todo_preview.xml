@@ -10,7 +10,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="12dp"
+    android:padding="@dimen/widget_pad"
     android:background="@drawable/widget_card_round">
 
     <!-- Header：色族徽章 + 标题 + 逾期警示 pill -->
@@ -71,9 +71,12 @@
         android:orientation="horizontal"
         android:layout_marginTop="8dp">
 
-        <!-- 左栏：今日完成 Hero + 进度条 + 已完成明细 -->
+        <!-- 左栏：今日完成 Hero + 进度条 + 已完成明细
+             与运行时同口径改 1fr 等分双栏（稿 grid-template-columns:1fr 1fr；
+             原 96dp 固定宽让分隔线比稿早到 60dp） -->
         <LinearLayout
-            android:layout_width="96dp"
+            android:layout_width="0dp"
+            android:layout_weight="1"
             android:layout_height="match_parent"
             android:orientation="vertical">
 
@@ -108,10 +111,12 @@
                     android:layout_marginStart="2dp" />
             </LinearLayout>
 
+            <!--条高与稿同 10px、右缘离分隔线 10dp；样例 2/4 绿段 50% + 露灰 50%（原 seg_slot 满铺是满绿） -->
             <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="8dp"
-                android:layout_marginTop="8dp">
+                android:layout_height="10dp"
+                android:layout_marginTop="8dp"
+                android:layout_marginEnd="10dp">
 
                 <ImageView
                     android:layout_width="match_parent"
@@ -119,12 +124,26 @@
                     android:background="@drawable/widget_bar_track"
                     android:contentDescription="@null" />
 
-                <ImageView
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:background="@drawable/widget_seg_slot"
-                    android:backgroundTint="@color/widget_hue_3"
-                    android:contentDescription="@null" />
+                    android:orientation="horizontal">
+
+                    <!-- RemoteViews 白名单没有裸 <View>，用 ImageView 当色段/占位 -->
+                    <ImageView
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:background="@drawable/widget_seg_slot"
+                        android:backgroundTint="@color/widget_hue_3"
+                        android:contentDescription="@null" />
+
+                    <ImageView
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:contentDescription="@null" />
+                </LinearLayout>
             </FrameLayout>
 
             <TextView
@@ -136,7 +155,7 @@
                 android:layout_marginTop="10dp"
                 tools:ignore="SmallSp" />
 
-            <!-- 已完成明细 ×2：实心勾选框 + 三级色文本（划线过不了 RemoteViews，用三级色代偿） -->
+            <!-- 已完成明细 ×2：绿勾盒 + 三级色文字；删除线是运行时 paintFlags 加的，静态预览没有 -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -231,7 +250,7 @@
         </LinearLayout>
 
         <ImageView
-            android:layout_width="2dp"
+            android:layout_width="1dp"
             android:layout_height="match_parent"
             android:background="@color/widget_v2_ring"
             android:contentDescription="@null" />
@@ -288,6 +307,7 @@
                     android:layout_weight="1"
                     android:text="@string/widget_preview_todo_2"
                     android:textSize="12sp"
+                    android:textStyle="bold"
                     android:textColor="@color/widget_v2_text_primary"
                     android:layout_marginStart="6dp"
                     android:maxLines="1"
@@ -323,6 +343,7 @@
                     android:layout_weight="1"
                     android:text="@string/widget_preview_todo_3"
                     android:textSize="12sp"
+                    android:textStyle="bold"
                     android:textColor="@color/widget_v2_text_primary"
                     android:layout_marginStart="6dp"
                     android:maxLines="1"
@@ -384,6 +405,7 @@
                     android:layout_weight="1"
                     android:text="@string/widget_preview_todo_od"
                     android:textSize="12sp"
+                    android:textStyle="bold"
                     android:textColor="@color/widget_v2_text_primary"
                     android:layout_marginStart="6dp"
                     android:maxLines="1"
@@ -445,6 +467,7 @@
                     android:layout_weight="1"
                     android:text="@string/widget_preview_todo_tmr"
                     android:textSize="12sp"
+                    android:textStyle="bold"
                     android:textColor="@color/widget_v2_text_primary"
                     android:layout_marginStart="6dp"
                     android:maxLines="1"

@@ -28,7 +28,8 @@ import kotlinx.serialization.json.JsonPrimitive
  * 订阅提醒 3×2：列出最近几次扣费（名称 + 价格 + 还有几天），最多 3 条。
  * 到期口径与提醒链路共用 [nextBillingDate]；点条目进生活页。
  */
-class SubscriptionWidgetProvider : ScopedWidgetProvider() {
+// open：尺寸变体（SubscriptionMini/SubscriptionNarrow）薄子类继承，复用同一套取数与切档逻辑
+open class SubscriptionWidgetProvider : ScopedWidgetProvider() {
 
     @EntryPoint
     @InstallIn(SingletonComponent::class)
@@ -165,8 +166,8 @@ class SubscriptionWidgetProvider : ScopedWidgetProvider() {
         return sum
     }
 
-    /** 2×1 极简档：最近一笔「金额 / 名称 · 日期」，3 天内附「即将扣费」。 */
-    private fun minimalViews(context: Context, appWidgetId: Int, renewals: List<Renewal>): RemoteViews {
+    /** 2×1 极简档：最近一笔「金额 / 名称 · 日期」，3 天内附「即将扣费」。internal = 预览图生成器复用。 */
+    internal fun minimalViews(context: Context, appWidgetId: Int, renewals: List<Renewal>): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.widget_subscription_minimal)
         val today = LocalDate.now()
         val first = renewals.firstOrNull()
@@ -200,8 +201,8 @@ class SubscriptionWidgetProvider : ScopedWidgetProvider() {
         return views
     }
 
-    /** 1×2 竖条：徽章 / 本月合计 / 本月笔数 / 最近一笔「日期 · 金额」。 */
-    private fun narrowViews(context: Context, appWidgetId: Int, renewals: List<Renewal>): RemoteViews {
+    /** 1×2 竖条：徽章 / 本月合计 / 本月笔数 / 最近一笔「日期 · 金额」。internal = 预览图生成器复用。 */
+    internal fun narrowViews(context: Context, appWidgetId: Int, renewals: List<Renewal>): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.widget_subscription_narrow)
         val family = WidgetData.colorFamily(context, 4)
         views.setInt(R.id.widget_subscription_narrow_badge, "setColorFilter", family.tint)

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 待办 4×1 横条（设计卡 25）：minWidth 按格数口径 宽4→250 / 高1→40 -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="250dp"
+    android:minHeight="40dp"
+    android:minResizeWidth="110dp"
+    android:minResizeHeight="40dp"
+    android:targetCellWidth="4"
+    android:targetCellHeight="1"
+    android:maxResizeWidth="400dp"
+    android:maxResizeHeight="250dp"
+    android:updatePeriodMillis="1800000"
+    android:initialLayout="@layout/widget_todo_wide"
+    android:widgetCategory="home_screen"
+    android:description="@string/widget_todo_desc"
+    android:previewImage="@drawable/widget_preview_todo_wide"
+    android:previewLayout="@layout/widget_todo_wide_preview"
+    android:configure="com.palmnote.ui.widget.WidgetConfigActivity"
+    android:resizeMode="horizontal|vertical" />

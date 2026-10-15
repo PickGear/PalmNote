@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 习惯 4×1 横条（设计卡 26）：minWidth 按格数口径 宽4→250 / 高1→40 -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="250dp"
+    android:minHeight="40dp"
+    android:minResizeWidth="110dp"
+    android:minResizeHeight="40dp"
+    android:targetCellWidth="4"
+    android:targetCellHeight="1"
+    android:maxResizeWidth="500dp"
+    android:maxResizeHeight="400dp"
+    android:updatePeriodMillis="1800000"
+    android:initialLayout="@layout/widget_habit_wide"
+    android:widgetCategory="home_screen"
+    android:description="@string/widget_habit_desc"
+    android:previewImage="@drawable/widget_preview_habit_wide"
+    android:previewLayout="@layout/widget_habit_wide_preview"
+    android:configure="com.palmnote.ui.widget.WidgetConfigActivity"
+    android:resizeMode="horizontal|vertical" />
