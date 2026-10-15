@@ -12,8 +12,9 @@ package com.palmnote.ui.life
  * 买房首付 / 周末囤货 / 待办 / 杭州 4 日 /《置身事内》/ Kotlin 进阶课 / 妈妈生日 / 戒烟 /
  * 爸爸 / 在一起 / 晨跑 / 心情 / 日记 / 云盘会员 —— 每个模板的示例就是设计稿里那一屏的内容，
  * 这样用户第一次进来看到的就是「设计稿的样子」，而不是另一套自造的假数据。
+ * v1.4.2 起「目标」也是模板：示例「今年读完 12 本书」（7/12）由这里播种。
  *
- * 合计 **61 条**（一次性记录 13 + 日常记录 48）；全部落在**今天及之前**（`daysAgo ≥ 0`），不出现「未来日期已有记录」。
+ * 合计 **62 条**（一次性记录 14 + 日常记录 48）；全部落在**今天及之前**（`daysAgo ≥ 0`），不出现「未来日期已有记录」。
  * 复合字段的编码见 `FieldContract`（清单 `{"v":1,"items":[…]}`，表格 `{"v":1,"columns":[…],"rows":[…]}`）。
  */
 internal data class LifeDemoItem(
@@ -35,7 +36,7 @@ internal data class LifeDemoItem(
 
 internal object LifeDemoData {
 
-    /** 示例条目：一次性记录 13 + 日常记录 48 = 61。 */
+    /** 示例条目：一次性记录 14 + 日常记录 48 = 62。 */
     val items: List<LifeDemoItem> = listOf(
         // ── 一次性记录（设计稿 dtl_01–10 / dtl_14）──
         // dtl_01 存钱：目标 ¥300,000 / 已存 ¥96,000 / 目标日 2027-06-30
@@ -191,6 +192,19 @@ internal object LifeDemoData {
             hour = 19,
             minute = 30,
             images = mapOf("photo" to "demo_filter.jpg")
+        ),
+
+        // 目标（v1.4.2 新增）：原 HabitDemoSeeder 的累计型目标并入生活示例 ——
+        // 「今年读完 12 本书」7/12，单位「本」。刻意**不填截止日**：演示种子的相对日期
+        // 占位符表达不了「今年年底」，而随便给个 +Nd 又会与「今年」自相矛盾；
+        // 无截止日的目标落在首页「待安排」卡里，正好演示这类条目的自然位置。
+        LifeDemoItem(
+            "flag",
+            "今年读完 12 本书",
+            """{"target":12,"current":7,"unitText":"本"}""",
+            daysAgo = 280,
+            hour = 20,
+            minute = 30
         ),
 
         // ── 日常记录（可跨天重复，体现「每天记一点」）──

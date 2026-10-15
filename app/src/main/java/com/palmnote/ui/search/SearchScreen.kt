@@ -27,7 +27,7 @@ import com.palmnote.app.R
 import com.palmnote.data.db.entity.Anniversary
 import com.palmnote.data.db.entity.Asset
 import com.palmnote.data.db.entity.Bill
-import com.palmnote.data.db.entity.Goal
+import com.palmnote.data.db.entity.LifeItem
 import com.palmnote.data.db.entity.Moment
 import com.palmnote.domain.model.toMoney
 import com.palmnote.domain.util.CurrencyUtils
@@ -171,6 +171,7 @@ fun SearchScreen(
                             "BILLS" -> items(state.bills, key = { "bill_${it.id}" }) { bill ->
                                 BillSearchItem(bill, onClick = { onNavigateToBill(bill.id) })
                             }
+                            // 目标已是目标模板下的生活条目，点击传条目 id 进详情
                             "GOALS" -> items(state.goals, key = { "goal_${it.id}" }) { goal ->
                                 GoalSearchItem(goal, onClick = { onNavigateToGoal(goal.id) })
                             }
@@ -250,16 +251,16 @@ private fun BillSearchItem(bill: Bill, onClick: () -> Unit) {
 }
 
 @Composable
-private fun GoalSearchItem(goal: Goal, onClick: () -> Unit) {
+private fun GoalSearchItem(goal: LifeItem, onClick: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth().clip(MaterialTheme.shapes.medium).clickable(onClick = onClick),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Text(goal.title, fontWeight = FontWeight.Medium)
-            if (goal.description.isNotEmpty()) {
+            if (goal.note.isNotEmpty()) {
                 Text(
-                    goal.description,
+                    goal.note,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 2,

@@ -79,10 +79,8 @@ class ImportKeysTest {
         val keys = listOf(
             ImportKeys.wallet("x", "CASH"),
             ImportKeys.asset("x", null),
-            ImportKeys.goal("x", null),
             ImportKeys.anniversary("x", null),
             ImportKeys.moment(0L, "x"),
-            ImportKeys.goalCheckIn(null, null),
             ImportKeys.recurringTemplate("x", "EXPENSE", "MONTHLY"),
             ImportKeys.categoryConfig("x", "y"),
             ImportKeys.customTag("x"),

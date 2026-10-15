@@ -10,7 +10,6 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.palmnote.app.R
 import com.palmnote.data.db.dao.HeldCategoryCount
 import com.palmnote.data.db.entity.Budget
-import com.palmnote.data.db.entity.Goal
 import com.palmnote.data.db.entity.LifeItem
 import java.io.File
 import java.io.FileOutputStream

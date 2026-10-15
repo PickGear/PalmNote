@@ -22,7 +22,15 @@ data class ImportReport(
     val skipped: Int = 0,
 
     /** 余额与账单不一致、因而按账单重算了的钱包数。 */
-    val walletsRecalculated: Int = 0
+    val walletsRecalculated: Int = 0,
+
+    /**
+     * 旧版包（≤ 1.4.1）里被丢弃的「目标打卡记录」行数。
+     *
+     * 习惯语义早已由生活模板的「打卡」承担，旧包中的打卡记录只挂在演示习惯目标上，
+     * 没有可搬的用户数据；这里显式计数，让「包里有些东西没进来」是可见的，而不是静默消失。
+     */
+    val legacyCheckInsDropped: Int = 0
 ) {
     /** 包里没有任何可识别的记录（既没写入也没跳过）。 */
     val isEmpty: Boolean get() = inserted == 0 && skipped == 0

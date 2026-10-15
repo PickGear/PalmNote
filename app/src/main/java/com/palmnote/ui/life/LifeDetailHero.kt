@@ -355,7 +355,8 @@ private fun HeroMoney3Amount(
         if (canAdjust && pcfg != null) {
             Spacer(Modifier.weight(1f))
             ProgressStepper(
-                step = progressStepOf(pcfg, pv?.total),
+                // 递减型把步长取负：`+` 恒为「朝目标推进」（读数变小）
+                step = progressStepOf(pcfg, pv?.total) * if (pv?.decreasing == true) -1.0 else 1.0,
                 accent = accent,
                 modifier = Modifier.padding(bottom = Spacing.xxs)
             ) { delta -> onNudgeProgress?.invoke(pcfg.key, delta, pcfg.min, pcfg.max) }
@@ -444,7 +445,8 @@ private fun HeroMoney3Progress(
     if (canAdjust && pcfg != null && ringForm != null) {
         Spacer(Modifier.height(6.dp))
         ProgressStepper(
-            step = progressStepOf(pcfg, pv?.total),
+            // 递减型把步长取负：`+` 恒为「朝目标推进」（读数变小）
+            step = progressStepOf(pcfg, pv?.total) * if (pv?.decreasing == true) -1.0 else 1.0,
             accent = ctx.accent,
             modifier = endModifier
         ) { delta -> onNudgeProgress?.invoke(pcfg.key, delta, pcfg.min, pcfg.max) }
@@ -485,11 +487,11 @@ internal fun heroLeftText(kind: NoteKind, leftPct: Int, leftTargetDays: String, 
         NoteKind.NONE -> ""
     }
 
-/** 右下注脚（目标日期 / 下次扣费 / 分类数 / 最长记录）。 */
+/** 右下注脚（目标日期 / 下次扣费 / 分类数 / 最长记录）。日期为空时整条不显示（目标/存钱没填截止日很常见）。 */
 internal fun heroRightText(kind: RightKind, rightText: String, rightCount: Int, L: HeroLabels): String =
     when (kind) {
-        RightKind.TARGET_DATE -> String.format(L.targetDate, rightText)
-        RightKind.NEXT_BILLING -> String.format(L.nextBilling, rightText)
+        RightKind.TARGET_DATE -> rightText.takeIf { it.isNotBlank() }?.let { String.format(L.targetDate, it) }.orEmpty()
+        RightKind.NEXT_BILLING -> rightText.takeIf { it.isNotBlank() }?.let { String.format(L.nextBilling, it) }.orEmpty()
         RightKind.CATEGORIES -> String.format(L.categories, rightCount)
         RightKind.LONGEST -> rightText.takeIf { it.isNotBlank() }?.let { String.format(L.longest, it) }.orEmpty()
         RightKind.NONE -> ""
@@ -533,14 +535,44 @@ private fun HeroRingValue(big: String, unit: String, form: ProgressForm) {
     }
 }
 
-internal fun money3Data(ctx: DetailCtx): Money3Data? = when (ctx.template.icon) {
-    "savings" -> savingsHeroData(ctx)
-    "shopping_cart" -> shoppingHeroData(ctx)
-    "school" -> schoolHeroData(ctx)
-    "calendar_month" -> checkInHeroData(ctx)
-    "subscriptions" -> subscriptionHeroData(ctx)
-    "fitness_center" -> fitnessHeroData(ctx)
-    else -> null
+internal fun money3Data(ctx: DetailCtx): Money3Data? = when {
+    // 与 heroForm 同一判据：目标按 kind 认，改图标不换形态
+    ctx.template.getKind() == LifeTemplateKind.GOAL -> goalHeroData(ctx)
+    else -> when (ctx.template.icon) {
+        "savings" -> savingsHeroData(ctx)
+        "shopping_cart" -> shoppingHeroData(ctx)
+        "school" -> schoolHeroData(ctx)
+        "calendar_month" -> checkInHeroData(ctx)
+        "subscriptions" -> subscriptionHeroData(ctx)
+        "fitness_center" -> fitnessHeroData(ctx)
+        else -> null
+    }
+}
+
+/**
+ * 目标（v1.4.2 由独立 `goals` 表并入）：大数字 = 当前值，配 `±`（递减型朝目标走是**减少**读数）。
+ *
+ * 左注用「已完成 N%」（与存钱/学习同族），右注放截止日期（可选字段，没填就不显示）。
+ * 单位取条目的 `unitText` 字段 —— 逐条目标单位不同，不能挂在模板配置上。
+ */
+internal fun goalHeroData(ctx: DetailCtx): Money3Data {
+    val pcfg = ctx.cfg("current")
+    val pv = ctx.progressOf(pcfg)
+    val target = ctx.num("target")
+    val form = pcfg?.let(::resolveProgressForm) ?: ProgressForm.THICK_CAPSULE
+    return money3Of(
+        label = ctx.cfg("target")?.label.orEmpty(),
+        big = ctx.num("current"),
+        target = target,
+        fraction = pv?.fraction,
+        form = form,
+        segments = progressSegmentsFor(form, pv?.total ?: target),
+        unitText = ctx.str("unitText").orEmpty(),
+        leftKind = NoteKind.DONE_PCT,
+        rightKind = RightKind.TARGET_DATE,
+        rightText = ctx.dateText("deadline").orEmpty(),
+        decreasing = pv?.decreasing == true
+    )
 }
 
 internal fun savingsHeroData(ctx: DetailCtx): Money3Data {
@@ -670,9 +702,15 @@ internal fun money3Of(
     leftTargetDays: String = "",
     rightKind: RightKind = RightKind.NONE,
     rightText: String = "",
-    rightCount: Int = 0
+    rightCount: Int = 0,
+    /** 递减型（起始值 > 目标值）：缺口 = 当前 − 目标（还要再降多少），端标与达标判定都随之反向。 */
+    decreasing: Boolean = false
 ): Money3Data {
-    val gap = if (target != null && big != null) target - big else null
+    val gap = if (target != null && big != null) {
+        if (decreasing) big - target else target - big
+    } else {
+        null
+    }
     return Money3Data(
         label = label,
         big = big?.let { if (monetary) fmtMoney(it) else fmtNumber(it) } ?: DetailCtx.PLACEHOLDER,

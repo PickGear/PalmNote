@@ -15,8 +15,8 @@ class LifeDemoDataTest {
         val oneTime = LifeDemoData.items.filterNot { it.templateIcon in dailyIcons }
         val daily = LifeDemoData.items.filter { it.templateIcon in dailyIcons }
 
-        assertEquals(61, LifeDemoData.items.size)
-        assertEquals(13, oneTime.size)
+        assertEquals(62, LifeDemoData.items.size)
+        assertEquals(14, oneTime.size)
         assertEquals(48, daily.size)
     }
 

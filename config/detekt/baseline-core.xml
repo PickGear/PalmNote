@@ -56,8 +56,6 @@
     <ID>MaxLineLength:FieldInputComponent.kt$dismissButton = { TextButton(onClick = { showPicker = false }) { Text(stringResource(R.string.cancel), fontWeight = FontWeight.Bold) } }</ID>
     <ID>MaxLineLength:FieldInputComponent.kt$try { java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date(value.toLong())) } catch (_: Exception) { value }</ID>
     <ID>MaxLineLength:FocusRecordDao.kt$FocusRecordDao$@Query("SELECT COALESCE(SUM(durationMinutes), 0) FROM focus_records WHERE startTime &gt;= :startOfDay AND startTime &lt; :endOfDay AND completed = 1")</ID>
-    <ID>MaxLineLength:GoalDao.kt$GoalDao$@Query("UPDATE goals SET currentCount = 0, currentPeriodStart = :periodStart, currentPeriodEnd = :periodEnd, updatedAt = :now WHERE id IN (:ids)")</ID>
-    <ID>MaxLineLength:GoalDao.kt$GoalDao$@Query("UPDATE goals SET streak = :streak, longestStreak = MAX(longestStreak, :streak), lastCheckInDate = :checkInDate, totalCheckInDays = totalCheckInDays + 1, updatedAt = :now WHERE id = :id")</ID>
     <ID>MaxLineLength:IconPicker.kt$creativeLabel to listOf(AppIcon.Palette, AppIcon.MusicNote, AppIcon.Movie, AppIcon.Mic, AppIcon.CameraAlt, AppIcon.VideogameAsset, AppIcon.Brush, AppIcon.Headphones, AppIcon.Tv)</ID>
     <ID>MaxLineLength:IconPicker.kt$financeLabel to listOf(AppIcon.Savings, AppIcon.TrendingUp, AppIcon.AccountBalance, AppIcon.CreditCard, AppIcon.Percent, AppIcon.HealthAndSafety)</ID>
     <ID>MaxLineLength:IconPicker.kt$goalsLabel to listOf(AppIcon.CheckCircle, AppIcon.LocalFireDepartment, AppIcon.Repeat, AppIcon.CalendarMonth, AppIcon.Today, AppIcon.Assignment, AppIcon.EmojiEvents, AppIcon.Celebration)</ID>
@@ -152,8 +150,6 @@
     <ID>WildcardImport:FieldInputComponent.kt$import androidx.compose.material3.*</ID>
     <ID>WildcardImport:FieldInputComponent.kt$import androidx.compose.runtime.*</ID>
     <ID>WildcardImport:FocusRecordDao.kt$import androidx.room.*</ID>
-    <ID>WildcardImport:GoalCheckInDao.kt$import androidx.room.*</ID>
-    <ID>WildcardImport:GoalDao.kt$import androidx.room.*</ID>
     <ID>WildcardImport:IconPicker.kt$import androidx.compose.foundation.layout.*</ID>
     <ID>WildcardImport:IconPicker.kt$import androidx.compose.material3.*</ID>
     <ID>WildcardImport:IconPicker.kt$import androidx.compose.runtime.*</ID>

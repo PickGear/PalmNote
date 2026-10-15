@@ -79,6 +79,7 @@ internal object DemoTexts {
         "周末去菜市场" to "Weekend market run",
         "跑鞋" to "Running shoes",
         "买房首付" to "House down payment",
+        "今年读完 12 本书" to "Read 12 books this year",
         "写重构方案" to "Write the refactor plan",
         "项目收尾，节奏终于慢下来了。" to "Wrapping up the project — the pace finally slowed down.",
         "预约和缴费都处理完了，心里轻松不少。" to "Appointments and bills are all done; feels lighter.",

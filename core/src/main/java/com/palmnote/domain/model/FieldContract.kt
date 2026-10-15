@@ -1,10 +1,12 @@
 package com.palmnote.domain.model
 
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
 /** 字段六组（§3.5）：数值 / 点选 / 媒体与空间 / 文本 / 复合 / 派生。 */
@@ -130,10 +132,55 @@ fun projectToListCard(form: ProgressForm): ProgressForm = when (form) {
 }
 
 /** 进度求值结果：携带原值（端标「还差 ¥6,800」需要 cur/tot，§3.5.1 #6）。 */
-data class ProgressValue(val current: Double?, val total: Double?, val fraction: Float) {
+data class ProgressValue(
+    val current: Double?,
+    val total: Double?,
+    val fraction: Float,
+    /** 递减型（起始值 > 目标值）：文案用「当前 → 目标」，`+` 朝目标走是**减少**读数。 */
+    val decreasing: Boolean = false
+) {
     companion object {
         val EMPTY = ProgressValue(null, null, 0f)
     }
+}
+
+/**
+ * 进度归一化求值（分方向）—— **详情页 / 列表卡 / 小组件的唯一口径**。
+ *
+ * - **递增**（无起始值，或起始值 ≤ 目标值）：`当前 / 目标`，目标为 0 时不给进度。
+ * - **递减**（起始值 > 目标值）：`(起始 − 当前) / (起始 − 目标)`，
+ *   语义是「从起始读数走掉多少比例」（戒烟 20→0、减重 80→70）；分母恒 > 0。
+ *
+ * 取不到分母 / 起始值时返回 null —— **绝不拿 0 冒充进度**（§14.1 缺陷类）。
+ */
+fun evalProgress(cur: Double, target: Double, start: Double?): ProgressValue? {
+    if (start != null && start > target) {
+        return ProgressValue(cur, target, ((start - cur) / (start - target)).toFloat().coerceIn(0f, 1f), decreasing = true)
+    }
+    if (target <= 0.0) return null
+    return ProgressValue(cur, target, (cur / target).toFloat().coerceIn(0f, 1f))
+}
+
+/** 解析 fieldsConfig / fieldsData 用的 Json（宽容未知键：配置会随版本加键）。 */
+private val STORED_PROGRESS_JSON = Json { ignoreUnknownKeys = true }
+
+/**
+ * 从**存储态**（`fieldsConfig` + `fieldsData` 原文）求进度 —— 没有 `DetailCtx` / 卡片上下文时的入口。
+ *
+ * 小组件、列表卡这类只有两串 JSON 的地方共用它，口径与详情页 [evalProgress] 完全一致
+ * （含递减方向）。解析失败 / 缺 showAsProgress 字段 / 取不到分母 → null（不出空条）。
+ */
+fun progressOfStored(fieldsConfig: String, fieldsData: String): ProgressValue? {
+    val config = runCatching { STORED_PROGRESS_JSON.decodeFromString<List<FieldConfig>>(fieldsConfig) }
+        .getOrDefault(emptyList())
+        .firstOrNull { it.showAsProgress && !it.disabled }
+        ?: return null
+    val obj = runCatching { STORED_PROGRESS_JSON.parseToJsonElement(fieldsData).jsonObject }.getOrNull() ?: return null
+    val num = { key: String -> (obj[key] as? JsonPrimitive)?.contentOrNull?.toDoubleOrNull() }
+    val cur = num(config.key) ?: return null
+    val target = config.progressTargetKey.takeIf { it.isNotBlank() }?.let(num) ?: config.max
+    val start = config.progressStartKey.takeIf { it.isNotBlank() }?.let(num)
+    return target?.let { evalProgress(cur, it, start) }
 }
 
 /**

@@ -200,10 +200,9 @@ class DemoDataIntegrityTest {
 
     @Test
     fun `demo prefs keys stay in sync with seeders`() {
-        // 三个播种器的版本号都必须 > 0（0 表示从未播种，会让 ensureSeeded 判定失效）
+        // 播种器的版本号都必须 > 0（0 表示从未播种，会让 ensureSeeded 判定失效）
         assertTrue(com.palmnote.data.LifeDemoSeeder.SEED_VERSION > 0)
         assertTrue(com.palmnote.data.WealthDemoSeeder.SEED_VERSION > 0)
-        assertTrue(com.palmnote.data.HabitDemoSeeder.SEED_VERSION > 0)
         // 引用一下 PreferencesManager 的演示偏好，保证改名时编译期就断
         val p = PreferencesManager::class.java
         assertTrue(p.methods.any { it.name == "setLifeCategoryCompact" })

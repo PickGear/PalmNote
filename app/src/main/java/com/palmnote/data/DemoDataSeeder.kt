@@ -13,18 +13,19 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * 演示数据的**统一入口**：生活（[LifeDemoSeeder]）+ 记账/物品（[WealthDemoSeeder]）+ 目标/习惯（[HabitDemoSeeder]）。
+ * 演示数据的**统一入口**：生活（[LifeDemoSeeder]）+ 记账/物品（[WealthDemoSeeder]）。
  *
  * 为什么要这层门面：演示开关的语义是「这个 app 有没有示例数据」，
- * 而实现上是两个模块各自的播种器。调用方（应用启动 / 设置开关 / 引导页 / 生活页 VM）
+ * 而实现上是各模块自己的播种器。调用方（应用启动 / 设置开关 / 引导页 / 生活页 VM）
  * 只该知道「开或关」，不该知道有几个播种器、每个播种器怎么判断幂等。
- * 将来补记账 / 物品之外的模块（目标等），也只在这里加一行委托。
+ *
+ * v1.4.2 起目标并入生活模板体系：静态的目标/习惯演示由 [LifeDemoSeeder] 一并播种，
+ * 原 `HabitDemoSeeder`（写旧 `goals` 表）已整体退役。
  */
 @Singleton
 class DemoDataSeeder @Inject constructor(
     private val life: LifeDemoSeeder,
     private val wealth: WealthDemoSeeder,
-    private val habit: HabitDemoSeeder,
     @ApplicationContext private val context: Context,
     /** 只服务于 [onLanguageChanged]：见该方法的说明。 */
     @ApplicationScope private val appScope: CoroutineScope
@@ -69,13 +70,11 @@ class DemoDataSeeder @Inject constructor(
         if (preferences.demoSeedLanguage.first() != language) {
             life.reseed(preferences)
             wealth.reseed(preferences)
-            habit.reseed(preferences)
             preferences.setDemoSeedLanguage(language)
             return@withLock
         }
         life.ensureSeeded(preferences)
         wealth.ensureSeeded(preferences)
-        habit.ensureSeeded(preferences)
     }
 
     /**
@@ -102,9 +101,8 @@ class DemoDataSeeder @Inject constructor(
         seedMutex.withLock {
             val lifeResult = life.clearAll(preferences, keepUserCreated)
             val wealthResult = wealth.clearAll(preferences)
-            val habitResult = habit.clearAll(preferences)
             ClearResult(
-                removed = lifeResult.removed + wealthResult.removed + habitResult.removed,
+                removed = lifeResult.removed + wealthResult.removed,
                 kept = lifeResult.kept
             )
         }

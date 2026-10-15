@@ -146,23 +146,6 @@ class CategoryConfigRepositoryImpl @Inject constructor(
             ))
         }
 
-        // 目标分类
-        val goalCategories = listOf(
-            Triple(context.getString(R.string.goal_category_fitness), AppIcon.FitnessCenter, "#FF6D00"),
-            Triple(context.getString(R.string.goal_category_reading), AppIcon.MenuBook, "#4285F4"),
-            Triple(context.getString(R.string.goal_category_skill), AppIcon.School, "#9C27B0"),
-            Triple(context.getString(R.string.goal_category_habit), AppIcon.Today, "#34A853"),
-            Triple(context.getString(R.string.goal_category_project), AppIcon.Assignment, "#FBBC04"),
-            Triple(context.getString(R.string.goal_category_savings), AppIcon.Savings, "#E91E63"),
-            Triple(context.getString(R.string.goal_category_custom), AppIcon.Build, "#607D8B")
-        )
-        goalCategories.forEachIndexed { index, (name, icon, color) ->
-            categoryConfigDao.insert(CategoryConfig(
-                type = "GOAL", name = name, icon = icon,
-                color = color, sortOrder = index, isDefault = true
-            ))
-        }
-
         // 纪念日类型
         val anniversaryTypes = listOf(
             Triple(context.getString(R.string.anniversary_type_birthday), AppIcon.Celebration, "#E91E63"),

@@ -116,6 +116,7 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import kotlin.math.abs
 import kotlin.math.round
 
 /**
@@ -412,6 +413,10 @@ private fun NumberPillRow(
     accent: Color, state: CreateRecordUiState, host: FieldFormHost, fieldError: Boolean
 ) {
     val step = progressStepFor(cfg, state.values[cfg.progressTargetKey]?.toDoubleOrNull())
+    // 递减型（起始值 > 目标值，如戒烟 20 → 0）：步长取负，`+` 恒为「朝目标推进」——与详情页同手感
+    val startValue = cfg.progressStartKey.takeIf { it.isNotBlank() }?.let { state.values[it]?.toDoubleOrNull() }
+    val targetValue = state.values[cfg.progressTargetKey]?.toDoubleOrNull()
+    val decreasing = startValue != null && targetValue != null && startValue > targetValue
     Row(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -419,11 +424,12 @@ private fun NumberPillRow(
         RowLabel(rowIcon, accent, cfg.label, cfg.required, fieldError, Modifier.weight(0.9f))
         // 有步长就给 −/+（与详情页同一个控件，手感一致）；没有就只留输入框。
         if (step != null) {
-            ProgressStepper(step = step, accent = accent) { delta ->
+            ProgressStepper(step = if (decreasing) -step else step, accent = accent) { delta ->
                 // 表单侧是本地状态（同步），直接算新值即可；边界与详情页同一套钳制口径
                 var next = (state.values[cfg.key]?.toDoubleOrNull() ?: 0.0) + delta
-                // 与详情页同一套：步长是整数时取整（计数类字段不该出现 9.2 节这种值）
-                next = snapNudged(next, step)
+                // 与详情页同一套：步长是整数时取整（计数类字段不该出现 9.2 节这种值）；
+                // 递减型步长为负，取整口径看绝对值
+                next = snapNudged(next, abs(step))
                 cfg.min?.let { next = next.coerceAtLeast(it) }
                 cfg.max?.let { next = next.coerceAtMost(it) }
                 host.updateValue(cfg.key, formatNum(next))

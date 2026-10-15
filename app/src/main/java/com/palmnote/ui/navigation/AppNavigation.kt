@@ -489,8 +489,12 @@ fun PalmNoteNavHost() {
                 onNavigateToBill = { billId ->
                     navController.navigate(BillDetail(billId))
                 },
-                onNavigateToGoal = { _ ->
-                    navController.previousBackStackEntry?.savedStateHandle?.set("navToTab", "life")
+                onNavigateToGoal = { itemId ->
+                    // 目标已是生活模板下的条目：切到生活 Tab 并直接打开该条目的详情页
+                    navController.previousBackStackEntry?.savedStateHandle?.apply {
+                        set("navToTab", "life")
+                        set("lifeDetailItemId", itemId)
+                    }
                     navController.popBackStack()
                 },
                 onNavigateToAnniversary = { _ ->

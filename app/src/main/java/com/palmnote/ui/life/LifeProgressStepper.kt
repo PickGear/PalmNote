@@ -158,14 +158,17 @@ internal fun ProgressStepper(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
+        // 步长为负 = 递减型（`+` 恒为「朝目标推进」，读数变小）：读屏语义跟着**值的变化**走，
+        // 「＋」按钮播报「减少」、「−」按钮播报「增加」，否则 TalkBack 会把方向念反。
+        val decreasing = step < 0
         StepButton(
             icon = Icons.Filled.Remove,
-            description = stringResource(R.string.life_stepper_minus),
+            description = stringResource(if (decreasing) R.string.life_stepper_plus else R.string.life_stepper_minus),
             accent = accent
         ) { onNudge(-step) }
         StepButton(
             icon = Icons.Filled.Add,
-            description = stringResource(R.string.life_stepper_plus),
+            description = stringResource(if (decreasing) R.string.life_stepper_minus else R.string.life_stepper_plus),
             accent = accent
         ) { onNudge(step) }
     }

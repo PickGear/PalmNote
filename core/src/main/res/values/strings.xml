@@ -128,6 +128,8 @@
     <string name="template_body_desc">记录体重、睡眠与运动，健康看得见</string>
     <string name="template_maintenance_name">物品维护</string>
     <string name="template_maintenance_desc">滤芯、牙刷等消耗品的更换周期提醒（区别于「物品」的资产台账）</string>
+    <string name="template_goal_name">目标</string>
+    <string name="template_goal_desc">设定目标，记录完成进度</string>
     <string name="wallet_type_cash">现金</string>
     <string name="wallet_type_wechat">微信</string>
     <string name="wallet_type_alipay">支付宝</string>

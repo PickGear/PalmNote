@@ -5,16 +5,17 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import androidx.compose.runtime.Stable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.palmnote.data.db.dao.LifeItemDao
 import com.palmnote.data.db.entity.Anniversary
 import com.palmnote.data.db.entity.Asset
 import com.palmnote.data.db.entity.Bill
-import com.palmnote.data.db.entity.Goal
+import com.palmnote.data.db.entity.LifeItem
 import com.palmnote.data.db.entity.Moment
 import com.palmnote.domain.repository.AnniversaryRepository
 import com.palmnote.domain.repository.AssetRepository
 import com.palmnote.domain.repository.BillRepository
-import com.palmnote.domain.repository.GoalRepository
 import com.palmnote.domain.repository.MomentRepository
+import com.palmnote.domain.util.LifeTemplateKind
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
@@ -30,7 +31,8 @@ data class SearchState(
     val query: String = "",
     val assets: List<Asset> = emptyList(),
     val bills: List<Bill> = emptyList(),
-    val goals: List<Goal> = emptyList(),
+    /** 「目标」节：目标模板下的生活条目（目标已并入模板体系，v1.4.2）。 */
+    val goals: List<LifeItem> = emptyList(),
     val anniversaries: List<Anniversary> = emptyList(),
     val moments: List<Moment> = emptyList(),
     val isSearching: Boolean = false
@@ -40,7 +42,8 @@ data class SearchState(
 class SearchViewModel @Inject constructor(
     private val assetRepository: AssetRepository,
     private val billRepository: BillRepository,
-    private val goalRepository: GoalRepository,
+    /** 目标已并入生活模板体系：这里按语义类型搜目标条目，不再是独立的 goals 表。 */
+    private val lifeItemDao: LifeItemDao,
     private val anniversaryRepository: AnniversaryRepository,
     private val momentRepository: MomentRepository
 ) : ViewModel() {
@@ -63,7 +66,9 @@ class SearchViewModel @Inject constructor(
             try {
                 val assetsDeferred = async { assetRepository.search(query) }
                 val billsDeferred = async { billRepository.search(query) }
-                val goalsDeferred = async { goalRepository.search(query) }
+                val goalsDeferred = async {
+                    lifeItemDao.searchByTemplateKind(LifeTemplateKind.GOAL.name, query)
+                }
                 val anniversariesDeferred = async { anniversaryRepository.search(query) }
                 val momentsDeferred = async { momentRepository.search(query) }
                 val assets = assetsDeferred.await()

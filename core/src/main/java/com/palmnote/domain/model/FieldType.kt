@@ -25,6 +25,8 @@ enum class FieldType {
  * - progressStyle：进度形态覆盖（§4.2；null = AUTO 按语义推导；认不出的值回落 AUTO）
  * - progressTargetKey：进度分母字段的 key（§7.2；空 = 用 min/max）
  * - step：步进器步长（CURRENCY 默认步长由模板给，如存钱 500）
+ *
+ * v1.4.2 新增 [progressStartKey]：进度**方向**由「起始值」字段的数据决定（见该字段 KDoc）。
  */
 @Serializable
 data class FieldConfig(
@@ -56,5 +58,15 @@ data class FieldConfig(
     val disabled: Boolean = false,
     val progressStyle: String? = null,
     val progressTargetKey: String = "",
+    /**
+     * 进度的**起始值字段** key（空 = 无起始值，进度恒为「递增」）。
+     *
+     * 方向写在**数据**里而不是配置里：同一个模板下既有「存钱 0→10000」（递增）又有
+     * 「戒烟 20→0」（递减），逐条填不填起始值即可区分，配置层不需要方向开关。
+     * 判据：起始值 > 目标值时按**递减**算 —— `(起始 − 当前) / (起始 − 目标)`，
+     * 语义是「从起始读数走掉多少比例」；否则按递增 `当前 / 目标`。
+     * 见 `evalProgress`（core）——详情页 / 列表卡 / 小组件共用同一份求值。
+     */
+    val progressStartKey: String = "",
     val sortOrder: Int = 0
 )

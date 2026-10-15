@@ -66,22 +66,11 @@ object ImportKeys {
     /** 物品键：名称 + 获取日期。同名同日期视为同一件。 */
     fun asset(name: String, acquisitionDate: Long?): String = join("asset", name, acquisitionDate)
 
-    /** 目标键：标题 + 开始日期。 */
-    fun goal(title: String, startDate: Long?): String = join("goal", title, startDate)
-
     /** 纪念日键：标题 + 公历日期。 */
     fun anniversary(title: String, solarDate: Long?): String = join("anniv", title, solarDate)
 
     /** 瞬间键：时间戳 + 正文。正文是瞬间的主键式内容。 */
     fun moment(timestamp: Long, content: String): String = join("moment", timestamp / 1000L * 1000L, content)
-
-    /**
-     * 打卡记录键：目标 + 日期。
-     *
-     * @param goalId 必须是**已解析到本机**的目标 id（若目标被改名合并，这里应传映射后的 id），
-     *               否则跨设备合并时同一次打卡会被当成两条。
-     */
-    fun goalCheckIn(goalId: Long?, date: Long?): String = join("checkin", goalId, date)
 
     /** 周期模板键：名称 + 收支类型 + 频率。 */
     fun recurringTemplate(name: String, type: String, frequency: String): String =

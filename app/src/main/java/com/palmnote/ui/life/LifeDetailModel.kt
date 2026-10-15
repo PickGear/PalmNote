@@ -11,12 +11,15 @@ import com.palmnote.domain.model.FieldType
 import com.palmnote.domain.model.ProgressForm
 import com.palmnote.domain.model.ProgressValue
 import com.palmnote.domain.model.compoundRawOf
+import com.palmnote.domain.model.evalProgress
 import com.palmnote.domain.model.parseChecklist
 import com.palmnote.domain.model.parseMap
 import com.palmnote.domain.model.parseRange
 import com.palmnote.domain.model.parseTable
 import com.palmnote.domain.model.resolveProgressForm
 import com.palmnote.domain.util.DateUtils
+import com.palmnote.domain.util.LifeTemplateKind
+import com.palmnote.domain.util.getKind
 import com.palmnote.ui.theme.LifeMoodAngry
 import com.palmnote.ui.theme.LifeMoodHappy
 import com.palmnote.ui.theme.LifeMoodNormal
@@ -110,8 +113,9 @@ class DetailCtx(
                 ?: c.max
                 ?: return null
         }
-        if (target <= 0.0) return null
-        return ProgressValue(cur, target, (cur / target).toFloat().coerceIn(0f, 1f))
+        // 方向由数据决定：配了起始值字段且「起始 > 目标」时按递减算（见 FieldConfig.progressStartKey）
+        val start = c.progressStartKey.takeIf { it.isNotBlank() }?.let { num(it) }
+        return evalProgress(cur, target, start)
     }
 
     /**
@@ -128,18 +132,23 @@ class DetailCtx(
 
     /** 英雄区形态：模板身份 → 形态（设计稿 16 张的逐模板标定）。 */
     val heroForm: HeroForm
-        get() = when (template.icon) {
-            "savings", "shopping_cart", "school", "calendar_month", "subscriptions",
-            "fitness_center" -> HeroForm.MONEY3
-            "timer_off", "trending_up", "cake", "celebration", "build" -> HeroForm.DAYS
-            "flight" -> HeroForm.ROUTE
-            "menu_book" -> HeroForm.COVER
-            "book" -> HeroForm.NOTE
-            "checklist" -> HeroForm.TODO
-            "mood" -> HeroForm.MOOD
-            "timer" -> HeroForm.TIMER
-            // 未知模板：退化为「一个大数字」形态，不空屏（§14.10(3) 第 4 条同义）
-            else -> HeroForm.MONEY3
+        get() = when {
+            // 目标走「三段式」形态。按 **kind** 而不是 icon 分派：用户可以把模板图标改掉
+            // （图标只是长相），改完 hero 不该跟着换成一个和字段对不上的形态。
+            template.getKind() == LifeTemplateKind.GOAL -> HeroForm.MONEY3
+            else -> when (template.icon) {
+                "savings", "shopping_cart", "school", "calendar_month", "subscriptions",
+                "fitness_center" -> HeroForm.MONEY3
+                "timer_off", "trending_up", "cake", "celebration", "build" -> HeroForm.DAYS
+                "flight" -> HeroForm.ROUTE
+                "menu_book" -> HeroForm.COVER
+                "book" -> HeroForm.NOTE
+                "checklist" -> HeroForm.TODO
+                "mood" -> HeroForm.MOOD
+                "timer" -> HeroForm.TIMER
+                // 未知模板：退化为「一个大数字」形态，不空屏（§14.10(3) 第 4 条同义）
+                else -> HeroForm.MONEY3
+            }
         }
 
     /** ② 主指标行是否出现：**P2（天数巨字）不出现**（§14.12(4)）。 */
@@ -631,7 +640,13 @@ private fun progressValueRow(
         val total = config.progressTargetKey.takeIf { it.isNotBlank() }?.let { targetKey ->
             amountText(targetKey)
         } ?: config.max?.let { fmtNumber(it) }
-        if (total != null) "${config.label} $cur / $total" else config.label
+        when {
+            total == null -> config.label
+            // 递减型（起始值 > 目标值）：读数是「当前 → 目标」而不是「当前 / 目标」——
+            // 分母（目标）反而是终点，用斜杠读起来像「完成了 15/0」。
+            progress.decreasing -> "${config.label} $cur → $total"
+            else -> "${config.label} $cur / $total"
+        }
     } else {
         config.label
     }
@@ -648,8 +663,15 @@ private fun progressValueRow(
         form = form,
         segments = segments,
         // CHECKLIST 的进度靠勾选推进，不给数值步进器。
+        // 递减型把步长取负：同一颗 `+` 按钮恒为「朝目标推进」（读数变小），与旧目标页的手感一致。
         stepper = progress.current?.takeIf { config.type != FieldType.CHECKLIST }?.let {
-            BarStepper(config.key, progressStepOf(config, progress.total), it, config.min, config.max)
+            BarStepper(
+                config.key,
+                progressStepOf(config, progress.total) * if (progress.decreasing) -1.0 else 1.0,
+                it,
+                config.min,
+                config.max
+            )
         }
     )
 }

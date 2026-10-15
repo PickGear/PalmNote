@@ -51,8 +51,6 @@ class DataClearViewModel @Inject constructor(
 
     fun clearLife() = launchClear {
         // Legacy tables
-        db.goalDao().deleteAll()
-        db.goalCheckInDao().deleteAll()
         db.anniversaryDao().deleteAll()
         db.momentDao().deleteAll()
         // Life module tables

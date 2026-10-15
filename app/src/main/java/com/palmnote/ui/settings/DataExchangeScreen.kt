@@ -129,6 +129,13 @@ fun DataExchangeScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
+                    if (report.legacyCheckInsDropped > 0) {
+                        Text(
+                            stringResource(R.string.import_full_legacy_checkins, report.legacyCheckInsDropped),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             },
             confirmButton = {

@@ -5,6 +5,8 @@ import android.content.Context
 import android.view.View
 import android.widget.RemoteViews
 import com.palmnote.app.R
+import com.palmnote.domain.util.LifeTemplateKind
+import com.palmnote.domain.util.getKind
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
@@ -26,7 +28,6 @@ class DashboardWidgetProvider : ScopedWidgetProvider() {
     interface WidgetEntryPoint {
         fun billDao(): com.palmnote.data.db.dao.BillDao
         fun budgetDao(): com.palmnote.data.db.dao.BudgetDao
-        fun goalDao(): com.palmnote.data.db.dao.GoalDao
         fun lifeItemDao(): com.palmnote.data.db.dao.LifeItemDao
         fun lifeTemplateDao(): com.palmnote.data.db.dao.LifeTemplateDao
         fun anniversaryDao(): com.palmnote.data.db.dao.AnniversaryDao
@@ -170,7 +171,7 @@ class DashboardWidgetProvider : ScopedWidgetProvider() {
 
         val yearMonth = DateTimeFormatter.ofPattern("yyyy-MM").format(today)
         val budgetTile = fetchBudget(context, entryPoint, yearMonth)
-        val goals = fetchGoalProgress(context, entryPoint)
+        val goals = fetchGoalProgress(context, entryPoint, entryPoint.preferencesManager().lifeDemoMode.first())
         val todoStats = fetchTodoStats(entryPoint, todayStart, weekEnd)
         val anniversary = fetchAnniversary(context, entryPoint, today)
 
@@ -271,33 +272,29 @@ class DashboardWidgetProvider : ScopedWidgetProvider() {
         return Triple(next.first, next.second, dateText)
     }
 
-    /** 目标进度：百分比文案、名称、进度计数（无目标时计数为 "--"）。 */
-    private suspend fun fetchGoalProgress(context: Context, entryPoint: WidgetEntryPoint): GoalProgress {
-        val allGoals = entryPoint.goalDao().getAllGoals().first()
-        val activeGoal = allGoals.firstOrNull { it.currentCount < it.totalCount }
-        return when {
-            activeGoal != null -> {
-                val pct = if (activeGoal.totalCount > 0) {
-                    activeGoal.currentCount * 100 / activeGoal.totalCount
-                } else {
-                    0
-                }
-                GoalProgress(
-                    "$pct%",
-                    activeGoal.title,
-                    "${activeGoal.currentCount}/${activeGoal.totalCount}"
-                )
-            }
-            allGoals.isNotEmpty() -> GoalProgress(
-                "100%",
-                context.getString(R.string.widget_goal_all_done),
-                "--"
-            )
-            else -> GoalProgress("--", context.getString(R.string.widget_no_goals), "--")
-        }
+    /**
+     * 目标进度：百分比文案、名称、进度计数（无目标时计数为 "--"）。
+     * 选卡与文案在 [WidgetData.goalTileData]；演示互斥（`includeDemo`）与待办 tile 同口径。
+     */
+    private suspend fun fetchGoalProgress(
+        context: Context,
+        entryPoint: WidgetEntryPoint,
+        includeDemo: Boolean
+    ): WidgetData.GoalTileData {
+        val noGoals = WidgetData.GoalTileData("--", context.getString(R.string.widget_no_goals), "--")
+        // kind = GOAL 可能不止一张（自建模板也能选 flag 图标）：优先内置那张，取数才不会落到别人的模板上
+        val templates = entryPoint.lifeTemplateDao().getAllVisibleTemplates().first()
+        val template = (templates.firstOrNull { it.isBuiltin && it.getKind() == LifeTemplateKind.GOAL }
+            ?: templates.firstOrNull { it.getKind() == LifeTemplateKind.GOAL }) ?: return noGoals
+        val items = entryPoint.lifeItemDao()
+            .getWidgetItemsByTemplate(template.id, includeDemo, com.palmnote.data.db.dao.LIFE_DEMO_META)
+            .first()
+        return WidgetData.goalTileData(
+            template.fieldsConfig,
+            items,
+            context.getString(R.string.widget_goal_all_done)
+        ) ?: noGoals
     }
-
-    private data class GoalProgress(val pctText: String, val name: String, val countsText: String)
 
     internal fun bindSnapshot(context: Context, views: RemoteViews, snapshot: DashboardSnapshot) {
         // 右上角：本周待办（近 7 天内到期未完成）

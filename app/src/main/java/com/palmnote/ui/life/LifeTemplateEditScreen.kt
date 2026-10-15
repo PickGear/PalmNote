@@ -1227,7 +1227,7 @@ internal val IDENTITY_COLORS = listOf(
 internal val ICON_KEYS = listOf(
     "savings", "shopping_cart", "checklist", "flight", "menu_book", "school",
     "timer_off", "trending_up", "cake", "celebration", "calendar_month", "mood",
-    "book", "subscriptions", "BarChart", "fitness_center", "note_add"
+    "book", "subscriptions", "BarChart", "fitness_center", "note_add", "flag"
 )
 
 /** 字段库分组（ed_5）：A–F 六组，与设计稿 §3.1 一致。 */

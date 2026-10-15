@@ -36,12 +36,10 @@ class DemoDataSeederTest {
 
     private val life = mockk<LifeDemoSeeder>(relaxed = true)
     private val wealth = mockk<WealthDemoSeeder>(relaxed = true)
-    private val habit = mockk<HabitDemoSeeder>(relaxed = true)
 
     private fun seeder() = DemoDataSeeder(
         life,
         wealth,
-        habit,
         ApplicationProvider.getApplicationContext(),
         // 应用级 scope 只服务于 onLanguageChanged（fire-and-forget）；本测试直接 await ensureSeeded
         CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -69,21 +67,18 @@ class DemoDataSeederTest {
 
         coVerify(exactly = 0) { life.reseed(any()) }
         coVerify(exactly = 0) { wealth.reseed(any()) }
-        coVerify(exactly = 0) { habit.reseed(any()) }
         coVerify(exactly = 0) { life.ensureSeeded(any()) }
         coVerify(exactly = 0) { wealth.ensureSeeded(any()) }
-        coVerify(exactly = 0) { habit.ensureSeeded(any()) }
     }
 
     @Test
-    fun `locale change reseeds all three modules`() = runBlocking {
+    fun `locale change reseeds both modules`() = runBlocking {
         val prefs = preferences(demoOn = true, seededLocale = "zh-CN")
 
         seeder().ensureSeeded(prefs)
 
         coVerify(exactly = 1) { life.reseed(prefs) }
         coVerify(exactly = 1) { wealth.reseed(prefs) }
-        coVerify(exactly = 1) { habit.reseed(prefs) }
         coVerify(exactly = 1) { prefs.setDemoSeedLanguage("en") }
     }
 
@@ -96,7 +91,6 @@ class DemoDataSeederTest {
         coVerify(exactly = 0) { life.reseed(any()) }
         coVerify(exactly = 1) { life.ensureSeeded(prefs) }
         coVerify(exactly = 1) { wealth.ensureSeeded(prefs) }
-        coVerify(exactly = 1) { habit.ensureSeeded(prefs) }
     }
 
     @Test
@@ -110,7 +104,6 @@ class DemoDataSeederTest {
 
         coVerify(exactly = 1) { life.reseed(prefs) }
         coVerify(exactly = 1) { wealth.reseed(prefs) }
-        coVerify(exactly = 1) { habit.reseed(prefs) }
         coVerify(exactly = 1) { prefs.setDemoSeedLanguage("en") }
     }
 
@@ -120,7 +113,7 @@ class DemoDataSeederTest {
         // 播种放慢，把竞态窗口拉开：没有闸门时两个调用都会读到旧语言、各插一份示例。
         coEvery { life.reseed(any()) } coAnswers {
             delay(80)
-            61
+            62
         }
         val prefs = preferences(demoOn = true, seededLocale = "zh-CN")
         val seeder = seeder()
@@ -130,6 +123,5 @@ class DemoDataSeederTest {
 
         coVerify(exactly = 1) { life.reseed(prefs) }
         coVerify(exactly = 1) { wealth.reseed(prefs) }
-        coVerify(exactly = 1) { habit.reseed(prefs) }
     }
 }

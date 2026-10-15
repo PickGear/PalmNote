@@ -29,6 +29,8 @@ import androidx.compose.ui.unit.dp
 import com.palmnote.data.db.entity.BuiltinFieldText
 import com.palmnote.domain.model.FieldConfig
 import com.palmnote.domain.model.FieldType
+import com.palmnote.domain.model.evalProgress
+import com.palmnote.domain.model.progressOfStored
 import com.palmnote.domain.util.DateUtils
 import com.palmnote.app.R
 import androidx.compose.ui.res.pluralStringResource
@@ -231,26 +233,21 @@ private fun derivedText(
 
 /**
  * 卡面进度分母：取 `showAsProgress` 字段的当前值 ÷ （`progressTargetKey` 指向字段的值，缺省 `max`）。
- * 与详情页 hero 同口径；缺任一端就返回 null（不出空条）。
+ * 与详情页 hero 同口径（含**递减型**：起始值 > 目标值时按 `(起始 − 当前) / (起始 − 目标)`）；
+ * 缺任一端就返回 null（不出空条）。
  */
 internal fun cardProgressFraction(configs: List<FieldConfig>, obj: JsonObject): Float? {
     val cfg = configs.firstOrNull { it.showAsProgress && !it.disabled } ?: return null
-    val current = (obj[cfg.key] as? JsonPrimitive)?.contentOrNull?.toDoubleOrNull() ?: return null
-    val target = configs.firstOrNull { it.key == cfg.progressTargetKey }
-        ?.let { (obj[it.key] as? JsonPrimitive)?.contentOrNull?.toDoubleOrNull() }
-        ?: cfg.max
-        ?: return null
-    return if (target <= 0.0) null else (current / target).toFloat().coerceIn(0f, 1f)
+    val number = { key: String -> (obj[key] as? JsonPrimitive)?.contentOrNull?.toDoubleOrNull() }
+    val current = number(cfg.key) ?: return null
+    val target = cfg.progressTargetKey.takeIf { it.isNotBlank() }?.let(number) ?: cfg.max ?: return null
+    val start = cfg.progressStartKey.takeIf { it.isNotBlank() }?.let(number)
+    return evalProgress(current, target, start)?.fraction
 }
 
 /** 从存储态取进度分母（列表用；解析失败返回 null）。 */
-internal fun cardProgressFraction(fieldsConfig: String, fieldsData: String): Float? {
-    val configs = runCatching { CARD_JSON.decodeFromString<List<FieldConfig>>(fieldsConfig) }
-        .getOrDefault(emptyList())
-    if (configs.isEmpty()) return null
-    val obj = runCatching { CARD_JSON.parseToJsonElement(fieldsData).jsonObject }.getOrNull() ?: return null
-    return cardProgressFraction(configs, obj)
-}
+internal fun cardProgressFraction(fieldsConfig: String, fieldsData: String): Float? =
+    progressOfStored(fieldsConfig, fieldsData)?.fraction
 
 /** 卡面字段一行：最多 3 项 + 「+N」。 */
 @Composable

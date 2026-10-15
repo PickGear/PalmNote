@@ -88,6 +88,7 @@ private val BUILTIN_NAME_RES: Map<String, Int> = mapOf(
     "shopping_cart" to R.string.template_shopping_name,
     "checklist" to R.string.template_todo_name,
     "flight" to R.string.template_travel_name,
+    "flag" to R.string.template_goal_name,
     "menu_book" to R.string.template_reading_name,
     "school" to R.string.template_study_name,
     "timer_off" to R.string.template_countdown_name,
@@ -127,6 +128,7 @@ fun LifeTemplate.getDisplayDescription(context: Context): String {
         "shopping_cart" -> context.getString(R.string.template_shopping_desc)
         "checklist" -> context.getString(R.string.template_todo_desc)
         "flight" -> context.getString(R.string.template_travel_desc)
+        "flag" -> context.getString(R.string.template_goal_desc)
         "menu_book" -> context.getString(R.string.template_reading_desc)
         "school" -> context.getString(R.string.template_study_desc)
         "timer_off" -> context.getString(R.string.template_countdown_desc)

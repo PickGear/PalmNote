@@ -930,28 +930,36 @@ object DetailAssembler {
      * 已被 ① 英雄区消费的字段 key —— 避免同一个值在页面上出现两次。
      * 逐模板标定（与 16 张设计稿一一对应）。
      */
-    private fun consumedKeys(ctx: DetailCtx): Set<String> = when (ctx.template.icon) {
-        "savings" -> setOf("targetAmount", "currentAmount", "remain")
-        // 购物：photo/items 是退役字段（定案 20 + 种子 v5）——数据保留在 DB，
-        // 但不再进结构区；对已自定义、拿不到新种子的存量安装做兜底隐藏。
-        "shopping_cart" -> setOf("budget", "spent", "photo", "items")
-        "school" -> setOf("completedLessons", "totalLessons")
-        "calendar_month" -> setOf("currentStreak", "targetDays")
-        "subscriptions" -> setOf("price", "nextBilling", "daysToBilling", "billingDay")
-        "fitness_center" -> setOf("weight")
-        "flight" -> setOf("destination", "startDate", "route")
-        "menu_book" -> setOf("totalPages", "currentPage", "author", "cover")
-        // 截止只以英雄区 chip 呈现（dtl_03），不单列结构组；
-        // billingDay 供提醒 Worker 用（Worker 里按号数算扣费日），不单列结构组。
-        "checklist" -> setOf("subtasks", "deadline")
-        "mood" -> setOf("mood", "energy")
-        "book" -> setOf("content", "weather", "mood")
-        "timer_off" -> setOf("targetDate", "remainDays")
-        "trending_up" -> setOf("start_date", "elapsedDays")
-        "cake" -> setOf("date", "person")
-        "celebration" -> setOf("date", "person")
-        "build" -> setOf("boughtAt", "cycle")
-        else -> emptySet()
+    private fun consumedKeys(ctx: DetailCtx): Set<String> = when {
+        // 目标按 **kind** 认（与 hero 同口径）：用户把图标改掉后这四个字段
+        // 也不该回流到结构区变成「同屏两份进度」。
+        ctx.template.getKind() == LifeTemplateKind.GOAL ->
+            setOf("target", "current", "unitText", "deadline")
+        else -> when (ctx.template.icon) {
+            "savings" -> setOf("targetAmount", "currentAmount", "remain")
+            // 购物：photo/items 是退役字段（定案 20 + 种子 v5）——数据保留在 DB，
+            // 但不再进结构区；对已自定义、拿不到新种子的存量安装做兜底隐藏。
+            "shopping_cart" -> setOf("budget", "spent", "photo", "items")
+            "school" -> setOf("completedLessons", "totalLessons")
+            "calendar_month" -> setOf("currentStreak", "targetDays")
+            "subscriptions" -> setOf("price", "nextBilling", "daysToBilling", "billingDay")
+            "fitness_center" -> setOf("weight")
+            "flight" -> setOf("destination", "startDate", "route")
+            "menu_book" -> setOf("totalPages", "currentPage", "author", "cover")
+            // 截止只以英雄区 chip 呈现（dtl_03），不单列结构组；
+            // billingDay 供提醒 Worker 用（Worker 里按号数算扣费日），不单列结构组。
+            "checklist" -> setOf("subtasks", "deadline")
+            "mood" -> setOf("mood", "energy")
+            "book" -> setOf("content", "weather", "mood")
+            "timer_off" -> setOf("targetDate", "remainDays")
+            "trending_up" -> setOf("start_date", "elapsedDays")
+            "cake" -> setOf("date", "person")
+            "celebration" -> setOf("date", "person")
+            "build" -> setOf("boughtAt", "cycle")
+            // 目标：目标值 / 当前值 / 单位 / 截止日期 全部由英雄区呈现（大数字 + 进度条 + 端标），
+            // 结构区再列一遍就是同屏两份进度。
+            else -> emptySet()
+        }
     }
 
     /**
@@ -963,6 +971,8 @@ object DetailAssembler {
      * 指标名**取字段自己的 label**（数据），不当场造中文词 —— 否则英文界面会串中文。
      */
     private fun metricsOf(ctx: DetailCtx): List<DetailMetric> {
+        // 目标按 kind 认（与 hero / consumedKeys 同口径）：改过图标的目标不该冒出别人家的指标格
+        if (ctx.template.getKind() == LifeTemplateKind.GOAL) return emptyList()
         if (!ctx.showsMetrics) return emptyList()
 
         fun m(key: String, value: String?): DetailMetric? = value?.let { DetailMetric(key, ctx.cfg(key)?.label ?: key, it) }

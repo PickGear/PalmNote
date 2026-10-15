@@ -9,7 +9,7 @@ import com.palmnote.data.db.entity.*
 
 @Database(
     entities = [
-        Asset::class, Bill::class, Goal::class, GoalCheckIn::class, Anniversary::class,
+        Asset::class, Bill::class, Anniversary::class,
         Moment::class, CategoryMapping::class, UsageRecord::class, Budget::class,
         RecurringTemplate::class, CategoryConfig::class, CustomTag::class, Wallet::class,
         AccountBook::class, PlanList::class, PlanListItem::class, Plan::class,
@@ -17,15 +17,13 @@ import com.palmnote.data.db.entity.*
         LifeReport::class, TodoItem::class, LifeMoment::class, MoodDiary::class, FocusRecord::class,
         BillRecycleBin::class, AssetRecycleBin::class, FieldValue::class, LifeRecycleBin::class
     ],
-    version = 17,
+    version = 18,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun assetDao(): AssetDao
     abstract fun billDao(): BillDao
-    abstract fun goalDao(): GoalDao
-    abstract fun goalCheckInDao(): GoalCheckInDao
     abstract fun anniversaryDao(): AnniversaryDao
     abstract fun momentDao(): MomentDao
     abstract fun categoryMappingDao(): CategoryMappingDao

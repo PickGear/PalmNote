@@ -129,6 +129,10 @@ object BuiltinFieldText {
         "物品" to "Item",
         "更换日期" to "Replaced on",
         "更换周期" to "Replace every",
+        "目标值" to "Target",
+        "当前值" to "Current",
+        "起始值" to "Starting value",
+        "单位" to "Unit",
         // ── 表头（TABLE 列的中间段）──
         "名目" to "Item",
         "金额" to "Amount",
@@ -143,7 +147,8 @@ object BuiltinFieldText {
         "今天学到了什么？" to "What did you learn today?",
         "今天最值得记住的一件小事？" to "One small thing worth remembering today?",
         "摘一句打动你的话" to "A line that stayed with you",
-        "此刻的感觉，因为什么？" to "How do you feel right now, and why?"
+        "此刻的感觉，因为什么？" to "How do you feel right now, and why?",
+        "递减目标填起始读数" to "Starting reading for decreasing goals"
     )
 
     /** 单位（跟在数字后面）。 */

@@ -128,6 +128,8 @@
     <string name="template_body_desc">Track weight, sleep and exercise</string>
     <string name="template_maintenance_name">Maintenance</string>
     <string name="template_maintenance_desc">Replacement reminders for consumables like filters and toothbrush heads</string>
+    <string name="template_goal_name">Goal</string>
+    <string name="template_goal_desc">Set goals and track progress</string>
     <string name="wallet_type_cash">Cash</string>
     <string name="wallet_type_wechat">WeChat</string>
     <string name="wallet_type_alipay">Alipay</string>

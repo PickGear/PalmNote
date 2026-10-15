@@ -12,6 +12,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.palmnote.app.R
 import com.palmnote.data.datastore.PreferencesManager
+import com.palmnote.data.db.dao.LifeItemDao
+import com.palmnote.domain.util.LifeTemplateKind
 import com.palmnote.data.AppIconManager
 import com.palmnote.data.DemoDataSeeder
 import com.palmnote.data.export.CsvDataExporter
@@ -81,7 +83,7 @@ class SettingsViewModel @Inject constructor(
     private val csvDataExporter: CsvDataExporter,
     private val calendarSyncManager: CalendarSyncManager,
     private val assetRepository: AssetRepository,
-    private val goalRepository: GoalRepository,
+    private val lifeItemDao: LifeItemDao,
     private val momentRepository: MomentRepository,
     private val anniversaryRepository: AnniversaryRepository,
     val appLockManager: AppLockManager,
@@ -137,7 +139,8 @@ class SettingsViewModel @Inject constructor(
                 preferencesManager.wallpaperCustomUri,
                 preferencesManager.wallpaperCustomColor,
                 assetRepository.getTotalAssetCount(),
-                goalRepository.getGoalCount(),
+                // 目标已并入生活模板：设置页「目标」计数 = 目标类模板下的生活条目数
+                lifeItemDao.getItemCountByTemplateKind(LifeTemplateKind.GOAL.name),
                 momentRepository.getMomentCount(),
                 anniversaryRepository.getAnniversaryCount(),
                 preferencesManager.autoLockTimeoutMinutes,

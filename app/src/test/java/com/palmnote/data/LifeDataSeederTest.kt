@@ -65,10 +65,25 @@ class LifeDataSeederTest {
     }
 
     @Test
-    fun `lifeTemplateSeeds contains all 17 builtin templates`() {
+    fun `lifeTemplateSeeds contains all 18 builtin templates`() {
         val seeds = seeder().lifeTemplateSeeds
-        // 17 = 18 个内置模板 − 1 个退役（「周报月报」，v1.27 → 报告改由统计页承担）
-        assertEquals(17, seeds.size)
+        // 18 = 19 个内置模板 − 1 个退役（「周报月报」，v1.27 → 报告改由统计页承担）；
+        // v1.4.2 新增「目标」（原 goals 表并入模板体系）
+        assertEquals(18, seeds.size)
+    }
+
+    @Test
+    fun `goal template wires progress target and start keys`() {
+        // 「目标」是 v1.4.2 新增的内置模板：进度挂在 current 上，分母 target、起始值 initial
+        // （起始值 > 目标值即递减，见 FieldConfig.progressStartKey）
+        val goal = seeder().lifeTemplateSeeds.first { it.icon == "flag" }
+        assertEquals("GOAL", goal.kind)
+        assertEquals(19, goal.sortOrder)
+        val fields = Json.decodeFromString<JsonArray>(goal.fieldsConfig)
+        val current = fields.first { it.jsonObject["key"]?.jsonPrimitive?.content == "current" }.jsonObject
+        assertEquals("true", current["showAsProgress"]?.jsonPrimitive?.content)
+        assertEquals("target", current["progressTargetKey"]?.jsonPrimitive?.content)
+        assertEquals("initial", current["progressStartKey"]?.jsonPrimitive?.content)
     }
 
     @Test

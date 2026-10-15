@@ -17,8 +17,6 @@ class MomentRepositoryImpl @Inject constructor(
     override fun getMomentsByAnniversary(anniversaryId: Long): Flow<List<Moment>> =
         momentDao.getMomentsByAnniversary(anniversaryId)
 
-    override fun getMomentsByGoal(goalId: Long): Flow<List<Moment>> = momentDao.getMomentsByGoal(goalId)
-
     override fun getMomentsByTag(tag: String): Flow<List<Moment>> = momentDao.getMomentsByTag(tag)
 
     override fun getMomentCount(): Flow<Int> = momentDao.getMomentCount()

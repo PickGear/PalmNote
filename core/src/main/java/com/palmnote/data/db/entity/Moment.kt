@@ -31,6 +31,11 @@ data class Moment(
     val wordCount: Int = 0, // 字数统计
     val linkedAssetId: Long? = null,
     val linkedAnniversaryId: Long? = null,
+    /**
+     * ⚠️ **无写入方、无读方**（2026-10-15）：目标并入生活模板体系（v1.4.2 起目标 = 目标模板下的条目），
+     * 这条指向旧 `goals` 表 id 的关联既没有入口可填、也没有页面展示；`MIGRATION_17_18` 已把存量值清空。
+     * 保留列只为不动 `moments` 表结构（删列要重建表）；**别再往里写值，也别据此判断"关联了目标"**。
+     */
     val linkedGoalId: Long? = null,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()

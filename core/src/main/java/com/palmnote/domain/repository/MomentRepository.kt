@@ -8,7 +8,6 @@ interface MomentRepository {
     suspend fun getMomentById(id: Long): Moment?
     fun getMomentsByAsset(assetId: Long): Flow<List<Moment>>
     fun getMomentsByAnniversary(anniversaryId: Long): Flow<List<Moment>>
-    fun getMomentsByGoal(goalId: Long): Flow<List<Moment>>
     fun getMomentsByTag(tag: String): Flow<List<Moment>>
     fun getMomentCount(): Flow<Int>
     suspend fun insertMoment(moment: Moment): Long

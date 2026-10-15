@@ -49,7 +49,6 @@ data class CategoryState(
         CategoryType("ASSET", R.string.recycle_tab_assets),
         CategoryType("BILL_EXPENSE", R.string.bill_expense),
         CategoryType("BILL_INCOME", R.string.bill_income),
-        CategoryType("GOAL", R.string.recycle_tab_goals),
         CategoryType("ANNIVERSARY", R.string.recycle_tab_anniversaries),
         CategoryType("MOMENT", R.string.recycle_tab_moments),
         CategoryType("TAG", R.string.bill_tags)

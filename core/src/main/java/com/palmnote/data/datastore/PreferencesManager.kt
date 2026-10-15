@@ -44,8 +44,6 @@ class PreferencesManager @Inject constructor(
         val LIFE_DEMO_SEED_VERSION = intPreferencesKey("life_demo_seed_version")
         val WEALTH_DEMO_SEEDED = booleanPreferencesKey("wealth_demo_seeded")
         val WEALTH_DEMO_SEED_VERSION = intPreferencesKey("wealth_demo_seed_version")
-        val HABIT_DEMO_SEEDED = booleanPreferencesKey("habit_demo_seeded")
-        val HABIT_DEMO_SEED_VERSION = intPreferencesKey("habit_demo_seed_version")
         /**
          * 播种演示数据时的应用**语言码**（`zh` / `en`）：演示内容是**存库的文案**，
          * 切语言后要整批重播（见 DemoDataSeeder）。只记语言码不记完整 locale——
@@ -421,18 +419,6 @@ class PreferencesManager @Inject constructor(
 
     suspend fun setWealthDemoSeedVersion(version: Int) {
         context.dataStore.edit { it[WEALTH_DEMO_SEED_VERSION] = version }
-    }
-
-    val habitDemoSeeded: Flow<Boolean> = prefsFlow.map { it[HABIT_DEMO_SEEDED] ?: false }
-
-    suspend fun setHabitDemoSeeded(seeded: Boolean) {
-        context.dataStore.edit { it[HABIT_DEMO_SEEDED] = seeded }
-    }
-
-    val habitDemoSeedVersion: Flow<Int> = prefsFlow.map { it[HABIT_DEMO_SEED_VERSION] ?: 0 }
-
-    suspend fun setHabitDemoSeedVersion(version: Int) {
-        context.dataStore.edit { it[HABIT_DEMO_SEED_VERSION] = version }
     }
 
     /** 播种演示数据时的应用语言码（null = 尚未记录；null 也算"与当前语言不一致"，见 DemoDataSeeder）。 */

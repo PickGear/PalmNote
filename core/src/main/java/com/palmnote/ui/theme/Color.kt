@@ -2,6 +2,7 @@ package com.palmnote.ui.theme
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import com.palmnote.domain.util.BuiltinGoalTemplate
 
 // ============================================================
 // PalmNote Design Tokens
@@ -153,7 +154,10 @@ val LifeTemplateIdentityHex: Map<String, String> = mapOf(
     "BarChart" to "#42A5F5",        // 周报月报（系统型）
     "timer" to "#00ACC1",           // 专注（系统型）
     "fitness_center" to "#00897B",  // 身体记录（身体，§5.3 新增）
-    "build" to "#8D6E63"            // 物品维护（家物，§5.3 新增）
+    "build" to "#8D6E63",           // 物品维护（家物，§5.3 新增）
+    // 单一真源取自 BuiltinGoalTemplate.COLOR（迁移与种子共用的那枚常量），
+    // 避免「种子色」与「迁移插入色」两处手抄同一串 hex 而静默漂移
+    "flag" to BuiltinGoalTemplate.COLOR             // 目标（同设置页统计条的珊瑚色，v1.4.2 新增）
 )
 
 /** 取内置模板身份色（hex 字符串，DB 存储用）；未知 icon 返回 null。 */

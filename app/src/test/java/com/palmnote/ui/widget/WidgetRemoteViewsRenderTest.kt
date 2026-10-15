@@ -11,7 +11,6 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.palmnote.app.R
 import com.palmnote.data.db.dao.HeldCategoryCount
 import com.palmnote.data.db.entity.Budget
-import com.palmnote.data.db.entity.Goal
 import com.palmnote.data.db.entity.LifeItem
 import java.time.LocalDate
 import org.junit.Assert.assertEquals

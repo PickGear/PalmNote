@@ -5,6 +5,7 @@ import com.palmnote.data.db.AppDatabase
 import com.palmnote.data.db.entity.LifeTemplate
 import com.palmnote.domain.model.ReminderSpec
 import com.palmnote.domain.repository.LifeTemplateRepository
+import com.palmnote.domain.util.BuiltinGoalTemplate
 import com.palmnote.domain.util.kindFromIcon
 import com.palmnote.ui.theme.lifeTemplateIdentityHex
 import kotlinx.coroutines.flow.first
@@ -28,7 +29,7 @@ class LifeDataSeeder(
 ) {
     companion object {
         /** 当前种子版本；每次重写种子默认值时 +1（§7.3 seedVersion 投递）。 */
-        const val SEED_VERSION = 8
+        const val SEED_VERSION = 9
         private const val KEY_SEED_VERSION = "life_seed_version"
         private const val KEY_CUSTOMIZED = "customized_template_ids"
 
@@ -459,6 +460,16 @@ class LifeDataSeeder(
             """[{"key":"item","label":"物品","type":"TEXT","required":true,"showInCard":true,"sortOrder":1},{"key":"boughtAt","label":"更换日期","type":"DATE","required":false,"showInCard":true,"sortOrder":2},{"key":"cycle","label":"更换周期","type":"DURATION","required":false,"unit":"天","showInCard":false,"sortOrder":3},{"key":"photo","label":"照片","type":"IMAGE","showInCard":false,"sortOrder":4}]""",
             """["card","list"]""", flowJson("ARCHIVED" to "已归档"),
             """{"allowCrossLink":false,"targetTypes":[]}"""
+        ),
+        // ── 19 目标（v1.4.2）：原独立 `goals` 表并入模板体系 ——
+        //    定义常量抽在 core 的 BuiltinGoalTemplate（迁移 MIGRATION_17_18 要建同一行模板，
+        //    两处必须逐字节一致）；进度用 current/target，**递减型**（戒烟 20→0）填「起始值」即可，
+        //    方向由数据决定（起始值 > 目标值 → 递减），配置层没有方向开关。
+        buildTemplate(
+            BuiltinGoalTemplate.NAME, BuiltinGoalTemplate.CATEGORY, BuiltinGoalTemplate.ICON,
+            BuiltinGoalTemplate.DESCRIPTION, BuiltinGoalTemplate.SORT_ORDER,
+            BuiltinGoalTemplate.FIELDS_CONFIG, BuiltinGoalTemplate.AVAILABLE_LAYOUTS,
+            BuiltinGoalTemplate.STATUS_FLOW, BuiltinGoalTemplate.LINK_CONFIG
         ),
     )
 

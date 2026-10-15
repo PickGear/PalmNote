@@ -6,6 +6,8 @@ import com.palmnote.data.datastore.PreferencesManager
 import com.palmnote.data.db.dao.LifeItemDao
 import com.palmnote.data.db.dao.LifeTemplateDao
 import com.palmnote.data.db.entity.LifeItem
+import com.palmnote.domain.model.ProgressValue
+import com.palmnote.domain.model.progressOfStored
 import com.palmnote.domain.util.LifeTemplateKind
 import com.palmnote.domain.util.getKind
 import com.palmnote.ui.theme.ThemePackages
@@ -213,4 +215,52 @@ object WidgetData {
         }
         return next.toEpochDay() - today.toEpochDay()
     }
+
+    /** 概览组件目标卡的一屏数据（纯数据；空态文案由组件侧注入，[WidgetData] 不持 Context）。 */
+    data class GoalTileData(
+        val pctText: String,
+        val name: String,
+        val countsText: String
+    )
+
+    /**
+     * 目标卡取数：目标自 v1.4.2 起是**目标模板（kind = GOAL）下的生活条目**，不再是 `goals` 表。
+     *
+     * - 无条目 → null（组件侧显示「暂无目标」）；
+     * - 有未完成条目（进度 < 100%）→ 取第一条，给百分比 + 计数文案；
+     * - 全部算得出进度且都到 100% → 「100% + [allDoneName]」；
+     * - 有任何一条**算不出进度**（如还没填当前值）且没有可展示的未完成项 →
+     *   首条的名字 + `--`，与列表卡/详情「算不出就不出进度」同口径，**绝不谎报「全部完成」**。
+     *
+     * 进度走 [progressOfStored] 与详情页同一口径：**递减型**（起始值 > 目标值）也算得出
+     * 正确百分比 —— 旧实现直接 `current/total`，递减型必然算错。
+     */
+    fun goalTileData(fieldsConfig: String, items: List<LifeItem>, allDoneName: String): GoalTileData? {
+        if (items.isEmpty()) return null
+        val withProgress = items.mapNotNull { item ->
+            progressOfStored(fieldsConfig, item.fieldsData)?.let { item to it }
+        }
+        val unfinished = withProgress.firstOrNull { (_, progress) -> progress.fraction < 1f }
+        val (item, progress) = unfinished
+            ?: return if (withProgress.size == items.size) {
+                GoalTileData("100%", allDoneName, "--")
+            } else {
+                GoalTileData("--", items.first().title, "--")
+            }
+        return GoalTileData("${(progress.fraction * 100).toInt()}%", item.title, goalCountsText(progress))
+    }
+
+    /**
+     * 目标卡的进度计数文案：递增沿用旧观感 `当前/目标`；
+     * 递减用 `当前 → 目标` —— 分子分母反向，斜杠会把「20 → 0」读成「完成了 15/0」。
+     */
+    fun goalCountsText(progress: ProgressValue): String {
+        val current = countText(progress.current ?: return "--")
+        val total = countText(progress.total ?: return "--")
+        return if (progress.decreasing) "$current → $total" else "$current/$total"
+    }
+
+    /** 计数取整显示（7.0 → 7，7.5 → 7.5）：目标是计数量，别在桌面上写「7.0/12.0」。 */
+    private fun countText(value: Double): String =
+        if (value == kotlin.math.floor(value)) value.toLong().toString() else value.toString()
 }

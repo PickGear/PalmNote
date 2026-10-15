@@ -11,7 +11,6 @@ import com.palmnote.data.db.dao.LifeItemDao
 import com.palmnote.data.db.dao.LifeTemplateDao
 import com.palmnote.data.db.entity.Anniversary
 import com.palmnote.data.db.entity.Budget
-import com.palmnote.data.db.entity.Goal
 import com.palmnote.data.db.entity.getDisplayName
 import com.palmnote.data.datastore.PreferencesManager
 import com.palmnote.data.db.entity.CategoryConfig

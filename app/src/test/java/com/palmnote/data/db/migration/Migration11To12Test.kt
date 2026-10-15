@@ -47,9 +47,10 @@ class Migration11To12Test {
         const val DB_EMPTY = "migration-11-to-12-empty"
 
         /**
-         * 覆盖 [com.palmnote.domain.util.kindFromIcon] 的**每一个**分支（11 个 icon），
-         * 外加 [NO_KIND_ICONS] 六个无语义反例。加新语义类型时这里必须同步，
-         * 否则该类型的回填会静默漏掉。
+         * 覆盖 [MIGRATION_11_12] 的**每一条回填语句**（按 icon 计 11 条），
+         * 外加 [NO_KIND_ICONS] 六个无语义反例。回填语句是历史快照（刻意不随
+         * `kindFromIcon` 演进，见迁移头注），加语句时这里必须同步，
+         * 否则那一条的回填会静默漏掉。
          */
         val EXPECTED = mapOf(
             "calendar_month" to "HABIT",

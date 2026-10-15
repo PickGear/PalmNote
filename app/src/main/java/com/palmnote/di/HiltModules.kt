@@ -166,7 +166,8 @@ object DatabaseModule {
                 com.palmnote.data.db.migration.MIGRATION_13_14,
                 com.palmnote.data.db.migration.MIGRATION_14_15,
                 com.palmnote.data.db.migration.MIGRATION_15_16,
-                com.palmnote.data.db.migration.MIGRATION_16_17
+                com.palmnote.data.db.migration.MIGRATION_16_17,
+                com.palmnote.data.db.migration.MIGRATION_17_18
             )
             .addCallback(object : androidx.room.RoomDatabase.Callback() {
                 override fun onCreate(db: SupportSQLiteDatabase) {
@@ -189,8 +190,6 @@ object DatabaseModule {
 
     @Provides fun provideAssetDao(db: AppDatabase): AssetDao = db.assetDao()
     @Provides fun provideBillDao(db: AppDatabase): BillDao = db.billDao()
-    @Provides fun provideGoalDao(db: AppDatabase): GoalDao = db.goalDao()
-    @Provides fun provideGoalCheckInDao(db: AppDatabase): GoalCheckInDao = db.goalCheckInDao()
     @Provides fun provideAnniversaryDao(db: AppDatabase): AnniversaryDao = db.anniversaryDao()
     @Provides fun provideMomentDao(db: AppDatabase): MomentDao = db.momentDao()
     @Provides fun provideCategoryMappingDao(db: AppDatabase): CategoryMappingDao = db.categoryMappingDao()
@@ -282,10 +281,6 @@ object RepositoryModule {
     @Provides @Singleton
     fun provideBudgetRepository(dao: BudgetDao): BudgetRepository =
         BudgetRepositoryImpl(dao)
-
-    @Provides @Singleton
-    fun provideGoalRepository(dao: GoalDao, checkInDao: GoalCheckInDao, appDatabase: AppDatabase): GoalRepository =
-        GoalRepositoryImpl(dao, checkInDao, appDatabase)
 
     @Provides @Singleton
     fun provideAnniversaryRepository(dao: AnniversaryDao): AnniversaryRepository =

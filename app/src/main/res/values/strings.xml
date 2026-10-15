@@ -1440,7 +1440,6 @@
     <string name="recycle_tab_assets">物品</string>
     <string name="recycle_tab_bills">账单</string>
     <string name="recycle_tab_life">生活</string>
-    <string name="recycle_tab_goals">目标</string>
     <string name="recycle_tab_anniversaries">纪念日</string>
     <string name="recycle_tab_moments">瞬间</string>
     <!-- Search -->
@@ -1563,13 +1562,6 @@
     <string name="life_preset">预设</string>
     <!-- Trigger Engine Notifications -->
     <!-- Default Goal Categories -->
-    <string name="goal_category_fitness">运动健身</string>
-    <string name="goal_category_reading">阅读学习</string>
-    <string name="goal_category_skill">技能提升</string>
-    <string name="goal_category_habit">日常习惯</string>
-    <string name="goal_category_project">项目计划</string>
-    <string name="goal_category_savings">储蓄理财</string>
-    <string name="goal_category_custom">自定义</string>
     <!-- Default Anniversary Types -->
     <string name="anniversary_type_birthday">生日</string>
     <string name="anniversary_type_wedding">结婚纪念</string>
@@ -2026,6 +2018,7 @@
     <string name="import_bill_file_body">微信/支付宝账单、通用 CSV、Excel 和截图识别，请在「账单」页右上角的导入入口操作。本页只导入应用全量数据包。</string>
     <string name="import_error_too_large">文件过大，无法导入（上限约 300MB）</string>
     <string tools:ignore="PluralsCandidate" name="import_full_done_wallets">已按账单重算 %1$d 个钱包余额</string>
+    <string tools:ignore="PluralsCandidate" name="import_full_legacy_checkins">旧版数据包里的 %1$d 条目标打卡记录未导入（习惯已由「打卡」模板记录）</string>
     <string name="backup_file_is_data">这是数据文件，请到「数据与备份 → 导入导出」页导入</string>
     <string name="about_version_history_desc">看看每个版本都带来了什么</string>
     <string name="about_project_source">项目源码</string>
@@ -2259,29 +2252,6 @@
     <string name="life_field_hint_remaining">目标减去当前，只读；需选「被减 / 减数」字段</string>
     <string name="life_field_hint_streak">连续记录的天数，自动统计（无需参考字段）</string>
     <string name="life_field_hint_elapsed">距某天已过 / 还剩多少天；需选一个日期字段</string>
-    <string name="life_goal_title">目标</string>
-    <string name="life_goal_new">新建目标</string>
-    <string name="life_goal_edit">编辑</string>
-    <string name="life_goal_empty">还没有目标</string>
-    <string name="life_goal_empty_hint">用「+ 新建」立一个目标</string>
-    <string name="life_goal_name">名称</string>
-    <string name="life_goal_type">类型</string>
-    <string name="life_goal_type_cumulative">累计</string>
-    <string name="life_goal_type_target">目标值</string>
-    <string name="life_goal_type_cumulative_hint">如「今年读 12 本书」，做一次加一次</string>
-    <string name="life_goal_type_target_hint">如「体重降到 65」，一个要到达的数值</string>
-    <string name="life_goal_target">目标值</string>
-    <string name="life_goal_unit">单位</string>
-    <string name="life_goal_direction">方向</string>
-    <string name="life_goal_direction_increase">递增</string>
-    <string name="life_goal_direction_decrease">递减</string>
-    <string name="life_goal_initial_value">当前值</string>
-    <string name="life_goal_initial_value_hint">现在的读数，从它往目标值走</string>
-    <string name="life_goal_progress">%1$d / %2$d %3$s</string>
-    <string name="life_goal_step_forward">向目标前进一步</string>
-    <string name="life_goal_step_back">回退一步</string>
-    <string name="life_goal_delete_title">删除这个目标？</string>
-    <string name="life_goal_delete_message">目标与其打卡记录会一并删除，无法恢复</string>
     <string name="life_photo_add">添加照片</string>
     <string name="life_photo_add_hint">最多 9 张，第一张用作详情页封面</string>
     <string name="life_photo_pick">选择照片</string>

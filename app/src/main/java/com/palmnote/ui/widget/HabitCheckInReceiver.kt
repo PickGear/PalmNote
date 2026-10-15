@@ -27,8 +27,8 @@ import kotlinx.coroutines.launch
  *
  * **数据源与生活页详情完全同源**（LifeItem + LifeTemplate，kind = HABIT）：
  * 「打卡」不是某个字段，而是「今天这条模板有没有一条非 ARCHIVED 的行」。
- * 此前这里写的是已废弃的 Goal/GoalCheckIn 表——UI 层根本没有创建 Goal 的入口，
- * 于是组件只能显示演示数据、且打了卡生活页看不到。
+ * 此前这里写的是 Goal/GoalCheckIn 表——那套「目标」子系统已并入生活模板体系（v1.4.2），
+ * UI 层从来没有过创建 Goal 的入口，于是组件当时只能显示演示数据、且打了卡生活页看不到。
  */
 class HabitCheckInReceiver : BroadcastReceiver() {
 

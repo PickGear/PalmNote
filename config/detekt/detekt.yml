@@ -11,6 +11,8 @@ complexity:
     # Room DAO/实体/仓库等数据层样板天然多函数，类/接口级阈值放宽
     thresholdInClasses: 80
     thresholdInInterfaces: 80
+    # object 单例同理（如 WidgetPin：目录/添加通道/落桌核对/本地记录一体）
+    thresholdInObjects: 80
 
 style:
   MaxLineLength:

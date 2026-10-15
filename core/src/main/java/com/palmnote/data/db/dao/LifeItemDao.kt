@@ -140,6 +140,22 @@ interface LifeItemDao {
     )
     fun getVisibleItemCountByTemplate(templateId: Long): Flow<Int>
 
+    /**
+     * 某**语义类型**模板下的条目数（[com.palmnote.domain.util.LifeTemplateKind] 的枚举名）。
+     *
+     * 用途：设置页「目标」统计条 —— 目标并入模板体系后，计数口径从 `goals` 表改为
+     * 「目标类模板下的记录数」。只数可见模板；示例行同样计入（与资产/纪念日等统计条一致，
+     * 那几个计数也从不排除演示数据）。
+     */
+    @Query(
+        """
+        SELECT COUNT(*) FROM life_items li
+        INNER JOIN life_templates lt ON li.templateId = lt.id AND lt.isHidden = 0
+        WHERE lt.kind = :kind
+    """
+    )
+    fun getItemCountByTemplateKind(kind: String): Flow<Int>
+
     /** 某模板全部记录的字段 JSON，供编辑器判断各字段 key 是否已有历史数据。 */
     @Query("SELECT fieldsData FROM life_items WHERE templateId = :templateId")
     fun getFieldsDataByTemplate(templateId: Long): Flow<List<String>>
@@ -240,6 +256,23 @@ interface LifeItemDao {
     )
     suspend fun search(query: String): List<LifeItem>
 
+    /**
+     * 按**语义类型**（[com.palmnote.domain.util.LifeTemplateKind] 的枚举名）搜索记录。
+     *
+     * 用途：全局搜索的「目标」节 —— 目标并入模板体系后，这里搜的是目标模板下的条目。
+     * 只搜可见模板、排除已归档；匹配口径与 [search] 一致（标题 / 备注）。
+     */
+    @Query(
+        """
+        SELECT li.* FROM life_items li
+        INNER JOIN life_templates lt ON li.templateId = lt.id AND lt.isHidden = 0
+        WHERE lt.kind = :kind AND li.status != 'ARCHIVED'
+          AND (li.title LIKE '%' || :query || '%' OR li.note LIKE '%' || :query || '%')
+        ORDER BY li.updatedAt DESC LIMIT 50
+    """
+    )
+    suspend fun searchByTemplateKind(kind: String, query: String): List<LifeItem>
+
     /** 全量搜索：标题 / 备注 / 字段值全文，实时 Flow。 */
     @Query(
         """
@@ -291,10 +324,6 @@ interface LifeItemDao {
         remindAt: Int?,
         meta: String?
     )
-
-    /** 导入收尾专用：把记录重新挂到改派后的模板 id 上（跨设备合并时会撞 id）。 */
-    @Query("UPDATE life_items SET templateId = :templateId WHERE id = :id")
-    suspend fun updateTemplateId(id: Long, templateId: Long)
 
     /** 导入收尾专用：把子项重新挂到改派后的父项 id 上。 */
     @Query("UPDATE life_items SET parentId = :parentId WHERE id = :id")

@@ -1278,7 +1278,6 @@
     <string name="recycle_tab_assets">Assets</string>
     <string name="recycle_tab_bills">Bills</string>
     <string name="recycle_tab_life">Life</string>
-    <string name="recycle_tab_goals">Goals</string>
     <string name="recycle_tab_anniversaries">Anniversaries</string>
     <string name="recycle_tab_moments">Moments</string>
     <!-- Search -->
@@ -1401,13 +1400,6 @@
     <string name="life_preset">Preset</string>
     <!-- Trigger Engine Notifications -->
     <!-- Default Goal Categories -->
-    <string name="goal_category_fitness">Fitness</string>
-    <string name="goal_category_reading">Reading &amp; Study</string>
-    <string name="goal_category_skill">Skill Improvement</string>
-    <string name="goal_category_habit">Daily Habits</string>
-    <string name="goal_category_project">Project Plan</string>
-    <string name="goal_category_savings">Savings &amp; Finance</string>
-    <string name="goal_category_custom">Custom</string>
     <!-- Default Anniversary Types -->
     <string name="anniversary_type_birthday">Birthday</string>
     <string name="anniversary_type_wedding">Wedding Anniversary</string>
@@ -2046,6 +2038,7 @@
     <string name="import_bill_file_body">For WeChat/Alipay bills, generic CSV, Excel and screenshot recognition, use the import entry at the top of the "Bills" tab. This page only imports full app-data packages.</string>
     <string name="import_error_too_large">File too large to import (limit ~300MB)</string>
     <string tools:ignore="PluralsCandidate" name="import_full_done_wallets">Recalculated %1$d wallet balance(s)</string>
+    <string tools:ignore="PluralsCandidate" name="import_full_legacy_checkins">%1$d goal check-in(s) from the legacy package were not imported (habits are tracked by the Check-in template)</string>
     <string name="backup_file_is_data">This is a data file — import it via "Data &amp; Backup → Import/Export"</string>
     <string name="about_version_history_desc">See what each version brings</string>
     <string name="about_project_source">Source code</string>
@@ -2283,29 +2276,6 @@
     <string name="life_field_hint_remaining">Target minus current, read-only; pick the minuend / subtrahend fields</string>
     <string name="life_field_hint_streak">Consecutive days, counted automatically (no source needed)</string>
     <string name="life_field_hint_elapsed">Days since or until a date; pick a date field</string>
-    <string name="life_goal_title">Goals</string>
-    <string name="life_goal_new">New goal</string>
-    <string name="life_goal_edit">Edit</string>
-    <string name="life_goal_empty">No goals yet</string>
-    <string name="life_goal_empty_hint">Create one with "+" to get started</string>
-    <string name="life_goal_name">Name</string>
-    <string name="life_goal_type">Type</string>
-    <string name="life_goal_type_cumulative">Cumulative</string>
-    <string name="life_goal_type_target">Target</string>
-    <string name="life_goal_type_cumulative_hint">e.g. "Read 12 books this year" — count each one</string>
-    <string name="life_goal_type_target_hint">e.g. "Get to 65 kg" — a value to reach</string>
-    <string name="life_goal_target">Target</string>
-    <string name="life_goal_unit">Unit</string>
-    <string name="life_goal_direction">Direction</string>
-    <string name="life_goal_direction_increase">Increasing</string>
-    <string name="life_goal_direction_decrease">Decreasing</string>
-    <string name="life_goal_initial_value">Current value</string>
-    <string name="life_goal_initial_value_hint">Where you are now; walk it down to the target</string>
-    <string name="life_goal_progress">%1$d / %2$d %3$s</string>
-    <string name="life_goal_step_forward">Step toward goal</string>
-    <string name="life_goal_step_back">Step back</string>
-    <string name="life_goal_delete_title">Delete this goal?</string>
-    <string name="life_goal_delete_message">The goal and its check-ins will be deleted permanently</string>
     <string name="life_photo_add">Add photos</string>
     <string name="life_photo_add_hint">Up to 9; the first one is the detail cover</string>
     <string name="life_photo_pick">Pick photos</string>

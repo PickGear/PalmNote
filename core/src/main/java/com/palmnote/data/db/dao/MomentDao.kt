@@ -18,9 +18,6 @@ interface MomentDao {
     @Query("SELECT * FROM moments WHERE linkedAnniversaryId = :anniversaryId ORDER BY timestamp DESC")
     fun getMomentsByAnniversary(anniversaryId: Long): Flow<List<Moment>>
 
-    @Query("SELECT * FROM moments WHERE linkedGoalId = :goalId ORDER BY timestamp DESC")
-    fun getMomentsByGoal(goalId: Long): Flow<List<Moment>>
-
     @Query("SELECT * FROM moments WHERE tags LIKE '%' || :tag || '%' ORDER BY timestamp DESC")
     fun getMomentsByTag(tag: String): Flow<List<Moment>>
 

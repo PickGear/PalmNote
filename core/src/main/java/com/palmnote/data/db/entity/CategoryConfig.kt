@@ -42,7 +42,7 @@ data class CustomTag(
     @ColumnInfo(defaultValue = "Flag")
     val icon: AppIcon = AppIcon.Flag, // 标签图标
     val usageCount: Int = 0, // 使用次数
-    val applicableTypes: String = "", // JSON array: ["ASSET", "BILL", "GOAL", "MOMENT"]
+    val applicableTypes: String = "", // JSON array: ["ASSET", "BILL", "MOMENT"]
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()
 )

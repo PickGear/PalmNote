@@ -31,7 +31,7 @@ import com.palmnote.data.db.entity.LifeTemplate
  * ## 与 [LifeTemplateRouteType] 的分工
  *
  * `RouteType` 是**路由分类**（10 个值，含 MOOD / JOURNAL / COUNTUP 等尚无专属详情跳转的类型）；
- * `Kind` 是**行为身份**（11 个值 = `GENERIC` + 10 个有专属行为分支的类型）。两者不合并：
+ * `Kind` 是**行为身份**（12 个值 = `GENERIC` + 11 个有专属行为分支的类型）。两者不合并：
  * RouteType 的额外值不影响任何行为分支，混进来只会扩大迁移面。
  */
 enum class LifeTemplateKind {
@@ -46,6 +46,9 @@ enum class LifeTemplateKind {
 
     /** 待办（未完成计数、待办指标）。 */
     TODO,
+
+    /** 目标（带目标值/当前值/起始值的目标进度；概览小组件与设置统计按它取数）。 */
+    GOAL,
 
     /** 倒计时（按目标日期算剩余天数）。 */
     COUNTDOWN,
@@ -85,6 +88,7 @@ enum class LifeTemplateKind {
  */
 fun kindFromIcon(icon: String): LifeTemplateKind = when (icon) {
     "calendar_month" -> LifeTemplateKind.HABIT
+    "flag" -> LifeTemplateKind.GOAL
     "timer" -> LifeTemplateKind.FOCUS
     "checklist" -> LifeTemplateKind.TODO
     "timer_off" -> LifeTemplateKind.COUNTDOWN

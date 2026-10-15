@@ -59,7 +59,7 @@ class LifeDemoSeeder @Inject constructor(
          * v21：修掉「并发播种插出两份示例」后必须重播一次——受影响的安装里库里躺着 122 条
          * （两份 61 条），只有重建（先清后插）能清干净。
          */
-        const val SEED_VERSION = 21
+        const val SEED_VERSION = 22
     }
 
     /**
@@ -77,11 +77,11 @@ class LifeDemoSeeder @Inject constructor(
      * **重建（重置）**示例数据：先清掉示例行，再按 [LifeDemoData] 重新播种。
      *
      * 语义来自用户定案：**再次开启 = 重置** —— 无论用户之前是否编辑、删除过示例，
-     * 都会复原成初始的 61 条。
+     * 都会复原成初始的 62 条。
      * 因此这里不做「已存在就跳过」，而是每次调用都重建；**是否重建**由调用方
      * （依 `lifeDemoSeeded` 偏好）判断：关闭时该标记被清，于是下次开启必然重建。
      *
-     * **播种标记在这里落**（与 `WealthDemoSeeder` / `HabitDemoSeeder` 的 reseed 一致）：
+     * **播种标记在这里落**（与 `WealthDemoSeeder` 的 reseed 一致）：
      * 调用方除了「开启演示」还有一条「语言变了 → 重播」的路径，那条不经过 `ensureSeeded`，
      * 漏了标记会让下一次 `ensureSeeded` 认为「版本落后」，于是**每次启动都重播一遍**——
      * 演示期用户改过的示例内容会被反复抹掉。
