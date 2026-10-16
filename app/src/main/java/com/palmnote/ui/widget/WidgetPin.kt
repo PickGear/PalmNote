@@ -382,34 +382,41 @@ object WidgetPin {
         return manager.isRequestPinAppWidgetSupported
     }
 
-    fun boundCount(context: Context, providerClass: Class<*>): Int {
-        val manager = AppWidgetManager.getInstance(context) ?: return 0
-        return manager.getAppWidgetIds(ComponentName(context, providerClass))?.size ?: 0
+    fun boundCount(context: Context, providerClass: Class<*>): Int = boundIds(context, providerClass).size
+
+    /**
+     * 桌面上的实例 id 集合。
+     * 核对该用 id 而不是数量：落桌后还要按 id 写配置（面板里选的透明度要在这一刻落到新实例上）。
+     */
+    fun boundIds(context: Context, providerClass: Class<*>): IntArray {
+        val manager = AppWidgetManager.getInstance(context) ?: return IntArray(0)
+        return manager.getAppWidgetIds(ComponentName(context, providerClass)) ?: IntArray(0)
     }
 
     /**
-     * 发起请求后核对到底有没有落桌。
+     * 发起请求后核对到底有没有落桌，返回**新落桌的那个实例 id**（一直没数到就返回 null）。
      *
      * `requestPinAppWidget` 的返回值只说明「这个桌面支持应用内添加」，**不代表添加成功** ——
      * 平台文档写明「返回时不等用户响应，因此返回 true 不等于已固定」。桌面在缺少相关权限时
      * 会静默吞掉请求（确认页一闪而过、桌面什么都没有），只看返回值就会报出假成功。
-     * 所以这里不猜：等一会儿重新数一遍桌面上的实例，多了才算成了。
+     * 所以这里不猜：等一会儿重新数一遍桌面上的实例，比出多出来的那个才算成了，
+     * 顺带把 id 带回去（面板里选的透明度要写到这个新实例上）。
      *
-     * 成功会在数到的那一刻立即返回；一直没数到才等到最后一轮结束，此时返回 false（未确认）。
+     * 成功会在数到的那一刻立即返回；一直没数到才等到最后一轮结束，此时返回 null（未确认）。
      */
-    suspend fun awaitPinned(context: Context, entry: Entry, before: Int): Boolean {
-        val added = awaitIncrease(before) { boundCount(context, entry.providerClass) }
-        if (added) recordPinSuccess(context)
-        return added
+    suspend fun awaitPinned(context: Context, entry: Entry, before: IntArray): Int? {
+        val newId = awaitNewId(before) { boundIds(context, entry.providerClass) }
+        if (newId != null) recordPinSuccess(context)
+        return newId
     }
 
-    /** [awaitPinned] 的核对逻辑本体：每轮重新取一次数量，比 [before] 多就算落桌了。 */
-    internal suspend fun awaitIncrease(before: Int, count: () -> Int): Boolean {
+    /** [awaitPinned] 的核对逻辑本体：每轮重新取一次实例集合，比 [before] 多出来的那个就是新实例。 */
+    internal suspend fun awaitNewId(before: IntArray, ids: () -> IntArray): Int? {
         repeat(PIN_VERIFY_ATTEMPTS) {
             delay(PIN_VERIFY_INTERVAL_MS)
-            if (count() > before) return true
+            ids().firstOrNull { it !in before }?.let { return it }
         }
-        return false
+        return null
     }
 
     /**

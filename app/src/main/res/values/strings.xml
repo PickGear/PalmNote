@@ -725,11 +725,19 @@
     <string name="widget_group_asset">资产</string>
     <string name="widget_group_other">其他</string>
     <string name="widget_search_hint">搜索小组件</string>
+    <string name="widget_search_empty_hint">换个关键词试试</string>
     <!-- 添加页：落桌核对期的按钮态 -->
     <string name="widget_page_add_confirming">确认中…</string>
     <string name="widget_page_add_again">再添加</string>
     <string name="widget_pin_add">添加到桌面</string>
-    <string name="widget_pin_count">桌面已有 %1$d 个</string>
+    <string name="widget_pin_choose_size">选择尺寸</string>
+    <string name="widget_pin_quick_add">按当前尺寸添加</string>
+    <!-- 画廊卡名称下那行小字专用：行右端还有一枚 48dp「＋」触控盒，长文案会挤到按钮底下 -->
+    <string name="widget_pin_count_short">已有 %1$d 个</string>
+    <!-- 面板里的透明度档位：与配置页同源，只是提前到落桌之前选；带配置页的组件不显示这一行 -->
+    <string name="widget_pin_opacity_label">透明度</string>
+    <string name="widget_pin_opacity_follow">跟随</string>
+    <string name="widget_pin_opacity_level">%1$d%%</string>
     <string name="widget_pin_failed">未能发起添加，请从桌面的小组件列表添加</string>
     <string name="widget_pin_added">已添加到桌面</string>
     <string name="widget_pin_not_added">没有添加成功，请检查桌面权限后重试</string>

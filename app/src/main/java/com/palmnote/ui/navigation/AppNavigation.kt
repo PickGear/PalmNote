@@ -71,6 +71,7 @@ import com.palmnote.ui.life.LifeNavHost
 import com.palmnote.ui.backup.BackupScreen
 import com.palmnote.ui.settings.DataExchangeScreen
 import com.palmnote.ui.theme.*
+import com.palmnote.ui.widget.WidgetPinViewModel
 import com.palmnote.feature.vault.vault.VaultScreen
 import com.palmnote.feature.vault.vault.VaultDetailScreen
 import com.palmnote.feature.vault.vault.VaultEditScreen
@@ -307,9 +308,12 @@ fun PalmNoteNavHost() {
         }
 
         composable<WidgetSettings> {
-            // 透明度按组件各自设置（在该组件的配置页里），本页不再需要 ViewModel
+            // 透明度按组件各自设置（在该组件的配置页里，或在添加页面板里挑好、落桌时写进新实例），
+            // 落桌收尾交给 ViewModel（配置按 appWidgetId 存，只有它拿得到 DataStore）
+            val widgetViewModel: WidgetPinViewModel = hiltViewModel()
             WidgetPinScreen(
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() },
+                onApplyOpacity = widgetViewModel::applyOpacity
             )
         }
 

@@ -38,7 +38,9 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -352,6 +354,12 @@ fun AppBottomSheet(
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
     sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+    /**
+     * 面板高度占**可用高度**的比例：给了就按这个比例定住、内容**不再滚动**（内部改用 `weight`
+     * 分配余量，适合「中间一块吃掉空档 + 底部按钮钉住」的近全高面板）；不给就按内容自适应并纵向滚动。
+     * 用比例而不是具体 dp：可用高度已扣掉系统栏与把手，面板因此永远不会顶出屏幕。
+     */
+    heightFraction: Float? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
     ModalBottomSheet(
@@ -366,9 +374,12 @@ fun AppBottomSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .then(
+                    if (heightFraction != null) Modifier.fillMaxHeight(heightFraction) else Modifier
+                )
                 .padding(horizontal = 24.dp)
                 .padding(bottom = 32.dp)
-                .verticalScroll(rememberScrollState()),
+                .then(if (heightFraction == null) Modifier.verticalScroll(rememberScrollState()) else Modifier),
             verticalArrangement = Arrangement.spacedBy(12.dp),
             content = content
         )
@@ -1115,7 +1126,7 @@ fun ModuleSearchBar(
     autoFocus: Boolean = false,
     modifier: Modifier = Modifier
 ) {
-    val focusRequester = remember { androidx.compose.ui.focus.FocusRequester() }
+    val focusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) {
         if (autoFocus) {
             focusRequester.requestFocus()
@@ -1140,6 +1151,9 @@ fun ModuleSearchBar(
             }
         },
         singleLine = true,
+        // IME「搜索」键：回调上层（收键盘 / 出结果），别调了没反应
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+        keyboardActions = KeyboardActions(onSearch = { onSearch() }),
         shape = MaterialTheme.shapes.extraLarge,
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = Color.Transparent,

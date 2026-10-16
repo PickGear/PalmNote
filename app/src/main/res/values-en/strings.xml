@@ -551,10 +551,17 @@
     <string name="widget_group_asset">Assets</string>
     <string name="widget_group_other">Other</string>
     <string name="widget_search_hint">Search widgets</string>
+    <string name="widget_search_empty_hint">Try a different keyword</string>
     <string name="widget_page_add_confirming">Confirming…</string>
     <string name="widget_page_add_again">Add another</string>
     <string name="widget_pin_add">Add to home screen</string>
-    <string name="widget_pin_count">%1$d on home screen</string>
+    <string name="widget_pin_choose_size">Choose a size</string>
+    <string name="widget_pin_quick_add">Add at current size</string>
+    <!-- Gallery tile mini line only: the 48dp add button shares the row, so the long form crowds it -->
+    <string name="widget_pin_count_short">%1$d on home</string>
+    <string name="widget_pin_opacity_label">Opacity</string>
+    <string name="widget_pin_opacity_follow">Default</string>
+    <string name="widget_pin_opacity_level">%1$d%%</string>
     <string name="widget_pin_failed">Couldn\'t start pinning. Add from your home screen\'s widget list instead.</string>
     <string name="widget_pin_added">Added to your home screen</string>
     <string name="widget_pin_not_added">Not added. Check permissions and try again.</string>
