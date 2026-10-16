@@ -4,14 +4,10 @@ import android.content.Context
 import android.content.Intent
 import android.provider.Settings
 import android.widget.Toast
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -22,22 +18,19 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -59,9 +52,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -71,26 +62,12 @@ import com.palmnote.ui.components.CompactTopAppBar
 import com.palmnote.ui.widget.WidgetPin
 import kotlinx.coroutines.launch
 
-/** 预览区高度：所有页统一，横滑时页码点不会上下跳。 */
-private val PREVIEW_STAGE_HEIGHT = 272.dp
-
-/** 预览区留白：卡片边框到屏幕边 / 到预览图各留一点，预览图本身撑满剩下的宽度。 */
-private val PAGE_H_PADDING = 24.dp
-private val PREVIEW_STAGE_PADDING = 16.dp
-
-/**
- * 内容高低于这个值就切「可滚版式」：横屏 / 分屏小窗 / 系统大字体下，两个 weight(1f)
- * 富余吸收会塌缩到 0 仍放不下 —— 权限条和页脚会被裁掉且无处可滚。
- */
-private val MIN_BALANCED_HEIGHT = 640.dp
-
-/** 可滚版式下预览舞台的高度占比：让标题与页码点尽量留在同屏，少滚一点。 */
-private const val COMPACT_STAGE_RATIO = 0.45f
+/** 卡片里预览舞台的固定高度：所有卡片同高，列表整齐好扫。 */
+private val PREVIEW_HEIGHT = 110.dp
 
 /**
  * 全目录统一的缩放基准：设计稿里最大的卡（4×3 = 340×268dp，见 design-v4.html 的 `.s43`）。
- * 所有卡片乘同一个系数 —— 1×1 就摆成小方块、4×3 摆成大块，相对大小等于桌面占格比例；
- * 旧实现是每张各自拉满预览区宽度，于是 1×1 和 4×3 一样宽、比例完全失真。
+ * 所有卡片乘同一个系数 —— 1×1 是小方块、2×1 是矮条、4×3 是大块，相对大小等于桌面占格比例。
  */
 private const val DESIGN_MAX_WIDTH = 340f
 private const val DESIGN_MAX_HEIGHT = 268f
@@ -101,48 +78,46 @@ private val FALLBACK_SIZE = 245 to 148
 /** 预览图的测试标签：单测靠它量 dp 尺寸，锁住「不随屏幕密度变」。 */
 internal const val PREVIEW_IMAGE_TAG = "widget_preview_image"
 
-/** 目录格子的测试标签：单测靠它定位首格、验证网格可滚。 */
+/** 组件卡的测试标签：单测靠它定位首卡、验证分组与尺寸切换。 */
 internal const val CATALOG_CELL_TAG = "widget_catalog_cell"
 
-/** 目录网格列数：两列总览，缩略图按设计尺寸等比缩，一眼扫完 22 个形态。 */
-private const val CATALOG_COLUMNS = 2
+/** 目录列表的测试标签：卡内还有横向滚动的尺寸胶囊，滚动断言得点名这个纵向列表。 */
+internal const val CATALOG_LIST_TAG = "widget_catalog_list"
 
-/** 目录缩略图舞台高：4×3 大卡撑满此高，其余按同一系数缩小 —— 格间相对大小 = 桌面占格比。 */
-private val CATALOG_THUMB_HEIGHT = 88.dp
+/** 搜索框的测试标签。 */
+internal const val SEARCH_FIELD_TAG = "widget_search_field"
 
 /**
  * 添加页：**只在应用内一键添加**（`requestPinAppWidget`），不讲系统的手动添加路径。
  *
- * 两层版式：首屏是 2 列网格总览（22 个形态一屏扫完，名称 + 尺寸标 + 已添加提示），
- * 点格子进详情落桌页（一次一张大预览 + 底部唯一添加按钮）。轮播已退役 ——
- * 22 页横滑没人滑得动，网格两列六七行就见底。
+ * 一屏完成「选组件 → 选尺寸 → 添加」：
+ * - 首屏是按用途分组的组件列表（记账 / 生活 / 效率 / 资产 / 其他），每张卡 = 一个大预览
+ *   + 名称 + 说明 + 尺寸切换胶囊 + 添加按钮；
+ * - 同组件的多个尺寸形态合并进一张卡，点尺寸胶囊预览实时切换（不再退回目录找另一个格子）；
+ * - 添加按钮直接在卡上，点一下就落桌，不再进详情页；
+ * - 顶部搜索框按名称过滤。
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WidgetPinScreen(onNavigateBack: () -> Unit = {}) {
     val context = LocalContext.current
-    val lifecycleOwner = LocalLifecycleOwner.current
-    val isMiui = remember { WidgetPin.isMiuiHome(context) }
     val scope = rememberCoroutineScope()
+    val catalog = remember { WidgetPin.catalog() }
+    val isMiui = remember { WidgetPin.isMiuiHome(context) }
 
     var snapshot by remember { mutableStateOf(WidgetPin.snapshot(context)) }
     // 落桌核对期（最多 5×1.5s）锁住按钮：不锁的话连点会连发多个系统确认框
     var verifying by remember { mutableStateOf(false) }
-    // 两层导航：null = 目录网格（首屏），非空 = 该组件的详情落桌页
-    var selected by remember { mutableStateOf<WidgetPin.Entry?>(null) }
+    // 每个组件当前选中的尺寸（族键 → entries 下标），默认 0 = 基类形态
+    var selectedIndex by remember { mutableStateOf<Map<Int, Int>>(emptyMap()) }
+    var query by remember { mutableStateOf("") }
 
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) snapshot = WidgetPin.snapshot(context)
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
-    }
+    // 从系统确认框回来时（ON_RESUME）重数一遍桌面实例，把「已添加 N 个」刷新到最新
+    RefreshSnapshotOnResume { snapshot = WidgetPin.snapshot(context) }
 
     // 点了「添加」不立刻报结果：requestPinAppWidget 的返回值只代表「这个桌面支持应用内添加」，
     // 桌面缺少相关权限时会静默失败（请求被吞、桌面什么都没有），照着返回值报成功就是假消息。
     // 所以等几秒重新数一遍桌面实例，数到了才算成了，没数到就如实说没成功。
-    // 核对期间按钮转「确认中…」禁用 —— 不然连点会连发多个系统确认框。
+    // 核对期间按钮转「确认中…」并禁用 —— 不然连点会连发多个系统确认框。
     fun addWidget(entry: WidgetPin.Entry, before: Int) {
         if (verifying) return
         if (!WidgetPin.requestPin(context, entry)) {
@@ -158,216 +133,29 @@ fun WidgetPinScreen(onNavigateBack: () -> Unit = {}) {
         }
     }
 
-    Scaffold(
-        topBar = {
-            CompactTopAppBar(
-                title = stringResource(R.string.settings_widget_title),
-                navigationIcon = {
-                    IconButton(
-                        onClick = {
-                            // 详情里先退回目录；目录里再退才是离开设置页
-                            if (selected != null) selected = null else onNavigateBack()
-                        }
-                    ) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.settings_navigate_back)
-                        )
-                    }
-                }
-            )
-        },
-        bottomBar = {
-            // 目录页没有「当前组件」，不摆添加按钮；进详情才出现
-            selected?.let { entry ->
-                BottomBar(
-                    bound = snapshot.boundCount(entry),
-                    pinSupported = snapshot.pinSupported,
-                    verifying = verifying,
-                    onAdd = { addWidget(entry, snapshot.boundCount(entry)) }
-                )
-            }
-        }
-    ) { innerPadding ->
-        WidgetPinContent(
-            modifier = Modifier.padding(innerPadding),
-            selected = selected,
-            snapshot = snapshot,
-            isMiui = isMiui,
-            onSelect = { selected = it }
-        )
-    }
-}
-
-/**
- * 页面主体两层：
- * - 目录（首屏）：2 列滚动网格总览全部形态 —— 缩略图按设计尺寸等比缩（4×3 大块、1×1 小方），
- *   网格自己滚，矮屏也不塌（不需要版式切换）；
- * - 详情（点选进入）：标题 → 大预览 → 页脚 → 前提提示，添加按钮在底部栏（[BottomBar]）。
- */
-@Composable
-private fun WidgetPinContent(
-    modifier: Modifier,
-    selected: WidgetPin.Entry?,
-    snapshot: WidgetPin.Snapshot,
-    isMiui: Boolean,
-    onSelect: (WidgetPin.Entry) -> Unit
-) {
-    BoxWithConstraints(
-        modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-    ) {
-        val balanced = maxHeight >= MIN_BALANCED_HEIGHT
-        val stageHeight =
-            if (balanced) {
-                PREVIEW_STAGE_HEIGHT
-            } else {
-                minOf(PREVIEW_STAGE_HEIGHT, maxHeight * COMPACT_STAGE_RATIO)
-            }
-        if (selected == null) {
-            CatalogBody(snapshot = snapshot, isMiui = isMiui, onSelect = onSelect)
-        } else {
-            DetailBody(
-                entry = selected,
-                snapshot = snapshot,
-                isMiui = isMiui,
-                stageHeight = stageHeight,
-                balanced = balanced
-            )
-        }
-    }
-}
-
-/** 目录页：网格占满中间自己滚，前提提示固定在底部。 */
-@Composable
-private fun CatalogBody(
-    snapshot: WidgetPin.Snapshot,
-    isMiui: Boolean,
-    onSelect: (WidgetPin.Entry) -> Unit
-) {
-    Column(modifier = Modifier.fillMaxSize()) {
-        Box(modifier = Modifier.weight(1f)) {
-            CatalogGrid(snapshot = snapshot, onSelect = onSelect)
-        }
-        PermissionStrip(
-            pinSupported = snapshot.pinSupported,
-            isMiui = isMiui,
-            pinOk = snapshot.pinOk
-        )
-        Spacer(Modifier.height(10.dp))
-    }
-}
-
-@Composable
-private fun CatalogGrid(snapshot: WidgetPin.Snapshot, onSelect: (WidgetPin.Entry) -> Unit) {
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(CATALOG_COLUMNS),
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        items(WidgetPin.entries) { entry ->
-            CatalogCell(
-                entry = entry,
-                bound = snapshot.boundCount(entry),
-                onClick = { onSelect(entry) }
-            )
-        }
-    }
-}
-
-/**
- * 目录格子：缩略图（沿用统一等比缩放，格间相对大小 = 桌面占格比）+ 名称 + 尺寸标 + 已添加。
- * 读屏把整格念成一条：名称、尺寸、已添加一起给，图与格子本身无从辨认。
- */
-@Composable
-private fun CatalogCell(entry: WidgetPin.Entry, bound: Int, onClick: () -> Unit) {
-    val title = stringResource(entry.titleRes)
-    val cells = WidgetPin.cellsOf(entry)
-    val added = if (bound == 0) null else stringResource(R.string.widget_pin_count, bound)
-    Surface(
-        shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .testTag(CATALOG_CELL_TAG)
-            .semantics {
-                contentDescription = listOfNotNull(title, cells, added).joinToString("，")
-            }
-    ) {
+    Scaffold(topBar = { WidgetPinTopBar(onNavigateBack) }) { innerPadding ->
         Column(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 10.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier
+                .padding(innerPadding)
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(CATALOG_THUMB_HEIGHT),
-                contentAlignment = Alignment.Center
-            ) {
-                PreviewImage(
-                    imageRes = entry.previewImageRes,
-                    designSize = WidgetPin.designSizeOf(entry),
-                    // 整格已有合成读屏描述，图不再单独念一遍
-                    contentDescription = null
-                )
-            }
-            Text(
-                title,
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                textAlign = TextAlign.Center
-            )
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(top = 2.dp)
-            ) {
-                Text(
-                    cells,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                if (added != null) {
-                    Text(
-                        " · $added",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary
-                    )
+            WidgetSearchField(query = query, onQueryChange = { query = it })
+            CatalogList(
+                modifier = Modifier.weight(1f),
+                catalog = catalog,
+                query = query,
+                selectedIndex = selectedIndex,
+                snapshot = snapshot,
+                verifying = verifying,
+                onSelectSize = { familyKey, index ->
+                    selectedIndex = selectedIndex.toMutableMap().apply { put(familyKey, index) }
+                },
+                onAdd = { component ->
+                    val selected = selectedEntry(component, selectedIndex)
+                    addWidget(selected, snapshot.boundCount(selected))
                 }
-            }
-        }
-    }
-}
-
-/**
- * 详情落桌页（目录点选进入）：标题 → 大预览 → 页脚 → 前提提示。
- * 两种版式按可用高切换：
- * - 常规竖屏（≥ [MIN_BALANCED_HEIGHT]）：富余高度上下平分、前提提示贴底；
- * - 矮一屏（横屏 / 分屏小窗 / 系统大字体）：整列可滚 + 预览舞台按比例收缩 ——
- *   weight 版式在矮屏会塌缩到 0 仍放不下，权限条和页脚会被裁掉且无处可滚。
- */
-@Composable
-private fun DetailBody(
-    entry: WidgetPin.Entry,
-    snapshot: WidgetPin.Snapshot,
-    isMiui: Boolean,
-    stageHeight: Dp,
-    balanced: Boolean
-) {
-    if (balanced) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            Spacer(Modifier.weight(1f))
-            CurrentTitle(entry = entry, snapshot = snapshot)
-            Spacer(Modifier.height(14.dp))
-            PreviewPage(entry = entry, stageHeight = stageHeight)
-            Spacer(Modifier.height(12.dp))
-            PageFooter()
-            Spacer(Modifier.weight(1f))
+            )
             PermissionStrip(
                 pinSupported = snapshot.pinSupported,
                 isMiui = isMiui,
@@ -375,121 +163,290 @@ private fun DetailBody(
             )
             Spacer(Modifier.height(10.dp))
         }
-    } else {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-        ) {
-            Spacer(Modifier.height(16.dp))
-            CurrentTitle(entry = entry, snapshot = snapshot)
-            Spacer(Modifier.height(14.dp))
-            PreviewPage(entry = entry, stageHeight = stageHeight)
-            Spacer(Modifier.height(12.dp))
-            PageFooter()
-            PermissionStrip(
-                pinSupported = snapshot.pinSupported,
-                isMiui = isMiui,
-                pinOk = snapshot.pinOk
-            )
-            Spacer(Modifier.height(16.dp))
-        }
     }
 }
 
+/** 顶栏：标题 + 返回。 */
 @Composable
-private fun PageFooter() {
-    Text(
-        stringResource(R.string.widget_page_footer),
-        style = MaterialTheme.typography.labelSmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        textAlign = TextAlign.Center,
+private fun WidgetPinTopBar(onNavigateBack: () -> Unit) {
+    CompactTopAppBar(
+        title = stringResource(R.string.settings_widget_title),
+        navigationIcon = {
+            IconButton(onClick = onNavigateBack) {
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = stringResource(R.string.settings_navigate_back)
+                )
+            }
+        }
+    )
+}
+
+/** 回到前台时回调一次：用于重数桌面实例。 */
+@Composable
+private fun RefreshSnapshotOnResume(onResume: () -> Unit) {
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) onResume()
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+}
+
+/** 顶部搜索框：按组件名称过滤（分组浏览时隐藏空组）。 */
+@Composable
+private fun WidgetSearchField(query: String, onQueryChange: (String) -> Unit) {
+    OutlinedTextField(
+        value = query,
+        onValueChange = onQueryChange,
+        placeholder = { Text(stringResource(R.string.widget_search_hint)) },
+        leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+        singleLine = true,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp)
+            .padding(horizontal = 16.dp, vertical = 4.dp)
+            .testTag(SEARCH_FIELD_TAG)
     )
 }
 
 /**
- * 当前组件的名称 + 说明 + 尺寸/已添加：进详情时交叉淡入。
+ * 组件目录：无搜索词时按分组列出（组标题 + 组件卡），有搜索词时拍平成匹配结果。
+ * 两种呈现共用同一张卡 [CatalogCardItem]。
  */
 @Composable
-private fun CurrentTitle(entry: WidgetPin.Entry, snapshot: WidgetPin.Snapshot) {
-    AnimatedContent(
-        targetState = entry,
-        transitionSpec = { fadeIn(tween(220)) togetherWith fadeOut(tween(120)) },
-        label = "widgetPinTitle",
+private fun CatalogList(
+    modifier: Modifier,
+    catalog: List<WidgetPin.CatalogGroup>,
+    query: String,
+    selectedIndex: Map<Int, Int>,
+    snapshot: WidgetPin.Snapshot,
+    verifying: Boolean,
+    onSelectSize: (familyKey: Int, index: Int) -> Unit,
+    onAdd: (WidgetPin.CatalogComponent) -> Unit
+) {
+    val context = LocalContext.current
+    LazyColumn(
+        modifier = modifier
+            .fillMaxWidth()
+            .testTag(CATALOG_LIST_TAG),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        if (query.isBlank()) {
+            catalog.forEach { group ->
+                item(key = "h_${group.group.name}") { GroupHeader(group.group) }
+                items(group.components, key = { "c_${it.familyKey}" }) { component ->
+                    CatalogCardItem(component, selectedIndex, snapshot, verifying, onSelectSize, onAdd)
+                }
+            }
+        } else {
+            // 过滤在普通 lambda 里做，用 context.getString（stringResource 是 @Composable，不能在这用）
+            val results = catalog
+                .flatMap { it.components }
+                .filter { context.getString(it.titleRes).contains(query, ignoreCase = true) }
+            items(results, key = { "s_${it.familyKey}" }) { component ->
+                CatalogCardItem(component, selectedIndex, snapshot, verifying, onSelectSize, onAdd)
+            }
+        }
+    }
+}
+
+/** 单张组件卡：从状态里取当前选中尺寸与桌面实例数，交给 [ComponentCard] 渲染。 */
+@Composable
+private fun CatalogCardItem(
+    component: WidgetPin.CatalogComponent,
+    selectedIndex: Map<Int, Int>,
+    snapshot: WidgetPin.Snapshot,
+    verifying: Boolean,
+    onSelectSize: (familyKey: Int, index: Int) -> Unit,
+    onAdd: (WidgetPin.CatalogComponent) -> Unit
+) {
+    ComponentCard(
+        component = component,
+        selected = selectedEntry(component, selectedIndex),
+        bound = snapshot.boundCountOf(component),
+        pinSupported = snapshot.pinSupported,
+        verifying = verifying,
+        onSelectSize = { entry -> onSelectSize(component.familyKey, component.entries.indexOf(entry)) },
+        onAdd = { onAdd(component) }
+    )
+}
+
+/** 组件当前选中的尺寸形态：优先用户选过，否则基类（entries 首位）。 */
+private fun selectedEntry(
+    component: WidgetPin.CatalogComponent,
+    selectedIndex: Map<Int, Int>
+): WidgetPin.Entry = component.entries.getOrElse(selectedIndex[component.familyKey] ?: 0) {
+    component.entries.first()
+}
+
+/** 分组标题。 */
+@Composable
+private fun GroupHeader(group: WidgetPin.WidgetGroup) {
+    Text(
+        stringResource(group.titleRes),
+        style = MaterialTheme.typography.titleMedium,
+        fontWeight = FontWeight.Bold,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(top = 4.dp, bottom = 2.dp)
+    )
+}
+
+/**
+ * 组件卡：大预览（随选中尺寸切换）+ 名称 + 说明 + 尺寸胶囊 + 添加按钮。
+ * 读屏把整卡合成一条：名称、尺寸、已添加一起给，图与卡本身无从辨认。
+ */
+@Composable
+private fun ComponentCard(
+    component: WidgetPin.CatalogComponent,
+    selected: WidgetPin.Entry,
+    bound: Int,
+    pinSupported: Boolean,
+    verifying: Boolean,
+    onSelectSize: (WidgetPin.Entry) -> Unit,
+    onAdd: () -> Unit
+) {
+    // 读屏描述要在 Compose 作用域里先取好字符串，再交给 semantics（其 lambda 不是 Compose 作用域）
+    val cellDesc = listOfNotNull(
+        stringResource(component.titleRes),
+        component.cells.joinToString("/"),
+        if (bound > 0) stringResource(R.string.widget_pin_count, bound) else null
+    ).joinToString("，")
+    Surface(
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp)
-    ) { current ->
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
+            .testTag(CATALOG_CELL_TAG)
+            .semantics { contentDescription = cellDesc }
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            CardPreview(selected)
+            CardTitleRow(component.titleRes, bound)
             Text(
-                stringResource(current.titleRes),
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center
-            )
-            Text(
-                stringResource(current.descRes),
-                style = MaterialTheme.typography.bodyMedium,
+                stringResource(component.descRes),
+                style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(top = 6.dp)
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(top = 2.dp)
             )
-            val cells = WidgetPin.cellsOf(current)
-            val bound = snapshot.boundCount(current)
-            val added = if (bound == 0) {
-                stringResource(R.string.widget_pin_none)
-            } else {
-                stringResource(R.string.widget_pin_count, bound)
-            }
-            val meta = listOf(cells, added)
-                .filter { it.isNotEmpty() }
-                .joinToString(" · ")
+            CardSizeRow(component, selected, onSelectSize)
+            CardAddButton(bound, pinSupported, verifying, onAdd)
+        }
+    }
+}
+
+/** 卡内预览舞台：固定高度 + 居中，随选中尺寸换图（整卡已有合成读屏描述，图不再单独念）。 */
+@Composable
+private fun CardPreview(selected: WidgetPin.Entry) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(PREVIEW_HEIGHT),
+        contentAlignment = Alignment.Center
+    ) {
+        PreviewImage(
+            imageRes = selected.previewImageRes,
+            designSize = WidgetPin.designSizeOf(selected),
+            contentDescription = null
+        )
+    }
+}
+
+/** 卡内名称行：名称（左）+「已添加 N」（右，仅已添加时）。 */
+@Composable
+private fun CardTitleRow(titleRes: Int, bound: Int) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            stringResource(titleRes),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f)
+        )
+        if (bound > 0) {
             Text(
-                meta,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 6.dp)
+                stringResource(R.string.widget_pin_count, bound),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary
             )
         }
     }
 }
 
-/**
- * 一页：一张卡摆在浅中性底的预览舞台上。
- *
- * 曾试过「迷你桌面」情境化背景（渐变壁纸 + 4 列网格 + 底部 Dock 胶囊，同 iOS/系统选择器），
- * 真机看过后用户定稿换回浅色纯底：壁纸本身抢视觉焦点，预览的主角是卡不是舞台。
- * 网格/Dock 是画在壁纸上的白 alpha 线，浅底上无意义，一并退场。
- */
+/** 卡内尺寸切换行：每个形态一颗胶囊，横向可滚（习惯有 4 个尺寸）。 */
 @Composable
-private fun PreviewPage(entry: WidgetPin.Entry, stageHeight: Dp) {
-    Surface(
+private fun CardSizeRow(
+    component: WidgetPin.CatalogComponent,
+    selected: WidgetPin.Entry,
+    onSelectSize: (WidgetPin.Entry) -> Unit
+) {
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(stageHeight)
-            .padding(horizontal = PAGE_H_PADDING),
-        shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+            .horizontalScroll(rememberScrollState())
+            .padding(top = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(PREVIEW_STAGE_PADDING),
-            contentAlignment = Alignment.Center
-        ) {
-            PreviewImage(
-                imageRes = entry.previewImageRes,
-                designSize = WidgetPin.designSizeOf(entry),
-                // 读屏用户滑到这页能知道是哪个组件（图本身无从辨认）
-                contentDescription = stringResource(entry.titleRes)
-            )
+        component.entries.forEach { entry ->
+            SizeChip(WidgetPin.cellsOf(entry), entry == selected) { onSelectSize(entry) }
         }
+    }
+}
+
+/** 卡内添加按钮：核对期转「确认中…」并禁用，防连发确认框。 */
+@Composable
+private fun CardAddButton(bound: Int, pinSupported: Boolean, verifying: Boolean, onAdd: () -> Unit) {
+    Button(
+        onClick = onAdd,
+        enabled = pinSupported && !verifying,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp)
+    ) {
+        Text(
+            stringResource(
+                when {
+                    verifying -> R.string.widget_page_add_confirming
+                    bound == 0 -> R.string.widget_pin_add
+                    else -> R.string.widget_page_add_again
+                }
+            )
+        )
+    }
+}
+
+/** 尺寸胶囊：选中态用主色填充，未选中用中性底。 */
+@Composable
+private fun SizeChip(cells: String, selected: Boolean, onClick: () -> Unit) {
+    Surface(
+        shape = MaterialTheme.shapes.small,
+        color = if (selected) {
+            MaterialTheme.colorScheme.primary
+        } else {
+            MaterialTheme.colorScheme.surfaceVariant
+        },
+        modifier = Modifier.clickable(onClick = onClick)
+    ) {
+        Text(
+            cells,
+            style = MaterialTheme.typography.labelMedium,
+            color = if (selected) {
+                MaterialTheme.colorScheme.onPrimary
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            },
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+        )
     }
 }
 
@@ -589,34 +546,6 @@ private fun InfoBlock(title: String, body: String?, action: String?, onClick: ()
                     Text(it)
                 }
             }
-        }
-    }
-}
-
-/** 底部通栏按钮：整页只有这一个动作，点它添加当前这一页的组件。
- *  落桌核对期转「确认中…」并禁用 —— 返回值不等于成功，核对完才放行下一次点击。 */
-@Composable
-private fun BottomBar(bound: Int, pinSupported: Boolean, verifying: Boolean, onAdd: () -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .navigationBarsPadding()
-            .padding(horizontal = 16.dp, vertical = 12.dp)
-    ) {
-        Button(
-            enabled = pinSupported && !verifying,
-            onClick = onAdd,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(
-                stringResource(
-                    when {
-                        verifying -> R.string.widget_page_add_confirming
-                        bound == 0 -> R.string.widget_pin_add
-                        else -> R.string.widget_page_add_again
-                    }
-                )
-            )
         }
     }
 }

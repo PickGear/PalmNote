@@ -544,11 +544,16 @@
     <string name="widget_page_perm_desc">Your launcher requires the “Desktop shortcuts” permission. Without it, adding will not succeed.</string>
     <string name="widget_page_perm_action">Open settings ›</string>
     <string name="widget_page_unsupported">This launcher doesn\'t support adding from inside the app — add it from the launcher\'s widget list instead.</string>
-    <string name="widget_page_footer">After placing, long-press a widget to change its settings.</string>
+    <!-- Add page: group titles + search -->
+    <string name="widget_group_billing">Billing</string>
+    <string name="widget_group_life">Life</string>
+    <string name="widget_group_efficiency">Productivity</string>
+    <string name="widget_group_asset">Assets</string>
+    <string name="widget_group_other">Other</string>
+    <string name="widget_search_hint">Search widgets</string>
     <string name="widget_page_add_confirming">Confirming…</string>
     <string name="widget_page_add_again">Add another</string>
     <string name="widget_pin_add">Add to home screen</string>
-    <string name="widget_pin_none">Not added</string>
     <string name="widget_pin_count">%1$d on home screen</string>
     <string name="widget_pin_failed">Couldn\'t start pinning. Add from your home screen\'s widget list instead.</string>
     <string name="widget_pin_added">Added to your home screen</string>

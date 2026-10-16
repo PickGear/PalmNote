@@ -718,12 +718,17 @@
     <string name="widget_page_perm_desc">你的桌面要求「桌面快捷方式」权限。没开的话，点添加不会成功。</string>
     <string name="widget_page_perm_action">去开启 ›</string>
     <string name="widget_page_unsupported">当前桌面不支持在应用内添加，只能从桌面的小组件列表里添加。</string>
-    <string name="widget_page_footer">放好之后长按组件还能改设置。</string>
+    <!-- 添加页：分组标题 + 搜索 -->
+    <string name="widget_group_billing">记账</string>
+    <string name="widget_group_life">生活</string>
+    <string name="widget_group_efficiency">效率</string>
+    <string name="widget_group_asset">资产</string>
+    <string name="widget_group_other">其他</string>
+    <string name="widget_search_hint">搜索小组件</string>
     <!-- 添加页：落桌核对期的按钮态 -->
     <string name="widget_page_add_confirming">确认中…</string>
     <string name="widget_page_add_again">再添加</string>
     <string name="widget_pin_add">添加到桌面</string>
-    <string name="widget_pin_none">未添加</string>
     <string name="widget_pin_count">桌面已有 %1$d 个</string>
     <string name="widget_pin_failed">未能发起添加，请从桌面的小组件列表添加</string>
     <string name="widget_pin_added">已添加到桌面</string>

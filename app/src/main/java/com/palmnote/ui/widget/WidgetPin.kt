@@ -29,6 +29,37 @@ object WidgetPin {
         val configureActivity: Class<*>? = null
     )
 
+    /** 目录分组：22 个尺寸形态按用途归到 5 组，组内再按组件折叠（见 [catalog]）。 */
+    enum class WidgetGroup(val titleRes: Int) {
+        BILLING(R.string.widget_group_billing),
+        LIFE(R.string.widget_group_life),
+        EFFICIENCY(R.string.widget_group_efficiency),
+        ASSET(R.string.widget_group_asset),
+        OTHER(R.string.widget_group_other),
+    }
+
+    /**
+     * 目录里的一个**组件**：同基类的多个尺寸形态合并为一组（如「今日待办」= 4×3 + 2×1 + 4×1）。
+     * [entries] 首位是基类形态，即默认选中的尺寸。
+     */
+    data class CatalogComponent(
+        /** 族键：同族尺寸形态共享 titleRes，用它把一组的多个尺寸认成一个组件。 */
+        val familyKey: Int,
+        val titleRes: Int,
+        val descRes: Int,
+        val entries: List<Entry>,
+        val configureActivity: Class<*>?,
+    ) {
+        /** 该组件支持的所有尺寸标签（与 [entries] 一一对应）。 */
+        val cells: List<String> get() = entries.map { cellsOf(it) }
+    }
+
+    /** 目录的一个分组：组标题 + 该组的组件列表。 */
+    data class CatalogGroup(
+        val group: WidgetGroup,
+        val components: List<CatalogComponent>,
+    )
+
     // 缩略图与选择器 previewImage 同源（真实布局离屏渲染），
     // 确认框预览布局与选择器 previewLayout 同源：确认框里看到的就是添加后的样子
     // 顺序即目录里的顺序，按分组排（记账 → 生活 → 其他）
@@ -224,6 +255,56 @@ object WidgetPin {
     /** 尺寸标签（如 `3×2`）；没登记就返回空串，标签自动隐藏。 */
     fun cellsOf(entry: Entry): String = CELLS[entry.providerClass].orEmpty()
 
+    /** 每个形态属于哪个目录分组（与 [WidgetGroup] 对应）。 */
+    private val GROUP_OF: Map<Class<*>, WidgetGroup> = mapOf(
+        BillWidgetProvider::class.java to WidgetGroup.BILLING,
+        NetWorthWidgetProvider::class.java to WidgetGroup.BILLING,
+        TodoWidgetProvider::class.java to WidgetGroup.LIFE,
+        TodoMini::class.java to WidgetGroup.LIFE,
+        TodoWide::class.java to WidgetGroup.LIFE,
+        HabitWidgetProvider::class.java to WidgetGroup.LIFE,
+        HabitMini::class.java to WidgetGroup.LIFE,
+        HabitWide::class.java to WidgetGroup.LIFE,
+        HabitNarrow::class.java to WidgetGroup.LIFE,
+        NextUpWidgetProvider::class.java to WidgetGroup.LIFE,
+        LifeCounterWidgetProvider::class.java to WidgetGroup.EFFICIENCY,
+        CounterNarrow::class.java to WidgetGroup.EFFICIENCY,
+        CounterTall::class.java to WidgetGroup.EFFICIENCY,
+        SubscriptionWidgetProvider::class.java to WidgetGroup.EFFICIENCY,
+        SubscriptionMini::class.java to WidgetGroup.EFFICIENCY,
+        SubscriptionNarrow::class.java to WidgetGroup.EFFICIENCY,
+        DashboardWidgetProvider::class.java to WidgetGroup.OTHER,
+        AssetWidgetProvider::class.java to WidgetGroup.ASSET,
+        VaultWidgetProvider::class.java to WidgetGroup.ASSET,
+        ShortcutsWidgetProvider::class.java to WidgetGroup.OTHER,
+        ShortcutsWide::class.java to WidgetGroup.OTHER,
+        ShortcutsSmall::class.java to WidgetGroup.OTHER,
+    )
+
+    /** 形态所属分组；没登记归 OTHER（与 [GROUP_OF] 一致，测试可据此锁住分组完整）。 */
+    fun groupOf(entry: Entry): WidgetGroup = GROUP_OF[entry.providerClass] ?: WidgetGroup.OTHER
+
+    /**
+     * 把 22 个尺寸形态折叠成「分组 → 组件」两级目录：
+     * 同族尺寸形态（共享 titleRes）合并成一个 [CatalogComponent]，基类形态在首位即默认尺寸。
+     * 分组顺序 = [WidgetGroup] 声明顺序，组内组件顺序 = 目录里的先后。
+     */
+    fun catalog(): List<CatalogGroup> = WidgetGroup.entries.map { group ->
+        val components = entries
+            .filter { groupOf(it) == group }
+            .groupBy { it.titleRes }
+            .map { (title, family) ->
+                CatalogComponent(
+                    familyKey = title,
+                    titleRes = title,
+                    descRes = family.first().descRes,
+                    entries = family,
+                    configureActivity = family.first().configureActivity,
+                )
+            }
+        CatalogGroup(group, components)
+    }.filter { it.components.isNotEmpty() }
+
     /**
      * 各组件的**设计尺寸**（dp，宽 to 高），取自 `dist/widget-design-v2/design-v4.html`
      * 的 `.s11/.s21/.s22/.s32/.s41/.s43` —— 就是它们在桌面上的真实占格大小。
@@ -265,6 +346,10 @@ object WidgetPin {
         val pinOk: Boolean
     ) {
         fun boundCount(entry: Entry): Int = bound[entry.providerClass] ?: 0
+
+        /** 组件（含各尺寸形态）在桌面上的实例总数。 */
+        fun boundCountOf(component: CatalogComponent): Int =
+            component.entries.sumOf { bound[it.providerClass] ?: 0 }
     }
 
     fun snapshot(context: Context): Snapshot = Snapshot(

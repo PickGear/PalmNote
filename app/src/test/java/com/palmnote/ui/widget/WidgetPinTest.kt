@@ -6,12 +6,12 @@ import android.content.Intent
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.hasContentDescription
-import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -20,11 +20,14 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.unit.dp
 import androidx.test.platform.app.InstrumentationRegistry
 import com.palmnote.app.R
 import com.palmnote.ui.settings.CATALOG_CELL_TAG
+import com.palmnote.ui.settings.CATALOG_LIST_TAG
 import com.palmnote.ui.settings.PREVIEW_IMAGE_TAG
+import com.palmnote.ui.settings.SEARCH_FIELD_TAG
 import com.palmnote.ui.settings.WidgetPinScreen
 import com.palmnote.ui.theme.PalmNoteTheme
 import kotlinx.coroutines.test.runTest
@@ -40,14 +43,15 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
 /**
- * 添加页（**只在应用内一键添加**，不再讲系统手动添加路径）两层版式：
- * - 首屏目录 = 2 列网格总览（22 个形态一屏扫完，格子 = 缩略图 + 名称 + 尺寸标 + 已添加）；
- * - 点格子进详情落桌页（大预览 + 底部唯一添加按钮），返回键先退目录再退设置；
- * - 目录覆盖全部 22 个组件（11 尺寸形态 + 11 基类）、Provider 不重复、标题/描述/预览资源可解析，
- *   且每组都登记了格数标签与设计尺寸；
+ * 添加页（**只在应用内一键添加**，不再讲系统的手动添加路径）一屏版式：
+ * - 首屏是按用途分组的组件列表（记账 / 生活 / 效率 / 资产 / 其他），
+ *   每张卡 = 大预览 + 名称 + 说明 + 尺寸切换胶囊 + 添加按钮；
+ * - 同组件的多个尺寸形态合并进一张卡，点尺寸胶囊预览实时切换；
+ * - 添加按钮直接在卡上，点一下就落桌；顶部搜索框按名称过滤；
+ * - 目录覆盖全部 22 个组件（11 尺寸形态 + 11 基类）、Provider 不重复、
+ *   标题/描述/预览资源可解析，且每组都登记了格数标签、设计尺寸与分组；
  * - manifest 覆盖：22 个 receiver 全部声明（系统选择器按 manifest 的 label 区分同族形态）；
- * - 两个分支都显式锁定（不依赖阴影默认值）：启动器支持 pin → 按钮可用；不支持 → 按钮禁用 + 整页兜底文案；
- * - 透明度是「默认外观」，改的是全局默认值。
+ * - 两个分支都显式锁定（不依赖阴影默认值）：启动器支持 pin → 按钮可用；不支持 → 按钮禁用 + 整页兜底文案。
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [30], application = Application::class)
@@ -62,14 +66,12 @@ class WidgetPinTest {
         shadowOf(AppWidgetManager.getInstance(context)).setRequestPinAppWidgetSupported(supported)
     }
 
-    /** 详情页才有添加按钮：先点格子进去（默认点首格账单，标题唯一）。 */
-    private fun openDetail(entry: WidgetPin.Entry = WidgetPin.entries.first()) {
-        compose.onNodeWithText(context.getString(entry.titleRes)).performClick()
-    }
+    /** 所有「添加到桌面」按钮（未添加时按钮文案统一是它）。 */
+    private fun addButtons() =
+        compose.onAllNodesWithText(context.getString(R.string.widget_pin_add))
 
-    /** 详情页只有这一个动作按钮；保守起见仍断言「可见集合非空」而非总数。 */
-    private fun visibleAddButtons() =
-        compose.onAllNodesWithText(context.getString(R.string.widget_pin_add)).fetchSemanticsNodes()
+    private fun firstPreviewHeightPx(): Int =
+        compose.onAllNodesWithTag(PREVIEW_IMAGE_TAG)[0].fetchSemanticsNode().size.height
 
     @Test
     fun `目录覆盖 22 个尺寸形态且资源都存在`() {
@@ -80,7 +82,7 @@ class WidgetPinTest {
             context.getString(entry.titleRes)
             context.getString(entry.descRes)
             context.resources.getResourceEntryName(entry.previewLayoutRes)
-            // 每个形态都要有格数标签与设计尺寸，缺一个预览卡就少一条信息（没登记会静默兜底）
+            // 每个形态都要有格数标签、设计尺寸与分组，缺一个预览卡就少一条信息（没登记会静默兜底）
             assertTrue(
                 "缺格数标签：${entry.providerClass.simpleName}",
                 WidgetPin.cellsOf(entry).isNotBlank()
@@ -89,7 +91,32 @@ class WidgetPinTest {
                 "缺设计尺寸：${entry.providerClass.simpleName}",
                 WidgetPin.designSizeOf(entry) != null
             )
+            assertNotNull("缺分组：${entry.providerClass.simpleName}", WidgetPin.groupOf(entry))
         }
+    }
+
+    @Test
+    fun `22 个形态折叠成 11 个组件并归 5 组`() {
+        val catalog = WidgetPin.catalog()
+        assertEquals(5, catalog.size)
+        val components = catalog.flatMap { it.components }
+        assertEquals(11, components.size)
+        // 每个组件至少 1 个尺寸，合计 22；同组件 titleRes 相同（族键），不同组件不同
+        assertTrue(components.all { it.entries.isNotEmpty() })
+        assertEquals(22, components.sumOf { it.entries.size })
+        assertEquals(11, components.map { it.familyKey }.distinct().size)
+    }
+
+    @Test
+    fun `分组把记账类排在最前`() {
+        // 分组顺序是唯一的引导：最常用的记账类占首组首位，用户不用先滚一段才找到
+        val catalog = WidgetPin.catalog()
+        assertEquals(WidgetPin.WidgetGroup.BILLING, catalog.first().group)
+        val firstComponent = catalog.first().components.first()
+        assertEquals(
+            context.getString(WidgetPin.entries.first().titleRes),
+            context.getString(firstComponent.titleRes)
+        )
     }
 
     @Test
@@ -111,17 +138,6 @@ class WidgetPinTest {
     }
 
     @Test
-    fun `目录顺序把记账类排在最前`() {
-        // 网格没有分组标题，顺序就是唯一的引导：
-        // 最常用的记账类占首格，用户不用先滚一段才找到
-        assertEquals(BillWidgetProvider::class.java, WidgetPin.entries.first().providerClass)
-        assertTrue(
-            "总资产应紧跟账单",
-            WidgetPin.entries.take(2).any { it.providerClass == NetWorthWidgetProvider::class.java }
-        )
-    }
-
-    @Test
     fun `只有账单组件在添加后弹配置页`() {
         // pin 通道不会拉起配置页，需要用户当场做选择的组件才挂成功回调自己补。
         // 目前只有账单（要选账本）；其余组件加完就完事，想调透明度可以之后长按进设置。
@@ -136,12 +152,9 @@ class WidgetPinTest {
         setPinSupported(true)
         compose.setContent { PalmNoteTheme { WidgetPinScreen() } }
 
-        // 首屏目录就有账单：格子里有名称
+        // 首屏就有账单卡：卡里有名称
         val first = WidgetPin.entries.first()
-        compose.onNodeWithText(context.getString(first.titleRes)).assertExists()
-        // 点进详情：名称与说明都在（说明是详情页的信息，格子里不占地方）
-        openDetail(first)
-        compose.onNodeWithText(context.getString(first.descRes)).assertExists()
+        compose.onAllNodesWithText(context.getString(first.titleRes)).assertCountEquals(1)
         // 系统手动添加那套（机型切换 + 三步路径）已整体下线，连文案都不该留在资源里
         assertEquals(
             0,
@@ -154,12 +167,10 @@ class WidgetPinTest {
         setPinSupported(false)
         compose.setContent { PalmNoteTheme { WidgetPinScreen() } }
 
-        // 前提提示两层都在：目录页就先讲清楚（全组件通用的前提）
+        // 前提提示在列表下方就先讲清楚（全组件通用的前提）
         compose.onNodeWithText(context.getString(R.string.widget_page_unsupported)).assertExists()
-        // 添加按钮只在详情页底部
-        openDetail()
-        compose.onNodeWithText(context.getString(R.string.widget_page_unsupported)).assertExists()
-        val buttons = visibleAddButtons()
+        // 所有添加按钮禁用
+        val buttons = addButtons().fetchSemanticsNodes()
         assertTrue("至少应看到一个可见的添加按钮", buttons.isNotEmpty())
         buttons.forEach { node ->
             assertTrue("pin unsupported 时添加按钮应禁用", node.config.getOrNull(SemanticsProperties.Disabled) != null)
@@ -171,8 +182,7 @@ class WidgetPinTest {
         setPinSupported(true)
         compose.setContent { PalmNoteTheme { WidgetPinScreen() } }
 
-        openDetail()
-        val buttons = visibleAddButtons()
+        val buttons = addButtons().fetchSemanticsNodes()
         assertTrue("至少应看到一个可见的添加按钮", buttons.isNotEmpty())
         buttons.forEach { node ->
             assertTrue("pin supported 时添加按钮应可用", node.config.getOrNull(SemanticsProperties.Disabled) == null)
@@ -197,34 +207,58 @@ class WidgetPinTest {
         assertEquals("数到就该立刻返回，不必跑满全部轮次", 2, polls)
     }
 
-    // ── 添加页优化：页序 / 读屏 / 权限条收起 / 落桌核对期按钮 ──
+    // ── 一屏版式：分组 / 尺寸切换 / 搜索 / 读屏 ──
 
     @Test
-    fun `目录网格首格是账单且能滚到目录深处`() {
+    fun `首屏首卡是账单且能滚到列表深处`() {
         setPinSupported(true)
         compose.setContent { PalmNoteTheme { WidgetPinScreen() } }
-        // 首格 = 账单：最常用的记账类占头位，不用先滚一段才找到
-        // （格子的合成读屏描述 = 名称 + 尺寸标，首格内容即目录第一条）
+        // 首卡 = 账单：最常用的记账类占头位，不用先滚一段才找到
+        // （卡的合成读屏描述 = 名称 + 尺寸标，首卡内容即目录第一条）
         val first = WidgetPin.entries.first()
         val firstCellDesc = "${context.getString(first.titleRes)}，${WidgetPin.cellsOf(first)}"
         compose.onAllNodesWithTag(CATALOG_CELL_TAG)[0].assert(hasContentDescription(firstCellDesc))
-        // 网格可滚：滚到密码本（目录第 19 位）证明不是只摆了首屏几格
+        // 列表可滚：滚到密码本（资产组，在列表深处）证明不是只摆了首屏几张卡
         val vaultTitle = context.getString(R.string.widget_vault_title)
-        compose.onNode(hasScrollAction()).performScrollToNode(hasText(vaultTitle))
+        compose.onNodeWithTag(CATALOG_LIST_TAG).performScrollToNode(hasText(vaultTitle))
         compose.onNodeWithText(vaultTitle).assertExists()
     }
 
     @Test
-    fun `网格格子与预览图都有读屏描述`() {
+    fun `卡片有读屏描述`() {
         setPinSupported(true)
         compose.setContent { PalmNoteTheme { WidgetPinScreen() } }
         val first = WidgetPin.entries.first()
-        // 目录格子：名称 + 尺寸标合成一条描述（未添加时就这两项，图与格子本身无从辨认）
+        // 卡：名称 + 尺寸标合成一条描述（未添加时就这两项，图与卡本身无从辨认）
         val cellDesc = "${context.getString(first.titleRes)}，${WidgetPin.cellsOf(first)}"
         compose.onNode(hasContentDescription(cellDesc)).assertExists()
-        // 进详情：预览图 contentDescription = 组件标题
-        openDetail(first)
-        compose.onNode(hasContentDescription(context.getString(first.titleRes))).assertExists()
+    }
+
+    @Test
+    fun `点尺寸胶囊切换预览`() {
+        setPinSupported(true)
+        compose.setContent { PalmNoteTheme { WidgetPinScreen() } }
+        // 搜出多尺寸组件（待办清单 = 4×3 + 2×1 + 4×1）；搜索词走资源，英文 locale 下也成立
+        compose.onNodeWithTag(SEARCH_FIELD_TAG)
+            .performTextInput(context.getString(R.string.widget_todo_title))
+        // 默认选中基类 4×3（高 268 比例，预览最高）
+        val before = firstPreviewHeightPx()
+        // 点 2×1（160×74，明显更矮）
+        compose.onNodeWithText("2×1").performClick()
+        val after = firstPreviewHeightPx()
+        assertTrue("切换尺寸后预览应变矮：before=$before after=$after", after < before)
+    }
+
+    @Test
+    fun `搜索过滤组件`() {
+        setPinSupported(true)
+        compose.setContent { PalmNoteTheme { WidgetPinScreen() } }
+        // 搜密码本 → 只剩密码本一个组件卡（搜索框里也有同样的字，用卡片数而不是标题文本判定）
+        compose.onNodeWithTag(SEARCH_FIELD_TAG)
+            .performTextInput(context.getString(R.string.widget_vault_title))
+        compose.onAllNodesWithTag(CATALOG_CELL_TAG).assertCountEquals(1)
+        // 不匹配的账单卡应消失
+        compose.onAllNodesWithText(context.getString(R.string.widget_bill_title)).assertCountEquals(0)
     }
 
     @Test
@@ -240,20 +274,21 @@ class WidgetPinTest {
     fun `落桌核对期按钮转确认中并禁用`() {
         setPinSupported(true)
         compose.setContent { PalmNoteTheme { WidgetPinScreen() } }
-        // 进详情点添加：返回值只说明通道可用，核对期（最多 5×1.5s）内必须锁住按钮，防止连发确认框
-        openDetail()
-        compose.onAllNodesWithText(context.getString(R.string.widget_pin_add))[0].performClick()
+        // 点首张卡的添加（先把列表滚到按钮——首卡偏高，按钮可能在首屏视口外）：
+        // 返回值只说明通道可用，核对期（最多 5×1.5s）内必须锁住按钮，防止连发确认框
+        compose.onNodeWithTag(CATALOG_LIST_TAG)
+            .performScrollToNode(hasText(context.getString(R.string.widget_pin_add)))
+        addButtons()[0].performClick()
         val confirming = context.getString(R.string.widget_page_add_confirming)
         compose.onNodeWithText(confirming).assertIsDisplayed()
         compose.onNodeWithText(confirming).assertIsNotEnabled()
     }
 
     // ── 预览尺寸：按组件设计尺寸**等比**摆放 ──
-    // 目录里的卡不再各自拉满预览区宽度（那样 1×1 和 4×3 一样宽、比例失真），而是全部乘
-    // 同一个系数：maxScale = min(可用宽/340, 可用高/268)。断言值按这个式子算出来，
-    // 同时锁住「尺寸不随屏幕密度变」（同一条在 2x / 3x 两种密度下量，结果必须一致）。
-    // 393dp 屏：可用宽 = 393 - 24×2（页边距）- 16×2（预览区留白）= 313dp；
-    // 可用高 = 272（舞台高）- 32（预览区留白）= 240dp
+    // 卡内预览盒固定高 110dp、宽 = 屏宽 - 列表边距 - 卡片内边。断言值按统一系数算：
+    // scale = min(可用宽/340, 可用高/268)。同时锁住「尺寸不随屏幕密度变」
+    // （同一条在 2x / 3x 两种密度下量，结果必须一致）。
+    // 393dp 屏：可用宽 = 393 - 16×2（列表边距）- 12×2（卡片内边）= 337dp；可用高 = 110dp
 
     @Test
     @Config(sdk = [30], application = Application::class, qualifiers = "zh-rCN-w393dp-h852dp-xxhdpi")
@@ -262,9 +297,8 @@ class WidgetPinTest {
         compose.setContent { PalmNoteTheme { WidgetPinScreen() } }
         val first = WidgetPin.entries.first()
         val (designW, designH) = WidgetPin.designSizeOf(first)!!
-        openDetail(first)
         val scale = previewScale()
-        compose.onNodeWithTag(PREVIEW_IMAGE_TAG)
+        compose.onAllNodesWithTag(PREVIEW_IMAGE_TAG)[0]
             .assertWidthIsEqualTo((designW * scale).dp)
             .assertHeightIsEqualTo((designH * scale).dp)
     }
@@ -276,13 +310,13 @@ class WidgetPinTest {
         compose.setContent { PalmNoteTheme { WidgetPinScreen() } }
         val first = WidgetPin.entries.first()
         val (designW, _) = WidgetPin.designSizeOf(first)!!
-        openDetail(first)
-        compose.onNodeWithTag(PREVIEW_IMAGE_TAG).assertWidthIsEqualTo((designW * previewScale()).dp)
+        compose.onAllNodesWithTag(PREVIEW_IMAGE_TAG)[0]
+            .assertWidthIsEqualTo((designW * previewScale()).dp)
     }
 
     private companion object {
-        const val PREVIEW_WIDTH_DP = 313f
-        const val PREVIEW_HEIGHT_DP = 240f
+        const val PREVIEW_WIDTH_DP = 337f
+        const val PREVIEW_HEIGHT_DP = 110f
 
         /** 设计稿最大卡（4×3）的尺寸，全目录统一缩放基准。 */
         const val DESIGN_MAX_WIDTH = 340f
