@@ -22,3 +22,8 @@ Thumbs.db
 *.pfx
 *.pem
 *.key
+
+# 本机产物（装机包 / 排查对比图）：只在本地生成，不进仓库树。
+# 写在这里而不是 .git/info/exclude，是为了别的 clone 也默认忽略。
+/dist/
+.workbuddy/
