@@ -359,14 +359,14 @@ object WidgetPin {
     )
 
     /**
-     * 系统桌面权限条的出现条件：启动器支持应用内添加 + 是系统桌面 + **还没成功落桌过**。
-     * 「桌面快捷方式」权限没有公开查询法，但成功落桌过就是权限已开的实证——之后再常驻
+     * 权限条的出现条件：启动器支持应用内添加 + 当前桌面 pin 前会校验「桌面快捷方式」权限 +
+     * **还没成功落桌过**。该权限没有公开查询法，但成功落桌过就是权限已开的实证——之后再常驻
      * 提示只会制造焦虑；后来被关掉权限时，添加失败的 toast 里已有引导文案兜底。
      */
-    internal fun showMiuiPermStrip(pinSupported: Boolean, isMiui: Boolean, pinOk: Boolean): Boolean =
-        pinSupported && isMiui && !pinOk
+    internal fun showHomePermStrip(pinSupported: Boolean, homeNeedsPerm: Boolean, pinOk: Boolean): Boolean =
+        pinSupported && homeNeedsPerm && !pinOk
 
-    /** 成功落桌过一次的记录（本地存，只增不删）：用于收起小米权限条。 */
+    /** 成功落桌过一次的记录（本地存，只增不删）：用于收起权限条。 */
     fun pinSucceededBefore(context: Context): Boolean =
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             .getBoolean(KEY_PIN_OK, false)
@@ -460,11 +460,14 @@ object WidgetPin {
     }
 
     /**
-     * 系统桌面：pin 确认页（AddItemActivity）在真正落桌前会校验
-     * 调用方的「桌面快捷方式」权限（logcat: "add widget failed, <pkg> has no permission"），
-     * 未授权时确认页静默退出、用户看不到任何界面——需要权限引导文案。
+     * 当前桌面是否属于「pin 前要先开桌面快捷方式权限」的那一类：这类桌面的 pin 确认页（AddItemActivity）
+     * 在真正落桌前会校验调用方有没有这条权限（logcat: "add widget failed, <pkg> has no permission"），
+     * 未授权时确认页静默退出、用户看不到任何界面——所以要提前摆权限引导条。
+     *
+     * 判据是桌面应用的包名（下面这串就是真实包名）：不在名单里的桌面不校验这条权限，返回 false、
+     * 不摆引导条；将来遇到同类桌面只在这里补一串包名即可。
      */
-    fun isMiuiHome(context: Context): Boolean = try {
+    fun homeNeedsPerm(context: Context): Boolean = try {
         context.packageManager.getPackageInfo("com.miui.home", 0) != null
     } catch (_: Exception) {
         false

@@ -25,6 +25,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.IntSize
@@ -38,12 +39,13 @@ import com.palmnote.ui.settings.PREVIEW_IMAGE_TAG
 import com.palmnote.ui.settings.QUICK_ADD_TAG
 import com.palmnote.ui.settings.SEARCH_FIELD_TAG
 import com.palmnote.ui.settings.SHEET_ADD_TAG
+import com.palmnote.ui.settings.SHEET_BACK_TAG
 import com.palmnote.ui.settings.SHEET_DOT_TAG
 import com.palmnote.ui.settings.SHEET_DOTS_TAG
 import com.palmnote.ui.settings.SHEET_OPACITY_ROW_TAG
 import com.palmnote.ui.settings.SHEET_PREVIEW_TAG
-import com.palmnote.ui.settings.SHEET_SIZE_ROW_TAG
 import com.palmnote.ui.settings.SHEET_TAG
+import com.palmnote.ui.settings.SHEET_TOPBAR_TAG
 import com.palmnote.ui.settings.WidgetPinScreen
 import com.palmnote.ui.settings.pickedOpacityForNewInstance
 import com.palmnote.ui.theme.PalmNoteTheme
@@ -120,14 +122,35 @@ class WidgetPinTest {
     private fun previewSize(): IntSize =
         compose.onNodeWithTag(SHEET_PREVIEW_TAG).fetchSemanticsNode().size
 
-    /** 在面板大预览上横滑一段（真指针：按下 → 位移 → 抬起）。 */
-    private fun swipePreview(dx: Float) {
+    /** 面板圆点行在根坐标系里的顶边（px）：组件之间、翻页前后对齐都得看它。 */
+    private fun dotsRowTop(): Float =
+        compose.onNodeWithTag(SHEET_DOTS_TAG).fetchSemanticsNode().boundsInRoot.top
+
+    /**
+     * 在面板大预览上横滑：`fraction` 是位移占**页宽**（= 面板内容宽）的比例。
+     * 真指针：按下 → 分两步挪并走时间 → 停一拍 → 抬起。
+     *
+     * 停那一拍是关键：pager 是「甩动速度 + 过没过页中线」一起决定落哪页的，速度归零之后
+     * 就只按位置落页，同样的位移才落到同一页（不然同一段位移会因速度不同飘到不同尺寸）。
+     * 比例得按页宽算：小尺寸的预览节点自己就窄（2×1 只有页宽的 46%），
+     * 拿节点宽当分母会算出「看着滑了一大段、其实没过页中线」。
+     */
+    private fun swipePreview(fraction: Float) {
+        val dx = sheetWidthPx() * fraction
         compose.onNodeWithTag(SHEET_PREVIEW_TAG).performTouchInput {
-            down(center)
-            moveBy(Offset(dx, 0f))
+            // 从节点靠里那一侧起手：整段位移都落在页内，不靠「指针跑出页外」来凑距离
+            down(Offset(if (dx < 0) right - 4f else left + 4f, centerY))
+            moveBy(Offset(dx / 2f, 0f))
+            advanceEventTime(16)
+            moveBy(Offset(dx / 2f, 0f))
+            advanceEventTime(200)
             up()
         }
     }
+
+    /** 面板内容宽 = pager 的页宽（预览节点只是页内居中的图，宽度不等于页宽）。 */
+    private fun sheetWidthPx(): Int =
+        compose.onNodeWithTag(SHEET_TAG).fetchSemanticsNode().size.width
 
     // ── 目录 / manifest（与版式无关） ──
 
@@ -297,30 +320,6 @@ class WidgetPinTest {
     }
 
     @Test
-    fun `单尺寸组件面板不摆尺寸行`() {
-        setPinSupported(true)
-        render()
-        // 本月记账只有 3×2 一个形态，摆一排只有一颗胶囊的尺寸行像坏了
-        openSearch()
-        compose.onNodeWithTag(SEARCH_FIELD_TAG)
-            .performTextInput(context.getString(R.string.widget_bill_title))
-        openFirstTile()
-        compose.onNodeWithTag(SHEET_ADD_TAG).assertExists()
-        compose.onAllNodesWithTag(SHEET_SIZE_ROW_TAG).assertCountEquals(0)
-    }
-
-    @Test
-    fun `多尺寸组件面板有尺寸行`() {
-        setPinSupported(true)
-        render()
-        openSearch()
-        compose.onNodeWithTag(SEARCH_FIELD_TAG)
-            .performTextInput(context.getString(R.string.widget_todo_title))
-        openFirstTile()
-        compose.onNodeWithTag(SHEET_SIZE_ROW_TAG).assertExists()
-    }
-
-    @Test
     fun `面板的分页圆点数等于该组件的尺寸个数`() {
         setPinSupported(true)
         render()
@@ -346,6 +345,46 @@ class WidgetPinTest {
     }
 
     @Test
+    fun `面板圆点行位置不随组件变`() {
+        setPinSupported(true)
+        render()
+        // 圆点行是「翻到第几个尺寸」的指示，得钉在面板里同一行上。
+        // 待办清单那一组最大 4×3=268dp、快捷入口那一组最大只有 160dp：页高若跟着「本组最大」走，
+        // 换成快捷入口时 widget 与圆点会整体上移 54dp —— 圆点跟着组件跑，看着像没对齐。
+        // （两个组件的标题与说明都是一行，页高以上那段完全相同，所以这个横向比较是干净的。）
+        openSearch()
+        compose.onNodeWithTag(SEARCH_FIELD_TAG)
+            .performTextInput(context.getString(R.string.widget_todo_title))
+        openFirstTile()
+        val todoDotsTop = dotsRowTop()
+        compose.onNodeWithTag(SHEET_BACK_TAG).performClick()
+        compose.onNodeWithTag(SEARCH_FIELD_TAG).performTextClearance()
+        compose.onNodeWithTag(SEARCH_FIELD_TAG)
+            .performTextInput(context.getString(R.string.widget_shortcuts_title))
+        openFirstTile()
+        assertEquals("换组件不该带走圆点行", todoDotsTop, dotsRowTop(), 0.5f)
+    }
+
+    @Test
+    fun `面板大预览按桌面真实尺寸，不被该组最大形小拉低`() {
+        setPinSupported(true)
+        render()
+        // 快捷入口那一组最大只有 160dp 高（1×1 / 4×1），页高仍按全局 4×3 的 268dp 算：
+        // 页高就是页内缩放系数的分母，改按本组最大算的话，这一组预览会被压到真实尺寸的六成
+        openSearch()
+        compose.onNodeWithTag(SEARCH_FIELD_TAG)
+            .performTextInput(context.getString(R.string.widget_shortcuts_title))
+        openFirstTile()
+        val entry = WidgetPin.catalog().flatMap { it.components }
+            .first { it.titleRes == R.string.widget_shortcuts_title }
+            .entries.first()
+        val (designW, designH) = WidgetPin.designSizeOf(entry)!!
+        compose.onNodeWithTag(SHEET_PREVIEW_TAG)
+            .assertWidthIsEqualTo(designW.dp)
+            .assertHeightIsEqualTo(designH.dp)
+    }
+
+    @Test
     fun `点卡片弹出面板，面板里有预览和添加按钮`() {
         setPinSupported(true)
         render()
@@ -356,22 +395,15 @@ class WidgetPinTest {
     }
 
     @Test
-    fun `面板里点尺寸胶囊切换大预览`() {
+    fun `面板顶栏是面板里唯一的显式返回入口，点了收起面板`() {
         setPinSupported(true)
         render()
-        // 搜出多尺寸组件（待办清单 = 4×3 + 2×1 + 4×1）；搜索词走资源，英文 locale 下也成立
-        openSearch()
-        compose.onNodeWithTag(SEARCH_FIELD_TAG)
-            .performTextInput(context.getString(R.string.widget_todo_title))
         openFirstTile()
-        // 默认选中基类 4×3（340×268，面板里最大），点 2×1（160×74）后宽高都应该明显变小
-        val before = previewSize()
-        compose.onNodeWithText("2×1").performClick()
-        val after = previewSize()
-        assertTrue(
-            "切换尺寸后大预览应变小（宽高都小）：before=$before after=$after",
-            after.width < before.width && after.height < before.height
-        )
+        // 顶栏（应用图标 + 应用名，对齐系统选择器那一行）只做身份与返回：
+        // 「←」与系统返回 / 下滑 / 点遮罩同义，点了收起面板回画廊
+        compose.onNodeWithTag(SHEET_TOPBAR_TAG).assertExists()
+        compose.onNodeWithTag(SHEET_BACK_TAG).performClick()
+        compose.onAllNodesWithTag(SHEET_TAG).assertCountEquals(0)
     }
 
     @Test
@@ -382,28 +414,30 @@ class WidgetPinTest {
         compose.onNodeWithTag(SEARCH_FIELD_TAG)
             .performTextInput(context.getString(R.string.widget_todo_title))
         openFirstTile()
-        // 手势与尺寸胶囊等效：大预览是面板里最大的一块，滑它比去够下面那排胶囊顺手
+        // 尺寸只靠滑：大预览是面板里最大的一块，滑它比去够一排胶囊顺手（各家卡片预览页都是这个手势）
+        // 预览标签只挂在「翻到的这一页、并且它就是当前选中的那个尺寸」上，所以下面量尺寸的同时
+        // 也在验「翻页结果有没有回报给上层」—— 回报断了标签就没了、量不到
         val base = previewSize()
-        swipePreview(-150f)
+        swipePreview(-0.7f)
         val next = previewSize()
         assertTrue("左滑应换到下一个（更小的）尺寸：before=$base after=$next", next.width < base.width)
         // 右滑切回上一个：方向没搞反
-        swipePreview(150f)
+        swipePreview(0.7f)
         assertEquals("右滑应切回原尺寸", base, previewSize())
     }
 
     @Test
-    fun `面板里滑动位移不够就不换尺寸`() {
+    fun `面板里滑动不过页中线就不换尺寸`() {
         setPinSupported(true)
         render()
         openSearch()
         compose.onNodeWithTag(SEARCH_FIELD_TAG)
             .performTextInput(context.getString(R.string.widget_todo_title))
         openFirstTile()
-        // 手指按在预览上轻轻一挪（不足阈值）不算换尺寸，免得误触
+        // 手指按在预览上只挪一小段（没过页中线）：pager 会弹回原页，不该换尺寸，免得误触
         val base = previewSize()
-        swipePreview(-20f)
-        assertEquals("位移不到阈值不该换尺寸", base, previewSize())
+        swipePreview(-0.2f)
+        assertEquals("没过页中线不该换尺寸", base, previewSize())
     }
 
     @Test
@@ -605,12 +639,12 @@ class WidgetPinTest {
     }
 
     @Test
-    fun `小米权限条只在没成功落桌过时出现`() {
+    fun `权限条只在「桌面要权限且没成功落桌过」时出现`() {
         // 「桌面快捷方式」权限没有公开查询法，但成功落桌过就是权限已开的实证：那之后不再打扰
-        assertTrue(WidgetPin.showMiuiPermStrip(pinSupported = true, isMiui = true, pinOk = false))
-        assertFalse(WidgetPin.showMiuiPermStrip(pinSupported = true, isMiui = true, pinOk = true))
-        assertFalse(WidgetPin.showMiuiPermStrip(pinSupported = true, isMiui = false, pinOk = false))
-        assertFalse(WidgetPin.showMiuiPermStrip(pinSupported = false, isMiui = true, pinOk = false))
+        assertTrue(WidgetPin.showHomePermStrip(pinSupported = true, homeNeedsPerm = true, pinOk = false))
+        assertFalse(WidgetPin.showHomePermStrip(pinSupported = true, homeNeedsPerm = true, pinOk = true))
+        assertFalse(WidgetPin.showHomePermStrip(pinSupported = true, homeNeedsPerm = false, pinOk = false))
+        assertFalse(WidgetPin.showHomePermStrip(pinSupported = false, homeNeedsPerm = true, pinOk = false))
     }
 
     // ── 预览尺寸：按组件设计尺寸**等比**摆放 ──

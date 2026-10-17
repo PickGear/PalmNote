@@ -8,6 +8,7 @@ import android.graphics.Canvas
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -23,9 +24,13 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.test.platform.app.InstrumentationRegistry
 import com.palmnote.app.R
+import com.palmnote.ui.components.COMPACT_DRAG_HANDLE_PADDING
+import com.palmnote.ui.components.DEFAULT_DRAG_HANDLE_PADDING
+import com.palmnote.ui.components.SheetDragHandle
 import com.palmnote.ui.theme.BottomSheetShape
 import com.palmnote.ui.theme.PalmNoteTheme
 import com.palmnote.ui.widget.BillWidgetProvider
@@ -109,10 +114,32 @@ class WidgetPinLayoutDumpTest {
         capture("sheet")
     }
 
+    /** 把手留白按 M3 默认（48dp 槽）的对照版：用来比「贴顶把手 vs M3 默认」对顶栏 / 标题位置的影响。 */
+    @Test
+    fun `底部面板_把手按M3默认`() {
+        compose.setContent {
+            PalmNoteTheme {
+                SheetMock(
+                    R.string.widget_todo_title,
+                    bound = 2,
+                    dragHandlePadding = DEFAULT_DRAG_HANDLE_PADDING
+                )
+            }
+        }
+        capture("sheet-m3handle")
+    }
+
     @Test
     fun `底部面板_单尺寸`() {
         compose.setContent { PalmNoteTheme { SheetMock(R.string.widget_bill_title, bound = 0) } }
         capture("sheet-one")
+    }
+
+    /** 本组最大只有 1×1 / 4×1 的组件（快捷入口）：页高按全局 4×3 算，圆点行应与多尺寸那版落在同一行。 */
+    @Test
+    fun `底部面板_矮尺寸组`() {
+        compose.setContent { PalmNoteTheme { SheetMock(R.string.widget_shortcuts_title, bound = 0) } }
+        capture("sheet-short")
     }
 
     @Test
@@ -138,12 +165,19 @@ class WidgetPinLayoutDumpTest {
     }
 
     /**
-     * 把面板内容摆成一个贴底浮层：形状、内边距、**高度**都照抄 `AppBottomSheet`，出图才和真机一致。
+     * 把面板内容摆成一个贴底浮层：形状、**把手**、内边距、**高度**都照抄 `AppBottomSheet`，出图才和真机一致。
      * 高度必须显式给（真机上由 `AppBottomSheet` 的 heightFraction 定住）：面板内容用 weight
      * 分配余量，高度不定的话预览拿到 0 高度、整张图会空掉。
+     *
+     * 把手直接用 `AppBottomSheet` 里那个 `SheetDragHandle`（同源，不会画歪）：
+     * 少了它，面板内容会整体上移一个槽高，顶栏与标题的位置就和真机对不上、没法跟竞品逐行比。
      */
     @Composable
-    private fun SheetMock(titleRes: Int, bound: Int) {
+    private fun SheetMock(
+        titleRes: Int,
+        bound: Int,
+        dragHandlePadding: Dp = COMPACT_DRAG_HANDLE_PADDING
+    ) {
         val component = WidgetPin.catalog()
             .flatMap { it.components }
             .first { it.titleRes == titleRes }
@@ -156,26 +190,30 @@ class WidgetPinLayoutDumpTest {
             Surface(
                 shape = BottomSheetShape,
                 color = MaterialTheme.colorScheme.surface,
-                modifier = Modifier.fillMaxWidth()
+                // 0.92 = WidgetPinScreen 的 SHEET_HEIGHT_FRACTION（真机上相对可用高度）
+                modifier = Modifier.fillMaxWidth().fillMaxHeight(0.92f)
             ) {
-                Box(
-                    Modifier
-                        // 0.92 = WidgetPinScreen 的 SHEET_HEIGHT_FRACTION（真机上相对可用高度）
-                        .fillMaxHeight(0.92f)
-                        .padding(horizontal = 24.dp)
-                        .padding(bottom = 32.dp)
-                ) {
-                    WidgetPinSheetContent(
-                        component = component,
-                        selected = component.entries.first(),
-                        bound = bound,
-                        pinSupported = true,
-                        verifying = false,
-                        opacity = null,
-                        onSelectSize = {},
-                        onSelectOpacity = {},
-                        onAdd = {}
-                    )
+                Column(Modifier.fillMaxSize()) {
+                    SheetDragHandle(dragHandlePadding)
+                    Box(
+                        Modifier
+                            .weight(1f)
+                            .padding(horizontal = 24.dp)
+                            .padding(bottom = 32.dp)
+                    ) {
+                        WidgetPinSheetContent(
+                            component = component,
+                            selected = component.entries.first(),
+                            bound = bound,
+                            pinSupported = true,
+                            verifying = false,
+                            opacity = null,
+                            onBack = {},
+                            onSelectSize = {},
+                            onSelectOpacity = {},
+                            onAdd = {}
+                        )
+                    }
                 }
             }
         }

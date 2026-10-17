@@ -1,3 +1,8 @@
+// 「画廊 + 详情面板」两层同处一屏：面板那叠组件（顶栏 / 大预览 / 两种选项行 / 添加按钮）与
+// 画廊格共用同一个预览缩放算法，拆文件反而要把那套私有算法对外公开，因此按 life 各屏的既有
+// 做法在文件级放宽函数条数（detekt 阈值 30）。
+@file:Suppress("TooManyFunctions")
+
 package com.palmnote.ui.settings
 
 import android.content.Context
@@ -5,12 +10,13 @@ import android.content.Intent
 import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,12 +30,18 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -38,8 +50,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Button
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -50,24 +60,27 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -81,11 +94,15 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.palmnote.app.R
 import com.palmnote.ui.components.AppBottomSheet
+import com.palmnote.ui.components.COMPACT_DRAG_HANDLE_PADDING
 import com.palmnote.ui.components.SecondaryTopAppBar
 import com.palmnote.ui.components.EmptyState
 import com.palmnote.ui.components.ModuleSearchBar
 import com.palmnote.ui.widget.WidgetPin
+import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 
 /** 画廊单卡最小宽度：手机恰好两列，平板 / 横屏自动多列（预览按实际宽度等比缩放，不会失真）。 */
@@ -95,7 +112,7 @@ private val GRID_MIN_TILE_WIDTH = 150.dp
 private val PREVIEW_HEIGHT = 126.dp
 
 /**
- * 面板高度占**可用高度**的比例：对齐小米「添加小部件」那种**近全高面板**（顶部留出状态栏与把手）。
+ * 面板高度占**可用高度**的比例：对齐系统「添加小部件」那种**近全高面板**（顶部留出状态栏与把手）。
  * 里边用 `weight` 分配余量 —— 预览吃掉中间那块空档、按钮钉在底部，全程不用滚。
  * 给比例而不是具体 dp：可用高度已扣掉系统栏与把手，面板因此永远不会顶出屏幕。
  */
@@ -104,12 +121,39 @@ private const val SHEET_HEIGHT_FRACTION = 0.92f
 /** 预览底托的内边距（画廊卡用）：底托比 widget 外扩这一圈，widget 才不会贴着底托边，也留出投影的位置。 */
 private val STAGE_PADDING = 10.dp
 
-/** 面板预览上左右滑动换尺寸的位移阈值：轻扫一下不会误触，明确滑一段才切。 */
-private val SIZE_SWIPE_THRESHOLD = 20.dp
-
-/** 面板里尺寸分页圆点的直径与间距：只做「这里能翻页」的指示，能点着选的仍是尺寸胶囊。 */
-private val SIZE_DOT_SIZE = 6.dp
+/**
+ * 面板里尺寸分页圆点的直径与间距。
+ *
+ * 尺寸行撤掉之后，这排点就是**尺寸的唯一指示**，所以它得跟着手指连续变（见 [SizeDots]），
+ * 不能只在落页时跳一下。直径对齐系统组件预览页的分页点（实测 4dp，取 5dp 留一点触底余量）。
+ */
+private val SIZE_DOT_SIZE = 5.dp
 private val SIZE_DOT_GAP = 6.dp
+
+/**
+ * 面板顶栏：左「←」+ 中间「应用图标 + 应用名」—— 系统「添加小部件」页顶部就是这一行（系统
+ * 选择器的招牌 chrome），也是面板里唯一的显式返回入口（此前只能下滑 / 点遮罩 / 系统返回）。
+ * 高度取 44dp：够放下 48dp 触控盒的返回键，又不比把手那一槽更高（对齐系统页 30dp 上下就贴住把手）。
+ */
+private val SHEET_TOPBAR_HEIGHT = 44.dp
+
+/** 顶栏里应用图标底框的边长（图形占底框一半，见 [SheetTopBar] 里 1.5 倍的取法）。 */
+private val SHEET_APP_ICON = 20.dp
+
+/**
+ * 面板配置区的胶囊：**无描边实底**（系统选择器那套），比 M3 的 `FilterChip` 高一档、
+ * 不用描边。系统页的选项行都是实底圆片 / 胶囊，带 1dp 描边的 `FilterChip` 是应用内表单的语汇，
+ * 摆进面板会立刻显得「旧」。
+ */
+private val PILL_HEIGHT = 36.dp
+private val PILL_H_PADDING = 16.dp
+private val PILL_GAP = 8.dp
+
+/** 胶囊选中态的淡入时长：颜色突变（尤其五档透明度来回点）会显得生硬，给一小段过渡就顺了。 */
+private const val PILL_FADE_MILLIS = 160
+
+/** 面板底部添加按钮：对齐系统页的 50dp 实底胶囊（M3 默认 40dp 偏矮）。 */
+private val SHEET_ADD_HEIGHT = 50.dp
 
 /** 面板里可选的透明度档位：与配置页同一套四档（另加「跟随默认」= null）。 */
 private val OPACITY_LEVELS = listOf(1f, 0.8f, 0.6f, 0.4f)
@@ -164,14 +208,22 @@ internal const val SEARCH_FIELD_TAG = "widget_search_field"
 /** 底部面板内容的测试标签。 */
 internal const val SHEET_TAG = "widget_pin_sheet"
 
-/** 面板里大预览的测试标签。 */
+/** 面板顶栏（返回键 + 应用图标 + 应用名）的测试标签。 */
+internal const val SHEET_TOPBAR_TAG = "widget_pin_sheet_topbar"
+
+/** 面板顶栏返回键的测试标签。 */
+internal const val SHEET_BACK_TAG = "widget_pin_sheet_back"
+
+/**
+ * 面板里大预览的测试标签：只挂**当前页** —— 翻页途中相邻页也在组合里，同一标签会撞成多节点。
+ */
 internal const val SHEET_PREVIEW_TAG = "widget_pin_sheet_preview"
+
+/** 面板里相邻页预览的测试标签（非当前页）：只为把当前页那个标签腾干净，单测不点它。 */
+private const val SHEET_PREVIEW_IDLE_TAG = "widget_pin_sheet_preview_idle"
 
 /** 面板里添加按钮的测试标签。 */
 internal const val SHEET_ADD_TAG = "widget_pin_sheet_add"
-
-/** 面板里尺寸切换行的测试标签（单尺寸组件不显示这一行）。 */
-internal const val SHEET_SIZE_ROW_TAG = "widget_pin_sheet_size_row"
 
 /** 面板里尺寸分页圆点行的测试标签（单尺寸组件同样不显示）。 */
 internal const val SHEET_DOTS_TAG = "widget_pin_sheet_dots"
@@ -191,8 +243,8 @@ internal const val SHEET_OPACITY_ROW_TAG = "widget_pin_sheet_opacity"
  * **灰底卡身**（预览的底托就是卡本身，不再套一层白卡）+ 托下居中的名称 + 一行灰色小字
  * （未落桌写尺寸标、落过桌写「已有 N 个」，右端一枚「＋」）—— 先「看长相」找组件；
  * 已落桌的卡在预览右上角带小勾。点卡身弹出**近全高面板**（对齐各家「添加小部件」的观感）：
- * 名称 + 说明两行居中 + 大预览（按桌面真实尺寸浮在面板上，左右滑动换尺寸、下缘一排分页圆点）
- * + 尺寸胶囊 + 透明度档位 + 添加按钮，当场选当场落桌；卡上的「＋」不走面板，
+ * 名称 + 说明两行居中 + 大预览（按桌面真实尺寸浮在面板上，**左右滑动换尺寸**、下缘一排分页圆点）
+ * + 透明度档位 + 添加按钮，当场选当场落桌；卡上的「＋」不走面板，
  * 直接按当前尺寸落桌，省一次点击。同组件的多个尺寸形态合并成一张卡（默认基类尺寸），
  * 不必退回目录找另一个格子。
  */
@@ -204,7 +256,7 @@ fun WidgetPinScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val catalog = remember { WidgetPin.catalog() }
-    val isMiui = remember { WidgetPin.isMiuiHome(context) }
+    val homeNeedsPerm = remember { WidgetPin.homeNeedsPerm(context) }
 
     var snapshot by remember { mutableStateOf(WidgetPin.snapshot(context)) }
     // 落桌核对期（最多 5×1.5s）锁住按钮：不锁的话连点会连发多个系统确认框
@@ -274,7 +326,7 @@ fun WidgetPinScreen(
                 onQuickAdd = { pinCurrent(it) }
             )
             PermissionStrip(
-                pinSupported = snapshot.pinSupported, isMiui = isMiui, pinOk = snapshot.pinOk
+                pinSupported = snapshot.pinSupported, homeNeedsPerm = homeNeedsPerm, pinOk = snapshot.pinOk
             )
             Spacer(Modifier.height(10.dp))
         }
@@ -324,7 +376,12 @@ private fun WidgetPinSheet(
     onSelectOpacity: (Float?) -> Unit,
     onAdd: () -> Unit
 ) {
-    AppBottomSheet(onDismissRequest = onDismiss, heightFraction = SHEET_HEIGHT_FRACTION) {
+    AppBottomSheet(
+        onDismissRequest = onDismiss,
+        heightFraction = SHEET_HEIGHT_FRACTION,
+        // 把手贴顶：M3 默认 48dp 的槽会把顶栏 / 标题整体压低 20dp 上下，系统选择器那一行是贴着的
+        dragHandlePadding = COMPACT_DRAG_HANDLE_PADDING
+    ) {
         WidgetPinSheetContent(
             component = component,
             selected = selectedEntry(component, selectedIndex),
@@ -332,6 +389,7 @@ private fun WidgetPinSheet(
             pinSupported = snapshot.pinSupported,
             verifying = verifying,
             opacity = opacity,
+            onBack = onDismiss,
             onSelectSize = onSelectSize,
             onSelectOpacity = onSelectOpacity,
             onAdd = onAdd
@@ -697,10 +755,14 @@ private fun AddedBadge(modifier: Modifier = Modifier) {
 }
 
 /**
- * 面板内容：头部（名称 / 桌面已有 N 个 / 说明，居中一叠）+ 大预览（**吃掉中间余量**，
- * 下缘一排尺寸分页圆点）+ 尺寸胶囊 + 透明度档位 + 添加按钮（抽出来是为了能单独出图）。
+ * 面板内容：顶栏（返回 + 应用身份）+ 头部（名称 / 说明，居中一叠）+ 尺寸翻页器（**吃掉中间余量**：
+ * 大预览左右滑换尺寸，下缘一排分页圆点）+ 透明度档位 + 添加按钮（抽出来是为了能单独出图）。
  * 高度由 [AppBottomSheet] 的 height 定住，预览用 weight 占住中间那块空档 —— 面板是「近全高」的。
+ *
+ * 参数多且都从外面注入：这一层是纯展示（状态与动作都归 `WidgetPinScreen` / ViewModel），
+ * 按仓库既有口径（`WidgetConfigScreen` 同款）就地放宽参数条数。
  */
+@Suppress("LongParameterList")
 @Composable
 internal fun WidgetPinSheetContent(
     component: WidgetPin.CatalogComponent,
@@ -709,6 +771,7 @@ internal fun WidgetPinSheetContent(
     pinSupported: Boolean,
     verifying: Boolean,
     opacity: Float?,
+    onBack: () -> Unit,
     onSelectSize: (WidgetPin.Entry) -> Unit,
     onSelectOpacity: (Float?) -> Unit,
     onAdd: () -> Unit
@@ -720,35 +783,20 @@ internal fun WidgetPinSheetContent(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        SheetTopBar(onBack = onBack)
         SheetHeader(component.titleRes, component.descRes)
         // 预览块吃掉中间余量：widget 与它下面的分页圆点作为**一组**居中 ——
         // 圆点是「这一页能翻」的指示，必须贴着 widget，不能被甩到面板底部去
-        Column(
+        SizePager(
+            entries = component.entries,
+            selected = selected,
+            onSelectIndex = { onSelectSize(component.entries[it]) },
             modifier = Modifier
                 .weight(1f)
-                .fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            SheetPreview(
-                component = component,
-                selected = selected,
-                onSelectSize = onSelectSize,
-                // fill = false：这块只占 widget 自己的高度，剩下的余量由上面这层居中分配
-                modifier = Modifier.weight(1f, fill = false)
-            )
-            // 只有一个尺寸的组件不摆尺寸行：一颗孤零零的胶囊看着像坏了
-            if (component.entries.size > 1) {
-                SizeDots(
-                    count = component.entries.size,
-                    selectedIndex = component.entries.indexOf(selected),
-                    modifier = Modifier.padding(top = 12.dp)
-                )
-            }
-        }
-        if (component.entries.size > 1) {
-            SizeChipRow(component = component, selected = selected, onSelectSize = onSelectSize)
-        }
+                .fillMaxWidth()
+        )
+        // 尺寸不再摆一排胶囊：大预览左右滑就是切换（各家卡片预览页的手势都是滑它），
+        // 圆点标出翻到第几个 —— 面板里少一行，也少一个和手势重复的入口
         // 带配置页的组件（账单）落桌后由系统拉起配置页，那里也管透明度，这里就不再重复一档
         if (component.configureActivity == null) {
             OpacityRow(selected = opacity, onSelect = onSelectOpacity)
@@ -757,7 +805,67 @@ internal fun WidgetPinSheetContent(
     }
 }
 
-/** 面板头部：名称 + 说明两行居中一叠（各家「添加小部件」的面板也是这两行，实例数由画廊卡说）。 */
+/**
+ * 面板顶栏：左「←」+ 中间「应用图标 + 应用名」。
+ *
+ * 系统「添加小部件」页顶部就是这一行 —— 系统选择器的招牌 chrome，也是面板里唯一的**显式**
+ * 返回入口（此前只能下滑 / 点遮罩 / 系统返回）。返回 = 收起面板回画廊，与系统返回键同义。
+ * 图标取启动图标的图形 + 主色底，画法与「关于」页同一套，只是缩到行内小图标的尺寸。
+ */
+@Composable
+private fun SheetTopBar(onBack: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(SHEET_TOPBAR_HEIGHT)
+            .testTag(SHEET_TOPBAR_TAG)
+    ) {
+        IconButton(
+            onClick = onBack,
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .testTag(SHEET_BACK_TAG)
+        ) {
+            Icon(
+                Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = stringResource(R.string.settings_navigate_back),
+                modifier = Modifier.size(22.dp)
+            )
+        }
+        Row(
+            modifier = Modifier.align(Alignment.Center),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(SHEET_APP_ICON)
+                    .background(MaterialTheme.colorScheme.primary, MaterialTheme.shapes.small),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_launcher_foreground_bw),
+                    contentDescription = null,
+                    // onPrimary 而不是写死白：深色模式下主题色是亮青，白图形会糊成一片
+                    tint = MaterialTheme.colorScheme.onPrimary,
+                    // 该 vector 的 viewport 是 108dp、图形只占居中的 36dp（= 底框的 1.5 倍处）
+                    modifier = Modifier.requiredSize(SHEET_APP_ICON * 1.5f)
+                )
+            }
+            Text(
+                stringResource(R.string.app_name),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(start = 8.dp)
+            )
+        }
+    }
+}
+
+/**
+ * 面板头部：名称 + 说明两行居中一叠（系统「添加小部件」的面板也是这两行，实例数由画廊卡说）。
+ * 名称用 22sp 的 `headlineLarge`（本就是粗体）：对齐系统面板标题的实测字号（墨迹 20dp ≈ 22sp），
+ * 18sp 的 `titleLarge` 在这个近全高面板里显小。
+ */
 @Composable
 private fun SheetHeader(titleRes: Int, descRes: Int) {
     Column(
@@ -766,8 +874,7 @@ private fun SheetHeader(titleRes: Int, descRes: Int) {
     ) {
         Text(
             stringResource(titleRes),
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
+            style = MaterialTheme.typography.headlineLarge,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
@@ -785,7 +892,7 @@ private class PickerOption(val label: String, val selected: Boolean, val onClick
 
 /**
  * 配置区的一行：标题（左对齐小字灰）+ 一排可选胶囊，横向可滚、左贴齐（尺寸与透明度共用）。
- * 胶囊文字比 M3 默认略小一档：透明度五档要在一行里排得下，不靠横向滚动去找最后一档。
+ * 胶囊文字比 M3 默认小一档：透明度五档要在一行里排得下，不靠横向滚动去找最后一档。
  */
 @Composable
 private fun PickerRow(label: String, tag: String, options: @Composable () -> List<PickerOption>) {
@@ -802,22 +909,61 @@ private fun PickerRow(label: String, tag: String, options: @Composable () -> Lis
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 6.dp)
-                .horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                .padding(top = 8.dp)
+                .horizontalScroll(rememberScrollState())
+                .selectableGroup(),
+            horizontalArrangement = Arrangement.spacedBy(PILL_GAP)
         ) {
             options().forEach { option ->
-                FilterChip(
-                    selected = option.selected,
-                    onClick = option.onClick,
-                    label = { Text(option.label, style = MaterialTheme.typography.labelMedium) },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                        selectedLabelColor = MaterialTheme.colorScheme.primary
-                    )
-                )
+                PillOption(option)
             }
         }
+    }
+}
+
+/**
+ * 无描边实底胶囊：未选中走中性淡底 + 次级文字，选中走主色淡底 + 主色文字。
+ *
+ * 不用 M3 的 `FilterChip`：那颗未选中态带 1dp 描边，是应用内表单的语汇；系统选择器的选项行是
+ * **实底无描边**（系统页的「文字颜色」圆片同一逻辑），面板里换成它才跟系统页一个体系。
+ * `selectable` 挂在内层容器上，胶囊自带选中语义（与 `FilterChip` 的读屏口径一致）。
+ */
+@Composable
+private fun PillOption(option: PickerOption) {
+    // 底色与文字色都走一段短过渡：五档透明度来回点时，颜色突变比尺寸跳变更显生硬
+    val background by animateColorAsState(
+        targetValue = if (option.selected) {
+            MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+        } else {
+            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.08f)
+        },
+        animationSpec = tween(PILL_FADE_MILLIS),
+        label = "pillBackground"
+    )
+    val contentColor by animateColorAsState(
+        targetValue = if (option.selected) {
+            MaterialTheme.colorScheme.primary
+        } else {
+            MaterialTheme.colorScheme.onSurfaceVariant
+        },
+        animationSpec = tween(PILL_FADE_MILLIS),
+        label = "pillContent"
+    )
+    Box(
+        modifier = Modifier
+            .height(PILL_HEIGHT)
+            .clip(RoundedCornerShape(percent = 50))
+            .background(background)
+            .selectable(selected = option.selected, role = Role.RadioButton, onClick = option.onClick)
+            .padding(horizontal = PILL_H_PADDING),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            option.label,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = if (option.selected) FontWeight.Bold else FontWeight.Medium,
+            color = contentColor
+        )
     }
 }
 
@@ -852,67 +998,92 @@ private fun OpacityRow(selected: Float?, onSelect: (Float?) -> Unit) {
 }
 
 /**
- * 面板里的大预览：左右滑动就换到下一个 / 上一个尺寸（各家「卡片预览页」都是这个手势），
- * 与点尺寸胶囊等效 —— 大预览是面板里最大的一块，滑它比去够下面那排胶囊顺手。
- * 位移要超过 [SIZE_SWIPE_THRESHOLD] 才算切换，轻轻一碰不会跳；到两端就不动。
- * 高度只包住 widget 自己（由调用方的 weight 给上限），面板里的余量交给外层居中分配。
+ * 尺寸翻页器：widget 与它下面的分页圆点作为**一组**居中（圆点是「这一页能翻」的指示）。
+ *
+ * 用 `HorizontalPager` 而不是自己接 `detectHorizontalDragGestures`：拖动时预览跟着手指走、
+ * 松手按**甩动速度**落页，圆点在拖动过程中就连续跟着变 —— 之前是「松手才跳一下」，
+ * 拖动期间毫无反馈，所以滑起来发涩。
+ *
+ * 页高按**全局最大卡**（4×3）算，不按本组最大的那个尺寸，这条是刻意钉住的：
+ * ① 页高 = 页内缩放系数的分母，按本组最大算的话，只有矮条的组件（快捷入口最大 1×1）
+ *    整组预览会被缩到桌面真实尺寸的六成；② 组件之间对齐 —— 不管打开哪个组件，
+ * 圆点行都落在面板里同一行上，翻页时容器也不跳、小尺寸在页内居中。
  */
 @Composable
-private fun SheetPreview(
-    component: WidgetPin.CatalogComponent,
+private fun SizePager(
+    entries: List<WidgetPin.Entry>,
     selected: WidgetPin.Entry,
-    onSelectSize: (WidgetPin.Entry) -> Unit,
+    onSelectIndex: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val threshold = with(LocalDensity.current) { SIZE_SWIPE_THRESHOLD.toPx() }
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            // 手势跟着当前尺寸重启（key 含 selected），否则闭包里的 selected 会是旧的、切错方向
-            .pointerInput(component.familyKey, selected) {
-                // 本次手势的累计位移：只放本地变量，拖动过程不写状态、不触发重组
-                var dragged = 0f
-                detectHorizontalDragGestures(
-                    onDragStart = { dragged = 0f },
-                    onDragCancel = { dragged = 0f },
-                    onDragEnd = {
-                        val target = when {
-                            dragged <= -threshold -> component.entries.swipeTarget(selected, forward = true)
-                            dragged >= threshold -> component.entries.swipeTarget(selected, forward = false)
-                            else -> null
-                        }
-                        dragged = 0f
-                        target?.let(onSelectSize)
-                    }
-                ) { _, amount -> dragged += amount }
-            }
+    val selectedIndex = entries.indexOf(selected).coerceAtLeast(0)
+    val pagerState = rememberPagerState(initialPage = selectedIndex) { entries.size }
+    // 落页后回报上层（写回 selected 再落桌）；首帧那一发就是开页用的初始页，跳过不回报
+    LaunchedEffect(pagerState) {
+        snapshotFlow { pagerState.settledPage }
+            .distinctUntilChanged()
+            .drop(1)
+            .collect { onSelectIndex(it) }
+    }
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
-        WidgetPreview(
-            imageRes = selected.previewImageRes,
-            designSize = WidgetPin.designSizeOf(selected),
-            stage = false,
-            tag = SHEET_PREVIEW_TAG,
-            // 只铺满宽、高包住图片自己：外层的 weight(fill = false) 才能靠它算高度
-            modifier = Modifier.fillMaxWidth()
-        )
+        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+            // 与 [WidgetPreview] 同一条系数：相对大小才等于它们在桌面上的占格比例
+            val scale = minOf(maxWidth.value / DESIGN_MAX_WIDTH, 1f)
+            val track = (DESIGN_MAX_HEIGHT * scale).coerceAtMost(maxHeight.value)
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(track.dp),
+                // 只有一个尺寸就没什么可翻的：关掉手势，免得白划一下
+                userScrollEnabled = entries.size > 1
+            ) { page ->
+                val entry = entries[page]
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    WidgetPreview(
+                        imageRes = entry.previewImageRes,
+                        designSize = WidgetPin.designSizeOf(entry),
+                        stage = false,
+                        // 标签只挂「当前选中那一页」：翻页途中相邻页也在组合里，同一标签会撞出多节点。
+                        // 拿 selected 比而不是拿 currentPage 比：这样「翻页结果有没有回报给上层」
+                        // 直接体现在渲染上 —— 回报断了，这一页就再也挂不上这个标签。
+                        tag = if (entry == selected) SHEET_PREVIEW_TAG else SHEET_PREVIEW_IDLE_TAG,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+        }
+        if (entries.size > 1) {
+            SizeDots(
+                count = entries.size,
+                pagerState = pagerState,
+                modifier = Modifier.padding(top = 12.dp)
+            )
+        }
     }
 }
 
-/** 滑动要落到的尺寸：左滑取下一个、右滑取上一个；已在两端给 null（不动）。 */
-private fun List<WidgetPin.Entry>.swipeTarget(current: WidgetPin.Entry, forward: Boolean): WidgetPin.Entry? {
-    val index = indexOf(current)
-    if (index < 0) return null
-    return getOrNull(if (forward) index + 1 else index - 1)
-}
-
-/** 面板里的添加按钮：核对期转「确认中…」并禁用，防连发确认框。 */
+/**
+ * 面板里的添加按钮：核对期转「确认中…」并禁用，防连发确认框。
+ * 50dp 实底胶囊 + 16sp 粗白字：对齐系统页底部那颗按钮的体量（M3 默认 40dp 偏矮，
+ * 在一屏留白里显得没落款）。
+ */
 @Composable
 private fun SheetAddButton(bound: Int, pinSupported: Boolean, verifying: Boolean, onAdd: () -> Unit) {
     Button(
         onClick = onAdd,
         enabled = pinSupported && !verifying,
+        shape = RoundedCornerShape(percent = 50),
         modifier = Modifier
             .fillMaxWidth()
+            .height(SHEET_ADD_HEIGHT)
             .testTag(SHEET_ADD_TAG)
     ) {
         Text(
@@ -922,60 +1093,46 @@ private fun SheetAddButton(bound: Int, pinSupported: Boolean, verifying: Boolean
                     bound == 0 -> R.string.widget_pin_add
                     else -> R.string.widget_page_add_again
                 }
-            )
+            ),
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.Bold
         )
     }
 }
 
 /**
- * 尺寸分页圆点：预览下面一排小点，标记当前是第几个尺寸（各家卡片预览页的分页指示）。
- * 纯视觉 —— 真要点着选尺寸是下面那排胶囊，读屏也只读胶囊，这里不重复播报。
+ * 尺寸分页圆点：预览下面一排小点，标记当前翻到第几个尺寸。
+ *
+ * 位置从 `currentPageOffsetFraction` **连续**取，不是只在落页时改索引 —— 拖动过程中点就跟着
+ * 手指在灰/深之间过渡，松手不用再「啪」地跳一下（这是「顺不顺」的大头）。
+ * 纯视觉：翻页手势本身就是入口（读屏靠 pager 自己的滚动动作），这里不重复播报。
  * 选中那颗用前景色（各家分页点都是深浅灰，不拿品牌色去点）。
  */
 @Composable
-private fun SizeDots(count: Int, selectedIndex: Int, modifier: Modifier = Modifier) {
+private fun SizeDots(count: Int, pagerState: PagerState, modifier: Modifier = Modifier) {
+    val active = pagerState.currentPage + pagerState.currentPageOffsetFraction
     Row(
         modifier = modifier.testTag(SHEET_DOTS_TAG),
         horizontalArrangement = Arrangement.spacedBy(SIZE_DOT_GAP)
     ) {
         repeat(count) { index ->
+            // 离「当前页」多远：0 = 就是它，1 = 隔壁那颗；用来把颜色从淡灰连到前景色
+            val away = (index - active).absoluteValue.coerceIn(0f, 1f)
             Box(
                 modifier = Modifier
                     .size(SIZE_DOT_SIZE)
                     .clip(CircleShape)
                     .background(
-                        if (index == selectedIndex) {
-                            MaterialTheme.colorScheme.onSurface
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
-                        }
+                        lerp(
+                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.25f),
+                            MaterialTheme.colorScheme.onSurface,
+                            1f - away
+                        )
                     )
                     .testTag(SHEET_DOT_TAG)
             )
         }
     }
-}
-
-/** 面板里尺寸切换行：标题 + 一排胶囊，横向可滚（习惯有 4 个尺寸）。 */
-@Composable
-private fun SizeChipRow(
-    component: WidgetPin.CatalogComponent,
-    selected: WidgetPin.Entry,
-    onSelectSize: (WidgetPin.Entry) -> Unit
-) {
-    PickerRow(
-        label = stringResource(R.string.widget_pin_choose_size),
-        tag = SHEET_SIZE_ROW_TAG,
-        options = {
-            component.entries.map { entry ->
-                PickerOption(
-                    label = WidgetPin.cellsOf(entry),
-                    selected = entry == selected,
-                    onClick = { onSelectSize(entry) }
-                )
-            }
-        }
-    )
 }
 
 /**
@@ -1046,11 +1203,11 @@ private fun WidgetPreview(
 /**
  * 前提提示条（只在需要时出现，用**中性底**而不是警示色——它是前提条件，不是报错）：
  * - 桌面不支持应用内添加：只能退回系统那条路（这时才提，平时不讲）；
- * - 系统桌面且**从未成功落桌**：落桌前校验「桌面快捷方式」权限，没开点添加会静默失败；
- *   成功过一次就不再提示（权限已开的实证，条件见 [WidgetPin.showMiuiPermStrip]）。
+ * - 当前桌面 pin 前会校验「桌面快捷方式」权限、且**从未成功落桌**：落桌时该权限没开就静默失败；
+ *   成功过一次就不再提示（权限已开的实证，条件见 [WidgetPin.showHomePermStrip]）。
  */
 @Composable
-private fun PermissionStrip(pinSupported: Boolean, isMiui: Boolean, pinOk: Boolean) {
+private fun PermissionStrip(pinSupported: Boolean, homeNeedsPerm: Boolean, pinOk: Boolean) {
     if (!pinSupported) {
         InfoBlock(
             title = stringResource(R.string.widget_page_unsupported),
@@ -1060,7 +1217,7 @@ private fun PermissionStrip(pinSupported: Boolean, isMiui: Boolean, pinOk: Boole
         )
         return
     }
-    if (!WidgetPin.showMiuiPermStrip(pinSupported = pinSupported, isMiui = isMiui, pinOk = pinOk)) return
+    if (!WidgetPin.showHomePermStrip(pinSupported = pinSupported, homeNeedsPerm = homeNeedsPerm, pinOk = pinOk)) return
 
     val context = LocalContext.current
     InfoBlock(
@@ -1068,7 +1225,7 @@ private fun PermissionStrip(pinSupported: Boolean, isMiui: Boolean, pinOk: Boole
         body = stringResource(R.string.widget_page_perm_desc),
         action = stringResource(R.string.widget_page_perm_action),
         onClick = {
-            // 系统桌面 的「桌面快捷方式」开关不在任何公开 API 里，只能带用户去应用详情页手动开
+            // 该「桌面快捷方式」开关不在任何公开 API 里，只能带用户去应用详情页手动开
             context.startActivity(
                 Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
                     .setData(android.net.Uri.fromParts("package", context.packageName, null))

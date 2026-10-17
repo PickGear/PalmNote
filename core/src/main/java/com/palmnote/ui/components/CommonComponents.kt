@@ -348,44 +348,6 @@ fun MonthSelector(
         }
     }
 }
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun AppBottomSheet(
-    onDismissRequest: () -> Unit,
-    modifier: Modifier = Modifier,
-    sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-    /**
-     * 面板高度占**可用高度**的比例：给了就按这个比例定住、内容**不再滚动**（内部改用 `weight`
-     * 分配余量，适合「中间一块吃掉空档 + 底部按钮钉住」的近全高面板）；不给就按内容自适应并纵向滚动。
-     * 用比例而不是具体 dp：可用高度已扣掉系统栏与把手，面板因此永远不会顶出屏幕。
-     */
-    heightFraction: Float? = null,
-    content: @Composable ColumnScope.() -> Unit
-) {
-    ModalBottomSheet(
-        onDismissRequest = onDismissRequest,
-        sheetState = sheetState,
-        shape = BottomSheetShape,
-        containerColor = MaterialTheme.colorScheme.surface,
-        tonalElevation = 0.dp,
-        dragHandle = { BottomSheetDefaults.DragHandle() },
-        modifier = modifier
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .then(
-                    if (heightFraction != null) Modifier.fillMaxHeight(heightFraction) else Modifier
-                )
-                .padding(horizontal = 24.dp)
-                .padding(bottom = 32.dp)
-                .then(if (heightFraction == null) Modifier.verticalScroll(rememberScrollState()) else Modifier),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            content = content
-        )
-    }
-}
-
 @Composable
 fun AppDialog(
     onDismissRequest: () -> Unit,
