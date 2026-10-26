@@ -29,10 +29,12 @@
   <tr>
     <td align="center"><b>统计报表</b></td>
     <td align="center"><b>生活模块</b></td>
+    <td align="center"><b>导入 / 导出</b></td>
   </tr>
   <tr>
     <td><img src="screenshots/zh/bill_stats.jpg" width="240"></td>
     <td><img src="screenshots/zh/life_template_manage.jpg" width="240"></td>
+    <td><img src="screenshots/zh/bill_import.jpg" width="240"></td>
   </tr>
 </table>
 

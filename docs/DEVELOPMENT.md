@@ -2386,9 +2386,9 @@ ls screenshots/en/
 # - bill_stats.jpg     → 统计报表是否有真实金额
 # - life_template_manage.jpg → 模板管理（纯功能演示，无个人条目）
 # 仍在跟踪的截图里不得出现真实纪念日、家人称谓、真实金额与账单
-# - bill_import.jpg    → 导入页是否露出真实账单文件/账号信息
-# 注：asset_grid / life_board_* / life_stats / settings_mine 等含个人条目的图已从仓库删除
-# 并写入 .gitignore（仅本机留档，fresh clone 不存在），不要再引用它们的相对路径。
+# - bill_import.jpg    → 导入 / 导出枢纽页是否露出真实账单文件/账号信息
+# 注：life.jpg / life_board_* / life_stats 等旧生活页截图已移出仓库并写入 .gitignore（仅本机留档，
+# fresh clone 不存在）；仍跟踪的 asset_grid / settings_mine 等同样要求模拟数据。
 ```
 
 **脱敏规则：**
