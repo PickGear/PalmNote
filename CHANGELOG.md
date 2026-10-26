@@ -4,6 +4,25 @@ All notable changes to PalmNote will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.4.2-beta3] - 2026-10-26
+
+<!-- 预发布：1.4.2 的第三个 beta，只发内测群、不发 GitHub Release（GitHub 只发正式版）。
+     正式发版时另起 [1.4.2] - <发布日> 条目，并同步 changelog.txt。 -->
+
+### Fixed
+- 小组件「配色」对概览 / 接下来不生效的问题（此前只有账单组件真的读取实例配色）
+- 「接下来」2×2 档实际按 4×2 落桌、且与 4×2 档重复的问题（info、预览图与注册表已对齐）
+- 部分机型添加小组件时确认页预览显示空白 / 「0」占位的问题（改用静态卡面图）
+- 小组件图片背景在进程重启后偶发丢失、删除组件后持久授权不释放的问题
+- 账单 / 资产保存后桌面组件最长要等 30 分钟才刷新的问题（现在即时刷新）
+- 打卡卡跨午夜后仍显示昨天状态的问题（深睡 / 后台冻结后最多一分钟自愈）
+- 应用内选择深色模式时，开屏与窗口底色仍按系统浅色显示的问题
+- 物品 4×4 组件首帧显示空白设计布局、净资产组件在系统选择器里出现两个名称的问题
+
+### Changed
+- 小组件面板的尺寸页序按设计稿统一为 4×2 → 2×2 → 4×1 → 4×4
+- 清理已下线的旧组件布局、预览图与无用字符串；许可声明补全 core-splashscreen / profileinstaller
+
 ## [1.4.2-beta2] - 2026-10-25
 
 <!-- 预发布：1.4.2 的第二个 beta，只发内测群、不发 GitHub Release（GitHub 只发正式版）。

@@ -38,11 +38,11 @@ android {
         // targetSdk 34：自用侧载，禁用 Android 15+ 强制 predictive back，恢复传统返回动画；
         // compileSdk 保持 36 不损失编译能力。上 Play 时需升回 35+。
         targetSdk = 34
-        // versionCode 单调递增：1.4.2-beta2 取 10。1.4.0 正式发布为 6；1.4.1 曾以 7 出过一版
+        // versionCode 单调递增：1.4.2-beta3 取 11。1.4.0 正式发布为 6；1.4.1 曾以 7 出过一版
         // （10-10 17:02 构建的 PalmNote-1.4.1.apk，只含首批修复），其后又并入报销功能
         // 与日历重构，重新出包取 8（1.4.1 正式发布）。1.4.2 起为 beta 线：beta1 取 9、
-        // beta2 取 10。但 1.4.2 正式版必须 ≥ 10（不得低于任何 beta）。
-        versionCode = 10
+        // beta2 取 10、beta3 取 11。但 1.4.2 正式版必须 ≥ 11（不得低于任何 beta）。
+        versionCode = 11
         versionName = libs.versions.palmnote.get()
         // 版本号的单一事实来源就是 `libs.versions.toml` 的 palmnote 键：
         // 界面取 `BuildConfig.VERSION_NAME`（AboutScreen 就是这么读的）。
