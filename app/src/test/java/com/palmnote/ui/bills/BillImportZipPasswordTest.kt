@@ -68,7 +68,7 @@ class BillImportZipPasswordTest {
             ctx, repo, MutableStateFlow(listOf(wallet)),
             MutableStateFlow<List<CategoryConfig>>(emptyList()),
             MutableStateFlow<List<AccountBook>>(emptyList()),
-            mockk(relaxed = true), mockk(relaxed = true)
+            mockk(relaxed = true)
         )
         testDispatcher.scheduler.advanceUntilIdle()
     }

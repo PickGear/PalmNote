@@ -48,7 +48,7 @@ import kotlinx.coroutines.withContext
  * 导入导出：**应用数据**的进出都在这一页，导入侧自动识别文件类型——
  * - 完整备份包（PNB）→ 指回「备份与恢复」页（恢复职能不在这里）
  * - 全量数据包（本应用导出的 ZIP）→ 就地合并导入（判重跳过，不覆盖已有数据）
- * - 账单文件 → 明确指路「账单」页（账单导入/OCR 与本页完全分开）
+ * - 账单文件 → 明确指路「账单」页（账单导入/导出与本页完全分开）
  * 导出侧把明文 CSV 交给表格软件 / 其他 App（依赖闭包自动带上钱包/分类）。
  * 整份可恢复的数据走「备份与恢复」页——各走各的入口，互不掺杂。
  */
@@ -87,7 +87,7 @@ fun DataExchangeScreen(
             when (type) {
                 ImportFileDetector.FileType.BACKUP_PACKAGE -> showBackupRedirect = true
                 ImportFileDetector.FileType.FULL_DATA -> importViewModel.importFullData(uri)
-                // 账单文件与 OCR 在「账单」页，本页只管应用数据；指路而不是跳转
+                // 账单文件在「账单」页（含流水导出），本页只管应用数据；指路而不是跳转
                 ImportFileDetector.FileType.BILL_FILE -> showBillFile = true
                 ImportFileDetector.FileType.UNKNOWN -> showUnsupported = true
             }

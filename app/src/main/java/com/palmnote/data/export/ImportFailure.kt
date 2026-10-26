@@ -3,7 +3,7 @@ package com.palmnote.data.export
 /**
  * 一条在解析阶段被丢弃的导入记录。
  *
- * [rawText] 保存原始来源文本（CSV 行 / XLSX 行 / OCR 分块），[reason] 为机器可判定的失败原因码，
+ * [rawText] 保存原始来源文本（CSV 行 / XLSX 行），[reason] 为机器可判定的失败原因码，
  * 供结果页统计、展示，以及导出「可修正后重新导入」的 CSV 使用。
  * 原因码在 UI/导出层本地化为用户可见文案。
  */

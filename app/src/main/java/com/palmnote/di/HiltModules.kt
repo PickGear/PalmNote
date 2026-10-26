@@ -13,8 +13,6 @@ import com.palmnote.data.db.dao.*
 import com.palmnote.data.db.entity.*
 import com.palmnote.data.export.CsvDataExporter
 import com.palmnote.data.lock.AppLockManager
-import com.palmnote.data.ocr.OcrEngine
-import com.palmnote.data.ocr.PaddleOcrEngine
 import com.palmnote.data.repository.*
 import com.palmnote.data.sync.CalendarSyncManager
 import com.palmnote.di.ApplicationScope
@@ -122,16 +120,6 @@ object AppModule {
         @ApplicationScope scope: CoroutineScope
     ): StateFlow<List<AccountBook>> =
         accountBookRepository.getAllBooks().stateIn(scope, SharingStarted.Eagerly, emptyList())
-}
-
-@Module
-@InstallIn(SingletonComponent::class)
-object OcrModule {
-
-    @Provides
-    @Singleton
-    fun provideOcrEngine(@ApplicationContext context: Context): OcrEngine =
-        PaddleOcrEngine(context)
 }
 
 @Module
@@ -265,9 +253,10 @@ object RepositoryModule {
     fun provideAssetRepository(
         dao: AssetDao,
         assetRecycleBinDao: AssetRecycleBinDao,
-        appDatabase: AppDatabase
+        appDatabase: AppDatabase,
+        eventBus: com.palmnote.domain.event.EventBus
     ): AssetRepository =
-        AssetRepositoryImpl(dao, assetRecycleBinDao, appDatabase)
+        AssetRepositoryImpl(dao, assetRecycleBinDao, appDatabase, eventBus)
 
     @Provides @Singleton
     fun provideBillRepository(
@@ -312,9 +301,10 @@ object RepositoryModule {
         dao: WalletDao,
         billRepository: BillRepository,
         appDatabase: AppDatabase,
-        @ApplicationContext context: Context
+        @ApplicationContext context: Context,
+        eventBus: com.palmnote.domain.event.EventBus
     ): WalletRepository =
-        WalletRepositoryImpl(dao, billRepository, appDatabase, context)
+        WalletRepositoryImpl(dao, billRepository, appDatabase, context, eventBus)
 
     @Provides @Singleton
     fun provideAccountBookRepository(

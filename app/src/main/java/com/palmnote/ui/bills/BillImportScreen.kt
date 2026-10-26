@@ -1,9 +1,7 @@
 package com.palmnote.ui.bills
 
-import android.net.Uri
 import com.palmnote.domain.model.BillType
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
@@ -39,15 +37,12 @@ import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.pluralStringResource
@@ -62,22 +57,16 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
-import coil3.compose.AsyncImage
 import kotlinx.coroutines.launch
 import com.palmnote.app.R
 import com.palmnote.data.export.BillCsvImporter
 import com.palmnote.data.export.ParsedBill
-import com.palmnote.data.ocr.FieldConfidence
-import com.palmnote.data.ocr.OcrBillResult
 import com.palmnote.domain.model.Money
 import com.palmnote.domain.model.toMoney
 import com.palmnote.domain.util.CurrencyUtils
 import com.palmnote.domain.util.DateUtils
-import com.palmnote.data.db.entity.Wallet
 import com.palmnote.data.db.entity.getDisplayName
 import com.palmnote.ui.components.*
 import com.palmnote.ui.theme.*
@@ -88,9 +77,6 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 // ============================ 导入页设计令牌 ============================
-/** 三屏统一卡片纵向间距（对齐 App 卡片节奏） */
-private val ImportCardGap = 8.dp
-
 /** 文件导入渠道品牌色（降饱和）——仅用于来源徽章，非数据库数据色 */
 private val ImportChannelWechat = Color(0xFF67AC5B)
 private val ImportChannelAlipay = Color(0xFF4E8ED8)
@@ -113,7 +99,7 @@ private const val IMPORT_DASH_DP = 3f
  * surface 底 + shapes.large(16dp) 圆角 + 1dp outlineVariant 描边 + 0 阴影 + 内距 12dp。
  */
 @Composable
-private fun ImportCardSurface(
+internal fun ImportCardSurface(
     modifier: Modifier = Modifier,
     color: Color = MaterialTheme.colorScheme.surface,
     contentPadding: PaddingValues = PaddingValues(12.dp),
@@ -156,12 +142,13 @@ private fun ImportBottomBar(content: @Composable RowScope.() -> Unit) {
  * 导入页顶栏。文件导入预览态（分拣台）用 15sp/Medium 的「导入确认」标题 + 右侧「全部确认」；
  * 「全部确认」语义 = 清空复核队列（把待复核一并标记已确认），**不触发导入** —— 导入只由底部主按钮触发。
  * 无待复核项时隐藏该按钮（[showConfirmAll] = false）。其余阶段沿用全局 [CompactTopAppBar] 大标题，
- * 行为与历史一致。OCR 页不受影响。
+ * 行为与历史一致。
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun BillImportTopBar(
     fileReviewStage: Boolean,
+    titleRes: Int,
     showConfirmAll: Boolean,
     onBack: () -> Unit,
     onConfirmAll: () -> Unit
@@ -192,7 +179,7 @@ private fun BillImportTopBar(
         )
     } else {
         CompactTopAppBar(
-            title = stringResource(R.string.bill_import_title),
+            title = stringResource(titleRes),
             navigationIcon = { ImportBackButton(onBack) }
         )
     }
@@ -202,6 +189,36 @@ private fun BillImportTopBar(
 private fun ImportBackButton(onBack: () -> Unit) {
     IconButton(onClick = onBack) {
         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
+    }
+}
+
+/**
+ * 导入 / 导出枢纽页：只放两张入口卡，导与出各是独立页面。
+ *
+ * 之前枢纽和导入流程挤在同一个路由里，导致导入流程的返回会直接退回账单首页；
+ * 拆成三个路由后，「导入页 / 导出页」返回都回到这里。
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun BillImportHubScreen(
+    onNavigateBack: () -> Unit = {},
+    onSelectImport: () -> Unit = {},
+    onSelectExport: () -> Unit = {}
+) {
+    Scaffold(
+        topBar = {
+            BillImportTopBar(
+                fileReviewStage = false,
+                titleRes = R.string.bill_import_export_entry,
+                showConfirmAll = false,
+                onBack = onNavigateBack,
+                onConfirmAll = {}
+            )
+        }
+    ) { padding ->
+        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+            ModeSelection(onSelectFile = onSelectImport, onSelectExport = onSelectExport)
+        }
     }
 }
 
@@ -216,7 +233,8 @@ fun BillImportScreen(
 
     // 「分拣台」已确认集合：纯 UI 状态（不改业务/不落库）；离开文件预览即清空，避免下次导入残留
     var confirmedReview by remember { mutableStateOf(emptySet<Int>()) }
-    // 文件页三态筛选；默认「待复核」（进页面即分拣台），离开文件预览一并复位
+    // 文件页三态筛选：默认「待复核」，但若没有待复核项会由 AutoSwitchAwayFromEmptyReview
+    // 自动落到「全部」（别让首屏停在一个空档位）；离开文件预览一并复位
     var fileFilter by remember { mutableStateOf(ReviewFilter.REVIEW) }
     // 「待复核」队列只统计**会被导入**的行（已勾选）：默认不勾选（不计收支）或用户手动取消勾选的行不占额度
     val reviewIndices = remember(state.parsed, state.selectedIndices) {
@@ -231,14 +249,14 @@ fun BillImportScreen(
             }
             .toSet()
     }
-    LaunchedEffect(state.stage, state.mode) {
-        if (state.stage != ImportStage.PREVIEW || state.mode != ImportMode.FILE) {
+    LaunchedEffect(state.stage) {
+        if (state.stage != ImportStage.PREVIEW) {
             confirmedReview = emptySet()
             fileFilter = ReviewFilter.REVIEW
         }
     }
-    // 仅文件导入的预览态走「分拣台」顶栏（标题/全部确认）；OCR 页保持原样
-    val fileReviewStage = state.stage == ImportStage.PREVIEW && state.mode == ImportMode.FILE
+    // 仅文件导入的预览态走「分拣台」顶栏（标题/全部确认）
+    val fileReviewStage = state.stage == ImportStage.PREVIEW
     // 顶栏「全部确认」可见性：仅「待复核」档且有待复核项时（= 复核队列 - 已确认）才显示
     val pendingReviewCount = (reviewIndices - confirmedReview).size
     val showConfirmAll = fileReviewStage && fileFilter == ReviewFilter.REVIEW && pendingReviewCount > 0
@@ -251,12 +269,6 @@ fun BillImportScreen(
         }
     }
 
-    val imagePickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        if (uri != null) viewModel.processOcrImage(context, uri)
-    }
-    val launchImagePicker = {
-        imagePickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-    }
 
     // 失败记录导出：SAF 建文件，写出 BillCsvImporter 可读回的 CSV
     val failedCsvName = stringResource(R.string.bill_import_failed_csv_name)
@@ -268,6 +280,7 @@ fun BillImportScreen(
         topBar = {
             BillImportTopBar(
                 fileReviewStage = fileReviewStage,
+                titleRes = R.string.bill_import_title,
                 showConfirmAll = showConfirmAll,
                 onBack = onNavigateBack,
                 onConfirmAll = { confirmedReview = reviewIndices }
@@ -275,71 +288,44 @@ fun BillImportScreen(
         }
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-            if (state.stage == ImportStage.IDLE) {
-                ModeSelection(
-                    onSelectFile = { viewModel.setMode(ImportMode.FILE); filePickerLauncher.launch(arrayOf("text/*", "*/*")) },
-                    onSelectOcr = { viewModel.setMode(ImportMode.OCR); launchImagePicker() }
-                )
-            } else {
-                TabRow(
-                    selectedTabIndex = if (state.mode == ImportMode.FILE) 0 else 1,
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    contentColor = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Tab(selected = state.mode == ImportMode.FILE, onClick = {
-                        viewModel.setMode(ImportMode.FILE)
-                        filePickerLauncher.launch(arrayOf("text/*", "*/*"))
-                    }) { Text(stringResource(R.string.bill_import_file), modifier = Modifier.padding(12.dp)) }
-                    Tab(selected = state.mode == ImportMode.OCR, onClick = {
-                        viewModel.setMode(ImportMode.OCR)
-                        launchImagePicker()
-                    }) { Text(stringResource(R.string.bill_import_image), modifier = Modifier.padding(12.dp)) }
-                }
-
-                Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
-                    when (state.stage) {
-                        ImportStage.IDLE -> {}
-                        ImportStage.PARSING -> LoadingContent(stringResource(R.string.bill_import_parsing), onCancel = viewModel::cancelWork)
-                        ImportStage.IMPORTING -> LoadingContent(stringResource(R.string.bill_import_importing), onCancel = viewModel::cancelWork)
-                        // 加密 zip：内容区留空，由页面级的密码弹窗承载交互
-                        ImportStage.PASSWORD -> {}
-                        ImportStage.DONE -> DoneContent(
-                            count = state.importCount,
-                            skipped = state.skippedCount,
-                            failedCount = state.failures.size,
-                            canUndo = state.importedBillIds.isNotEmpty(),
-                            message = state.actionMessage,
-                            onUndo = viewModel::undoImport,
-                            onExportFailures = { exportLauncher.launch(failedCsvName) },
-                            onBack = onNavigateBack,
-                            onContinue = { viewModel.reset() }
-                        )
-                        ImportStage.ERROR -> ErrorContent(
-                            error = state.error ?: stringResource(R.string.bill_import_failed),
-                            diagnostic = state.diagnostic,
-                            onRetry = {
-                                viewModel.reset()
-                                if (state.mode == ImportMode.FILE) filePickerLauncher.launch(arrayOf("text/*", "*/*"))
-                                else launchImagePicker()
-                            },
-                            onBack = onNavigateBack
-                        )
-                        ImportStage.PREVIEW -> {
-                            if (state.mode == ImportMode.FILE) {
-                                FilePreviewContent(
-                                    state = state,
-                                    viewModel = viewModel,
-                                    confirmedReview = confirmedReview,
-                                    filter = fileFilter,
-                                    onFilter = { fileFilter = it },
-                                    onConfirmReview = { confirmedReview = confirmedReview + it }
-                                )
-                            } else {
-                                OcrPreviewContent(state, viewModel, context, onPickAnother = { launchImagePicker() })
-                            }
-                        }
-                    }
+            Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                when (state.stage) {
+                    // 本页只做导入：未开始时就地给出「选择账单文件」入口
+                    ImportStage.IDLE -> ImportStartContent(
+                        onPickFile = { filePickerLauncher.launch(arrayOf("text/*", "*/*")) }
+                    )
+                    ImportStage.PARSING -> LoadingContent(stringResource(R.string.bill_import_parsing), onCancel = viewModel::cancelWork)
+                    ImportStage.IMPORTING -> LoadingContent(stringResource(R.string.bill_import_importing), onCancel = viewModel::cancelWork)
+                    // 加密 zip：内容区留空，由页面级的密码弹窗承载交互
+                    ImportStage.PASSWORD -> {}
+                    ImportStage.DONE -> DoneContent(
+                        count = state.importCount,
+                        skipped = state.skippedCount,
+                        failedCount = state.failures.size,
+                        canUndo = state.importedBillIds.isNotEmpty(),
+                        message = state.actionMessage,
+                        onUndo = viewModel::undoImport,
+                        onExportFailures = { exportLauncher.launch(failedCsvName) },
+                        onBack = onNavigateBack,
+                        onContinue = { viewModel.reset() }
+                    )
+                    ImportStage.ERROR -> ErrorContent(
+                        error = state.error ?: stringResource(R.string.bill_import_failed),
+                        diagnostic = state.diagnostic,
+                        onRetry = {
+                            viewModel.reset()
+                            filePickerLauncher.launch(arrayOf("text/*", "*/*"))
+                        },
+                        onBack = onNavigateBack
+                    )
+                    ImportStage.PREVIEW -> FilePreviewContent(
+                        state = state,
+                        viewModel = viewModel,
+                        confirmedReview = confirmedReview,
+                        filter = fileFilter,
+                        onFilter = { fileFilter = it },
+                        onConfirmReview = { confirmedReview = confirmedReview + it }
+                    )
                 }
             }
         }
@@ -352,6 +338,57 @@ fun BillImportScreen(
             onSubmit = viewModel::submitZipPassword,
             onCancel = viewModel::cancelWork
         )
+    }
+}
+
+/**
+ * 导入页的起始态：本页只负责「导入」，未选文件时就地给一个明确入口。
+ * 与导出页对称——列表/说明在上，动作在底部；这一步不做自动弹窗，避免用户一进来就被系统面板糊脸。
+ */
+@Composable
+private fun ImportStartContent(onPickFile: () -> Unit) {
+    var showTutorial by remember { mutableStateOf(false) }
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 24.dp, vertical = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        ImportCardSurface(
+            modifier = Modifier.fillMaxWidth(),
+            contentPadding = PaddingValues(20.dp)
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Icon(
+                    Icons.Outlined.FileDownload,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(36.dp)
+                )
+                Text(
+                    stringResource(R.string.bill_import_file),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    stringResource(R.string.bill_import_start_desc),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+        Button(onClick = onPickFile, modifier = Modifier.fillMaxWidth()) {
+            Text(stringResource(R.string.bill_import_pick_file))
+        }
+        ImportHelpCard(onTutorial = { showTutorial = true })
+    }
+    if (showTutorial) {
+        ImportTutorialSheet(onDismiss = { showTutorial = false })
     }
 }
 
@@ -402,9 +439,16 @@ private fun ZipPasswordDialog(wrong: Boolean, onSubmit: (String) -> Unit, onCanc
     )
 }
 
-/** 导入方式选择首页：英雄卡 + 双入口卡（可横向滑动聚焦）+ 三步流程 + 教程引导 */
+/**
+ * 导入方式选择首页：英雄卡 + 双入口卡（可横向滑动聚焦）+ 三步流程 + 教程引导。
+ *
+ * 图标口径：**页内两卡按数据流向** —— 导入 = 数据进来 = FileDownload（向下箭头），
+ * 导出 = 数据出去 = FileUpload（向上箭头），沿用 commit f20bb8e 的定案。
+ * **账单页入口例外**：它进入的是双能力页，用 ImportExport 双向箭头（2026-10-26 用户定案），
+ * 单向下箭头会让导出无处可点。
+ */
 @Composable
-private fun ModeSelection(onSelectFile: () -> Unit, onSelectOcr: () -> Unit) {
+private fun ModeSelection(onSelectFile: () -> Unit, onSelectExport: () -> Unit) {
     var showTutorial by remember { mutableStateOf(false) }
     Column(
         modifier = Modifier
@@ -415,7 +459,7 @@ private fun ModeSelection(onSelectFile: () -> Unit, onSelectOcr: () -> Unit) {
         Spacer(modifier = Modifier.height(8.dp))
         ImportHeroCard()
         Spacer(modifier = Modifier.height(24.dp))
-        ImportEntrySwitcher(onSelectFile = onSelectFile, onSelectOcr = onSelectOcr)
+        ImportEntrySwitcher(onSelectFile = onSelectFile, onSelectExport = onSelectExport)
         Spacer(modifier = Modifier.height(16.dp))
         ImportStepsCard()
         Spacer(modifier = Modifier.height(16.dp))
@@ -502,10 +546,10 @@ private fun Modifier.entryStackLayers(
  * 进入逻辑分两段，保证点任何地方都有反馈、又不会"手滑点到旁边那张就直接跳走"：
  * 点未选中的卡 → 只把它切为选中；点已选中的卡 → 进入对应流程。
  *
- * [focus] ∈ [-1f, 1f]：-1 文件导入卡选中（默认）/ 1 图片识别卡选中，中间值为拖动过程。
+ * [focus] ∈ [-1f, 1f]：-1 文件导入卡选中（默认）/ 1 导出账单卡选中，中间值为拖动过程。
  */
 @Composable
-private fun ImportEntrySwitcher(onSelectFile: () -> Unit, onSelectOcr: () -> Unit) {
+private fun ImportEntrySwitcher(onSelectFile: () -> Unit, onSelectExport: () -> Unit) {
     var focus by remember { mutableFloatStateOf(-1f) }
     val scope = rememberCoroutineScope()
     val dragStep = with(LocalDensity.current) { 60.dp.toPx() }
@@ -517,7 +561,7 @@ private fun ImportEntrySwitcher(onSelectFile: () -> Unit, onSelectOcr: () -> Uni
         EntryCardRow(
             focus = focus,
             onFileClick = { if (focus < 0f) onSelectFile() else pick(-1f) },
-            onOcrClick = { if (focus > 0f) onSelectOcr() else pick(1f) },
+            onExportClick = { if (focus > 0f) onSelectExport() else pick(1f) },
             modifier = Modifier.entryFocusDrag(focus = { focus }, setFocus = { focus = it }, dragStep = dragStep)
         )
         EntryGuide(focus = focus)
@@ -525,7 +569,7 @@ private fun ImportEntrySwitcher(onSelectFile: () -> Unit, onSelectOcr: () -> Uni
 }
 
 /**
- * 两张入口卡的并排布局：焦点度由 [focus] 派生（-1 文件卡 / 1 图片卡）。
+ * 两张入口卡的并排布局：焦点度由 [focus] 派生（-1 文件卡 / 1 导出卡）。
  * 两卡各向中间平移 `ENTRY_CARD_OVERLAP` 形成轻微压叠，焦点那张用 zIndex 提到上层，
  * 因为左右位移量相同，卡组整体仍是居中对称的。
  */
@@ -533,11 +577,11 @@ private fun ImportEntrySwitcher(onSelectFile: () -> Unit, onSelectOcr: () -> Uni
 private fun EntryCardRow(
     focus: Float,
     onFileClick: () -> Unit,
-    onOcrClick: () -> Unit,
+    onExportClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val fileEmphasis = (-focus).coerceIn(0f, 1f)
-    val ocrEmphasis = focus.coerceIn(0f, 1f)
+    val exportEmphasis = focus.coerceIn(0f, 1f)
     val overlapPx = with(LocalDensity.current) { ENTRY_CARD_OVERLAP.toPx() }
 
     Row(
@@ -564,31 +608,31 @@ private fun EntryCardRow(
                 .weight(1f)
                 .zIndex(fileEmphasis)
                 .graphicsLayer {
-                    val s = 1f + 0.06f * fileEmphasis - 0.12f * ocrEmphasis
+                    val s = 1f + 0.06f * fileEmphasis - 0.12f * exportEmphasis
                     scaleX = s
                     scaleY = s
                     translationX = overlapPx
                 }
         )
         EntryCard(
-            title = stringResource(R.string.bill_import_image),
-            desc = stringResource(R.string.bill_import_ocr_desc_short),
-            icon = Icons.Outlined.CameraAlt,
-            emphasize = ocrEmphasis,
+            title = stringResource(R.string.bill_import_export),
+            desc = stringResource(R.string.bill_import_export_desc_short),
+            icon = Icons.Outlined.FileUpload,
+            emphasize = exportEmphasis,
             rotationDeg = 2f,
             stackDirX = 1f,
-            onClick = onOcrClick,
+            onClick = onExportClick,
             modifier = Modifier
                 .weight(1f)
-                .zIndex(ocrEmphasis)
+                .zIndex(exportEmphasis)
                 .graphicsLayer {
-                    val s = 1f + 0.06f * ocrEmphasis - 0.12f * fileEmphasis
+                    val s = 1f + 0.06f * exportEmphasis - 0.12f * fileEmphasis
                     scaleX = s
                     scaleY = s
                     translationX = -overlapPx
                     // 错落下移必须走绘制层：之前这里是 padding(top = 16dp - 8dp * focus)，
                     // 属布局属性，focus 一动就把 Row 的高度改掉，整页内容跟着上下跳。
-                    translationY = (16.dp - 8.dp * ocrEmphasis).toPx()
+                    translationY = (16.dp - 8.dp * exportEmphasis).toPx()
                 }
         )
     }
@@ -1358,6 +1402,13 @@ private fun FilePreviewContent(
     // 「已跳过」= 用户取消勾选、本次不导入的行（派生量，随勾选实时变，务必不要缓存）
     val skippedIndices = state.parsed.indices.filter { it !in state.selectedIndices }
 
+    AutoSwitchAwayFromEmptyReview(
+        filter = filter,
+        pendingCount = pendingIndices.size,
+        total = state.parsed.size,
+        onFilter = onFilter
+    )
+
     Column(modifier = Modifier.fillMaxSize()) {
         ReviewFilterRow(
             filter = filter,
@@ -1366,14 +1417,19 @@ private fun FilePreviewContent(
             totalCount = state.parsed.size,
             skippedCount = skippedIndices.size
         )
+        ReviewReadyNote(
+            pendingCount = pendingIndices.size,
+            selectedCount = state.selectedIndices.size,
+            reason = dominantReason(pendingIndices.mapNotNull { reviewReasons[it] })
+        )
         FileFilteredBody(
             filter = filter,
             state = state,
             viewModel = viewModel,
             pendingIndices = pendingIndices,
             skippedIndices = skippedIndices,
-            reviewReasons = reviewReasons,
             onConfirmReview = onConfirmReview,
+            onFilterFor = onFilter,
             onEditCategory = { categoryEditIndex = it },
             onEditBill = { editingIndex = it }
         )
@@ -1405,20 +1461,13 @@ private fun ColumnScope.FileFilteredBody(
     viewModel: BillImportViewModel,
     pendingIndices: List<Int>,
     skippedIndices: List<Int>,
-    reviewReasons: List<ReviewReason?>,
     onConfirmReview: (Int) -> Unit,
     onEditCategory: (Int) -> Unit,
-    onEditBill: (Int) -> Unit
+    onEditBill: (Int) -> Unit,
+    onFilterFor: (ReviewFilter) -> Unit
 ) {
     when (filter) {
         ReviewFilter.REVIEW -> {
-            // 分拣台只在「待复核」档出现（ALL / SKIPPED 下不显示，避免与筛选条计数重复）
-            FileSortingHeader(
-                pendingCount = pendingIndices.size,
-                reviewCount = reviewReasons.count { it != null },
-                total = state.parsed.size,
-                reason = dominantReason(pendingIndices.map { reviewReasons[it] })
-            )
             if (pendingIndices.isNotEmpty()) {
                 FileReviewList(
                     indices = pendingIndices,
@@ -1429,26 +1478,22 @@ private fun ColumnScope.FileFilteredBody(
                     modifier = Modifier.weight(1f)
                 )
             } else {
-                Text(
+                FileEmptyHint(
                     text = stringResource(R.string.bill_import_no_review),
-                    fontSize = 11.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+                    actionLabel = stringResource(R.string.bill_import_view_all),
+                    onAction = { onFilterFor(ReviewFilter.ALL) }
                 )
-                Spacer(modifier = Modifier.weight(1f))
             }
         }
         ReviewFilter.ALL -> FileBillList(
             remember(state.parsed) { state.parsed.indices.toList() }, state, viewModel, onEdit = onEditBill, modifier = Modifier.weight(1f)
         )
         ReviewFilter.SKIPPED -> if (skippedIndices.isEmpty()) {
-            Text(
+            FileEmptyHint(
                 text = stringResource(R.string.bill_import_no_skipped),
-                fontSize = 11.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+                actionLabel = stringResource(R.string.bill_import_view_all),
+                onAction = { onFilterFor(ReviewFilter.ALL) }
             )
-            Spacer(modifier = Modifier.weight(1f))
         } else {
             SkippedExcludedNote(skippedIndices.count { !state.parsed[it].defaultSelected })
             FileBillList(skippedIndices, state, viewModel, onEdit = onEditBill, modifier = Modifier.weight(1f))
@@ -1479,27 +1524,90 @@ private enum class ReviewEditField { AMOUNT, MERCHANT }
 private fun formatCentsForEdit(cents: Long): String =
     String.format(Locale.US, "%.2f", cents / 100.0)
 
-/** 分拣台头区：待确认条数主标题（15sp/Medium）+ 原因摘要副标题（11sp 次要色） */
+/**
+ * 首屏别停在空的「待复核」档：首次进入没有待复核项就落「全部」；
+ * 审核完最后一条也自动切走。用户之后手动点回「待复核」不再被打断。
+ */
 @Composable
-private fun FileSortingHeader(pendingCount: Int, reviewCount: Int, total: Int, reason: ReviewReason?) {
-    val reasonText = reason?.let { reviewReasonLabel(it) } ?: ""
+private fun AutoSwitchAwayFromEmptyReview(
+    filter: ReviewFilter,
+    pendingCount: Int,
+    total: Int,
+    onFilter: (ReviewFilter) -> Unit
+) {
+    var lastPending by remember { mutableIntStateOf(-1) }
+    LaunchedEffect(pendingCount, total) {
+        if (total == 0) return@LaunchedEffect
+        if (shouldFallbackToAll(filter, pendingCount, lastPending)) onFilter(ReviewFilter.ALL)
+        lastPending = pendingCount
+    }
+}
+
+/**
+ * 拆成两段判断，避开 detekt 的复杂条件阈值（可读性也更好）。
+ * internal 是为了让单测覆盖「首轮落全部 / 审完自动走 / 用户手动点回不打断」这三条行为。
+ */
+internal fun shouldFallbackToAll(filter: ReviewFilter, pendingCount: Int, lastPending: Int): Boolean {
+    if (filter != ReviewFilter.REVIEW || pendingCount != 0) return false
+    return lastPending == -1 || lastPending > 0
+}
+
+/**
+ * 待复核时的补充说明：**只讲标签页里没有的那一层关系**。
+ *
+ * 标签页已经有「待复核 N / 全部 M / 已跳过 K」，底部按钮已经有「导入 X 笔」，
+ * 所以这里不再重复任何已有数字，只补一句「其余 N 笔已就绪」——
+ * 把「选中的 X = 待复核 + 已就绪」这条关系说清，后面跟一行主要问题。
+ * 没有待复核项时整块不渲染（此时页面不需要额外解释）。
+ */
+@Composable
+private fun ReviewReadyNote(pendingCount: Int, selectedCount: Int, reason: ReviewReason?) {
+    if (pendingCount <= 0) return
+    val ready = (selectedCount - pendingCount).coerceAtLeast(0)
     Column(
-        modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 4.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 16.dp, top = 6.dp, end = 16.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
         Text(
-            text = if (pendingCount > 0) stringResource(R.string.bill_import_review_headline, pendingCount)
-            else stringResource(R.string.bill_import_review_all_ready, total),
-            fontSize = 15.sp,
-            fontWeight = FontWeight.Medium,
-            color = MaterialTheme.colorScheme.onSurface
+            text = stringResource(R.string.bill_import_summary_ready_rest, ready),
+            fontSize = 12.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        if (pendingCount > 0 && reasonText.isNotEmpty()) {
+        if (reason != null) {
             Text(
-                text = stringResource(R.string.bill_import_review_subtitle, reasonText, (total - reviewCount).coerceAtLeast(0)),
-                fontSize = 11.sp,
+                text = stringResource(R.string.bill_import_summary_reason, reviewReasonLabel(reason)),
+                fontSize = 12.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+        }
+    }
+}
+
+/**
+ * 空档位提示：整块居中 + 一个动作按钮，而不是左上角一行灰字。
+ * 页面不会因为「这一档是空的」看起来像坏了。
+ */
+@Composable
+private fun ColumnScope.FileEmptyHint(text: String, actionLabel: String, onAction: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .weight(1f)
+            .fillMaxWidth()
+            .padding(horizontal = 32.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = text,
+            fontSize = 13.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+        OutlinedButton(onClick = onAction, shape = MaterialTheme.shapes.medium) {
+            Text(actionLabel, fontSize = 13.sp)
         }
     }
 }
@@ -1583,7 +1691,6 @@ private fun ReviewMoreRow(hiddenCount: Int, onClick: () -> Unit) {
  * [evidence] 为可选证据槽（缩略图等）：文件导入的数据是 ParsedBill（CSV/Excel 行，**无源图**），
  * 其不确定性是**字段级**（商户/分类）而非「图片能否看清」，故本批传 null、**不渲染任何占位块**。
  * 若强行画一个假缩略图，用户会读成「图片裂了」，把「分类未识别」误判为「UI 坏了」，反而误导。
- * OCR 页将来需要缩略图时，可复用同一槽位传入 cropBox 裁剪的 bitmap。
  */
 @Composable
 private fun ReviewSortingCard(
@@ -1703,7 +1810,7 @@ private fun ReviewCategorySheetHost(
 }
 
 /**
- * 待复核卡的分类选择面板：与 OCR 逐笔编辑面板（ImportEditSheet → OcrCategorySection）**同源**——
+ * 待复核卡的分类选择面板：与导入编辑面板（ImportEditSheet → ImportCategorySection）**同源**——
  * 同一个 ModalBottomSheet 外壳（BottomSheetShape + DragHandle）+ 同一个 [CategoryPicker] 组件 +
  * 同一个 [rememberImportCategories] 数据构建（预设/自定义/频次排序/名称解析全复用），不新造选择器。
  * 选中即经 [onSelected] 落回（无需「保存」二次确认）。
@@ -1867,27 +1974,40 @@ private fun ImportTargetRow(state: BillImportState, context: android.content.Con
     val wallet = state.wallets.firstOrNull { it.id == state.importWalletId }
         ?.let { com.palmnote.ui.components.getLocalizedWalletDisplayName(it, context) }.orEmpty()
     Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+        modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 4.dp, bottom = 2.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            text = stringResource(R.string.bill_import_deposit_to, book, wallet),
-            fontSize = 11.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f)
-        )
-        Text(
-            text = stringResource(R.string.bill_import_change),
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Medium,
-            color = AccentOrange,
-            modifier = Modifier
-                .clip(MaterialTheme.shapes.small)
-                .clickable(role = Role.Button, onClick = onClick)
-                .padding(horizontal = 6.dp, vertical = 2.dp)
-        )
+        // 「存入」是这页最要紧的一条信息（导到哪个账本/账户），给标签 + 正文两级，别缩成 11sp 灰字
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = stringResource(R.string.bill_import_deposit_label),
+                fontSize = 11.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = listOf(book, wallet).filter { it.isNotBlank() }.joinToString(" · "),
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+        TextButton(onClick = onClick, contentPadding = PaddingValues(horizontal = 10.dp)) {
+            Icon(
+                Icons.Outlined.Tune,
+                contentDescription = null,
+                tint = AccentOrange,
+                modifier = Modifier.size(16.dp)
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(
+                text = stringResource(R.string.bill_import_change),
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Medium,
+                color = AccentOrange
+            )
+        }
     }
 }
 
@@ -1975,46 +2095,6 @@ private fun ImportSecondaryButton(text: String, onClick: () -> Unit) {
     }
 }
 
-/** 统计条：一张白卡三列紧凑并排——已选 N/M · 支出合计 · 收入合计；金额仅用红/绿文字着色（不铺浅色底块） */
-@Composable
-private fun ImportStatBar(selectedCount: Int, totalCount: Int, expenseCents: Long, incomeCents: Long) {
-    val context = LocalContext.current
-    ImportCardSurface(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
-    ) {
-        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            StatCell(
-                label = stringResource(R.string.bill_import_selected),
-                value = "$selectedCount/$totalCount",
-                valueColor = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.weight(1f)
-            )
-            StatCell(
-                label = stringResource(R.string.bill_import_expense_sum),
-                value = CurrencyUtils.formatCurrency(context, expenseCents.toMoney()),
-                valueColor = ExpenseRed,
-                modifier = Modifier.weight(1f)
-            )
-            StatCell(
-                label = stringResource(R.string.bill_import_income_sum),
-                value = CurrencyUtils.formatCurrency(context, incomeCents.toMoney()),
-                valueColor = IncomeGreen,
-                modifier = Modifier.weight(1f)
-            )
-        }
-    }
-}
-
-/** 统计条单列：上小标签（labelMedium）下金额（titleSmall 加粗 + 语义色） */
-@Composable
-private fun StatCell(label: String, value: String, valueColor: Color, modifier: Modifier = Modifier) {
-    Column(modifier = modifier) {
-        Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
-        Spacer(modifier = Modifier.height(2.dp))
-        Text(value, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = valueColor, maxLines = 1)
-    }
-}
 
 /** 设置分组：小标签（labelMedium）在上 + 内容在下 */
 @Composable
@@ -2101,63 +2181,14 @@ private fun <T> SelectionSquareRow(
 /** 导入来源徽章：文案 + 品牌色（仅 FILE 模式且格式已识别时非空） */
 private data class ImportSourceBadge(val text: String, val color: Color)
 
-/** 当前来源徽章；FILE 且格式已知才返回，否则 null（OCR 模式没有「来源」概念） */
+/** 当前来源徽章；FILE 且格式已知才返回，否则 null */
 @Composable
 private fun rememberImportSourceBadge(state: BillImportState): ImportSourceBadge? {
-    if (state.mode != ImportMode.FILE || state.format == BillCsvImporter.CsvFormat.UNKNOWN) return null
+    if (state.format == BillCsvImporter.CsvFormat.UNKNOWN) return null
     return when (state.format) {
         BillCsvImporter.CsvFormat.WECHAT -> ImportSourceBadge(stringResource(R.string.bill_import_wechat_bill), ImportChannelWechat)
         BillCsvImporter.CsvFormat.ALIPAY -> ImportSourceBadge(stringResource(R.string.bill_import_alipay_bill), ImportChannelAlipay)
         else -> ImportSourceBadge(stringResource(R.string.bill_import_source_file), MaterialTheme.colorScheme.onSurfaceVariant)
-    }
-}
-
-/** 当前去向摘要：FILE 拼「来源 · 账本 · 账户」，OCR 拼「账本 · 账户」；空段自动跳过 */
-@Composable
-private fun rememberImportTargetLabel(state: BillImportState, context: android.content.Context): String {
-    val badge = rememberImportSourceBadge(state)
-    val book = state.accountBooks.firstOrNull { it.id == state.importBookId }?.getDisplayName(context)
-    val wallet = state.wallets.firstOrNull { it.id == state.importWalletId }
-        ?.let { com.palmnote.ui.components.getLocalizedWalletDisplayName(it, context) }
-    return remember(badge, book, wallet) {
-        listOfNotNull(badge?.text, book, wallet).filter { it.isNotBlank() }.joinToString(" · ")
-    }
-}
-
-/** 收起后的「当前去向」摘要行（高 44dp）：左摘要文本，右「更改」；整行可点，点开 [ImportSettingSheet] */
-@Composable
-private fun ImportSettingSummary(
-    state: BillImportState,
-    context: android.content.Context,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier.padding(horizontal = 16.dp)
-) {
-    val label = rememberImportTargetLabel(state, context)
-    ImportCardSurface(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(44.dp)
-            .clip(MaterialTheme.shapes.large)
-            .clickable(role = Role.Button, onClick = onClick),
-        contentPadding = PaddingValues(horizontal = 12.dp)
-    ) {
-        Row(modifier = Modifier.fillMaxWidth().height(44.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                label,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                stringResource(R.string.bill_import_change),
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.primary
-            )
-        }
     }
 }
 
@@ -2244,8 +2275,8 @@ private fun ImportSettingGroups(state: BillImportState, viewModel: BillImportVie
 /**
  * 预览页筛选：左侧分段控件（待复核 N / 全部 [N] / [已跳过 N]）+ 可选右侧「全不选」次按钮
  * （筛选只影响展示，不隐藏勾选）。
- * - [totalCount] 非空 → 「全部」段带总数（文件页）；为空 → 纯「全部」（OCR 页，外观不变）。
- * - [skippedCount] 非空 → 追加第三段「已跳过」（文件页）；为空 → 不渲染（OCR 页仍两段）。
+ * - [totalCount] 非空 → 「全部」段带总数（文件页）；为空 → 纯「全部」。
+ * - [skippedCount] 非空 → 追加第三段「已跳过」（文件页）；为空 → 不渲染。
  * - [onDeselectAll] 为空 → 不渲染右侧按钮，左侧分段容器铺满整行（文件页；用户截图中无「全不选」）。
  */
 @Composable
@@ -2325,66 +2356,6 @@ private fun SegmentedTab(text: String, selected: Boolean, onClick: () -> Unit, m
 /** 待复核理由 → 颜色：严重（缺金额/缺日期）红，一般（商户待确认/分类未识别）琥珀 */
 private fun reviewReasonColor(reason: ReviewReason): Color = if (reason.severe) ExpenseRed else Warning
 
-/** 字段置信度小圆点（8dp 实心圆）：绿=可靠识别，琥珀=规则推断，红=必填缺失 */
-@Composable
-private fun ConfidenceDot(confidence: FieldConfidence) {
-    val color = when (confidence) {
-        FieldConfidence.HIGH -> IncomeGreen
-        FieldConfidence.INFERRED -> Warning
-        FieldConfidence.MISSING -> ExpenseRed
-    }
-    Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(color))
-}
-
-/** 字段置信度图例：3 行圆点 + 文案（说明分级含义，不承诺阻断行为） */
-@Composable
-private fun ConfidenceLegend() {
-    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        Text(
-            stringResource(R.string.bill_import_confidence_legend_title),
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        LegendLine(FieldConfidence.HIGH, stringResource(R.string.bill_import_confidence_high))
-        LegendLine(FieldConfidence.INFERRED, stringResource(R.string.bill_import_confidence_inferred))
-        LegendLine(FieldConfidence.MISSING, stringResource(R.string.bill_import_confidence_missing))
-    }
-}
-
-/** 置信度图例折叠区：默认收起只留一行开关；展开才渲染 [ConfidenceLegend]，避免常驻占屏 */
-@Composable
-private fun ConfidenceLegendSection() {
-    var legendOpen by remember { mutableStateOf(false) }
-    TextButton(
-        onClick = { legendOpen = !legendOpen },
-        modifier = Modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-    ) {
-        Text(
-            stringResource(R.string.bill_import_confidence_legend_title),
-            color = MaterialTheme.colorScheme.primary,
-            fontWeight = FontWeight.Medium
-        )
-        Icon(
-            Icons.AutoMirrored.Filled.KeyboardArrowRight,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(18.dp).graphicsLayer { rotationZ = if (legendOpen) 90f else 0f }
-        )
-    }
-    if (legendOpen) ConfidenceLegend()
-}
-
-@Composable
-private fun LegendLine(confidence: FieldConfidence, text: String) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        ConfidenceDot(confidence)
-        Spacer(modifier = Modifier.width(4.dp))
-        Text(text, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-    }
-}
-
 @Composable
 private fun reviewReasonLabel(reason: ReviewReason): String = stringResource(
     when (reason) {
@@ -2396,11 +2367,11 @@ private fun reviewReasonLabel(reason: ReviewReason): String = stringResource(
 )
 
 /**
- * 单条票据预览行：文件导入 / OCR 多笔识别 共用同一布局
+ * 单条票据预览行：文件导入预览共用布局
  *  (◉) 商户名                        ¥金额
  *      09月09日 · 分类
  *  交互：点圆形勾选标记 = 切换选中（金额缺失时不可选）；点卡片其它任意位置 = 打开逐笔编辑。
- *  金额缺失（OCR 未识别到）时金额显示 "--" 且不可勾选；商户缺失显示「未识别」+ 警示图标。
+ *  金额缺失时金额显示 "--" 且不可勾选；商户缺失显示「未识别」+ 警示图标。
  */
 @Composable
 private fun BillPreviewRow(
@@ -2620,40 +2591,32 @@ private fun AmountHero(
     isIncome: Boolean,
     error: Boolean,
     onAmount: (String) -> Unit,
-    onType: (BillType) -> Unit,
-    confidence: FieldConfidence? = null
+    onType: (BillType) -> Unit
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
-        OcrTypeToggle(selected = if (isIncome) BillType.INCOME else BillType.EXPENSE, onSelect = onType)
+        BillTypeToggle(selected = if (isIncome) BillType.INCOME else BillType.EXPENSE, onSelect = onType)
         Spacer(modifier = Modifier.height(16.dp))
-        FieldBlock(stringResource(R.string.bill_import_amount), confidence) {
+        FieldBlock(stringResource(R.string.bill_import_amount)) {
             UnderlineAmountField(value = amount, onValueChange = onAmount, error = error)
         }
     }
 }
 
 /**
- * 编辑表单的字段块：小标题（含可选置信度圆点）+ 常显下划线输入。
+ * 编辑表单的字段块：小标题 + 常显下划线输入。
  * 输入控件自身不带标签，避免与块标题重复。
  */
 @Composable
 private fun FieldBlock(
     label: String,
-    confidence: FieldConfidence? = null,
     content: @Composable () -> Unit
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            if (confidence != null) {
-                ConfidenceDot(confidence)
-                Spacer(modifier = Modifier.width(4.dp))
-            }
-            Text(
-                label,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
+        Text(
+            label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
         Spacer(modifier = Modifier.height(4.dp))
         content()
     }
@@ -2661,9 +2624,9 @@ private fun FieldBlock(
 
 /** 文件导入编辑面板的初始表单：各字段直接取自解析结果 */
 @Composable
-private fun rememberFileEditForm(bill: ParsedBill): MutableState<OcrEditForm> = remember(bill) {
+private fun rememberFileEditForm(bill: ParsedBill): MutableState<ImportBillEditForm> = remember(bill) {
     mutableStateOf(
-        OcrEditForm(
+        ImportBillEditForm(
             amount = String.format(Locale.US, "%.2f", bill.amount / 100.0),
             isIncome = bill.type == BillType.INCOME.value,
             merchant = bill.merchant,
@@ -2674,7 +2637,7 @@ private fun rememberFileEditForm(bill: ParsedBill): MutableState<OcrEditForm> = 
     )
 }
 
-/** 文件导入预览的逐笔编辑面板：金额/类型/商户/分类/日期/备注（表单与 OCR 编辑共用） */
+/** 文件导入预览的逐笔编辑面板：金额/类型/商户/分类/日期/备注 */
 @Composable
 private fun FileEditSheet(bill: ParsedBill, viewModel: BillImportViewModel, onDismiss: () -> Unit, onSave: (ParsedBill) -> Unit) {
     var form by rememberFileEditForm(bill)
@@ -2709,7 +2672,7 @@ private fun FileEditSheet(bill: ParsedBill, viewModel: BillImportViewModel, onDi
             )
         }
     ) {
-        OcrEditFields(
+        ImportEditFields(
             form = form,
             onForm = { form = it; amountError = false; dateError = false },
             dateError = dateError,
@@ -2718,325 +2681,8 @@ private fun FileEditSheet(bill: ParsedBill, viewModel: BillImportViewModel, onDi
         )
     }
 }
-
 @Composable
-private fun OcrPreviewContent(state: BillImportState, viewModel: BillImportViewModel, context: android.content.Context, onPickAnother: () -> Unit) {
-    val isMulti = state.ocrResults.size > 1
-    var showZoom by remember { mutableStateOf(false) }
-    var editingIndex by remember { mutableStateOf<Int?>(null) }
-    var showSettings by remember { mutableStateOf(false) }
-    Column(modifier = Modifier.fillMaxSize()) {
-        if (isMulti) {
-            OcrMultiReview(
-                state,
-                viewModel,
-                context,
-                onOpenSettings = { showSettings = true },
-                onEdit = { editingIndex = it },
-                onZoom = { showZoom = true }
-            )
-        } else {
-            // weight(1f)：把自滚动表单压在底部按钮行之内，避免按钮被挤出屏幕
-            OcrSingleEditor(
-                state = state,
-                viewModel = viewModel,
-                context = context,
-                onOpenSettings = { showSettings = true },
-                onZoom = { showZoom = true },
-                modifier = Modifier.weight(1f)
-            )
-        }
-        ImportBottomBar {
-            if (!isMulti) {
-                OutlinedButton(
-                    onClick = onPickAnother,
-                    modifier = Modifier.width(96.dp).height(52.dp),
-                    shape = MaterialTheme.shapes.medium,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-                ) { Text(stringResource(R.string.bill_import_reselect)) }
-            }
-            Button(
-                onClick = { viewModel.saveOcrSelected() },
-                modifier = Modifier.weight(1f).height(52.dp),
-                enabled = state.ocrSelectedIndices.isNotEmpty(),
-                shape = MaterialTheme.shapes.medium
-            ) {
-                Text(
-                    if (isMulti) stringResource(R.string.bill_import_batch_save, state.ocrSelectedIndices.size)
-                    else stringResource(R.string.bill_import_save),
-                    fontWeight = FontWeight.Bold
-                )
-            }
-        }
-    }
-    if (showSettings) {
-        ImportSettingSheet(state, viewModel, context, onDismiss = { showSettings = false })
-    }
-    if (showZoom && state.ocrImageUri != null) {
-        ZoomableImageDialog(uri = state.ocrImageUri, onDismiss = { showZoom = false })
-    }
-    OcrEditSheetHost(editingIndex, state, viewModel, onDismiss = { editingIndex = null })
-}
-
-/** OCR 多笔校对：原图入口窄行 → 去向摘要 → 统计条 → 筛选 → 明细列表（weight(1f) 吃掉剩余高度） */
-@Composable
-private fun OcrMultiReview(
-    state: BillImportState,
-    viewModel: BillImportViewModel,
-    context: android.content.Context,
-    onOpenSettings: () -> Unit,
-    onEdit: (Int) -> Unit,
-    onZoom: () -> Unit
-) {
-    val expenseSum = remember(state.ocrResults, state.ocrSelectedIndices) {
-        state.ocrResults.filterIndexed { i, _ -> i in state.ocrSelectedIndices }
-            .filter { it.type != BillType.INCOME }.sumOf { it.amount ?: 0L }
-    }
-    val incomeSum = remember(state.ocrResults, state.ocrSelectedIndices) {
-        state.ocrResults.filterIndexed { i, _ -> i in state.ocrSelectedIndices }
-            .filter { it.type == BillType.INCOME }.sumOf { it.amount ?: 0L }
-    }
-    // 待复核筛选（多笔页）：默认「全部」；筛选只影响展示，待复核行仍可勾选
-    var filter by remember { mutableStateOf(ReviewFilter.ALL) }
-    val reviewReasons = remember(state.ocrResults) {
-        state.ocrResults.map { reviewReasonOf(it.amount, it.date, it.merchant, it.category) }
-    }
-    val visibleIndices = remember(state.ocrResults, filter, reviewReasons) {
-        state.ocrResults.indices.filter { index ->
-            when (filter) {
-                ReviewFilter.REVIEW -> reviewReasons[index] != null
-                // ALL 与（OCR 页不会出现的）SKIPPED 均展示全部，保证与历史行为一致
-                ReviewFilter.ALL, ReviewFilter.SKIPPED -> true
-            }
-        }
-    }
-    Column(modifier = Modifier.fillMaxSize()) {
-        Spacer(modifier = Modifier.height(8.dp))
-        // 多笔页与单笔共用同一原图 URI / ZoomableImageDialog，仅此前未接 onZoom；
-        // 多笔不写 ocrDate，中间文案改用「截图」避免误显示「未识别」
-        OcrThumbnailRow(
-            state = state,
-            onZoom = onZoom,
-            subtitle = stringResource(R.string.bill_import_screenshot),
-            modifier = Modifier.padding(horizontal = 16.dp)
-        )
-        ImportSettingSummary(state, context, onClick = onOpenSettings)
-        Spacer(modifier = Modifier.height(ImportCardGap))
-        ImportStatBar(state.ocrSelectedIndices.size, state.ocrResults.size, expenseSum, incomeSum)
-        ReviewFilterRow(
-            filter = filter,
-            reviewCount = reviewReasons.count { it != null },
-            onFilter = { filter = it },
-            onDeselectAll = { viewModel.deselectAllOcr() }
-        )
-        OcrBillList(visibleIndices, state, viewModel, onEdit = onEdit, modifier = Modifier.weight(1f))
-    }
-}
-
-/** 多笔识别明细列表：weight(1f) 吃掉剩余全部高度（页边 16 / 行距 8） */
-@Composable
-private fun OcrBillList(
-    indices: List<Int>,
-    state: BillImportState,
-    viewModel: BillImportViewModel,
-    onEdit: (Int) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    LazyColumn(
-        modifier = modifier,
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        items(indices, key = { it }) { index ->
-            val result = state.ocrResults[index]
-            BillPreviewRow(
-                selected = index in state.ocrSelectedIndices,
-                type = result.type ?: BillType.EXPENSE,
-                amountCents = result.amount,
-                merchant = result.merchant,
-                category = result.category,
-                dateMillis = result.date,
-                note = result.note,
-                onToggle = { viewModel.toggleOcrSelection(index) },
-                onEdit = { onEdit(index) }
-            )
-        }
-    }
-}
-
-/** 多笔逐笔编辑面板宿主：收敛 null 判空与保存回调 */
-@Composable
-private fun OcrEditSheetHost(index: Int?, state: BillImportState, viewModel: BillImportViewModel, onDismiss: () -> Unit) {
-    if (index == null) return
-    val result = state.ocrResults.getOrNull(index) ?: return
-    OcrEditSheet(
-        result = result,
-        viewModel = viewModel,
-        onDismiss = onDismiss,
-        onSave = { updated ->
-            viewModel.updateOcrResult(index, updated)
-            onDismiss()
-        }
-    )
-}
-
-/** 识别结果的图片入口窄行（高 44dp）：28dp 缩略图 + [subtitle]（缺省用 ocrDate） + 右侧「查看原图 ›」；整行可点放大（单笔/多笔共用） */
-@Composable
-private fun OcrThumbnailRow(
-    state: BillImportState,
-    onZoom: () -> Unit,
-    modifier: Modifier = Modifier,
-    subtitle: String? = null
-) {
-    if (state.ocrImageUri == null) return
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(44.dp)
-            .clip(MaterialTheme.shapes.medium)
-            .clickable(role = Role.Button, onClick = onZoom),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        AsyncImage(
-            model = state.ocrImageUri,
-            contentDescription = stringResource(R.string.bill_import_screenshot),
-            modifier = Modifier.size(28.dp).clip(MaterialTheme.shapes.small),
-            contentScale = ContentScale.Crop
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(
-            subtitle ?: state.ocrDate.ifBlank { stringResource(R.string.bill_import_unrecognized) },
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-            maxLines = 1,
-            modifier = Modifier.weight(1f)
-        )
-        Text(
-            stringResource(R.string.bill_import_view_original),
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.primary
-        )
-        Icon(
-            Icons.AutoMirrored.Filled.KeyboardArrowRight,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(18.dp)
-        )
-    }
-}
-
-/** 单笔识别：缩略图窄行 → 金额 → 识别详情(商户/日期/备注) → 分类网格 → 去向摘要 → 识别详情文字（全部随内容滚动） */
-@Composable
-private fun OcrSingleEditor(
-    state: BillImportState,
-    viewModel: BillImportViewModel,
-    context: android.content.Context,
-    onOpenSettings: () -> Unit,
-    onZoom: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier.verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Spacer(modifier = Modifier.height(8.dp))
-        OcrThumbnailRow(state = state, onZoom = onZoom)
-        OcrAmountCard(state, viewModel)
-        OcrDetailCard(state, viewModel)
-        OcrCategoryCard(state, viewModel)
-        ImportSettingSummary(state, context, onClick = onOpenSettings, modifier = Modifier)
-        // 字段置信度图例：默认折叠，点标题展开（信息性说明，不阻断任何操作）
-        ConfidenceLegendSection()
-        // 识别详情（原始文字）：随内容滚动，不再固定占一行
-        OcrRawTextSection(state)
-        if (state.error != null) {
-            Text(state.error, color = ExpenseRed, style = MaterialTheme.typography.bodySmall)
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-    }
-}
-
-/** 「查看识别详情」折叠区 + 原始识别文字 */
-@Composable
-private fun OcrRawTextSection(state: BillImportState) {
-    var showRaw by remember { mutableStateOf(false) }
-    Column(modifier = Modifier.fillMaxWidth()) {
-        TextButton(
-            onClick = { showRaw = !showRaw },
-            contentPadding = PaddingValues(horizontal = 0.dp, vertical = 4.dp)
-        ) {
-            Text(
-                stringResource(R.string.bill_import_ocr_details),
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.Medium
-            )
-            Icon(
-                Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(18.dp)
-            )
-        }
-        if (showRaw && state.ocrRawText.isNotEmpty()) {
-            Surface(
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                shape = MaterialTheme.shapes.small,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    state.ocrRawText,
-                    modifier = Modifier.padding(12.dp),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-    }
-}
-
-/** 收支分段 + 大金额下划线输入卡；金额字段前置置信度圆点 */
-@Composable
-private fun OcrAmountCard(state: BillImportState, viewModel: BillImportViewModel) {
-    ImportCardSurface {
-        OcrTypeToggle(selected = state.ocrType, onSelect = viewModel::updateOcrType)
-        HorizontalDivider(
-            modifier = Modifier.padding(vertical = 12.dp),
-            thickness = 1.dp,
-            color = MaterialTheme.colorScheme.outlineVariant
-        )
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            ConfidenceDot(state.ocrAmountConfidence)
-            Spacer(modifier = Modifier.width(8.dp))
-            UnderlineAmountField(
-                value = state.ocrAmount,
-                onValueChange = viewModel::updateOcrAmount,
-                modifier = Modifier.weight(1f)
-            )
-        }
-    }
-}
-
-/** 识别详情卡：商户 / 日期 / 备注 三个带标签的下划线字段（顺序 商户 → 日期 → 备注） */
-@Composable
-private fun OcrDetailCard(state: BillImportState, viewModel: BillImportViewModel) {
-    ImportCardSurface {
-        FieldBlock(stringResource(R.string.bill_import_merchant), state.ocrMerchantConfidence) {
-            UnderlineField(value = state.ocrMerchant, onValueChange = viewModel::updateOcrMerchant)
-        }
-        Spacer(modifier = Modifier.height(12.dp))
-        FieldBlock(stringResource(R.string.bill_import_date), state.ocrDateConfidence) {
-            UnderlineDateField(value = state.ocrDate, onValueChange = viewModel::updateOcrDate)
-        }
-        Spacer(modifier = Modifier.height(12.dp))
-        FieldBlock(stringResource(R.string.bill_import_note)) {
-            UnderlineField(value = state.ocrNote, onValueChange = viewModel::updateOcrNote)
-        }
-    }
-}
-
-/** 收支切换：与记账页（AddBillScreen）同款两段分段控件——支出选中填 ExpenseRed、收入选中填 StatusActive */
-@Composable
-private fun OcrTypeToggle(selected: BillType, onSelect: (BillType) -> Unit, modifier: Modifier = Modifier) {
+private fun BillTypeToggle(selected: BillType, onSelect: (BillType) -> Unit, modifier: Modifier = Modifier) {
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -3110,32 +2756,6 @@ private fun rememberImportCategories(
     }
 }
 
-/** 分类卡：图标网格，图标与排列和记账页（AddBillScreen）完全一致（默认 2 行 × 5 列 + 更多） */
-@Composable
-private fun OcrCategoryCard(state: BillImportState, viewModel: BillImportViewModel) {
-    val context = LocalContext.current
-    val presetOverrides by viewModel.presetCategoryOverrides.collectAsStateWithLifecycle()
-    ImportCardSurface {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            ConfidenceDot(state.ocrCategoryConfidence)
-            Spacer(modifier = Modifier.width(4.dp))
-            Text(stringResource(R.string.bill_category), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-        val categories = rememberImportCategories(viewModel, state.ocrType != BillType.INCOME, ensureCategory = state.ocrCategory)
-        CategoryPicker(
-            selected = state.ocrCategory,
-            onSelected = viewModel::updateOcrCategory,
-            categories = categories,
-            getDisplayName = { key -> resolvePresetCategoryName(presetOverrides, key, state.ocrType.value, context) }
-        )
-    }
-}
-
-/**
- * 下划线式单行输入（用户认可的 Batch 9/10 形态）：底部一条细线，无外框；
- * 整行高 ≥40dp 保证触摸目标，placeholder 居左、trailing 居右。
- */
 @Composable
 private fun UnderlineField(
     value: String,
@@ -3284,7 +2904,7 @@ private fun UnderlineAmountField(
 }
 
 /** 逐笔编辑对话框的表单值 */
-private data class OcrEditForm(
+private data class ImportBillEditForm(
     val amount: String,
     val isIncome: Boolean,
     val merchant: String,
@@ -3297,87 +2917,13 @@ private data class OcrEditForm(
 private fun sanitizeNotePlaceholder(note: String): String =
     if (note.trim() == "/" || note.trim() == "-") "" else note
 
-/** 多笔识别编辑面板的初始表单：各字段取自识别结果 */
 @Composable
-private fun rememberOcrEditForm(result: OcrBillResult): MutableState<OcrEditForm> = remember(result) {
-    mutableStateOf(
-        OcrEditForm(
-            amount = result.amount?.let { String.format(Locale.US, "%.2f", it / 100.0) } ?: "",
-            isIncome = result.type == BillType.INCOME,
-            merchant = result.merchant,
-            category = result.category,
-            note = sanitizeNotePlaceholder(result.note),
-            dateStr = result.date?.let { DateUtils.formatDate(it) } ?: ""
-        )
-    )
-}
-
-/** 多笔识别结果的逐笔编辑面板：金额/类型/商户/分类/日期/备注 */
-@Composable
-private fun OcrEditSheet(result: OcrBillResult, viewModel: BillImportViewModel, onDismiss: () -> Unit, onSave: (OcrBillResult) -> Unit) {
-    var form by rememberOcrEditForm(result)
-    var dateError by remember { mutableStateOf(false) }
-    var amountError by remember { mutableStateOf(false) }
-
-    ImportEditSheet(
-        title = stringResource(R.string.bill_import_ocr_edit_title),
-        onDismiss = onDismiss,
-        onSave = {
-            val cents = Money.parse(form.amount)?.cents
-            if (cents == null || cents <= 0) {
-                amountError = true
-                return@ImportEditSheet
-            }
-            val dateMillis = if (form.dateStr.isBlank()) null else runCatching {
-                LocalDate.parse(form.dateStr, DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-                    .atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-            }.getOrElse {
-                dateError = true
-                return@ImportEditSheet
-            }
-            // 编辑面板为整笔确认：保存即视为用户已核对，各字段置信度置为 HIGH
-            onSave(
-                result.copy(
-                    amount = cents,
-                    type = if (form.isIncome) BillType.INCOME else BillType.EXPENSE,
-                    merchant = form.merchant.trim(),
-                    category = form.category.ifBlank { "其他" },
-                    note = form.note.trim(),
-                    date = dateMillis,
-                    amountConfidence = FieldConfidence.HIGH,
-                    merchantConfidence = FieldConfidence.HIGH,
-                    dateConfidence = FieldConfidence.HIGH,
-                    categoryConfidence = FieldConfidence.HIGH
-                )
-            )
-        }
-    ) {
-        OcrEditFields(
-            form = form,
-            onForm = { form = it; amountError = false; dateError = false },
-            dateError = dateError,
-            viewModel = viewModel,
-            amountError = amountError,
-            amountConfidence = result.amountConfidence,
-            merchantConfidence = result.merchantConfidence,
-            dateConfidence = result.dateConfidence,
-            categoryConfidence = result.categoryConfidence
-        )
-    }
-}
-
-/** 逐笔编辑表单区（金额 Hero + 商户/日期/备注常显字段块 + 分类用记账页同款图标网格） */
-@Composable
-private fun OcrEditFields(
-    form: OcrEditForm,
-    onForm: (OcrEditForm) -> Unit,
+private fun ImportEditFields(
+    form: ImportBillEditForm,
+    onForm: (ImportBillEditForm) -> Unit,
     dateError: Boolean,
     viewModel: BillImportViewModel,
-    amountError: Boolean = false,
-    amountConfidence: FieldConfidence? = null,
-    merchantConfidence: FieldConfidence? = null,
-    dateConfidence: FieldConfidence? = null,
-    categoryConfidence: FieldConfidence? = null
+    amountError: Boolean = false
 ) {
     // 金额 Hero：收支分段 + 大号金额下划线输入（视觉焦点）
     AmountHero(
@@ -3385,16 +2931,15 @@ private fun OcrEditFields(
         isIncome = form.isIncome,
         error = amountError,
         onAmount = { onForm(form.copy(amount = it)) },
-        onType = { onForm(form.copy(isIncome = it == BillType.INCOME)) },
-        confidence = amountConfidence
+        onType = { onForm(form.copy(isIncome = it == BillType.INCOME)) }
     )
     Spacer(modifier = Modifier.height(16.dp))
     // 识别详情：商户 / 日期 / 备注 三个带标签的下划线字段
-    FieldBlock(stringResource(R.string.bill_import_merchant), merchantConfidence) {
+    FieldBlock(stringResource(R.string.bill_import_merchant)) {
         UnderlineField(value = form.merchant, onValueChange = { onForm(form.copy(merchant = it)) })
     }
     Spacer(modifier = Modifier.height(12.dp))
-    FieldBlock(stringResource(R.string.bill_import_date), dateConfidence) {
+    FieldBlock(stringResource(R.string.bill_import_date)) {
         UnderlineDateField(value = form.dateStr, onValueChange = { onForm(form.copy(dateStr = it)) })
     }
     if (dateError) {
@@ -3407,31 +2952,24 @@ private fun OcrEditFields(
     }
     Spacer(modifier = Modifier.height(16.dp))
     // 分类：与记账页一致的图标网格（2 行 × 5 列 + 更多）
-    OcrCategorySection(form = form, onForm = onForm, viewModel = viewModel, confidence = categoryConfidence)
+    ImportCategorySection(form = form, onForm = onForm, viewModel = viewModel)
 }
 
 /** 编辑表单的分类区：与记账页一致的图标网格（2 行 × 5 列 + 更多） */
 @Composable
-private fun OcrCategorySection(
-    form: OcrEditForm,
-    onForm: (OcrEditForm) -> Unit,
-    viewModel: BillImportViewModel,
-    confidence: FieldConfidence?
+private fun ImportCategorySection(
+    form: ImportBillEditForm,
+    onForm: (ImportBillEditForm) -> Unit,
+    viewModel: BillImportViewModel
 ) {
     val context = LocalContext.current
     val presetOverrides by viewModel.presetCategoryOverrides.collectAsStateWithLifecycle()
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        if (confidence != null) {
-            ConfidenceDot(confidence)
-            Spacer(modifier = Modifier.width(4.dp))
-        }
-        Text(
-            stringResource(R.string.bill_category),
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(vertical = 4.dp)
-        )
-    }
+    Text(
+        stringResource(R.string.bill_category),
+        style = MaterialTheme.typography.titleSmall,
+        fontWeight = FontWeight.Bold,
+        modifier = Modifier.padding(vertical = 4.dp)
+    )
     val categories = rememberImportCategories(viewModel, !form.isIncome, ensureCategory = form.category)
     CategoryPicker(
         selected = form.category,
@@ -3441,51 +2979,4 @@ private fun OcrCategorySection(
             resolvePresetCategoryName(presetOverrides, key, if (form.isIncome) "INCOME" else "EXPENSE", context)
         }
     )
-}
-
-/** 全屏可缩放查看识别原图：双指缩放 + 拖动，点背景关闭 */
-@Composable
-private fun ZoomableImageDialog(uri: Uri, onDismiss: () -> Unit) {
-    var scale by remember { mutableFloatStateOf(1f) }
-    var offset by remember { mutableStateOf(Offset.Zero) }
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
-    ) {
-        NoDialogWindowAnimation()
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.92f))
-                .clickable(onClick = onDismiss),
-            contentAlignment = Alignment.Center
-        ) {
-            AsyncImage(
-                model = uri,
-                contentDescription = stringResource(R.string.bill_import_screenshot),
-                contentScale = ContentScale.Fit,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .graphicsLayer(
-                        scaleX = scale,
-                        scaleY = scale,
-                        translationX = offset.x,
-                        translationY = offset.y
-                    )
-                    .pointerInput(Unit) {
-                        detectTransformGestures { _, pan, zoom, _ ->
-                            scale = (scale * zoom).coerceIn(1f, 5f)
-                            offset = if (scale > 1f) offset + pan else Offset.Zero
-                        }
-                    }
-                    .clickable(enabled = false) { }
-            )
-            Text(
-                "×%.1f".format(scale),
-                color = Color.White.copy(alpha = 0.7f),
-                style = MaterialTheme.typography.labelMedium,
-                modifier = Modifier.align(Alignment.BottomCenter).padding(24.dp)
-            )
-        }
-    }
 }

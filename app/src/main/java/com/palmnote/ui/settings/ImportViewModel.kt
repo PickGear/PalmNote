@@ -17,7 +17,7 @@ import javax.inject.Inject
 /**
  * 统一导入入口的「全量数据导入」部分。
  *
- * 账单导入（微信/支付宝/CSV/Excel/OCR）走 BillImport 流程，有自己的 ViewModel；
+ * 账单导入（微信/支付宝/CSV/Excel）走 BillImport 流程，有自己的 ViewModel；
  * 这里只负责 PalmNote 全量数据包（CsvDataExporter 导出的 ZIP）的导入。
  */
 @HiltViewModel

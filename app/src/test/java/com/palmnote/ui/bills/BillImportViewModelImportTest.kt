@@ -12,7 +12,6 @@ import com.palmnote.data.db.entity.AccountBook
 import com.palmnote.data.db.entity.CategoryConfig
 import com.palmnote.data.db.entity.Wallet
 import com.palmnote.data.repository.BillRepositoryImpl
-import com.palmnote.domain.model.BillType
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
@@ -94,7 +93,6 @@ class BillImportViewModelImportTest {
         wallets,
         MutableStateFlow<List<CategoryConfig>>(emptyList()),
         MutableStateFlow<List<AccountBook>>(emptyList()),
-        mockk(relaxed = true),
         mockk(relaxed = true)
     ).also { createdViewModels += it }
 
@@ -129,13 +127,12 @@ class BillImportViewModelImportTest {
         return (listOf(header) + rows).joinToString("\n").toByteArray(Charsets.UTF_8)
     }
 
-    private fun importOneViaOcr(amount: String, merchant: String, date: String) {
-        vm.updateOcrAmount(amount)
-        vm.updateOcrMerchant(merchant)
-        vm.updateOcrDate(date)
-        vm.updateOcrCategory("餐饮")
-        vm.updateOcrType(BillType.EXPENSE)
-        vm.saveOcrSelected()
+    /** 走文件导入路径导入一笔（解析 → 预览 → 导入），模拟微信 CSV 单行。 */
+    private fun importOneViaFile(amount: String, merchant: String, date: String, txId: String) {
+        val bytes = wechatCsv("$date 12:30:00,商户消费,$merchant,,支出,$amount,微信支付,已支付,$txId")
+        vm.parseFile(fileContext(bytes), Uri.parse("content://t/$txId.csv"), "$txId.csv")
+        settle { vm.state.value.stage == ImportStage.PREVIEW }
+        vm.importSelected()
     }
 
     // ── T1：无钱包用户 ──
@@ -145,11 +142,10 @@ class BillImportViewModelImportTest {
         val noWalletVm = newViewModel(MutableStateFlow(emptyList()))
         testDispatcher.scheduler.advanceUntilIdle()
 
-        noWalletVm.updateOcrAmount("45.00")
-        noWalletVm.updateOcrMerchant("美团")
-        noWalletVm.updateOcrDate("2026-07-20")
-        noWalletVm.updateOcrType(BillType.EXPENSE)
-        noWalletVm.saveOcrSelected()
+        val bytes = wechatCsv("2026-07-20 12:30:00,商户消费,美团,,支出,45.00,微信支付,已支付,T-NOWALLET")
+        noWalletVm.parseFile(fileContext(bytes), Uri.parse("content://t/nowallet.csv"), "nowallet.csv")
+        settle { noWalletVm.state.value.stage == ImportStage.PREVIEW }
+        noWalletVm.importSelected()
         settle { noWalletVm.state.value.stage == ImportStage.DONE }
 
         assertEquals(1, noWalletVm.state.value.importCount)
@@ -160,20 +156,6 @@ class BillImportViewModelImportTest {
     }
 
     // ── T5：计数 ──
-
-    @Test
-    fun `T5 importing an identical OCR bill twice skips the second (attribute dedup)`() {
-        importOneViaOcr("45.00", "美团", "2026-07-20")
-        settle { vm.state.value.stage == ImportStage.DONE }
-        assertEquals(1, vm.state.value.importCount)
-        assertEquals(0, vm.state.value.skippedCount)
-
-        importOneViaOcr("45.00", "美团", "2026-07-20")
-        settle { vm.state.value.stage == ImportStage.DONE }
-        assertEquals(0, vm.state.value.importCount)
-        assertEquals(1, vm.state.value.skippedCount)
-        assertEquals(1, billsNow().size)
-    }
 
     @Test
     fun `T5 duplicate transactionId within one file is imported once and skipped once`() {
@@ -275,12 +257,12 @@ class BillImportViewModelImportTest {
     fun `T3 undoImport reverts only the latest batch and restores that balance`() {
         val start = balanceNow()
 
-        importOneViaOcr("45.00", "美团", "2026-07-20")
+        importOneViaFile("45.00", "美团", "2026-07-20", "T-UNDO-A")
         settle { vm.state.value.stage == ImportStage.DONE }
         val afterA = balanceNow()
         assertEquals(start - 4500, afterA)
 
-        importOneViaOcr("12.00", "地铁", "2026-07-21")
+        importOneViaFile("12.00", "地铁", "2026-07-21", "T-UNDO-B")
         settle { vm.state.value.stage == ImportStage.DONE }
         assertEquals(start - 4500 - 1200, balanceNow())
 
@@ -294,7 +276,7 @@ class BillImportViewModelImportTest {
 
     @Test
     fun `T3 reset clears the in-memory undo ids`() {
-        importOneViaOcr("45.00", "美团", "2026-07-20")
+        importOneViaFile("45.00", "美团", "2026-07-20", "T-RESET-A")
         settle { vm.state.value.stage == ImportStage.DONE }
         assertTrue(vm.state.value.importedBillIds.isNotEmpty())
 

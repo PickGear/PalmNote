@@ -7,10 +7,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.Matrix
-import android.media.ExifInterface
 import android.net.Uri
 import androidx.compose.runtime.Stable
 import androidx.lifecycle.ViewModel
@@ -30,17 +26,11 @@ import com.palmnote.data.export.ImportFailureReason
 import com.palmnote.data.export.ParsedBill
 import com.palmnote.data.export.WrongPasswordException
 import com.palmnote.data.export.ZipArchiveReader
-import com.palmnote.data.ocr.BillOcrParser
-import com.palmnote.data.ocr.FieldConfidence
-import com.palmnote.data.ocr.OcrBillResult
-import com.palmnote.data.ocr.OcrEngine
 import com.palmnote.data.db.entity.Wallet
-import com.palmnote.domain.model.Money
 import com.palmnote.domain.repository.BillRepository
 import com.palmnote.domain.util.AppLogger
 import com.palmnote.domain.util.DateUtils
 
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -57,7 +47,6 @@ import kotlinx.coroutines.withContext
 import java.nio.charset.Charset
 
 
-enum class ImportMode { FILE, OCR }
 enum class ImportStage { IDLE, PARSING, PASSWORD, PREVIEW, IMPORTING, DONE, ERROR }
 
 /** 一次批量写入的结果：成功写入的行 id 列表 + 因重复而被跳过的条数 */
@@ -65,7 +54,6 @@ private data class InsertOutcome(val insertedIds: List<Long>, val skipped: Int)
 
 @Stable
 data class BillImportState(
-    val mode: ImportMode = ImportMode.FILE,
     val stage: ImportStage = ImportStage.IDLE,
     val parsed: List<ParsedBill> = emptyList(),
     val selectedIndices: Set<Int> = emptySet(),
@@ -82,22 +70,7 @@ data class BillImportState(
     val fileName: String = "",
     val format: BillCsvImporter.CsvFormat = BillCsvImporter.CsvFormat.UNKNOWN,
     val diagnostic: String = "",
-    val ocrResults: List<OcrBillResult> = emptyList(),
-    val ocrSelectedIndices: Set<Int> = emptySet(),
-    val ocrImageUri: Uri? = null,
-    val ocrRawText: String = "",
-    val ocrAmount: String = "",
-    val ocrMerchant: String = "",
-    val ocrDate: String = "",
-    val ocrCategory: String = "其他",
-    val ocrNote: String = "",
-    val ocrType: BillType = BillType.EXPENSE,
-    /** 单笔校对页各字段置信度（分级圆点）；用户手动编辑后对应字段置为 HIGH */
-    val ocrAmountConfidence: FieldConfidence = FieldConfidence.MISSING,
-    val ocrMerchantConfidence: FieldConfidence = FieldConfidence.MISSING,
-    val ocrDateConfidence: FieldConfidence = FieldConfidence.MISSING,
-    val ocrCategoryConfidence: FieldConfidence = FieldConfidence.MISSING,
-    /** 本次导入（文件/OCR 两条路径共用）记到哪个钱包，默认第一个 */
+    /** 本次导入记到哪个钱包，默认第一个 */
     val importWalletId: Long? = null,
     val wallets: List<Wallet> = emptyList(),
     /** 本次导入记到哪个账本；与手动记账一样可选，默认账本 */
@@ -116,15 +89,13 @@ class BillImportViewModel @Inject constructor(
     private val cachedWallets: @JvmSuppressWildcards StateFlow<List<Wallet>>,
     private val cachedCategoryConfigs: @JvmSuppressWildcards StateFlow<List<CategoryConfig>>,
     private val cachedAccountBooks: @JvmSuppressWildcards StateFlow<List<AccountBook>>,
-    private val preferencesManager: PreferencesManager,
-    private val ocrEngine: OcrEngine
+    private val preferencesManager: PreferencesManager
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(BillImportState())
     val state: StateFlow<BillImportState> = _state.asStateFlow()
-    private val ocrParser = BillOcrParser()
 
-    /** 当前解析/导入任务，供「取消」中断（OCR 识别大图可能耗时数秒） */
+    /** 当前解析/导入任务，供「取消」中断（解析大文件可能耗时数秒） */
     private var workJob: Job? = null
 
     /** 加密 zip 的原始字节（等待密码期间暂存，避免让用户重新选文件） */
@@ -193,20 +164,7 @@ class BillImportViewModel @Inject constructor(
 
     override fun onCleared() {
         clearZipSecrets()
-        CoroutineScope(Dispatchers.IO).launch { ocrEngine.release() }
         super.onCleared()
-    }
-
-    fun setMode(mode: ImportMode) {
-        // 切换模式只清解析结果，保留账本/钱包列表与选择（此前整表重置导致切换后 chips 消失）
-        clearZipSecrets()
-        _state.value = BillImportState(
-            mode = mode,
-            wallets = _state.value.wallets,
-            importWalletId = _state.value.importWalletId,
-            accountBooks = _state.value.accountBooks,
-            importBookId = _state.value.importBookId
-        )
     }
 
     fun parseFile(@ApplicationContext context: Context, uri: Uri, fileName: String) {
@@ -444,64 +402,6 @@ class BillImportViewModel @Inject constructor(
         return out
     }
 
-    fun processOcrImage(@ApplicationContext context: Context, uri: Uri) {
-        workJob = viewModelScope.launch {
-            _state.value = _state.value.copy(stage = ImportStage.PARSING, ocrImageUri = uri, error = null)
-            try {
-                val (lines, text) = withContext(Dispatchers.IO) {
-                    // 先采样解码获取尺寸，再按需降采样，避免大图 OOM
-                    val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-                    context.contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) }
-                    val sample = BitmapFactory.Options().apply {
-                        inSampleSize = calculateInSampleSize(bounds.outWidth, bounds.outHeight, 2048)
-                    }
-                    val bitmap = context.contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, sample) }
-                        ?: throw Exception(context.getString(R.string.bill_import_error_read_image))
-                    val rotated = rotateBitmapIfNeeded(context, uri, bitmap)
-                    // 逐行识别并保留每行置信度（供字段级置信度分级）；同时拼回纯文本用于渠道判定与原文展示
-                    val ocrLines = ocrEngine.recognizeDetailed(rotated)
-                    ocrLines to ocrLines.joinToString("\n") { it.text }
-                }
-                val failures = mutableListOf<ImportFailure>()
-                val results = ocrParser.parseMultiple(lines, failures)
-                if (results.isEmpty()) {
-                    _state.value = _state.value.copy(stage = ImportStage.ERROR, error = context.getString(R.string.bill_import_error_ocr_invalid), ocrRawText = text)
-                    return@launch
-                }
-                // 微信/支付宝截图默认记到对应钱包（截图判不出渠道时保持原选择）
-                val walletId = pickWalletFor(detectChannel(text), _state.value.wallets) ?: _state.value.importWalletId
-                if (results.size == 1) {
-                    val r = results[0]
-                    val amountStr = r.amount?.let { String.format(java.util.Locale.US, "%.2f", it / 100.0) } ?: ""
-                    // 截图无日期（如电商订单裁剪图）时预填今天：保存本就回退今天，界面上不该留空白让人疑惑
-                    val dateStr = r.date?.let { DateUtils.formatDate(it) }
-                        ?: DateUtils.formatDate(System.currentTimeMillis())
-                    _state.value = _state.value.copy(
-                        stage = ImportStage.PREVIEW, ocrResults = results, ocrSelectedIndices = setOf(0),
-                        ocrImageUri = uri, ocrRawText = text, importWalletId = walletId,
-                        ocrAmount = amountStr, ocrMerchant = r.merchant, ocrDate = dateStr,
-                        ocrCategory = r.category, ocrNote = r.note,
-                        ocrAmountConfidence = r.amountConfidence,
-                        ocrMerchantConfidence = r.merchantConfidence,
-                        ocrDateConfidence = r.dateConfidence,
-                        ocrCategoryConfidence = r.categoryConfidence
-                    )
-                } else {
-                    _state.value = _state.value.copy(
-                        stage = ImportStage.PREVIEW, ocrResults = results,
-                        ocrSelectedIndices = results.indices.toSet(),
-                        ocrImageUri = uri, ocrRawText = text, importWalletId = walletId,
-                        failures = failures
-                    )
-                }
-            } catch (e: kotlinx.coroutines.CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                _state.value = _state.value.copy(stage = ImportStage.ERROR, error = context.getString(R.string.bill_import_error_ocr_failed, e.message))
-            }
-        }
-    }
-
     fun toggleFileSelection(index: Int) {
         val s = _state.value
         _state.value = s.copy(selectedIndices = if (index in s.selectedIndices) s.selectedIndices - index else s.selectedIndices + index)
@@ -509,37 +409,17 @@ class BillImportViewModel @Inject constructor(
     fun selectAllFiles() { _state.value = _state.value.copy(selectedIndices = _state.value.parsed.indices.toSet()) }
     fun deselectAllFiles() { _state.value = _state.value.copy(selectedIndices = emptySet()) }
 
-    /** 逐笔编辑文件导入预览中的记录（金额/类型/商户/分类/日期/备注） */
-    fun updateParsedBill(index: Int, bill: ParsedBill) {
-        val list = _state.value.parsed.toMutableList()
-        if (index in list.indices) list[index] = bill
-        _state.value = _state.value.copy(parsed = list)
-    }
-
-    fun toggleOcrSelection(index: Int) {
-        val s = _state.value
-        _state.value = s.copy(ocrSelectedIndices = if (index in s.ocrSelectedIndices) s.ocrSelectedIndices - index else s.ocrSelectedIndices + index)
-    }
-    fun selectAllOcr() { _state.value = _state.value.copy(ocrSelectedIndices = _state.value.ocrResults.indices.toSet()) }
-    fun deselectAllOcr() { _state.value = _state.value.copy(ocrSelectedIndices = emptySet()) }
-
-    // 用户手输/改过的值即可信：对应字段置信度置为 HIGH
-    fun updateOcrAmount(v: String) { _state.value = _state.value.copy(ocrAmount = v, ocrAmountConfidence = FieldConfidence.HIGH) }
-    fun updateOcrMerchant(v: String) { _state.value = _state.value.copy(ocrMerchant = v, ocrMerchantConfidence = FieldConfidence.HIGH) }
-    fun updateOcrDate(v: String) { _state.value = _state.value.copy(ocrDate = v, ocrDateConfidence = FieldConfidence.HIGH) }
-    fun updateOcrCategory(v: String) { _state.value = _state.value.copy(ocrCategory = v, ocrCategoryConfidence = FieldConfidence.HIGH) }
-    fun updateOcrNote(v: String) { _state.value = _state.value.copy(ocrNote = v) }
-    fun updateOcrType(t: BillType) { _state.value = _state.value.copy(ocrType = t) }
+    /** 切换本次导入记到哪个钱包，默认第一个 */
     fun updateImportWallet(id: Long?) { _state.value = _state.value.copy(importWalletId = id) }
 
     /** 切换本次导入记到哪个账本 */
     fun updateImportBook(id: Long?) { _state.value = _state.value.copy(importBookId = id) }
 
-    /** 逐笔编辑多笔识别结果（金额/类型/商户/分类/日期/备注） */
-    fun updateOcrResult(index: Int, result: OcrBillResult) {
-        val list = _state.value.ocrResults.toMutableList()
-        if (index in list.indices) list[index] = result
-        _state.value = _state.value.copy(ocrResults = list)
+    /** 逐笔编辑文件导入预览中的记录（金额/类型/商户/分类/日期/备注） */
+    fun updateParsedBill(index: Int, bill: ParsedBill) {
+        val list = _state.value.parsed.toMutableList()
+        if (index in list.indices) list[index] = bill
+        _state.value = _state.value.copy(parsed = list)
     }
 
     fun importSelected() {
@@ -552,77 +432,6 @@ class BillImportViewModel @Inject constructor(
                 val outcome = withContext(Dispatchers.IO) {
                     saveBills(selected, s.importWalletId ?: getWalletId(), resolveBookId(s))
                 }
-                _state.value = _state.value.copy(
-                    stage = ImportStage.DONE,
-                    importCount = outcome.insertedIds.size,
-                    skippedCount = outcome.skipped,
-                    importedBillIds = outcome.insertedIds,
-                    actionMessage = null
-                )
-            } catch (e: kotlinx.coroutines.CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                AppLogger.e("BillImportViewModel", "import failed", e)
-                _state.value = _state.value.copy(
-                    stage = ImportStage.PREVIEW,
-                    error = e.message ?: e.javaClass.simpleName
-                )
-            }
-        }
-    }
-
-    fun saveOcrSelected() {
-        val s = _state.value
-        workJob = viewModelScope.launch {
-            _state.value = s.copy(stage = ImportStage.IMPORTING)
-            try {
-                val (toSave, existing) = withContext(Dispatchers.IO) {
-                    val existing = billRepository.getAllBills().first()
-                    val walletId = s.importWalletId ?: getWalletId()
-                    val bookId = resolveBookId(s)
-
-                    // 多笔：按勾选的解析结果逐笔保存；单笔/手动：以表单编辑值为准（表单留空回退解析值）——
-                    // 此前单笔编辑走解析值分支，用户在表单里改的金额/商户/日期/备注保存时被忽略
-                    val toSave = if (s.ocrResults.size > 1 && s.ocrSelectedIndices.isNotEmpty()) {
-                        s.ocrResults.filterIndexed { i, _ -> i in s.ocrSelectedIndices }.mapNotNull { r ->
-                            val amount = r.amount ?: return@mapNotNull null
-                            val date = r.date ?: System.currentTimeMillis()
-                            Bill(amount = amount, type = r.type ?: s.ocrType, category = r.category, note = r.note,
-                                date = date, yearMonth = DateUtils.formatYearMonth(date),
-                                accountBookId = bookId, walletId = walletId,
-                                merchant = r.merchant, createdAt = System.currentTimeMillis(), updatedAt = System.currentTimeMillis())
-                        }
-                    } else {
-                        val parsed = s.ocrResults.firstOrNull()
-                        val amount = Money.parse(s.ocrAmount)?.cents ?: parsed?.amount
-                        if (amount == null) return@withContext null to existing
-                        val billDate = try {
-                            java.time.LocalDate.parse(s.ocrDate, java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-                                .atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
-                        } catch (_: Exception) { parsed?.date ?: System.currentTimeMillis() }
-                        listOf(
-                            Bill(
-                                amount = amount, type = parsed?.type ?: s.ocrType,
-                                category = s.ocrCategory.ifBlank { parsed?.category ?: "其他" }, note = s.ocrNote,
-                                date = billDate, yearMonth = DateUtils.formatYearMonth(billDate),
-                                accountBookId = bookId, walletId = walletId,
-                                merchant = s.ocrMerchant,
-                                createdAt = System.currentTimeMillis(), updatedAt = System.currentTimeMillis()
-                            )
-                        )
-                    }
-                    toSave to existing
-                }
-
-                if (toSave == null) {
-                    _state.value = _state.value.copy(
-                        stage = ImportStage.PREVIEW,
-                        error = context.getString(R.string.bill_import_error_invalid_amount)
-                    )
-                    return@launch
-                }
-
-                val outcome = insertBillsIfNew(toSave, existing)
                 _state.value = _state.value.copy(
                     stage = ImportStage.DONE,
                     importCount = outcome.insertedIds.size,
@@ -674,12 +483,6 @@ class BillImportViewModel @Inject constructor(
         else -> null
     }
 
-    /** OCR 截图只能靠关键词判渠道；判不出返回 null，此时保持原有选择 */
-    private fun detectChannel(text: String): Channel? = when {
-        text.contains("微信") -> Channel.WECHAT
-        text.contains("支付宝") -> Channel.ALIPAY
-        else -> null
-    }
 
     /**
      * 按渠道挑默认钱包：微信账单默认记到"微信"，支付宝账单默认记到"支付宝"。
@@ -728,7 +531,6 @@ class BillImportViewModel @Inject constructor(
     fun reset() {
         clearZipSecrets()
         _state.value = BillImportState(
-            mode = _state.value.mode,
             wallets = _state.value.wallets,
             importWalletId = _state.value.importWalletId,
             accountBooks = _state.value.accountBooks,
@@ -803,25 +605,6 @@ class BillImportViewModel @Inject constructor(
         }
     )
 
-    private fun rotateBitmapIfNeeded(@ApplicationContext context: Context, uri: Uri, bitmap: Bitmap): Bitmap {
-        val degrees = try {
-            context.contentResolver.openInputStream(uri)?.use { stream ->
-                val exif = ExifInterface(stream)
-                when (exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)) {
-                    ExifInterface.ORIENTATION_ROTATE_90 -> 90
-                    ExifInterface.ORIENTATION_ROTATE_180 -> 180
-                    ExifInterface.ORIENTATION_ROTATE_270 -> 270
-                    else -> null
-                }
-            }
-        } catch (_: Exception) { null }
-        return if (degrees != null && degrees != 0) {
-            val rotated = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, Matrix().apply { postRotate(degrees.toFloat()) }, true)
-            bitmap.recycle()
-            rotated
-        } else bitmap
-    }
-
     private fun detectEncoding(rawBytes: ByteArray): String {
         if (rawBytes.size < 2) return "UTF-8"
         val b0 = rawBytes[0].toInt() and 0xFF
@@ -836,16 +619,6 @@ class BillImportViewModel @Inject constructor(
             } catch (_: Exception) { }
         }
         return "UTF-8"
-    }
-
-    private fun calculateInSampleSize(width: Int, height: Int, maxSize: Int): Int {
-        var sample = 1
-        var w = width
-        var h = height
-        while (w / (sample * 2) >= maxSize || h / (sample * 2) >= maxSize) {
-            sample *= 2
-        }
-        return sample
     }
 
     private companion object {

@@ -252,10 +252,12 @@ fun BillScreen(
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
+                        // 入口指向的是「导入 / 导出」双能力页：用双向箭头，
+                        // 避免单向下箭头只讲了一半、导出无处可点（2026-10-26 用户定案）。
                         IconButton(onClick = { onNavigateToImportCsv() }) {
                             Icon(
-                                Icons.Outlined.FileDownload,
-                                contentDescription = stringResource(R.string.bill_import),
+                                Icons.Outlined.ImportExport,
+                                contentDescription = stringResource(R.string.bill_import_export_entry),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }

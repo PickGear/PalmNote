@@ -16,12 +16,11 @@ enum class ReviewReason(val severe: Boolean) {
  * 缺金额 > 缺日期 > 商户待确认 > 分类未识别；字段齐全时返回 null。
  *
  * 注意：文件导入的 [com.palmnote.data.export.ParsedBill] 金额/日期均非空（非空即不进入预览），
- * 因此文件预览只会命中「商户待确认 / 分类未识别」两条；「缺金额 / 缺日期」仅 OCR 结果可能命中。
+ * 因此文件预览只会命中「商户待确认 / 分类未识别」两条。
  *
  * 分类未识别（[ReviewReason.UNKNOWN_CATEGORY]）由 [categoryResolved] 决定，**不再**用
  * `category == "其他"` 判断：源文件显式写「其他」、或词表有意映射到「其他」（转账/生活服务等）
  * 都算「已明确」，不再误报；只有真正未能识别、被迫回退「其他」才报。
- * OCR 侧（[com.palmnote.data.ocr.OcrBillResult] 无该字段）沿用默认 true，行为不变。
  */
 @Suppress("UnusedParameter") // category 仅为调用点签名兼容保留；判定已改由 categoryResolved 决定
 fun reviewReasonOf(

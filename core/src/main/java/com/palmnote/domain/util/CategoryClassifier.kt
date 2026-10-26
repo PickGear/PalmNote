@@ -1,9 +1,9 @@
 package com.palmnote.domain.util
 
 /**
- * 共享的账单分类猜测逻辑，供 OCR 解析器和 CSV 导入器复用。
+ * 共享的账单分类猜测逻辑，供账单导入器（CSV / XLSX）复用。
  *
- * ⚠️ 入参是**自由文本**（OCR 字面文本 / 商户名 / 备注），不是分类标签。
+ * ⚠️ 入参是**自由文本**（商户名 / 备注等），不是分类标签。
  * 因此只保留**低歧义**词根；分类标签的别名映射请用
  * [com.palmnote.data.export.BillCsvImporter.normalizeCategory]（其专用别名表）。
  */
