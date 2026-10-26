@@ -29,12 +29,10 @@ A local-first life tracking app that combines expense tracking, item management,
   <tr>
     <td align="center"><b>Reports</b></td>
     <td align="center"><b>Life</b></td>
-    <td align="center"><b>Bill Import</b></td>
   </tr>
   <tr>
     <td><img src="screenshots/en/bill_stats.jpg" width="240"></td>
     <td><img src="screenshots/en/life_template_manage.jpg" width="240"></td>
-    <td><img src="screenshots/en/bill_import.jpg" width="240"></td>
   </tr>
 </table>
 
