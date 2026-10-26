@@ -27,3 +27,18 @@ Thumbs.db
 # 写在这里而不是 .git/info/exclude，是为了别的 clone 也默认忽略。
 /dist/
 .workbuddy/
+
+# 本机的历史文档归档（旧计划 / 审计 / 截图）：只在本地留档，不进仓库。
+# 规范类文档放 docs/ 顶层或 docs/widgets/，一律跟踪。
+/docs/_archive/
+
+# 设计稿量测脚本的输出（根目录临时产物）
+/_v*_audit.json
+
+# 截图里的「生活模块」等含个人条目的图：只在本地留存，不进仓库（隐私）。
+/screenshots/zh/life.jpg
+/screenshots/zh/life_board_month.jpg
+/screenshots/zh/life_board_week.jpg
+/screenshots/en/life.jpg
+/screenshots/en/life_board_month.jpg
+/screenshots/en/life_stats.jpg

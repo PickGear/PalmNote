@@ -1645,7 +1645,6 @@ categories.forEach { category ->
 | 图表 | Compose Canvas 自绘（无第三方库） |
 | 状态管理 | ViewModel + StateFlow |
 | 备份 | AES-GCM + PBKDF2（本地 ZIP 备份） |
-| OCR | PaddleOCR PP-OCRv6（本地离线识别，ONNX Runtime） |
 | 后台任务 | WorkManager |
 | 序列化 | Kotlinx Serialization |
 | 农历 | Lunar |

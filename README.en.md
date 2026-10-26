@@ -33,7 +33,7 @@ A local-first life tracking app that combines expense tracking, item management,
   </tr>
   <tr>
     <td><img src="screenshots/en/bill_stats.jpg" width="240"></td>
-    <td><img src="screenshots/en/life.jpg" width="240"></td>
+    <td><img src="screenshots/en/life_template_manage.jpg" width="240"></td>
     <td><img src="screenshots/en/bill_import.jpg" width="240"></td>
   </tr>
 </table>
@@ -66,7 +66,7 @@ See [CHANGELOG.md](CHANGELOG.md).
 - Multi-ledger, multi-wallet management
 - Income/expense categories, budget settings, monthly/yearly reports
 - Calendar view, advanced filtering
-- CSV/XLSX import (encrypted Alipay ZIP supported), OCR recognition
+- CSV/XLSX import (encrypted Alipay ZIP supported), bill flow export (CSV, 13 columns, selectable date range, UTF-8 with BOM)
 - Redesigned import page ("sorting desk") surfacing items that need review, with one-tap undo
 - Home screen widget
 
@@ -111,7 +111,6 @@ See [CHANGELOG.md](CHANGELOG.md).
 | DI | Hilt |
 | Backup Encryption | AES-GCM + PBKDF2 |
 | Database Encryption | SQLCipher |
-| OCR | PaddleOCR PP-OCRv6 (on-device, ONNX Runtime) |
 | Background Tasks | WorkManager |
 | Serialization | Kotlinx Serialization |
 | Chinese Lunar Calendar | Lunar |
@@ -142,14 +141,12 @@ core/                      # Core library module (namespace: com.palmnote)
 
 app/                       # Application module (namespace: com.palmnote.app)
 ├── src/main/java/com/palmnote/
-│   ├── data/              # Backup/export/OCR/repository impls/worker
+│   ├── data/              # Backup/import-export/repository impls/worker
 │   ├── feature/           # Password vault (field-level encryption) + usecases
 │   ├── ui/                # Business UI: asset/bills/dashboard/life/settings/search/navigation/backup
 │   └── PalmNoteApp.kt     # Application class
 ├── src/main/res/          # App resources (incl. string keys shared with core)
 └── schemas/               # VaultDatabase Room schema (v1-v4)
-
-ppocr-sdk/                 # PaddleOCR native SDK
 ```
 
 > core has no dependency on app; app depends on core (`implementation(project(":core"))`).
@@ -175,10 +172,14 @@ git clone https://github.com/PickGear/PalmNote.git
 - Global design system (colors, typography, spacing, components, animations): [docs/design-spec.md](docs/design-spec.md)
 - Password vault module design: [docs/feature-vault.md](docs/feature-vault.md)
 
-## Privacy & Terms
+## Privacy
 
-- [Privacy Policy](docs/privacy/privacy-en.md)
-- [Terms of Service](docs/terms/terms-en.md)
+**Fully local, no network, no data collection.** The app explicitly removes the `INTERNET`
+permission in the manifest, so it cannot connect to the network at the OS level. No account,
+no telemetry, no advertising or analytics SDKs; all data stays on your device.
+
+See the [Privacy Policy](docs/privacy/privacy-en.md) for the full details (data structures,
+encryption, deletion and export).
 
 ## Permissions
 
@@ -192,7 +193,7 @@ PalmNote follows the principle of least privilege. The complete list:
 | Exact alarms | Reminder punctuality only; the system settings page opens when needed |
 | Run at startup | Restores scheduled reminders after a reboot; collects no data |
 
-Import/export of bills, backups and crash logs all go through the system file picker (SAF) — **no storage permission needed**; photo-based bill recognition uses the system photo picker — **no camera permission needed**.
+Import/export of bills, backups and crash logs all go through the system file picker (SAF) — **no storage permission needed**; the app does not request camera permission.
 
 ## Known Limitations
 
@@ -202,7 +203,7 @@ PalmNote is fully local, and the following limitations are the direct cost of it
 - **Backups are up to you**: automatic backup is built in (off by default; enable it in Settings → Data & Backup) alongside manual backup. The backup location is configurable (e.g. a cloud-sync folder). Please confirm backup status regularly.
 - **The master password cannot be recovered**: it protects both the vault and encrypted backups; if forgotten, no one can restore them.
 - **No in-app updates**: download new versions from [Releases](https://github.com/PickGear/PalmNote/releases) and install over the old one.
-- **Recognition, not guessing**: complex sources such as bill screenshots may be partially recognized; the import page marks items for review instead of silently filling in guesses.
+- **Parse, don't guess**: bill files with missing fields or unmatched categories are marked for review on the import page instead of being silently filled with guesses.
 - **Still a work in progress**: widgets, the Life module, other modules and Settings are not fully complete yet; a basic feature-complete state is expected in v1.5. Treat the current release as self-use / early-access.
 
 ## Contributing
@@ -220,6 +221,8 @@ This project is licensed under the [GPL-3.0](LICENSE) license. Copyright and lic
 ## Disclaimer
 
 PalmNote is not affiliated with, endorsed by, or associated with WeChat, Alipay, or any other third-party service provider. Importing third-party bill files (CSV/XLSX/encrypted ZIP) is provided solely for local format compatibility with the user's own data; names such as "WeChat" and "Alipay" are used descriptively only, and the relevant trademarks belong to their respective owners. Bill parsing is performed entirely on-device — no network access, no data upload.
+
+The software is provided "as is", without warranty of any kind; the developer is not liable for any data loss or damages arising from its use. The complete warranty and liability terms are in the [GPL-3.0 LICENSE](LICENSE).
 
 ## Contact
 

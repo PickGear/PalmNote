@@ -129,7 +129,7 @@ main (v1.2.0)
 
 ```
 vault, bills, asset, dashboard, life, settings, backup,
-core, app, ocr, db, lock, widget, ci, gradle
+core, app, db, lock, widget, ci, gradle
 ```
 
 ### 2.4 Subject 规则
@@ -208,6 +208,12 @@ v1.4.0            # 正式发布
 
 排序：`alpha < beta < rc < 正式`
 
+> **发布渠道（2026-10-23 定）：** 预发布（alpha / beta / rc）**只发内测群，不发 GitHub Release**；
+> GitHub Releases **只放正式版**。`release.yml` 已按「tag 名含 `-` 即不发布」拦截——推预发布 tag 只跑
+> 质量门与构建冒烟，不建 Release、不上传资产；**也别手跑 `tools/release-local.sh`**（它「Release 不存在就创建」）。
+>
+> **本项目实际命名不带点**：`1.4.2-beta1`（`versionName` 与 tag 同形，如 `v1.4.2-beta1`）。
+
 ### 3.4 PalmNote 特殊规则
 
 由于 PalmNote 是面向终端用户的应用（非库/API），补充以下规则：
@@ -226,6 +232,7 @@ v1.4.0            # 正式发布
 | 1.2.0 | 3 |
 | 1.3.0 | 4 |
 | 1.4.0 | 6 |
+| 1.4.1 | 8 |
 
 > ⚠️ 上表是**已发布版本的历史记录**，不是「下一个版本该填几」的预测值——新增版本时在末尾**追加**一行。
 > `versionCode` 必须**单调递增**，禁止回退，也禁止重用已用过的值（上架场景尤其重要）。
@@ -683,6 +690,11 @@ release:
         files: app/build/outputs/apk/release/*.apk
         generate_release_notes: true
 ```
+
+> ⚠️ **必须加预发布拦截**：`v*` 会把 `v1.4.2-beta1` 一并触发。PalmNote 的规则是
+> 「GitHub 只发正式版、beta 只发内测群」，所以发布步骤要带条件
+> `if: ${{ !contains(github.ref_name, '-') }}`（本项目 `release.yml` 正是这么做的，
+> 且还叠加了「只在已签名时发布」）。否则一个 beta tag 就会在 GitHub 上生出一个正式 Release。
 
 ### 10.6 CI 环境要求
 
@@ -1580,8 +1592,8 @@ fun vaultCrypto_samePinDerivesSameKey() {
 
 | 指标 | 当前值 | 预算 | 说明 |
 |------|--------|------|------|
-| Release APK | ~42.6 MB | ≤ 50 MB | PaddleOCR + ONNX Runtime 主要贡献 |
-| Debug APK | ~80 MB | ≤ 100 MB | 含 x86_64 + 完整调试信息 |
+| Release APK | ~15 MB | ≤ 50 MB | 1.4.2 移除 OCR 后大幅缩小（原 ~71 MB）；原生库仅剩 SQLCipher |
+| Debug APK | ~39 MB | ≤ 100 MB | 含 x86_64 + 完整调试信息 |
 
 **体积优化手段：**
 - Release 仅 `arm64-v8a`（省去 ~30MB 32 位库）
@@ -1702,7 +1714,6 @@ PalmNote/
 │   ├── build.gradle.kts
 │   ├── src/
 │   └── schemas/            # AppDatabase Room schema
-├── ppocr-sdk/              # PaddleOCR 原生 SDK
 ├── gradle/
 │   ├── libs.versions.toml  # 版本目录
 │   └── wrapper/            # Gradle wrapper
@@ -1803,9 +1814,6 @@ PalmNote/
 
 # SQLCipher
 -keep class net.zetetic.** { *; }
-
-# ONNX Runtime
--keep class ai.onnxruntime.** { *; }
 
 # Hilt
 -keep class dagger.hilt.** { *; }
@@ -2355,7 +2363,6 @@ fun vaultEntryCard_hasCorrectSemantics() {
 ### 第三方合规
 - [ ] LICENSE 文件存在且正确
 - [ ] NOTICE 文件列出所有第三方依赖及许可证
-- [ ] PaddleOCR / ONNX Runtime 许可证兼容 GPL-3.0
 - [ ] 无侵犯版权的图片/字体/资源
 ```
 
@@ -2372,14 +2379,16 @@ fun vaultEntryCard_hasCorrectSemantics() {
 ls screenshots/zh/
 ls screenshots/en/
 
-# 需要检查的文件：
+# 需要检查的文件（2026-10-25 起，带生活条目的 6 张已撤出跟踪，只留本地）：
 # - dashboard.jpg      → 净资产、月度收支是否为真实数据
 # - asset_list.jpg     → 物品列表是否有真实物品
 # - bill_calendar.jpg  → 日历中是否有真实账单
 # - bill_stats.jpg     → 统计报表是否有真实金额
-# - life.jpg           → 生活模块是否有真实计划
+# - life_template_manage.jpg → 模板管理（纯功能演示，无个人条目）
+# 仍在跟踪的截图里不得出现真实纪念日、家人称谓、真实金额与账单
 # - bill_import.jpg    → 导入页是否露出真实账单文件/账号信息
-# 注：同目录下还有备用图（asset_grid / life_board_* / life_stats / settings_mine 等），同样要求模拟数据。
+# 注：asset_grid / life_board_* / life_stats / settings_mine 等含个人条目的图已从仓库删除
+# 并写入 .gitignore（仅本机留档，fresh clone 不存在），不要再引用它们的相对路径。
 ```
 
 **脱敏规则：**
@@ -2458,20 +2467,15 @@ signing/
 *.gpg
 ```
 
-#### 检查 4：PaddleOCR 模型文件
+#### 检查 4：原生库与模型资产
 
 ```bash
-# 检查 ppocr-sdk 模块中的模型文件
-ls ppocr-sdk/src/main/assets/
+# OCR 已于 1.4.2 整体移除（ppocr-sdk 模块、ONNX Runtime、OpenCV 及其模型）。
+# 确认安装包里没有遗留：
+unzip -l app/build/outputs/apk/release/*.apk | grep -Ei "onnx|opencv|\.onnx$"
 
-# 模型文件通常较大（>10MB），确认：
-# 1. 模型许可证是 Apache 2.0（PaddleOCR 官方模型）
-# 2. 没有打包非开源的自定义模型
-# 3. 模型文件大小合理（没有意外的调试文件）
-
-# 如果模型文件太大导致仓库臃肿，考虑：
-# - 使用 Git LFS 管理大文件
-# - 或模型按需下载（首次启动时下载）
+# 期望：无任何输出。若重新引入需要本地推理的模型，务必同时更新
+# NOTICE、LicenseScreen 与本检查，并优先评估体积（原生库动辄数十 MB）。
 ```
 
 #### 检查 5：NOTICE 文件完整性
@@ -2488,8 +2492,6 @@ cat NOTICE
 # - Hilt / Dagger (Apache 2.0)
 # - SQLCipher (BSD 3-Clause)
 # - Coil (Apache 2.0)
-# - PaddleOCR (Apache 2.0)
-# - ONNX Runtime (MIT)
 # - Lunar 农历 (MIT)
 # - Kotlinx Serialization (Apache 2.0)
 # - WorkManager (Apache 2.0)
@@ -2552,7 +2554,7 @@ cat .github/workflows/release.yml
 - [ ] 检查截图是否使用模拟数据（检查 1）
 - [ ] 检查 NOTICE 文件完整性（检查 5）
 - [ ] 检查 .gitignore 是否完善（检查 3）
-- [ ] 检查 PaddleOCR 模型文件（检查 4）
+- [ ] 检查安装包内无遗留原生库 / 模型资产（检查 4）
 
 ### 第二步：Git 历史检查
 - [ ] git log --format='%ae' | sort -u 检查邮箱（检查 2）
@@ -2838,16 +2840,6 @@ PalmNote 使用 GPL-3.0，以下许可证兼容：
 | GPL 2.0-only | ❌ | 不兼容 GPL-3.0 |
 | AGPL | ⚠️ | 更严格，需评估 |
 
-#### PaddleOCR 许可证
-
-PaddleOCR 使用 Apache 2.0 许可证，兼容 GPL-3.0。但需注意：
-
-```markdown
-- ONNX Runtime 使用 MIT 许可证 ✅
-- PaddleOCR 模型文件使用 Apache 2.0 ✅
-- 如果模型文件有单独的许可条款，需要在 NOTICE 中说明
-```
-
 #### NOTICE 文件规范
 
 ```markdown
@@ -2883,14 +2875,6 @@ This product is licensed under the GNU General Public License v3.0.
 ### Coil
 - License: Apache License 2.0
 - Copyright: Coil Contributors
-
-### PaddleOCR
-- License: Apache License 2.0
-- Copyright: PaddlePaddle Authors
-
-### ONNX Runtime
-- License: MIT License
-- Copyright: Microsoft Corporation
 
 ### Lunar (农历)
 - License: MIT License

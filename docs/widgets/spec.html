@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>PalmNote 小组件 · 设计交付规范 v37</title>
+<style>
+:root{--bg:#F4F5F7;--card:#FFF;--t1:#1B1F27;--t2:#6F757E;--t3:#8A8F98;--line:#EDEFF2;--outline:#DDE1E7;--green:#1F7F33;--radius:28px}
+*{box-sizing:border-box;margin:0;padding:0}
+html{background:var(--bg);scroll-behavior:smooth}
+body{background:var(--bg);color:var(--t1);padding:40px 32px 100px;max-width:1440px;margin:0 auto;font-family:-apple-system,"SF Pro Text","Segoe UI","Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.55}
+h1{font-size:28px;font-weight:800;letter-spacing:-.02em}
+h1 em{font-style:normal;color:#4A72F5}
+.lead{font-size:14px;line-height:1.8;color:#5C636E;margin-top:12px;max-width:1060px}
+.lead b{color:var(--t1);font-weight:600}
+.lead code,.note code{font-family:ui-monospace,Consolas,monospace;font-size:12.5px;background:#fff;border:1px solid var(--line);border-radius:6px;padding:2px 6px;color:#8A5A20}
+h2.sec{font-size:20px;font-weight:800;margin:56px 0 12px;padding-top:12px;border-top:2px solid var(--line)}
+h2.sec u{text-decoration:none;color:#4A72F5;margin-right:12px;font-variant-numeric:tabular-nums}
+h3.sub{font-size:15px;font-weight:700;margin:28px 0 10px}
+.note{font-size:13px;line-height:1.85;color:#5C636E;margin:8px 0 20px;max-width:1060px}
+.note b{color:var(--t1);font-weight:600}
+.nav{display:flex;gap:8px;flex-wrap:wrap;margin-top:20px}
+.nav a{font-size:12px;font-weight:600;color:#5C636E;background:#fff;border-radius:8px;padding:6px 12px;box-shadow:0 1px 3px rgba(20,24,32,.08);text-decoration:none}
+.nav a:hover{color:#2F5DF4}
+
+/* 规范表格 */
+.tbl{display:grid;grid-template-columns:140px 1fr;gap:1px;background:var(--line);border-radius:12px;overflow:hidden;max-width:1060px;margin-top:16px;font-size:13px}
+.tbl>div{background:#fff;padding:12px 16px;line-height:1.7;color:#5C636E}
+.tbl>div:nth-child(odd){font-weight:700;color:var(--t1);background:#FAFBFC}
+
+/* 色板 */
+.deck{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:20px;max-width:1060px}
+.sw{background:#fff;border-radius:12px;padding:12px 14px;box-shadow:0 1px 3px rgba(20,24,32,.06)}
+.sw .bar{height:32px;border-radius:8px;margin-bottom:10px}
+.sw b{display:block;font-size:13px;font-weight:700}
+.sw u{display:block;text-decoration:none;font-size:11px;color:#8A8F98;margin-top:3px;font-family:ui-monospace,monospace}
+.sw s{display:block;text-decoration:none;font-size:11px;color:#AEB3BB;margin-top:6px}
+
+/* 组件展示区 */
+.fam{margin-top:40px;padding-bottom:40px;border-bottom:1px dashed var(--outline)}
+.famhd{display:flex;align-items:baseline;gap:12px;margin-bottom:16px}
+.famhd h3{font-size:18px;font-weight:800}
+.famhd p{font-size:13px;color:#8A8F98;margin-left:auto;font-weight:500}
+.grid{display:flex;gap:28px;flex-wrap:wrap;align-items:flex-start}
+.item{display:flex;flex-direction:column;gap:10px}
+.cap{font-size:12px;line-height:1.6;color:#7A818C;text-align:center}
+.cap b{color:var(--t1);font-weight:700}
+
+/* ── 基础卡片 ── */
+.w{position:relative;background:var(--card);border-radius:var(--radius);color:var(--t1);box-shadow:0 2px 8px rgba(20,24,32,.06),0 12px 32px -16px rgba(20,24,32,.25);overflow:hidden}
+.s44{width:340px;height:340px;padding:16px 15px}
+.s44k{width:300px;height:250px;padding:14px 15px}
+.s42{width:340px;height:148px;padding:14px 15px}
+.s22{width:160px;height:160px;padding:14px}
+.s41{width:340px;height:76px;padding:0 16px;display:flex;flex-direction:column;justify-content:center}
+.r{display:flex;align-items:center}.c{display:flex;flex-direction:column}
+.hd{display:flex;align-items:center;gap:8px}
+.ico{width:26px;height:26px;border-radius:50%;background:var(--d);color:#fff;flex:none;display:flex;align-items:center;justify-content:center}
+.ico.sm{width:22px;height:22px}
+.ico svg{width:15px;height:15px;display:block}.ico.sm svg{width:13px;height:13px}
+.ttl{font-size:15px;font-weight:700;letter-spacing:-.01em;white-space:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.ttl.sm{font-size:13px}
+.meta{font-size:12px;color:var(--t2);white-space:nowrap;margin-left:auto;font-weight:500}
+.pill{font-size:11px;font-weight:700;padding:3px 9px;border-radius:99px;white-space:nowrap;background:var(--dt);color:var(--di);margin-left:auto}
+.hero{font-weight:800;letter-spacing:-.035em;line-height:1;white-space:nowrap;font-variant-numeric:tabular-nums}
+.lb{font-size:12px;color:var(--t2);white-space:nowrap;font-weight:500}
+.sub{font-size:12px;color:var(--t2);white-space:nowrap}
+.ch{background:var(--dt);border-radius:12px;height:30px;padding:0 10px;display:flex;align-items:center;gap:6px;min-width:0}
+.ch.sm{height:26px;padding:0 9px;border-radius:10px}
+.ch .nm{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
+.ch.sm .nm{font-size:12px}
+.ch .vl{margin-left:auto;font-size:15px;font-weight:800;color:var(--di);white-space:nowrap;font-variant-numeric:tabular-nums}
+.ch.sm .vl{font-size:13px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--d);flex:none}
+.dot.sm{width:7px;height:7px}
+.date{font-size:12px;font-weight:700;color:var(--t2);width:38px;flex:none}
+.seg{display:flex;gap:2px;height:12px;border-radius:8px;overflow:hidden}
+.seg i{display:block}
+.bars{display:flex;align-items:flex-end;gap:7px}
+.bars i{flex:1;border-radius:6px;display:block}
+.bt{height:9px;border-radius:99px;background:#EFF1F4;overflow:hidden}
+.bt i{display:block;height:100%;border-radius:99px}
+.prog{height:9px;border-radius:6px;background:var(--line);overflow:hidden}
+.prog i{display:block;height:100%;border-radius:6px}
+.dotr{display:flex;gap:4px}.dotr i{width:7px;height:7px;border-radius:50%;background:#E3E6EB;display:block}.dotr i.on{background:var(--d)}
+.ck{width:16px;height:16px;border-radius:50%;border:1.6px solid var(--outline);flex:none;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;line-height:1;color:#fff}
+.ck.on{background:var(--green);border-color:var(--green)}
+.dotg{display:grid;grid-template-columns:repeat(4,13px);gap:8px;justify-content:center}
+.dotg i{width:13px;height:13px;border-radius:50%;background:#E3E6EB;display:block}.dotg i.on{background:var(--d)}
+.dpd{display:flex;gap:4px;align-items:center;flex:none}
+.dpd i{width:9px;height:9px;border-radius:50%;border:1.5px solid var(--outline);background:transparent;display:block;flex:none;box-sizing:border-box}.dpd i.on{background:var(--d);border-color:var(--d)}
+.ticks{display:flex;gap:2px;width:100%;height:6px}.ticks i{flex:1;border-radius:1.5px;background:var(--line)}.ticks i.on{background:var(--d)}
+.dstrip{display:flex;gap:3px;width:100%}
+.dcell{flex:1;height:20px;border-radius:5px;background:var(--line);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:var(--t2);white-space:nowrap;overflow:hidden;font-variant-numeric:tabular-nums}
+.dcell.on{background:var(--d);color:#fff}
+.dcell.today{box-shadow:inset 0 0 0 1.5px var(--d);color:var(--di);font-weight:700}
+.gr4{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.gr8{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.gr9{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:8px}
+.ic{border-radius:14px;background:var(--dt);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;height:100%}
+.ic .ico{width:20px;height:20px}.ic .ico svg{width:12px;height:12px}
+.ic span{font-size:10px;font-weight:600;color:var(--t1);line-height:1}
+.cols{display:flex;width:100%;align-items:center;flex:1;min-width:0}
+.cols>div{flex:1;display:flex;flex-direction:column;gap:1px;padding-left:10px;min-width:0}
+.cols>div:first-child{padding-left:0}.cols .lb{font-size:10px}
+.cols .vl{font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.cols .vl.big{font-size:17px;font-weight:800}.cols .line{border-left:1px solid var(--line)}
+.dsplit{display:flex;gap:14px;width:100%;flex:1;min-width:0;align-items:center}
+.dsplit .lhero{flex:none;width:108px;display:flex;flex-direction:column;justify-content:center;gap:5px}
+.dsplit .lhero .hero{font-size:40px}
+.ritems{flex:1;display:flex;flex-direction:column;justify-content:center;gap:9px;min-width:0}
+.vstack{display:flex;gap:3px;height:12px;border-radius:8px;overflow:hidden}
+.vstack i{display:block;flex:1 1 0;min-width:0}
+.eye{display:flex;align-items:center;justify-content:center;flex:none;color:var(--t3)}.eye svg{width:14px;height:14px}
+.chgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;min-width:0}
+.chgrid2{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
+
+/* 4×4 专属组件 */
+.kpis{display:flex;gap:6px;width:100%;flex:none}
+.kpi{flex:1;display:flex;flex-direction:column;gap:1px;border-radius:10px;padding:7px 8px;min-width:0;background:var(--kdt,var(--dt))}
+.kpi .kl{font-size:10px;color:var(--kdi,var(--t2));display:flex;align-items:center;gap:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+.kpi .kv{font-size:18px;font-weight:800;letter-spacing:-.02em;line-height:1.1;font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--kdi,var(--t1))}
+.kpi .ks{font-size:10px;color:var(--kdi,var(--t3));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chart{display:flex;flex-direction:column;gap:4px;width:100%;flex:1;min-height:0}
+.chart .chead{display:flex;align-items:baseline;flex:none}
+.chart .chead .cl{font-size:11px;color:var(--t2);font-weight:600}
+.chart .chead .cm{font-size:10px;color:var(--t3);margin-left:auto}
+.chart .cbody{position:relative;flex:1;min-height:0;padding-top:18px}
+.chart .cbody::after{content:'';position:absolute;left:0;right:0;bottom:0;height:1px;background:var(--line)}
+.chart .cbars{display:flex;align-items:flex-end;gap:5px;height:100%}
+.chart .cbars i{flex:1;border-radius:4px 4px 0 0;display:block;background:var(--bar,var(--d));min-height:3px;position:relative}
+.chart .cbars i .cv{position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:10px;font-weight:700;line-height:1;color:var(--t1);white-space:nowrap}
+.chart .caxis{display:flex;gap:5px;margin-top:4px;flex:none}
+.chart .caxis span{flex:1;text-align:center;font-size:10px;color:var(--t3);white-space:nowrap}
+.chart .caxis span.today{color:var(--di);font-weight:700}
+.footer{display:flex;align-items:center;gap:8px;border-top:1px solid var(--line);padding-top:8px;width:100%;flex:none}
+.footer .fl{font-size:10px;color:var(--t3);font-weight:600;flex:none}
+.footer .fv{font-size:12px;color:var(--t1);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.footer .fr{margin-left:auto;font-size:10px;color:var(--t2);white-space:nowrap;font-weight:600}
+.minichips{display:flex;gap:4px;width:100%;flex:none}
+.minichips .mc{flex:1;border-radius:6px;padding:4px 6px;display:flex;flex-direction:column;gap:0;min-width:0;background:var(--mdt,var(--dt))}
+.minichips .mc .mn{font-size:10px;color:var(--mdi,var(--t2));white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+.minichips .mc .mv{font-size:11px;font-weight:800;color:var(--mdi,var(--di));white-space:nowrap;font-variant-numeric:tabular-nums}
+.sublist{display:flex;flex-direction:column;gap:3px;width:100%;flex:none}
+.duitem{display:flex;align-items:center;gap:6px;min-width:0}
+.duitem .dt{font-size:10px;color:var(--t2);width:34px;flex:none;font-variant-numeric:tabular-nums;font-weight:600}
+.duitem .dd{width:6px;height:6px;border-radius:50%;background:var(--dd,var(--d));flex:none}
+.duitem .dn{font-size:11px;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;font-weight:600}
+.duitem .dv{font-size:11px;font-weight:700;color:var(--dd,var(--di));white-space:nowrap;font-variant-numeric:tabular-nums}
+
+/* 空白态 */
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;flex:1;min-height:0;text-align:center}
+.empty .eico{width:40px;height:40px;border-radius:50%;background:var(--dt);color:var(--di);display:flex;align-items:center;justify-content:center}
+.empty .eico svg{width:20px;height:20px}
+.empty .et{font-size:13px;font-weight:700;color:var(--t1)}
+.empty .ed{font-size:11px;color:var(--t2)}
+
+/* 夜间模式色值 */
+.night{--line:#2F343D;--outline:#3A404A;background:#101216;padding:24px;border-radius:16px;margin-top:16px;display:flex;gap:24px;flex-wrap:wrap}
+.night .w{background:#1C1F26;color:#EDEFF3;box-shadow:none;border:1px solid #2F343D}
+.night .ttl,.night .hero,.night .ch .nm,.night .footer .fv,.night .duitem .dn{color:#EDEFF3}
+.night .meta,.night .lb,.night .sub,.night .footer .fl,.night .footer .fr,.night .duitem .dt{color:#9AA1AC}
+.night .bt,.night .prog{background:#2A2E36}
+.night .chart .cbars i .cv{color:#EDEFF3}
+.night .chart .avgline b{background:#1C1F26}
+.night .chart .chead .cm{color:#9AA1AC}
+.night .dotr i{background:#333842}
+.night .ck{border-color:#5A606B}
+.night .cap{color:#8A8F98}
+.night .dcell:not(.on){background:#2A2F36;color:#9AA1AC}
+.night .footer{border-top-color:#2F343D}
+
+/* 夜间淡底色板：--dt 换成深色 tint，--di 提亮为前景色 */
+.night .c1{--dt:#263154;--di:#9DB6FF}
+.night .c2{--dt:#1F3324;--di:#8FE06D}
+.night .c3{--dt:#3A2F1B;--di:#F0CE7A}
+.night .c4{--dt:#33244A;--di:#C9A0FF}
+.night .c5{--dt:#3D2618;--di:#FFA97A}
+.night .c6{--dt:#3D1F2C;--di:#FF9DBE}
+.night .c7{--dt:#163A3D;--di:#6FD8E4}
+.night .c8{--dt:#2A2E36;--di:#B4BAC6}
+.night .kpi.blue{--kdt:#263154;--kdi:#9DB6FF}
+.night .kpi.green{--kdt:#1F3324;--kdi:#8FE06D}
+.night .kpi.purple{--kdt:#33244A;--kdi:#C9A0FF}
+.night .kpi.orange{--kdt:#3D2618;--kdi:#FFA97A}
+.night .kpi.pink{--kdt:#3D1F2C;--kdi:#FF9DBE}
+.night .kpi.cyan{--kdt:#163A3D;--kdi:#6FD8E4}
+.night .mc.orange{--mdt:#3D2618;--mdi:#FFA97A}
+.night .mc.blue{--mdt:#263154;--mdi:#9DB6FF}
+.night .mc.purple{--mdt:#33244A;--mdi:#C9A0FF}
+.night .mc.gray{--mdt:#2A2E36;--mdi:#B4BAC6}
+.night .ico{background:var(--dt);color:var(--di)}
+.night .ic span{color:#EDEFF3}
+.night .dotg i:not(.on){background:#333842}
+.night .dcell.today{color:var(--di)}
+.night .empty .et{color:#EDEFF3}
+.night .empty .eico{background:var(--dt);color:var(--di)}
+
+/* 色彩定义 */
+.c1{--d:#4A72F5;--dt:#EDF1FE;--di:#2F5DF4}
+.c2{--d:#57C22E;--dt:#EEF9EA;--di:#377C1D}
+.c3{--d:#E7B33C;--dt:#FDF7EC;--di:#916B12}
+.c4{--d:#A45CF0;--dt:#F6EFFE;--di:#8F36ED}
+.c5{--d:#F4762A;--dt:#FEF1EA;--di:#B84B0A}
+.c6{--d:#EC5C93;--dt:#FDEFF4;--di:#D2185F}
+.c7{--d:#2AB6C6;--dt:#EAF8F9;--di:#1C7882}
+.c8{--d:#6B7280;--dt:#F0F1F2;--di:#646A77}
+.kpi.blue{--kdt:#EDF1FE;--kdi:#2F5DF4}.kpi.green{--kdt:#EEF9EA;--kdi:#377C1D}
+.kpi.purple{--kdt:#F6EFFE;--kdi:#8F36ED}.kpi.orange{--kdt:#FEF1EA;--kdi:#B84B0A}
+.kpi.pink{--kdt:#FDEFF4;--kdi:#D2185F}.kpi.cyan{--kdt:#EAF8F9;--kdi:#1C7882}
+.mc.orange{--mdt:#FEF1EA;--mdi:#B84B0A}.mc.blue{--mdt:#EDF1FE;--mdi:#2F5DF4}
+.mc.purple{--mdt:#F6EFFE;--mdi:#8F36ED}.mc.gray{--mdt:#F0F1F2;--mdi:#646A77}
+</style>
+</head>
+<body>
+
+<!-- SVG 图标库 -->
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="i-overview" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></g></symbol>
+  <symbol id="i-bill" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18v12H3z"/><path d="M3 7l2-3h14l2 3"/><path d="M16 13h3"/></g></symbol>
+  <symbol id="i-todo" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 20 6"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></g></symbol>
+  <symbol id="i-asset" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></g></symbol>
+  <symbol id="i-net" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 8l3.5 4.5L15.5 8"/><path d="M12 12.5V18"/><path d="M9 14h6"/><path d="M9 16.5h6"/></g></symbol>
+  <symbol id="i-habit" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="9 15 11 17 15 13"/></g></symbol>
+  <symbol id="i-count" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></g></symbol>
+  <symbol id="i-sub" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></g></symbol>
+  <symbol id="i-shortcut" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></g></symbol>
+  <symbol id="i-calendar" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></g></symbol>
+  <symbol id="i-next" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></g></symbol>
+</svg>
+
+<div class="doc">
+  <h1>PalmNote 小组件 · 设计交付规范 <em>v37</em></h1>
+  <p class="lead">
+    本文是 PalmNote 小组件（Android 原生 <b>RemoteViews</b>，非 Glance）的设计交付规范：10 个族的全量矩阵设计（<b>4×4 / 4×2 / 2×2 / 4×1</b>）、设计 Token、夜间适配，以及落地时必须遵守的平台约束。
+  </p>
+  <p class="lead">
+    基准视口 <b>1px = 1dp</b>。稿上的 <code>340×148</code> / <code>340×340</code> 是<b>理想渲染尺寸</b>，不是单元格声明——Provider 的 <code>minWidth</code> / <code>minHeight</code> 必须按官方公式换算，见 §04.1。
+  </p>
+  <p class="note" style="margin-top:10px;border-left:3px solid #4A72F5;padding-left:10px">
+    <b>依据：</b>本文全部数值与约束以 <b>Android 官方小组件规范</b>为准——尺寸公式 <code>min = 70n − 30</code>、<code>targetCellWidth/Height</code>（Android 12+）、系统圆角 <code>system_app_widget_background_radius</code>、<code>previewImage</code> 与 <code>previewLayout</code> 的取舍、RemoteViews 支持范围、刷新间隔下限。
+    <b>不做任何第三方桌面的特殊适配</b>；各家桌面若有额外行为，以平台文档为准。
+  </p>
+  <div class="nav">
+    <a href="#tokens">01 设计 Token</a>
+    <a href="#matrix">02 全量矩阵</a>
+    <a href="#night">03 夜间模式</a>
+    <a href="#spec">04 落地技术规范</a>
+  </div>
+</div>
+
+<!-- 1. 设计 Token -->
+<h2 class="sec" id="tokens"><u>01</u>设计 Token 规范</h2>
+<div class="note">
+  所有颜色均定义主色、淡底、深档，夜间自动切换。严禁使用设计规范外的颜色与字号。
+</div>
+<div class="deck">
+  <div class="sw"><div class="bar" style="background:linear-gradient(90deg,#4A72F5 40%,#EDF1FE 40%)"></div><b>c1 蓝</b><u>#4A72F5 · #EDF1FE</u><s>深档 #2F5DF4</s></div>
+  <div class="sw"><div class="bar" style="background:linear-gradient(90deg,#57C22E 40%,#EEF9EA 40%)"></div><b>c2 绿</b><u>#57C22E · #EEF9EA</u><s>深档 #377C1D</s></div>
+  <div class="sw"><div class="bar" style="background:linear-gradient(90deg,#E7B33C 40%,#FDF7EC 40%)"></div><b>c3 黄</b><u>#E7B33C · #FDF7EC</u><s>深档 #916B12</s></div>
+  <div class="sw"><div class="bar" style="background:linear-gradient(90deg,#A45CF0 40%,#F6EFFE 40%)"></div><b>c4 紫</b><u>#A45CF0 · #F6EFFE</u><s>深档 #8F36ED</s></div>
+  <div class="sw"><div class="bar" style="background:linear-gradient(90deg,#F4762A 40%,#FEF1EA 40%)"></div><b>c5 橙</b><u>#F4762A · #FEF1EA</u><s>深档 #B84B0A</s></div>
+  <div class="sw"><div class="bar" style="background:linear-gradient(90deg,#EC5C93 40%,#FDEFF4 40%)"></div><b>c6 玫</b><u>#EC5C93 · #FDEFF4</u><s>深档 #D2185F</s></div>
+  <div class="sw"><div class="bar" style="background:linear-gradient(90deg,#2AB6C6 40%,#EAF8F9 40%)"></div><b>c7 青</b><u>#2AB6C6 · #EAF8F9</u><s>深档 #1C7882</s></div>
+  <div class="sw"><div class="bar" style="background:linear-gradient(90deg,#6B7280 40%,#F0F1F2 40%)"></div><b>c8 石墨</b><u>#6B7280 · #F0F1F2</u><s>深档 #646A77</s></div>
+</div>
+
+<div class="tbl">
+  <div>卡面底色</div><div>白 <code>#FFFFFF</code> · 夜间 <code>#1C1F26</code></div>
+  <div>文字颜色</div><div>标题墨 <code>#1B1F27</code> / 灰字 <code>#6F757E</code> / 辅助淡灰 <code>#AEB3BB</code></div>
+  <div>图标用法</div><div>圆底一律用主色 <code>--d</code>，图形统一白色，保持明亮。夜间改为深色淡底 <code>--dt</code> + 提亮图形 <code>--di</code>。<b>注意：</b>绿 c2 / 黄 c3 / 橙 c5 / 青 c7 上白字对比仅 1.9–2.8:1，图标类小图形可接受；若要满足无障碍 3:1，可单独把这四色圆底换成深档 <code>--di</code>（或按需改用淡底深图形）。</div>
+  <div>字号规范</div><div>全稿 10 档，按用途固定：<code>10</code> 微标签/轴标签 · <code>11</code> 明细行 · <code>12</code> 说明/胶囊名 · <code>13</code> 小标题/胶囊值 · <code>15</code> 卡片标题 · <code>17</code> 4×1 读数 · <code>18</code> KPI 数字 · <code>26</code> 4×2/2×2 主数字 · <code>36</code> 2×2 主数字 · <code>40</code> 4×4 主数字。主数字 800 字重。</div>
+  <div>圆角规范</div><div>卡片根容器 <b><code>28dp</code></b>（<code>@dimen/widget_card_radius</code>；Android 12+ 取 <code>system_app_widget_background_radius</code> 跟系统，31 以下回落 28dp）。内部胶囊 / KPI 块 <code>10dp</code>，网格子块 <code>8~12dp</code>，快捷格 <code>14dp</code>。<b>改卡片圆角必须同步三处</b>：卡底 drawable、预览卡 Compose 形状、重出预览图，漏一处就会看到「直角色块从圆角里露出来」。</div>
+  <div>间距规范</div><div>4×4 内边距上下 <code>16dp</code> / 左右 <code>15dp</code>；4×2 上下 <code>14dp</code> / 左右 <code>15dp</code>。子元素间距五档：<code>4 / 6 / 8 / 10 / 12dp</code>；<code>14dp</code> 仅用于 4×1 多列分栏。</div>
+</div>
+
+<!-- 2. 全量矩阵 -->
+<h2 class="sec" id="matrix"><u>02</u>全量组件矩阵</h2>
+<div class="note">每族提供四种尺寸。4×4 作为大尺寸信息板，深度利用空间；4×2 为横向入口卡；2×2 为方形单点卡；4×1 为单行读数条。</div>
+
+<!-- 1. 概览 -->
+<div class="fam"><div class="famhd"><h3>1. 概览</h3><p>4×4 仪表盘 / 4×2 左大右三行 / 2×2 主数字+胶囊 / 4×1 四列</p></div>
+<div class="grid">
+  <div class="item"><div class="w s44 c1"><div class="c" style="height:100%;gap:8px">
+    <div class="hd"><i class="ico c1"><svg><use href="#i-overview"/></svg></i><span class="ttl">今日 · 周六</span><span class="meta">10/24</span></div>
+    <div class="r" style="gap:10px;align-items:baseline"><div class="hero" style="font-size:40px">¥128</div><span class="lb">3 笔 · 笔均 ¥43</span></div>
+    <div class="kpis"><div class="kpi blue"><span class="kl">待办</span><span class="kv">3/5</span><span class="ks">未完成</span></div><div class="kpi green"><span class="kl">打卡</span><span class="kv">2/5</span><span class="ks">连续 12 天</span></div><div class="kpi purple"><span class="kl">订阅</span><span class="kv">19</span><span class="ks">天后</span></div><div class="kpi orange"><span class="kl">预算</span><span class="kv">82%</span><span class="ks">剩 ¥1.8k</span></div></div>
+    <div class="chart"><div class="chead"><span class="cl">近 7 天支出</span><span class="cm">峰值 ¥420</span></div><div class="cbody"><div class="cbars"><i style="height:46%;--bar:#4A72F5"></i><i style="height:30%;--bar:#4A72F5"></i><i style="height:78%;--bar:#4A72F5"></i><i style="height:22%;--bar:#4A72F5"></i><i style="height:56%;--bar:#4A72F5"></i><i style="height:100%;--bar:#F4762A"></i><i style="height:44%;--bar:#4A72F5"><span class="cv">128</span></i></div></div><div class="caxis"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span class="today">六</span></div></div>
+  </div></div><div class="cap"><b>4×4</b> 仪表盘 · 柱状图区域 flex:1 撑满底部</div></div>
+  
+  <div class="item"><div class="w s42 c1"><div class="c" style="height:100%;justify-content:space-between;gap:6px"><div class="hd"><i class="ico c1"><svg><use href="#i-overview"/></svg></i><span class="ttl">今日 · 周六</span><span class="meta">10/24</span></div><div class="dsplit"><div class="lhero"><div class="hero">¥128</div><span class="sub">支出 · 3 笔</span></div><div class="ritems"><div class="ch c1 sm"><span class="nm">待办</span><span class="vl">3/5</span></div><div class="ch c2 sm"><span class="nm">打卡</span><span class="dpd c2"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span><span class="vl">2/5</span></div><div class="ch c4 sm"><span class="nm">订阅</span><span class="vl">19 天后</span></div></div></div></div></div><div class="cap"><b>4×2</b> 左侧主数字 + 右侧三行胶囊</div></div>
+  
+  <div class="item"><div class="w s22 c1"><div class="c" style="height:100%;gap:6px"><div class="hd"><i class="ico sm c1"><svg><use href="#i-overview"/></svg></i><span class="ttl sm">今日</span><span class="meta">10/24</span></div><div class="hero" style="font-size:36px">¥128</div><div class="c" style="gap:4px;margin-top:auto"><div class="ch c1 sm" style="height:22px;padding:0 8px"><span class="nm">待办</span><span class="vl">3/5</span></div><div class="ch c2 sm" style="height:22px;padding:0 8px"><span class="nm">打卡</span><span class="vl">2/5</span></div></div></div></div><div class="cap"><b>2×2</b> 主数字 + 底部两行紧凑胶囊</div></div>
+  
+  <div class="item"><div class="w s41 c1"><div class="r" style="gap:14px;width:100%"><i class="ico sm c1"><svg><use href="#i-overview"/></svg></i><div class="cols" style="gap:10px"><div><span class="lb">支出</span><span class="vl big">¥128</span></div><div class="line"><span class="lb">待办</span><span class="vl big">3/5</span></div><div class="line"><span class="lb">打卡</span><span class="vl big">2/5</span></div><div class="line"><span class="lb">订阅</span><span class="vl big">19 天后</span></div></div></div></div><div class="cap"><b>4×1</b> 单行四列读数</div></div>
+</div></div>
+
+<!-- 2. 记账 -->
+<div class="fam"><div class="famhd"><h3>2. 本月记账</h3><p>4×4 柱状图+分类胶囊 / 4×2 大数字+七日柱 / 2×2 大数字+七日柱 / 4×1 三列读数</p></div>
+<div class="grid">
+  <div class="item"><div class="w s44 c5"><div class="c" style="height:100%;gap:8px">
+    <div class="hd"><i class="ico c5"><svg><use href="#i-bill"/></svg></i><span class="ttl">本月记账</span><span class="meta">10 月</span></div>
+    <div class="r" style="gap:10px;align-items:baseline"><div class="hero" style="font-size:40px">¥8,200</div><span class="lb">预算 ¥10k</span></div>
+    <div class="kpis"><div class="kpi green"><span class="kl">收入</span><span class="kv">¥12k</span><span class="ks">+18% 环比</span></div><div class="kpi blue"><span class="kl">结余</span><span class="kv">¥3.8k</span><span class="ks">+32% 环比</span></div><div class="kpi orange"><span class="kl">日均</span><span class="kv">¥342</span><span class="ks">剩 7 天</span></div></div>
+    <div class="chart"><div class="chead"><span class="cl">近 12 个月</span><span class="cm">月均 5.0k</span></div><div class="cbody"><div class="cbars"><i style="height:42%;--bar:#4A72F5"></i><i style="height:38%;--bar:#4A72F5"></i><i style="height:55%;--bar:#4A72F5"></i><i style="height:48%;--bar:#4A72F5"></i><i style="height:60%;--bar:#4A72F5"></i><i style="height:52%;--bar:#4A72F5"></i><i style="height:65%;--bar:#4A72F5"></i><i style="height:58%;--bar:#4A72F5"></i><i style="height:70%;--bar:#4A72F5"></i><i style="height:62%;--bar:#4A72F5"></i><i style="height:75%;--bar:#4A72F5"></i><i style="height:100%;--bar:#F4762A"><span class="cv">8.2k</span></i></div></div><div class="caxis"><span>11</span><span>12</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span class="today">10</span></div></div>
+    <div class="minichips"><div class="mc orange"><span class="mn">餐饮</span><span class="mv">¥3.2k</span></div><div class="mc blue"><span class="mn">交通</span><span class="mv">¥1.8k</span></div><div class="mc purple"><span class="mn">购物</span><span class="mv">¥1.5k</span></div><div class="mc gray"><span class="mn">其他</span><span class="mv">¥1.7k</span></div></div>
+  </div></div><div class="cap"><b>4×4</b> 柱图(12月) + 底部四个分类小胶囊</div></div>
+  
+  <div class="item"><div class="w s42 c5"><div class="c" style="height:100%;justify-content:space-between;gap:6px"><div class="hd"><i class="ico c5"><svg><use href="#i-bill"/></svg></i><span class="ttl">本月记账</span><span class="pill c5">新增</span></div><div class="r" style="gap:16px;width:100%;align-items:stretch"><div class="c" style="gap:3px;flex:1;justify-content:flex-end"><span class="lb">本月支出</span><div class="hero" style="font-size:36px">¥8,200</div><div class="bt" style="height:9px;margin-top:4px;background:#FEF1EA"><i style="width:82%;background:#F4762A"></i></div></div><div class="bars" style="gap:6px;width:112px;height:78px"><i style="height:46%;background:#4A72F5"></i><i style="height:30%;background:#4A72F5"></i><i style="height:78%;background:#4A72F5"></i><i style="height:22%;background:#4A72F5"></i><i style="height:56%;background:#4A72F5"></i><i style="height:100%;background:#F4762A"></i><i style="height:44%;background:#4A72F5"></i></div></div></div></div><div class="cap"><b>4×2</b> 左侧主数字与预算条 + 右侧七日柱</div></div>
+  
+  <div class="item"><div class="w s22 c5"><div class="c" style="height:100%;gap:6px"><div class="hd"><i class="ico sm c5"><svg><use href="#i-bill"/></svg></i><span class="ttl sm">记账</span></div><div class="hero" style="font-size:36px">¥8,200</div><div class="c" style="gap:6px;margin-top:auto"><div class="bars" style="gap:6px;height:40px"><i style="height:46%;background:#4A72F5"></i><i style="height:30%;background:#4A72F5"></i><i style="height:78%;background:#4A72F5"></i><i style="height:22%;background:#4A72F5"></i><i style="height:56%;background:#4A72F5"></i><i style="height:100%;background:#F4762A"></i><i style="height:44%;background:#4A72F5"></i></div><span class="lb">近 7 天</span></div></div></div><div class="cap"><b>2×2</b> 主数字 + 迷你七日柱</div></div>
+  
+  <div class="item"><div class="w s41 c5"><div class="c" style="gap:7px;width:100%"><div class="r" style="gap:14px;width:100%"><i class="ico sm c5"><svg><use href="#i-bill"/></svg></i><div class="cols" style="gap:14px"><div><span class="lb">支出</span><span class="vl">¥8.2k</span></div><div class="line"><span class="lb">收入</span><span class="vl">¥12k</span></div><div class="line"><span class="lb">结余</span><span class="vl">¥3.8k</span></div></div></div><div class="seg"><i style="width:68%;background:#F4762A"></i><i style="width:32%;background:#57C22E"></i></div></div></div><div class="cap"><b>4×1</b> 三列读数 + 双色分段条</div></div>
+</div></div>
+
+<!-- 3. 待办 -->
+<div class="fam"><div class="famhd"><h3>3. 待办清单</h3><p>4×4 柱状图+最近一件 / 4×2 三行胶囊 / 2×2 大数字+三行 / 4×1 项数+完成度</p></div>
+<div class="grid">
+  <div class="item"><div class="w s44 c1"><div class="c" style="height:100%;gap:8px">
+    <div class="hd"><i class="ico c1"><svg><use href="#i-todo"/></svg></i><span class="ttl">待办</span><span class="meta">今天 3/5</span></div>
+    <div class="r" style="gap:10px;align-items:baseline"><div class="hero" style="font-size:40px">3 项</div></div>
+    <div class="kpis"><div class="kpi blue"><span class="kl">今天</span><span class="kv">3</span></div><div class="kpi green"><span class="kl">本周</span><span class="kv">15</span></div><div class="kpi purple"><span class="kl">完成率</span><span class="kv">80%</span></div><div class="kpi orange"><span class="kl">连续</span><span class="kv">12</span></div></div>
+    <div class="chart"><div class="chead"><span class="cl">近 7 天完成</span></div><div class="cbody"><div class="cbars"><i style="height:60%;--bar:#57C22E"></i><i style="height:80%;--bar:#57C22E"></i><i style="height:100%;--bar:#F4762A"><span class="cv">5</span></i><i style="height:40%;--bar:#57C22E"></i><i style="height:90%;--bar:#57C22E"></i><i style="height:70%;--bar:#57C22E"></i><i style="height:50%;--bar:#57C22E"></i></div></div><div class="caxis"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span class="today">六</span></div></div>
+    <div class="footer"><i class="ck on" style="width:14px;height:14px;font-size:9px">✓</i><span class="fl">最近</span><span class="fv">取快递</span><span class="fr">18:00</span></div>
+  </div></div><div class="cap"><b>4×4</b> 柱图 + 底部最近一件</div></div>
+  
+  <div class="item"><div class="w s42 c1"><div class="c" style="height:100%;justify-content:space-between;gap:6px"><div class="hd"><i class="ico c1"><svg><use href="#i-todo"/></svg></i><span class="ttl">待办</span><span class="meta">今天 3/5</span></div><div class="c" style="gap:5px"><div class="ch c2 sm"><i class="ck on">✓</i><span class="nm">交房租</span><span class="vl">10:00</span></div><div class="ch c1 sm"><i class="ck"></i><span class="nm">取快递</span><span class="vl">18:00</span></div><div class="ch c3 sm"><i class="ck"></i><span class="nm">写周报</span><span class="vl">21:00</span></div></div></div></div><div class="cap"><b>4×2</b> 三行可点胶囊</div></div>
+  
+  <div class="item"><div class="w s22 c1"><div class="c" style="height:100%;gap:6px"><div class="hd"><i class="ico sm c1"><svg><use href="#i-todo"/></svg></i><span class="ttl sm">待办</span></div><div class="hero" style="font-size:36px">3 项</div><div class="c" style="gap:4px;margin-top:auto"><div class="ch c2 sm tight"><i class="ck on" style="width:12px;height:12px;font-size:8px">✓</i><span class="nm">交房租</span></div><div class="ch c1 sm tight"><i class="ck" style="width:12px;height:12px;font-size:8px"></i><span class="nm">取快递</span></div></div></div></div><div class="cap"><b>2×2</b> 两行紧凑胶囊</div></div>
+  
+  <div class="item"><div class="w s41 c1"><div class="r" style="gap:14px;width:100%"><i class="ico sm c1"><svg><use href="#i-todo"/></svg></i><div class="cols" style="gap:14px"><div><span class="lb">今天</span><span class="vl">3 项</span></div><div class="line"><span class="lb">已完成</span><span class="vl">2/5</span></div><div class="line"><span class="lb">最近</span><span class="vl">取快递 18:00</span></div></div></div></div><div class="cap"><b>4×1</b> 三列读数</div></div>
+</div></div>
+
+<!-- 4. 物品 -->
+<div class="fam"><div class="famhd"><h3>4. 物品分布</h3><p>4×4 3×4矩阵（12格） / 4×2 单行四类 / 2×2 纯文本四行 / 4×1 三列读数</p></div>
+<div class="grid">
+  <div class="item"><div class="w s44 c1"><div class="c" style="height:100%;gap:10px">
+    <div class="hd"><i class="ico c1"><svg><use href="#i-asset"/></svg></i><span class="ttl">物品分布</span><span class="meta">38 件 · 12 类</span></div>
+    <div class="r" style="gap:10px;align-items:baseline"><div class="hero" style="font-size:40px">38 件</div><span class="lb">最多 数码 8</span></div>
+    <div class="seg" style="height:14px; gap:2px;"><i style="width:21%;background:#4A72F5;border-radius:4px 0 0 4px"></i><i style="width:16%;background:#57C22E"></i><i style="width:13%;background:#E7B33C"></i><i style="width:11%;background:#A45CF0"></i><i style="width:8%;background:#F4762A"></i><i style="width:31%;background:#6B7280;border-radius:0 4px 4px 0"></i></div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(4,1fr);gap:8px;flex:1;min-height:0">
+      <div class="ch c1" style="height:100%;padding:0 12px;display:flex;align-items:center;justify-content:space-between;border-radius:12px"><span class="nm" style="font-size:13px;display:flex;align-items:center;gap:6px"><i class="dot sm c1"></i>数码</span><span class="vl" style="font-size:15px">8</span></div>
+      <div class="ch c2" style="height:100%;padding:0 12px;display:flex;align-items:center;justify-content:space-between;border-radius:12px"><span class="nm" style="font-size:13px;display:flex;align-items:center;gap:6px"><i class="dot sm c2"></i>服饰</span><span class="vl" style="font-size:15px">6</span></div>
+      <div class="ch c3" style="height:100%;padding:0 12px;display:flex;align-items:center;justify-content:space-between;border-radius:12px"><span class="nm" style="font-size:13px;display:flex;align-items:center;gap:6px"><i class="dot sm c3"></i>家具</span><span class="vl" style="font-size:15px">5</span></div>
+
+      <div class="ch c4" style="height:100%;padding:0 12px;display:flex;align-items:center;justify-content:space-between;border-radius:12px"><span class="nm" style="font-size:13px;display:flex;align-items:center;gap:6px"><i class="dot sm c4"></i>图书</span><span class="vl" style="font-size:15px">4</span></div>
+      <div class="ch c5" style="height:100%;padding:0 12px;display:flex;align-items:center;justify-content:space-between;border-radius:12px"><span class="nm" style="font-size:13px;display:flex;align-items:center;gap:6px"><i class="dot sm c5"></i>家电</span><span class="vl" style="font-size:15px">3</span></div>
+      <div class="ch c6" style="height:100%;padding:0 12px;display:flex;align-items:center;justify-content:space-between;border-radius:12px"><span class="nm" style="font-size:13px;display:flex;align-items:center;gap:6px"><i class="dot sm c6"></i>美妆</span><span class="vl" style="font-size:15px">3</span></div>
+
+      <div class="ch c7" style="height:100%;padding:0 12px;display:flex;align-items:center;justify-content:space-between;border-radius:12px"><span class="nm" style="font-size:13px;display:flex;align-items:center;gap:6px"><i class="dot sm c7"></i>厨具</span><span class="vl" style="font-size:15px">2</span></div>
+      <div class="ch c8" style="height:100%;padding:0 12px;display:flex;align-items:center;justify-content:space-between;border-radius:12px"><span class="nm" style="font-size:13px;display:flex;align-items:center;gap:6px"><i class="dot sm c8"></i>工具</span><span class="vl" style="font-size:15px">2</span></div>
+      <div class="ch c1" style="height:100%;padding:0 12px;display:flex;align-items:center;justify-content:space-between;border-radius:12px"><span class="nm" style="font-size:13px;display:flex;align-items:center;gap:6px"><i class="dot sm c1"></i>运动</span><span class="vl" style="font-size:15px">1</span></div>
+
+      <div class="ch c2" style="height:100%;padding:0 12px;display:flex;align-items:center;justify-content:space-between;border-radius:12px"><span class="nm" style="font-size:13px;display:flex;align-items:center;gap:6px"><i class="dot sm c2"></i>文具</span><span class="vl" style="font-size:15px">1</span></div>
+      <div class="ch c3" style="height:100%;padding:0 12px;display:flex;align-items:center;justify-content:space-between;border-radius:12px"><span class="nm" style="font-size:13px;display:flex;align-items:center;gap:6px"><i class="dot sm c3"></i>宠物</span><span class="vl" style="font-size:15px">1</span></div>
+      <div class="ch c4" style="height:100%;padding:0 12px;display:flex;align-items:center;justify-content:space-between;border-radius:12px"><span class="nm" style="font-size:13px;display:flex;align-items:center;gap:6px"><i class="dot sm c4"></i>+1类</span><span class="vl" style="font-size:15px">2</span></div>
+    </div>
+    <div class="footer"><i class="dot" style="background:#4A72F5"></i><span class="fl">最近添加</span><span class="fv">iPhone 充电线</span><span class="fr">10/22</span></div>
+  </div></div><div class="cap"><b>4×4</b> 去掉进度条，大字号左右对齐填满 12 格；分段条 = 前五 + 其余（灰）</div></div>
+  
+  <div class="item"><div class="w s42 c1"><div class="c" style="height:100%;justify-content:space-between;gap:7px">
+    <div class="hd"><i class="ico c1"><svg><use href="#i-asset"/></svg></i><span class="ttl">物品</span><span class="hero" style="font-size:26px;margin-left:auto">11 件</span></div>
+    <div class="seg" style="gap:2px"><i style="width:46%;background:#4A72F5"></i><i style="width:27%;background:#57C22E"></i><i style="width:18%;background:#E7B33C"></i><i style="width:9%;background:#A45CF0"></i></div>
+    <div class="r" style="gap:6px;width:100%">
+      <div class="ch c1 sm" style="flex:1"><i class="dot sm c1"></i><span class="nm">数码</span><span class="vl">5</span></div>
+      <div class="ch c2 sm" style="flex:1"><i class="dot sm c2"></i><span class="nm">运动</span><span class="vl">3</span></div>
+      <div class="ch c3 sm" style="flex:1"><i class="dot sm c3"></i><span class="nm">家具</span><span class="vl">2</span></div>
+      <div class="ch c4 sm" style="flex:1"><i class="dot sm c4"></i><span class="nm">图书</span><span class="vl">1</span></div>
+    </div>
+  </div></div><div class="cap"><b>4×2</b> 分段条 + 单行四类图例（与 2×2 数据一致）</div></div>
+  
+  <div class="item"><div class="w s22 c1"><div class="c" style="height:100%;gap:8px">
+    <div class="hd"><i class="ico sm c1"><svg><use href="#i-asset"/></svg></i><span class="ttl sm">物品</span><span class="hero" style="font-size:26px;margin-left:auto">11 件</span></div>
+    <div class="seg"><i style="width:46%;background:#4A72F5"></i><i style="width:27%;background:#57C22E"></i><i style="width:18%;background:#E7B33C"></i><i style="width:9%;background:#A45CF0"></i></div>
+    <!-- 改为纯文本列表，均匀撑满剩余高度，文字绝不截断 -->
+    <div class="c" style="flex:1;justify-content:space-evenly;margin-top:2px">
+      <div class="r" style="justify-content:space-between;width:100%;font-size:12px"><span class="lb" style="color:var(--t1);display:flex;align-items:center;gap:4px"><i class="dot sm c1"></i> 数码</span><span class="vl" style="font-size:13px;font-weight:800;color:#2F5DF4">5</span></div>
+      <div class="r" style="justify-content:space-between;width:100%;font-size:12px"><span class="lb" style="color:var(--t1);display:flex;align-items:center;gap:4px"><i class="dot sm c2"></i> 运动</span><span class="vl" style="font-size:13px;font-weight:800;color:#377C1D">3</span></div>
+      <div class="r" style="justify-content:space-between;width:100%;font-size:12px"><span class="lb" style="color:var(--t1);display:flex;align-items:center;gap:4px"><i class="dot sm c3"></i> 家具</span><span class="vl" style="font-size:13px;font-weight:800;color:#916B12">2</span></div>
+      <div class="r" style="justify-content:space-between;width:100%;font-size:12px"><span class="lb" style="color:var(--t1);display:flex;align-items:center;gap:4px"><i class="dot sm c4"></i> 图书</span><span class="vl" style="font-size:13px;font-weight:800;color:#8F36ED">1</span></div>
+    </div>
+  </div></div><div class="cap"><b>2×2</b> 纯文本列表拉满，不再用背景框截断文字</div></div>
+  
+  <div class="item"><div class="w s41 c1"><div class="c" style="gap:7px;width:100%"><div class="r" style="gap:14px;width:100%"><i class="ico sm c1"><svg><use href="#i-asset"/></svg></i><div class="cols" style="gap:14px"><div><span class="lb">在库</span><span class="vl">11 件</span></div><div class="line"><span class="lb">分类</span><span class="vl">4</span></div><div class="line"><span class="lb">最多</span><span class="vl" style="color:#2F5DF4">数码 5</span></div></div></div><div class="seg"><i style="width:46%;background:#4A72F5"></i><i style="width:27%;background:#57C22E"></i><i style="width:18%;background:#E7B33C"></i><i style="width:9%;background:#A45CF0"></i></div></div></div><div class="cap"><b>4×1</b> 三列读数 + 分段条</div></div>
+</div></div>
+
+<!-- 5. 净资产 -->
+<div class="fam"><div class="famhd"><h3>5. 净资产</h3><p>4×4 柱状图+双进度条 / 4×2 两枚胶囊 / 2×2 堆叠条 / 4×1 三列读数</p></div>
+<div class="grid">
+  <div class="item"><div class="w s44 c2"><div class="c" style="height:100%;gap:8px">
+    <div class="hd"><i class="ico c2"><svg><use href="#i-net"/></svg></i><span class="ttl">净资产</span><span class="pill c2">▲ 2.0%</span></div>
+    <div class="r" style="gap:10px;align-items:baseline"><div class="hero" style="font-size:40px">¥34,180</div></div>
+    <div class="kpis"><div class="kpi blue"><span class="kl">资产</span><span class="kv">¥41k</span></div><div class="kpi orange"><span class="kl">负债</span><span class="kv">¥6.8k</span></div><div class="kpi green"><span class="kl">年化</span><span class="kv">+6.4%</span></div></div>
+    <div class="chart"><div class="chead"><span class="cl">近 12 个月净值</span></div><div class="cbody"><div class="cbars"><i style="height:35%;--bar:#57C22E"></i><i style="height:42%;--bar:#57C22E"></i><i style="height:48%;--bar:#57C22E"></i><i style="height:45%;--bar:#57C22E"></i><i style="height:58%;--bar:#57C22E"></i><i style="height:65%;--bar:#57C22E"></i><i style="height:62%;--bar:#57C22E"></i><i style="height:75%;--bar:#57C22E"></i><i style="height:82%;--bar:#57C22E"></i><i style="height:78%;--bar:#57C22E"></i><i style="height:90%;--bar:#57C22E"></i><i style="height:100%;--bar:#2AB6C6"><span class="cv">34.2k</span></i></div></div><div class="caxis"><span>11</span><span>12</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span class="today">10</span></div></div>
+    <div class="c" style="gap:3px;border-top:1px solid var(--line);padding-top:6px"><div class="r" style="gap:6px"><i class="dot sm c1"></i><span class="lb">资产</span><div class="bt" style="flex:1;height:5px;margin:0 6px;background:#EDF1FE"><i style="width:86%;background:#4A72F5"></i></div><span class="lb" style="font-weight:700;color:#2F5DF4">86%</span></div><div class="r" style="gap:6px"><i class="dot sm c5"></i><span class="lb">负债</span><div class="bt" style="flex:1;height:5px;margin:0 6px;background:#FEF1EA"><i style="width:14%;background:#F4762A"></i></div><span class="lb" style="font-weight:700;color:#B84B0A">14%</span></div></div>
+  </div></div><div class="cap"><b>4×4</b> 柱图 + 底部资产/负债双进度条</div></div>
+  
+  <div class="item"><div class="w s42 c2"><div class="c" style="height:100%;justify-content:space-between;gap:6px"><div class="hd"><i class="ico c2"><svg><use href="#i-net"/></svg></i><span class="ttl">净资产</span><span class="pill c2">▲ 2.0%</span></div><div class="hero" style="font-size:40px">¥34,180</div><div class="seg"><i style="width:86%;background:#4A72F5"></i><i style="width:14%;background:#F4762A"></i></div><div class="r" style="gap:6px;width:100%"><div class="ch c1 sm"><i class="dot sm c1"></i><span class="nm">资产</span><span class="vl">¥41,000</span></div><div class="ch c5 sm"><i class="dot sm c5"></i><span class="nm">负债</span><span class="vl">¥6,820</span></div></div></div></div><div class="cap"><b>4×2</b> 主数字 + 分段条 + 两枚胶囊</div></div>
+  
+  <div class="item"><div class="w s22 c2"><div class="c" style="height:100%;gap:6px"><div class="hd"><i class="ico sm c2"><svg><use href="#i-net"/></svg></i><span class="ttl sm">净资产</span></div><div class="hero" style="font-size:36px">¥3.4万</div><div class="c" style="gap:6px;margin-top:auto"><div class="vstack"><i style="flex:86 1 0;background:#4A72F5"></i><i style="flex:14 1 0;background:#F4762A"></i></div><div class="r" style="gap:8px;width:100%"><span class="lb" style="color:#2F5DF4;font-weight:600">资产 86%</span><span class="lb" style="margin-left:auto;color:#B84B0A;font-weight:600">负债 14%</span></div></div></div></div><div class="cap"><b>2×2</b> 主数字 + 双色堆叠条</div></div>
+  
+  <div class="item"><div class="w s41 c2"><div class="c" style="gap:7px;width:100%"><div class="r" style="gap:14px;width:100%"><i class="ico sm c2"><svg><use href="#i-net"/></svg></i><div class="cols" style="gap:14px"><div><span class="lb">净值</span><span class="vl">¥3.4万</span></div><div class="line"><span class="lb">资产</span><span class="vl">¥41k</span></div><div class="line"><span class="lb">负债</span><span class="vl">¥6.8k</span></div></div></div><div class="seg"><i style="width:86%;background:#4A72F5"></i><i style="width:14%;background:#F4762A"></i></div></div></div><div class="cap"><b>4×1</b> 三列 + 双色分段条</div></div>
+</div></div>
+
+<!-- 6. 打卡 -->
+<div class="fam"><div class="famhd"><h3>6. 今日打卡</h3><p>4×4 柱状图+最佳 / 4×2 三行胶囊 / 2×2 五个大点 / 4×1 三列</p></div>
+<div class="grid">
+  <div class="item"><div class="w s44 c2"><div class="c" style="height:100%;gap:8px">
+    <div class="hd"><i class="ico c2"><svg><use href="#i-habit"/></svg></i><span class="ttl">今日打卡</span></div>
+    <div class="r" style="gap:10px;align-items:baseline"><div class="hero" style="font-size:40px">2/5</div></div>
+    <div class="kpis"><div class="kpi green"><span class="kl">今日</span><span class="kv">2/5</span></div><div class="kpi blue"><span class="kl">本周</span><span class="kv">15</span></div><div class="kpi orange"><span class="kl">最佳</span><span class="kv">7/7</span></div><div class="kpi purple"><span class="kl">连续</span><span class="kv">12</span></div></div>
+    <div class="chart"><div class="chead"><span class="cl">近 7 天完成</span></div><div class="cbody"><div class="cbars"><i style="height:60%;--bar:#57C22E"></i><i style="height:80%;--bar:#57C22E"></i><i style="height:100%;--bar:#F4762A"><span class="cv">5</span></i><i style="height:40%;--bar:#57C22E"></i><i style="height:90%;--bar:#57C22E"></i><i style="height:70%;--bar:#57C22E"></i><i style="height:50%;--bar:#57C22E"></i></div></div><div class="caxis"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span class="today">六</span></div></div>
+    <div class="footer"><span class="fl">最佳</span><span class="fv"><i class="dot sm" style="background:#57C22E;display:inline-block;vertical-align:middle;margin-right:4px"></i>早起 7/7</span><span class="fr">阅读 5/7</span></div>
+  </div></div><div class="cap"><b>4×4</b> 柱图 + 底部最佳习惯</div></div>
+  
+  <div class="item"><div class="w s42 c2"><div class="c" style="height:100%;justify-content:space-between;gap:6px"><div class="hd"><i class="ico c2"><svg><use href="#i-habit"/></svg></i><span class="ttl">打卡</span><span class="hero" style="font-size:26px;margin-left:auto">2/5</span></div><div class="c" style="gap:5px"><div class="ch sm c2" style="padding:0 9px"><span class="nm">早起</span><div class="dotr" style="margin-left:auto"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div></div><div class="ch sm c1" style="padding:0 9px"><span class="nm">阅读</span><div class="dotr" style="margin-left:auto"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></div></div><div class="ch sm c7" style="padding:0 9px"><span class="nm">运动</span><div class="dotr" style="margin-left:auto"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i></div></div></div></div></div><div class="cap"><b>4×2</b> 三行胶囊带点阵</div></div>
+  
+  <div class="item"><div class="w s22 c2"><div class="c" style="height:100%;gap:6px"><div class="hd"><i class="ico sm c2"><svg><use href="#i-habit"/></svg></i><span class="ttl sm">打卡</span></div><div class="hero" style="font-size:36px">2/5</div><div class="c" style="gap:5px;margin-top:auto;align-items:center"><div class="dotg"><i class="on" style="background:#57C22E"></i><i class="on" style="background:#57C22E"></i><i></i><i></i><i></i></div><span class="lb">连续 12 天</span></div></div></div><div class="cap"><b>2×2</b> 大数字 + 五个大点</div></div>
+  
+  <div class="item"><div class="w s41 c2"><div class="r" style="gap:14px;width:100%"><i class="ico sm c2"><svg><use href="#i-habit"/></svg></i><div class="cols" style="gap:14px"><div><span class="lb">今日</span><span class="vl">2/5</span><span class="ticks"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span></div><div class="line"><span class="lb">连续</span><span class="vl">12 天</span></div><div class="line"><span class="lb">早起</span><span class="vl">7/7</span></div></div></div></div><div class="cap"><b>4×1</b> 三列 + 列内刻度</div></div>
+</div></div>
+
+<!-- 7. 计数 -->
+<div class="fam"><div class="famhd"><h3>7. 生活计数</h3><p>4×4 KPI+点阵（无按天历史时的替代）/ 4×2 主+副 / 2×2 8点2×4 / 4×1 三列</p></div>
+<div class="grid">
+  <div class="item"><div class="w s44 c7"><div class="c" style="height:100%;gap:8px">
+    <div class="hd"><i class="ico c7"><svg><use href="#i-count"/></svg></i><span class="ttl">今日喝水</span><span class="meta">目标 8 杯</span></div>
+    <div class="r" style="gap:10px;align-items:baseline"><div class="hero" style="font-size:40px">6/8</div><span class="lb">还差 2 杯</span></div>
+
+    <!-- 增加 KPI 横排 -->
+    <div class="kpis">
+      <div class="kpi cyan"><span class="kl">目标</span><span class="kv">8</span><span class="ks">杯</span></div>
+      <div class="kpi blue"><span class="kl">已完成</span><span class="kv">6</span><span class="ks">杯</span></div>
+      <div class="kpi orange"><span class="kl">剩余</span><span class="kv">2</span><span class="ks">杯</span></div>
+      <div class="kpi purple"><span class="kl">咖啡</span><span class="kv">2</span><span class="ks">次</span></div>
+    </div>
+
+    <!-- 增加近 7 天打卡柱状图填满中间 -->
+    <div class="chart" style="margin-top:auto">
+      <div class="chead"><span class="cl">近 7 天完成</span><span class="cm">日均 6.7 杯</span></div>
+      <div class="cbody">
+        <div class="cbars" style="gap:12px">
+          <i style="height:100%;--bar:#2AB6C6"><span class="cv">8</span></i><i style="height:88%;--bar:#2AB6C6"></i><i style="height:75%;--bar:#2AB6C6"></i><i style="height:100%;--bar:#2AB6C6"></i><i style="height:50%;--bar:#2AB6C6"></i><i style="height:100%;--bar:#2AB6C6"></i><i style="height:75%;--bar:#2AB6C6"><span class="cv">6</span></i>
+        </div>
+      </div>
+      <div class="caxis"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span class="today">六</span></div>
+    </div>
+  </div></div><div class="cap"><b>4×4</b> 增加 4 个 KPI 与近 7 天记录柱图，不再留白</div></div>
+  
+  <div class="item"><div class="w s42 c7"><div class="c" style="height:100%;justify-content:space-between;gap:6px"><div class="hd"><i class="ico c7"><svg><use href="#i-count"/></svg></i><span class="ttl">喝水</span><span class="hero" style="font-size:26px;margin-left:auto">6/8</span></div><div class="r" style="gap:6px;width:100%"><div class="ch c7 sm"><i class="dot sm c7"></i><span class="nm">咖啡</span><span class="vl">2</span></div><div class="ch c4 sm"><i class="dot sm c4"></i><span class="nm">烟</span><span class="vl">0</span></div></div><div class="dotr" style="justify-content:flex-end"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></div></div></div><div class="cap"><b>4×2</b> 主数字 + 副计数 + 8点阵</div></div>
+  
+  <div class="item"><div class="w s22 c7"><div class="c" style="height:100%;gap:6px"><div class="hd"><i class="ico sm c7"><svg><use href="#i-count"/></svg></i><span class="ttl sm">计数</span></div><div class="hero" style="font-size:36px">6/8</div><div class="c" style="gap:7px;margin-top:auto;align-items:center"><div class="dotg"><i class="on" style="background:#2AB6C6"></i><i class="on" style="background:#2AB6C6"></i><i class="on" style="background:#2AB6C6"></i><i class="on" style="background:#2AB6C6"></i><i class="on" style="background:#2AB6C6"></i><i class="on" style="background:#2AB6C6"></i><i></i><i></i></div><span class="lb">还差 2 杯</span></div></div></div><div class="cap"><b>2×2</b> 数字 + 8点阵折行</div></div>
+  
+  <div class="item"><div class="w s41 c7"><div class="r" style="gap:14px;width:100%"><i class="ico sm c7"><svg><use href="#i-count"/></svg></i><div class="cols" style="gap:14px"><div><span class="lb">喝水</span><span class="vl">6/8</span></div><div class="line"><span class="lb">咖啡</span><span class="vl">2</span></div><div class="line"><span class="lb">烟</span><span class="vl">0</span></div></div></div></div><div class="cap"><b>4×1</b> 三列计数</div></div>
+</div></div>
+
+<!-- 8. 订阅 -->
+<div class="fam"><div class="famhd"><h3>8. 订阅提醒</h3><p>4×4 柱状图+双行 / 4×2 三行胶囊 / 2×2 合计+两行 / 4×1 三列</p></div>
+<div class="grid">
+  <div class="item"><div class="w s44 c4"><div class="c" style="height:100%;gap:8px">
+    <div class="hd"><i class="ico c4"><svg><use href="#i-sub"/></svg></i><span class="ttl">订阅提醒</span></div>
+    <div class="r" style="gap:10px;align-items:baseline"><div class="hero" style="font-size:40px">¥48</div></div>
+    <div class="kpis"><div class="kpi purple"><span class="kl">本月</span><span class="kv">¥48</span></div><div class="kpi pink"><span class="kl">年度</span><span class="kv">¥876</span></div><div class="kpi orange"><span class="kl">下个</span><span class="kv">11/12</span></div></div>
+    <div class="chart"><div class="chead"><span class="cl">未来 6 个月扣费</span></div><div class="cbody"><div class="cbars"><i style="height:66%;--bar:#A45CF0"></i><i style="height:45%;--bar:#A45CF0"></i><i style="height:80%;--bar:#A45CF0"></i><i style="height:55%;--bar:#A45CF0"></i><i style="height:100%;--bar:#EC5C93"><span class="cv">120</span></i><i style="height:70%;--bar:#A45CF0"></i></div></div><div class="caxis"><span>10</span><span>11</span><span>12</span><span>1</span><span class="today">2</span><span>3</span></div></div>
+    <div class="sublist" style="border-top:1px solid var(--line);padding-top:6px"><div class="duitem" style="--dd:#F4762A"><span class="dt">11/12</span><i class="dd"></i><span class="dn">云盘</span><span class="dv">¥25</span></div><div class="duitem" style="--dd:#4A72F5"><span class="dt">11/17</span><i class="dd"></i><span class="dn">视频</span><span class="dv">¥15</span></div></div>
+  </div></div><div class="cap"><b>4×4</b> 柱图 + 底部双行扣费明细</div></div>
+  
+  <div class="item"><div class="w s42 c4"><div class="c" style="height:100%;justify-content:space-between;gap:6px"><div class="hd"><i class="ico c4"><svg><use href="#i-sub"/></svg></i><span class="ttl">订阅</span><span class="hero" style="font-size:26px;margin-left:auto">¥48</span></div><div class="c" style="gap:5px"><div class="r" style="gap:8px;width:100%"><span class="date">10/12</span><div class="ch c5 sm" style="flex:1"><i class="dot sm c5"></i><span class="nm">云盘</span><span class="vl">¥25</span></div></div><div class="r" style="gap:8px;width:100%"><span class="date">10/17</span><div class="ch c1 sm" style="flex:1"><i class="dot sm c1"></i><span class="nm">视频</span><span class="vl">¥15</span></div></div></div></div></div><div class="cap"><b>4×2</b> 主数字 + 双行扣费胶囊</div></div>
+  
+  <div class="item"><div class="w s22 c4"><div class="c" style="height:100%;gap:6px"><div class="hd"><i class="ico sm c4"><svg><use href="#i-sub"/></svg></i><span class="ttl sm">订阅</span></div><div class="hero" style="font-size:36px">¥48</div><div class="c" style="gap:4px;margin-top:auto"><div class="ch c5 sm tight"><i class="dot sm c5"></i><span class="nm">云盘</span><span class="vl">25</span></div><div class="ch c1 sm tight"><i class="dot sm c1"></i><span class="nm">视频</span><span class="vl">15</span></div></div></div></div><div class="cap"><b>2×2</b> 主数字 + 双行紧凑胶囊</div></div>
+  
+  <div class="item"><div class="w s41 c4"><div class="c" style="gap:7px;width:100%"><div class="r" style="gap:14px;width:100%"><i class="ico sm c4"><svg><use href="#i-sub"/></svg></i><div class="cols" style="gap:14px"><div><span class="lb">本月</span><span class="vl">¥48</span></div><div class="line"><span class="lb">下个</span><span class="vl">11/12</span></div><div class="line"><span class="lb">金额</span><span class="vl">¥25</span></div></div></div><div class="seg"><i style="width:52%;background:#A45CF0"></i><i style="width:31%;background:#4A72F5"></i><i style="width:17%;background:#E7B33C"></i></div></div></div><div class="cap"><b>4×1</b> 三列 + 彩色分段条</div></div>
+</div></div>
+
+<!-- 9. 快捷入口 -->
+<div class="fam"><div class="famhd"><h3>9. 快捷入口</h3><p>4×4 3×3九格 / 4×2 八格 / 2×2 四格 / 4×1 四格横排</p></div>
+<div class="grid">
+  <div class="item"><div class="w s44 c1"><div class="c" style="height:100%;gap:10px">
+    <div class="hd"><i class="ico c1"><svg><use href="#i-shortcut"/></svg></i><span class="ttl">快捷入口</span></div>
+    <div class="gr9" style="flex:1;min-height:0">
+      <div class="ic c5"><i class="ico c5"><svg><use href="#i-bill"/></svg></i><span>记账</span></div><div class="ic c1"><i class="ico c1"><svg><use href="#i-todo"/></svg></i><span>待办</span></div><div class="ic c2"><i class="ico c2"><svg><use href="#i-habit"/></svg></i><span>打卡</span></div>
+      <div class="ic c4"><i class="ico c4"><svg><use href="#i-asset"/></svg></i><span>物品</span></div><div class="ic c6"><i class="ico c6"><svg><use href="#i-net"/></svg></i><span>净资产</span></div><div class="ic c3"><i class="ico c3"><svg><use href="#i-sub"/></svg></i><span>订阅</span></div>
+      <div class="ic c7"><i class="ico c7"><svg><use href="#i-count"/></svg></i><span>计数</span></div><div class="ic c8"><i class="ico c8"><svg><use href="#i-calendar"/></svg></i><span>日历</span></div><div class="ic c5"><i class="ico c5"><svg><use href="#i-next"/></svg></i><span>接下来</span></div>
+    </div>
+  </div></div><div class="cap"><b>4×4</b> 3×3 九宫格大图标</div></div>
+  
+  <div class="item"><div class="w s42 c1"><div class="c" style="height:100%;justify-content:space-between;gap:6px"><div class="hd"><i class="ico c1"><svg><use href="#i-shortcut"/></svg></i><span class="ttl">快捷入口</span></div><div class="gr8" style="flex:1;grid-template-rows:1fr 1fr;gap:6px"><div class="ic c5"><i class="ico c5"><svg><use href="#i-bill"/></svg></i><span>记账</span></div><div class="ic c1"><i class="ico c1"><svg><use href="#i-todo"/></svg></i><span>待办</span></div><div class="ic c2"><i class="ico c2"><svg><use href="#i-habit"/></svg></i><span>打卡</span></div><div class="ic c4"><i class="ico c4"><svg><use href="#i-asset"/></svg></i><span>物品</span></div><div class="ic c6"><i class="ico c6"><svg><use href="#i-net"/></svg></i><span>净资产</span></div><div class="ic c3"><i class="ico c3"><svg><use href="#i-sub"/></svg></i><span>订阅</span></div><div class="ic c7"><i class="ico c7"><svg><use href="#i-count"/></svg></i><span>计数</span></div><div class="ic c8"><i class="ico c8"><svg><use href="#i-calendar"/></svg></i><span>日历</span></div></div></div></div><div class="cap"><b>4×2</b> 4×2 八宫格图标</div></div>
+  
+  <div class="item"><div class="w s22 c1"><div class="c" style="height:100%;justify-content:space-between;gap:8px"><div class="hd"><i class="ico sm c1"><svg><use href="#i-shortcut"/></svg></i><span class="ttl sm">快捷入口</span></div><div class="gr4" style="flex:1;grid-template-rows:1fr 1fr;gap:8px"><div class="ic c5"><i class="ico c5"><svg><use href="#i-bill"/></svg></i><span>记账</span></div><div class="ic c1"><i class="ico c1"><svg><use href="#i-todo"/></svg></i><span>待办</span></div><div class="ic c2"><i class="ico c2"><svg><use href="#i-habit"/></svg></i><span>打卡</span></div><div class="ic c4"><i class="ico c4"><svg><use href="#i-asset"/></svg></i><span>物品</span></div></div></div></div><div class="cap"><b>2×2</b> 2×2 四宫格图标</div></div>
+  
+  <div class="item"><div class="w s41 c1"><div class="r" style="gap:10px;width:100%"><div class="ic c5" style="flex:1;height:48px"><i class="ico c5"><svg><use href="#i-bill"/></svg></i><span>记账</span></div><div class="ic c1" style="flex:1;height:48px"><i class="ico c1"><svg><use href="#i-todo"/></svg></i><span>待办</span></div><div class="ic c2" style="flex:1;height:48px"><i class="ico c2"><svg><use href="#i-habit"/></svg></i><span>打卡</span></div><div class="ic c4" style="flex:1;height:48px"><i class="ico c4"><svg><use href="#i-asset"/></svg></i><span>物品</span></div></div></div><div class="cap"><b>4×1</b> 四宫格横向</div></div>
+</div></div>
+
+<!-- 10. 接下来 -->
+<div class="fam"><div class="famhd"><h3>10. 接下来</h3><p>4×4 日历条+双行 / 4×2 天数+进度条 / 2×2 天数+进度+说明 / 4×1 三列+日历条</p></div>
+<div class="grid">
+  <div class="item"><div class="w s44 c5"><div class="c" style="height:100%;gap:8px">
+    <div class="hd"><i class="ico c5"><svg><use href="#i-next"/></svg></i><span class="ttl">接下来</span><span class="meta">未来 30 天</span></div>
+    <div class="r" style="gap:10px;align-items:baseline"><div class="hero" style="font-size:40px">8 天</div><span class="lb">爸爸生日</span></div>
+
+    <div class="kpis">
+      <div class="kpi orange"><span class="kl">最近</span><span class="kv">10/25</span><span class="ks">体检</span></div>
+      <div class="kpi blue"><span class="kl">本月</span><span class="kv">3</span><span class="ks">个事件</span></div>
+      <div class="kpi purple"><span class="kl">提醒</span><span class="kv">09:00</span><span class="ks">提前 1 天</span></div>
+    </div>
+
+    <div class="c" style="gap:8px;flex:1;justify-content:center">
+      <div class="dstrip" style="margin-bottom:4px"><span class="dcell">23</span><span class="dcell today">24</span><span class="dcell">25</span><span class="dcell">26</span><span class="dcell">27</span><span class="dcell">28</span><span class="dcell">29</span><span class="dcell">30</span><span class="dcell">31</span><span class="dcell on">11/1</span></div>
+      <div class="bt c5" style="height:12px"><i style="width:62%"></i></div>
+    </div>
+
+    <!-- 底部事件从 2 行扩展为 4 行 -->
+    <div class="sublist" style="border-top:1px solid var(--line);padding-top:8px;gap:6px">
+      <div class="duitem" style="--dd:#4A72F5"><span class="dt">10/25</span><i class="dd"></i><span class="dn">预约体检</span><span class="dv">09:00</span></div>
+      <div class="duitem" style="--dd:#A45CF0"><span class="dt">10/25</span><i class="dd"></i><span class="dn">还信用卡</span><span class="dv">10:00</span></div>
+      <div class="duitem" style="--dd:#57C22E"><span class="dt">10/28</span><i class="dd"></i><span class="dn">团队周会</span><span class="dv">14:00</span></div>
+      <div class="duitem" style="--dd:#F4762A"><span class="dt">11/01</span><i class="dd"></i><span class="dn">爸爸生日</span><span class="dv">全天</span></div>
+    </div>
+  </div></div><div class="cap"><b>4×4</b> 底部扩展为 4 行事件明细，彻底填满空间</div></div>
+  
+  <div class="item"><div class="w s42 c5"><div class="c" style="height:100%;justify-content:space-between;gap:6px"><div class="hd"><i class="ico c5"><svg><use href="#i-next"/></svg></i><span class="ttl">接下来</span><span class="meta">11/1</span></div><div class="hero" style="font-size:36px">8 天</div><div class="bt" style="height:12px"><i style="width:62%"></i></div><span class="lb">爸爸生日 · 提醒 09:00</span></div></div><div class="cap"><b>4×2</b> 天数 + 进度 + 说明</div></div>
+  
+  <div class="item"><div class="w s22 c5"><div class="c" style="height:100%;gap:6px"><div class="hd"><i class="ico sm c5"><svg><use href="#i-next"/></svg></i><span class="ttl sm">接下来</span></div><div class="hero" style="font-size:36px">8 天</div><div class="c" style="gap:5px;margin-top:auto"><div class="bt" style="height:8px"><i style="width:62%"></i></div><span class="lb">爸爸生日 11/1</span></div></div></div><div class="cap"><b>2×2</b> 天数 + 进度条</div></div>
+  
+  <div class="item"><div class="w s41 c5"><div class="c" style="gap:7px;width:100%"><div class="r" style="gap:14px;width:100%"><i class="ico sm c5"><svg><use href="#i-next"/></svg></i><div class="cols" style="gap:14px"><div><span class="lb">还有</span><span class="vl">8 天</span></div><div class="line"><span class="lb">事件</span><span class="vl">爸爸生日</span></div><div class="line"><span class="lb">日期</span><span class="vl">11/1</span></div></div></div><div class="dstrip"><span class="dcell">28</span><span class="dcell">29</span><span class="dcell">30</span><span class="dcell">31</span><span class="dcell on">11/1</span></div></div></div><div class="cap"><b>4×1</b> 三列 + 迷你日历条</div></div>
+</div></div>
+
+<!-- 11. 空白态与压缩态 -->
+<div class="fam"><div class="famhd"><h3>11. 空白态与压缩态</h3><p>4×4 空白 / 2×2 空白 / 4×4 压缩（300×250）</p></div>
+<div class="grid">
+  <div class="item"><div class="w s44 c1"><div class="c" style="height:100%;gap:8px">
+    <div class="hd"><i class="ico c1"><svg><use href="#i-todo"/></svg></i><span class="ttl">待办</span><span class="meta">今天 0 项</span></div>
+    <div class="empty">
+      <div class="eico c1"><svg><use href="#i-todo"/></svg></div>
+      <span class="et">今天没有待办</span>
+      <span class="ed">点按卡片添加一条</span>
+    </div>
+    <div class="footer"><span class="fl">本周完成</span><span class="fv">12 项</span><span class="fr">连续 5 天</span></div>
+  </div></div><div class="cap"><b>4×4 · 空白</b> 不显示空柱图与 0 值 KPI，改给一句动作引导</div></div>
+
+  <div class="item"><div class="w s22 c1"><div class="c" style="height:100%;gap:8px">
+    <div class="hd"><i class="ico sm c1"><svg><use href="#i-asset"/></svg></i><span class="ttl sm">物品</span></div>
+    <div class="empty">
+      <div class="eico c1" style="width:32px;height:32px"><svg style="width:16px;height:16px"><use href="#i-asset"/></svg></div>
+      <span class="et" style="font-size:12px">暂无物品</span>
+      <span class="ed">点按添加</span>
+    </div>
+  </div></div><div class="cap"><b>2×2 · 空白</b> 图标 + 一句引导，不保留空分段条</div></div>
+
+  <div class="item"><div class="w s44k c5"><div class="c" style="height:100%;gap:8px">
+    <div class="hd"><i class="ico c5"><svg><use href="#i-next"/></svg></i><span class="ttl">接下来</span></div>
+    <div class="r" style="gap:10px;align-items:baseline"><div class="hero" style="font-size:36px">8 天</div><span class="lb">爸爸生日</span></div>
+    <div class="kpis"><div class="kpi orange"><span class="kl">最近</span><span class="kv">10/25</span><span class="ks">体检</span></div><div class="kpi blue"><span class="kl">本月</span><span class="kv">3</span><span class="ks">个事件</span></div><div class="kpi purple"><span class="kl">提醒</span><span class="kv">09:00</span><span class="ks">提前 1 天</span></div></div>
+    <div class="sublist" style="border-top:1px solid var(--line);padding-top:8px;gap:6px">
+      <div class="duitem" style="--dd:#4A72F5"><span class="dt">10/25</span><i class="dd"></i><span class="dn">预约体检</span><span class="dv">09:00</span></div>
+      <div class="duitem" style="--dd:#F4762A"><span class="dt">11/01</span><i class="dd"></i><span class="dn">爸爸生日</span><span class="dv">全天</span></div>
+    </div>
+  </div></div><div class="cap"><b>4×4 · 压缩 300×250</b> 先砍日历条与进度条、事件降到 2 行，主数字与 KPI 全保留</div></div>
+</div></div>
+
+<!-- 3. 夜间模式 -->
+<h2 class="sec" id="night"><u>03</u>夜间模式展示</h2>
+<div class="note">以下为概览、记账与净资产在夜间的显示。深色模式下淡底 <code>--dt</code> 整体换成深色 tint（如蓝 <code>#263154</code>、绿 <code>#1F3324</code>），<code>--di</code> 提亮为前景色，胶囊 / KPI / 图标不再残留亮色块。Agent 在实现时通过 <code>values-night/</code> 静态资源加载，<b>严禁在代码中通过 Java/Kotlin 动态切换颜色</b>。</div>
+<div class="night">
+  <div class="item"><div class="w s44 c5"><div class="c" style="height:100%;gap:8px">
+    <div class="hd"><i class="ico c5"><svg><use href="#i-bill"/></svg></i><span class="ttl">本月记账</span><span class="meta">10 月</span></div>
+    <div class="r" style="gap:10px;align-items:baseline"><div class="hero" style="font-size:40px">¥8,200</div><span class="lb">预算 ¥10k</span></div>
+    <div class="kpis"><div class="kpi green"><span class="kl">收入</span><span class="kv">¥12k</span><span class="ks">+18% 环比</span></div><div class="kpi blue"><span class="kl">结余</span><span class="kv">¥3.8k</span><span class="ks">+32% 环比</span></div><div class="kpi orange"><span class="kl">日均</span><span class="kv">¥342</span><span class="ks">剩 7 天</span></div></div>
+    <div class="chart"><div class="chead"><span class="cl">近 12 个月</span><span class="cm">月均 5.0k</span></div><div class="cbody"><div class="cbars"><i style="height:42%;--bar:#4A72F5"></i><i style="height:38%;--bar:#4A72F5"></i><i style="height:55%;--bar:#4A72F5"></i><i style="height:48%;--bar:#4A72F5"></i><i style="height:60%;--bar:#4A72F5"></i><i style="height:52%;--bar:#4A72F5"></i><i style="height:65%;--bar:#4A72F5"></i><i style="height:58%;--bar:#4A72F5"></i><i style="height:70%;--bar:#4A72F5"></i><i style="height:62%;--bar:#4A72F5"></i><i style="height:75%;--bar:#4A72F5"></i><i style="height:100%;--bar:#F4762A"><span class="cv">8.2k</span></i></div></div><div class="caxis"><span>11</span><span>12</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span class="today">10</span></div></div>
+    <div class="minichips"><div class="mc orange"><span class="mn">餐饮</span><span class="mv">¥3.2k</span></div><div class="mc blue"><span class="mn">交通</span><span class="mv">¥1.8k</span></div><div class="mc purple"><span class="mn">购物</span><span class="mv">¥1.5k</span></div><div class="mc gray"><span class="mn">其他</span><span class="mv">¥1.7k</span></div></div>
+  </div></div><div class="cap" style="color:#AEB3BB"><b>4×4 · 记账 · 夜间</b></div></div>
+
+  <div class="item"><div class="w s44 c1"><div class="c" style="height:100%;gap:8px">
+    <div class="hd"><i class="ico c1"><svg><use href="#i-overview"/></svg></i><span class="ttl">今日 · 周六</span><span class="meta">10/24</span></div>
+    <div class="r" style="gap:10px;align-items:baseline"><div class="hero" style="font-size:40px">¥128</div><span class="lb">3 笔 · 笔均 ¥43</span></div>
+    <div class="kpis"><div class="kpi blue"><span class="kl">待办</span><span class="kv">3/5</span><span class="ks">未完成</span></div><div class="kpi green"><span class="kl">打卡</span><span class="kv">2/5</span><span class="ks">连续 12 天</span></div><div class="kpi purple"><span class="kl">订阅</span><span class="kv">19</span><span class="ks">天后</span></div><div class="kpi orange"><span class="kl">预算</span><span class="kv">82%</span><span class="ks">剩 ¥1.8k</span></div></div>
+    <div class="chart"><div class="chead"><span class="cl">近 7 天支出</span><span class="cm">峰值 ¥420</span></div><div class="cbody"><div class="cbars"><i style="height:46%;--bar:#4A72F5"></i><i style="height:30%;--bar:#4A72F5"></i><i style="height:78%;--bar:#4A72F5"></i><i style="height:22%;--bar:#4A72F5"></i><i style="height:56%;--bar:#4A72F5"></i><i style="height:100%;--bar:#F4762A"></i><i style="height:44%;--bar:#4A72F5"><span class="cv">128</span></i></div></div><div class="caxis"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span class="today">六</span></div></div>
+  </div></div><div class="cap" style="color:#AEB3BB"><b>4×4 · 概览 · 夜间</b></div></div>
+
+  <div class="item"><div class="w s42 c2"><div class="c" style="height:100%;justify-content:space-between;gap:6px"><div class="hd"><i class="ico c2"><svg><use href="#i-net"/></svg></i><span class="ttl">净资产</span><span class="pill c2">▲ 2.0%</span></div><div class="hero" style="font-size:40px">¥34,180</div><div class="seg"><i style="width:86%;background:#4A72F5"></i><i style="width:14%;background:#F4762A"></i></div><div class="r" style="gap:6px;width:100%"><div class="ch c1 sm"><i class="dot sm c1"></i><span class="nm">资产</span><span class="vl">¥41,000</span></div><div class="ch c5 sm"><i class="dot sm c5"></i><span class="nm">负债</span><span class="vl">¥6,820</span></div></div></div></div><div class="cap" style="color:#AEB3BB"><b>4×2 · 净资产 · 夜间</b> 深色淡底 + 提亮前景</div></div>
+</div>
+
+<!-- 4. 落地技术规范 -->
+<h2 class="sec" id="spec"><u>04</u>给 Agent 的落地技术规范</h2>
+<div class="note">
+  针对 Android 原生 <b>RemoteViews（非 Glance）</b> 实现的硬性约束。请 Agent 严格遵循，避免踩坑。
+</div>
+
+<h3 class="sub">1. 尺寸声明 (appwidget-provider XML)</h3>
+<div class="note">
+   稿上的 <code>340×340</code> / <code>340×148</code> 是理想渲染尺寸，<b>不能填进 minWidth / minHeight</b>：这两个值表达的是「需要几格」，不是「我要画多宽」。
+  <br><b>按官方公式 <code>min = 70 × n − 30</code></b>（1 格 40dp / 2 格 110dp / 3 格 180dp / 4 格 250dp）。Android 12+ 由 <code>targetCell</code> 决定格数，min 只作兼容兜底；Android 8–11 的启动器仍按 <code>(min + 30) / 70</code> 反推，给大了会多占一格。
+</div>
+<div class="tbl">
+  <div>4×4 尺寸</div><div><code>targetCellWidth="4" targetCellHeight="4" minWidth="250dp" minHeight="250dp" minResizeWidth="250dp" minResizeHeight="220dp" resizeMode="horizontal|vertical"</code></div>
+  <div>4×2 尺寸</div><div><code>targetCellWidth="4" targetCellHeight="2" minWidth="250dp" minHeight="110dp" minResizeWidth="110dp" minResizeHeight="74dp" resizeMode="horizontal|vertical"</code></div>
+  <div>2×2 尺寸</div><div><code>targetCellWidth="2" targetCellHeight="2" minWidth="110dp" minHeight="110dp" minResizeWidth="110dp" minResizeHeight="74dp" resizeMode="horizontal|vertical"</code></div>
+  <div>4×1 尺寸</div><div><code>targetCellWidth="4" targetCellHeight="1" minWidth="250dp" minHeight="40dp" minResizeWidth="110dp" minResizeHeight="74dp" resizeMode="horizontal|vertical"</code></div>
+  <div>minResize 边界</div><div>不得低于各档<b>最小可渲染尺寸</b>：单行档 74dp（再小单行布局会挤爆）、4×4 竖向 220dp（= TALL 阈值，再小就退化成横条构图）、4×4 横向 250dp（不许压到 2 列，否则 12 格网格塞进 160dp）。</div>
+  <div>预览声明</div><div><code>previewImage</code> 必填；<code>previewLayout</code> <b>绝不可指向真机布局</b>（12+ 启动器优先用它，静态 inflate 没有数值、也没有运行时着色）——要么不写，要么给静态 <code>*_preview.xml</code>。</div>
+  <div>可重配</div><div>有 <code>android:configure</code> 的必须同时声明 <code>android:widgetFeatures="reconfigurable"</code>，否则 12+ 长按菜单里没有「编辑」入口。</div>
+  <div>刷新</div><div><code>updatePeriodMillis="1800000"</code>（系统下限 30 分钟）；纯静态组件（快捷入口）写 <code>0</code>。</div>
+</div>
+
+<h3 class="sub">2. RemoteViews 白名单与禁止项</h3>
+<div class="tbl">
+  <div>允许使用</div><div><code>FrameLayout</code> / <code>LinearLayout</code> / <code>RelativeLayout</code> / <code>ImageView</code> / <code>TextView</code> / <code>Button</code> / <code>ProgressBar</code> / <code>ListView</code> / <code>GridView</code> / <code>AdapterViewFlipper</code> 等。</div>
+  <div>严禁使用</div><div>自定义 View、<code>CheckBox</code>、<code>Switch</code>、<code>Space</code>、<code>SpannableString</code>、<code>ViewStub</code>（某些机型不支持）、在布局写 <code>android:tint</code>（必须用代码 <code>setColorFilter</code>）。</div>
+  <div>进度条/分段条</div><div>严禁用 <code>setProgressTintList</code>。统一用 <code>ImageView + ClipDrawable + setImageLevel(0~10000)</code> 实现，或者直接切多张 drawable 背景。</div>
+  <div>勾选态/点阵</div><div>禁止用 <code>CheckBox</code>。用两个 <code>ImageView</code>（实心/空心）配合 <code>setViewVisibility</code> 实现切换，或者通过代码 <code>setBackgroundResource</code> 动态换底。</div>
+  <div>字体样式</div><div>所有文字必须显式设置 <code>lineHeight</code>，并设 <code>android:includeFontPadding="false"</code>。主数字加上 <code>android:fontFeatureSettings="tnum"</code>。</div>
+  <div>样式不可下发</div><div>RemoteViews <b>没有可用的 <code>setTextStyle</code></b>（<code>setTypeface</code> 收的是 <code>Typeface</code> 对象，<code>setPaintFlags</code> 会连抗锯齿一起覆盖）。稿里「加粗」这类要求只能在布局里写死；运行时区分状态请只改颜色（如柱图轴上的「今天」列）。</div>
+</div>
+
+<h3 class="sub">3. 夜间模式（必做）</h3>
+<div class="note">
+  夜间适配一律走<b>资源限定符</b>：颜色令牌与 drawable 在 <code>values-night/</code> 提供同名覆盖，组件只引用 <code>@color/…</code>。
+  <br><b>不要在绑定过程里读系统 uiMode 再动态改色</b>（<code>setTextColor</code> 一类）：RemoteViews 会被宿主缓存复用，动态改色与实际展示状态容易错位，主题切换也未必触发重新绑定；限定符由系统按当前配置解析，不需要额外代码。
+  <br>需要按数据上色的部分（族色、涨跌方向）不适用限定符，用 <code>setColorFilter</code> 下发具体色值；这类颜色在日/夜两套里都要保证对比度 ≥4.5:1。
+  <br>卡面夜间底色 <code>#1C1F26</code>；淡底色令牌在 <code>colors.xml</code> 与 <code>values-night/colors.xml</code> 各给一份。
+</div>
+
+<h3 class="sub">4. 数据与尺寸切换机制</h3>
+<div class="note">
+  <b>多尺寸下发：</b>Android 12+ 用 <code>RemoteViews(Map&lt;SizeF, RemoteViews&gt;)</code> 构造，一次给出多个候选尺寸，由桌面按当前格子挑选；旧系统退回「横屏 / 竖屏」两参构造。每个形态只需 2~3 个尺寸桶（紧凑 / 标准 / 宽），不必为每种像素组合建一份布局。
+  <br><b>数据绑定：</b>柱状图的高度百分比在 HTML 里是内联样式，实际开发时如果高度固定，可以直接在 XML 里写死高度（如 <code>40dp</code>），通过 <code>setImageViewResource</code> 变高低；或把柱状图替换成 12 个空 <code>ImageView</code>，通过代码设定高度比例。
+  <br><b>列表滚动：</b>待办/订阅若需滚动，使用 <code>RemoteViewsService</code> 和 <code>RemoteViewsFactory</code>，严禁用普通的 <code>LinearLayout</code> 硬塞几十行数据。
+  <br><b>示例数据：</b>本文档各尺寸的示例数据仅用于展示布局（如物品 4×4 为 38 件/12 类，2×2 与 4×2 为 11 件/4 类）。同一 Widget 实例在尺寸间缩放时，必须复用同一数据源，不允许换一套数字。
+</div>
+
+<h3 class="sub">5. 分段条、网格与等分留白</h3>
+<div class="tbl">
+  <div>分段条圆角</div><div>禁止在子段上做内圆角——RemoteViews 不能裁剪子 View。子段一律直角，只有容器首尾用圆角 drawable，或直接切一整条背景图（4×1 的物品/订阅条最适合后者）。</div>
+  <div>网格布局</div><div>设计稿里的 CSS grid（物品 3×4、快捷 3×3、4×2 八格、2×2 四格）在 RemoteViews 中只有 API 31+ 的 <code>GridLayout</code> 可直接对应。minSdk 更低时必须用嵌套 <code>LinearLayout</code> + <code>layout_weight</code> 手搭。</div>
+  <div>等分留白</div><div><code>justify-content:space-evenly</code> 无对应属性，且 <code>Space</code> 在禁用清单里。用空 <code>View</code> + <code>layout_weight="1"</code> 占位，或在父容器用 <code>paddingVertical</code> 均分。</div>
+  <div>压缩优先级</div><div>4×4 按 340×340 排版，但 minHeight 只声明 250dp。空间不足时按序隐藏：① 元信息/副标题 → ② 底部事件第 3、4 行 → ③ 日历条与进度条 → ④ KPI 从 4 个减到 2 个 → ⑤ 柱状图。<b>主数字与标题在任何尺寸下都不隐藏。</b>参考「11. 空白态与压缩态」的 300×250 示例。</div>
+</div>
+
+<h3 class="sub">6. 触达区（点击热区）</h3>
+<div class="tbl">
+  <div>4×4 快捷九宫格</div><div>约 96×96dp，达标。</div>
+  <div>4×2 快捷八宫格</div><div>约 73×41dp，高度不足 48dp。整格可点；若必须严格达标，去掉标题行后单格可到约 57dp。</div>
+  <div>4×2 待办三行</div><div>行高 26dp，低于 48dp。必须整行可点（勾选圈 + 文字 + 时间绑定同一个 PendingIntent）。</div>
+  <div>4×4 物品 12 格 / 4×2 胶囊</div><div>纯展示，不设点击，避免误触。</div>
+  <div>4×1 四宫格</div><div>48dp 高，达标。</div>
+  <div>整卡空白区</div><div>除上述热区外，卡片空白区域统一跳转对应功能首页。</div>
+</div>
+
+
+<h3 class="sub">7. 预览图产出与分层</h3>
+<div class="note">
+  选择器里的图不是「截屏」，是<b>真实布局 + 样例数据的离屏渲染</b>（Robolectric，3 倍密度）。每个形态产出多层，应用内画廊按
+  <code>cardColor → blocks → surface → chip → content</code> 合成：
+</div>
+<div class="tbl">
+  <div>内容层 <code>x</code></div><div>文字 / 图标 / 柱图。<b>卡底与胶囊底在这一层被抽掉</b>——应用内画廊由 Compose 按用户所选背景色实时垫底，换背景色预览才能跟着变。</div>
+  <div><code>_surface</code></div><div>内层面板（白底 / 淡彩底块），跟卡片不透明度一起淡出。</div>
+  <div><code>_blocks</code></div><div>会盖住卡面的语义色砖；多数形态为空，为空时不出图。</div>
+  <div><code>_chip</code></div><div>胶囊底（深色卡上翻白的那类），单独一层才能随卡色反转。</div>
+  <div><code>_card</code></div><div><b>整卡图</b>（卡底 + 全部内容），只给系统选择器的 <code>android:previewImage</code> 用；按 2/3 降采样。</div>
+  <div>审查纪律</div><div><b>必须把各层合成后再评估效果</b>。只看内容层会得出「底色丢了」的错误结论。</div>
+  <div>样例基准日</div><div>= <b>生成当天</b>（provider 内部 <code>LocalDate.now()</code>）。fixture 若写死日期，跨过午夜就会出现「头部 10/25、近 7 天末柱却是 0」这类自相矛盾。稿里的 10/24 只是排版时的示例日。</div>
+</div>
+
+<h3 class="sub">8. 柱图的实现约束</h3>
+<div class="tbl">
+  <div>柱间留缝</div><div>柱与柱之间留 <code>5dp</code> 缝（每根柱左右各 <code>2.5dp</code> 边距）。不留缝时整排会连成一块色带，读不出「几根柱」。</div>
+  <div>峰值标只一处</div><div>每张图只标一个数值。同高的柱取<b>最靠今天</b>的那一根着色与标注，避免出现「3 3 3」这种重复。</div>
+  <div>标签带等高</div><div>数值标不占柱区高度做不到（RemoteViews 没有绝对定位），改为<b>每列固定 14dp 标签带</b>、非峰值列用 <code>INVISIBLE</code> 占位。用 <code>GONE</code> 会让该列柱区变矮，跨列比例失真。</div>
+  <div>非零保底</div><div>数值很小但非 0 时给 <code>2%</code> 保底高度，保证柱头可见；纯 0 不画。</div>
+  <div>今天列</div><div>用族色区分当前时段列，不加粗（见 §04.2「样式不可下发」）。</div>
+</div>
+
+<h3 class="sub">9. 实现取舍与已知限制</h3>
+<div class="tbl">
+  <div>卡片圆角</div><div><b>28dp</b>；Android 12+ 取 <code>system_app_widget_background_radius</code> 跟系统，31 以下回落 28dp。4×1 单档高 74dp，28dp 视觉偏圆，属既定取舍。</div>
+  <div>尺寸下限</div><div>见 §04.1。4×4 竖向不得小于 <code>220dp</code>（低于此值按横条构图渲染），横向不得小于 <code>250dp</code>（否则 12 格网格挤进 2 列）。</div>
+  <div>生活计数 4×4</div><div>计数只存当前值、没有按天历史，因此用<b>可数八点阵</b>表达进度，不画 7 天柱图——不虚构分母是硬约束。</div>
+  <div>记账 4×4</div><div>KPI 只给「收入 / 结余 / 日均」；不显示环比与「剩余天数」，因为快照里没有上月收入，只做一半口径不如不做。</div>
+  <div>饼状/占比表达</div><div>只用分段条（有真实分母）与点阵；不做无分母的装饰性图形。</div>
+  <div>并列峰值</div><div>同高柱只标最靠今天的一根。</div>
+  <div>选择器预览</div><div><code>previewImage</code> 指向带卡底的 <code>_card</code> 图；<code>previewLayout</code> 只允许静态预览布局，不指向真机布局。</div>
+  <div>物品 4×2</div><div>四列等宽；英文长类名（Stationery 等）会省略号，中文不受影响。</div>
+</div>
+
+</body>
+</html>

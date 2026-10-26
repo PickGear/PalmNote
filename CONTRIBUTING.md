@@ -59,7 +59,7 @@ fun AssetCard(
 - `core/ui/` — 通用 Compose 组件、主题、锁界面、通知、Widget
 
 **app（namespace `com.palmnote.app`）** — 应用入口与业务：
-- `app/data/` — 备份、导出、OCR、Repository 实现、Worker
+- `app/data/` — 备份、导入导出、Repository 实现、Worker
 - `app/domain/` — 业务 usecase（`com.palmnote.feature.{asset,bills,life}.usecase`）
 - `app/di/` — Hilt 模块（`HiltModules.kt` 等）
 - `app/ui/` — 业务 Compose 界面（per-module packages）

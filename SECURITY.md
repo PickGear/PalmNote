@@ -35,4 +35,3 @@ Please do not disclose security vulnerabilities in public issues.
 - **备份加密 / Backup Encryption**: AES-GCM + PBKDF2
 - **数据存储 / Data Storage**: 纯本地 Room 数据库 + DataStore / Local-only Room + DataStore
 - **网络权限 / Network**: 未声明 `INTERNET` 权限，应用无法联网 / No `INTERNET` permission declared — the app cannot access the network
-- **OCR / OCR**: PaddleOCR PP-OCRv6 纯本地离线推理 / fully on-device inference (ONNX Runtime)

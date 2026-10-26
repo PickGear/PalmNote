@@ -33,7 +33,7 @@
   </tr>
   <tr>
     <td><img src="screenshots/zh/bill_stats.jpg" width="240"></td>
-    <td><img src="screenshots/zh/life.jpg" width="240"></td>
+    <td><img src="screenshots/zh/life_template_manage.jpg" width="240"></td>
     <td><img src="screenshots/zh/bill_import.jpg" width="240"></td>
   </tr>
 </table>
@@ -68,7 +68,7 @@
 - 报销管理：支出标记「可报销」，支持部分报销、代记收入与撤销，统计页查看「净支出」
 - 回收站：删除钱包 / 账本 / 分类时，账单与物品移入回收站，可随时恢复
 - 日历视图、高级筛选
-- CSV/XLSX 导入（支持支付宝加密 ZIP 直读）、OCR 识别
+- CSV/XLSX 导入（支持支付宝加密 ZIP 直读）、账单流水导出（CSV，13 列，可选时间范围，UTF-8 带 BOM）
 - 导入账单改版为「分拣台」，待复核项一目了然，支持一键撤销
 - 桌面小组件
 
@@ -114,7 +114,6 @@
 | 依赖注入 | Hilt |
 | 备份加密 | AES-GCM + PBKDF2 |
 | 数据库加密 | SQLCipher |
-| OCR | PaddleOCR PP-OCRv6（本地离线，ONNX Runtime） |
 | 后台任务 | WorkManager |
 | 序列化 | Kotlinx Serialization |
 | 农历 | Lunar |
@@ -145,14 +144,12 @@ core/                      # 核心库模块（namespace: com.palmnote）
 
 app/                       # 应用模块（namespace: com.palmnote.app）
 ├── src/main/java/com/palmnote/
-│   ├── data/              # 备份/导出/OCR/repository 实现/worker
+│   ├── data/              # 备份/导入导出/repository 实现/worker
 │   ├── feature/           # 密码本（字段级加密）+ usecase
 │   ├── ui/                # 业务 UI：asset/bills/dashboard/life/settings/search/navigation/backup
 │   └── PalmNoteApp.kt     # Application
 ├── src/main/res/          # app 资源（含与 core 共用的字符串 key）
 └── schemas/               # VaultDatabase Room schema（v1-v4）
-
-ppocr-sdk/                 # PaddleOCR 原生 SDK
 ```
 
 > core 不依赖 app；app 依赖 core（`implementation(project(":core"))`）。
@@ -178,10 +175,12 @@ git clone https://github.com/PickGear/PalmNote.git
 - 全局设计系统（色彩、字体、间距、组件、动画）：[docs/design-spec.md](docs/design-spec.md)
 - 密码本模块设计：[docs/feature-vault.md](docs/feature-vault.md)
 
-## 隐私与条款
+## 隐私
 
-- [隐私政策](docs/privacy/privacy-zh.md)
-- [用户协议](docs/terms/terms-zh.md)
+**纯本地、不联网、不收集。** 应用在清单中显式移除 `INTERNET` 权限，系统层面即无法联网；
+无账号、无遥测、无广告与统计 SDK，所有数据只存储在本机。
+
+完整说明（数据结构、加密方式、删除与导出）见 [隐私政策](docs/privacy/privacy-zh.md)。
 
 ## 权限说明
 
@@ -195,7 +194,7 @@ PalmNote 遵循最小权限原则，申请的全部权限如下：
 | 精确闹钟 | 仅用于提醒准点触发；需要时引导到系统设置页手动开启 |
 | 开机自启 | 仅用于重启手机后恢复已设定的提醒，不采集任何数据 |
 
-账单、备份与崩溃日志的导入导出全部通过系统文件选择器（SAF）完成，**无需存储权限**；拍照识别账单使用系统照片选择器，**无需相机权限**。
+账单、备份与崩溃日志的导入导出全部通过系统文件选择器（SAF）完成，**无需存储权限**；应用不申请相机权限。
 
 ## 已知限制
 
@@ -205,7 +204,7 @@ PalmNote 是纯本地应用，以下限制是"零联网"设计的直接代价，
 - **数据安全靠习惯**：应用内置自动备份（默认关闭，可在「设置 → 数据与备份 → 备份与恢复」开启）与手动备份；备份位置可选网盘同步文件夹。请定期确认备份状态。
 - **主密码无法找回**：密码本与加密备份都由主密码保护，忘记后任何人都无法恢复。
 - **无应用内更新**：新版本请到 [Releases](https://github.com/PickGear/PalmNote/releases) 下载覆盖安装。
-- **识别不猜测**：账单截图等复杂来源可能识别不全，导入页会明确标注待复核项，而不是静默填入猜测值。
+- **解析不猜测**：账单文件缺字段或对不上分类时会进「待复核」，导入页明确列出而不是静默填入猜测值。
 - **功能仍在完善中**：桌面小组件、生活页、其他模块与设置均未完全成型，部分场景尚不完整；基本功能闭环预计在 v1.5 版本完成。当前版本请以自用／尝鲜为主。
 
 ## 如何贡献
@@ -226,6 +225,8 @@ PalmNote 是纯本地应用，以下限制是"零联网"设计的直接代价，
 ## 免责声明
 
 PalmNote 与微信、支付宝等第三方服务的权利人无任何关联、合作或背书关系。对第三方账单文件（CSV/XLSX/加密 ZIP）的导入仅为在本地对用户自有数据作格式兼容处理，"微信""支付宝"等名称仅作描述性使用，相关商标归其权利人所有。账单解析全程在设备本地完成，不联网、不上传任何数据。
+
+本软件按"现状"提供，不附带任何形式的担保；因使用本软件导致的任何数据丢失或损失，开发者不承担责任。完整的担保免责与责任条款见 [GPL-3.0 LICENSE](LICENSE)。
 
 ## 联系方式
 
