@@ -482,11 +482,48 @@ class BackupManager(
         val backedUpFiles = backupCurrentData(dirs)
         try {
             extractEntries(zipFile, dirs, skipDbKeyPrefs)
+            // WAL（2026-10-18 起开启）：备份可能只含主库（checkpoint 快照路径，zip 里没有 -wal/-shm）。
+            // 此时本地残留的侧车文件属于**旧库**，SQLite 会把它当成刚恢复主库的未提交数据
+            // → 数据损坏。所以备份里没有的侧车一律删除（删除前已由 backupCurrentData 拷进回滚目录）。
+            purgeSidecarsNotInBackup(zipFile, dirs.dbDir)
         } catch (e: Exception) {
             rollbackRestore(backedUpFiles, dirs)
             throw e
         } finally {
             dirs.rollbackDir.deleteRecursively()
+        }
+    }
+
+    /**
+     * 删除备份里不存在的 `-wal` / `-shm` 侧车文件（主库与密码本库各一套）。
+     *
+     * 只在恢复流程用：备份是「某一时刻的快照」，本地残留的侧车不属于这个快照。
+     * 读不到 ZIP 条目列表时**不删**——宁可保留残留（下次打开由 SQLite 自行判定），
+     * 也不要在不确定的情况下删掉可能属于快照的文件。
+     */
+    private fun purgeSidecarsNotInBackup(zipFile: File, dbDir: File) {
+        // 不用 zip.entries().toList()：Kotlin stdlib 只给 Enumeration 提供了 iterator() 扩展，
+        // 没有 toList()（实测 javap 核对过 stdlib），这么写会编译失败。
+        val entries = runCatching {
+            java.util.zip.ZipFile(zipFile).use { zip ->
+                val names = HashSet<String>()
+                val iterator = zip.entries()
+                while (iterator.hasMoreElements()) names.add(iterator.nextElement().name)
+                names
+            }
+        }.getOrNull() ?: return
+        val databases = listOf(
+            "db/" to AppDatabase.DATABASE_NAME,
+            "vault-db/" to com.palmnote.feature.vault.VaultDatabase.DATABASE_NAME
+        )
+        for ((prefix, dbName) in databases) {
+            for (suffix in listOf("-wal", "-shm")) {
+                if (entries.contains("$prefix$dbName$suffix")) continue
+                val sidecar = File(dbDir, dbName + suffix)
+                if (sidecar.exists() && !sidecar.delete()) {
+                    android.util.Log.w(TAG, "purgeSidecarsNotInBackup: 删除 ${sidecar.name} 失败")
+                }
+            }
         }
     }
 

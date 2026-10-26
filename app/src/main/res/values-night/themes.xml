@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      夜间启动画面主题：与 values/themes.xml 的同名基础 style **整份替换**（资源限定符是覆盖不是合并），
+      所以这里要把每一项都写全。差异只有两处：
+      - splash_background 由 values-night/colors.xml 解析成 #121212；
+      - 状态栏图标转浅色（深色底上看不清深色图标）。
+
+      注意：四个图标风格子主题（.GreenWhite / .BlackWhite / .WhiteBlack）只在 values/ 定义，
+      这里**不要**重复——它们在夜间配置下解析到的 parent 就是本文件这个夜间版基础主题，
+      因而状态栏明暗、底色都会自动跟随，图标则由子主题各自覆盖。
+    -->
+    <style name="Theme.PalmNote.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_icon_cyan</item>
+        <item name="postSplashScreenTheme">@style/Theme.PalmNote</item>
+        <item name="android:statusBarColor">@color/splash_background</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 深色模式的启动画面底色 = app 深色背景（BackgroundDark）。图标由 drawable/splash_icon_*.xml 提供。 -->
+    <color name="splash_background">#121212</color>
+</resources>

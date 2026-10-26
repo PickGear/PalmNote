@@ -1,8 +1,67 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <style name="Theme.PalmNote" parent="Theme.AppCompat.DayNight.NoActionBar">
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">true</item>
+        <!--
+          窗口首帧背景必须显式给：Activity 重建（切语言 recreate / 主题切换等）时，
+          Compose 首帧绘制前窗口露出的是 windowBackground——不设就是 AppCompat
+          默认灰底，与米色界面有色差，视觉上「闪一下」。色值复用 splash_background
+          （#F8F6F3 / 夜间 #121212，见 colors 的 night 变体），与开屏底色同源，
+          冷启动、重建两条路的首帧颜色完全一致。
+        -->
+        <item name="android:windowBackground">@color/splash_background</item>
+    </style>
+
+    <!--
+      系统启动画面主题（MainActivity 兜底 + 四个图标别名各用一套）。退出时切回 Theme.PalmNote。
+
+      只做「app 背景色 + 当前的应用图标」：
+      - 底色 = app 的浅色背景（#F8F6F3，与 Theme.kt 的 BackgroundLight 同值），
+        夜里由 values-night/colors.xml 换成 #121212 ⟹ 进首页时不会跳色；
+      - 图标 = 按桌面图标复刻的 `splash_icon_*`（品牌色圆角方块 + 便签记号），**静态**。
+        2026-10-18 定案不加动画：开屏保持时长由数据决定（AppStartupState 上限 600ms，常态
+        0.3~0.6s），动画长度必须短于「最短的可能停留时间」，否则尾巴必被系统淡出切断；而数据
+        若优化到 200ms 级，开屏只剩一两帧，动画就失去意义。曾试过的 220/280ms 分层错峰 AVD
+        已移除——要重做的话：给 vector 的两个 group 命名，再用 animated-vector 各包一层。
+      - **不能直接引用 @mipmap/ic_launcher**：系统把启动图标铺在 288dp 容器里（AndroidX 兼容库的
+        splashscreen_icon_size_no_background 与 Android 12+ 规范同值），108dp 的自适应图标会被
+        放大 2.67 倍 ⟹ 屏上约 288dp，巨大。复刻版把方块画成 72 单位（= 启动器遮罩后的可见
+        区域）、group scale=0.5 ⟹ 屏上方块 96dp（桌面图标可见区的 1.33 倍；官方 192dp 是安全区
+        上限而非推荐值，理由见 splash_icon_cyan.xml）。
+      - 图标必须**跟着图标风格走**：桌面图标在设置里可切换四种风格（enable/disable 四个
+        activity-alias 实现），若开屏固定用青色那款，切换后开屏与桌面就对不上。所以下面按
+        风格各定义一个子主题，只覆盖图标，其余（底色 / 状态栏明暗 / 退出后主题）继承基础主题；
+        Manifest 里每个别名绑对应的那套。基础主题留青色款给 MainActivity 兜底。
+      - 不加品牌图、不做自绘开屏 Activity（Android 12+ 系统已强制有启动画面，
+        再叠一个会变成两次开屏，官方明确不鼓励）。
+
+      底色统一为 app 背景色 ⟹ 与「开屏底色 = 图标底色」互斥（后者会让图标方形边界消失），
+      这里选择「像桌面图标」而不是「融入背景」。
+
+      保持时长由 AppStartupState 控制（上限 600ms），退出动画交给系统淡出。
+    -->
+    <style name="Theme.PalmNote.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_icon_cyan</item>
+        <item name="postSplashScreenTheme">@style/Theme.PalmNote</item>
+        <item name="android:statusBarColor">@color/splash_background</item>
+        <!-- 浅色底：状态栏图标用深色 -->
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+
+    <!-- 以下三套只换图标，其余全部继承；夜间由 values-night/themes.xml 整份替换基础主题，
+         子主题在夜间配置下解析到的 parent 就是夜间版 ⟹ 状态栏明暗自动跟着变。 -->
+    <style name="Theme.PalmNote.Splash.GreenWhite" parent="Theme.PalmNote.Splash">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_icon_gw</item>
+    </style>
+
+    <style name="Theme.PalmNote.Splash.BlackWhite" parent="Theme.PalmNote.Splash">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_icon_bw</item>
+    </style>
+
+    <style name="Theme.PalmNote.Splash.WhiteBlack" parent="Theme.PalmNote.Splash">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_icon_wb</item>
     </style>
 </resources>

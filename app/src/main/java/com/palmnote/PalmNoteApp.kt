@@ -96,9 +96,20 @@ class PalmNoteApp : Application(), Configuration.Provider {
         } catch (_: UnsatisfiedLinkError) {
             android.util.Log.e("PalmNote", "sqlcipher native library load failed")
         }
-        applySavedLanguage()
+        // 语言以系统真源为准，启动时**不反向覆盖**（细节见 LanguageHelper.syncStoredLanguageFromSystem）：
+        // 只把系统真源同步回 DataStore 供设置页显示；持久化由系统（13+ LocaleManager /
+        // 12- AppCompat autoStoreLocales）负责，此前每次冷启动 setApplicationLocales
+        // 会把用户在系统设置里改的语言清掉（realme「改了还是英文」的根因）。
+        applicationScope.launch {
+            com.palmnote.ui.settings.LanguageHelper.syncStoredLanguageFromSystem(preferencesManager)
+        }
         restoreAppIconStyle()
         NotificationHelper.createChannels(this)
+        // 冷启动最贵的单项是 SQLCipher **首次开库**（密钥派生 + 解密 schema，真机实测
+        // 700~750ms，见 2026-10-18 的 logcat：getWritableDatabase 上 4 个线程等 747ms）。
+        // 这里先于一切把它踢起来，让这段时间与 Activity 创建、DataStore 读取重叠，
+        // 而不是排在上面的配置读取之后。幂等：后续任何一次库访问都复用同一次打开。
+        applicationScope.launch { database.openHelper.writableDatabase }
         applicationScope.launch {
             // 异步读取启动页配置，避免在 Application.onCreate 主线程同步阻塞 DataStore
             cachedStartPage = preferencesManager.defaultStartPage.first()
@@ -202,11 +213,6 @@ class PalmNoteApp : Application(), Configuration.Provider {
         }
     }
     
-    private fun applySavedLanguage() {
-        val savedLanguage = preferencesManager.getLanguage()
-        com.palmnote.ui.settings.LanguageHelper.applyLanguage(savedLanguage)
-    }
-
     private fun restoreAppIconStyle() {
         applicationScope.launch {
             val style = preferencesManager.appIconStyle.first()

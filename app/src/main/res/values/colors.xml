@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      启动画面底色 = app 浅色模式的背景色（core/theme/Color.kt 的 BackgroundLight #F8F6F3）。
+
+      底色为什么不跟随图标风格：那套做法靠「开屏底色 = 图标底色」让遮罩边界不可见，与
+      "底色要和 app 背景一致"互斥（app 背景是米白，图标底色是青/绿/黑/白）。定案：**底色统一
+      取 app 背景色**；图标本身仍按四种风格分套（见 values/themes.xml 的四个子主题）。
+
+      夜里由 values-night/colors.xml 覆盖为 BackgroundDark #121212。
+    -->
+    <color name="splash_background">#F8F6F3</color>
+</resources>

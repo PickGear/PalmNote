@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 启动画面的应用图标（绿白风格）。结构与 splash_icon_cyan.xml 完全一致，只是方块底色不同。 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:pivotX="54"
+        android:pivotY="54"
+        android:scaleX="0.5"
+        android:scaleY="0.5">
+        <path
+            android:fillColor="#2D4A3E"
+            android:pathData="M34,18L74,18A16,16 0 0 1 90,34L90,74A16,16 0 0 1 74,90L34,90A16,16 0 0 1 18,74L18,34A16,16 0 0 1 34,18Z" />
+        <group
+            android:translateX="27"
+            android:translateY="27">
+            <path
+                android:fillColor="#FFFFFF"
+                android:pathData="M12,8L40,8C42.2,8 44,9.8 44,12L44,40C44,42.2 42.2,44 40,44L12,44C9.8,44 8,42.2 8,40L8,12C8,9.8 9.8,8 12,8ZM12,12L8,12L8,40C8,40 8,40 8,40L40,40C40,40 44,40 44,40L44,12C44,12 44,12 44,12L12,12ZM14,16L38,16L38,20L14,20L14,16ZM14,24L30,24L30,28L14,28L14,24ZM14,32L26,32L26,36L14,36L14,32Z" />
+        </group>
+    </group>
+</vector>

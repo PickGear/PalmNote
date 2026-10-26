@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  启动画面的应用图标（青白，默认风格）。
+
+  为什么不用 @mipmap/ic_launcher：系统把启动图标铺在 **288dp** 容器里（AndroidX 兼容库的
+  splashscreen_icon_size_no_background 与 Android 12+ 规范一致），108dp 的自适应图标会被
+  放大 2.67 倍 ⟹ 屏上约 288dp，明显过大。
+
+  这里按桌面图标复刻：品牌色圆角方块 + 便签记号（前景路径与 ic_launcher_foreground_bw
+  逐字相同）。
+
+  两个关键数字：
+  - 方块画 18..90（**72 单位**），不是满幅 108。启动器会对自适应图标做遮罩，桌面实际可见的
+    只有中间 72/108（每边裁 18dp）；满幅画会让记号相对方块显得偏小（1/3 vs 桌面 1/2）。
+  - group scale = **0.5**（72 单位 × 2.667 × 0.5 ⟹ 屏上方块 **96dp**、记号约 48dp）。
+    为什么不是官方 192dp：那是「内容不能超出」的安全区**上限**，且假设图标是透明底 logo；
+    满底色方块同等边长下视觉重量高得多，会像一整块色卡。实测/社区实践区间是 96~192dp，
+    而桌面图标的可见区是 72dp（自适应图标 108dp 画布、每边裁 18dp），开屏取 96dp 恰好是
+    桌面图标的 1.33 倍 —— 既有"开屏放大展示"的仪式感，又不喧宾夺主。
+    外接圆 136dp，距 192dp 安全区仍有 56dp 余量；占 360dp 屏宽 27%。
+  圆角 16/72 ≈ 22%，对应 MIUI 的 squircle。
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:pivotX="54"
+        android:pivotY="54"
+        android:scaleX="0.5"
+        android:scaleY="0.5">
+        <path
+            android:fillColor="#0891B2"
+            android:pathData="M34,18L74,18A16,16 0 0 1 90,34L90,74A16,16 0 0 1 74,90L34,90A16,16 0 0 1 18,74L18,34A16,16 0 0 1 34,18Z" />
+        <group
+            android:translateX="27"
+            android:translateY="27">
+            <path
+                android:fillColor="#FFFFFF"
+                android:pathData="M12,8L40,8C42.2,8 44,9.8 44,12L44,40C44,42.2 42.2,44 40,44L12,44C9.8,44 8,42.2 8,40L8,12C8,9.8 9.8,8 12,8ZM12,12L8,12L8,40C8,40 8,40 8,40L40,40C40,40 44,40 44,40L44,12C44,12 44,12 44,12L12,12ZM14,16L38,16L38,20L14,20L14,16ZM14,24L30,24L30,28L14,28L14,24ZM14,32L26,32L26,36L14,36L14,32Z" />
+        </group>
+    </group>
+</vector>

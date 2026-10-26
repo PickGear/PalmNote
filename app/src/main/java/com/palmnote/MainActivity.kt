@@ -2,24 +2,18 @@ package com.palmnote
 
 import android.os.Bundle
 import android.content.Intent
-import androidx.annotation.StringRes
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.activity.compose.setContent
 import android.Manifest
 import android.os.Build
-import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
@@ -28,30 +22,17 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.togetherWith
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.palmnote.data.datastore.PreferencesManager
 import com.palmnote.data.lock.AppLockManager
 import com.palmnote.ui.lock.AppLockScreen
@@ -59,11 +40,8 @@ import com.palmnote.ui.lock.AppLockState
 import com.palmnote.ui.navigation.PalmNoteNavHost
 import com.palmnote.ui.onboarding.OnboardingScreen
 import com.palmnote.ui.theme.PalmNoteTheme
-import com.palmnote.ui.theme.TypeScale
 import com.palmnote.ui.theme.WallpaperBackground
 import com.palmnote.ui.widget.WidgetDeepLink
-import androidx.compose.ui.res.stringResource
-import com.palmnote.app.R
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.combine
@@ -149,8 +127,36 @@ class MainActivity : AppCompatActivity() {
         com.palmnote.ui.widget.WidgetUpdateHelper.refreshAllWidgets()
     }
 
+    /**
+     * 让启动/窗口资源（values-night 里的 splash_background、windowBackground、状态栏）跟随
+     * **应用内**深浅色设置，而不是只听系统 uiMode。
+     *
+     * 只决定「首帧资源怎么解析」：运行中的配色仍由 Compose 的 PalmNoteTheme 管，所以这里
+     * 不需要（也不会）触发 Activity 重建。模式已经一致时不重复设置。
+     */
+    private fun applyNightModeFromPrefs() {
+        val app = application as? PalmNoteApp ?: return
+        val wanted = when (app.preferencesManager.themeModeForSplash()) {
+            "DARK" -> AppCompatDelegate.MODE_NIGHT_YES
+            "LIGHT" -> AppCompatDelegate.MODE_NIGHT_NO
+            else -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+        }
+        if (AppCompatDelegate.getDefaultNightMode() != wanted) {
+            AppCompatDelegate.setDefaultNightMode(wanted)
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        // 必须在 installSplashScreen()/super.onCreate() 之前：让 values-night 资源（开屏底色、
+        // windowBackground、状态栏）跟随应用内深浅色，而不是只听系统 uiMode。否则系统浅色 +
+        // 应用内选深色的用户，每次冷启动都会看到 1s 级白闪——正是 5e9d297/8d14f71 想消除的跳色。
+        applyNightModeFromPrefs()
+        // 必须在 super.onCreate() 之前：install 之后系统才会接管启动画面（Android 12+ 原生，
+        // 低版本由 androidx 兼容库模拟）。保持条件见 AppStartupState：首页首帧数据到齐
+        // 或超时（1000ms，从进程启动算）就放行 —— 不再出现「页面已经在、物品分布卡几秒后才蹦出来」。
+        val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
+        splashScreen.setKeepOnScreenCondition { AppStartupState.shouldHoldSplash() }
         enableEdgeToEdge()
 
         // 手机（<600dp 最小宽度）锁竖屏；平板保持横屏适配（NavigationRail）
@@ -196,6 +202,9 @@ class MainActivity : AppCompatActivity() {
         }
 
         setContent {
+            // 首帧前先取一份同步偏好快照给 initialValue 用：否则 Flow 第一帧还没到，
+            // 只能用「无壁纸」的默认值 → 顶栏先亮后暗闪一下（见 PreferencesManager.themeSnapshot）。
+            val initialTheme = remember { preferencesManager.themeSnapshot() }
             val preferences by remember {
                 val theme = combine(
                     preferencesManager.themeMode,
@@ -210,13 +219,13 @@ class MainActivity : AppCompatActivity() {
                 ) { style, opacity, blur, uri, color -> WallpaperPrefs(style, opacity, blur, uri, color) }
                 combine(theme, wallpaper) { t, w -> t to w }
             }.collectAsStateWithLifecycle(
-                initialValue = ("SYSTEM" to PreferencesManager.DEFAULT_THEME_COLOR) to
+                initialValue = (initialTheme.themeMode to initialTheme.themeColor) to
                     WallpaperPrefs(
-                        PreferencesManager.DEFAULT_WALLPAPER_STYLE,
-                        PreferencesManager.DEFAULT_WALLPAPER_OPACITY,
-                        PreferencesManager.DEFAULT_WALLPAPER_BLUR,
-                        "",
-                        PreferencesManager.DEFAULT_WALLPAPER_CUSTOM_COLOR
+                        initialTheme.wallpaperStyle,
+                        initialTheme.wallpaperOpacity,
+                        initialTheme.wallpaperBlur,
+                        initialTheme.wallpaperCustomUri,
+                        initialTheme.wallpaperCustomColor
                     )
             )
             val (themePrefs, wallpaper) = preferences
@@ -230,9 +239,18 @@ class MainActivity : AppCompatActivity() {
                 if (isDarkTheme) it.darkPrimary else it.lightPrimary
             }
             val lockState by appLockManager.lockState.collectAsStateWithLifecycle()
-            val privacyAgreed by preferencesManager.privacyAgreed.collectAsStateWithLifecycle(initialValue = null)
             val onboardingCompleted by preferencesManager.onboardingCompleted.collectAsStateWithLifecycle(initialValue = null)
             val scope = rememberCoroutineScope()
+
+            // 引导页 / 锁屏期间根本没有「首页数据」可等：立即放行启动画面，
+            // 否则新用户第一次启动会白等满 AppStartupState 的上限（1000ms）。
+            // onboardingCompleted 的初值是 null（DataStore 还没读完），读到 false 才放行——
+            // 所以首启的开屏停留 ≈ DataStore 首次读取的耗时（几十毫秒），肉眼几乎不可见。
+            LaunchedEffect(onboardingCompleted, lockState) {
+                if (onboardingCompleted == false || lockState !is AppLockState.Unlocked) {
+                    AppStartupState.disableHold()
+                }
+            }
 
             // 应用锁启用时禁止截图/录屏，防止最近任务缩略图泄露财务数据；
             // 实时跟随开关变化（运行中开启/关闭都立即生效）
@@ -255,204 +273,7 @@ class MainActivity : AppCompatActivity() {
                 wallpaperCustomColor = wallpaper.customColor
             ) {
                 WallpaperBackground(modifier = Modifier.fillMaxSize()) {
-                    if (privacyAgreed == null) {
-                        // Still loading privacy state - show nothing
-                    } else if (privacyAgreed == false) {
-                        var showPolicy by rememberSaveable { mutableStateOf(false) }
-                        var showTerms by rememberSaveable { mutableStateOf(false) }
-
-                        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                            Box(modifier = Modifier.fillMaxSize()) {
-                                // 顶部随主题色渐晕：整页铺满（含状态栏），颜色随用户所选主题色变化
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .background(
-                                            Brush.verticalGradient(
-                                                0f to MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
-                                                0.45f to MaterialTheme.colorScheme.background.copy(alpha = 0f)
-                                            )
-                                        )
-                                )
-
-                                // 内容分上下两区：上半（品牌 + 承诺）占满并吃掉空余空间，
-                                // 下半（条款入口 + 同意）钉在底部 —— 短屏时上半滚动、底部操作始终可见。
-                                Column(modifier = Modifier.fillMaxSize()) {
-                                    // 上半区按可视高度垂直居中：装得下时上下留白均分（不再全堆在顶部、
-                                    // 把下方留空），装不下时照常滚动（heightIn(min = 可视高度) 即
-                                    // 「能居中、超了能滚」的标准写法）。
-                                    BoxWithConstraints(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .weight(1f)
-                                            .statusBarsPadding()
-                                    ) {
-                                        val minContentHeight = maxHeight
-                                        Column(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .verticalScroll(rememberScrollState())
-                                                .heightIn(min = minContentHeight)
-                                                .padding(horizontal = 20.dp),
-                                            verticalArrangement = Arrangement.Center
-                                        ) {
-                                            Spacer(Modifier.height(24.dp))
-
-                                            // 品牌行：方形圆角底 + 白色图形 + 拉丁品牌名
-                                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                                Box(
-                                                    modifier = Modifier
-                                                        .size(36.dp)
-                                                        .clip(RoundedCornerShape(10.dp))
-                                                        .background(MaterialTheme.colorScheme.primary),
-                                                    contentAlignment = Alignment.Center
-                                                ) {
-                                                    Icon(
-                                                        painter = painterResource(id = R.drawable.ic_launcher_foreground_bw),
-                                                        contentDescription = null,
-                                                    // 该 vector 的 viewport 为 108dp、图形仅占居中的 36/108，故容器须取 66dp
-                                                    // 才等于 22dp 视觉图形；容器大于底框（36dp），必须用 requiredSize
-                                                    // 才不会被父级约束钳到 36dp（那样图形只剩 12dp）
-                                                    modifier = Modifier.requiredSize(66.dp),
-                                                    // onPrimary：深色模式下主题色是亮青，白图形会糊掉
-                                                    tint = MaterialTheme.colorScheme.onPrimary
-                                                )
-                                                }
-
-                                                Spacer(Modifier.width(12.dp))
-
-                                                Text(
-                                                    stringResource(R.string.privacy_brand_latin),
-                                                    fontSize = TypeScale.bodyL,
-                                                    lineHeight = 22.sp,
-                                                    fontWeight = FontWeight.Bold,
-                                                    color = MaterialTheme.colorScheme.onBackground
-                                                )
-                                            }
-
-                                            Spacer(Modifier.height(32.dp))
-
-                                            Text(
-                                                stringResource(R.string.privacy_eyebrow),
-                                                fontSize = TypeScale.bodyS,
-                                                lineHeight = 16.sp,
-                                                fontWeight = FontWeight.Medium,
-                                                color = MaterialTheme.colorScheme.primary
-                                            )
-
-                                            Spacer(Modifier.height(10.dp))
-
-                                            Text(
-                                                stringResource(R.string.privacy_dialog_title),
-                                                fontSize = TypeScale.displayS,
-                                                lineHeight = 32.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = MaterialTheme.colorScheme.onBackground
-                                            )
-
-                                            Spacer(Modifier.height(12.dp))
-
-                                            Text(
-                                                stringResource(R.string.privacy_dialog_text),
-                                                fontSize = TypeScale.bodyM,
-                                                lineHeight = 21.sp,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-
-                                            Spacer(Modifier.height(28.dp))
-
-                                            PrivacyPointsCards()
-
-                                            Spacer(Modifier.height(24.dp))
-                                        }
-                                    }
-
-                                    // 底部操作区：条款入口 + 同意声明 + 主/次按钮，始终可见。
-                                    Column(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .navigationBarsPadding()
-                                            .padding(horizontal = 20.dp)
-                                    ) {
-                                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                            PrivacyDocButton(
-                                                icon = Icons.Outlined.Security,
-                                                label = stringResource(R.string.about_privacy_policy),
-                                                modifier = Modifier.weight(1f),
-                                                onClick = { showPolicy = true }
-                                            )
-                                            PrivacyDocButton(
-                                                icon = Icons.Outlined.Description,
-                                                label = stringResource(R.string.about_terms_of_service),
-                                                modifier = Modifier.weight(1f),
-                                                onClick = { showTerms = true }
-                                            )
-                                        }
-
-                                        Spacer(Modifier.height(12.dp))
-
-                                        Text(
-                                            stringResource(R.string.privacy_consent_note),
-                                            fontSize = TypeScale.bodyS,
-                                            lineHeight = 17.sp,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-
-                                        Spacer(Modifier.height(16.dp))
-
-                                        Button(
-                                            onClick = {
-                                                scope.launch { preferencesManager.setPrivacyAgreed(true) }
-                                            },
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .height(52.dp),
-                                            shape = RoundedCornerShape(26.dp)
-                                        ) {
-                                            Text(
-                                                stringResource(R.string.privacy_dialog_agree),
-                                                fontWeight = FontWeight.Bold,
-                                                fontSize = 16.sp
-                                            )
-                                        }
-
-                                        Spacer(Modifier.height(4.dp))
-
-                                        TextButton(
-                                            onClick = { finishAffinity() },
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .height(48.dp)
-                                        ) {
-                                            Text(
-                                                stringResource(R.string.privacy_dialog_disagree),
-                                                fontSize = 14.sp,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                        }
-
-                                        Spacer(Modifier.height(12.dp))
-                                    }
-                                }
-                            }
-                        }
-
-                        if (showPolicy) {
-                            FullDocumentOverlay(
-                                title = stringResource(R.string.about_privacy_policy),
-                                lines = com.palmnote.ui.settings.getPrivacyPolicyLines(),
-                                onBack = { showPolicy = false }
-                            )
-                        }
-
-                        if (showTerms) {
-                            FullDocumentOverlay(
-                                title = stringResource(R.string.about_terms_of_service),
-                                lines = com.palmnote.ui.settings.getTermsOfServiceLines(),
-                                onBack = { showTerms = false }
-                            )
-                        }
-                    } else if (onboardingCompleted == null) {
+                    if (onboardingCompleted == null) {
                         // Still loading onboarding state - show nothing
                     } else if (onboardingCompleted == false) {
                         OnboardingScreen(
@@ -542,7 +363,6 @@ class MainActivity : AppCompatActivity() {
             WidgetDeepLink.TAB_REPORT, WidgetDeepLink.TAB_BUDGET -> "bill"
             WidgetDeepLink.TAB_ASSET -> "asset"
             WidgetDeepLink.TAB_LIFE -> "life"
-            WidgetDeepLink.TAB_VAULT -> "vault"
             else -> "dashboard"
         }
         if (tab == WidgetDeepLink.TAB_ADD_BILL) {
@@ -561,156 +381,5 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         ProcessLifecycleOwner.get().lifecycle.removeObserver(lockObserver)
-    }
-}
-
-@Composable
-private fun FullDocumentOverlay(title: String, lines: List<String>, onBack: () -> Unit) {
-    BackHandler(onBack = onBack)
-    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-        Column(modifier = Modifier.fillMaxSize().systemBarsPadding()) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp).height(56.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
-                }
-                Text(title, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-            }
-            HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 20.dp, vertical = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                lines.forEach { line ->
-                    val isZh = java.util.Locale.getDefault().language == "zh"
-                    val isHeading = if (isZh) {
-                        listOf("一、", "二、", "三、", "四、", "五、", "六、", "七、", "八、", "九、", "十").any { line.startsWith(it) }
-                    } else {
-                        line.matches(Regex("^\\d+\\..*"))
-                    } || line.endsWith(title)
-                    Text(
-                        text = line,
-                        style = if (isHeading) MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold) else MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-                Spacer(Modifier.height(32.dp))
-            }
-        }
-    }
-}
-
-/** 隐私页三要点：一条数据的图标 + 标题 + 说明。 */
-private data class PrivacyPoint(
-    val icon: ImageVector,
-    @StringRes val titleRes: Int,
-    @StringRes val bodyRes: Int
-)
-
-/**
- * 隐私页的三点承诺卡片：不联网 / 不上传 / 只在本机。
- * 三张独立白卡（20dp 圆角 + 1dp 细描边 + 无投影），与全 App 的卡片语言一致。
- */
-@Composable
-private fun PrivacyPointsCards() {
-    val points = listOf(
-        PrivacyPoint(
-            icon = Icons.Outlined.WifiOff,
-            titleRes = R.string.privacy_point_offline_title,
-            bodyRes = R.string.privacy_point_offline_body
-        ),
-        PrivacyPoint(
-            icon = Icons.Outlined.CloudOff,
-            titleRes = R.string.privacy_point_no_upload_title,
-            bodyRes = R.string.privacy_point_no_upload_body
-        ),
-        PrivacyPoint(
-            icon = Icons.Outlined.PhoneAndroid,
-            titleRes = R.string.privacy_point_local_title,
-            bodyRes = R.string.privacy_point_local_body
-        )
-    )
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        points.forEach { point ->
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
-                color = MaterialTheme.colorScheme.surface,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
-            ) {
-                Row(
-                    modifier = Modifier.padding(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primary),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = point.icon,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(19.dp)
-                        )
-                    }
-
-                    Spacer(Modifier.width(12.dp))
-
-                    Column(
-                        modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(3.dp)
-                    ) {
-                        Text(
-                            text = stringResource(point.titleRes),
-                            fontSize = 14.sp,
-                            lineHeight = 19.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = stringResource(point.bodyRes),
-                            fontSize = 12.sp,
-                            lineHeight = 16.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-/** 隐私页的条款入口按钮：44dp 胶囊描边 + 图标 + 13sp 文字，两个并排各占半宽。 */
-@Composable
-private fun PrivacyDocButton(
-    icon: ImageVector,
-    label: String,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit
-) {
-    OutlinedButton(
-        onClick = onClick,
-        modifier = modifier.height(44.dp),
-        shape = RoundedCornerShape(22.dp),
-        contentPadding = PaddingValues(horizontal = 6.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
-    ) {
-        Icon(icon, contentDescription = null, modifier = Modifier.size(17.dp))
-        Spacer(Modifier.width(8.dp))
-        Text(
-            text = label,
-            fontSize = 13.sp,
-            fontWeight = FontWeight.Medium,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
     }
 }
