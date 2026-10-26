@@ -28,9 +28,9 @@ import com.palmnote.app.R
 import com.palmnote.ui.components.CompactTopAppBar
 
 /**
- * 可复用的长文本文档屏（隐私政策 / 用户协议 / 开源许可等）。
+ * 可复用的长文本文档屏（隐私政策 / 开源许可等）。
  *
- * 视觉严格对齐 [PrivacyPolicyScreen] / [TermsOfServiceScreen]：
+ * 视觉严格对齐 [PrivacyPolicyScreen]：
  * Scaffold + CompactTopAppBar + LazyColumn(16.dp / spacedBy(8.dp)) + 末尾 Spacer(32.dp)。
  *
  * @param title 顶部标题（调用方自行 stringResource 解析）。

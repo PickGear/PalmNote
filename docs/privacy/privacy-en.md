@@ -1,65 +1,45 @@
 # Privacy Policy
 
-**Effective Date**: July 6, 2026  
-**App Name**: PalmNote (All-in-One Recorder)  
-**Developer**: Individual Developer
+**App name**: PalmNote
+**Last updated**: October 18, 2026
+
+PalmNote is a fully local app. This document says one thing: **your data never leaves your device.**
+
+## 1. We Do Not Collect Data
+
+We collect nothing. PalmNote removes the network permission (INTERNET) in the manifest via
+`tools:node="remove"`, so it has no network capability at the OS level — there is no upload,
+no telemetry, no data reporting. The app contains no advertising, analytics or crash-reporting
+SDKs, and provides no account registration, because there is no server.
+
+## 2. Data Processed On-Device When You Use Certain Features
+
+- **Bill import**: you pick downloaded bill files through the system file picker; parsing
+  runs on-device and files never leave your device
+- **App lock**: PINs are stored as salted hashes; fingerprint / face is used only for
+  on-device verification and is never stored or transmitted
+- **Calendar sync**: only writes to the system calendar when you enable it, and never reads
+  other calendar data
+
+## 3. Where Data Is Stored
+
+Everything is stored in the app's private directory (`/data/data/com.palmnote/`), protected by
+the Android sandbox and unreadable by other apps:
+
+- **Database**: fully encrypted with SQLCipher (AES-256); keys are kept only on the device
+- **Backup files**: optional AES-GCM encryption with a user-set key
+- **Password vault**: field-level encryption with a separate master password
+
+## 4. Your Data Is Yours
+
+You can export a backup and delete any or all data at any time. Uninstalling the app wipes all
+local data permanently and irreversibly.
+
+## 5. Questions and Feedback
+
+<https://github.com/PickGear/PalmNote/issues>
 
 ---
 
-## 1. Data Storage
-
-PalmNote is a **purely local storage** application:
-
-- All data (bills, assets, life records, etc.) is **stored only on your device**
-- **No data is uploaded to any server**
-- **No personal information is collected**
-- **No third-party analytics SDKs are used**
-
-## 2. Data Collection
-
-This application **does not collect** the following:
-
-- Device identifiers (IMEI, Android ID, etc.)
-- Location information
-- Contacts
-- Photos/Media/Files (unless you actively select attachments)
-- Usage behavior data
-
-## 3. Data Access
-
-This application requires the following permissions for normal functionality:
-
-| Permission | Purpose | Required |
-|------------|---------|----------|
-| Storage Read/Write | Local data backup/restore | Yes |
-| Camera | Photo attachments (optional) | No |
-| Biometric | App lock unlock (optional) | No |
-| Notifications | Billing reminders (optional) | No |
-
-## 4. Data Security
-
-- Database files are encrypted with SQLCipher (AES-256), key stored in the app's private directory
-- Backup files can be optionally encrypted with AES-GCM
-- App lock supports PIN/Biometric authentication
-- Vault entries are field-level encrypted with AES-256-GCM (separate master password, key-wrapping)
-- OCR runs fully on-device with PaddleOCR (ONNX Runtime); images never leave the device
-
-## 5. Data Deletion
-
-- You can delete any data within the app at any time
-- Uninstalling the app will delete all local data
-- Deletion operations are irreversible
-
-## 6. Children's Privacy
-
-This application is not directed at children under 13 and does not collect personal information from children.
-
-## 7. Privacy Policy Updates
-
-This privacy policy may be updated from time to time. Updated policies will be published within the app.
-
-## 8. Contact
-
-If you have any privacy-related questions, please contact us via:
-
-- GitHub: https://github.com/PickGear/PalmNote/issues
+The app is released under GPL-3.0 and provided "as is", without warranty of any kind. The
+complete disclaimer and liability terms are in [LICENSE](../../LICENSE).

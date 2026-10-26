@@ -30,6 +30,7 @@ import androidx.compose.material.icons.outlined.AccountBalance
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Backup
+import androidx.compose.material.icons.outlined.SwapHoriz
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Dataset
 import androidx.compose.material.icons.filled.CheckCircle
@@ -44,7 +45,6 @@ import androidx.compose.material.icons.outlined.Inventory2
 import androidx.compose.material.icons.outlined.Key
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Notifications
-import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.outlined.Security
 import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material.icons.outlined.Timeline
@@ -122,7 +122,7 @@ private val modulePages = listOf(
         features = listOf(
             OnboardingFeature(R.string.onboarding_bill_f1, Icons.Outlined.AccountBalance),
             OnboardingFeature(R.string.onboarding_bill_f2, Icons.Outlined.CalendarMonth),
-            OnboardingFeature(R.string.onboarding_bill_f3, Icons.Outlined.PhotoCamera)
+            OnboardingFeature(R.string.onboarding_bill_f3, Icons.Outlined.SwapHoriz)
         )
     ),
     OnboardingModulePage(
