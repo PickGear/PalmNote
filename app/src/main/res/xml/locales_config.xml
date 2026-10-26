@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    系统设置「应用语言」（设置 → 应用 → 掌记 → 语言）列出的语言清单。
+    必须与 LanguageHelper.SUPPORTED_LOCALES 保持一致（跟随系统不在其中，它是入口的默认态）。
+    缺了这份声明，部分定制系统（ColorOS/realme UI 等）不会展示语言入口或列表不完整。
+-->
+<locale-config xmlns:android="http://schemas.android.com/apk/res/android">
+    <locale android:name="zh-CN" />
+    <locale android:name="en" />
+</locale-config>

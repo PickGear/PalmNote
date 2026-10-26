@@ -217,20 +217,6 @@ fun GeneralSettingsScreen(
                             Icon(Icons.Filled.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
-                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-                    // 页面形态偏好：只影响生活首页的分类卡，但它是**显示偏好**，
-                    // 与主题色/深浅色同类 → 集中在外观区（单开一类不够用，见设置页规划的说明）。
-                    SettingRow {
-                        SettingRowContent(
-                            title = stringResource(R.string.settings_life_category_compact),
-                            subtitle = stringResource(R.string.settings_life_category_compact_subtitle)
-                        )
-                        CapsuleSwitch(
-                            checked = categoryCompactEnabled,
-                            onCheckedChange = { viewModel.setCategoryCompact(it) },
-                            checkedTrackColor = MaterialTheme.colorScheme.primary
-                        )
-                    }
                 }
             }
 
@@ -261,6 +247,27 @@ fun GeneralSettingsScreen(
                     }
                 }
             }
+
+            // 生活相关偏好独立成区：只影响生活首页，和「语言/启动页」这类全局通用项关切点不同。
+            // 「分类卡紧凑显示」原先暂放在外观区（按"显示偏好"归类），但它实际改变的是生活首页的
+            // 信息密度，属于生活模块自己的形态，用户 2026-10-18 要求归到本分区。
+            item { SectionHeader(stringResource(R.string.settings_life_section), Icons.Filled.Favorite, ModuleLife) }
+            item {
+                ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
+                    SettingRow {
+                        SettingRowContent(
+                            title = stringResource(R.string.settings_life_category_compact),
+                            subtitle = stringResource(R.string.settings_life_category_compact_subtitle)
+                        )
+                        CapsuleSwitch(
+                            checked = categoryCompactEnabled,
+                            onCheckedChange = { viewModel.setCategoryCompact(it) },
+                            checkedTrackColor = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+            }
+
             item { Spacer(modifier = Modifier.height(32.dp)) }
         }
     }

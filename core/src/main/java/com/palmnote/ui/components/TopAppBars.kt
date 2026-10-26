@@ -1,5 +1,6 @@
 package com.palmnote.ui.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.statusBars
@@ -50,8 +51,14 @@ fun CompactTopAppBar(
         title = title,
         navigationIcon = navigationIcon,
         actions = actions,
+        // 底色自己画（Modifier.background 立即生效），容器色恒为透明。
+        // M3 的 TopAppBar 内部对 containerColor 做**无条件** spring 动画；壁纸模式下
+        // colorScheme.background 是 Color.Transparent（透明黑），从 BackgroundLight 插值过去
+        // 会经过「低亮度 + 半透明」的中间色 —— 换壁纸 / 开关壁纸那一刻顶栏（含状态栏区域）
+        // 会压过一层半透明灰，看起来就是「闪一下暗色」。
+        modifier = Modifier.background(backgroundColor),
         colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = backgroundColor
+            containerColor = Color.Transparent
         ),
         windowInsets = windowInsets
     )
@@ -78,7 +85,10 @@ fun SecondaryTopAppBar(
         },
         navigationIcon = navigationIcon,
         actions = actions,
-        colors = colors,
+        // 同 CompactTopAppBar：容器色恒透明、底色自己画，绕开 M3 对 containerColor 的
+        // 无条件 spring 动画（壁纸开关时会经过半透明灰）。
+        modifier = Modifier.background(colors.containerColor),
+        colors = colors.copy(containerColor = Color.Transparent),
     )
 }
 
@@ -96,6 +106,7 @@ fun SecondaryTopAppBar(
         title = title,
         navigationIcon = navigationIcon,
         actions = actions,
-        colors = colors,
+        modifier = Modifier.background(colors.containerColor),
+        colors = colors.copy(containerColor = Color.Transparent),
     )
 }
