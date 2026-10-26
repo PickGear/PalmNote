@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  物品图例行 · 3 列（v22 WIDE 用）：空宿主，胶囊由 Provider addView 进来（0dp+weight 1 等分）。
+  行高 26 = 胶囊高（稿 .ch.sm）；行间 6dp 走本布局的 marginBottom。
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_asset_row"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/widget_v22_chip_h"
+    android:orientation="horizontal"
+    android:layout_marginBottom="6dp" />

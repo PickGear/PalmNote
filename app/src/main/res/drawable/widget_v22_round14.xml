@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- v22 圆角 14（稿 .ic 方块底）：快捷入口格用；白底占位，运行时 setColorFilter 上族色 tint -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#FFFFFFFF" />
+    <corners android:radius="14dp" />
+</shape>

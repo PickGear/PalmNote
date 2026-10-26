@@ -23,9 +23,8 @@ internal object WidgetConfigContract {
         Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId)
 }
 
-/** 配置页的产出：账本选择 + 透明度覆盖 + 强调色覆盖（null = 跟随全局/应用默认）。 */
+/** 配置页的产出：账本选择 + 强调色覆盖（null = 跟随全局/应用默认）。背景与不透明度在添加弹窗。 */
 internal data class WidgetConfigResult(
     val bookId: Long?,
-    val opacityOverride: Float?,
     val accentThemeId: String? = null
 )

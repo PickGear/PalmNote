@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  v22 订阅行 · 末行版：不带行间 margin（三行排满时刚好贴内容底）。
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_sub_row"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/widget_v22_chip_h"
+    android:orientation="horizontal"
+    android:gravity="center_vertical">
+
+    <TextView
+        android:id="@+id/widget_sub_row_date"
+        android:layout_width="38dp"
+        android:layout_height="wrap_content"
+        android:textSize="@dimen/widget_v22_text_lb"
+        android:textColor="@color/widget_v22_text_2"
+        android:maxLines="1" />
+
+    <LinearLayout
+        android:id="@+id/widget_sub_row_chip_host"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="horizontal"
+        android:layout_marginStart="8dp" />
+</LinearLayout>

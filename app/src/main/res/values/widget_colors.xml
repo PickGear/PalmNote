@@ -29,12 +29,13 @@
          小组件布局在桌面进程内以桌面 uiMode 解析，跟随系统深色模式）
          ═══════════════════════════════════════════════════════════════ -->
     <color name="widget_v2_card_bg">#FFFFFFFF</color>
-    <!-- 组件「透明度」档位底色：alpha 直接写在色值里，RemoteViews 无法改 alpha，只能换底图 -->
-    <color name="widget_v2_card_bg_80">#CCFFFFFF</color>
-    <color name="widget_v2_card_bg_60">#99FFFFFF</color>
-    <color name="widget_v2_card_bg_40">#66FFFFFF</color>
     <color name="widget_v2_soft_mint">#FFEEF5F3</color>
     <color name="widget_v2_soft_gray">#FFF5F7F7</color>
+    <!-- 行底 / 芯片底 / 天数胶囊底：以前把色值直接写死在 drawable 里，系统深色模式下这三块仍是浅色板，
+         而板上的字已经变浅 —— 现在是令牌，随系统明暗解析，也被 WidgetToneSweep 认作「跟着色调换」的面板底。 -->
+    <color name="widget_v2_item_bg">#FFF8F8F8</color>
+    <color name="widget_v2_chip_bg">#FFF5F5F5</color>
+    <color name="widget_v2_days_bg">#FFE8F4FD</color>
     <color name="widget_v2_text_primary">#FF15181A</color>
     <color name="widget_v2_text_secondary">#FF6B7B77</color>
     <color name="widget_v2_text_tertiary">#FF9AA8A4</color>
@@ -69,4 +70,65 @@
     <color name="widget_hue_5">#FF8B5CF6</color>
     <color name="widget_tint_6">#FFFEF3C7</color>
     <color name="widget_hue_6">#FFEAB308</color>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         v22 色板（docs/mockups/widgets/v22/index.html 的 CSS 提取）：
+         一族三档 —— d 主色（图形/色点/填充）、dt 淡底（胶囊底）、di 深墨（数值）。
+         夜间只覆盖 dt/di（dt 换深底、di 提亮），d 不变（图形仍饱和），见 values-night。
+         上方 widget_tint_N/widget_hue_N 为 v4 遗留，逐族迁到 v22 后删。
+         ═══════════════════════════════════════════════════════════════ -->
+    <color name="widget_v22_c1">#FF4A72F5</color>
+    <color name="widget_v22_c1_tint">#FFEDF1FE</color>
+    <color name="widget_v22_c1_ink">#FF2F5DF4</color>
+    <color name="widget_v22_c2">#FF57C22E</color>
+    <color name="widget_v22_c2_tint">#FFEEF9EA</color>
+    <color name="widget_v22_c2_ink">#FF377C1D</color>
+    <color name="widget_v22_c3">#FFE7B33C</color>
+    <color name="widget_v22_c3_tint">#FFFDF7EC</color>
+    <color name="widget_v22_c3_ink">#FF916B12</color>
+    <color name="widget_v22_c4">#FFA45CF0</color>
+    <color name="widget_v22_c4_tint">#FFF6EFFE</color>
+    <color name="widget_v22_c4_ink">#FF8F36ED</color>
+    <color name="widget_v22_c5">#FFF4762A</color>
+    <color name="widget_v22_c5_tint">#FFFEF1EA</color>
+    <color name="widget_v22_c5_ink">#FFB84B0A</color>
+    <!-- c6 粉：物品「+N 类」聚合槽专用（色轮第 6 位，与相邻橙区分明显） -->
+    <color name="widget_v22_c6">#FFEC5C93</color>
+    <color name="widget_v22_c6_tint">#FFFDEFF4</color>
+    <color name="widget_v22_c6_ink">#FFD2185F</color>
+    <color name="widget_v22_c7">#FF2AB6C6</color>
+    <color name="widget_v22_c7_tint">#FFEAF8F9</color>
+    <color name="widget_v22_c7_ink">#FF1C7882</color>
+    <!-- c8 灰：非分类的中性图形 -->
+    <color name="widget_v22_c8">#FF6B7280</color>
+    <color name="widget_v22_c8_tint">#FFF0F1F2</color>
+    <color name="widget_v22_c8_ink">#FF646A77</color>
+
+    <!-- v22 中性令牌（mockup :root）：t1 主文 / t2 次文 / t3 辅助 / line 分隔 / outline 描边 -->
+    <color name="widget_v22_text_1">#FF1B1F27</color>
+    <color name="widget_v22_text_2">#FF6F757E</color>
+    <color name="widget_v22_text_3">#FFAEB3BB</color>
+    <color name="widget_v22_line">#FFEDEFF2</color>
+    <color name="widget_v22_outline">#FFDDE1E7</color>
+    <color name="widget_v22_card">#FFFFFFFF</color>
+    <color name="widget_v22_red">#FFE5484D</color>
+    <color name="widget_v22_green">#FF1F7F33</color>
+
+<!-- v37 圆标昼夜对：底 = 浅色 d / 夜间 dt；图形 = 浅色白 / 夜间 di（小米深色必须走资源，禁代码切色） -->
+<color name="widget_v22_c1_badge_bg">#FF4A72F5</color>
+<color name="widget_v22_c1_badge_fg">#FFFFFFFF</color>
+<color name="widget_v22_c2_badge_bg">#FF57C22E</color>
+<color name="widget_v22_c2_badge_fg">#FFFFFFFF</color>
+<color name="widget_v22_c3_badge_bg">#FFE7B33C</color>
+<color name="widget_v22_c3_badge_fg">#FFFFFFFF</color>
+<color name="widget_v22_c4_badge_bg">#FFA45CF0</color>
+<color name="widget_v22_c4_badge_fg">#FFFFFFFF</color>
+<color name="widget_v22_c5_badge_bg">#FFF4762A</color>
+<color name="widget_v22_c5_badge_fg">#FFFFFFFF</color>
+<color name="widget_v22_c6_badge_bg">#FFEC5C93</color>
+<color name="widget_v22_c6_badge_fg">#FFFFFFFF</color>
+<color name="widget_v22_c7_badge_bg">#FF2AB6C6</color>
+<color name="widget_v22_c7_badge_fg">#FFFFFFFF</color>
+<color name="widget_v22_c8_badge_bg">#FF6B7280</color>
+<color name="widget_v22_c8_badge_fg">#FFFFFFFF</color>
 </resources>

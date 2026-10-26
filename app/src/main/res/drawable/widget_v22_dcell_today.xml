@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  v37 日历条的「今天」格（稿 .dcell.today：1.5px 族色描边、无实底、族色 ink 字）。
+  与普通格（widget_v22_round5 实底）区分：RemoteViews 用 setImageViewResource 换图 +
+  setColorFilter 上族色（SRC_ATOP 只染描边，透明底不受影响）。
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@android:color/transparent" />
+    <stroke
+        android:width="1.5dp"
+        android:color="@color/widget_v22_outline" />
+    <corners android:radius="5dp" />
+</shape>

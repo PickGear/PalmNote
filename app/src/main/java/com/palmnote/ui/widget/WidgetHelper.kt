@@ -3,10 +3,8 @@ package com.palmnote.ui.widget
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.view.View
 import android.widget.RemoteViews
 import com.palmnote.app.R
-import com.palmnote.domain.model.BillType
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -16,35 +14,17 @@ import java.time.format.DateTimeFormatter
 object WidgetHelper {
 
     /**
-     * 组件透明度落到**卡片底色**上：RemoteViews 不允许调用 `View.setAlpha`
-     * （`can't use method with RemoteViews: setAlpha(float)`，框架只放行
-     * `@RemotableViewMethod`），所以只能换成对应档位的半透明圆角底图。
-     * 档位固定 4 档，滑块也按这 4 档吸附，所见即所得。
+     * 各组件的「点整卡 → 进对应页签」出口。[requestCode] = `WidgetDeepLink.SEG_*` 号段 + appWidgetId，
+     * [tab] 决定落到哪个根页签。之前每个 provider 自带一份 `linkViews` 私有实现，只有号段不同 —— 收敛到这里。
      */
-    fun cardBackgroundFor(opacity: Float): Int = when {
-        opacity >= 0.9f -> R.drawable.widget_card_round
-        opacity >= 0.7f -> R.drawable.widget_card_round_80
-        opacity >= 0.5f -> R.drawable.widget_card_round_60
-        else -> R.drawable.widget_card_round_40
+    fun linkViews(context: Context, views: RemoteViews, requestCode: Int, tab: String): RemoteViews {
+        views.setOnClickPendingIntent(
+            R.id.widget_layout,
+            createPendingIntent(context, requestCode, tab)
+        )
+        return views
     }
 
-    /** 整卡底色。不透明档不写入，省掉每次刷新的一次 RemoteViews 动作。 */
-    fun applyWidgetOpacity(views: RemoteViews, opacity: Float) {
-        if (opacity < 0.9f) {
-            views.setInt(R.id.widget_layout, "setBackgroundResource", cardBackgroundFor(opacity))
-        }
-    }
-
-    /**
-     * 卡片内部的大块实底（概览的预算/目标卡、账单横幅、倒计时焦点卡、快捷入口的记一笔格）。
-     * 底色变透但内层实底不动的话，只有卡片留白透出壁纸、看起来像没生效；
-     * 这几块用 `setImageAlpha`（ImageView 的 @RemotableViewMethod）跟着一起变透。
-     */
-    fun applySurfaceAlpha(views: RemoteViews, viewId: Int, opacity: Float) {
-        if (opacity < 0.9f) {
-            views.setInt(viewId, "setImageAlpha", (opacity * 255f).toInt().coerceIn(0, 255))
-        }
-    }
 
     fun formatMoney(amount: Long): String {
         val yuan = amount / 100.0
@@ -164,7 +144,7 @@ object WidgetHelper {
         timeText: String,
         isOverdue: Boolean
     ): RemoteViews {
-        val views = RemoteViews(context.packageName, R.layout.widget_todo_agenda_row)
+        val views = widgetViews(context, R.layout.widget_todo_agenda_row)
         views.setTextViewText(R.id.widget_todo_agenda_name, item.title)
         views.setTextViewText(R.id.widget_todo_agenda_time, timeText)
         if (isOverdue) {
@@ -183,26 +163,11 @@ object WidgetHelper {
     }
 
     fun addCounterItemView(context: Context, views: RemoteViews, containerId: Int, title: String, dateMillis: Long) {
-        val itemView = RemoteViews(context.packageName, R.layout.widget_counter_item)
+        val itemView = widgetViews(context, R.layout.widget_counter_item)
         itemView.setTextViewText(R.id.widget_item_name, title)
         val days = daysUntil(dateMillis)
         itemView.setTextViewText(R.id.widget_item_days, formatDaysLeft(days))
         itemView.setTextViewText(R.id.widget_item_unit, getDaysLabel(context, days))
-        views.addView(containerId, itemView)
-    }
-
-    fun addBillItemView(context: Context, views: RemoteViews, containerId: Int, bill: com.palmnote.data.db.entity.Bill) {
-        val itemView = RemoteViews(context.packageName, R.layout.widget_bill_item)
-        itemView.setTextViewText(R.id.widget_item_category, bill.category)
-        val prefix = if (bill.type == BillType.EXPENSE) "-" else "+"
-        itemView.setTextViewText(R.id.widget_item_amount, "$prefix${formatMoney(bill.amount)}")
-        views.addView(containerId, itemView)
-    }
-
-    fun addVaultItemView(context: Context, views: RemoteViews, containerId: Int, name: String, type: String) {
-        val itemView = RemoteViews(context.packageName, R.layout.widget_vault_item)
-        itemView.setTextViewText(R.id.widget_item_name, name)
-        itemView.setTextViewText(R.id.widget_item_type, type)
         views.addView(containerId, itemView)
     }
 }

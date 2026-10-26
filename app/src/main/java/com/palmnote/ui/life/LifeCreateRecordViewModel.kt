@@ -315,6 +315,7 @@ class LifeCreateRecordViewModel @Inject constructor(
                     repository.insertItem(item)
                 }
                 WidgetUpdateHelper.refreshTodoWidgets()
+                WidgetUpdateHelper.refreshSubscriptionWidgets()
                 WidgetUpdateHelper.refreshCounterWidgets()
                 WidgetUpdateHelper.refreshHabitWidgets()
                 _state.update { it.copy(saving = false, saved = true) }

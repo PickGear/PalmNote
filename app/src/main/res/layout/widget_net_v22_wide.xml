@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  净资产 4×2（v22 WIDE）：hd(徽章+净资产+眼睛) / hero ¥ + 涨跌胶囊 / 分段条(资产/负债) / 两枚胶囊。
+  条与胶囊走 addView（widget_v22_seg / widget_v22_chip），RemoteViews 不支持 include。
+  隐藏态由 Provider 收：金额换圆点、条整条中性灰、涨幅去方向（交互见 WidgetPrivacyReceiver）。
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ImageView
+        android:id="@+id/widget_bg"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:contentDescription="@null"
+        android:scaleType="centerCrop" />
+
+    <LinearLayout
+        android:id="@+id/widget_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:paddingHorizontal="15dp"
+        android:paddingVertical="13dp"
+        android:background="@drawable/widget_card_round">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <FrameLayout
+                android:layout_width="@dimen/widget_v22_badge_sm"
+                android:layout_height="@dimen/widget_v22_badge_sm">
+
+                <ImageView
+                    android:id="@+id/widget_net_badge"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/widget_shape_circle"
+                    android:contentDescription="@null" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:text="¥"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:textColor="#FFFFFFFF"
+                    android:gravity="center" />
+            </FrameLayout>
+
+            <TextView
+                android:id="@+id/widget_net_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="7dp"
+                android:text="@string/widget_net_worth_title"
+                android:textSize="@dimen/widget_v22_text_ttl"
+                android:textStyle="bold"
+                android:textColor="@color/widget_v22_text_1"
+                android:maxLines="1" />
+
+            <ImageView
+                android:id="@+id/widget_net_eye"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_marginStart="8dp"
+                android:src="@drawable/widget_v22_eye"
+                android:contentDescription="@string/widget_net_eye_toggle" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/widget_net_amount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0"
+                android:textSize="@dimen/widget_v22_text_hero"
+                android:textStyle="bold"
+                android:textColor="@color/widget_v22_text_1"
+                android:maxLines="1"
+                android:includeFontPadding="false" />
+
+            <TextView
+                android:id="@+id/widget_net_delta"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:textSize="@dimen/widget_v22_text_lb"
+                android:textStyle="bold"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="3dp"
+                android:maxLines="1" />
+        </LinearLayout>
+
+        <!-- 分段条宿主：addView(widget_v22_seg) -->
+        <LinearLayout
+            android:id="@+id/widget_net_seg_host"
+            android:layout_width="match_parent"
+            android:layout_height="8dp"
+            android:orientation="horizontal"
+            android:layout_marginTop="4dp" />
+
+        <!-- 两枚胶囊宿主：addView(widget_v22_chip) × 2 -->
+        <LinearLayout
+            android:id="@+id/widget_net_chip_host"
+            android:layout_width="match_parent"
+            android:layout_height="26dp"
+            android:orientation="horizontal"
+            android:layout_marginTop="7dp" />
+    </LinearLayout>
+</FrameLayout>

@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  打卡 4×2（v22 WIDE）：hd(徽章+今日打卡+hero 今日 x/y) / 三行习惯胶囊（名字 + 行内七天点）。
+  行走 addView(widget_habit_v22_row)，行间 5dp；点行进生活页，行内点阵本身也是打卡热区。
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ImageView
+        android:id="@+id/widget_bg"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:contentDescription="@null"
+        android:scaleType="centerCrop" />
+
+    <LinearLayout
+        android:id="@+id/widget_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:paddingHorizontal="15dp"
+        android:paddingVertical="13dp"
+        android:background="@drawable/widget_card_round">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <FrameLayout
+                android:layout_width="@dimen/widget_v22_badge"
+                android:layout_height="@dimen/widget_v22_badge">
+
+                <ImageView
+                    android:id="@+id/widget_habit_badge"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/widget_shape_circle"
+                    android:contentDescription="@null" />
+
+                <ImageView
+                    android:layout_width="11dp"
+                    android:layout_height="11dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/widget_ic_calendar_white"
+                    android:contentDescription="@null" />
+            </FrameLayout>
+
+            <TextView
+                android:id="@+id/widget_habit_title"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="7dp"
+                android:text="@string/widget_habit_title"
+                android:textSize="@dimen/widget_v22_text_ttl"
+                android:textStyle="bold"
+                android:textColor="@color/widget_v22_text_1"
+                android:maxLines="1"
+                android:ellipsize="end" />
+
+            <TextView
+                android:id="@+id/widget_habit_hero"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0/0"
+                android:textSize="@dimen/widget_v22_text_hero_sm"
+                android:textStyle="bold"
+                android:textColor="@color/widget_v22_text_1"
+                android:maxLines="1"
+                android:includeFontPadding="false" />
+        </LinearLayout>
+
+        <!-- 习惯行宿主：addView(widget_habit_v22_row) × ≤3 -->
+        <LinearLayout
+            android:id="@+id/widget_habit_rows_host"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center_vertical"
+            android:layout_marginTop="8dp" />
+
+        <TextView
+            android:id="@+id/widget_habit_empty"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="@string/widget_habit_empty"
+            android:textSize="@dimen/widget_v22_text_lb"
+            android:textColor="@color/widget_v22_text_2"
+            android:visibility="gone" />
+
+    </LinearLayout>
+
+</FrameLayout>

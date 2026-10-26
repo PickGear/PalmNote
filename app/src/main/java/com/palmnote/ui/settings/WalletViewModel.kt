@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.palmnote.data.db.entity.Wallet
 import com.palmnote.domain.repository.WalletRepository
+import com.palmnote.ui.widget.WidgetUpdateHelper
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -27,12 +28,17 @@ class WalletViewModel @Inject constructor(
     fun addWallet(wallet: Wallet) {
         viewModelScope.launch {
             walletRepository.insert(wallet)
+            WidgetUpdateHelper.refreshNetWorthWidgets()
+            WidgetUpdateHelper.refreshDashboardWidgets()
         }
     }
 
     fun updateWallet(wallet: Wallet) {
         viewModelScope.launch {
             walletRepository.update(wallet.copy(updatedAt = System.currentTimeMillis()))
+            // 编辑含改期初/当前余额：净值与概览 hero 都吃它
+            WidgetUpdateHelper.refreshNetWorthWidgets()
+            WidgetUpdateHelper.refreshDashboardWidgets()
         }
     }
 
@@ -45,6 +51,9 @@ class WalletViewModel @Inject constructor(
     fun deleteWalletWithData(walletId: Long) {
         viewModelScope.launch {
             walletRepository.deleteWalletWithData(walletId)
+            // 账单进回收站 + 钱包行消失：账单/净值/概览三路都要跟
+            WidgetUpdateHelper.refreshBillWidgets()
+            WidgetUpdateHelper.refreshNetWorthWidgets()
         }
     }
 

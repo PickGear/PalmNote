@@ -1,19 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 2×1：minWidth/minHeight 与 targetCell 同口径，缩小/放大都用 minResize* / maxResize* 控制 -->
+<!-- 2×2：画廊入口即 2×2（稿口径）；minHeight 仍放到 2×1，桌面可拖成矮条（归档到 CHIP 档） -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:minWidth="110dp"
-    android:minHeight="40dp"
+    android:minHeight="110dp"
     android:minResizeWidth="110dp"
-    android:minResizeHeight="40dp"
+    android:minResizeHeight="74dp"
     android:targetCellWidth="2"
-    android:targetCellHeight="1"
+    android:targetCellHeight="2"
     android:maxResizeWidth="250dp"
-    android:maxResizeHeight="110dp"
+    android:maxResizeHeight="160dp"
     android:updatePeriodMillis="1800000"
-    android:initialLayout="@layout/widget_net_worth_unified"
+    android:initialLayout="@layout/widget_net_v22_square"
     android:widgetCategory="home_screen"
     android:description="@string/widget_net_worth_desc"
-    android:previewImage="@drawable/widget_preview_net_worth"
+    android:previewImage="@drawable/widget_preview_net_worth_card"
     android:previewLayout="@layout/widget_net_worth_preview"
-    android:configure="com.palmnote.ui.widget.WidgetConfigActivity"
     android:resizeMode="horizontal|vertical" />

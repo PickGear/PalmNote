@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- net_worth_bar_widget_info：targetCell 4×1（v22 四档之一），预览图与 previewLayout 同源真实布局 -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="250dp"
+    android:minHeight="40dp"
+    android:minResizeWidth="110dp"
+    android:minResizeHeight="74dp"
+    android:targetCellWidth="4"
+    android:targetCellHeight="1"
+    android:maxResizeWidth="400dp"
+    android:maxResizeHeight="250dp"
+    android:updatePeriodMillis="1800000"
+    android:initialLayout="@layout/widget_net_v22_bar"
+    android:widgetCategory="home_screen"
+    android:description="@string/widget_net_worth_desc"
+    android:previewImage="@drawable/widget_preview_net_worth_bar_card"
+    android:resizeMode="horizontal|vertical" />

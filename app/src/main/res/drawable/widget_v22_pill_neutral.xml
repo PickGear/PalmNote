@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 隐藏态涨幅胶囊底（稿 .pill.masked）：中性灰、无方向语义 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#FFF0F1F2" />
+    <corners android:radius="8dp" />
+</shape>

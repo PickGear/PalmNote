@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  pin 确认页（API 31+ 的 EXTRA_APPWIDGET_PREVIEW）用的**静态画布**。
+
+  launcher 只 inflate 这个布局、不会跑应用代码：所以不能指向运行时布局（文本要靠
+  setTextViewText 填，inflate 出来是空壳或 "0" 占位）。这里放一张由
+  WidgetPreviewPngGenerator 出好的整卡图（`widget_preview_*_card`），与系统选择器一致。
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ImageView
+        android:id="@+id/widget_pin_card_image"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="fitCenter"
+        android:contentDescription="@null" />
+
+</FrameLayout>

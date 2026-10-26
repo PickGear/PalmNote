@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  v22 胶囊行 · 紧版（稿 .ch.sm.tight：内边距 6、间隙 4、色点 5）：2×2 的 134dp 内宽用。
+  高度与常规版同为 26dp（稿里 sm 两处同高，tight 只收内边距）。
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_v22_chip_root"
+    android:layout_width="0dp"
+    android:layout_weight="1"
+    android:layout_height="26dp">
+
+    <ImageView
+        android:id="@+id/widget_v22_chip_bg"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:src="@drawable/widget_v22_round10"
+        android:contentDescription="@null" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="6dp">
+
+        <ImageView
+            android:id="@+id/widget_v22_chip_dot"
+            android:layout_width="5dp"
+            android:layout_height="5dp"
+            android:src="@drawable/widget_shape_circle"
+            android:contentDescription="@null" />
+
+        <TextView
+            android:id="@+id/widget_v22_chip_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="@color/widget_v22_text_1"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <TextView
+            android:id="@+id/widget_v22_chip_sub"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="4dp"
+            android:textSize="12sp"
+            android:textColor="@color/widget_v22_text_2"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <TextView
+            android:id="@+id/widget_v22_chip_value"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:textColor="@color/widget_v22_text_1"
+            android:maxLines="1"
+            android:includeFontPadding="false" />
+    </LinearLayout>
+</FrameLayout>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  v22 待办勾选框 · 空（稿 .ck：16dp 圆 + 1.5dp 描边）：描边走 outline 令牌（日夜两档，
+  自定义背景时由 WidgetToneContext 强制解析，无需运行时上色）。
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <stroke
+        android:width="1.5dp"
+        android:color="@color/widget_v22_outline" />
+    <solid android:color="#00000000" />
+</shape>

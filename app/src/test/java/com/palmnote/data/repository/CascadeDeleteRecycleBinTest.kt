@@ -48,9 +48,9 @@ class CascadeDeleteRecycleBinTest {
             .allowMainThreadQueries()
             .build()
         billRepo = BillRepositoryImpl(db.billDao(), db.walletDao(), db.billRecycleBinDao(), db)
-        walletRepo = WalletRepositoryImpl(db.walletDao(), billRepo, db, context)
+        walletRepo = WalletRepositoryImpl(db.walletDao(), billRepo, db, context, com.palmnote.data.event.EventBusImpl())
         bookRepo = AccountBookRepositoryImpl(db.accountBookDao(), billRepo, db, context)
-        assetRepo = AssetRepositoryImpl(db.assetDao(), db.assetRecycleBinDao(), db)
+        assetRepo = AssetRepositoryImpl(db.assetDao(), db.assetRecycleBinDao(), db, com.palmnote.data.event.EventBusImpl())
     }
 
     @After

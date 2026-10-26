@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  v22 近 7 天柱阵（稿 .spark/.bars）：7 个固定槽，柱高走竖向 clip 的 level（0..10000）——
+  RemoteViews 不能动态改高度，柱状图必须 clip + setImageLevel（与 v4 的 bindDailyBars 同机制）。
+  v22 配色：柱 = 族色 d；**今天（末柱）恒全不透明**，其余 32%；空柱 line 灰基线。
+  宿主高度由卡片定（4×2 约 64dp / 2×2 约 26dp 迷你）。
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_v22_bars7_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal"
+    android:gravity="bottom">
+
+    <ImageView
+        android:id="@+id/widget_v22_bar_0"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:src="@drawable/widget_bar_clip"
+        android:contentDescription="@null" />
+
+    <ImageView
+        android:id="@+id/widget_v22_bar_1"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:layout_marginStart="4dp"
+        android:src="@drawable/widget_bar_clip"
+        android:contentDescription="@null" />
+
+    <ImageView
+        android:id="@+id/widget_v22_bar_2"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:layout_marginStart="4dp"
+        android:src="@drawable/widget_bar_clip"
+        android:contentDescription="@null" />
+
+    <ImageView
+        android:id="@+id/widget_v22_bar_3"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:layout_marginStart="4dp"
+        android:src="@drawable/widget_bar_clip"
+        android:contentDescription="@null" />
+
+    <ImageView
+        android:id="@+id/widget_v22_bar_4"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:layout_marginStart="4dp"
+        android:src="@drawable/widget_bar_clip"
+        android:contentDescription="@null" />
+
+    <ImageView
+        android:id="@+id/widget_v22_bar_5"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:layout_marginStart="4dp"
+        android:src="@drawable/widget_bar_clip"
+        android:contentDescription="@null" />
+
+    <ImageView
+        android:id="@+id/widget_v22_bar_6"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:layout_marginStart="4dp"
+        android:src="@drawable/widget_bar_clip"
+        android:contentDescription="@null" />
+</LinearLayout>

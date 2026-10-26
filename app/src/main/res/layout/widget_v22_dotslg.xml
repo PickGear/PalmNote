@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  v22 大点阵（稿 .dotslg：10px 点、隙 6）：打卡 2×2 用，一格 = 一个习惯，亮点 = 今天已打卡。
+  分母是用户的习惯数（≤5 才画；超过 5 个这行整体收起，数字照样给 —— 点阵不虚构分母）。
+  亮暗由 Provider setColorFilter（亮点着卡族色、暗点着 outline 灰）。
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_v22_dotslg_root"
+    android:layout_width="wrap_content"
+    android:layout_height="12dp"
+    android:orientation="horizontal">
+
+    <ImageView
+        android:id="@+id/widget_v22_dotslg_1"
+        android:layout_width="12dp"
+        android:layout_height="12dp"
+        android:layout_marginEnd="6dp"
+        android:src="@drawable/widget_shape_circle"
+        android:contentDescription="@null" />
+    <ImageView
+        android:id="@+id/widget_v22_dotslg_2"
+        android:layout_width="12dp"
+        android:layout_height="12dp"
+        android:layout_marginEnd="6dp"
+        android:src="@drawable/widget_shape_circle"
+        android:contentDescription="@null" />
+    <ImageView
+        android:id="@+id/widget_v22_dotslg_3"
+        android:layout_width="12dp"
+        android:layout_height="12dp"
+        android:layout_marginEnd="6dp"
+        android:src="@drawable/widget_shape_circle"
+        android:contentDescription="@null" />
+    <ImageView
+        android:id="@+id/widget_v22_dotslg_4"
+        android:layout_width="12dp"
+        android:layout_height="12dp"
+        android:layout_marginEnd="6dp"
+        android:src="@drawable/widget_shape_circle"
+        android:contentDescription="@null" />
+    <ImageView
+        android:id="@+id/widget_v22_dotslg_5"
+        android:layout_width="12dp"
+        android:layout_height="12dp"
+        android:src="@drawable/widget_shape_circle"
+        android:contentDescription="@null" />
+</LinearLayout>

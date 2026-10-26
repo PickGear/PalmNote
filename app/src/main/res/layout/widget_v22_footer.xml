@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- v37 .footer：底行（线 + 左标签 + 值 + 右注），勾选圈位可选 -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_v22_footer_root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingTop="8dp">
+    <ImageView android:id="@+id/widget_v22_footer_ck" android:layout_width="14dp" android:layout_height="14dp" android:contentDescription="@null" android:visibility="gone" />
+    <TextView android:id="@+id/widget_v22_footer_l" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="10sp" android:includeFontPadding="false" android:maxLines="1" />
+    <TextView android:id="@+id/widget_v22_footer_v" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="6dp" android:textSize="12sp" android:textStyle="bold" android:includeFontPadding="false" android:maxLines="1" android:ellipsize="end" />
+    <TextView android:id="@+id/widget_v22_footer_r" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="6dp" android:textSize="10sp" android:includeFontPadding="false" android:maxLines="1" />
+</LinearLayout>

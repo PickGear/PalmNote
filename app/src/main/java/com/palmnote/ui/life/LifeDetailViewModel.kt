@@ -377,6 +377,7 @@ class LifeDetailViewModel @Inject constructor(
             // 绕过双写会让统计副本与主表分叉，也会漏掉存钱达标事件。
             repository.updateFieldsData(itemId, updated.toString())
             WidgetUpdateHelper.refreshTodoWidgets()
+            WidgetUpdateHelper.refreshSubscriptionWidgets()
         }
     }
 
@@ -457,6 +458,7 @@ class LifeDetailViewModel @Inject constructor(
         viewModelScope.launch {
             repository.delete(itemId)
             WidgetUpdateHelper.refreshTodoWidgets()
+            WidgetUpdateHelper.refreshSubscriptionWidgets()
             WidgetUpdateHelper.refreshCounterWidgets()
             onDeleted()
         }
@@ -480,6 +482,7 @@ class LifeDetailViewModel @Inject constructor(
                 // 再点一次「今日打卡」即原样恢复 —— 不再 deleteItemCascade 连带删数据。
                 active.forEach { itemDao.updateStatus(it.id, "ARCHIVED") }
                 WidgetUpdateHelper.refreshTodoWidgets()
+                WidgetUpdateHelper.refreshSubscriptionWidgets()
                 WidgetUpdateHelper.refreshCounterWidgets()
                 WidgetUpdateHelper.refreshHabitWidgets()
             } else {
@@ -488,6 +491,7 @@ class LifeDetailViewModel @Inject constructor(
                     // 今天已有被撤销过的行 → 复活（保留原字段数据），不重复插行
                     archived.forEach { itemDao.updateStatus(it.id, "ACTIVE") }
                     WidgetUpdateHelper.refreshTodoWidgets()
+                    WidgetUpdateHelper.refreshSubscriptionWidgets()
                     WidgetUpdateHelper.refreshCounterWidgets()
                     WidgetUpdateHelper.refreshHabitWidgets()
                 } else {
@@ -509,6 +513,7 @@ class LifeDetailViewModel @Inject constructor(
                         )
                     )
                     WidgetUpdateHelper.refreshTodoWidgets()
+                    WidgetUpdateHelper.refreshSubscriptionWidgets()
                     WidgetUpdateHelper.refreshCounterWidgets()
                     WidgetUpdateHelper.refreshHabitWidgets()
                     celebrateMilestoneIfReached(item.templateId, demo)

@@ -9,11 +9,13 @@ import com.palmnote.data.db.dao.AssetRecycleBinDao
 import com.palmnote.data.db.entity.Asset
 import com.palmnote.data.db.entity.toRecycleBin
 import com.palmnote.data.db.entity.toAsset
+import com.palmnote.domain.event.DomainEvent
 import com.palmnote.domain.repository.AssetRepository
 class AssetRepositoryImpl @Inject constructor(
     private val assetDao: AssetDao,
     private val assetRecycleBinDao: AssetRecycleBinDao,
-    private val appDatabase: AppDatabase
+    private val appDatabase: AppDatabase,
+    private val eventBus: com.palmnote.domain.event.EventBus
 ) : AssetRepository {
     override fun getAllAssets() = assetDao.getAllAssets()
 
@@ -72,18 +74,34 @@ class AssetRepositoryImpl @Inject constructor(
     override suspend fun incrementUseCount(assetId: Long) = assetDao.incrementUseCount(assetId)
 
     override suspend fun awayAsset(id: Long, tags: String, reason: String) =
-        assetDao.awayAsset(id, System.currentTimeMillis(), tags, reason)
+        changeAssetStatus(id) { assetDao.awayAsset(id, System.currentTimeMillis(), tags, reason) }
 
     override suspend fun retireAsset(id: Long, reason: String) =
-        assetDao.retireAsset(id, System.currentTimeMillis(), reason)
+        changeAssetStatus(id) { assetDao.retireAsset(id, System.currentTimeMillis(), reason) }
 
     override suspend fun markAssetLost(id: Long, reason: String) =
-        assetDao.markAssetLost(id, System.currentTimeMillis(), reason)
+        changeAssetStatus(id) { assetDao.markAssetLost(id, System.currentTimeMillis(), reason) }
 
     override suspend fun sellAsset(id: Long, soldPrice: Long, soldChannel: String, soldToWhom: String) =
-        assetDao.sellAsset(id, System.currentTimeMillis(), soldPrice, soldChannel, soldToWhom)
+        changeAssetStatus(id) {
+            assetDao.sellAsset(id, System.currentTimeMillis(), soldPrice, soldChannel, soldToWhom)
+        }
 
-    override suspend fun reactivateAsset(id: Long) = assetDao.reactivateAsset(id)
+    override suspend fun reactivateAsset(id: Long) =
+        changeAssetStatus(id) { assetDao.reactivateAsset(id) }
+
+    /**
+     * 状态变更统一包装：变更前后各读一次状态，成功后发布 [DomainEvent.AssetStatusChanged]
+     * （WidgetRefreshConsumer 据此刷物品组件；发布失败不影响主流程，桌面靠 30 分钟周期兜底）。
+     * 状态读不到（条目已被删）就只执行动作不发事件 —— 别拿编造的状态撒谎。
+     */
+    private suspend fun changeAssetStatus(id: Long, mutation: suspend () -> Unit) {
+        val old = assetDao.getAssetById(id)?.status
+        mutation()
+        val new = assetDao.getAssetById(id)?.status
+        if (old == null || new == null || old == new) return
+        runCatching { eventBus.publish(DomainEvent.AssetStatusChanged(id, old, new)) }
+    }
 
     override suspend fun completeMaintenance(id: Long, date: Long, nextDate: Long?, notes: String) =
         assetDao.completeMaintenance(id, date, nextDate, notes)

@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  计数器 4×2（v22 WIDE，稿 §2-7 space-between 三段式）：hd(徽章+目标名+hero 当前/目标)
+  / 副计数胶囊（垂直居中）/ 八点（贴底右对齐）。
+  八点只在目标值是 ≤8 的整数时画（点 = 目标值、亮点 = 当前值，分母固定才画点）；
+  副计数是另外两个目标的当前值（无目标值也给数，走 plain 胶囊）。点卡片进生活页目标区。
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ImageView
+        android:id="@+id/widget_bg"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:contentDescription="@null"
+        android:scaleType="centerCrop" />
+
+    <LinearLayout
+        android:id="@+id/widget_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:paddingHorizontal="15dp"
+        android:paddingVertical="13dp"
+        android:background="@drawable/widget_card_round">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <FrameLayout
+                android:layout_width="@dimen/widget_v22_badge"
+                android:layout_height="@dimen/widget_v22_badge">
+
+                <ImageView
+                    android:id="@+id/widget_counter_badge"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/widget_shape_circle"
+                    android:contentDescription="@null" />
+
+                <ImageView
+                    android:layout_width="11dp"
+                    android:layout_height="11dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/widget_ic_hash_white"
+                    android:contentDescription="@null" />
+            </FrameLayout>
+
+            <TextView
+                android:id="@+id/widget_counter_title"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="7dp"
+                android:textSize="@dimen/widget_v22_text_ttl"
+                android:textStyle="bold"
+                android:textColor="@color/widget_v22_text_1"
+                android:maxLines="1"
+                android:ellipsize="end" />
+
+            <!-- Hero 进头部行（稿 §2-7 4×2：badge + 目标名 + 右对齐 hero 26px），2026-10-25 对稿 -->
+            <TextView
+                android:id="@+id/widget_counter_hero"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="@dimen/widget_v22_text_hero_sm"
+                android:textStyle="bold"
+                android:textColor="@color/widget_v22_text_1"
+                android:maxLines="1"
+                android:includeFontPadding="false" />
+        </LinearLayout>
+
+        <!-- 副计数胶囊宿主：addView(widget_v22_chip_wrap) × ≤2。
+             稿 space-between 第二块：weight 吃掉头部与八点之间的余量，胶囊在其中垂直居中 -->
+        <LinearLayout
+            android:id="@+id/widget_counter_subs_host"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:visibility="gone" />
+
+        <!-- 八点宿主：addView(widget_v22_dotr8)，目标值 >8 时整行 GONE。
+             稿第三块：贴卡底**右对齐**（dotr justify-content:flex-end） -->
+        <LinearLayout
+            android:id="@+id/widget_counter_dots_host"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="end"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/widget_counter_empty"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="@string/widget_no_goals"
+            android:textSize="@dimen/widget_v22_text_lb"
+            android:textColor="@color/widget_v22_text_2"
+            android:visibility="gone" />
+
+    </LinearLayout>
+
+</FrameLayout>

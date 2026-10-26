@@ -56,27 +56,29 @@ sealed interface DomainEvent {
     // 物品事件
     data class AssetCreated(val assetId: Long) : DomainEvent
 
-    /** ⚠️ **无发布方**（见文件头）：资产状态变更后，资产小组件的刷新分支不会执行。 */
+    /** 发布方 = `AssetRepositoryImpl` 五个状态变更（2026-10-23 补），消费端刷物品组件。 */
     data class AssetStatusChanged(val assetId: Long, val old: AssetStatus, val new: AssetStatus) : DomainEvent
 
     // 生活事件
 
-    /** ⚠️ **无发布方**：`TriggerEngine` 的 `ITEM_CREATED` 规则因此从未评估。 */
+    /** 仍**无发布方**（2026-10-23 决定）：发布即激活 `ITEM_CREATED` 规则，而那条规则的关联目标
+     * 疑似自关联（见 TriggerEventConsumer 注释），复活前要先修规则。生活数据的组件刷新
+     * 由 UI 层直接调 WidgetUpdateHelper 承担。 */
     data class LifeItemCreated(val itemId: Long) : DomainEvent
 
-    /** ⚠️ **无发布方**：**「存钱达标 → 自动完成 + 提醒」这条规则从未触发**（功能价值最高的一条）。 */
+    /** 有发布方（LifeItemRepositoryImpl，存钱后零值占位发布）；金额/总额传非零值是「存钱达标」规则的待办。 */
     data class SavingDeposit(val itemId: Long, val amount: Long, val total: Long) : DomainEvent
 
-    /** ⚠️ **无发布方**：消费者里本就是空分支（成就评估待做）。 */
+    /** 仍**无发布方**：打卡是「插入一条当天 ACTIVE 行」，与普通新建无法在仓储层可靠区分；消费者分支本是空的（成就评估待做）。打卡的组件刷新由 LifeDetailViewModel 与 HabitCheckInReceiver 直接承担。 */
     data class HabitCheckedIn(val itemId: Long, val streak: Int) : DomainEvent
 
     // 钱包事件
 
-    /** ⚠️ **无发布方**：Dashboard 小组件的刷新分支不会执行。 */
+    /** 发布方 = `WalletRepositoryImpl`（2026-10-23 补），消费端刷概览与净资产组件。 */
     data class WalletBalanceChanged(val walletId: Long, val newBalance: Long) : DomainEvent
 
     // 数据事件
 
-    /** ⚠️ **无发布方**：`refreshAllWidgets()` 分支不会执行（导入后另有直接刷新）。 */
+    /** 保持**无发布方**（有意）：恢复期间组件广播被抑制（restoring 窗口），发布了也白发；BackupViewModel 以 JUST_RESTORED 标记让重启后的 Application 补一次全量刷新。 */
     data class DataImported(val count: Int, val source: String) : DomainEvent
 }

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 计数器组件的头部徽章字形：白色井号（稿 c-count ico：两横两竖，叠在运行时着色的圆形底上） -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M9.6,2.6h2.2l-0.7,6h4.3l0.7,-6h2.2l-0.7,6h4.1v2.2h-4.6l-0.6,4.6h4.2v2.2h-4.7l-0.7,6h-2.2l0.7,-6h-4.3l-0.7,6H6.9l0.7,-6H3.5v-2.2h4.6l0.6,-4.6H4.5V8.8h4.7L9.6,2.6zM10.2,11l-0.6,4.6h4.3l0.6,-4.6H10.2z" />
+</vector>

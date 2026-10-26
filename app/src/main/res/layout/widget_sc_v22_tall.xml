@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  快捷入口 4×4（v37 §2-9）：hd(26dp 圆标 + 快捷入口) / 3×3 九宫格（稿 .gr9）。
+  行走 addView(widget_sc_v22_row)（0dp+weight 1 等高），格用 widget_sc_v22_tile（0dp+weight 1 等宽），
+  与 4×2 八格同一套动态构件；标签走 strings（不硬编码），深链运行时按格挂。
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ImageView
+        android:id="@+id/widget_bg"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:contentDescription="@null"
+        android:scaleType="centerCrop" />
+
+    <LinearLayout
+        android:id="@+id/widget_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:paddingHorizontal="15dp"
+        android:paddingVertical="16dp"
+        android:background="@drawable/widget_card_round">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <FrameLayout
+                android:layout_width="26dp"
+                android:layout_height="26dp">
+
+                <ImageView
+                    android:id="@+id/widget_sc_badge"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/widget_shape_circle"
+                    android:contentDescription="@null" />
+
+                <ImageView
+                    android:layout_width="15dp"
+                    android:layout_height="15dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/widget_ic_grid_white"
+                    android:contentDescription="@null" />
+            </FrameLayout>
+
+            <TextView
+                android:id="@+id/widget_sc_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="@string/widget_shortcuts_title"
+                android:textSize="@dimen/widget_v22_text_ttl"
+                android:textStyle="bold"
+                android:textColor="@color/widget_v22_text_1"
+                android:maxLines="1" />
+        </LinearLayout>
+
+        <!-- 九宫格宿主：addView(widget_sc_v22_row) × 3 -->
+        <LinearLayout
+            android:id="@+id/widget_sc_grid_host"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginTop="8dp" />
+
+    </LinearLayout>
+
+</FrameLayout>

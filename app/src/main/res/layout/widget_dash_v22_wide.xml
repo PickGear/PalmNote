@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  概览 4×2（v22 WIDE）：hd(徽章+今日 · 周四) / 左 hero（今日支出 + 笔数 + 收入）
+  / 右三枚胶囊（待办 / 打卡 / 订阅 —— 与各组件 4×2 同语言，只有打卡画 5 点）。
+  胶囊走 addView(widget_v22_chip)，不足三枚不补位（没有订阅就两枚）。
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ImageView
+        android:id="@+id/widget_bg"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:contentDescription="@null"
+        android:scaleType="centerCrop" />
+
+    <LinearLayout
+        android:id="@+id/widget_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:paddingHorizontal="15dp"
+        android:paddingVertical="13dp"
+        android:background="@drawable/widget_card_round">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <FrameLayout
+                android:layout_width="@dimen/widget_v22_badge"
+                android:layout_height="@dimen/widget_v22_badge">
+
+                <ImageView
+                    android:id="@+id/widget_dash_badge"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/widget_shape_circle"
+                    android:contentDescription="@null" />
+
+                <ImageView
+                    android:layout_width="11dp"
+                    android:layout_height="11dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/widget_ic_grid_white"
+                    android:contentDescription="@null" />
+            </FrameLayout>
+
+            <TextView
+                android:id="@+id/widget_dash_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="7dp"
+                android:textSize="@dimen/widget_v22_text_ttl"
+                android:textStyle="bold"
+                android:textColor="@color/widget_v22_text_1"
+                android:maxLines="1"
+                android:ellipsize="end" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="6dp">
+
+            <!-- 左 hero：今日支出大数字 + 两行副信息（稿 .dsplit .lhero 宽 108） -->
+            <LinearLayout
+                android:layout_width="108dp"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/widget_dash_hero"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="¥0"
+                    android:textSize="@dimen/widget_v22_text_hero_lg"
+                    android:textStyle="bold"
+                    android:textColor="@color/widget_v22_text_1"
+                    android:maxLines="1"
+                    android:includeFontPadding="false" />
+
+                <TextView
+                    android:id="@+id/widget_dash_hero_lbl"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:text="@string/widget_dash_expense_label"
+                    android:textSize="@dimen/widget_v22_text_lb"
+                    android:textColor="@color/widget_v22_text_2"
+                    android:maxLines="1" />
+
+                <TextView
+                    android:id="@+id/widget_dash_hero_sub"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:textSize="@dimen/widget_v22_text_lb"
+                    android:textColor="@color/widget_v22_text_3"
+                    android:maxLines="1" />
+            </LinearLayout>
+
+            <!-- 右三枚胶囊宿主：addView(widget_v22_chip) × ≤3 -->
+            <LinearLayout
+                android:id="@+id/widget_dash_chips_host"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginStart="12dp" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+</FrameLayout>

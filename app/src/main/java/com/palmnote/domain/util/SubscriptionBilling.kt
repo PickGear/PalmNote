@@ -25,9 +25,11 @@ fun nextBillingDate(
 
     var candidate = billingDayIn(today, billingDay)
     if (candidate.isBefore(today)) candidate = billingDayIn(today.plusMonths(1), billingDay)
-    // 上次已扣过：按周期往后推，直到晚于「上次 + 一个周期」
+    // 上次已扣过：按月步进直到晚于「上次 + 一个周期」。**不能按周期整步跳** ——
+    // 年费上次扣在 2 月、今天是 10 月时，整步跳会从 11 月直接跳到明年 11 月，
+    // 把中间的明年 2 月漏掉（提醒与 4×4 的逐月投影都会少算一次）。
     while (earliest != null && candidate.isBefore(earliest)) {
-        candidate = billingDayIn(candidate.plusMonths(months), billingDay)
+        candidate = billingDayIn(candidate.plusMonths(1), billingDay)
     }
     return candidate
 }

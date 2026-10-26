@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  本月记账 4×1（v22 BAR）：三列读数 支出 / 收入 / 结余（稿「读数条：支出/收入/结余三列」）。
+  柱状图让位给趋势样式；这一档只回答「这个月进出多少」。
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ImageView
+        android:id="@+id/widget_bg"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:contentDescription="@null"
+        android:scaleType="centerCrop" />
+
+    <LinearLayout
+        android:id="@+id/widget_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="15dp"
+        android:paddingVertical="9dp"
+        android:background="@drawable/widget_card_round">
+
+        <FrameLayout
+            android:layout_width="@dimen/widget_v22_badge_sm"
+            android:layout_height="@dimen/widget_v22_badge_sm">
+
+            <ImageView
+                android:id="@+id/widget_bill_badge"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:src="@drawable/widget_shape_circle"
+                android:contentDescription="@null" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:text="¥"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFFFF"
+                android:gravity="center" />
+        </FrameLayout>
+
+        <TextView
+            android:id="@+id/widget_bill_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="7dp"
+            android:text="@string/widget_bill_title"
+            android:textSize="@dimen/widget_v22_text_ttl"
+            android:textStyle="bold"
+            android:textColor="@color/widget_v22_text_1"
+            android:maxLines="1" />
+
+        <!-- 三列读数 -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:layout_marginStart="10dp">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/widget_expense_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/widget_expense_label"
+                    android:textSize="@dimen/widget_v22_text_micro"
+                    android:textColor="@color/widget_v22_text_2"
+                    android:maxLines="1" />
+
+                <TextView
+                    android:id="@+id/widget_expense_amount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0"
+                    android:textSize="@dimen/widget_v22_text_val"
+                    android:textStyle="bold"
+                    android:textColor="@color/widget_v22_text_1"
+                    android:maxLines="1"
+                    android:includeFontPadding="false" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/widget_bill_income_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/bill_income"
+                    android:textSize="@dimen/widget_v22_text_micro"
+                    android:textColor="@color/widget_v22_text_2"
+                    android:maxLines="1" />
+
+                <TextView
+                    android:id="@+id/widget_bill_income"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0"
+                    android:textSize="@dimen/widget_v22_text_val"
+                    android:textStyle="bold"
+                    android:textColor="@color/widget_v22_text_1"
+                    android:maxLines="1"
+                    android:includeFontPadding="false" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/widget_bill_balance_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/bill_balance"
+                    android:textSize="@dimen/widget_v22_text_micro"
+                    android:textColor="@color/widget_v22_text_2"
+                    android:maxLines="1" />
+
+                <TextView
+                    android:id="@+id/widget_bill_balance"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0"
+                    android:textSize="@dimen/widget_v22_text_val"
+                    android:textStyle="bold"
+                    android:textColor="@color/widget_v22_text_1"
+                    android:maxLines="1"
+                    android:includeFontPadding="false" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+</FrameLayout>

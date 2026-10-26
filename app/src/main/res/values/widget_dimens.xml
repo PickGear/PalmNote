@@ -19,8 +19,56 @@
     <dimen name="widget_text_label">9sp</dimen>
     <dimen name="widget_text_micro">10sp</dimen>
 
+    <!--
+      卡片圆角。官方推荐（Android 12+）直接取系统圆角，保证和桌面里其它组件同形；
+      31 以下没有这个系统资源，退回同值 28dp —— 预览图按 sdk 30 离屏渲染，
+      两边同值才不会出现「选择器里的图和真机圆角不一样」。
+    -->
+    <dimen name="widget_card_radius">28dp</dimen>
     <dimen name="widget_pad">16dp</dimen>
     <dimen name="widget_pad_compact">14dp</dimen>
     <dimen name="widget_gap">8dp</dimen>
     <dimen name="widget_icon_badge">16dp</dimen>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         v22 构件令牌（docs/mockups/widgets/v22 量值）。
+         字阶 8 档：40/36/26/17/15/13/12/10 —— 新布局只许用这些档，
+         不许再引入 11/14 等中间值（稿里曾因 11px 归并整改过一轮）。
+         ═══════════════════════════════════════════════════════════════ -->
+    <dimen name="widget_v22_text_hero_lg">40sp</dimen>
+    <dimen name="widget_v22_text_hero">36sp</dimen>
+    <dimen name="widget_v22_text_hero_sm">26sp</dimen>
+    <dimen name="widget_v22_text_val_lg">17sp</dimen>
+    <dimen name="widget_v22_text_val">15sp</dimen>
+    <dimen name="widget_v22_text_ttl">13sp</dimen>
+    <dimen name="widget_v22_text_lb">12sp</dimen>
+    <dimen name="widget_v22_text_micro">10sp</dimen>
+
+    <!-- 胶囊（.ch）：常规 26 / 紧凑 22（2×2 用）；圆角 10；紧版内边距 6、间隙 4 -->
+    <dimen name="widget_v22_chip_h">26dp</dimen>
+    <dimen name="widget_v22_chip_h_compact">26dp</dimen>
+    <dimen name="widget_v22_chip_pad">9dp</dimen>
+    <dimen name="widget_v22_chip_pad_tight">6dp</dimen>
+    <!-- 分段刻度（.ticks）：高 6，格间隙 2，圆角 1.5 -->
+    <dimen name="widget_v22_ticks_h">6dp</dimen>
+    <dimen name="widget_v22_ticks_gap">2dp</dimen>
+    <!-- 日历格（.dcell）：高 20、圆角 5、格间隙 3 -->
+    <dimen name="widget_v22_dcell">20dp</dimen>
+    <dimen name="widget_v22_dcell_radius">5dp</dimen>
+    <dimen name="widget_v22_dcell_gap">3dp</dimen>
+    <!-- 分段条（.seg）：高 8（卡片 12 的粗条另有 .bt 12dp）；圆角 4 -->
+    <dimen name="widget_v22_seg_h">12dp</dimen>
+    <dimen name="widget_v22_badge">26dp</dimen>
+    <dimen name="widget_v22_badge_sm">22dp</dimen>
+    <dimen name="widget_v22_bar_h">12dp</dimen>
+    <!-- 色点/点阵：dot 8、dot_sm 7、dot_xs 5；点阵点 9（dpd）、方框 13（ck） -->
+    <dimen name="widget_v22_dot">8dp</dimen>
+    <dimen name="widget_v22_dot_sm">7dp</dimen>
+    <dimen name="widget_v22_dot_xs">5dp</dimen>
+    <dimen name="widget_v22_dot_gap">4dp</dimen>
+    <dimen name="widget_v22_dpd">9dp</dimen>
+    <dimen name="widget_v22_ck">13dp</dimen>
+    <!-- 卡片圆角：4×2/2×2 22、4×1/2×1 18-20（稿 .s42/.s22/.s41/.s21） -->
+    <dimen name="widget_v22_radius_card">22dp</dimen>
+    <dimen name="widget_v22_radius_row">18dp</dimen>
 </resources>

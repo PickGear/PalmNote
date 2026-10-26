@@ -567,6 +567,9 @@ class BillViewModel @Inject constructor(
                 }
 
                 cleanupImagesAfterSave(form.images)
+                // 桌面组件即时刷新：新建/编辑账单会改钱包余额与本日/本月支出，别等 30 分钟周期
+                com.palmnote.ui.widget.WidgetUpdateHelper.refreshBillWidgets()
+                com.palmnote.ui.widget.WidgetUpdateHelper.refreshNetWorthWidgets()
                 _formState.value = form.copy(isSaving = false, isSaved = true)
             } catch (e: Exception) {
                 _formState.value = _formState.value.copy(isSaving = false)

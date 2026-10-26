@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  v22 快捷入口格（稿 .ic：圆角 14 淡彩方块 + 20px 族色字形 + 10sp 标签）：
+  方块底白底占位（运行时 setColorFilter 上族色 tint），字形运行时上族色（白色矢量 + 滤镜）。
+  整格是点击热区（Provider 挂各自的深链 PendingIntent）。
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_sc_tile"
+    android:layout_width="0dp"
+    android:layout_weight="1"
+    android:layout_height="match_parent">
+
+    <ImageView
+        android:id="@+id/widget_sc_tile_bg"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:src="@drawable/widget_v22_round14"
+        android:contentDescription="@null" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:paddingHorizontal="2dp">
+
+        <ImageView
+            android:id="@+id/widget_sc_tile_icon"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:contentDescription="@null" />
+
+        <TextView
+            android:id="@+id/widget_sc_tile_label"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="3dp"
+            android:textSize="@dimen/widget_v22_text_micro"
+            android:textStyle="bold"
+            android:textColor="@color/widget_v22_text_1"
+            android:gravity="center"
+            android:maxLines="1"
+            android:ellipsize="end" />
+    </LinearLayout>
+</FrameLayout>

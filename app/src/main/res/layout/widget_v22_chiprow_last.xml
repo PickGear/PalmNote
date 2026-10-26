@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  纵排胶囊的**末行**容器：与 widget_v22_chiprow 同构，唯独没有 6dp 底距。
+  4×2 概览三行胶囊正好填满中间行（3×26+2×6=90dp）—— 末行再带 6dp 底距整列就 96dp，
+  超出的 6dp 被容器裁掉，第三颗胶囊底部被切平（预览图里即如此）。
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_v22_chiprow"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal" />

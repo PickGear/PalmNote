@@ -14,17 +14,16 @@ import javax.inject.Singleton
  * Widget 刷新事件消费者：订阅领域事件，主动触发 Widget 更新。
  * 覆盖所有通过 EventBus 发布的数据变更事件。
  *
- * ## ⚠️ 本类**所有分支都不会执行**（2026-10-01 审计）
+ * ## 现状（2026-10-26 复核）
  *
- * 事件的 4 个发布点都在 UseCase 里，而那些 UseCase **自己没有任何调用方**
- * （界面层直接调仓库）→ **没有任何事件会被发出**，这里的 `when` 恒为 `else`。
+ * - **已接**：资产状态变更（AssetRepositoryImpl）、钱包余额（WalletRepositoryImpl）——
+ *   这两个分支现在真的会执行；
+ * - **未接**：新增 / 编辑资产、账单增删改 —— `CreateAssetUseCase` / `CreateBillUseCase`
+ *   仍无调用方（界面层直接调仓库），这些改动最坏等 `updatePeriodMillis` 的 30 分钟周期才上桌面。
+ *   生活模块则一直由 VM / 接收器直接调 `WidgetUpdateHelper`，无延迟。
  *
- * ## 但"小组件没刷新"的影响有限
- *
- * 所有小组件都配了 `updatePeriodMillis = 30 分钟`，Android 会周期性刷新它们：
- * - **生活模块**：改动后**立即刷新**（VM / 小组件接收器直接调 `WidgetUpdateHelper`）✓ 无延迟；
- * - **账单 / 资产 / 密码本**：只能等周期刷新 → 应用内改动后**最多 30 分钟**才反映到桌面。
- *   这是小瑕疵（不是"永远不更新"），所以本次**没有为它改 4 个模块的调用点**。
+ * 所以「账单/资产改动要等半小时」仍是已知小瑕疵；要彻底解决得把发布点接到界面层保存成功处
+ * （或在 VM 里直接调 `WidgetUpdateHelper`），与本次的小组件渲染修复分开做。
  */
 @Singleton
 class WidgetRefreshConsumer @Inject constructor() : EventConsumer {
@@ -38,6 +37,9 @@ class WidgetRefreshConsumer @Inject constructor() : EventConsumer {
                 is DomainEvent.BillDeleted,
                 is DomainEvent.BillRestored -> {
                     WidgetUpdateHelper.refreshBillWidgets()
+                    // 记账回滚余额走的是 walletDao.adjustBalance（绕过 WalletRepository，
+                    // 发不出 WalletBalanceChanged），净值合计含钱包余额，这里补上
+                    WidgetUpdateHelper.refreshNetWorthWidgets()
                 }
 
                 // 资产事件
@@ -61,9 +63,10 @@ class WidgetRefreshConsumer @Inject constructor() : EventConsumer {
                     WidgetUpdateHelper.refreshAllWidgets()
                 }
 
-                // 钱包事件（影响 DashboardWidget）
+                // 钱包事件（余额进概览 hero，也进净资产组件的合计）
                 is DomainEvent.WalletBalanceChanged -> {
                     WidgetUpdateHelper.refreshDashboardWidgets()
+                    WidgetUpdateHelper.refreshNetWorthWidgets()
                 }
 
                 else -> {}

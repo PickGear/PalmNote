@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  v22 待办胶囊行（稿 .ch.sm：高 26、圆角 10、内边距 9）：淡彩底 + 勾选框 + 事项 + 时间。
+  底是白底占位（运行时 setColorFilter 上族色 tint）；勾选框空/已勾两种背景由 Provider 换图；
+  时间着族色 ink（Provider setTextColor）。整行可点（Provider 挂勾选 PendingIntent）。
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_todo_row"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/widget_v22_chip_h"
+    android:layout_marginBottom="5dp">
+
+    <ImageView
+        android:id="@+id/widget_todo_row_bg"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:src="@drawable/widget_v22_round10"
+        android:contentDescription="@null" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="9dp">
+
+        <TextView
+            android:id="@+id/widget_todo_row_ck"
+            android:layout_width="@dimen/widget_v22_ck"
+            android:layout_height="@dimen/widget_v22_ck"
+            android:background="@drawable/widget_v22_ck_off"
+            android:gravity="center"
+            android:maxLines="1"
+            android:includeFontPadding="false"
+            android:textColor="#FFFFFFFF"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:contentDescription="@null" />
+
+        <TextView
+            android:id="@+id/widget_todo_row_name"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="7dp"
+            android:textSize="@dimen/widget_v22_text_lb"
+            android:textStyle="bold"
+            android:textColor="@color/widget_v22_text_1"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <TextView
+            android:id="@+id/widget_todo_row_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="7dp"
+            android:textSize="@dimen/widget_v22_text_val"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:includeFontPadding="false" />
+    </LinearLayout>
+</FrameLayout>

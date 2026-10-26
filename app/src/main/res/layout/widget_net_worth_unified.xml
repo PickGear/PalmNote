@@ -5,59 +5,75 @@
   没有额外口径。期初 = 当前余额合计 − 本月净收入，期初算不出（≤0，新账户第一个月）时整枚胶囊隐藏。
   数字点进记账页看明细。桌面缩到最小格、高度放不下三段时由 Provider 收起底行（不会截断）。
 -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/widget_layout"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:paddingHorizontal="14dp"
-    android:paddingVertical="12dp"
-    android:background="@drawable/widget_card_round">
+    android:layout_height="match_parent">
+
+    <!-- 壁纸层：app 内「自定义背景」开启时由 WidgetWallpaper 填充，卡片底色转透明 -->
+    <ImageView
+        android:id="@+id/widget_bg"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:contentDescription="@null"
+        android:scaleType="centerCrop" />
 
     <LinearLayout
+        android:id="@+id/widget_layout"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical">
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:paddingHorizontal="14dp"
+        android:paddingVertical="12dp"
+        android:background="@drawable/widget_card_round">
 
-        <TextView
-            android:layout_width="0dp"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/wallet_total_assets"
-            android:textSize="@dimen/widget_text_label"
-            android:textColor="@color/widget_v2_text_tertiary" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
 
+            <TextView
+                android:id="@+id/wallet_total_assets"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/wallet_total_assets"
+                android:textSize="@dimen/widget_text_label"
+                android:textColor="@color/widget_v2_text_tertiary" />
+
+            <TextView
+                android:id="@+id/widget_net_worth_delta"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="@dimen/widget_text_label"
+                android:textStyle="bold"
+                android:paddingHorizontal="7dp"
+                android:paddingVertical="2dp" />
+        </LinearLayout>
+
+        <!-- Hero 数字吃掉剩余高度并垂直居中：上方胶囊与下方第三行都是定高，中间自适应 -->
         <TextView
-            android:id="@+id/widget_net_worth_delta"
+            android:id="@+id/widget_net_worth_amount"
             android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:gravity="center_vertical"
+            android:text="0"
+            android:textSize="21sp"
+            android:textColor="@color/widget_v2_text_primary"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <TextView
+            android:id="@+id/widget_net_worth_sub"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textSize="@dimen/widget_text_label"
-            android:textStyle="bold"
-            android:paddingHorizontal="7dp"
-            android:paddingVertical="2dp" />
+            android:maxLines="1"
+            android:ellipsize="end" />
+
     </LinearLayout>
 
-    <!-- Hero 数字吃掉剩余高度并垂直居中：上方胶囊与下方第三行都是定高，中间自适应 -->
-    <TextView
-        android:id="@+id/widget_net_worth_amount"
-        android:layout_width="wrap_content"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:gravity="center_vertical"
-        android:text="0"
-        android:textSize="21sp"
-        android:textColor="@color/widget_v2_text_primary"
-        android:textStyle="bold"
-        android:maxLines="1"
-        android:ellipsize="end" />
-
-    <TextView
-        android:id="@+id/widget_net_worth_sub"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:textSize="@dimen/widget_text_label"
-        android:maxLines="1"
-        android:ellipsize="end" />
-
-</LinearLayout>
+</FrameLayout>

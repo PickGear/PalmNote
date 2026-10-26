@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  v22 纵排胶囊的行容器：一行一颗胶囊（0dp+weight=1 占满行宽），行间 6dp。
+  概览右侧三胶囊等纵排场景用 —— chip 根是横向 weight 语义，不能直接塞进纵向容器。
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_v22_chiprow"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:layout_marginBottom="6dp" />

@@ -9,6 +9,7 @@ import com.palmnote.data.db.dao.WalletDao
 import com.palmnote.data.db.entity.Wallet
 import com.palmnote.ui.bills.walletPresets
 import kotlinx.coroutines.flow.Flow
+import com.palmnote.domain.event.DomainEvent
 import com.palmnote.domain.repository.BillRepository
 import com.palmnote.domain.repository.WalletRepository
 
@@ -16,7 +17,8 @@ class WalletRepositoryImpl @Inject constructor(
     private val walletDao: WalletDao,
     private val billRepository: BillRepository,
     private val appDatabase: AppDatabase,
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val eventBus: com.palmnote.domain.event.EventBus
 ) : WalletRepository {
     override fun getEnabledWallets(): Flow<List<Wallet>> = walletDao.getEnabledWallets()
 
@@ -42,9 +44,20 @@ class WalletRepositoryImpl @Inject constructor(
 
     override suspend fun update(wallet: Wallet) = walletDao.update(wallet)
 
-    override suspend fun updateBalance(id: Long, balance: Long) = walletDao.updateBalance(id, balance)
+    override suspend fun updateBalance(id: Long, balance: Long) {
+        walletDao.updateBalance(id, balance)
+        runCatching { eventBus.publish(DomainEvent.WalletBalanceChanged(id, balance)) }
+    }
 
-    override suspend fun adjustBalance(id: Long, amount: Long) = walletDao.adjustBalance(id, amount)
+    override suspend fun adjustBalance(id: Long, amount: Long) {
+        walletDao.adjustBalance(id, amount)
+        // 记账/回滚路径不知道新余额，回读后再发（读不到就不发，别发错数）；
+        // 整个事件路径 runCatching：桌面刷新失败绝不影响余额更新的主流程
+        runCatching {
+            val wallet = walletDao.getWalletById(id) ?: return
+            eventBus.publish(DomainEvent.WalletBalanceChanged(id, wallet.currentBalance))
+        }
+    }
 
     override suspend fun setDefault(id: Long) = walletDao.setAsDefault(id)
 

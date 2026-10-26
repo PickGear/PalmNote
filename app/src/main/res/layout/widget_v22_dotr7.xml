@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  v22 七天点排（稿 .dotr：7px 点、隙 4）：打卡 4×2 行内用，一格 = 一天（6 天前→今天）。
+  亮暗都由 Provider setColorFilter（亮点着族色、暗点着 outline 灰）—— 与 dotg/dpd 同族写法。
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_v22_dotr7_root"
+    android:layout_width="wrap_content"
+    android:layout_height="@dimen/widget_v22_dot_sm"
+    android:orientation="horizontal">
+
+    <ImageView
+        android:id="@+id/widget_v22_dotr7_1"
+        android:layout_width="@dimen/widget_v22_dot_sm"
+        android:layout_height="@dimen/widget_v22_dot_sm"
+        android:layout_marginEnd="@dimen/widget_v22_dot_gap"
+        android:src="@drawable/widget_shape_circle"
+        android:contentDescription="@null" />
+    <ImageView
+        android:id="@+id/widget_v22_dotr7_2"
+        android:layout_width="@dimen/widget_v22_dot_sm"
+        android:layout_height="@dimen/widget_v22_dot_sm"
+        android:layout_marginEnd="@dimen/widget_v22_dot_gap"
+        android:src="@drawable/widget_shape_circle"
+        android:contentDescription="@null" />
+    <ImageView
+        android:id="@+id/widget_v22_dotr7_3"
+        android:layout_width="@dimen/widget_v22_dot_sm"
+        android:layout_height="@dimen/widget_v22_dot_sm"
+        android:layout_marginEnd="@dimen/widget_v22_dot_gap"
+        android:src="@drawable/widget_shape_circle"
+        android:contentDescription="@null" />
+    <ImageView
+        android:id="@+id/widget_v22_dotr7_4"
+        android:layout_width="@dimen/widget_v22_dot_sm"
+        android:layout_height="@dimen/widget_v22_dot_sm"
+        android:layout_marginEnd="@dimen/widget_v22_dot_gap"
+        android:src="@drawable/widget_shape_circle"
+        android:contentDescription="@null" />
+    <ImageView
+        android:id="@+id/widget_v22_dotr7_5"
+        android:layout_width="@dimen/widget_v22_dot_sm"
+        android:layout_height="@dimen/widget_v22_dot_sm"
+        android:layout_marginEnd="@dimen/widget_v22_dot_gap"
+        android:src="@drawable/widget_shape_circle"
+        android:contentDescription="@null" />
+    <ImageView
+        android:id="@+id/widget_v22_dotr7_6"
+        android:layout_width="@dimen/widget_v22_dot_sm"
+        android:layout_height="@dimen/widget_v22_dot_sm"
+        android:layout_marginEnd="@dimen/widget_v22_dot_gap"
+        android:src="@drawable/widget_shape_circle"
+        android:contentDescription="@null" />
+    <ImageView
+        android:id="@+id/widget_v22_dotr7_7"
+        android:layout_width="@dimen/widget_v22_dot_sm"
+        android:layout_height="@dimen/widget_v22_dot_sm"
+        android:src="@drawable/widget_shape_circle"
+        android:contentDescription="@null" />
+</LinearLayout>

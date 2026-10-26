@@ -72,6 +72,7 @@ object WidgetUpdateHelper {
 
     /** 给一族的每个类各发一条只含自己实例 id 的更新广播（见上方 id 归属注释）。 */
     private fun sendFamily(base: Class<*>) {
+        if (!::appContext.isInitialized) return  // 单测环境（Application.onCreate 未跑）静默跳过
         val manager = AppWidgetManager.getInstance(appContext)
         familyOf(base).forEach { provider ->
             sendUpdate(provider, manager.getAppWidgetIds(ComponentName(appContext, provider)))
@@ -98,9 +99,9 @@ object WidgetUpdateHelper {
         refreshDashboardWidgets()
     }
 
-    fun refreshVaultWidgets() {
-        sendFamily(VaultWidgetProvider::class.java)
-        refreshDashboardWidgets()
+    /** 净资产（含隐私眼睛切换后的刷新）。 */
+    fun refreshNetWorthWidgets() {
+        sendFamily(NetWorthWidgetProvider::class.java)
     }
 
     fun refreshNextUpWidgets() {
@@ -111,12 +112,19 @@ object WidgetUpdateHelper {
         sendFamily(DashboardWidgetProvider::class.java)
     }
 
+    /** 订阅提醒（生活条目 kind=SUBSCRIPTION 变化后跟刷；与待办同属生活数据）。 */
+    fun refreshSubscriptionWidgets() {
+        sendFamily(SubscriptionWidgetProvider::class.java)
+    }
+
     fun refreshHabitWidgets() {
-        HabitWidgetProvider.requestUpdateAll(appContext)
+        sendFamily(HabitWidgetProvider::class.java)
     }
 
     fun refreshAllWidgets() {
-        // 直接遍历目录条目（22 类 = 11 基类 + 11 尺寸形态），每类只发自己实例的 id。
+        if (!::appContext.isInitialized) return  // 单测环境静默跳过
+
+        // 直接遍历目录条目（40 类 = 10 基类 + 30 尺寸形态薄子类），每类只发自己实例的 id。
         // 此前逐类硬编码时漏过 NetWorth/Subscription/NextUp/Shortcuts，
         // 改按目录派生后「全量」与目录天然一致，新增组件不会再漏。
         val manager = AppWidgetManager.getInstance(appContext)
@@ -128,6 +136,8 @@ object WidgetUpdateHelper {
     // Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND 是隐藏 API（0x01000000），只能以字面量使用
     @Suppress("WrongConstant")
     private fun sendUpdate(providerClass: Class<*>, ids: IntArray) {
+        // 单测环境（Application.onCreate 未跑）appContext 未初始化：静默跳过，别把测试炸了
+        if (!::appContext.isInitialized) return
         if (restoring) return  // 恢复窗口内静默丢弃：见 restoring 注释
         if (ids.isEmpty()) return
         val intent = Intent(appContext, providerClass).apply {

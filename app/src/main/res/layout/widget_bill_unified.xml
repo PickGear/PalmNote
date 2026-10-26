@@ -1,260 +1,197 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  账单 3×2（v4 定稿）：左栏「本月支出」大数字（33sp 主数字）+ 预算用量条（10dp 加粗），
-  右栏近 7 天支出柱状图（图形当主角，占满剩余高度）。
-  柱高与用量条都靠 clip 的 level 定（RemoteViews 改不了控件尺寸）：用量条是「轨道 + clip 填充」
-  叠在 FrameLayout 里，颜色运行时 setColorFilter，所以两层的默认白色都不是最终色。
+  本月记账 4×2（v22 WIDE，数据版）：hd(徽章+标题+「新增」胶囊) / 左「本月支出 hero + 预算条」右「近 7 天柱」。
+  v22 口径：收入/结余/最高分类让位给柱状图（三列读数在 4×1 档）；预算没设时整块收起，不拿 0% 假装有预算。
+  近 7 天柱走 addView(widget_v22_bars7)：柱高 = 当天 ÷ 峰值，今天（末柱）恒全不透明，其余 32%。
+  柱高与用量条都靠 clip 的 level 定（RemoteViews 改不了控件尺寸）。
+  空态沿用 v4：「本月还没有记账」整卡一句话，不留白板。
 -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/widget_layout"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="@dimen/widget_pad"
-    android:background="@drawable/widget_card_round">
+    android:layout_height="match_parent">
 
-    <!-- Header：色族徽章 + 标题 + 新增色片 -->
-    <LinearLayout
+    <!-- 壁纸层：app 内「自定义背景」开启时由 WidgetWallpaper 填充，卡片底色转透明 -->
+    <ImageView
+        android:id="@+id/widget_bg"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical">
+        android:layout_height="match_parent"
+        android:contentDescription="@null"
+        android:scaleType="centerCrop" />
 
-        <FrameLayout
-            android:layout_width="@dimen/widget_icon_badge"
-            android:layout_height="@dimen/widget_icon_badge">
-
-            <ImageView
-                android:id="@+id/widget_bill_badge"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:src="@drawable/widget_shape_circle"
-                android:contentDescription="@null" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:text="¥"
-                android:textSize="11sp"
-                android:textStyle="bold"
-                android:textColor="#FFFFFFFF"
-                android:gravity="center" />
-        </FrameLayout>
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/widget_bill_title"
-            android:textSize="@dimen/widget_text_title"
-            android:textColor="@color/widget_v2_text_primary"
-            android:textStyle="bold"
-            android:layout_marginStart="8dp" />
-
-        <TextView
-            android:id="@+id/widget_add_btn"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/widget_add"
-            android:textSize="10sp"
-            android:textStyle="bold"
-            android:background="@drawable/widget_pill_tint1"
-            android:paddingHorizontal="12dp"
-            android:paddingVertical="4dp" />
-    </LinearLayout>
-
-    <!-- Content：左栏大数字 / 右栏柱状图 -->
     <LinearLayout
-        android:id="@+id/widget_content_with_data"
+        android:id="@+id/widget_layout"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:orientation="horizontal"
-        android:gravity="bottom"
-        android:layout_marginTop="6dp"
-        android:visibility="gone">
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:paddingHorizontal="15dp"
+        android:paddingVertical="13dp"
+        android:background="@drawable/widget_card_round">
 
+        <!-- Header：色族徽章 + 标题 + 新增色片（id 沿用 v4，bindHeader/bindAddButton 直接可用） -->
         <LinearLayout
-            android:layout_width="100dp"
-            android:layout_height="match_parent"
-            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
             android:gravity="center_vertical">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/widget_expense_label"
-                android:textSize="@dimen/widget_text_label"
-                android:textColor="@color/widget_v2_text_tertiary" />
-
-            <TextView
-                android:id="@+id/widget_expense_amount"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="0"
-                android:textSize="33sp"
-                android:lineSpacingMultiplier="0.75"
-                android:textColor="@color/widget_v2_text_primary"
-                android:textStyle="bold"
-                android:layout_marginTop="1dp"
-                android:maxLines="1"
-                android:ellipsize="end" />
-
-            <!-- 预算用量条：轨道 + clip 填充（宽度由 level 定） -->
             <FrameLayout
-                android:id="@+id/widget_bill_budget_bar"
-                android:layout_width="match_parent"
-                android:layout_height="10dp"
-                android:layout_marginTop="6dp">
+                android:layout_width="@dimen/widget_v22_badge"
+                android:layout_height="@dimen/widget_v22_badge">
 
                 <ImageView
+                    android:id="@+id/widget_bill_badge"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:src="@drawable/widget_bar_track"
+                    android:src="@drawable/widget_shape_circle"
                     android:contentDescription="@null" />
 
-                <ImageView
-                    android:id="@+id/widget_bill_budget_fill"
+                <TextView
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:src="@drawable/widget_bar_fill"
-                    android:contentDescription="@null" />
+                    android:text="¥"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:textColor="#FFFFFFFF"
+                    android:gravity="center" />
             </FrameLayout>
 
-            <LinearLayout
-                android:layout_width="match_parent"
+            <TextView
+                android:id="@+id/widget_bill_title"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginTop="2dp">
-
-                <TextView
-                    android:id="@+id/widget_budget_card_label"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/widget_budget_used"
-                    android:textSize="@dimen/widget_text_label"
-                    android:textColor="@color/widget_v2_text_tertiary" />
-
-                <TextView
-                    android:id="@+id/widget_budget_amount"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="0"
-                    android:textSize="@dimen/widget_text_label"
-                    android:textColor="@color/widget_v2_text_tertiary"
-                    android:layout_marginStart="4dp"
-                    android:maxLines="1"
-                    android:ellipsize="end" />
-            </LinearLayout>
-        </LinearLayout>
-
-        <!-- 近 7 天支出柱状图：柱高由 clip 的 level 定，颜色运行时着色（最高的一天换个色） -->
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:layout_marginStart="12dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1"
-                android:orientation="horizontal"
-                android:gravity="bottom">
-
-                <ImageView
-                    android:id="@+id/widget_bill_bar_0"
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:src="@drawable/widget_bar_clip"
-                    android:contentDescription="@null" />
-
-                <ImageView
-                    android:id="@+id/widget_bill_bar_1"
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:layout_marginStart="4dp"
-                    android:src="@drawable/widget_bar_clip"
-                    android:contentDescription="@null" />
-
-                <ImageView
-                    android:id="@+id/widget_bill_bar_2"
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:layout_marginStart="4dp"
-                    android:src="@drawable/widget_bar_clip"
-                    android:contentDescription="@null" />
-
-                <ImageView
-                    android:id="@+id/widget_bill_bar_3"
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:layout_marginStart="4dp"
-                    android:src="@drawable/widget_bar_clip"
-                    android:contentDescription="@null" />
-
-                <ImageView
-                    android:id="@+id/widget_bill_bar_4"
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:layout_marginStart="4dp"
-                    android:src="@drawable/widget_bar_clip"
-                    android:contentDescription="@null" />
-
-                <ImageView
-                    android:id="@+id/widget_bill_bar_5"
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:layout_marginStart="4dp"
-                    android:src="@drawable/widget_bar_clip"
-                    android:contentDescription="@null" />
-
-                <ImageView
-                    android:id="@+id/widget_bill_bar_6"
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:layout_marginStart="4dp"
-                    android:src="@drawable/widget_bar_clip"
-                    android:contentDescription="@null" />
-            </LinearLayout>
+                android:layout_marginStart="7dp"
+                android:text="@string/widget_bill_title"
+                android:textSize="@dimen/widget_v22_text_ttl"
+                android:textStyle="bold"
+                android:textColor="@color/widget_v22_text_1"
+                android:maxLines="1" />
 
             <TextView
+                android:id="@+id/widget_add_btn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="@string/widget_add"
+                android:textSize="@dimen/widget_v22_text_lb"
+                android:textStyle="bold"
+                android:paddingHorizontal="9dp"
+                android:paddingVertical="3dp"
+                android:maxLines="1" />
+        </LinearLayout>
+
+        <!-- 有数据的内容区（bindDataVisibility 切换） -->
+        <LinearLayout
+            android:id="@+id/widget_content_with_data"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <!-- 左：本月支出 hero + 预算条 -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/widget_expense_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/widget_expense_label"
+                    android:textSize="@dimen/widget_v22_text_lb"
+                    android:textColor="@color/widget_v22_text_2"
+                    android:maxLines="1" />
+
+                <TextView
+                    android:id="@+id/widget_expense_amount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="0"
+                    android:textSize="@dimen/widget_v22_text_hero"
+                    android:textStyle="bold"
+                    android:textColor="@color/widget_v22_text_1"
+                    android:maxLines="1"
+                    android:includeFontPadding="false" />
+
+                <!-- 预算粗条：track 铺底 + fill 走 level（82% = setImageLevel 8200） -->
+                <FrameLayout
+                    android:id="@+id/widget_bill_budget_bar"
+                    android:layout_width="match_parent"
+                    android:layout_height="9dp"
+                    android:layout_marginTop="8dp">
+
+                    <ImageView
+                        android:id="@+id/widget_bill_budget_track"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:src="@drawable/widget_bar_track"
+                        android:contentDescription="@null" />
+
+                    <ImageView
+                        android:id="@+id/widget_bill_budget_fill"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:src="@drawable/widget_bar_fill"
+                        android:contentDescription="@null" />
+                </FrameLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="4dp">
+
+                    <TextView
+                        android:id="@+id/widget_budget_card_label"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="@dimen/widget_v22_text_micro"
+                        android:textColor="@color/widget_v22_text_2"
+                        android:maxLines="1" />
+
+                    <TextView
+                        android:id="@+id/widget_budget_amount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="4dp"
+                        android:textSize="@dimen/widget_v22_text_micro"
+                        android:textStyle="bold"
+                        android:textColor="@color/widget_v22_text_1"
+                        android:maxLines="1" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- 右：近 7 天柱（addView widget_v22_bars7，bindBars7 上色与 level） -->
+            <LinearLayout
+                android:id="@+id/widget_bill_bars_host"
+                android:layout_width="112dp"
+                android:layout_height="78dp"
+                android:layout_marginStart="10dp"
+                android:orientation="horizontal" />
+        </LinearLayout>
+
+        <!-- 空态：本月一笔都没有时整卡一句话 -->
+        <LinearLayout
+            android:id="@+id/widget_empty_state"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/widget_bill_empty"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/widget_bill_week_label"
-                android:textSize="@dimen/widget_text_label"
-                android:textColor="@color/widget_v2_text_tertiary"
-                android:gravity="center"
-                android:layout_marginTop="3dp" />
+                android:text="@string/widget_bill_empty"
+                android:textSize="@dimen/widget_v22_text_lb"
+                android:textColor="@color/widget_v22_text_2"
+                android:maxLines="2" />
         </LinearLayout>
     </LinearLayout>
-
-    <!-- Empty -->
-    <LinearLayout
-        android:id="@+id/widget_empty_state"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:orientation="vertical"
-        android:gravity="center"
-        android:visibility="visible">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/widget_bill_empty"
-            android:textSize="12sp"
-            android:textColor="@color/widget_v2_text_tertiary" />
-    </LinearLayout>
-
-</LinearLayout>
+</FrameLayout>

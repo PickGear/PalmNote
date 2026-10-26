@@ -36,8 +36,17 @@ data object Budget
 @Serializable
 data class Report(val selectedBookId: Long = -1L, val bookName: String = "")
 
+/** 导入 / 导出枢纽（两张入口卡）。导入页与导出页都从这里进，返回也回到这里。 */
+@Serializable
+data object BillImportHub
+
+/** 导入流程页（选文件 → 解析 → 预览 → 结果）。 */
 @Serializable
 data object BillImport
+
+/** 导出账单流水：独立页（导入/导出枢纽页的第二张卡进入）。 */
+@Serializable
+data object BillExport
 
 /** 报销管理：待报销汇总与逐笔标记。 */
 @Serializable
@@ -54,9 +63,6 @@ data object About
 
 @Serializable
 data object PrivacyPolicy
-
-@Serializable
-data object TermsOfService
 
 @Serializable
 data object OpenSourceLicense

@@ -78,7 +78,6 @@
     <string name="bill_switch_book">Switch Book</string>
     <string name="bill_book_list">Book List</string>
     <string name="bill_default">Default</string>
-    <string name="bill_import">Import</string>
     <string name="bill_all_books">All Books</string>
     <string name="bill_report">Statistics</string>
     <string name="bill_budget_tab">Budget</string>
@@ -143,6 +142,18 @@
 
     <string name="settings_demo_section">Sample data</string>
     <string name="settings_bill_section">Bills</string>
+    <string name="settings_life_section">Life</string>
+    <string name="widget_pin_background_label">Background color</string>
+    <string name="widget_pin_background_permission_failed">Can\'t keep long-term access to this image — pick another one or use a preset color</string>
+    <string name="widget_pin_blur_label">Blur</string>
+    <string name="widget_pin_background_image">Image</string>
+
+    <!-- Editing placed widget instances (gallery "Edit" entry → instance picker → edit panel) -->
+    <string name="widget_pin_edit_action">Edit</string>
+    <string name="widget_pin_save">Save</string>
+    <string name="widget_pin_saved">Saved</string>
+    <string name="widget_pin_instances_desc">On your home screen · %1$d total</string>
+    <string name="widget_pin_instance_name">Instance %1$d</string>
     <string name="onboarding_demo_section">Sample data</string>
     <string name="onboarding_demo_hint">Not sure? Load the samples and look around — you can turn them off later</string>
     <string name="onboarding_demo_opt_on_title">Load sample data</string>
@@ -151,7 +162,7 @@
     <string name="onboarding_demo_opt_off_body">No samples — everything will be created by you</string>
     <string name="onboarding_demo_footnote">Samples can be viewed, edited and deleted. Turn them off in Settings → Data &amp; Backup → Sample data; that removes them completely.</string>
     <string name="settings_life_category_compact">Compact category chips</string>
-    <string name="settings_life_category_compact_subtitle">Show life home categories as one pill row, leaving more room for today</string>
+    <string name="settings_life_category_compact_subtitle">One row, more room for today</string>
     <string name="settings_calendar_sync_subtitle">Sync anniversaries to system calendar</string>
     <string name="settings_app_lock">App Lock</string>
     <string name="settings_app_lock_subtitle">Protect privacy, verify on startup</string>
@@ -400,69 +411,102 @@
     <string name="bill_import_error_parse_invalid">No valid bill records found</string>
     <string name="bill_import_error_format_unknown">Unrecognized file format, please confirm it is a WeChat or Alipay bill</string>
     <string name="bill_import_error_parse_failed">Parse failed: %s</string>
-    <string name="bill_import_error_read_image">Unable to read image</string>
-    <string name="bill_import_error_ocr_invalid">No valid transactions recognized</string>
-    <string name="bill_import_error_ocr_failed">Recognition failed: %s</string>
-    <string name="bill_import_error_invalid_amount">Please enter a valid amount</string>
     <string name="widget_bill_desc">"This month's spending and what's left of the budget"</string>
+    <!-- Three styles of the monthly-bill family, each its own catalog entry -->
+    <!-- Income line on the 2×2 card: %1$s is the amount -->
     <string name="widget_todo_title">Todo List</string>
     <string name="widget_todo_done_label">Done today</string>
+    <!-- Todo v22: short title; header "Today N/M"; 4x1 column labels; today empty state -->
+    <string name="widget_todo_title_short">Todo</string>
+    <string name="widget_todo_meta_today">Today %1$d/%2$d</string>
+    <string name="widget_todo_label_done">Done</string>
+    <string name="widget_todo_empty_today">Nothing due today</string>
     <string name="widget_overdue">Overdue</string>
-    <string name="widget_completed">Completed</string>
     <string name="widget_todo_desc">"Today's to-dos — tap a row to tick it off"</string>
     <string name="widget_counter_title">Life Counter</string>
     <string name="widget_counter_desc">Days until a birthday or anniversary</string>
+    <!-- Counter v22: shows goal progress now (2026-10-23); countdown lives in Next Up -->
+    <string name="widget_counter_desc_goal">Goal progress: current / target at a glance</string>
+    <string name="widget_counter_title_short">Count</string>
+    <string name="widget_counter_remaining_unit">%1$s %2$s to go</string>
+    <string name="widget_counter_remaining">%1$s to go</string>
     <string name="widget_asset_title">Assets</string>
     <string name="widget_asset_desc">What you own, grouped by category</string>
-    <string name="widget_net_worth_desc">Balances added up across all accounts</string>
+    <!-- Asset v22: short title for 2x2/4x1/2x1; 4x1 reading labels; "most" row; overflow slot -->
+    <string name="widget_asset_title_short">Items</string>
+    <string name="widget_asset_label_total">In use</string>
+    <string name="widget_asset_label_cats">Categories</string>
+    <string name="widget_asset_label_most">Most</string>
+    <string name="widget_asset_more">+%1$d more</string>
+    <string name="widget_asset_more_short">+%1$d</string>
+    <string name="widget_asset_dash">—</string>
+    <string name="widget_net_worth_desc">Assets minus liabilities</string>
+    <!-- Dashboard v22: header "Today · Wed"; hero spent today; three chips -->
+    <string name="widget_dash_today_fmt">Today · %1$s</string>
+    <string name="widget_dash_today">Today</string>
+    <string name="widget_dash_expense_label">Spent today</string>
+    <string name="widget_dash_expense_short">Spent</string>
+    <string name="widget_dash_bills_fmt">%1$d bills</string>
+    <string name="widget_dash_income_fmt">Income %1$s</string>
+    <string name="widget_dash_todo_total_fmt">%1$d total</string>
+    <string name="widget_dash_sub_label">Subs</string>
+    <string name="widget_dash_habit_label">Check-in</string>
+    <string name="widget_dash_budget_label">Budget</string>
+    <string name="widget_dash_avg_fmt">avg %1$s</string>
+    <string name="widget_dash_left_days_fmt">in %1$d d</string>
+    <string name="widget_dash_undone">to do</string>
+    <string name="widget_chart_week">Last 7 days</string>
+    <string name="widget_chart_peak_fmt">Peak %1$s</string>
+    <string name="widget_dash_empty_title">No expenses today</string>
+    <string name="widget_dash_empty_hint">Tap to add one</string>
+    <string name="widget_bill_budget_fmt">Budget %1$s</string>
+    <string name="widget_bill_balance">Balance</string>
+    <string name="widget_bill_daily_avg">Daily avg</string>
+    <string name="widget_chart_months">Last 12 months</string>
+    <string name="widget_chart_avg_fmt">Monthly avg %1$s</string>
+    <string name="widget_net_label_income_alt">Income</string>
+    <string name="widget_net_worth_title">Net Worth</string>
+    <string name="widget_net_worth_title_short">Net Worth</string>
+    <string name="widget_net_label_assets">Assets</string>
+    <string name="widget_net_label_liab">Liabilities</string>
+    <string name="widget_net_eye_toggle">Show or hide amounts</string>
     <!-- Net worth 2x1 third row (v4): this month\'s net income, %1$s like "+¥680" -->
-    <string name="widget_net_worth_month_sub">This month %1$s</string>
     <string name="widget_subscription_title">Renewals</string>
+    <!-- Subscription v22: short title; 4x1 column labels; 2x1 title -->
+    <string name="widget_subscription_title_short">Subs</string>
+    <string name="widget_sub_title_next">Next charge</string>
+    <string name="widget_sub_label_month">Total</string>
+    <string name="widget_sub_label_this_month">This month</string>
+    <string name="widget_sub_label_next">Next</string>
+    <string name="widget_sub_label_amount">Amount</string>
     <string name="widget_subscription_desc">The next charges, laid out by date</string>
     <string name="widget_subscription_empty">No subscriptions</string>
-    <string name="widget_vault_title">Vault</string>
-    <string name="widget_vault_entries">entries</string>
-    <string name="widget_vault_hint">Tap to open vault</string>
-    <string name="widget_vault_desc">Just a lock — nothing from the vault shows</string>
     <string name="widget_dashboard_title">Overview</string>
+    <string name="widget_dashboard_title_short">Overview</string>
     <string name="widget_dashboard_desc">Spending, to-dos and check-ins at a glance</string>
     <string name="widget_todos_label">Today</string>
+    <string name="widget_todo_recent">Recent</string>
+    <string name="widget_todo_kpi_rate">Done</string>
     <string name="widget_add_bill">Add Bill</string>
-    <string name="widget_vault_empty">No entries</string>
-    <string name="widget_bill_week_label">Last 7 days</string>
     <string name="widget_bill_empty">No bills yet</string>
     <string name="widget_todo_empty">All clear!</string>
-    <string name="widget_counter_empty">No events</string>
     <string name="widget_asset_empty">No items</string>
-    <string name="widget_budget_remaining">Budget Left</string>
     <string name="widget_budget_used">Budget used</string>
-    <string name="widget_net_income">Net Income</string>
     <!-- Dashboard 4x3 (v4): header / tile secondary info -->
-    <string name="widget_week_todo_count">%1$d todos this week</string>
-    <string name="widget_budget_used_pct">%1$d%% used</string>
-    <string name="widget_overdue_count">%1$d overdue</string>
-    <string name="widget_todo_done_today">%1$d done today</string>
-    <string name="widget_date_md_week">M/d · E</string>
+    <string name="widget_budget_remain_fmt">%1$s left</string>
     <string name="widget_todo_done_more">View all ›</string>
-    <string name="widget_date_format_cn_weekday">MMM d, yyyy · EEE</string>
     <!-- v4 agenda sections (design: today/overdue/tomorrow/later + week-done footer) -->
-    <string name="widget_tomorrow_count">%1$D due tomorrow</string>
-    <string name="widget_todo_done_count">%1$d done</string>
-    <string name="widget_todo_week_done">%1$d done this week</string>
     <string name="widget_todo_sect_count">%1$d items</string>
     <string name="widget_todo_sect_later">Later</string>
-    <string name="widget_overdue_short">Overdue %1$d</string>
     <string name="widget_yesterday">Yesterday</string>
-    <string name="widget_days_label">days</string>
     <string name="widget_date_format_cn">MMM d, yyyy</string>
     <string name="widget_days_ago">days ago</string>
     <string name="widget_today">today</string>
     <string name="widget_bill_title">This Month</string>
+    <string name="widget_bill_title_short">Bills</string>
     <string name="widget_add">Add</string>
-    <string name="widget_expense_label">Expense</string>
-    <string name="widget_goal_all_done">All done</string>
+    <string name="widget_expense_label">Spent this month</string>
     <string name="widget_no_goals">No goals</string>
-    <string name="widget_no_anniversary">No anniversaries</string>
     <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
     <plurals name="widget_days_unit">
         <item quantity="one">day</item>
@@ -476,43 +520,24 @@
     <string name="widget_asset_unit">items</string>
     <string name="widget_preview_todo_2">Inventory check</string>
     <string name="widget_preview_todo_3">Monthly report</string>
-    <string name="widget_preview_todo_due_3">in 3 days</string>
-    <string name="widget_preview_todo_due_4">Sunday</string>
-    <string name="widget_preview_todo_due_5">11/02</string>
     <string name="widget_habit_title">Check-in</string>
-    <string name="widget_habit_streak_label">Day streak</string>
     <string name="widget_habit_empty">No habits</string>
-    <string name="widget_preview_habit_1">Run 5 km</string>
-    <string name="widget_preview_habit_names">Run 5 km · Read 30 min · Drink 8 cups</string>
-    <string name="widget_preview_asset_total">11 items</string>
+    <!-- Habit v22: short title; 4x1 column labels; 2x2 done names and streak -->
+    <string name="widget_habit_title_short">Habits</string>
+    <string name="widget_habit_label_today">Today</string>
+    <string name="widget_habit_label_streak">Streak</string>
+    <string name="widget_habit_done_names">Done %1$s</string>
+    <string name="widget_habit_streak_days">%1$d-day streak</string>
     <string name="widget_preview_asset_cat_1">Digital</string>
     <string name="widget_preview_asset_cat_2">Sports</string>
     <string name="widget_preview_asset_cat_3">Furniture</string>
     <string name="widget_preview_asset_cat_4">Books</string>
     <string name="widget_preview_asset_cat_5">Instruments</string>
     <string name="widget_preview_asset_cat_6">Photography</string>
-    <string name="widget_preview_asset_cnt_1">3 items</string>
-    <string name="widget_preview_asset_cnt_2">2 items</string>
-    <string name="widget_preview_asset_cnt_3">2 items</string>
-    <string name="widget_preview_asset_cnt_4">2 items</string>
-    <string name="widget_preview_asset_cnt_5">1 item</string>
-    <string name="widget_preview_asset_cnt_6">1 item</string>
-    <string name="widget_shortcut_add">Record</string>
     <string name="widget_shortcut_asset">Assets</string>
-    <string name="widget_shortcut_goal">Goals</string>
-    <string name="widget_shortcut_anniversary">Dates</string>
     <string name="widget_habit_desc">Tap a square to check in and see your streak</string>
     <!-- Habit weekly grid (v4): hero sub / header sub / footer stats -->
-    <string name="widget_this_week_label">This week</string>
-    <string name="widget_habit_hero_sub">%1$d days to your best</string>
-    <string name="widget_habit_hero_max">Personal best</string>
-    <string name="widget_habit_done_label">Completed today</string>
-    <string name="widget_habit_month_label">This month</string>
-    <string name="widget_habit_month_days">%1$d days</string>
     <string name="widget_habit_row_week">%1$d/7</string>
-    <string name="widget_habit_stat_longest">Longest %1$d</string>
-    <string name="widget_habit_stat_week">Week %1$d%%</string>
-    <string name="widget_habit_stat_todo">%1$d to check in</string>
     <string name="widget_preview_todo_done_1">Buy parts</string>
     <string name="widget_preview_todo_done_2">Call mom</string>
     <string name="widget_preview_todo_od">Submit expense report</string>
@@ -523,45 +548,41 @@
     <string name="widget_preview_done_cnt">2 done</string>
     <string name="widget_preview_week_done"><b>9</b> done this week</string>
     <!-- New size variants (v4): 2×1 minimal / 4×1 strip / 1×2·1×3 column -->
-    <string name="widget_todo_today">Today\'s todos</string>
-    <string name="widget_todo_today_week">Today · %1$s</string>
-    <string name="widget_todo_next">Next %1$s</string>
-    <string name="widget_subscription_recent">Recent renewal</string>
-    <string name="widget_subscription_month_brief">%1$d this month</string>
-    <string name="widget_life_count_title">Life counter</string>
-    <string name="widget_habit_count_label">%1$d habits</string>
-    <string name="widget_habit_today_fmt">Today %1$d/%2$d</string>
     <!-- 窄卡头部的纯比值（design-v4 窄卡只有 1/4，不带「今日」） -->
     <string name="widget_habit_today_ratio">%1$d/%2$d</string>
-    <string name="widget_habit_week_brief">Week %1$d%%</string>
-    <string name="widget_longest_label">Longest</string>
     <string name="widget_shortcuts_desc">Four shortcuts: record, assets, goals, dates</string>
     <string name="widget_shortcuts_title">Quick Access</string>
+    <string name="widget_shortcuts_title_short">Quick</string>
+    <!-- Shortcuts v22: eight tile labels -->
+    <string name="widget_shortcut_bill">Record</string>
+    <string name="widget_shortcut_todo">Todo</string>
+    <string name="widget_shortcut_habit">Check-in</string>
+    <string name="widget_shortcut_net">Net Worth</string>
+    <string name="widget_shortcut_sub">Subs</string>
+    <string name="widget_shortcut_counter">Count</string>
+    <string name="widget_shortcut_calendar">Calendar</string>
     <string name="settings_widget_title">Home Screen Widgets</string>
     <string name="settings_widget_subtitle">Pin widgets to your home screen and see added counts</string>
     <!-- Add page: headline / groups / permission strip / default look -->
     <string name="widget_page_perm_title">One permission first, then it\'s one tap</string>
     <string name="widget_page_perm_desc">Your launcher requires the “Desktop shortcuts” permission. Without it, adding will not succeed.</string>
     <string name="widget_page_perm_action">Open settings ›</string>
+    <string name="widget_page_perm_entry">Widget permission settings ›</string>
     <string name="widget_page_unsupported">This launcher doesn\'t support adding from inside the app — add it from the launcher\'s widget list instead.</string>
-    <!-- Add page: group titles + search -->
+    <!-- Add page: group names (used by the catalog's data-layer grouping, not shown as UI chips) -->
     <string name="widget_group_billing">Billing</string>
+    <string name="widget_group_asset">Items</string>
     <string name="widget_group_life">Life</string>
-    <string name="widget_group_efficiency">Productivity</string>
-    <string name="widget_group_asset">Assets</string>
+    <string name="widget_group_dashboard">Overview</string>
+    <string name="widget_group_shortcuts">Shortcuts</string>
     <string name="widget_group_other">Other</string>
-    <string name="widget_search_hint">Search widgets</string>
-    <string name="widget_search_empty_hint">Try a different keyword</string>
+    <!-- Add page: gallery header title (design v22 §5) + gray count on the right -->
+    <string name="widget_page_title">Widgets</string>
     <string name="widget_page_add_confirming">Confirming…</string>
     <string name="widget_page_add_again">Add another</string>
     <string name="widget_pin_add">Add to home screen</string>
-    <string name="widget_pin_choose_size">Choose a size</string>
-    <string name="widget_pin_quick_add">Add at current size</string>
-    <!-- Gallery tile mini line only: the 48dp add button shares the row, so the long form crowds it -->
-    <string name="widget_pin_count_short">%1$d on home</string>
+    <string name="widget_pin_choose_size">Choose a style</string>
     <string name="widget_pin_opacity_label">Opacity</string>
-    <string name="widget_pin_opacity_follow">Default</string>
-    <string name="widget_pin_opacity_level">%1$d%%</string>
     <string name="widget_pin_failed">Couldn\'t start pinning. Add from your home screen\'s widget list instead.</string>
     <string name="widget_pin_added">Added to your home screen</string>
     <string name="widget_pin_not_added">Not added. Check permissions and try again.</string>
@@ -569,15 +590,8 @@
     <string name="widget_config_title">Choose a book</string>
     <string name="widget_config_title_generic">Widget settings</string>
     <string name="widget_config_desc">This widget shows income and spending from the selected book only.</string>
-    <string name="widget_config_desc_opacity">This widget\'s opacity affects it alone — other widgets stay as they are.</string>
     <string name="widget_config_budget_note">Budgets are set per month, not per book — so a specific book shows that book\'s net income for the month.</string>
     <string name="widget_config_confirm">Done</string>
-    <!-- Per-widget opacity: follows the global default unless overridden -->
-    <string name="widget_config_opacity_label">Opacity</string>
-    <string name="widget_config_opacity_customize">Customize</string>
-    <string name="widget_config_opacity_follow">Follow default</string>
-    <string name="widget_config_opacity_following">Following the default (%1$d%%)</string>
-    <string name="widget_config_opacity_only_this">Affects this widget only — others keep the default.</string>
     <string name="widget_days_unit">days</string>
     <string name="widget_tomorrow">tomorrow</string>
     <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
@@ -866,10 +880,8 @@
     <string name="about_title">About</string>
     <string name="about_description_detail">PalmNote is a local-first life tracking app — expenses, items, life plans and a password vault, all stored on your phone.</string>
     <string name="about_privacy_policy">Privacy Policy</string>
-    <string name="about_terms_of_service">Terms of Service</string>
     <string name="about_made_with">Made with Love</string>
     <string name="about_privacy_title">Privacy Policy</string>
-    <string name="about_terms_title">Terms of Service</string>
     <string name="about_open_source_license">Open Source License</string>
     <string name="license_load_failed">Failed to load license text</string>
     <string name="about_version_history">Version History</string>
@@ -894,7 +906,7 @@
     <string name="onboarding_mod_vault_body">Locally encrypted storage</string>
     <string name="onboarding_bill_f1">Multiple ledgers and wallets</string>
     <string name="onboarding_bill_f2">Budgets, monthly/yearly reports and calendar view</string>
-    <string name="onboarding_bill_f3">Bill import (encrypted ZIP supported) and OCR recognition</string>
+    <string name="onboarding_bill_f3">Bill file import (encrypted ZIP) and flow export</string>
     <string name="onboarding_item_f1">Inventory with categories and status tracking</string>
     <string name="onboarding_item_f2">Usage logs and daily cost calculation</string>
     <string name="onboarding_item_f3">Warranty/maintenance reminders and photos</string>
@@ -961,7 +973,6 @@
     <string name="bill_image_section">Images</string>
     <string name="bill_image_hint">Add receipt or invoice photos, up to 4</string>
     <string name="bill_reimbursement_status">Reimbursement Status</string>
-    <string name="bill_reimbursed">Reimbursed</string>
     <string name="bill_pending_reimbursement">Pending</string>
     <!-- Reimbursement management -->
     <string name="reimbursement_title">Reimbursement</string>
@@ -1005,17 +1016,49 @@
     <string name="bill_updated_at">Updated At</string>
     <!-- Bill Import -->
     <string name="bill_import_title">Import Bills</string>
+    <!-- Bill flow export (second card on the import page): own clean format, not Alipay-style, intentionally not re-importable -->
+    <string name="bill_import_export_entry">Import / Export</string>
+    <string name="bill_import_export">Export bills</string>
+    <string name="bill_import_export_desc_short">Export all bills as a CSV flow</string>
+    <string name="bill_export_range_title">Date range</string>
+    <string name="bill_export_range_all">All</string>
+    <string name="bill_export_range_this_month">This month</string>
+    <string name="bill_export_range_last_month">Last month</string>
+    <string name="bill_export_range_last_3_months">Last 3 months</string>
+    <string name="bill_export_range_this_year">This year</string>
+    <string name="bill_export_range_custom">Custom</string>
+    <string name="bill_export_range_dialog_title">Select date range</string>
+    <string name="bill_export_range_empty">No bills in the selected range</string>
+    <string name="bill_export_file_name_ranged">palmnote_bills_%1$s_%2$s.csv</string>
+    <string name="bill_export_format_summary">%1$d columns · sorted by time · UTF-8 with BOM · opens directly in Excel / WPS</string>
+    <string name="bill_export_empty_hint">Add a bill on the Bills tab first, or pick another range</string>
+    <string name="bill_export_summary_loading">Counting…</string>
+    <string name="bill_export_summary_count">%1$d bills in total</string>
+    <string name="bill_export_summary_scope">%1$d books · %2$d wallets</string>
+    <string name="bill_export_action">Choose location and export</string>
+    <string name="bill_export_empty">No bills to export yet</string>
+    <string name="bill_export_file_name">palmnote_bills.csv</string>
+    <string name="bill_export_done">Exported %1$d bills</string>
+    <string name="bill_export_retry">Retry export</string>
+    <string name="bill_export_change_location">Change location</string>
+    <string name="bill_export_failed">Export failed, please retry</string>
+    <string name="bill_export_footnote">Device migration: Settings → Data exchange</string>
+    <string name="bill_flow_header">Time,Type,Amount,Book,Wallet,To wallet,Category,Subcategory,Merchant,Note,Payment,Transaction ID,Reimbursement</string>
+    <string name="bill_flow_reimb_none">No</string>
+    <string name="bill_flow_reimb_pending">Pending</string>
+    <string name="bill_flow_reimb_done">Reimbursed</string>
+    <string name="bill_flow_reimb_partial">Partial</string>
     <string name="bill_import_file">File Import</string>
-    <string name="bill_import_image">Image Recognition</string>
     <string name="bill_import_parsing">Parsing…</string>
     <string name="bill_import_importing">Importing…</string>
     <string name="bill_import_failed">Import Failed</string>
     <string name="bill_import_hero_title">Add External Bill Statements</string>
-    <string name="bill_import_hero_desc">Import a file or recognize images; entries are organized automatically</string>
+    <string name="bill_import_hero_desc">Import a bill file; entries are organized automatically</string>
     <string name="bill_import_file_desc_short">Batch import WeChat/Alipay statements</string>
-    <string name="bill_import_ocr_desc_short">Recognize bills from screenshots or photos</string>
+    <string name="bill_import_start_desc">Pick the bill file exported from WeChat / Alipay (CSV, Excel or encrypted ZIP). Parsing and saving happen on-device; the file never leaves your phone.</string>
+    <string name="bill_import_pick_file">Pick bill file</string>
     <string name="bill_import_step_1">Export official statement</string>
-    <string name="bill_import_step_2">Upload file or image</string>
+    <string name="bill_import_step_2">Pick your bill file</string>
     <string name="bill_import_step_3">Review and save</string>
     <string name="bill_import_help_title">Not sure how to export?</string>
     <string name="bill_import_help_desc">Export the statement file from WeChat or Alipay</string>
@@ -1034,29 +1077,20 @@
     <string name="bill_import_duplicate_existing">Already imported</string>
     <string name="bill_import_unrecognized">Unrecognized</string>
     <string name="bill_import_source_file">File</string>
-    <string name="bill_import_expense_sum">Expense total</string>
-    <string name="bill_import_income_sum">Income total</string>
     <string name="bill_import_preview_source">Source</string>
-    <string name="bill_import_view_original">Tap to view original</string>
-    <string name="bill_import_ocr_details">View recognition details</string>
     <string name="bill_import_complete">Import Complete</string>
     <string name="bill_import_continue">Continue Import</string>
     <string name="bill_import_reselect">Reselect</string>
     <string name="bill_import_select_none">Deselect All</string>
     <string name="bill_import_wechat_bill">WeChat Bill</string>
     <string name="bill_import_alipay_bill">Alipay Bill</string>
-    <string name="bill_import_ocr_edit_title">Edit Recognition Result</string>
     <string name="bill_import_amount">Amount</string>
     <string name="bill_import_merchant">Merchant</string>
     <string name="bill_import_date">Date</string>
     <string name="bill_import_note">Note</string>
     <string name="bill_import_edit_bill">Edit Bill</string>
     <string name="bill_import_amount_invalid">Enter an amount greater than 0</string>
-    <string name="bill_import_save">Save Bill</string>
-    <string name="bill_import_batch_save">Batch Save (%d)</string>
     <string name="bill_import_unknown_file">Unknown File</string>
-    <string name="bill_import_screenshot">Screenshot</string>
-    <string name="bill_import_selected">Selected</string>
     <string name="bill_import_change">Change</string>
     <string tools:ignore="PluralsCandidate" name="bill_import_export_failures">View &amp; export %1$d failed</string>
     <string name="bill_import_failed_csv_name">palmnote_import_failed.csv</string>
@@ -1083,17 +1117,10 @@
         <item quantity="other">%1$d records processed</item>
     </plurals>
     <string name="bill_import_review_line">To review · %1$s</string>
-    <string name="bill_import_confidence_legend_title">Field confidence</string>
-    <string name="bill_import_confidence_high">Reliably read</string>
-    <string name="bill_import_confidence_inferred">Inferred by rule, please verify</string>
-    <string name="bill_import_confidence_missing">Required but empty, please fill</string>
     <!-- Sorting station (file import result page) -->
     <string name="bill_import_confirm_title">Confirm Import</string>
     <string name="bill_import_confirm_all">Confirm All</string>
-    <string tools:ignore="PluralsCandidate" name="bill_import_review_headline">%1$d need your review</string>
-    <string tools:ignore="PluralsCandidate" name="bill_import_review_subtitle">%1$s · %2$d more ready</string>
-    <string tools:ignore="PluralsCandidate" name="bill_import_review_all_ready">%1$d ready to import</string>
-    <string name="bill_import_review_hint_amount">Low confidence · tap amount to edit</string>
+    <string name="bill_import_review_hint_amount">Amount missing · tap to edit</string>
     <string name="bill_import_review_hint_date">Missing date · tap card to confirm</string>
     <string name="bill_import_review_hint_merchant">Merchant incomplete · tap name to edit</string>
     <string name="bill_import_review_hint_category">Category unrecognized · tap category to edit</string>
@@ -1107,7 +1134,10 @@
     <string name="bill_import_zip_password_title">This bill is encrypted</string>
     <string name="bill_import_zip_password_hint">This archive is password-protected (e.g. Alipay "account details" export). Enter the extraction password.</string>
     <string name="bill_import_zip_password_wrong">Incorrect password, please try again</string>
-    <string name="bill_import_deposit_to">Save to %1$s / %2$s</string>
+    <string name="bill_import_summary_ready_rest">%1$d more ready to import</string>
+    <string name="bill_import_summary_reason">Main issue: %1$s</string>
+    <string name="bill_import_view_all">View all</string>
+    <string name="bill_import_deposit_label">Save to</string>
     <string name="bill_import_confirm_import_all">Confirm %1$d, import all %2$d</string>
     <string name="bill_import_confirm_import_some">Confirm %1$d, import %2$d</string>
     <string name="bill_import_import_total">Import %1$d</string>
@@ -1400,19 +1430,6 @@
     <string name="settings_notification_denied_title">Permission Denied</string>
     <string name="settings_notification_denied_text">Notification permission has been permanently denied. Please enable it in system settings.</string>
     <string name="settings_notification_denied_go_settings">Go to Settings</string>
-    <string name="privacy_dialog_title">User Agreement &amp; Privacy Policy</string>
-    <string name="privacy_eyebrow">Before you start</string>
-    <string name="privacy_brand_latin">PalmNote</string>
-    <string name="privacy_dialog_text">Thanks for using PalmNote. Here are the three promises we make about your data:</string>
-    <string name="privacy_point_offline_title">No network</string>
-    <string name="privacy_point_offline_body">No network permission declared, so the app cannot go online</string>
-    <string name="privacy_point_no_upload_title">No uploads</string>
-    <string name="privacy_point_no_upload_body">No server exists to receive your data</string>
-    <string name="privacy_point_local_title">Local only</string>
-    <string name="privacy_point_local_body">This device holds the only copy, with no cloud backup</string>
-    <string name="privacy_consent_note">Tap the buttons above to read the full terms. By continuing, you agree that you have read and accepted the User Agreement and Privacy Policy.</string>
-    <string name="privacy_dialog_agree">Agree and start</string>
-    <string name="privacy_dialog_disagree">Disagree</string>
     <string name="life_preset">Preset</string>
     <!-- Trigger Engine Notifications -->
     <!-- Default Goal Categories -->
@@ -2051,7 +2068,7 @@
     <string name="backup_location_use_internal">Use phone storage</string>
     <string name="backup_location_pick_folder">Choose a folder…</string>
     <string name="import_bill_file_title">This is a bill file</string>
-    <string name="import_bill_file_body">For WeChat/Alipay bills, generic CSV, Excel and screenshot recognition, use the import entry at the top of the "Bills" tab. This page only imports full app-data packages.</string>
+    <string name="import_bill_file_body">For WeChat/Alipay bills, generic CSV and Excel, use the import entry at the top of the Bills tab. This page only imports full app-data packages.</string>
     <string name="import_error_too_large">File too large to import (limit ~300MB)</string>
     <string tools:ignore="PluralsCandidate" name="import_full_done_wallets">Recalculated %1$d wallet balance(s)</string>
     <string tools:ignore="PluralsCandidate" name="import_full_legacy_checkins">%1$d goal check-in(s) from the legacy package were not imported (habits are tracked by the Check-in template)</string>
@@ -2070,7 +2087,6 @@
     <string name="about_group_open">Open in QQ</string>
     <string name="about_group_open_failed">QQ not found — group number copied, you can add it manually</string>
     <string name="about_privacy_desc">How your data is protected: local-only, no network permission</string>
-    <string name="about_terms_desc">Please read before using the app</string>
     <string name="about_license_desc">Open-source components used by this app</string>
     <string name="about_open_source_note">PalmNote is open source under GPL-3.0. Thanks to all open-source contributors.</string>
     <string name="wallet_default_set">Set as default wallet</string>
@@ -2298,22 +2314,46 @@
     <string name="life_photo_add_more">Add more</string>
     <string name="life_photo_title_hint">Caption (optional)</string>
     <string name="widget_config_accent_title">Accent color</string>
-    <string name="widget_config_accent_desc">Changes this widget only; the in-app theme stays as is.</string>
-    <string name="widget_config_accent_follow">Follow app</string>
+    <string name="widget_config_accent_desc">Changes this widget only; the in-app theme stays as is. Defaults to the widget design\'s module colors.</string>
+    <string name="widget_config_accent_follow">Default colors</string>
     <string name="widget_next_up_title">Next up</string>
+    <string name="widget_next_up_title_short">Next</string>
     <string name="widget_next_up_desc">One thing at a time — done means next</string>
     <string name="widget_next_up_empty">Nothing coming up</string>
-    <string name="widget_next_up_kind_todo">Todo</string>
-    <string name="widget_next_up_kind_renewal">Due</string>
-    <string name="widget_next_up_kind_countdown">Countdown</string>
     <string name="widget_next_up_due_today">Today</string>
-    <string name="widget_next_up_done">Done</string>
     <string name="widget_next_up_days_unit">d</string>
     <!-- 小组件 v4（3×2 家族）：接下来/订阅/倒计时的时效状态与 Hero 信息 -->
     <string name="widget_next_up_rotate">Auto</string>
-    <string name="widget_next_up_today_due">Due today</string>
     <string name="widget_next_up_renewal_date">Billed %1$s</string>
-    <string name="widget_subscription_upcoming">Due soon</string>
-    <string name="widget_counter_total_fmt">%1$d total</string>
-    <string name="widget_counter_second_days">%1$d days</string>
+    <!-- Next Up v22: 4x1 column labels; reminder line "Reminder HH:mm" -->
+    <string name="widget_next_up_remaining">Left</string>
+    <string name="widget_next_up_event">Event</string>
+    <string name="widget_next_up_date">Date</string>
+    <string name="widget_next_up_reminder">Reminder %1$s</string>
+    <string name="widget_pin_edit_entry">Edit more</string>
+    <string name="widget_pin_edit_title">Edit more</string>
+
+    <!-- v37 4x4 dashboard tier (seven families) -->
+    <string name="widget_asset_meta_fmt">%1$d items · %2$d categories</string>
+    <string name="widget_asset_most_fmt">Top %1$s %2$d</string>
+    <string name="widget_asset_recent_added">Recently added</string>
+    <string name="widget_asset_empty_hint">Tap to add</string>
+    <string name="widget_net_label_annualized">Annualized</string>
+    <string name="widget_net_chart_title">Net worth, last 12 months</string>
+    <string name="widget_habit_label_week">This week</string>
+    <string name="widget_habit_label_best">Best</string>
+    <string name="widget_habit_chart_recent">Completed, last 7 days</string>
+    <string name="widget_counter_label_goal">Goal</string>
+    <string name="widget_counter_label_done">Done</string>
+    <string name="widget_counter_label_left">Left</string>
+    <string name="widget_counter_goal_fmt">Goal %1$s %2$s</string>
+    <string name="widget_sub_label_year">Yearly</string>
+    <string name="widget_sub_chart_6m">Charges, next 6 months</string>
+    <string name="widget_next_up_meta_window">Next 30 days</string>
+    <string name="widget_next_up_label_recent">Next</string>
+    <string name="widget_next_up_label_month">This month</string>
+    <string name="widget_next_up_label_remind">Reminder</string>
+    <string name="widget_next_up_events_unit">events</string>
+    <string name="widget_next_up_all_day">All day</string>
+    <string name="widget_shortcut_next">Coming up</string>
 </resources>

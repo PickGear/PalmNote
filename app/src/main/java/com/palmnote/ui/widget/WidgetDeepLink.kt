@@ -21,7 +21,6 @@ object WidgetDeepLink {
     const val TAB_ADD_BILL = "add_bill"
     const val TAB_ASSET = "asset"
     const val TAB_LIFE = "life"
-    const val TAB_VAULT = "vault"
     const val TAB_REPORT = "report"
     const val TAB_BUDGET = "budget"
 
@@ -32,7 +31,6 @@ object WidgetDeepLink {
     const val SEG_TODO_ADD = 2_000_000
     const val SEG_COUNTER = 300_000
     const val SEG_ASSET = 400_000
-    const val SEG_VAULT = 500_000
     const val SEG_DASHBOARD = 600_000
     const val SEG_DASHBOARD_BUDGET = 610_000
     const val SEG_DASHBOARD_GOAL = 620_000

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  物品 4×4 网格行 · 3 列（v37 §2-4）：等高填满（0dp + weight 1），格由 Provider addView 进来
+  （widget_v22_chip_cell，0dp + weight 1 等宽、match_parent 等高）。行间 8dp。
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_asset_grid_row"
+    android:layout_width="match_parent"
+    android:layout_height="0dp"
+    android:layout_weight="1"
+    android:orientation="horizontal"
+    android:layout_marginBottom="8dp" />

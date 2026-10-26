@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  v37 净资产 4×4 底部的资产/负债双比例行（稿 §2-5）：色点 + 标签 + 5dp 细进度条 + 百分比。
+  条底走 widget_v22_track，填充走 widget_v22_bt_fill（ClipDrawable level = percent×100）。
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_v22_ratio_root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical">
+
+    <ImageView
+        android:id="@+id/widget_v22_ratio_dot"
+        android:layout_width="6dp"
+        android:layout_height="6dp"
+        android:src="@drawable/widget_shape_circle"
+        android:contentDescription="@null" />
+
+    <TextView
+        android:id="@+id/widget_v22_ratio_lbl"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="6dp"
+        android:textSize="12sp"
+        android:includeFontPadding="false"
+        android:maxLines="1"
+        android:textColor="@color/widget_v22_text_2" />
+
+    <FrameLayout
+        android:layout_width="0dp"
+        android:layout_height="5dp"
+        android:layout_weight="1"
+        android:layout_marginHorizontal="6dp"
+        android:background="@drawable/widget_v22_track">
+
+        <ImageView
+            android:id="@+id/widget_v22_ratio_fill"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:src="@drawable/widget_v22_bt_fill"
+            android:contentDescription="@null" />
+    </FrameLayout>
+
+    <TextView
+        android:id="@+id/widget_v22_ratio_val"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:includeFontPadding="false"
+        android:maxLines="1"
+        android:fontFeatureSettings="tnum"
+        android:textColor="@color/widget_v22_text_1" />
+</LinearLayout>

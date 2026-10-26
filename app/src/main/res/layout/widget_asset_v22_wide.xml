@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  物品 4×2（v22 WIDE）：hd(徽章+物品分布+hero「N 件」) / 分段条 / 3 列图例胶囊两行。
+  每行最多 3 格（0dp+weight 1 等分），不足用 widget_v22_spacer 补位 —— RemoteViews 改不了子控件宽度，
+  「占几格」表达排布，格子数由 Provider 按分类数决定。行高 26（稿 .ch.sm），行间 6dp。
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ImageView
+        android:id="@+id/widget_bg"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:contentDescription="@null"
+        android:scaleType="centerCrop" />
+
+    <LinearLayout
+        android:id="@+id/widget_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:paddingHorizontal="15dp"
+        android:paddingVertical="13dp"
+        android:background="@drawable/widget_card_round">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <FrameLayout
+                android:layout_width="@dimen/widget_v22_badge"
+                android:layout_height="@dimen/widget_v22_badge">
+
+                <ImageView
+                    android:id="@+id/widget_asset_badge"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/widget_shape_circle"
+                    android:contentDescription="@null" />
+
+                <ImageView
+                    android:layout_width="11dp"
+                    android:layout_height="11dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/widget_ic_box_white"
+                    android:contentDescription="@null" />
+            </FrameLayout>
+
+            <TextView
+                android:id="@+id/widget_asset_title"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="7dp"
+                android:text="@string/widget_asset_title"
+                android:textSize="@dimen/widget_v22_text_ttl"
+                android:textStyle="bold"
+                android:textColor="@color/widget_v22_text_1"
+                android:maxLines="1"
+                android:ellipsize="end" />
+
+            <!-- Hero Number：总数 + 单位一整串（稿 .hero 26px） -->
+            <TextView
+                android:id="@+id/widget_asset_total"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="@dimen/widget_v22_text_hero_sm"
+                android:textStyle="bold"
+                android:textColor="@color/widget_v22_text_1"
+                android:maxLines="1"
+                android:includeFontPadding="false" />
+        </LinearLayout>
+
+        <!-- 分段条宿主：addView(widget_v22_seg)。
+             稿 §2-4 4×2 是 space-between 三段式：weight 吃掉头部与胶囊行之间的余量、
+             8dp 分段条在其中垂直居中（上下留白均分），胶囊行被顶到卡底 —— 空间优势才出得来 -->
+        <LinearLayout
+            android:id="@+id/widget_asset_seg_host"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:gravity="center_vertical" />
+
+        <!-- 图例网格宿主：addView(widget_asset_v22_row3 / _end) × N。
+             2026-10-25 用户定：对稿 space-between —— 胶囊行贴卡底（上一版 gravity top 挤在上半截） -->
+        <LinearLayout
+            android:id="@+id/widget_asset_grid_host"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+
+        <TextView
+            android:id="@+id/widget_asset_empty"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="@string/widget_asset_empty"
+            android:textSize="@dimen/widget_v22_text_lb"
+            android:textColor="@color/widget_v22_text_2"
+            android:visibility="gone" />
+
+    </LinearLayout>
+
+</FrameLayout>

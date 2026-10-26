@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  物品图例行 · 3 列 · 末行版：不带行间 margin（末行再留 6dp 会把 2×2 的第三行顶出卡外）。
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_asset_row"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/widget_v22_chip_h"
+    android:orientation="horizontal" />

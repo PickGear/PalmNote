@@ -13,6 +13,8 @@ import android.view.ViewGroup
 import android.widget.FrameLayout
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import java.util.Locale
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -35,12 +37,21 @@ class NextUpWidgetTest {
         dueDate = java.time.LocalDate.now().atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
     )
 
+    @Before
+    fun forceChineseLocale() {
+        // 断言全部按默认（中文）strings 写：单测 JVM 默认 locale 跟宿主走，必须钉死
+        Locale.setDefault(Locale.SIMPLIFIED_CHINESE)
+        val config = context.resources.configuration
+        config.setLocale(Locale.SIMPLIFIED_CHINESE)
+        context.resources.updateConfiguration(config, context.resources.displayMetrics)
+    }
+
     @Test
     fun `今天的待办压过订阅与倒数`() {
         val focus = provider.pickFocus(
             todos = listOf(todo(1)),
             renewals = listOf(SubscriptionWidgetProvider.Renewal("视频会员", "¥25", daysLeft = 1)),
-            counters = listOf(LifeCounterWidgetProvider.CounterEvent(2, "妈妈生日", 5, java.time.LocalDate.now()))
+            counters = listOf(CounterEvent(2, "妈妈生日", 5, java.time.LocalDate.now()))
         )
         assertEquals(NextUpWidgetProvider.Kind.TODO, focus?.kind)
         assertEquals("交房租", focus?.title)
@@ -52,7 +63,7 @@ class NextUpWidgetTest {
         val focus = provider.pickFocus(
             todos = emptyList(),
             renewals = listOf(SubscriptionWidgetProvider.Renewal("视频会员", "¥25", daysLeft = 2)),
-            counters = listOf(LifeCounterWidgetProvider.CounterEvent(2, "妈妈生日", 5, java.time.LocalDate.now()))
+            counters = listOf(CounterEvent(2, "妈妈生日", 5, java.time.LocalDate.now()))
         )
         assertEquals(NextUpWidgetProvider.Kind.RENEWAL, focus?.kind)
         assertEquals("视频会员", focus?.title)
@@ -64,7 +75,7 @@ class NextUpWidgetTest {
         val focus = provider.pickFocus(
             todos = emptyList(),
             renewals = listOf(SubscriptionWidgetProvider.Renewal("视频会员", "¥25", daysLeft = 10)),
-            counters = listOf(LifeCounterWidgetProvider.CounterEvent(2, "妈妈生日", 5, java.time.LocalDate.now()))
+            counters = listOf(CounterEvent(2, "妈妈生日", 5, java.time.LocalDate.now()))
         )
         assertEquals(NextUpWidgetProvider.Kind.COUNTDOWN, focus?.kind)
         assertEquals("5", focus?.bigValue)
@@ -106,16 +117,16 @@ class NextUpWidgetTest {
             context, 1, provider.pickFocus(listOf(todo(9)), emptyList(), emptyList())
         ))
         assertTrue(texts(root).contains("交房租"))
-        assertTrue(texts(root).contains(context.getString(R.string.widget_next_up_kind_todo)))
+        // v22:hero「今天」+ meta 行标题;kind 标签与「完成」字样不再是版式的一部分
         assertTrue(texts(root).contains(context.getString(R.string.widget_next_up_due_today)))
-        assertTrue(texts(root).contains(context.getString(R.string.widget_next_up_done)))
     }
 
     @Test
     fun `空焦点渲染空态并藏内容`() {
         val root = render(provider.bindViews(context, 1, null))
-        assertEquals(View.VISIBLE, root.findViewById<View>(R.id.widget_next_up_empty)?.visibility)
-        assertEquals(View.GONE, root.findViewById<View>(R.id.widget_next_up_content)?.visibility)
+        // v22：空态显示 widget_next_empty，hero 藏（无独立 content 容器 id）
+        assertEquals(View.VISIBLE, root.findViewById<View>(R.id.widget_next_empty)?.visibility)
+        assertEquals(View.GONE, root.findViewById<View>(R.id.widget_next_hero)?.visibility)
     }
 
     // ── 逐实例配色覆盖 ──

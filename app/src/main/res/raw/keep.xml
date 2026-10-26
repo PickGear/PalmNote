@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  小组件预览图的分层按**资源名约定**在运行时查找（widget_preview_x_surface / _blocks / _chip，
+  见 WidgetPin.surfacePreviewRes / blocksPreviewRes / chipPreviewRes）：会跟着不透明度淡出的中性面板、
+  色砖、以及卡片相对时要被 tint 成浅色的胶囊底各占一张 PNG，面板层还要当白模 tint。
+  名字只在代码里拼，R8 的资源压缩会把它们当成无用资源删掉 —— 这里显式保住。
+  重新出图见 WidgetPreviewPngGenerator 的注释。
+-->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@drawable/widget_preview_*_surface,@drawable/widget_preview_*_blocks,@drawable/widget_preview_*_chip" />

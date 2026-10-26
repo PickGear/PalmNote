@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  浅色胶囊底：自选深色背景（卡片相对 + 深色卡）时「新增」胶囊翻成这一档，
+  由 BillWidgetProvider.bindAddButton 换上去，配日间那档的深字（widget_v2_text_primary）。
+  不透明度 0xE0/0xFF = 88%：卡底能透出一点，青卡/黑卡上都读作「浅色胶囊」而不是一块白砖。
+  面板预览侧同值（WidgetPinScreen.CHIP_OVERLAY_ALPHA）。
+  默认卡底（未接管背景）用不到它 —— 那仍是 widget_pill_tint1 的色族淡色。
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#E0FFFFFF" />
+    <corners android:radius="99dp" />
+</shape>

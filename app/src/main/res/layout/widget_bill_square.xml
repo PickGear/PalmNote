@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  本月记账 2×2（v22 SQUARE）：标题行 + hero + 七根迷你柱当背景图（稿「宁减条数不缩字号」）。
+  柱走 addView(widget_v22_bars7)，高 26dp 压在卡底；收入行让位（4×1 档才有三列读数）。
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ImageView
+        android:id="@+id/widget_bg"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:contentDescription="@null"
+        android:scaleType="centerCrop" />
+
+    <LinearLayout
+        android:id="@+id/widget_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:paddingHorizontal="13dp"
+        android:paddingVertical="13dp"
+        android:background="@drawable/widget_card_round">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <FrameLayout
+                android:layout_width="@dimen/widget_v22_badge_sm"
+                android:layout_height="@dimen/widget_v22_badge_sm">
+
+                <ImageView
+                    android:id="@+id/widget_bill_badge"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/widget_shape_circle"
+                    android:contentDescription="@null" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:text="¥"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:textColor="#FFFFFFFF"
+                    android:gravity="center" />
+            </FrameLayout>
+
+            <TextView
+                android:id="@+id/widget_bill_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:text="@string/widget_bill_title"
+                android:textSize="@dimen/widget_v22_text_ttl"
+                android:textStyle="bold"
+                android:textColor="@color/widget_v22_text_1"
+                android:maxLines="1" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/widget_expense_amount"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:gravity="center_vertical"
+            android:text="0"
+            android:textSize="@dimen/widget_v22_text_hero"
+            android:textStyle="bold"
+            android:textColor="@color/widget_v22_text_1"
+            android:maxLines="1"
+            android:includeFontPadding="false" />
+
+        <!-- 七根迷你柱宿主（addView） -->
+        <LinearLayout
+            android:id="@+id/widget_bill_bars_host"
+            android:layout_width="match_parent"
+            android:layout_height="26dp"
+            android:orientation="horizontal" />
+    </LinearLayout>
+</FrameLayout>

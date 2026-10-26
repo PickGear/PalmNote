@@ -129,6 +129,10 @@ interface AssetDao {
     @Query("UPDATE assets SET totalUsageHours = totalUsageHours + :hours, updatedAt = :now WHERE id = :assetId")
     suspend fun addUsageHours(assetId: Long, hours: Double, now: Long = System.currentTimeMillis())
 
+    /** 最近添加的一件在用物品（物品组件 4×4 的 footer「最近添加」用；没有返回 null）。 */
+    @Query("SELECT * FROM assets WHERE status = 'HELD' ORDER BY createdAt DESC LIMIT 1")
+    suspend fun getMostRecentHeldAsset(): Asset?
+
     @Query("UPDATE assets SET isFavorite = :isFavorite, updatedAt = :now WHERE id = :id")
     suspend fun setFavorite(id: Long, isFavorite: Boolean, now: Long = System.currentTimeMillis())
 

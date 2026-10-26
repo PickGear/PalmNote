@@ -13,7 +13,7 @@ import javax.inject.Inject
 import kotlinx.coroutines.launch
 
 /**
- * 账单组件的配置页（`android:configure`）：选这个实例只看哪个账本，外加它自己的透明度。
+ * 账单组件的配置页（`android:configure`）：选这个实例只看哪个账本，外加它自己的不透明度。
  *
  * 单独一个 Activity 是因为**账本这一段只有账单组件有**——配置页由各组件在
  * `*_info.xml` 里各自声明，不必在运行时去猜「正在配置哪个组件」。
@@ -47,8 +47,6 @@ class BillWidgetConfigActivity : ComponentActivity() {
                     showAccent = true,
                     booksFlow = accountBookDao.getAllBooks(),
                     selectedBookFlow = preferencesManager.widgetBook(widgetId),
-                    opacityOverrideFlow = preferencesManager.widgetOpacityOverride(widgetId),
-                    defaultOpacityFlow = preferencesManager.widgetOpacity,
                     accentThemeOverrideFlow = preferencesManager.widgetAccentThemeFor(widgetId),
                     onConfirm = ::confirm,
                     onCancel = { finish() }
@@ -60,7 +58,6 @@ class BillWidgetConfigActivity : ComponentActivity() {
     private fun confirm(result: WidgetConfigResult) {
         lifecycleScope.launch {
             preferencesManager.setWidgetBook(widgetId, result.bookId)
-            preferencesManager.setWidgetOpacityFor(widgetId, result.opacityOverride)
             preferencesManager.setWidgetAccentThemeFor(widgetId, result.accentThemeId)
             // 立刻按新设置重出内容：桌面拿到 RESULT_OK 后也会刷新一次，这里先动避免看到旧数据
             WidgetUpdateHelper.refreshBillWidgets()

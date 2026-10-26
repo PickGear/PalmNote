@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- v37 .minichips：四块分类小胶囊（淡底 + 名/值），底与值色运行时按族上色 -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_v22_minichips_root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal">
+    <FrameLayout android:id="@+id/widget_v22_mc_1" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1">
+        <ImageView android:id="@+id/widget_v22_mc_1_bg" android:layout_width="match_parent" android:layout_height="match_parent" android:src="@drawable/widget_v22_round10" android:contentDescription="@null" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:paddingHorizontal="6dp" android:paddingVertical="4dp">
+            <TextView android:id="@+id/widget_v22_mc_1_n" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="10sp" android:includeFontPadding="false" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/widget_v22_mc_1_v" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="11sp" android:textStyle="bold" android:includeFontPadding="false" android:maxLines="1" android:fontFeatureSettings="tnum" />
+        </LinearLayout>
+    </FrameLayout>
+    <FrameLayout android:id="@+id/widget_v22_mc_2" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="4dp">
+        <ImageView android:id="@+id/widget_v22_mc_2_bg" android:layout_width="match_parent" android:layout_height="match_parent" android:src="@drawable/widget_v22_round10" android:contentDescription="@null" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:paddingHorizontal="6dp" android:paddingVertical="4dp">
+            <TextView android:id="@+id/widget_v22_mc_2_n" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="10sp" android:includeFontPadding="false" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/widget_v22_mc_2_v" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="11sp" android:textStyle="bold" android:includeFontPadding="false" android:maxLines="1" android:fontFeatureSettings="tnum" />
+        </LinearLayout>
+    </FrameLayout>
+    <FrameLayout android:id="@+id/widget_v22_mc_3" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="4dp">
+        <ImageView android:id="@+id/widget_v22_mc_3_bg" android:layout_width="match_parent" android:layout_height="match_parent" android:src="@drawable/widget_v22_round10" android:contentDescription="@null" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:paddingHorizontal="6dp" android:paddingVertical="4dp">
+            <TextView android:id="@+id/widget_v22_mc_3_n" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="10sp" android:includeFontPadding="false" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/widget_v22_mc_3_v" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="11sp" android:textStyle="bold" android:includeFontPadding="false" android:maxLines="1" android:fontFeatureSettings="tnum" />
+        </LinearLayout>
+    </FrameLayout>
+    <FrameLayout android:id="@+id/widget_v22_mc_4" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="4dp">
+        <ImageView android:id="@+id/widget_v22_mc_4_bg" android:layout_width="match_parent" android:layout_height="match_parent" android:src="@drawable/widget_v22_round10" android:contentDescription="@null" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:paddingHorizontal="6dp" android:paddingVertical="4dp">
+            <TextView android:id="@+id/widget_v22_mc_4_n" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="10sp" android:includeFontPadding="false" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/widget_v22_mc_4_v" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="11sp" android:textStyle="bold" android:includeFontPadding="false" android:maxLines="1" android:fontFeatureSettings="tnum" />
+        </LinearLayout>
+    </FrameLayout>
+</LinearLayout>

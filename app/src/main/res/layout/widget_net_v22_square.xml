@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  净资产 2×2（v22 SQUARE）：hd(徽章+净资产+涨跌胶囊) / hero + 眼睛 / 横向分段条（稿 §5）/ 资产·负债两行。
+  seg 走 addView(widget_v22_seg)（稿 §5 画廊封面即横向 86/14，与 4×2 同画法）；
+  两行金额用 widget_v22_text_1 + 族色 ink（Provider 下发）。
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ImageView
+        android:id="@+id/widget_bg"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:contentDescription="@null"
+        android:scaleType="centerCrop" />
+
+    <LinearLayout
+        android:id="@+id/widget_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:paddingHorizontal="13dp"
+        android:paddingVertical="13dp"
+        android:background="@drawable/widget_card_round">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <FrameLayout
+                android:layout_width="@dimen/widget_v22_badge_sm"
+                android:layout_height="@dimen/widget_v22_badge_sm">
+
+                <ImageView
+                    android:id="@+id/widget_net_badge"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/widget_shape_circle"
+                    android:contentDescription="@null" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:text="¥"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:textColor="#FFFFFFFF"
+                    android:gravity="center" />
+            </FrameLayout>
+
+            <TextView
+                android:id="@+id/widget_net_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:text="@string/widget_net_worth_title"
+                android:textSize="@dimen/widget_v22_text_ttl"
+                android:textStyle="bold"
+                android:textColor="@color/widget_v22_text_1"
+                android:maxLines="1" />
+
+            <TextView
+                android:id="@+id/widget_net_delta"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:textSize="@dimen/widget_v22_text_micro"
+                android:textStyle="bold"
+                android:paddingHorizontal="6dp"
+                android:paddingVertical="2dp"
+                android:maxLines="1" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="4dp">
+
+            <TextView
+                android:id="@+id/widget_net_amount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0"
+                android:textSize="@dimen/widget_v22_text_hero_sm"
+                android:textStyle="bold"
+                android:textColor="@color/widget_v22_text_1"
+                android:maxLines="1"
+                android:includeFontPadding="false" />
+
+            <ImageView
+                android:id="@+id/widget_net_eye"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:layout_marginStart="8dp"
+                android:src="@drawable/widget_v22_eye"
+                android:contentDescription="@string/widget_net_eye_toggle" />
+        </LinearLayout>
+
+        <!-- 横向分段条宿主：addView(widget_v22_seg)；seg 自带 8dp 固定高，宿主 wrap 即可 -->
+        <FrameLayout
+            android:id="@+id/widget_net_seg_host"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="8dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <ImageView
+                android:id="@+id/widget_net_assets_dot"
+                android:layout_width="6dp"
+                android:layout_height="6dp"
+                android:src="@drawable/widget_shape_circle"
+                android:contentDescription="@null"
+                android:layout_marginEnd="5dp" />
+
+            <TextView
+                android:id="@+id/widget_net_assets_lbl"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/widget_net_label_assets"
+                android:textSize="@dimen/widget_v22_text_lb"
+                android:textColor="@color/widget_v22_text_2"
+                android:maxLines="1" />
+
+            <TextView
+                android:id="@+id/widget_net_assets_val"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:textSize="@dimen/widget_v22_text_lb"
+                android:textStyle="bold"
+                android:textColor="@color/widget_v22_text_1"
+                android:maxLines="1" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="3dp">
+
+            <ImageView
+                android:id="@+id/widget_net_liab_dot"
+                android:layout_width="6dp"
+                android:layout_height="6dp"
+                android:src="@drawable/widget_shape_circle"
+                android:contentDescription="@null"
+                android:layout_marginEnd="5dp" />
+
+            <TextView
+                android:id="@+id/widget_net_liab_lbl"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/widget_net_label_liab"
+                android:textSize="@dimen/widget_v22_text_lb"
+                android:textColor="@color/widget_v22_text_2"
+                android:maxLines="1" />
+
+            <TextView
+                android:id="@+id/widget_net_liab_val"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:textSize="@dimen/widget_v22_text_lb"
+                android:textStyle="bold"
+                android:textColor="@color/widget_v22_text_1"
+                android:maxLines="1" />
+        </LinearLayout>
+    </LinearLayout>
+</FrameLayout>

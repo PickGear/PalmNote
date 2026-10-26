@@ -12,42 +12,41 @@ import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
-import androidx.compose.ui.test.assertIsNotSelected
-import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertWidthIsEqualTo
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performScrollToNode
-import androidx.compose.ui.test.performTextClearance
-import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.test.platform.app.InstrumentationRegistry
 import com.palmnote.app.R
-import com.palmnote.ui.settings.ADDED_BADGE_TAG
 import com.palmnote.ui.settings.CATALOG_CELL_TAG
 import com.palmnote.ui.settings.CATALOG_LIST_TAG
+import com.palmnote.ui.settings.INSTANCE_ROW_TAG
 import com.palmnote.ui.settings.PREVIEW_IMAGE_TAG
-import com.palmnote.ui.settings.QUICK_ADD_TAG
-import com.palmnote.ui.settings.SEARCH_FIELD_TAG
 import com.palmnote.ui.settings.SHEET_ADD_TAG
+import com.palmnote.ui.settings.SHEET_SAVE_TAG
 import com.palmnote.ui.settings.SHEET_BACK_TAG
 import com.palmnote.ui.settings.SHEET_DOT_TAG
 import com.palmnote.ui.settings.SHEET_DOTS_TAG
+import com.palmnote.ui.settings.SHEET_BG_ROW_TAG
+import com.palmnote.ui.settings.SHEET_EDIT_ENTRY_TAG
 import com.palmnote.ui.settings.SHEET_OPACITY_ROW_TAG
+import com.palmnote.ui.settings.SHEET_OPACITY_SLIDER_TAG
 import com.palmnote.ui.settings.SHEET_PREVIEW_TAG
 import com.palmnote.ui.settings.SHEET_TAG
 import com.palmnote.ui.settings.SHEET_TOPBAR_TAG
 import com.palmnote.ui.settings.WidgetPinScreen
-import com.palmnote.ui.settings.pickedOpacityForNewInstance
 import com.palmnote.ui.theme.PalmNoteTheme
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -63,18 +62,18 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
 /**
- * 添加页（**只在应用内一键添加**，不再讲系统的手动添加路径）画廊版式：
- * - 首屏是按用途分组的**画廊**（记账 / 生活 / 效率 / 资产 / 其他），两列铺开，
- *   每张卡 = 组件预览（垫淡底托）+ 名称 + 尺寸标/桌面实例数 + 右下角「＋」；
+ * 添加页（**只在应用内一键添加**，不再讲系统的手动添加路径）画廊版式（设计稿 V22 §5，2026-10-24 对稿）：
+ * - 首屏是**一条平铺画廊**：4×2 的卡占整行、2×2 的卡两两并排，顺序按 [WidgetPin.GALLERY_ORDER]；
+ *   每张卡 = 组件预览（直接浮在页底上，widget 自带卡底与投影）+ 图下一行**居中短名**标签
+ *   （2026-10-25 用户定：短名不截断）；
+ *   不设分组筛选 / 占位格（稿里没有）；顶栏有搜索（按短名/长名/说明过滤）；
  * - 点某张卡弹出**近全高的面板**（对齐各家「添加小部件」的观感）：名称 + 说明 + 大预览
- *   （桌面**真实尺寸**、浮在白底上，左右滑动换尺寸、下缘一排分页圆点）+ 尺寸胶囊
- *   + 透明度档位（有配置页的组件不摆这一行）+ 添加按钮，当场选当场落桌；卡上的「＋」不进面板，
- *   按当前尺寸直接落桌；已落桌的卡在预览右上角带小勾；
- * - 同组件的多个尺寸形态合并成一张卡，面板里换尺寸后预览实时切换；顶部搜索框按名称过滤；
- *   输入后触碰画廊 / 按 IME「搜索」键都会收起键盘，搜索时看卡不被键盘挡住；
- * - 目录覆盖全部 22 个组件（11 尺寸形态 + 11 基类）、Provider 不重复、
- *   标题/描述/预览资源可解析，且每组都登记了格数标签、设计尺寸与分组；
- * - manifest 覆盖：22 个 receiver 全部声明（系统选择器按 manifest 的 label 区分同族形态）；
+ *   （桌面**真实尺寸**、浮在白底上，左右滑动换样式、下缘一排分页圆点）+ 背景色 + 不透明度滑杆
+ *   + 添加按钮，当场选当场落桌；已落桌的卡可长按或从面板底部进「编辑」（单实例直接进面板、
+ *   多实例先选一个，保存写回该实例）；
+ * - 目录覆盖 48 个尺寸形态（v22 每族四档；记账三样式 × 四档，折叠成 10 个组件）、
+ *   Provider 不重复、标题/描述/预览资源可解析，且每个形态都登记了格数标签、设计尺寸与分组；
+ * - manifest 覆盖：48 个 receiver 全部声明（系统选择器按 manifest 的 label 区分同族形态）；
  * - 两个分支都显式锁定（不依赖阴影默认值）：启动器支持 pin → 面板按钮可用；不支持 → 按钮禁用 + 整页兜底文案。
  */
 @RunWith(RobolectricTestRunner::class)
@@ -103,19 +102,15 @@ class WidgetPinTest {
         compose.onNodeWithTag(SHEET_ADD_TAG).fetchSemanticsNode()
             .config.getOrNull(SemanticsProperties.Disabled) != null
 
-    /** 卡片右下角「＋」是否禁用（enabled 的按钮不带 Disabled 语义键）。 */
-    private fun isQuickAddDisabled(): Boolean =
-        compose.onAllNodesWithTag(QUICK_ADD_TAG)[0].fetchSemanticsNode()
-            .config.getOrNull(SemanticsProperties.Disabled) != null
-
-    /** 搜索框是否持焦（输入后为 true；收起键盘/离开焦点后 Focused 键归零）。 */
-    private fun isSearchFocused(): Boolean =
-        compose.onNodeWithTag(SEARCH_FIELD_TAG).fetchSemanticsNode()
-            .config.getOrNull(SemanticsProperties.Focused) == true
-
-    /** 搜索入口在顶栏：先点搜索图标，整行搜索框才出现并可以输入。 */
-    private fun openSearch() {
-        compose.onNodeWithContentDescription(context.getString(R.string.search)).performClick()
+    /**
+     * 滚到某组件的画廊卡并点开面板。长列表里定位组件靠滚动 ——
+     * 按「卡片节点 + **短名**文本」匹配（2026-10-25 用户定：画廊标签用短名），
+     * 分组 chip 常驻误匹配的问题也不存在了。
+     */
+    private fun openTile(titleRes: Int) {
+        val title = context.getString(WidgetPin.titleShortOf(titleRes))
+        compose.onNodeWithTag(CATALOG_LIST_TAG).performScrollToNode(hasText(title))
+        compose.onNode(hasTestTag(CATALOG_CELL_TAG) and hasText(title)).performClick()
     }
 
     /** 面板大预览当前的尺寸：换尺寸后它会跟着变（各形态的尺寸不同）。 */
@@ -155,14 +150,15 @@ class WidgetPinTest {
     // ── 目录 / manifest（与版式无关） ──
 
     @Test
-    fun `目录覆盖 22 个尺寸形态且资源都存在`() {
-        assertEquals(22, WidgetPin.entries.size)
-        assertEquals(22, WidgetPin.entries.map { it.providerClass }.distinct().size)
+    fun `目录覆盖全部尺寸形态且资源都存在`() {
+        // 2026-10-24 v22 四档补全：每族 4×2 / 2×2 / 4×1 / 2×1（记账三样式 ×4），共 48 个形态
+        assertEquals(40, WidgetPin.entries.size)
+        assertEquals(40, WidgetPin.entries.map { it.providerClass }.distinct().size)
         WidgetPin.entries.forEach { entry ->
             // 引用不存在会直接抛 NotFoundException
             context.getString(entry.titleRes)
             context.getString(entry.descRes)
-            context.resources.getResourceEntryName(entry.previewLayoutRes)
+            context.resources.getResourceEntryName(entry.previewImageRes)
             // 每个形态都要有格数标签、设计尺寸与分组，缺一个预览卡就少一条信息（没登记会静默兜底）
             assertTrue(
                 "缺格数标签：${entry.providerClass.simpleName}",
@@ -177,15 +173,42 @@ class WidgetPinTest {
     }
 
     @Test
-    fun `22 个形态折叠成 11 个组件并归 5 组`() {
+    fun `40 个形态折叠成 10 个组件并归 5 个功能分区`() {
+        // 2026-10-21 用户定：按 App 功能模块分区（账单 / 物品 / 生活 / 总览 / 快捷入口），
+        // 分区里的组件再各自折叠出「四档尺寸 +（记账的）多套样式」。
+        // 2026-10-23 用户定：密码本不设分区——高危隐私，其小组件已整体下线。
         val catalog = WidgetPin.catalog()
         assertEquals(5, catalog.size)
+        assertEquals(
+            listOf(
+                WidgetPin.WidgetGroup.BILLING,
+                WidgetPin.WidgetGroup.ASSET,
+                WidgetPin.WidgetGroup.LIFE,
+                WidgetPin.WidgetGroup.DASHBOARD,
+                WidgetPin.WidgetGroup.SHORTCUTS
+            ),
+            catalog.map { it.group }
+        )
         val components = catalog.flatMap { it.components }
-        assertEquals(11, components.size)
-        // 每个组件至少 1 个尺寸，合计 22；同组件 titleRes 相同（族键），不同组件不同
-        assertTrue(components.all { it.entries.isNotEmpty() })
-        assertEquals(22, components.sumOf { it.entries.size })
-        assertEquals(11, components.map { it.familyKey }.distinct().size)
+        assertEquals(10, components.size)
+        // 每个组件恰好 4 档（4×2 / 2×2 / 4×1 / 4×4，v37 收敛），合计 40
+        assertTrue(components.all { it.entries.size == 4 })
+        assertEquals(40, components.sumOf { it.entries.size })
+        assertEquals(10, components.map { it.familyKey }.distinct().size)
+        // 每个分区至少一件组件
+        assertTrue(catalog.all { it.components.isNotEmpty() })
+    }
+
+    @Test
+    fun `本月记账四档（v37 单族收敛），弹窗里左右翻`() {
+        // v37 收敛：柱状/预算两套样式下线，本月记账 = 单族四档（4×2 / 2×2 / 4×1 / 4×4）
+        val bill = WidgetPin.catalog()
+            .flatMap { it.components }
+            .first { it.titleRes == R.string.widget_bill_title }
+        assertEquals(4, bill.entries.size)
+        assertEquals(4, bill.entries.count { BillWidgetProvider::class.java.isAssignableFrom(it.providerClass) })
+        // 四档设计尺寸互不相同（翻页时预览跟着变）
+        assertEquals(4, bill.entries.map { WidgetPin.designSizeOf(it) }.distinct().size)
     }
 
     @Test
@@ -201,7 +224,7 @@ class WidgetPinTest {
     }
 
     @Test
-    fun `manifest 声明全部 22 个 receiver 且带 label`() {
+    fun `manifest 声明全部 40 个 receiver 且带 label`() {
         // 目录只是应用自己的账本，落桌和系统选择器认的是 manifest：
         // 漏一个 receiver 组件就发不出更新，同族形态又全靠 android:label 区分
         val receivers = context.packageManager.queryBroadcastReceivers(
@@ -216,16 +239,26 @@ class WidgetPinTest {
             val hasLabel = activityInfo.labelRes != 0 || activityInfo.nonLocalizedLabel != null
             assertTrue("receiver 缺 android:label：$name", hasLabel)
         }
+        // 反向锁：上面只验「缺不缺」。删族时若漏删 manifest 条目（2026-10-23 密码本下线
+        // 就差点这样），多余的 receiver 会一直挂在选择器里，必须数量+成员双向一致。
+        val expectedNames = WidgetPin.entries.map { it.providerClass.name }.toSet()
+        val actualNames = receivers.map { it.activityInfo.name }.toSet()
+        assertEquals("manifest 里存在目录没有的 appwidget receiver", expectedNames, actualNames)
+        assertEquals("形态数与 manifest receiver 数不一致", 40, actualNames.size)
     }
 
     @Test
-    fun `只有账单组件在添加后弹配置页`() {
+    fun `只有账单族的样式在添加后弹配置页`() {
         // pin 通道不会拉起配置页，需要用户当场做选择的组件才挂成功回调自己补。
-        // 目前只有账单（要选账本）；其余组件加完就完事，想调透明度可以之后长按进设置。
+        // 目前只有账单族（本月记账三套样式 × 四档共 12 件都要选账本）
         val configured = WidgetPin.entries.filter { it.configureActivity != null }
-        assertEquals(1, configured.size)
+        assertEquals(4, configured.size)
+        assertTrue(
+            "配置页只该挂在账单族的样式上",
+            configured.all { WidgetPin.groupOf(it) == WidgetPin.WidgetGroup.BILLING }
+        )
+        assertTrue(configured.all { it.configureActivity == BillWidgetConfigActivity::class.java })
         assertEquals(BillWidgetProvider::class.java, configured.first().providerClass)
-        assertEquals(BillWidgetConfigActivity::class.java, configured.first().configureActivity)
     }
 
     // ── 画廊版式：分组 / 搜索 / 面板 / 尺寸切换 ──
@@ -235,9 +268,8 @@ class WidgetPinTest {
         setPinSupported(true)
         render()
 
-        // 首屏就有账单卡：卡里有名称
-        val first = WidgetPin.entries.first()
-        compose.onAllNodesWithText(context.getString(first.titleRes)).assertCountEquals(1)
+        // 首屏就有物品分布卡（GALLERY_ORDER 首位）：卡里有名称（短名「物品」）
+        compose.onAllNodesWithText(context.getString(R.string.widget_asset_title_short)).assertCountEquals(1)
         // 系统手动添加那套（机型切换 + 三步路径）已整体下线，连文案都不该留在资源里
         assertEquals(
             0,
@@ -246,102 +278,44 @@ class WidgetPinTest {
     }
 
     @Test
-    fun `首屏首卡是账单且能滚到画廊深处`() {
+    fun `首卡是物品分布且能滚到画廊末尾`() {
         setPinSupported(true)
         render()
-        // 首卡 = 账单：最常用的记账类占头位，不用先滚一段才找到
-        compose.onAllNodesWithText(context.getString(R.string.widget_bill_title)).assertCountEquals(1)
-        // 网格可滚：滚到密码本（资产组，在画廊深处）证明不是只摆了首屏几张卡
-        val vaultTitle = context.getString(R.string.widget_vault_title)
-        compose.onNodeWithTag(CATALOG_LIST_TAG).performScrollToNode(hasText(vaultTitle))
-        compose.onNodeWithText(vaultTitle).assertExists()
+        // 首卡 = 物品分布：稿 §5 封面次序的第一张（2026-10-24 稿序）
+        compose.onAllNodesWithText(context.getString(R.string.widget_asset_title_short)).assertCountEquals(1)
+        // 网格可滚：滚到接下来（GALLERY_ORDER 最后一张）证明不是只摆了首屏几张卡。
+        // 按「卡片节点」判定而不是按文本 —— 面板说明等处也会出现同名文本，只按文本断言不可靠
+        val lastTitle = context.getString(R.string.widget_next_up_title_short)
+        compose.onNodeWithTag(CATALOG_LIST_TAG).performScrollToNode(hasText(lastTitle))
+        compose.onNode(hasTestTag(CATALOG_CELL_TAG) and hasText(lastTitle)).assertExists()
     }
 
     @Test
-    fun `画廊按分组铺开，组标题可见`() {
+    fun `面板的分页圆点数等于该组件的形态个数`() {
         setPinSupported(true)
         render()
-        // 首屏就是记账组；往下滚能看到生活组标题（组标题横跨整行，是分组的唯一提示）
-        compose.onNodeWithText(context.getString(R.string.widget_group_billing)).assertExists()
-        val life = context.getString(R.string.widget_group_life)
-        compose.onNodeWithTag(CATALOG_LIST_TAG).performScrollToNode(hasText(life))
-        compose.onNodeWithText(life).assertExists()
-    }
-
-    @Test
-    fun `搜索过滤组件`() {
-        setPinSupported(true)
-        render()
-        // 搜索框不常驻：进页面时顶栏只有图标，点开才换成搜索框（与账单 / 资产各页一致）
-        compose.onAllNodesWithTag(SEARCH_FIELD_TAG).assertCountEquals(0)
-        // 搜密码本 → 只剩密码本一个组件卡（搜索框里也有同样的字，用卡片数而不是标题文本判定）
-        openSearch()
-        compose.onNodeWithTag(SEARCH_FIELD_TAG)
-            .performTextInput(context.getString(R.string.widget_vault_title))
-        compose.onAllNodesWithTag(CATALOG_CELL_TAG).assertCountEquals(1)
-        // 不匹配的账单卡应消失
-        compose.onAllNodesWithText(context.getString(R.string.widget_bill_title)).assertCountEquals(0)
-    }
-
-    @Test
-    fun `搜索也能匹配说明文字`() {
-        setPinSupported(true)
-        render()
-        // 整句说明当关键词：名称里没有这几个字，能命中说明就说明说明也参与了匹配
-        openSearch()
-        compose.onNodeWithTag(SEARCH_FIELD_TAG)
-            .performTextInput(context.getString(R.string.widget_bill_desc))
-        compose.onAllNodesWithTag(CATALOG_CELL_TAG).assertCountEquals(1)
-        compose.onNodeWithText(context.getString(R.string.widget_bill_title)).assertExists()
-    }
-
-    @Test
-    fun `搜索时名称命中排在说明命中前面`() {
-        setPinSupported(true)
-        render()
-        // 「待办」既是待办清单的名称，也出现在概览的说明里（「收支、待办、打卡一屏看完」）——
-        // 名称命中的待办清单必须排在前面
-        val keyword = context.getString(R.string.widget_todo_title).take(2)
-        openSearch()
-        compose.onNodeWithTag(SEARCH_FIELD_TAG).performTextInput(keyword)
-        compose.onAllNodesWithTag(CATALOG_CELL_TAG)[0]
-            .assert(hasText(context.getString(R.string.widget_todo_title), substring = true))
-    }
-
-    @Test
-    fun `搜索无结果时给空态提示`() {
-        setPinSupported(true)
-        render()
-        openSearch()
-        compose.onNodeWithTag(SEARCH_FIELD_TAG).performTextInput("zzz-no-such-widget")
-        compose.onAllNodesWithTag(CATALOG_CELL_TAG).assertCountEquals(0)
-        compose.onNodeWithText(context.getString(R.string.search_no_results)).assertExists()
-        compose.onNodeWithText(context.getString(R.string.widget_search_empty_hint)).assertExists()
-    }
-
-    @Test
-    fun `面板的分页圆点数等于该组件的尺寸个数`() {
-        setPinSupported(true)
-        render()
-        openSearch()
-        compose.onNodeWithTag(SEARCH_FIELD_TAG)
-            .performTextInput(context.getString(R.string.widget_todo_title))
-        openFirstTile()
-        // 圆点让「左右滑动换尺寸」看得见：点数 = 尺寸形态个数（待办 = 4×3 + 2×1 + 4×1）
+        openTile(R.string.widget_todo_title)
+        // 圆点让「左右滑动换尺寸」看得见：点数 = 形态个数（待办四档 = 4×2 + 2×2 + 4×1 + 2×1）
         val sizes = WidgetPin.entries.count { it.titleRes == R.string.widget_todo_title }
+        assertEquals(4, sizes)
         compose.onNodeWithTag(SHEET_DOTS_TAG).assertExists()
         compose.onAllNodesWithTag(SHEET_DOT_TAG).assertCountEquals(sizes)
     }
 
     @Test
-    fun `单尺寸组件面板不摆分页圆点`() {
+    fun `只有一套样式的组件面板不摆分页圆点`() {
+        // v22 四档补全后 10 个组件都至少 4 件形态，「单件」分支暂无使用者；
+        // 行为本身保留（将来加单档组件时生效），这里锁住前提不回归。
+        assertTrue(WidgetPin.catalog().flatMap { it.components }.all { it.entries.size >= 4 })
+    }
+
+    @Test
+    fun `本月记账弹窗里摆四个圆点对应四档`() {
         setPinSupported(true)
         render()
-        openSearch()
-        compose.onNodeWithTag(SEARCH_FIELD_TAG)
-            .performTextInput(context.getString(R.string.widget_bill_title))
-        openFirstTile()
-        compose.onAllNodesWithTag(SHEET_DOTS_TAG).assertCountEquals(0)
+        openTile(R.string.widget_bill_title)
+        // 数据 / 柱状 / 预算三套样式 × 四档 —— 翻页换的是「样式 × 尺寸」的组合
+        compose.onAllNodesWithTag(SHEET_DOT_TAG).assertCountEquals(4)
     }
 
     @Test
@@ -352,16 +326,10 @@ class WidgetPinTest {
         // 待办清单那一组最大 4×3=268dp、快捷入口那一组最大只有 160dp：页高若跟着「本组最大」走，
         // 换成快捷入口时 widget 与圆点会整体上移 54dp —— 圆点跟着组件跑，看着像没对齐。
         // （两个组件的标题与说明都是一行，页高以上那段完全相同，所以这个横向比较是干净的。）
-        openSearch()
-        compose.onNodeWithTag(SEARCH_FIELD_TAG)
-            .performTextInput(context.getString(R.string.widget_todo_title))
-        openFirstTile()
+        openTile(R.string.widget_todo_title)
         val todoDotsTop = dotsRowTop()
         compose.onNodeWithTag(SHEET_BACK_TAG).performClick()
-        compose.onNodeWithTag(SEARCH_FIELD_TAG).performTextClearance()
-        compose.onNodeWithTag(SEARCH_FIELD_TAG)
-            .performTextInput(context.getString(R.string.widget_shortcuts_title))
-        openFirstTile()
+        openTile(R.string.widget_shortcuts_title)
         assertEquals("换组件不该带走圆点行", todoDotsTop, dotsRowTop(), 0.5f)
     }
 
@@ -371,13 +339,10 @@ class WidgetPinTest {
         render()
         // 快捷入口那一组最大只有 160dp 高（1×1 / 4×1），页高仍按全局 4×3 的 268dp 算：
         // 页高就是页内缩放系数的分母，改按本组最大算的话，这一组预览会被压到真实尺寸的六成
-        openSearch()
-        compose.onNodeWithTag(SEARCH_FIELD_TAG)
-            .performTextInput(context.getString(R.string.widget_shortcuts_title))
-        openFirstTile()
-        val entry = WidgetPin.catalog().flatMap { it.components }
+        openTile(R.string.widget_shortcuts_title)
+        val component = WidgetPin.catalog().flatMap { it.components }
             .first { it.titleRes == R.string.widget_shortcuts_title }
-            .entries.first()
+        val entry = WidgetPin.defaultStyleEntry(component)
         val (designW, designH) = WidgetPin.designSizeOf(entry)!!
         compose.onNodeWithTag(SHEET_PREVIEW_TAG)
             .assertWidthIsEqualTo(designW.dp)
@@ -410,10 +375,7 @@ class WidgetPinTest {
     fun `面板里左滑预览换下一个尺寸，右滑换回上一个`() {
         setPinSupported(true)
         render()
-        openSearch()
-        compose.onNodeWithTag(SEARCH_FIELD_TAG)
-            .performTextInput(context.getString(R.string.widget_todo_title))
-        openFirstTile()
+        openTile(R.string.widget_todo_title)
         // 尺寸只靠滑：大预览是面板里最大的一块，滑它比去够一排胶囊顺手（各家卡片预览页都是这个手势）
         // 预览标签只挂在「翻到的这一页、并且它就是当前选中的那个尺寸」上，所以下面量尺寸的同时
         // 也在验「翻页结果有没有回报给上层」—— 回报断了标签就没了、量不到
@@ -430,89 +392,71 @@ class WidgetPinTest {
     fun `面板里滑动不过页中线就不换尺寸`() {
         setPinSupported(true)
         render()
-        openSearch()
-        compose.onNodeWithTag(SEARCH_FIELD_TAG)
-            .performTextInput(context.getString(R.string.widget_todo_title))
-        openFirstTile()
+        openTile(R.string.widget_todo_title)
         // 手指按在预览上只挪一小段（没过页中线）：pager 会弹回原页，不该换尺寸，免得误触
         val base = previewSize()
         swipePreview(-0.2f)
         assertEquals("没过页中线不该换尺寸", base, previewSize())
     }
 
-    @Test
-    fun `卡片加号不进面板，就地走落桌核对`() {
-        setPinSupported(true)
-        render()
-        // 快捷加号按当前尺寸直接落桌：不弹面板，核对期把加号锁住（不然连点会连发系统确认框）
-        compose.onAllNodesWithTag(QUICK_ADD_TAG)[0].performClick()
-        compose.onAllNodesWithTag(SHEET_TAG).assertCountEquals(0)
-        assertTrue("核对期应锁住卡片加号", isQuickAddDisabled())
-    }
+    // ── 已落桌实例的编辑：卡上的「编辑」→ 面板 → 保存写回 ──
 
-    @Test
-    fun `桌面不支持时卡片加号禁用`() {
-        setPinSupported(false)
-        render()
-        assertTrue("pin unsupported 时加号应禁用", isQuickAddDisabled())
-    }
-
-    @Test
-    fun `卡片加号触控盒达 48dp 最小触控`() {
-        setPinSupported(true)
-        render()
-        compose.onAllNodesWithTag(QUICK_ADD_TAG)[0]
-            .assertWidthIsEqualTo(48.dp)
-            .assertHeightIsEqualTo(48.dp)
-    }
-
-    @Test
-    fun `已落桌的卡片带小勾角标`() {
-        setPinSupported(true)
-        // 首卡（账单）桌面上已有一个实例：一眼就看得出它已经在桌面上，不必进面板翻数量
-        // （用 bindAppWidgetId 而不是 createWidget：后者会真的去 inflate RemoteViews）
+    /** 把物品组件绑到桌面上（只登记 id → provider，不 inflate RemoteViews）。 */
+    private fun bindAssetInstance(id: Int) {
         shadowOf(AppWidgetManager.getInstance(context))
-            .bindAppWidgetId(1, ComponentName(context, BillWidgetProvider::class.java))
-        render()
-        // 卡片是可点的，会把子节点语义合并上去 —— 角标要按未合并树找
-        compose.onAllNodesWithTag(ADDED_BADGE_TAG, useUnmergedTree = true).assertCountEquals(1)
+            .bindAppWidgetId(id, ComponentName(context, AssetWidgetProvider::class.java))
+    }
+
+    /** 长按首卡进「编辑已落桌实例」：面板底部那行编辑入口已删（2026-10-25），长按是唯一入口。 */
+    private fun editFirstTile() {
+        compose.onAllNodesWithTag(CATALOG_CELL_TAG)[0].performTouchInput { longClick() }
     }
 
     @Test
-    fun `没落桌的卡片不带小勾角标`() {
+    fun `单实例点编辑直接进面板，保存写回该实例`() {
         setPinSupported(true)
-        render()
-        compose.onAllNodesWithTag(ADDED_BADGE_TAG, useUnmergedTree = true).assertCountEquals(0)
+        bindAssetInstance(7)
+        var saved: Pair<Int, WidgetInstanceConfig>? = null
+        compose.setContent {
+            PalmNoteTheme {
+                WidgetPinScreen(
+                    loadInstance = { WidgetInstanceConfig(opacity = 0.6f, background = "#000000") },
+                    onSaveInstance = { id, config -> saved = id to config }
+                )
+            }
+        }
+
+        editFirstTile()
+        // 只有一份实例：不经过「选实例」层，直接进编辑面板；回填值要真的出现在面板上
+        compose.onAllNodesWithTag(INSTANCE_ROW_TAG).assertCountEquals(0)
+        compose.onNodeWithText("60%").assertExists()
+        // 面板里改的是草稿：拖一下不透明度，保存时一并写回
+        compose.onNodeWithTag(SHEET_OPACITY_SLIDER_TAG).performTouchInput { swipeLeft() }
+        compose.onNodeWithTag(SHEET_SAVE_TAG).performClick()
+
+        val recorded = requireNotNull(saved) { "点保存应写回实例配置" }
+        assertEquals("写回的必须是当前实例的 id", 7, recorded.first)
+        assertEquals("没动过的项原样带回", "#000000", recorded.second.background)
+        assertTrue("拖动后的不透明度要一起写回：${recorded.second.opacity}", recorded.second.opacity!! < 0.95f)
+        // 保存即收起面板
+        compose.onAllNodesWithTag(SHEET_SAVE_TAG).assertCountEquals(0)
     }
 
     @Test
-    fun `键盘搜索键收起键盘`() {
+    fun `同组件多实例点编辑先选一个实例`() {
         setPinSupported(true)
+        bindAssetInstance(11)
+        bindAssetInstance(12)
         render()
-        // 输入即获焦；此前「搜索」键没接线，点了毫无动作
-        openSearch()
-        compose.onNodeWithTag(SEARCH_FIELD_TAG).performTextInput(
-            context.getString(R.string.widget_todo_title).take(2)
-        )
-        assertTrue("输入后搜索框应持有焦点", isSearchFocused())
-        // IME「搜索」= 搜完收键盘：结果就在下面这屏，没有「提交」这一步
-        compose.onNodeWithTag(SEARCH_FIELD_TAG).performImeAction()
-        assertFalse("按搜索键应把焦点放掉", isSearchFocused())
-    }
 
-    @Test
-    fun `点画廊把键盘收掉`() {
-        setPinSupported(true)
-        render()
-        openSearch()
-        compose.onNodeWithTag(SEARCH_FIELD_TAG).performTextInput(
-            context.getString(R.string.widget_todo_title).take(2)
-        )
-        assertTrue("输入后搜索框应持有焦点", isSearchFocused())
-        // 搜索时看卡要滑网格：触碰画廊（真指针 down/up）下发即收键盘，别让键盘盖着半屏卡
-        compose.onAllNodesWithTag(CATALOG_CELL_TAG)[0].performTouchInput { down(center); up() }
-        assertFalse("触碰画廊应收起键盘", isSearchFocused())
-        compose.onNodeWithTag(SHEET_TAG).assertExists()
+        editFirstTile()
+        // 同尺寸的两份从列表上分不出谁是谁，但数量必须对、且不能跳过选择直接进面板
+        compose.onAllNodesWithTag(INSTANCE_ROW_TAG).assertCountEquals(2)
+        compose.onAllNodesWithTag(SHEET_SAVE_TAG).assertCountEquals(0)
+
+        compose.onAllNodesWithTag(INSTANCE_ROW_TAG)[0].performClick()
+        compose.onNodeWithTag(SHEET_SAVE_TAG).assertExists()
+        compose.onAllNodesWithTag(INSTANCE_ROW_TAG).assertCountEquals(0)
     }
 
     @Test
@@ -551,45 +495,52 @@ class WidgetPinTest {
     }
 
     @Test
-    fun `面板里能挑透明度，带配置页的组件不摆这一行`() {
+    fun `面板里能挑不透明度，带配置页的组件不摆这一行`() {
         setPinSupported(true)
         render()
-        // 待办清单没有配置页：面板里先挑一档透明度，落桌时写到新实例上（各家「可编辑的小组件」都这么做）
-        openSearch()
-        compose.onNodeWithTag(SEARCH_FIELD_TAG)
-            .performTextInput(context.getString(R.string.widget_todo_title))
-        openFirstTile()
+        // 待办清单没有配置页：面板里先挑一档不透明度，落桌时写到新实例上（各家「可编辑的小组件」都这么做）
+        openTile(R.string.widget_todo_title)
         compose.onNodeWithTag(SHEET_OPACITY_ROW_TAG).assertExists()
-        val follow = context.getString(R.string.widget_pin_opacity_follow)
-        compose.onNodeWithText(follow).assertIsSelected()
-        compose.onNodeWithText("60%").performClick()
-        compose.onNodeWithText("60%").assertIsSelected()
-        compose.onNodeWithText(follow).assertIsNotSelected()
+        // 无极滑杆：初始 100%，在滑杆上向左拖 → 值变化，百分比文本跟着变
+        // （手势必须打在滑杆上——整行 Row 的 Text 区域会把触摸吃掉）
+        compose.onNodeWithTag(SHEET_OPACITY_SLIDER_TAG).performTouchInput { swipeLeft() }
+        // 直接读滑杆的进度值断言（百分比文本/滑杆 state 描述都含 "100%"，contains 匹配不可靠）
+        val info = compose.onNodeWithTag(SHEET_OPACITY_SLIDER_TAG)
+            .fetchSemanticsNode().config[androidx.compose.ui.semantics.SemanticsProperties.ProgressBarRangeInfo]
+        assertTrue("拖动后不透明度应离开默认值：$info", info.range.start < 0.95f)
     }
 
     @Test
-    fun `账单有配置页，面板里不重复摆透明度`() {
+    fun `账单的面板里也直接摆不透明度与背景`() {
         setPinSupported(true)
         render()
-        // 账单落桌后系统会拉起它的配置页（账本 + 透明度都在那儿），面板里再来一档会互相覆盖
-        openSearch()
-        compose.onNodeWithTag(SEARCH_FIELD_TAG)
-            .performTextInput(context.getString(R.string.widget_bill_title))
-        openFirstTile()
-        compose.onAllNodesWithTag(SHEET_OPACITY_ROW_TAG).assertCountEquals(0)
+        // 背景与不透明度对账单也直接可编（配置页有「碰过才写」门控，两边不会互相清值）
+        openTile(R.string.widget_bill_title)
+        compose.onNodeWithTag(SHEET_OPACITY_ROW_TAG).assertExists()
+        compose.onNodeWithTag(SHEET_BG_ROW_TAG).assertExists()
+        // 「编辑更多」入口：账单有账本 + 配色两个额外项
+        compose.onNodeWithTag(SHEET_EDIT_ENTRY_TAG).assertExists()
     }
 
     @Test
-    fun `面板里挑的透明度只写给没有配置页的组件`() {
-        val todo = WidgetPin.entries.first { it.titleRes == R.string.widget_todo_title }
-        val bill = WidgetPin.entries.first { it.titleRes == R.string.widget_bill_title }
-        assertEquals(0.6f, pickedOpacityForNewInstance(todo, 0.6f))
-        assertNull(
-            "带配置页的组件由它自己的配置页管透明度，落桌时不再写一遍",
-            pickedOpacityForNewInstance(bill, 0.6f)
-        )
-        assertNull("没挑（跟随默认）就什么都不写", pickedOpacityForNewInstance(todo, null))
+    fun `概览的面板里也有「编辑更多」入口（配色是额外项）`() {
+        setPinSupported(true)
+        render()
+        // 概览渲染吃强调色 →「编辑更多」层放配色卡；点进去再返回
+        openTile(R.string.widget_dashboard_title)
+        compose.onNodeWithTag(SHEET_EDIT_ENTRY_TAG).assertExists()
+        compose.onNodeWithTag(SHEET_EDIT_ENTRY_TAG).performClick()
+        // 编辑态整块替换面板内容：入口行消失、编辑层出现（tag 相同，计数回到 1）
+        compose.onAllNodesWithTag(SHEET_EDIT_ENTRY_TAG).assertCountEquals(1)
+        // 编辑层可见配色卡的「跟随应用」选项；面板的不透明度行被替换掉
+        compose.onNodeWithText(context.getString(R.string.widget_config_accent_follow)).assertExists()
+        compose.onAllNodesWithTag(SHEET_OPACITY_ROW_TAG).assertCountEquals(0)
+        // 点编辑层左上角返回：面板恢复（不透明度行回来）。
+        // 按面板返回键的 tag 找 —— 搜索下线后页面顶栏返回键也是「返回」文案，按文案会撞成两个节点
+        compose.onNodeWithTag(SHEET_BACK_TAG).performClick()
+        compose.onNodeWithTag(SHEET_OPACITY_ROW_TAG).assertExists()
     }
+
 
     @Test
     fun `面板占屏高九成上下（对齐各家近全高面板）`() {
@@ -607,10 +558,7 @@ class WidgetPinTest {
     fun `面板大预览就是桌面真实尺寸，不再放大`() {
         setPinSupported(true)
         render()
-        openSearch()
-        compose.onNodeWithTag(SEARCH_FIELD_TAG)
-            .performTextInput(context.getString(R.string.widget_todo_title))
-        openFirstTile()
+        openTile(R.string.widget_todo_title)
         // 待办默认基类 4×3 = 340×268dp：面板里就按这么大摆（各家「添加小部件」都是 1:1 真尺寸）
         val (w, h) = WidgetPin.designSizeOf(
             WidgetPin.entries.first { it.titleRes == R.string.widget_todo_title }
@@ -635,7 +583,7 @@ class WidgetPinTest {
             if (polls >= 2) intArrayOf(1, 2) else intArrayOf(1)
         }
         assertEquals("数到就该立刻返回，不必跑满全部轮次", 2, polls)
-        assertEquals("新实例的 id 要带回去：面板里挑的透明度要写到它头上", 2, newId)
+        assertEquals("新实例的 id 要带回去：面板里挑的不透明度要写到它头上", 2, newId)
     }
 
     @Test
@@ -647,57 +595,165 @@ class WidgetPinTest {
         assertFalse(WidgetPin.showHomePermStrip(pinSupported = false, homeNeedsPerm = true, pinOk = false))
     }
 
-    // ── 预览尺寸：按组件设计尺寸**等比**摆放 ──
-    // 画廊卡预览底托外圈 = (393 - 网格两侧 16×2 - 列间 12) / 2 - 卡内 10×2 宽、126dp 高，
-    // 内圈再各去 8dp 内边距；断言值按统一系数算：scale = min(内圈宽/340, 内圈高/268)。
+    // ── 预览尺寸：入口卡按「该组件最饱满的形态」铺满列宽 ──
+    // 2026-10-21 定版（系统小部件页那种观感）：入口不跟上次选的尺寸走，一律摆 2×2 / 3×2 / 4×3
+    // 这一档，宽度铺满列宽（放大上限 SHOWCASE_MAX_SCALE），同一行取最高者当行高、各卡居中 ——
+    // 名称行因此严格对齐。具体尺寸点进面板再选。
     // 同时锁住「尺寸不随屏幕密度变」（同一条在 2x / 3x 两种密度下量，结果必须一致）。
 
     @Test
     @Config(sdk = [30], application = Application::class, qualifiers = "zh-rCN-w393dp-h852dp-xxhdpi")
-    fun `预览按设计尺寸等比摆放 3x 屏`() {
+    fun `入口预览按 4×2 画布铺满 3x 屏`() {
         setPinSupported(true)
         render()
-        val first = WidgetPin.entries.first()
-        val (designW, designH) = WidgetPin.designSizeOf(first)!!
-        val scale = previewScale()
-        compose.onAllNodesWithTag(PREVIEW_IMAGE_TAG, useUnmergedTree = true)[0]
-            .assertWidthIsEqualTo((designW * scale).dp)
-            .assertHeightIsEqualTo((designH * scale).dp)
+        val first = WidgetPin.catalog().first().components.first()
+        val (designW, designH) = WidgetPin.entrySizeOf(WidgetPin.entryCellOf(first))
+        // 画布本身是 4×2（340×148）
+        assertEquals(148f / 340f, designH.toFloat() / designW, 0.001f)
+        // 铺进卡位后仍是这个比例：图与卡位同画布，不留白也不裁边
+        val bounds = compose.onAllNodesWithTag(PREVIEW_IMAGE_TAG, useUnmergedTree = true)[0]
+            .fetchSemanticsNode().boundsInRoot
+        assertEquals(148f / 340f, bounds.height / bounds.width, 0.02f)
     }
 
     @Test
     @Config(sdk = [30], application = Application::class, qualifiers = "zh-rCN-w393dp-h852dp-xhdpi")
-    fun `预览尺寸不随屏幕密度变 2x 屏`() {
+    fun `入口预览比例不随屏幕密度变 2x 屏`() {
         setPinSupported(true)
         render()
-        val first = WidgetPin.entries.first()
-        val (designW, _) = WidgetPin.designSizeOf(first)!!
-        compose.onAllNodesWithTag(PREVIEW_IMAGE_TAG, useUnmergedTree = true)[0]
-            .assertWidthIsEqualTo((designW * previewScale()).dp)
+        val first = WidgetPin.catalog().first().components.first()
+        val (designW, designH) = WidgetPin.entrySizeOf(WidgetPin.entryCellOf(first))
+        assertEquals(148f / 340f, designH.toFloat() / designW, 0.001f)
+        val bounds = compose.onAllNodesWithTag(PREVIEW_IMAGE_TAG, useUnmergedTree = true)[0]
+            .fetchSemanticsNode().boundsInRoot
+        assertEquals(148f / 340f, bounds.height / bounds.width, 0.02f)
+    }
+
+    @Test
+    @Config(sdk = [30], application = Application::class, qualifiers = "zh-rCN-w393dp-h852dp-xxhdpi")
+    fun `每个组件的入口图都与它的卡位同画布`() {
+        // 入口图的像素比例必须等于卡位比例 —— 图与卡位不同源就会在卡里留白或裁边
+        // （2026-10-21 的坑：3×2 / 4×3 的形态图直接塞进 4×2 卡位，四周各留一条边）
+        val components = WidgetPin.catalog().flatMap { it.components }
+        assertEquals("目录组件数变了要同步这张断言", 10, components.size)
+        components.forEach { component ->
+            val cell = WidgetPin.entryCellOf(component)
+            val (designW, designH) = WidgetPin.entrySizeOf(cell)
+            val bitmap = android.graphics.BitmapFactory.decodeResource(
+                context.resources,
+                WidgetPin.entryImageOf(component)
+            )
+            assertNotNull("组件缺入口图", bitmap)
+            assertEquals(
+                "入口图比例必须等于卡位（4×2 = 340:148 / 2×2 = 1:1）",
+                designW.toFloat() / designH,
+                bitmap!!.width.toFloat() / bitmap.height,
+                0.03f
+            )
+        }
+    }
+
+    @Test
+    fun `首卡的预览按 4×2 铺满整行`() {
+        setPinSupported(true)
+        render()
+        // 首卡固定是本月记账（4×2）：铺满整行、比例 148/340
+        val wide = compose.onAllNodesWithTag(PREVIEW_IMAGE_TAG, useUnmergedTree = true)[0]
+            .fetchSemanticsNode().boundsInRoot
+        assertEquals("4×2 图的高宽比", 148f / 340f, wide.height / wide.width, 0.02f)
+    }
+
+    @Test
+    fun `入口封面取最饱满的形态，不会挑到细条或小方块`() {
+        val components = WidgetPin.catalog().flatMap { it.components }
+        fun showcaseOf(title: Int) =
+            WidgetPin.designSizeOf(WidgetPin.showcaseEntryOf(components.first { it.titleRes == title }))
+
+        // 待办 / 习惯：五档里 4×2（340×148）与 4×4（340×340）二选一时取面积大者——
+        // showcase 取「宽 ≥160 且宽高比 ≤2.6」里的最大面积：4×4 比例 1.0 合格且面积最大 → 4×4
+        assertEquals(340 to 340, showcaseOf(R.string.widget_todo_title))
+        assertEquals(340 to 340, showcaseOf(R.string.widget_habit_title))
+        // 本月记账：三套样式 × 四档，封面取第一条（数据版 4×2）
+        assertEquals(340 to 340, showcaseOf(R.string.widget_bill_title))
+        // 快捷入口：4×4 九宫格（340×340）面积最大 → 封面用 4×4
+        assertEquals(340 to 340, showcaseOf(R.string.widget_shortcuts_title))
+    }
+
+    // ── 预览图三层：内容层 + 面板层 + 色砖层（后两层跟着不透明度淡出） ──
+
+    @Test
+    fun `每张预览图都有配套的面板层`() {
+        // 面板层（会跟着不透明度淡出的中性底）由 WidgetPreviewPngGenerator 与内容层一起出图，
+        // 名字靠 _surface 后缀在运行时拼（R8 那边由 res/raw/keep.xml 保住）。漏出一张，预览就会
+        // 悄悄退回「单层实色」—— 正是 2026-10-20 那次「不透明度只调了边框、里面还是实的」的老毛病。
+        val resources = context.resources
+        val missing = WidgetPin.entries
+            .filter { WidgetPin.surfacePreviewRes(resources, it.previewImageRes) == 0 }
+            .map { resources.getResourceEntryName(it.previewImageRes) }
+        assertTrue("这些预览图缺面板层：$missing", missing.isEmpty())
+    }
+
+    @Test
+    fun `带内层色砖的形态有独立的色砖层`() {
+        // 概览四块砖 / 快捷入口四格的颜色是组件给的语义色，卡片相对模式下**不能**跟中性面板一起
+        // 被 tint 成极淡白/黑，所以单独出一层（见 WidgetOpacityFade.blockIds 与生成器的 hideBlocks）。
+        val resources = context.resources
+        // dashboard 的旧四砖随 v22 版式退场(面板层退回单层画法是合法路径);
+        // 带砖层的 = 快捷入口的八格 tile 底
+        val shapes = listOf(
+            R.drawable.widget_preview_shortcuts,
+            R.drawable.widget_preview_shortcuts_wide
+        )
+        val missing = shapes
+            .filter { WidgetPin.blocksPreviewRes(resources, it) == 0 }
+            .map { resources.getResourceEntryName(it) }
+        assertTrue("这些预览图缺色砖层：$missing", missing.isEmpty())
+    }
+
+    @Test
+    fun `账单有胶囊层，没有胶囊的形态不占`() {
+        // 「新增」胶囊是语义 tint 底，自选深色背景时要翻成浅色 —— 底得单独出一层，
+        // 面板才能在「卡片相对 + 深色卡」时把它 tint 成 88% 白（见 WidgetPin.CHIP_SUFFIX）。
+        // 文字留内容层，所以只有账单这一张有胶囊层。
+        val resources = context.resources
+        assertTrue(
+            "账单预览图缺胶囊层",
+            WidgetPin.chipPreviewRes(resources, R.drawable.widget_preview_bill) != 0
+        )
+        assertEquals(0, WidgetPin.chipPreviewRes(resources, R.drawable.widget_preview_todo))
+        assertEquals(0, WidgetPin.chipPreviewRes(resources, R.drawable.widget_item_bg))
+    }
+
+    @Test
+    fun `没有色砖的形态不占色砖层，退回跳过`() {
+        assertEquals(0, WidgetPin.blocksPreviewRes(context.resources, R.drawable.widget_preview_bill))
+        assertEquals(0, WidgetPin.blocksPreviewRes(context.resources, R.drawable.widget_item_bg))
+    }
+
+    @Test
+    fun `没有面板层时退回单层，不炸`() {
+        // 约定找不到就给 0（老资源/被裁掉），预览只画内容层 —— 兼容路径要一直在
+        assertEquals(0, WidgetPin.surfacePreviewRes(context.resources, R.drawable.widget_item_bg))
     }
 
     private companion object {
         /**
-         * 画廊卡预览底托的宽：393dp 屏，去掉网格两侧 16×2、列间 12，两列均分。
-         * 底托就是卡身本身（卡不再套一层白卡），所以这一整块宽都归预览。
+         * 画廊列的宽：393dp 屏，去掉网格两侧 16×2、列间 12，固定两列均分。
+         * 预览直接浮在页面底色上（无底托），这一整块宽都归预览。
          */
-        const val TILE_STAGE_WIDTH_DP = 174.5f
+        const val TILE_COLUMN_WIDTH_DP = 174.5f
 
-        /** 画廊卡预览底托的外圈高（与 WidgetPinScreen 的 PREVIEW_HEIGHT 一致）。 */
-        const val TILE_STAGE_HEIGHT_DP = 126f
+        /** 入口卡放大上限（与 WidgetPinScreen 的 SHOWCASE_MAX_SCALE 一致）。 */
+        const val SHOWCASE_MAX_SCALE = 1.5f
 
-        /** 底托内边距（与 WidgetPinScreen 的 STAGE_PADDING 一致）：widget 只在内圈里等比摆放。 */
-        const val STAGE_PADDING_DP = 10f
+        /** 预览盒上下呼吸位（与 WidgetPinScreen 的 PREVIEW_V_PADDING 一致，两侧共 8dp）。 */
+        const val PREVIEW_V_PADDING_DP = 4f
 
-        /** 设计稿最大卡（4×3）的尺寸，全目录统一缩放基准。 */
-        const val DESIGN_MAX_WIDTH = 340f
-        const val DESIGN_MAX_HEIGHT = 268f
-
-        /** 预览卡实际的统一缩放系数（与 WidgetPinScreen 里的算法一致：按底托内圈算，且不超过 1:1）。 */
-        fun previewScale(): Float = minOf(
-            (TILE_STAGE_WIDTH_DP - STAGE_PADDING_DP * 2) / DESIGN_MAX_WIDTH,
-            (TILE_STAGE_HEIGHT_DP - STAGE_PADDING_DP * 2) / DESIGN_MAX_HEIGHT,
-            1f
-        )
+        /**
+         * 入口卡预览的缩放系数（与 WidgetPinScreen 里同一算法）：
+         * 按列宽铺满（宽 = 列宽），放大不超过 [SHOWCASE_MAX_SCALE] —— 1×1 这种小方块宁可小一号居中。
+         */
+        fun showcaseScale(designW: Float): Float =
+            minOf(TILE_COLUMN_WIDTH_DP / designW, SHOWCASE_MAX_SCALE)
     }
 }

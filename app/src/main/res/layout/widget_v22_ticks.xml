@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  v22 分段刻度（稿 .ticks）：7 个固定槽（用不满就 GONE 尾段），高 6、格隙 2。
+  亮段着族色 d、暗段着 line 灰 —— 运行时 setColorFilter（白底占位）。
+  RemoteViews 不能按值改宽度⟹ 固定槽；分母固定（今日 5 / 早起 7）才用刻度。
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_v22_ticks_root"
+    android:layout_width="match_parent"
+    android:layout_height="6dp"
+    android:orientation="horizontal">
+
+    <ImageView
+        android:id="@+id/widget_v22_tick_1"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:layout_marginEnd="2dp"
+        android:src="@drawable/widget_v22_tick"
+        android:contentDescription="@null" />
+    <ImageView
+        android:id="@+id/widget_v22_tick_2"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:layout_marginEnd="2dp"
+        android:src="@drawable/widget_v22_tick"
+        android:contentDescription="@null" />
+    <ImageView
+        android:id="@+id/widget_v22_tick_3"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:layout_marginEnd="2dp"
+        android:src="@drawable/widget_v22_tick"
+        android:contentDescription="@null" />
+    <ImageView
+        android:id="@+id/widget_v22_tick_4"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:layout_marginEnd="2dp"
+        android:src="@drawable/widget_v22_tick"
+        android:contentDescription="@null" />
+    <ImageView
+        android:id="@+id/widget_v22_tick_5"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:layout_marginEnd="2dp"
+        android:src="@drawable/widget_v22_tick"
+        android:contentDescription="@null" />
+    <ImageView
+        android:id="@+id/widget_v22_tick_6"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:layout_marginEnd="2dp"
+        android:src="@drawable/widget_v22_tick"
+        android:contentDescription="@null" />
+    <ImageView
+        android:id="@+id/widget_v22_tick_7"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:src="@drawable/widget_v22_tick"
+        android:contentDescription="@null" />
+</LinearLayout>

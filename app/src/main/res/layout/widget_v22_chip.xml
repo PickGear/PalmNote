@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  v22 胶囊行（稿 .ch.sm：高 26、圆角 10、内边距 9）：淡彩底 + 色点 + 名称 + 副信息 + 族色数值。
+  底与点是白底占位，运行时 setColorFilter 上族色（tint / d）；数值文字运行时 setTextColor 上族色 ink。
+  副信息可 GONE（没有就别占位）；色点可 GONE（无点胶囊）。文字都有 id —— 扫色表交叉核对要求。
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_v22_chip_root"
+    android:layout_width="0dp"
+    android:layout_weight="1"
+    android:layout_height="26dp">
+
+    <ImageView
+        android:id="@+id/widget_v22_chip_bg"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:src="@drawable/widget_v22_round10"
+        android:contentDescription="@null" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="9dp">
+
+        <ImageView
+            android:id="@+id/widget_v22_chip_dot"
+            android:layout_width="7dp"
+            android:layout_height="7dp"
+            android:src="@drawable/widget_shape_circle"
+            android:contentDescription="@null" />
+
+        <TextView
+            android:id="@+id/widget_v22_chip_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="@color/widget_v22_text_1"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <TextView
+            android:id="@+id/widget_v22_chip_sub"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="6dp"
+            android:textSize="12sp"
+            android:textColor="@color/widget_v22_text_2"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <TextView
+            android:id="@+id/widget_v22_chip_value"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:textColor="@color/widget_v22_text_1"
+            android:maxLines="1"
+            android:includeFontPadding="false" />
+    </LinearLayout>
+</FrameLayout>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- v37 柱：ClipDrawable（level 0..10000 = 高度百分比），色由 setColorFilter 上 -->
+<clip xmlns:android="http://schemas.android.com/apk/res/android"
+    android:clipOrientation="vertical"
+    android:gravity="bottom">
+    <shape android:shape="rectangle">
+        <corners android:topLeftRadius="4dp" android:topRightRadius="4dp" />
+        <solid android:color="#FFFFFFFF" />
+    </shape>
+</clip>

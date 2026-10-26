@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 「接下来」组件的头部徽章字形：白色时钟（稿 c-next ico：圆 + 时针分针，叠在运行时着色的圆形底上） -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M12,2.5C6.76,2.5 2.5,6.76 2.5,12s4.26,9.5 9.5,9.5 9.5,-4.26 9.5,-9.5S17.24,2.5 12,2.5zM12,19.5c-4.14,0 -7.5,-3.36 -7.5,-7.5S7.86,4.5 12,4.5s7.5,3.36 7.5,7.5 -3.36,7.5 -7.5,7.5z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M12.75,7h-1.5v5.5c0,0.28 0.15,0.54 0.4,0.67l3.9,1.95 0.7,-1.4 -3.5,-1.75V7z" />
+</vector>

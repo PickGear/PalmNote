@@ -66,6 +66,23 @@ object WidgetData {
         return accent
     }
 
+    /**
+     * 某实例的强调色：有逐实例配色覆盖就用覆盖主题包主色，否则用该族设计稿默认色。
+     *
+     * 为什么要这个入口：WidgetPin 把账单 / 概览 / 接下来标记成 accentEditable，但此前只有账单
+     * 真的读覆盖值，「配色」对概览 / 接下来是纯装饰（改了没有任何视觉变化）。
+     */
+    internal suspend fun accentColorOrDefault(
+        context: Context,
+        preferencesManager: PreferencesManager,
+        appWidgetId: Int,
+        defaultFamilyColor: Int
+    ): Int {
+        val override = preferencesManager.widgetAccentThemeFor(appWidgetId).first()
+            ?: return defaultFamilyColor
+        return readAccentTheme(context, preferencesManager, override).accent
+    }
+
     private fun buildAccentTheme(themeId: String, isNight: Boolean): AccentTheme {
         val pkg = ThemePackages.getById(themeId)
         val argb = (if (isNight) pkg.darkPrimary else pkg.lightPrimary).toArgb()
@@ -83,7 +100,9 @@ object WidgetData {
         val abs = Math.abs(amount)
         val whole = abs / 100
         val cents = abs % 100
-        return if (cents == 0L) "$sign¥$whole" else "$sign¥$whole.${cents.toString().padStart(2, '0')}"
+        // 千分位与设计稿一致（¥8,200 / ¥6,820）；整数段按 3 位分组
+        val grouped = java.text.DecimalFormat("#,##0").format(whole)
+        return if (cents == 0L) "$sign¥$grouped" else "$sign¥$grouped.${cents.toString().padStart(2, '0')}"
     }
 
     // 卡片场景的金额缩写：5 位整数（≥¥10,000）起万/千单位折叠 —— 最窄的统计卡只放得下 4-5 个字符，
@@ -92,6 +111,28 @@ object WidgetData {
         if (Math.abs(amount) / 100 < 10_000) return formatMoneyShort(amount)
         val sign = if (amount < 0) "-" else ""
         return "$sign¥${formatAmountCompact(context, amount)}"
+    }
+
+    /**
+     * 柱图顶部的峰值标：**裸数字 + k/万折叠**（稿 `.cv` 的 `128` / `8.2k` / `34.2k`）。
+     *
+     * 12 槽柱图的每列只有 1/12 卡宽（≈28dp），带 ¥ 与千分位的 `¥8,200` 会被 maxLines=1
+     * 截成 `¥8,20`。口径：¥1,000 以下给整数，十万以下给一位小数的 k（`.0` 去掉），
+     * 再大按万折叠（128万）——与 [formatAmountCompact] 的分界不同（那是给 5 位整数用的）。
+     */
+    fun formatChartValue(amount: Long): String {
+        val yuan = Math.abs(amount) / 100
+        val sign = if (amount < 0) "-" else ""
+        val body = when {
+            yuan < 1_000 -> yuan.toString()
+            yuan < 100_000 -> String.format(java.util.Locale.US, "%.1fk", yuan / 1000.0).replace(".0k", "k")
+            else -> {
+                val wan = yuan / 10_000.0
+                if (wan == wan.toInt().toDouble()) "${wan.toInt()}万"
+                else String.format(java.util.Locale.CHINA, "%.1f万", wan)
+            }
+        }
+        return sign + body
     }
 
     /** 色族序号 → (淡底, 饱和前景)。按条目取不同族，组件里不要只用主题色。 */
@@ -124,7 +165,7 @@ object WidgetData {
      */
     fun formatAmountCompact(context: Context, amount: Long): String {
         val abs = Math.abs(amount)
-        if (abs / 100 < 10_000) return (abs / 100).toString()
+        if (abs / 100 < 10_000) return java.text.DecimalFormat("#,##0").format(abs / 100)
         val isZh = context.resources.configuration.locales.get(0).language == "zh"
         return if (isZh) {
             val wan = abs / 100.0 / 10_000
@@ -146,9 +187,15 @@ object WidgetData {
         }
     }
 
-    /** 待办组件的一屏数据：清单是「逾期 + 今天及以后」的活跃条目，进度轴用今日完成度。 */
+    /**
+     * 待办组件的一屏数据：清单是「逾期 + 今天及以后」的活跃条目，进度轴用今日完成度。
+     *
+     * [todayItems] 是**今天到期**的那批（含已完成），按 [items] 的同一种排序（时间升序）——
+     * v22 待办四档都只列今天的事项（稿口径），头部「今天 N/M」也由它和 [todayDone] 推出。
+     */
     data class TodoBoard(
         val items: List<LifeItem>,
+        val todayItems: List<LifeItem> = emptyList(),
         val todayDone: Int,
         val todayTotal: Int
     )
@@ -166,17 +213,22 @@ object WidgetData {
     ): TodoBoard {
         val templates = lifeTemplateDao.getAllVisibleTemplates().first()
         val todoTemplate = templates.firstOrNull { it.getKind() == LifeTemplateKind.TODO }
-            ?: return TodoBoard(emptyList(), 0, 0)
+            ?: return TodoBoard(emptyList(), emptyList(), 0, 0)
         val active = lifeItemDao.getWidgetItemsByTemplate(todoTemplate.id, includeDemo, demoMeta).first()
             .filter { it.parentId == null }
         val today = LocalDate.now()
         val todayStart = today.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
         val todayEnd = today.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
         val todayItems = active.filter { it.dueDate?.let { d -> d >= todayStart && d < todayEnd } == true }
+        val sorted = active.sortedWith(
+            compareBy({ it.dueDate == null }, { it.dueDate ?: Long.MAX_VALUE }, { it.sortOrder })
+        )
         return TodoBoard(
-            items = active.sortedWith(
-                compareBy({ it.dueDate == null }, { it.dueDate ?: Long.MAX_VALUE }, { it.sortOrder })
-            ),
+            items = sorted,
+            // 今天的事项沿用同一排序（active 已按 dueDate 升序过滤出来，顺序即时间序）
+            todayItems = sorted.filter { item ->
+                item.dueDate?.let { d -> d >= todayStart && d < todayEnd } == true
+            },
             todayDone = todayItems.count { it.status == "COMPLETED" },
             todayTotal = todayItems.size
         )

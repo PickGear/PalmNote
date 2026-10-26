@@ -863,6 +863,28 @@ interface LifeItemDao {
     fun getDistinctCheckInDays(templateId: Long, includeDemo: Boolean, demoMeta: String): Flow<List<String>>
 
     /**
+     * 某天已打卡的**模板 id 集合**（仪表盘打卡卡专用）。
+     *
+     * 存在的理由：此前仪表盘对每个习惯模板各调一次 [getDistinctCheckInDays] 再 `.first()`
+     * —— N 个模板 N 次串行的 Flow 往返（每次都要建观察者、查库、取消），在首屏把整份看板
+     * 数据拖住几百毫秒，且全部发生在主线程调度上。本查询把口径完全相同的判断收敛成 1 次。
+     *
+     * 口径与 [getDistinctCheckInDays] 逐条对齐（隐藏模板、ARCHIVED、演示互斥），
+     * 只是把 `templateId = :templateId` 换成「按天取全部模板」，结果多一列 templateId。
+     */
+    @Query(
+        """
+        SELECT DISTINCT li.templateId
+        FROM life_items li
+        INNER JOIN life_templates lt ON li.templateId = lt.id AND lt.isHidden = 0
+        WHERE li.status != 'ARCHIVED'
+          AND date(COALESCE(li.dueDate, li.createdAt) / 1000, 'unixepoch', 'localtime') = :day
+          AND ((:includeDemo = 1 AND li.meta = :demoMeta) OR (:includeDemo = 0 AND (li.meta IS NULL OR li.meta <> :demoMeta)))
+    """
+    )
+    fun getCheckedTemplateIdsOnDay(day: String, includeDemo: Boolean, demoMeta: String): Flow<List<Long>>
+
+    /**
      * 某模板全量去重记录日（日记连续天数用）。
      * 口径与 [getDistinctCheckInDays] 一致，只换模板语义；升序供 [StreakEngine] 计算。
      */

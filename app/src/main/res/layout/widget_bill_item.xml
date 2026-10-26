@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  说明：本布局当前不被任何 provider 直接使用，但它是 WidgetToneSweepTest /
+  WidgetTintBackgroundTest 的「典型带 id 布局」测试样本（验证色调扫描能覆盖各 id 类型）。
+  删它之前先给测试换样本，不要当孤儿资源清理。
+-->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_bill_item_root"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"

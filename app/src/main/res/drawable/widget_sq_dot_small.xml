@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- 1×3 窄条行的小方点（稿子窄条：7px 见方、2px 圆角），白底占位，运行时 setColorFilter 上色 -->
-<shape xmlns:android="http://schemas.android.com/apk/res/android"
-    android:shape="rectangle">
-    <corners android:radius="2dp" />
-    <solid android:color="#FFFFFFFF" />
-</shape>

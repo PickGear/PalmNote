@@ -59,6 +59,19 @@ interface BillDao {
     fun getMonthlyExpense(yearMonth: String): Flow<Long?>
 
     /**
+     * 近 N 个月的收入/支出合计（净资产组件 4×4 的近 12 个月净值序列用）。
+     * [fromYearMonth] 含当月（"yyyy-MM" 字符串可直接比较）；无记录的月份不出行，
+     * 调用方按 0 收敛。收入列同理（无收入记录月份为 0）。
+     */
+    @Query(
+        "SELECT yearMonth, " +
+            "SUM(CASE WHEN type = 'INCOME' THEN amount ELSE 0 END) AS income, " +
+            "SUM(CASE WHEN type = 'EXPENSE' THEN amount ELSE 0 END) AS expense " +
+            "FROM bills WHERE yearMonth >= :fromYearMonth GROUP BY yearMonth"
+    )
+    fun getMonthlyFlowsSince(fromYearMonth: String): Flow<List<MonthlyFlow>>
+
+    /**
      * 月度支出 + 其中已报销部分。一次查询拿两个数，报表不必为「净支出」再挂一条流
      * （Kotlin 的 combine 只到 5 个参数，报表页已经把额度用满了）。
      */
@@ -84,12 +97,38 @@ interface BillDao {
     )
     fun getDailyExpenseSince(fromMillis: Long): Flow<List<DailySummary>>
 
+    /**
+     * 同上，但限某个账本。**不能拿 [getDailyExpenseSince] 的结果自己过滤**：
+     * 那条 SQL 没有账本维度，而账本维度的账单查询只按 `yearMonth` 取，近 7 天窗口跨月时
+     * 上个月那几天会被判成「该账本没有记录」而清零，金额本身也还是全账本口径。
+     */
+    @Query(
+        "SELECT date, SUM(amount) AS expense, 0 AS income FROM bills " +
+            "WHERE accountBookId = :bookId AND type = 'EXPENSE' AND date >= :fromMillis " +
+            "GROUP BY date ORDER BY date"
+    )
+    fun getDailyExpenseSinceByBook(bookId: Long, fromMillis: Long): Flow<List<DailySummary>>
+
     @Query(
         "SELECT category AS category, SUM(amount) AS total FROM bills " +
             "WHERE yearMonth = :yearMonth AND type = 'EXPENSE' " +
             "GROUP BY category ORDER BY total DESC LIMIT 1"
     )
     suspend fun getTopExpenseCategory(yearMonth: String): CategoryTotal?
+
+    @Query(
+        "SELECT category AS category, SUM(amount) AS total FROM bills " +
+            "WHERE yearMonth = :yearMonth AND type = 'EXPENSE' " +
+            "GROUP BY category ORDER BY total DESC LIMIT :limit"
+    )
+    suspend fun getTopExpenseCategories(yearMonth: String, limit: Int): List<CategoryTotal>
+
+    @Query(
+        "SELECT category AS category, SUM(amount) AS total FROM bills " +
+            "WHERE accountBookId = :bookId AND yearMonth = :yearMonth AND type = 'EXPENSE' " +
+            "GROUP BY category ORDER BY total DESC LIMIT 1"
+    )
+    suspend fun getTopExpenseCategoryByBook(bookId: Long, yearMonth: String): CategoryTotal?
 
     @Query("SELECT SUM(amount) FROM bills WHERE accountBookId = :bookId AND yearMonth = :yearMonth AND type = 'EXPENSE'")
     fun getMonthlyExpenseByBook(bookId: Long, yearMonth: String): Flow<Long?>
@@ -581,4 +620,15 @@ data class ExpenseBreakdown(
 data class ReimbursementSummary(
     val remaining: Long? = null,
     val count: Int? = null
+)
+
+/**
+ * 一个自然月的收入/支出合计（净资产组件 4×4 的近 12 个月净值序列用）。
+ * 库里没有月份维度历史表，净值序列 = 当前净值 − 之后各月净流入的累计（见
+ * `NetWorthWidgetProvider` 的月度重建口径）；本投影只提供每月的收支。
+ */
+data class MonthlyFlow(
+    val yearMonth: String,
+    val income: Long,
+    val expense: Long
 )

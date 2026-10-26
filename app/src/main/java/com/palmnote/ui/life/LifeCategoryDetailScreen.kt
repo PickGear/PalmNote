@@ -210,6 +210,7 @@ class CategoryDetailViewModel @Inject constructor(
         viewModelScope.launch {
             lifeItemDao.updateStatus(itemId, if (completed) "COMPLETED" else "ACTIVE")
             WidgetUpdateHelper.refreshTodoWidgets()
+            WidgetUpdateHelper.refreshSubscriptionWidgets()
         }
     }
 
@@ -222,6 +223,7 @@ class CategoryDetailViewModel @Inject constructor(
             val todayStart = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
             lifeItemDao.updateFieldsDataWithSchedule(itemId, item.fieldsData, todayStart, item.dueTime)
             WidgetUpdateHelper.refreshTodoWidgets()
+            WidgetUpdateHelper.refreshSubscriptionWidgets()
         }
     }
 
@@ -229,6 +231,7 @@ class CategoryDetailViewModel @Inject constructor(
         viewModelScope.launch {
             itemRepo.delete(itemId)
             WidgetUpdateHelper.refreshTodoWidgets()
+            WidgetUpdateHelper.refreshSubscriptionWidgets()
         }
     }
 

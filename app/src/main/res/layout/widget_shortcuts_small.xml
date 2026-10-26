@@ -4,43 +4,61 @@
   （稿子 1×1 只画了这一个；要开别的入口就摆 2×2）。方块底与加号都是白底占位，
   运行时 setColorFilter 上色族色。
 -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/widget_layout"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:gravity="center"
-    android:padding="10dp"
-    android:background="@drawable/widget_card_round">
+    android:layout_height="match_parent">
 
-    <FrameLayout
-        android:layout_width="30dp"
-        android:layout_height="30dp">
+    <!-- 壁纸层：app 内「自定义背景」开启时由 WidgetWallpaper 填充，卡片底色转透明 -->
+    <ImageView
+        android:id="@+id/widget_bg"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:contentDescription="@null"
+        android:scaleType="centerCrop" />
 
-        <ImageView
-            android:id="@+id/widget_sc_small_bg"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:src="@drawable/widget_shape_circle"
-            android:contentDescription="@null" />
 
-        <ImageView
-            android:id="@+id/widget_sc_small_icon"
-            android:layout_width="15dp"
-            android:layout_height="15dp"
-            android:layout_gravity="center"
-            android:src="@drawable/widget_ic_plus_white"
-            android:contentDescription="@null" />
+    <LinearLayout
+        android:id="@+id/widget_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="10dp"
+        android:background="@drawable/widget_card_round">
+
+        <FrameLayout
+            android:layout_width="30dp"
+            android:layout_height="30dp">
+
+            <ImageView
+                android:id="@+id/widget_sc_small_bg"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:src="@drawable/widget_shape_circle"
+                android:contentDescription="@null" />
+
+            <ImageView
+                android:id="@+id/widget_sc_small_icon"
+                android:layout_width="15dp"
+                android:layout_height="15dp"
+                android:layout_gravity="center"
+                android:src="@drawable/widget_ic_plus_white"
+                android:contentDescription="@null" />
+        </FrameLayout>
+
+        <TextView
+            android:id="@+id/widget_add_bill"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:text="@string/widget_add_bill"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:textColor="@color/widget_v2_text_secondary"
+            android:maxLines="1" />
+
+    </LinearLayout>
+
+
     </FrameLayout>
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="5dp"
-        android:text="@string/widget_add_bill"
-        android:textSize="10sp"
-        android:textStyle="bold"
-        android:textColor="@color/widget_v2_text_secondary"
-        android:maxLines="1" />
-
-</LinearLayout>

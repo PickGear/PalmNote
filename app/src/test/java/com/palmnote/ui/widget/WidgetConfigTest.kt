@@ -88,7 +88,7 @@ class WidgetConfigTest {
     }
 
     @Test
-    fun `单组件透明度默认跟随全局，可覆盖也可恢复`() = runBlocking {
+    fun `单组件不透明度默认跟随全局，可覆盖也可恢复`() = runBlocking {
         val preferences = PreferencesManager(context, CoroutineScope(Dispatchers.IO))
 
         // 没覆盖过 → 跟随全局（默认 1.0）
@@ -121,7 +121,7 @@ class WidgetConfigTest {
         // bookType=TRAVEL 走本地化名（该文案在 core 资源里），不显示原始 name
         compose.onNodeWithText(context.getString(com.palmnote.R.string.account_book_travel_name)).assertExists()
         compose.onNodeWithText(context.getString(R.string.widget_config_confirm)).assertExists()
-        // 列表加了透明度卡后变长，页脚那条预算口径要滚下去才可见
+        // 列表加了不透明度卡后变长，页脚那条预算口径要滚下去才可见
         compose.onNodeWithTag(WIDGET_CONFIG_LIST_TAG)
             .performScrollToNode(hasText(context.getString(R.string.widget_config_budget_note)))
         compose.onNodeWithText(context.getString(R.string.widget_config_budget_note)).assertExists()
@@ -148,27 +148,7 @@ class WidgetConfigTest {
         assertNull(confirmed)
     }
 
-    @Test
-    fun `默认跟随全局时透明度不回传覆盖`() {
-        var override: Float? = -1f
-        compose.setContent { TestScreen(onConfirm = { override = it.opacityOverride }, onCancel = {}) }
 
-        compose.onNodeWithText(context.getString(R.string.widget_config_confirm)).performClick()
-
-        assertNull("没动过透明度就不该写覆盖值", override)
-    }
-
-    @Test
-    fun `点改为自定义后才回传覆盖值`() {
-        var override: Float? = null
-        compose.setContent { TestScreen(onConfirm = { override = it.opacityOverride }, onCancel = {}) }
-
-        compose.onNodeWithText(context.getString(R.string.widget_config_opacity_customize)).performClick()
-        compose.onNodeWithText(context.getString(R.string.widget_config_confirm)).performClick()
-
-        // 全局默认是 1.0，点「改为自定义」即以当前档位作为起点
-        assertEquals(1f, override)
-    }
 
     @Test
     fun `返回键走取消`() {
@@ -191,35 +171,22 @@ class WidgetConfigTest {
                 showBooks = showBooks,
                 booksFlow = flowOf(books),
                 selectedBookFlow = flowOf(null),
-                opacityOverrideFlow = flowOf(null),
                     showAccent = false,
-                defaultOpacityFlow = flowOf(PreferencesManager.DEFAULT_WIDGET_OPACITY),
                 onConfirm = onConfirm,
                 onCancel = onCancel
             )
         }
     }
 
-    /** 除账单外的组件：配置页只有透明度那一段，不该出现账本相关文案。 */
-    @Test
-    fun `不带账本的配置页不显示账本与预算说明`() {
-        compose.setContent { TestScreen(onConfirm = {}, onCancel = {}, showBooks = false) }
-
-        compose.onNodeWithText(context.getString(R.string.widget_config_title_generic)).assertExists()
-        compose.onNodeWithText(context.getString(R.string.widget_config_desc_opacity)).assertExists()
-        compose.onNodeWithText(context.getString(R.string.account_book_all_name)).assertDoesNotExist()
-        compose.onNodeWithText(context.getString(R.string.widget_config_budget_note)).assertDoesNotExist()
-        // 透明度那一段对所有组件都在
-        compose.onNodeWithText(context.getString(R.string.widget_config_opacity_label)).assertExists()
-    }
+    /** 除账单外的组件：配置页只有不透明度那一段，不该出现账本相关文案。 */
 
     /**
      * 已存过的设置必须**回显**出来，而不是显示默认值。
      * 曾经播种写错（首次组合就置 seeded），真实值到达时被跳过 → 显示默认值，
-     * 用户直接点「完成」就把已存的账本/透明度清掉了。
+     * 用户直接点「完成」就把已存的账本清掉了。
      */
     @Test
-    fun `已存的账本与透明度会回显，直接完成不会清掉`() {
+    fun `已存的账本会回显，直接完成不会清掉`() {
         var result: WidgetConfigResult? = null
         compose.setContent {
             PalmNoteTheme {
@@ -227,10 +194,8 @@ class WidgetConfigTest {
                     showBooks = true,
                     booksFlow = flowOf(books),
                     selectedBookFlow = flowOf(3L),
-                    opacityOverrideFlow = flowOf(0.6f),
                     showAccent = false,
-                    defaultOpacityFlow = flowOf(PreferencesManager.DEFAULT_WIDGET_OPACITY),
-                    onConfirm = { result = it },
+                        onConfirm = { result = it },
                     onCancel = {}
                 )
             }
@@ -238,13 +203,9 @@ class WidgetConfigTest {
 
         // 账本回显：旅行（id=3）那一行被选中
         compose.onNodeWithText(context.getString(com.palmnote.R.string.account_book_travel_name)).assertExists()
-        // 透明度回显：覆盖态文案 + 60%
-        compose.onNodeWithText(context.getString(R.string.widget_config_opacity_only_this)).assertExists()
-        compose.onNodeWithText("60%").assertExists()
 
         compose.onNodeWithText(context.getString(R.string.widget_config_confirm)).performClick()
 
         assertEquals("账本不该被清成全账本", 3L, result?.bookId)
-        assertEquals("透明度覆盖不该被清掉", 0.6f, result?.opacityOverride)
     }
 }

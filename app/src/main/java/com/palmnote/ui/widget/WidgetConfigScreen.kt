@@ -34,14 +34,12 @@ import androidx.compose.ui.platform.LocalConfiguration
 import com.palmnote.ui.theme.ThemePackages
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.draw.clip
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -50,11 +48,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.palmnote.app.R
-import com.palmnote.data.datastore.PreferencesManager
 import com.palmnote.data.db.entity.AccountBook
 import com.palmnote.data.db.entity.getDisplayName
 import com.palmnote.ui.components.CompactTopAppBar
@@ -62,14 +58,14 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.first
 
-/** 透明度档位间隔数：两端之外再插 2 个，共 4 档（40/60/80/100%），与添加页同一套档位。 */
-private const val OPACITY_STEPS = 2
 
 /** 配置项列表的测试标签：列表变长后页脚文案要滚动才可见，测试需要先滚过去。 */
 internal const val WIDGET_CONFIG_LIST_TAG = "widget_config_list"
 
 /**
- * 组件配置页：**透明度对所有组件都显示**；账本那一段只有账单组件有（[showBooks]）。
+ * 组件配置页：账本那一段只有账单组件有（[showBooks]），配色那一段只有渲染吃强调色的组件有
+ * （[showAccent]）。**不透明度与背景不在这里** —— 它们在添加/编辑面板（`WidgetPinScreen`）里
+ * 按 `appWidgetId` 直接改，见 `WidgetPinViewModel.applyOpacity`。
  * 无状态入口（数据靠 Flow 注入），便于离屏渲染核对。
  */
 @Composable
@@ -78,10 +74,6 @@ internal fun WidgetConfigScreen(
     showBooks: Boolean,
     booksFlow: Flow<List<AccountBook>>,
     selectedBookFlow: Flow<Long?>,
-    /** 该实例的透明度覆盖；null = 跟随全局默认。 */
-    opacityOverrideFlow: Flow<Float?>,
-    /** 全局默认透明度（「跟随默认」那行要显示它）。 */
-    defaultOpacityFlow: Flow<Float>,
     /** 该实例的强调色覆盖；null = 跟随应用主题包。 */
     accentThemeOverrideFlow: Flow<String?> = flowOf(null),
     /** 是否显示「配色」卡：只有渲染吃强调色的组件（账单/概览/接下来）才显示。 */
@@ -90,21 +82,16 @@ internal fun WidgetConfigScreen(
     onCancel: () -> Unit
 ) {
     val books by booksFlow.collectAsStateWithLifecycle(initialValue = emptyList())
-    val defaultOpacity by defaultOpacityFlow.collectAsStateWithLifecycle(
-        initialValue = PreferencesManager.DEFAULT_WIDGET_OPACITY
-    )
     val context = LocalContext.current
 
     // 选择先落在本地，点「完成」才写偏好——中途反悔直接返回不影响已摆的组件。
     // 播种必须用 first() 等流真正发出值：collectAsStateWithLifecycle 的初值是 null，
-    // 若按「首次组合就播种」，真实值到达时 already-seeded 会把已存的账本/透明度显示成默认值，
+    // 若按「首次组合就播种」，真实值到达时 already-seeded 会把已存的账本/配色显示成默认值，
     // 用户直接点「完成」就把设置清了。
     var selected by remember { mutableStateOf<Long?>(null) }
-    var override by remember { mutableStateOf<Float?>(null) }
     var accentTheme by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(Unit) {
         selected = selectedBookFlow.first()
-        override = opacityOverrideFlow.first()
         accentTheme = accentThemeOverrideFlow.first()
     }
 
@@ -116,7 +103,6 @@ internal fun WidgetConfigScreen(
                     onConfirm(
                         WidgetConfigResult(
                             bookId = selected,
-                            opacityOverride = override,
                             accentThemeId = accentTheme
                         )
                     )
@@ -130,9 +116,6 @@ internal fun WidgetConfigScreen(
             books = books,
             selected = selected,
             onSelect = { selected = it },
-            override = override,
-            defaultOpacity = defaultOpacity,
-            onOverrideChange = { override = it },
             accentTheme = accentTheme,
             onAccentThemeChange = { accentTheme = it },
             showAccent = showAccent,
@@ -141,7 +124,7 @@ internal fun WidgetConfigScreen(
     }
 }
 
-/** 配置项列表：说明 + （账单才有的）账本 + 透明度 + 配色 + 预算口径提示。 */
+/** 配置项列表：说明 + 账本（[showBooks]）+ 配色（[showAccent]）+ 预算口径提示（[showBooks]）。 */
 @Suppress("LongParameterList")
 @Composable
 private fun ConfigList(
@@ -150,9 +133,6 @@ private fun ConfigList(
     books: List<AccountBook>,
     selected: Long?,
     onSelect: (Long?) -> Unit,
-    override: Float?,
-    defaultOpacity: Float,
-    onOverrideChange: (Float?) -> Unit,
     accentTheme: String?,
     onAccentThemeChange: (String?) -> Unit,
     showAccent: Boolean,
@@ -168,9 +148,7 @@ private fun ConfigList(
     ) {
         item {
             Text(
-                stringResource(
-                    if (showBooks) R.string.widget_config_desc else R.string.widget_config_desc_opacity
-                ),
+                stringResource(R.string.widget_config_desc),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp)
@@ -178,9 +156,6 @@ private fun ConfigList(
         }
         if (showBooks) {
             item { BookListCard(books = books, selected = selected, onSelect = onSelect, context = context) }
-        }
-        item {
-            OpacityCard(override = override, defaultOpacity = defaultOpacity, onChange = onOverrideChange)
         }
         if (showAccent) {
             item {
@@ -207,7 +182,7 @@ private fun ConfigList(
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun AccentThemeCard(selected: String?, onSelect: (String?) -> Unit) {
+internal fun AccentThemeCard(selected: String?, onSelect: (String?) -> Unit) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
@@ -316,7 +291,7 @@ private fun ConfigConfirmBar(onConfirm: () -> Unit) {
 
 /** 账本列表：「全账本」在最前（null），随后是可见账本。 */
 @Composable
-private fun BookListCard(
+internal fun BookListCard(
     books: List<AccountBook>,
     selected: Long?,
     onSelect: (Long?) -> Unit,
@@ -373,90 +348,5 @@ private fun BookOptionRow(label: String, checked: Boolean, onClick: () -> Unit) 
                 modifier = Modifier.size(20.dp)
             )
         }
-    }
-}
-
-/**
- * 透明度：默认**跟随全局**，点「改为自定义」才覆盖。
- * 覆盖态显示实际档位，跟随态显示全局值并写明「跟随默认」。
- */
-@Composable
-private fun OpacityCard(
-    override: Float?,
-    defaultOpacity: Float,
-    onChange: (Float?) -> Unit
-) {
-    val effective = override ?: defaultOpacity
-    var value by remember(effective) { mutableFloatStateOf(effective) }
-
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surface
-    ) {
-        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-            OpacityHeader(
-                isOverride = override != null,
-                onToggle = { onChange(if (override == null) defaultOpacity else null) }
-            )
-            OpacitySlider(value = value, onValueChange = { value = it }, onCommit = { onChange(it) })
-            Text(
-                if (override == null) {
-                    stringResource(
-                        R.string.widget_config_opacity_following,
-                        (defaultOpacity * 100).toInt()
-                    )
-                } else {
-                    stringResource(R.string.widget_config_opacity_only_this)
-                },
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
-
-/** 标题行 + 「改为自定义 / 恢复跟随默认」切换。 */
-@Composable
-private fun OpacityHeader(isOverride: Boolean, onToggle: () -> Unit) {
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-        Text(
-            stringResource(R.string.widget_config_opacity_label),
-            style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.weight(1f)
-        )
-        TextButton(contentPadding = PaddingValues(horizontal = 8.dp), onClick = onToggle) {
-            Text(
-                stringResource(
-                    if (isOverride) {
-                        R.string.widget_config_opacity_follow
-                    } else {
-                        R.string.widget_config_opacity_customize
-                    }
-                )
-            )
-        }
-    }
-}
-
-/** 档位滑块 + 百分比。松手才提交（跟随态下拖动即就地改成自定义）。 */
-@Composable
-private fun OpacitySlider(value: Float, onValueChange: (Float) -> Unit, onCommit: (Float) -> Unit) {
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-        Slider(
-            value = value,
-            onValueChange = onValueChange,
-            onValueChangeFinished = { onCommit(value) },
-            valueRange = PreferencesManager.MIN_WIDGET_OPACITY..1f,
-            steps = OPACITY_STEPS,
-            modifier = Modifier.weight(1f)
-        )
-        Text(
-            "${(value * 100).toInt()}%",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.width(40.dp),
-            textAlign = TextAlign.End
-        )
     }
 }

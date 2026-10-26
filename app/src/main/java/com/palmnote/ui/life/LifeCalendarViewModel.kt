@@ -234,6 +234,7 @@ class LifeCalendarViewModel @Inject constructor(
                 demoMode = preferences.lifeDemoMode.first()
             )
             WidgetUpdateHelper.refreshTodoWidgets()
+            WidgetUpdateHelper.refreshSubscriptionWidgets()
             WidgetUpdateHelper.refreshCounterWidgets()
         }
     }
@@ -404,6 +405,7 @@ class LifeCalendarViewModel @Inject constructor(
             val item = lifeItemDao.getItemById(itemId) ?: return@launch
             lifeItemDao.updateStatus(itemId, if (item.status == "COMPLETED") "ACTIVE" else "COMPLETED")
             WidgetUpdateHelper.refreshTodoWidgets()
+            WidgetUpdateHelper.refreshSubscriptionWidgets()
         }
     }
 
@@ -419,6 +421,7 @@ class LifeCalendarViewModel @Inject constructor(
         viewModelScope.launch {
             lifeItemDao.updateStatus(itemId, if (completed) "COMPLETED" else "ACTIVE")
             WidgetUpdateHelper.refreshTodoWidgets()
+            WidgetUpdateHelper.refreshSubscriptionWidgets()
         }
     }
 
@@ -437,6 +440,7 @@ class LifeCalendarViewModel @Inject constructor(
             val todayStart = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
             lifeItemDao.updateFieldsDataWithSchedule(itemId, item.fieldsData, todayStart, item.dueTime)
             WidgetUpdateHelper.refreshTodoWidgets()
+            WidgetUpdateHelper.refreshSubscriptionWidgets()
         }
     }
 
@@ -454,6 +458,7 @@ class LifeCalendarViewModel @Inject constructor(
                 lifeItemDao.updateFieldsDataWithSchedule(itemId, item.fieldsData, todayStart, item.dueTime)
             }
             WidgetUpdateHelper.refreshTodoWidgets()
+            WidgetUpdateHelper.refreshSubscriptionWidgets()
         }
     }
 
@@ -467,6 +472,7 @@ class LifeCalendarViewModel @Inject constructor(
             val dayStart = date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
             lifeItemDao.updateFieldsDataWithSchedule(itemId, item.fieldsData, dayStart, item.dueTime)
             WidgetUpdateHelper.refreshTodoWidgets()
+            WidgetUpdateHelper.refreshSubscriptionWidgets()
         }
     }
 
@@ -475,6 +481,7 @@ class LifeCalendarViewModel @Inject constructor(
         viewModelScope.launch {
             itemRepository.delete(itemId)
             WidgetUpdateHelper.refreshTodoWidgets()
+            WidgetUpdateHelper.refreshSubscriptionWidgets()
         }
     }
     companion object {

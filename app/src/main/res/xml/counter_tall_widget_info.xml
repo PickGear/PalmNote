@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- counter_tall_widget_info：v37 4×4 仪表盘档（§04：targetCell 4×4，minWidth 300 / minHeight 250 兜底，绝不填画布像素） -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="250dp"
+    android:minHeight="250dp"
+    android:minResizeWidth="250dp"
+    android:minResizeHeight="220dp"
+    android:targetCellWidth="4"
+    android:targetCellHeight="4"
+    android:maxResizeWidth="400dp"
+    android:maxResizeHeight="400dp"
+    android:updatePeriodMillis="1800000"
+    android:initialLayout="@layout/widget_v22_tall"
+    android:widgetCategory="home_screen"
+    android:description="@string/widget_counter_desc"
+    android:previewImage="@drawable/widget_preview_counter_tall_card"
+    android:resizeMode="horizontal|vertical" />

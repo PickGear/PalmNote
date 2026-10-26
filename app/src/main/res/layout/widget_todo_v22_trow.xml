@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  v22 待办清单行 · 素行（稿 .trow：高 18、无底）：2×2 用。勾选框 13dp + 事项 + 时间，
+  时间着卡族 ink（Provider setTextColor，2×2 各行同色）。整行可点（挂勾选 PendingIntent）。
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_todo_trow"
+    android:layout_width="match_parent"
+    android:layout_height="17dp"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:layout_marginBottom="4dp">
+
+    <TextView
+        android:id="@+id/widget_todo_trow_ck"
+        android:layout_width="13dp"
+        android:layout_height="13dp"
+        android:background="@drawable/widget_v22_ck_off"
+        android:gravity="center"
+        android:maxLines="1"
+        android:includeFontPadding="false"
+        android:textColor="#FFFFFFFF"
+        android:textSize="9sp"
+        android:textStyle="bold"
+        android:contentDescription="@null" />
+
+    <TextView
+        android:id="@+id/widget_todo_trow_name"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginStart="6dp"
+        android:textSize="@dimen/widget_v22_text_lb"
+        android:textStyle="bold"
+        android:textColor="@color/widget_v22_text_1"
+        android:maxLines="1"
+        android:ellipsize="end" />
+
+    <TextView
+        android:id="@+id/widget_todo_trow_time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="6dp"
+        android:textSize="@dimen/widget_v22_text_lb"
+        android:textStyle="bold"
+        android:maxLines="1"
+        android:includeFontPadding="false" />
+</LinearLayout>

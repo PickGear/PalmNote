@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  生活计数 4×4 的点阵居中位（v37 §2-7 的柱图区替代）：计数器没有按天的历史记录
+  （目标值原地更新），柱图无真实数据源；按「不虚构分母」口径用可数的八点阵占位，
+  在弹性区里垂直居中（点阵布局自身高度固定，外包一层撑满居中）。
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_v22_dotg_center_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <include
+        layout="@layout/widget_v22_dotg_lg"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center" />
+</FrameLayout>

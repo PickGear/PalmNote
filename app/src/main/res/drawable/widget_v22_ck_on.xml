@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  v22 待办勾选框 · 已勾（稿 .ck.on：实心圆 + 白勾）：完成态是固定绿（green 令牌 #1F7F33），
+  不是色族色 —— 与 v4 的 widget_todo_check_done 同口径，预览与运行时共用。
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <solid android:color="@color/widget_v22_green" />
+</shape>

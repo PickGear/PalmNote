@@ -60,7 +60,7 @@ class HabitCheckInReceiver : BroadcastReceiver() {
                     includeDemo = entryPoint.preferencesManager().lifeDemoMode.first(),
                     demoMeta = LIFE_DEMO_META
                 )
-                HabitWidgetProvider.requestUpdateAll(context)
+                WidgetUpdateHelper.refreshHabitWidgets()
                 // Dashboard 的「今日打卡」卡也读同一份数据，不刷新就要等下一轮轮询
                 WidgetUpdateHelper.refreshDashboardWidgets()
             } catch (e: Exception) {

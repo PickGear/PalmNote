@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- 行底（设计稿 .tls .tlrow{border-radius:9px}：订阅时间轴行、倒计时第二事件行）：
-     白底，运行时 setColorFilter 上色族淡色 -->
-<shape xmlns:android="http://schemas.android.com/apk/res/android"
-    android:shape="rectangle">
-    <solid android:color="#FFFFFFFF" />
-    <corners android:radius="9dp" />
-</shape>

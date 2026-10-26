@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  v22 点阵（稿 .dpd）：5 个固定点，高 9、格隙 4。亮点着族色 d、暗点着 outline 灰。
+  只给分母固定 ≤ 5 的指标（打卡 2/5）；无上限计数不画点（2026-10-23 定）。
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_v22_dpd_root"
+    android:layout_width="wrap_content"
+    android:layout_height="9dp"
+    android:orientation="horizontal">
+
+    <ImageView
+        android:id="@+id/widget_v22_dpd_1"
+        android:layout_width="9dp"
+        android:layout_height="9dp"
+        android:layout_marginEnd="4dp"
+        android:src="@drawable/widget_shape_circle"
+        android:contentDescription="@null" />
+    <ImageView
+        android:id="@+id/widget_v22_dpd_2"
+        android:layout_width="9dp"
+        android:layout_height="9dp"
+        android:layout_marginEnd="4dp"
+        android:src="@drawable/widget_shape_circle"
+        android:contentDescription="@null" />
+    <ImageView
+        android:id="@+id/widget_v22_dpd_3"
+        android:layout_width="9dp"
+        android:layout_height="9dp"
+        android:layout_marginEnd="4dp"
+        android:src="@drawable/widget_shape_circle"
+        android:contentDescription="@null" />
+    <ImageView
+        android:id="@+id/widget_v22_dpd_4"
+        android:layout_width="9dp"
+        android:layout_height="9dp"
+        android:layout_marginEnd="4dp"
+        android:src="@drawable/widget_shape_circle"
+        android:contentDescription="@null" />
+    <ImageView
+        android:id="@+id/widget_v22_dpd_5"
+        android:layout_width="9dp"
+        android:layout_height="9dp"
+        android:src="@drawable/widget_shape_circle"
+        android:contentDescription="@null" />
+</LinearLayout>

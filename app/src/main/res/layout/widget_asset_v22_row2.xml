@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  物品图例行 · 2 列（v22 SQUARE 用）：胶囊走 widget_v22_chip_tight（稿 .ch.sm.tight）。
+  行高同为 26，行间 5dp。
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_asset_row"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/widget_v22_chip_h"
+    android:orientation="horizontal"
+    android:layout_marginBottom="5dp" />

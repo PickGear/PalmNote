@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  v22 日历条（稿 .dstrip/.dcell）：10 个固定格，一格 = 剩一天，末格 = 事件日。
+  格高 20、圆角 5、格隙 3；数字 10sp 居中。
+  底：普通格 line 灰 / 事件格族色 d（白字）——运行时 setColorFilter + setTextColor。
+  事件很远时上游折叠格数（用不到的格 GONE），不缩字号不改宽度。
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_v22_dstrip_root"
+    android:layout_width="match_parent"
+    android:layout_height="20dp"
+    android:orientation="horizontal">
+
+    <FrameLayout android:id="@+id/widget_v22_dcell_1" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_marginEnd="3dp">
+        <ImageView android:id="@+id/widget_v22_dcell_bg_1" android:layout_width="match_parent" android:layout_height="match_parent" android:src="@drawable/widget_v22_round5" android:contentDescription="@null" />
+        <TextView android:id="@+id/widget_v22_dcell_tx_1" android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center" android:textSize="10sp" android:textStyle="bold" android:textColor="@color/widget_v22_text_2" android:maxLines="1" android:includeFontPadding="false" />
+    </FrameLayout>
+    <FrameLayout android:id="@+id/widget_v22_dcell_2" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_marginEnd="3dp">
+        <ImageView android:id="@+id/widget_v22_dcell_bg_2" android:layout_width="match_parent" android:layout_height="match_parent" android:src="@drawable/widget_v22_round5" android:contentDescription="@null" />
+        <TextView android:id="@+id/widget_v22_dcell_tx_2" android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center" android:textSize="10sp" android:textStyle="bold" android:textColor="@color/widget_v22_text_2" android:maxLines="1" android:includeFontPadding="false" />
+    </FrameLayout>
+    <FrameLayout android:id="@+id/widget_v22_dcell_3" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_marginEnd="3dp">
+        <ImageView android:id="@+id/widget_v22_dcell_bg_3" android:layout_width="match_parent" android:layout_height="match_parent" android:src="@drawable/widget_v22_round5" android:contentDescription="@null" />
+        <TextView android:id="@+id/widget_v22_dcell_tx_3" android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center" android:textSize="10sp" android:textStyle="bold" android:textColor="@color/widget_v22_text_2" android:maxLines="1" android:includeFontPadding="false" />
+    </FrameLayout>
+    <FrameLayout android:id="@+id/widget_v22_dcell_4" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_marginEnd="3dp">
+        <ImageView android:id="@+id/widget_v22_dcell_bg_4" android:layout_width="match_parent" android:layout_height="match_parent" android:src="@drawable/widget_v22_round5" android:contentDescription="@null" />
+        <TextView android:id="@+id/widget_v22_dcell_tx_4" android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center" android:textSize="10sp" android:textStyle="bold" android:textColor="@color/widget_v22_text_2" android:maxLines="1" android:includeFontPadding="false" />
+    </FrameLayout>
+    <FrameLayout android:id="@+id/widget_v22_dcell_5" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_marginEnd="3dp">
+        <ImageView android:id="@+id/widget_v22_dcell_bg_5" android:layout_width="match_parent" android:layout_height="match_parent" android:src="@drawable/widget_v22_round5" android:contentDescription="@null" />
+        <TextView android:id="@+id/widget_v22_dcell_tx_5" android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center" android:textSize="10sp" android:textStyle="bold" android:textColor="@color/widget_v22_text_2" android:maxLines="1" android:includeFontPadding="false" />
+    </FrameLayout>
+    <FrameLayout android:id="@+id/widget_v22_dcell_6" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_marginEnd="3dp">
+        <ImageView android:id="@+id/widget_v22_dcell_bg_6" android:layout_width="match_parent" android:layout_height="match_parent" android:src="@drawable/widget_v22_round5" android:contentDescription="@null" />
+        <TextView android:id="@+id/widget_v22_dcell_tx_6" android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center" android:textSize="10sp" android:textStyle="bold" android:textColor="@color/widget_v22_text_2" android:maxLines="1" android:includeFontPadding="false" />
+    </FrameLayout>
+    <FrameLayout android:id="@+id/widget_v22_dcell_7" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_marginEnd="3dp">
+        <ImageView android:id="@+id/widget_v22_dcell_bg_7" android:layout_width="match_parent" android:layout_height="match_parent" android:src="@drawable/widget_v22_round5" android:contentDescription="@null" />
+        <TextView android:id="@+id/widget_v22_dcell_tx_7" android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center" android:textSize="10sp" android:textStyle="bold" android:textColor="@color/widget_v22_text_2" android:maxLines="1" android:includeFontPadding="false" />
+    </FrameLayout>
+    <FrameLayout android:id="@+id/widget_v22_dcell_8" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_marginEnd="3dp">
+        <ImageView android:id="@+id/widget_v22_dcell_bg_8" android:layout_width="match_parent" android:layout_height="match_parent" android:src="@drawable/widget_v22_round5" android:contentDescription="@null" />
+        <TextView android:id="@+id/widget_v22_dcell_tx_8" android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center" android:textSize="10sp" android:textStyle="bold" android:textColor="@color/widget_v22_text_2" android:maxLines="1" android:includeFontPadding="false" />
+    </FrameLayout>
+    <FrameLayout android:id="@+id/widget_v22_dcell_9" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_marginEnd="3dp">
+        <ImageView android:id="@+id/widget_v22_dcell_bg_9" android:layout_width="match_parent" android:layout_height="match_parent" android:src="@drawable/widget_v22_round5" android:contentDescription="@null" />
+        <TextView android:id="@+id/widget_v22_dcell_tx_9" android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center" android:textSize="10sp" android:textStyle="bold" android:textColor="@color/widget_v22_text_2" android:maxLines="1" android:includeFontPadding="false" />
+    </FrameLayout>
+    <FrameLayout android:id="@+id/widget_v22_dcell_10" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1">
+        <ImageView android:id="@+id/widget_v22_dcell_bg_10" android:layout_width="match_parent" android:layout_height="match_parent" android:src="@drawable/widget_v22_round5" android:contentDescription="@null" />
+        <TextView android:id="@+id/widget_v22_dcell_tx_10" android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center" android:textSize="10sp" android:textStyle="bold" android:textColor="@color/widget_v22_text_2" android:maxLines="1" android:includeFontPadding="false" />
+    </FrameLayout>
+</LinearLayout>

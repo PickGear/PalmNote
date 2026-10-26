@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  v37 物品 4×4 的加粗分段条（稿 §2-4：14px，比通用 .seg 的 12px 高一档）。
+  槽位与画法与 widget_v22_seg 完全一致（24 槽 + 组间缝），只是容器更高。
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_v22_seg_tall_root"
+    android:layout_width="match_parent"
+    android:layout_height="14dp"
+    android:orientation="horizontal">
+
+    <ImageView
+        android:id="@+id/widget_v22_seg_1"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:src="@drawable/widget_seg_slot_flat"
+        android:contentDescription="@null" />
+
+    <ImageView
+        android:id="@+id/widget_v22_seg_2"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:src="@drawable/widget_seg_slot_flat"
+        android:contentDescription="@null" />
+
+    <ImageView
+        android:id="@+id/widget_v22_seg_3"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:src="@drawable/widget_seg_slot_flat"
+        android:contentDescription="@null" />
+
+    <ImageView
+        android:id="@+id/widget_v22_seg_4"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:src="@drawable/widget_seg_slot_flat"
+        android:contentDescription="@null" />
+
+    <ImageView
+        android:id="@+id/widget_v22_seg_5"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:src="@drawable/widget_seg_slot_flat"
+        android:contentDescription="@null" />
+
+    <ImageView
+        android:id="@+id/widget_v22_seg_6"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:src="@drawable/widget_seg_slot_flat"
+        android:contentDescription="@null" />
+
+    <ImageView
+        android:id="@+id/widget_v22_seg_7"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:src="@drawable/widget_seg_slot_flat"
+        android:contentDescription="@null" />
+
+    <ImageView
+        android:id="@+id/widget_v22_seg_8"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:src="@drawable/widget_seg_slot_flat"
+        android:contentDescription="@null" />
+
+    <ImageView
+        android:id="@+id/widget_v22_seg_9"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:src="@drawable/widget_seg_slot_flat"
+        android:contentDescription="@null" />
+
+    <ImageView
+        android:id="@+id/widget_v22_seg_10"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:src="@drawable/widget_seg_slot_flat"
+        android:contentDescription="@null" />
+
+    <ImageView
+        android:id="@+id/widget_v22_seg_11"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:src="@drawable/widget_seg_slot_flat"
+        android:contentDescription="@null" />
+
+    <ImageView
+        android:id="@+id/widget_v22_seg_12"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:src="@drawable/widget_seg_slot_flat"
+        android:contentDescription="@null" />
+
+    <ImageView
+        android:id="@+id/widget_v22_seg_13"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:src="@drawable/widget_seg_slot_flat"
+        android:contentDescription="@null" />
+
+    <ImageView
+        android:id="@+id/widget_v22_seg_14"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:src="@drawable/widget_seg_slot_flat"
+        android:contentDescription="@null" />
+
+    <ImageView
+        android:id="@+id/widget_v22_seg_15"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:src="@drawable/widget_seg_slot_flat"
+        android:contentDescription="@null" />
+
+    <ImageView
+        android:id="@+id/widget_v22_seg_16"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:src="@drawable/widget_seg_slot_flat"
+        android:contentDescription="@null" />
+
+    <ImageView
+        android:id="@+id/widget_v22_seg_17"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:src="@drawable/widget_seg_slot_flat"
+        android:contentDescription="@null" />
+
+    <ImageView
+        android:id="@+id/widget_v22_seg_18"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:src="@drawable/widget_seg_slot_flat"
+        android:contentDescription="@null" />
+
+    <ImageView
+        android:id="@+id/widget_v22_seg_19"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:src="@drawable/widget_seg_slot_flat"
+        android:contentDescription="@null" />
+
+    <ImageView
+        android:id="@+id/widget_v22_seg_20"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:src="@drawable/widget_seg_slot_flat"
+        android:contentDescription="@null" />
+
+    <ImageView
+        android:id="@+id/widget_v22_seg_21"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:src="@drawable/widget_seg_slot_flat"
+        android:contentDescription="@null" />
+
+    <ImageView
+        android:id="@+id/widget_v22_seg_22"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:src="@drawable/widget_seg_slot_flat"
+        android:contentDescription="@null" />
+
+    <ImageView
+        android:id="@+id/widget_v22_seg_23"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:src="@drawable/widget_seg_slot_flat"
+        android:contentDescription="@null" />
+
+    <ImageView
+        android:id="@+id/widget_v22_seg_24"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:src="@drawable/widget_seg_slot_flat"
+        android:contentDescription="@null" />
+</LinearLayout>

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  物品 2×2 的纯文本图例行（稿 §2-4「纯文本列表拉满，不再用背景框截断文字」）：
+  色点 + 类名 + 件数，**没有底色**；行高 0dp + weight 1，四行把剩余高度均分。
+  名字 12sp、件数 13sp 加粗 —— 文案长度不可控，靠 ellipsize 而不是压字号。
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_asset_text_row"
+    android:layout_width="match_parent"
+    android:layout_height="0dp"
+    android:layout_weight="1"
+    android:orientation="horizontal"
+    android:gravity="center_vertical">
+
+    <ImageView
+        android:id="@+id/widget_asset_text_dot"
+        android:layout_width="7dp"
+        android:layout_height="7dp"
+        android:src="@drawable/widget_shape_circle"
+        android:contentDescription="@null" />
+
+    <TextView
+        android:id="@+id/widget_asset_text_name"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginStart="6dp"
+        android:textSize="12sp"
+        android:textColor="@color/widget_v22_text_1"
+        android:maxLines="1"
+        android:ellipsize="end" />
+
+    <TextView
+        android:id="@+id/widget_asset_text_value"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="4dp"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        android:textColor="@color/widget_v22_text_1"
+        android:maxLines="1"
+        android:includeFontPadding="false" />
+</LinearLayout>

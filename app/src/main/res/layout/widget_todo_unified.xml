@@ -5,224 +5,242 @@
   底部「本周已完成 N 项」。头部逾期时显示警示 pill（替代旧「新增」色片，设计稿如此）。
   进度条的填充是 clip，宽度由 level 定。
 -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/widget_layout"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="@dimen/widget_pad"
-    android:background="@drawable/widget_card_round">
+    android:layout_height="match_parent">
 
-    <!-- Header：色族徽章 + 标题 + 新增色片 -->
-    <LinearLayout
+    <!-- 壁纸层：app 内「自定义背景」开启时由 WidgetWallpaper 填充，卡片底色转透明 -->
+    <ImageView
+        android:id="@+id/widget_bg"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical">
-
-        <FrameLayout
-            android:layout_width="@dimen/widget_icon_badge"
-            android:layout_height="@dimen/widget_icon_badge">
-
-            <ImageView
-                android:id="@+id/widget_todo_badge"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:src="@drawable/widget_shape_circle"
-                android:contentDescription="@null" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:text="✓"
-                android:textSize="11sp"
-                android:textStyle="bold"
-                android:textColor="#FFFFFFFF"
-                android:gravity="center" />
-        </FrameLayout>
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/widget_todo_title"
-            android:textSize="@dimen/widget_text_title"
-            android:textColor="@color/widget_v2_text_primary"
-            android:textStyle="bold"
-            android:layout_marginStart="8dp" />
-
-        <!-- v4 设计稿：头部放「逾期 N」警示 pill（新增入口由卡片点按承担） -->
-        <TextView
-            android:id="@+id/widget_todo_overdue_pill"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@drawable/widget_pill_warn"
-            android:textSize="10sp"
-            android:textStyle="bold"
-            android:textColor="@color/widget_risk_red"
-            android:paddingHorizontal="10dp"
-            android:paddingVertical="3dp"
-            android:visibility="gone"
-            tools:ignore="SmallSp" />
-    </LinearLayout>
+        android:layout_height="match_parent"
+        android:contentDescription="@null"
+        android:scaleType="centerCrop" />
 
     <LinearLayout
+        xmlns:tools="http://schemas.android.com/tools"
+        android:id="@+id/widget_layout"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:orientation="horizontal"
-        android:layout_marginTop="10dp">
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:padding="@dimen/widget_pad"
+        android:background="@drawable/widget_card_round">
 
-        <!-- 完成度栏（v4）：今日完成 N/M + 完成度条 + 已完成明细 + 查看全部，
-             点它进「今日安排」完整清单 -->
+        <!-- Header：色族徽章 + 标题 + 新增色片 -->
         <LinearLayout
-            android:id="@+id/widget_todo_progress_col"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="match_parent"
-            android:orientation="vertical">
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
 
-            <!-- 设计稿/预览均为「标签在上、大数字在下」（design-v4 426-430 行），
-                 运行时布局曾把标签放数字下方，与选择器预览图分叉 -->
+            <FrameLayout
+                android:layout_width="@dimen/widget_v22_badge_sm"
+                android:layout_height="@dimen/widget_v22_badge_sm">
+
+                <ImageView
+                    android:id="@+id/widget_todo_badge"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/widget_shape_circle"
+                    android:contentDescription="@null" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:text="✓"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:textColor="#FFFFFFFF"
+                    android:gravity="center" />
+            </FrameLayout>
+
             <TextView
+                android:id="@+id/widget_todo_title"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/widget_todo_title"
+                android:textSize="@dimen/widget_text_title"
+                android:textColor="@color/widget_v2_text_primary"
+                android:textStyle="bold"
+                android:layout_marginStart="8dp" />
+
+            <!-- v4 设计稿：头部放「逾期 N」警示 pill（新增入口由卡片点按承担） -->
+            <TextView
+                android:id="@+id/widget_todo_overdue_pill"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/widget_todo_done_label"
-                android:textSize="@dimen/widget_text_label"
-                android:textColor="@color/widget_v2_text_tertiary" />
+                android:background="@drawable/widget_pill_warn"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:textColor="@color/widget_risk_red"
+                android:paddingHorizontal="10dp"
+                android:paddingVertical="3dp"
+                android:visibility="gone"
+                tools:ignore="SmallSp" />
+        </LinearLayout>
 
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:layout_marginTop="10dp">
+
+            <!-- 完成度栏（v4）：今日完成 N/M + 完成度条 + 已完成明细 + 查看全部，
+                 点它进「今日安排」完整清单 -->
             <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="bottom"
-                android:layout_marginTop="2dp">
+                android:id="@+id/widget_todo_progress_col"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="match_parent"
+                android:orientation="vertical">
 
+                <!-- 设计稿/预览均为「标签在上、大数字在下」（design-v4 426-430 行），
+                     运行时布局曾把标签放数字下方，与选择器预览图分叉 -->
                 <TextView
-                    android:id="@+id/widget_todo_done"
+                    android:id="@+id/widget_todo_done_label"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="0"
-                    android:textSize="30sp"
-                    android:textColor="@color/widget_v2_text_primary"
-                    android:textStyle="bold"
-                    android:maxLines="1" />
+                    android:text="@string/widget_todo_done_label"
+                    android:textSize="@dimen/widget_text_label"
+                    android:textColor="@color/widget_v2_text_tertiary" />
 
-                <TextView
-                    android:id="@+id/widget_todo_total"
+                <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="/0"
-                    android:textSize="13sp"
+                    android:orientation="horizontal"
+                    android:gravity="bottom"
+                    android:layout_marginTop="2dp">
+
+                    <TextView
+                        android:id="@+id/widget_todo_done"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0"
+                        android:textSize="30sp"
+                        android:textColor="@color/widget_v2_text_primary"
+                        android:textStyle="bold"
+                        android:maxLines="1" />
+
+                    <TextView
+                        android:id="@+id/widget_todo_total"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="/0"
+                        android:textSize="13sp"
+                        android:textColor="@color/widget_v2_text_tertiary"
+                        android:textStyle="bold"
+                        android:layout_marginStart="3dp"
+                        android:maxLines="1" />
+                </LinearLayout>
+
+                <!-- 完成度条右缘离竖分隔线留 10dp（用户反馈「离太近」，与右栏 10dp 起步对称） -->
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="10dp"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginEnd="10dp">
+
+                    <ImageView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:src="@drawable/widget_bar_track"
+                        android:contentDescription="@null" />
+
+                    <ImageView
+                        android:id="@+id/widget_todo_progress_fill"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:src="@drawable/widget_bar_fill"
+                        android:contentDescription="@null" />
+                </FrameLayout>
+
+                <!-- v4 设计稿：明细前给「已完成 N 项」计数标签 -->
+                <TextView
+                    android:id="@+id/widget_todo_done_count"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="@dimen/widget_text_label"
                     android:textColor="@color/widget_v2_text_tertiary"
+                    android:layout_marginTop="10dp"
+                    tools:ignore="SmallSp" />
+
+                <!-- v4：今日已完成明细（Provider 动态添加，✓ 前缀 + 三级色） -->
+                <LinearLayout
+                    android:id="@+id/widget_todo_done_list"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginTop="8dp" />
+
+                <TextView
+                    android:id="@+id/widget_todo_done_more"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/widget_todo_done_more"
+                    android:textSize="@dimen/widget_text_micro"
                     android:textStyle="bold"
-                    android:layout_marginStart="3dp"
+                    android:layout_marginTop="4dp"
                     android:maxLines="1" />
             </LinearLayout>
 
-            <!-- 完成度条右缘离竖分隔线留 10dp（用户反馈「离太近」，与右栏 10dp 起步对称） -->
-            <FrameLayout
-                android:layout_width="match_parent"
-                android:layout_height="10dp"
-                android:layout_marginTop="8dp"
-                android:layout_marginEnd="10dp">
-
-                <ImageView
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:src="@drawable/widget_bar_track"
-                    android:contentDescription="@null" />
-
-                <ImageView
-                    android:id="@+id/widget_todo_progress_fill"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:src="@drawable/widget_bar_fill"
-                    android:contentDescription="@null" />
-            </FrameLayout>
-
-            <!-- v4 设计稿：明细前给「已完成 N 项」计数标签 -->
-            <TextView
-                android:id="@+id/widget_todo_done_count"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textSize="@dimen/widget_text_label"
-                android:textColor="@color/widget_v2_text_tertiary"
-                android:layout_marginTop="10dp"
-                tools:ignore="SmallSp" />
-
-            <!-- v4：今日已完成明细（Provider 动态添加，✓ 前缀 + 三级色） -->
-            <LinearLayout
-                android:id="@+id/widget_todo_done_list"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:layout_marginTop="8dp" />
-
-            <TextView
-                android:id="@+id/widget_todo_done_more"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/widget_todo_done_more"
-                android:textSize="@dimen/widget_text_micro"
-                android:textStyle="bold"
-                android:layout_marginTop="4dp"
-                android:maxLines="1" />
-        </LinearLayout>
-
-        <ImageView
-            android:id="@+id/widget_todo_divider"
-            android:layout_width="1dp"
-            android:layout_height="match_parent"
-            android:background="@color/widget_v2_ring"
-            android:contentDescription="@null" />
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:layout_marginStart="10dp">
-
-            <ListView
-                android:id="@+id/widget_todo_list"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1"
-                android:divider="@android:color/transparent"
-                android:dividerHeight="3dp"
-                android:scrollbars="none" />
-
-            <TextView
-                android:id="@+id/widget_todo_empty"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/widget_todo_empty"
-                android:textSize="12sp"
-                android:textColor="@color/widget_v2_text_tertiary"
-                android:gravity="center"
-                android:paddingVertical="12dp"
-                android:visibility="gone" />
-
-            <!-- v4 设计稿：议程底部「本周已完成 N 项」固定页脚 -->
             <ImageView
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:layout_marginTop="4dp"
+                android:id="@+id/widget_todo_divider"
+                android:layout_width="1dp"
+                android:layout_height="match_parent"
                 android:background="@color/widget_v2_ring"
-                android:contentDescription="@null"
-                tools:ignore="ContentDescription" />
+                android:contentDescription="@null" />
 
-            <TextView
-                android:id="@+id/widget_todo_week_done"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textSize="10sp"
-                android:textColor="@color/widget_v2_text_secondary"
-                android:layout_marginTop="5dp"
-                tools:ignore="SmallSp" />
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:layout_marginStart="10dp">
+
+                <ListView
+                    android:id="@+id/widget_todo_list"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:divider="@android:color/transparent"
+                    android:dividerHeight="3dp"
+                    android:scrollbars="none" />
+
+                <TextView
+                    android:id="@+id/widget_todo_empty"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/widget_todo_empty"
+                    android:textSize="12sp"
+                    android:textColor="@color/widget_v2_text_tertiary"
+                    android:gravity="center"
+                    android:paddingVertical="12dp"
+                    android:visibility="gone" />
+
+                <!-- v4 设计稿：议程底部「本周已完成 N 项」固定页脚 -->
+                <ImageView
+                    android:id="@+id/widget_todo_week_rule"
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginTop="4dp"
+                    android:background="@color/widget_v2_ring"
+                    android:contentDescription="@null"
+                    tools:ignore="ContentDescription" />
+
+                <TextView
+                    android:id="@+id/widget_todo_week_done"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="10sp"
+                    android:textColor="@color/widget_v2_text_secondary"
+                    android:layout_marginTop="5dp"
+                    tools:ignore="SmallSp" />
+            </LinearLayout>
         </LinearLayout>
+
     </LinearLayout>
 
-</LinearLayout>
+</FrameLayout>

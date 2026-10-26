@@ -1,20 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 默认摆放 3×2（全档）；缩小到 2×1 由 minResize* 放开，BillWidgetProvider 按实际尺寸切迷你档。
-     minWidth/minHeight 保持 3×2 口径：写小会让 Android 12 以下的默认摆放落成 1 格宽的畸形档。 -->
+<!-- 默认摆放 4×2（目录里的五档之一）；缩小到 2×1 / 4×1 由 minResize* 放开，
+     BillWidgetProvider 按实际尺寸切「两栏 / 方卡 / 单行」三套版式。
+     maxResize 放到 4×4：超过五档的尺寸由桌面拖拽决定，布局按最近一档重排（WidgetSizeClass）。
+     minWidth/minHeight 保持默认摆放口径：写小会让 Android 12 以下的默认摆放落成 1 格宽的畸形档。 -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
-    android:minWidth="180dp"
+    android:minWidth="250dp"
     android:minHeight="110dp"
     android:minResizeWidth="110dp"
-    android:minResizeHeight="40dp"
-    android:targetCellWidth="3"
+    android:minResizeHeight="74dp"
+    android:targetCellWidth="4"
     android:targetCellHeight="2"
     android:maxResizeWidth="400dp"
-    android:maxResizeHeight="250dp"
+    android:maxResizeHeight="400dp"
     android:updatePeriodMillis="1800000"
     android:initialLayout="@layout/widget_bill_unified"
     android:widgetCategory="home_screen"
     android:description="@string/widget_bill_desc"
-    android:previewImage="@drawable/widget_preview_bill"
+    android:previewImage="@drawable/widget_preview_bill_card"
     android:previewLayout="@layout/widget_bill_preview"
-    android:configure="com.palmnote.ui.widget.BillWidgetConfigActivity"
     android:resizeMode="horizontal|vertical" />

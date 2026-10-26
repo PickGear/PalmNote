@@ -20,10 +20,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
-import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.test.platform.app.InstrumentationRegistry
@@ -83,7 +83,7 @@ class WidgetPinLayoutDumpTest {
     fun `画廊首屏_带已在桌面角标`() {
         val manager = AppWidgetManager.getInstance(context)
         shadowOf(manager).setRequestPinAppWidgetSupported(true)
-        // 账单 / 待办已在桌面：首屏两张卡右上角应出现「已在桌面」小勾（底行换成实例数）
+        // 账单 / 待办已在桌面：首屏两张卡右上角应出现「已在桌面」小勾，右端圆钮换成「编辑」
         shadowOf(manager).bindAppWidgetId(1, ComponentName(context, BillWidgetProvider::class.java))
         shadowOf(manager).bindAppWidgetId(2, ComponentName(context, TodoWidgetProvider::class.java))
         compose.setContent { PalmNoteTheme { WidgetPinScreen() } }
@@ -91,21 +91,22 @@ class WidgetPinLayoutDumpTest {
     }
 
     @Test
-    fun `搜索记账`() {
+    fun `画廊滚到记账段`() {
         shadowOf(AppWidgetManager.getInstance(context)).setRequestPinAppWidgetSupported(true)
         compose.setContent { PalmNoteTheme { WidgetPinScreen() } }
-        compose.onNodeWithContentDescription(context.getString(R.string.search)).performClick()
-        compose.onNodeWithTag(SEARCH_FIELD_TAG).performTextInput(context.getString(R.string.widget_group_billing))
-        capture("search")
+        compose.onNodeWithTag(CATALOG_LIST_TAG)
+            .performScrollToNode(hasText(context.getString(R.string.widget_subscription_title_short)))
+        capture("billing")
     }
 
+    /** 画廊滚到底：核对末尾几张卡（稿 §5 之外的尾部次序）。 */
     @Test
-    fun `搜索无结果`() {
+    fun `画廊末尾`() {
         shadowOf(AppWidgetManager.getInstance(context)).setRequestPinAppWidgetSupported(true)
         compose.setContent { PalmNoteTheme { WidgetPinScreen() } }
-        compose.onNodeWithContentDescription(context.getString(R.string.search)).performClick()
-        compose.onNodeWithTag(SEARCH_FIELD_TAG).performTextInput("zzz")
-        capture("empty")
+        compose.onNodeWithTag(CATALOG_LIST_TAG)
+            .performScrollToNode(hasText(context.getString(R.string.widget_next_up_title_short)))
+        capture("tail")
     }
 
     @Test
@@ -130,9 +131,16 @@ class WidgetPinLayoutDumpTest {
     }
 
     @Test
-    fun `底部面板_单尺寸`() {
-        compose.setContent { PalmNoteTheme { SheetMock(R.string.widget_bill_title, bound = 0) } }
+    fun `底部面板_单样式`() {
+        compose.setContent { PalmNoteTheme { SheetMock(R.string.widget_asset_title, bound = 0) } }
         capture("sheet-one")
+    }
+
+    /** 本月记账：一个组件里三套真样式（数据版 / 柱状版 / 预算版），弹窗里靠圆点与左右滑切换。 */
+    @Test
+    fun `底部面板_本月记账三样式`() {
+        compose.setContent { PalmNoteTheme { SheetMock(R.string.widget_bill_title, bound = 0) } }
+        capture("sheet-bill")
     }
 
     /** 本组最大只有 1×1 / 4×1 的组件（快捷入口）：页高按全局 4×3 算，圆点行应与多尺寸那版落在同一行。 */
@@ -203,14 +211,16 @@ class WidgetPinLayoutDumpTest {
                     ) {
                         WidgetPinSheetContent(
                             component = component,
-                            selected = component.entries.first(),
+                            selected = WidgetPin.defaultStyleEntry(component),
                             bound = bound,
                             pinSupported = true,
                             verifying = false,
                             opacity = null,
+                            background = null,
                             onBack = {},
-                            onSelectSize = {},
+                            onSelectStyle = {},
                             onSelectOpacity = {},
+                            onSelectBackground = {},
                             onAdd = {}
                         )
                     }

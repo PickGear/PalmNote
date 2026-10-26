@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  v22 八点横排（稿 .dotr + .s21 收紧：7px 点、隙 3）：计数器 4×2/2×1 的主计数点阵。
+  一格 = 目标值的一个单位（只有目标值是 ≤8 的整数才画 —— 分母固定才画点）；
+  亮点 = 当前值（四舍五入），暗点着 outline 灰。亮暗由 Provider setColorFilter。
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_v22_dotr8_root"
+    android:layout_width="wrap_content"
+    android:layout_height="@dimen/widget_v22_dot_sm"
+    android:orientation="horizontal">
+
+    <ImageView
+        android:id="@+id/widget_v22_dotr8_1"
+        android:layout_width="@dimen/widget_v22_dot_sm"
+        android:layout_height="@dimen/widget_v22_dot_sm"
+        android:layout_marginEnd="3dp"
+        android:src="@drawable/widget_shape_circle"
+        android:contentDescription="@null" />
+    <ImageView
+        android:id="@+id/widget_v22_dotr8_2"
+        android:layout_width="@dimen/widget_v22_dot_sm"
+        android:layout_height="@dimen/widget_v22_dot_sm"
+        android:layout_marginEnd="3dp"
+        android:src="@drawable/widget_shape_circle"
+        android:contentDescription="@null" />
+    <ImageView
+        android:id="@+id/widget_v22_dotr8_3"
+        android:layout_width="@dimen/widget_v22_dot_sm"
+        android:layout_height="@dimen/widget_v22_dot_sm"
+        android:layout_marginEnd="3dp"
+        android:src="@drawable/widget_shape_circle"
+        android:contentDescription="@null" />
+    <ImageView
+        android:id="@+id/widget_v22_dotr8_4"
+        android:layout_width="@dimen/widget_v22_dot_sm"
+        android:layout_height="@dimen/widget_v22_dot_sm"
+        android:layout_marginEnd="3dp"
+        android:src="@drawable/widget_shape_circle"
+        android:contentDescription="@null" />
+    <ImageView
+        android:id="@+id/widget_v22_dotr8_5"
+        android:layout_width="@dimen/widget_v22_dot_sm"
+        android:layout_height="@dimen/widget_v22_dot_sm"
+        android:layout_marginEnd="3dp"
+        android:src="@drawable/widget_shape_circle"
+        android:contentDescription="@null" />
+    <ImageView
+        android:id="@+id/widget_v22_dotr8_6"
+        android:layout_width="@dimen/widget_v22_dot_sm"
+        android:layout_height="@dimen/widget_v22_dot_sm"
+        android:layout_marginEnd="3dp"
+        android:src="@drawable/widget_shape_circle"
+        android:contentDescription="@null" />
+    <ImageView
+        android:id="@+id/widget_v22_dotr8_7"
+        android:layout_width="@dimen/widget_v22_dot_sm"
+        android:layout_height="@dimen/widget_v22_dot_sm"
+        android:layout_marginEnd="3dp"
+        android:src="@drawable/widget_shape_circle"
+        android:contentDescription="@null" />
+    <ImageView
+        android:id="@+id/widget_v22_dotr8_8"
+        android:layout_width="@dimen/widget_v22_dot_sm"
+        android:layout_height="@dimen/widget_v22_dot_sm"
+        android:src="@drawable/widget_shape_circle"
+        android:contentDescription="@null" />
+</LinearLayout>

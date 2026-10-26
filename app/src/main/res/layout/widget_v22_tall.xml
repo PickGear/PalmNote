@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- v37 4×4 通用仪表盘（340×340）：hd + hero 行 + KPI 条 + 柱图 + minichips/rows/footer/dstrip+bt/empty。
+     一张布局全族共用，区块由各 provider 绑定时显示/隐藏（压缩优先级见设计稿 §5）。 -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ImageView
+        android:id="@+id/widget_bg"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:contentDescription="@null"
+        android:scaleType="centerCrop" />
+
+    <LinearLayout
+        android:id="@+id/widget_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:paddingHorizontal="15dp"
+        android:paddingVertical="16dp"
+        android:background="@drawable/widget_card_round">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <FrameLayout
+                android:layout_width="26dp"
+                android:layout_height="26dp">
+
+                <ImageView
+                    android:id="@+id/widget_tall_badge"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/widget_shape_circle"
+                    android:contentDescription="@null" />
+
+                <ImageView
+                    android:id="@+id/widget_tall_glyph"
+                    android:layout_width="15dp"
+                    android:layout_height="15dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="@null" />
+            </FrameLayout>
+
+            <TextView
+                android:id="@+id/widget_tall_title"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:textSize="@dimen/widget_v22_text_ttl"
+                android:textStyle="bold"
+                android:textColor="@color/widget_v22_text_1"
+                android:maxLines="1"
+                android:ellipsize="end" />
+
+            <!-- 涨跌胶囊（v37 净资产 4×4）：默认 GONE，只有接了 pill 的族可见 -->
+            <TextView
+                android:id="@+id/widget_tall_pill"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/widget_tall_meta"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:textSize="@dimen/widget_v22_text_lb"
+                android:textColor="@color/widget_v22_text_2"
+                android:maxLines="1" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="6dp">
+
+            <TextView
+                android:id="@+id/widget_tall_hero"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="40sp"
+                android:textStyle="bold"
+                android:includeFontPadding="false"
+                android:fontFeatureSettings="tnum"
+                android:textColor="@color/widget_v22_text_1"
+                android:maxLines="1" />
+
+            <TextView
+                android:id="@+id/widget_tall_hero_lb"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="10dp"
+                android:textSize="@dimen/widget_v22_text_lb"
+                android:textColor="@color/widget_v22_text_2"
+                android:maxLines="1" />
+        </LinearLayout>
+
+        <include
+            android:id="@+id/widget_tall_kpis"
+            layout="@layout/widget_v22_kpis"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp" />
+
+        <include
+            android:id="@+id/widget_tall_chart"
+            layout="@layout/widget_v22_chart"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:layout_marginTop="8dp" />
+
+        <!-- 可填满的网格宿主（v37 物品 4×4 的 3×4 十二格）：seg + 行动态 addView 进来 -->
+        <LinearLayout
+            android:id="@+id/widget_tall_grid"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginTop="8dp"
+            android:visibility="gone" />
+
+        <include
+            android:id="@+id/widget_tall_minichips"
+            layout="@layout/widget_v22_minichips"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:visibility="gone" />
+
+        <!-- 日历条 + 进度条：吃满剩余高度并垂直居中（稿 §2-10 的 flex:1 / justify-content:center），
+             否则「接下来」的顶部块挤在上面、底部四行贴着上沿，中间空出一大条 -->
+        <LinearLayout
+            android:id="@+id/widget_tall_strip_host"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:gravity="center_vertical"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <include
+                layout="@layout/widget_v22_dstrip"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="12dp"
+                android:layout_marginTop="6dp"
+                android:background="@drawable/widget_v22_track">
+
+                <ImageView
+                    android:id="@+id/widget_tall_bt_fill"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/widget_v22_bt_fill"
+                    android:contentDescription="@null" />
+            </FrameLayout>
+        </LinearLayout>
+
+        <!-- 明细行宿主：竖向 LinearLayout（动态行 addView 进来要逐行排列；
+             FrameLayout 会把所有行叠在同一个位置，笔画叠成乱码） -->
+        <LinearLayout
+            android:id="@+id/widget_tall_rows"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="8dp"
+            android:visibility="gone" />
+
+        <include
+            android:id="@+id/widget_tall_footer"
+            layout="@layout/widget_v22_footer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone" />
+
+        <include
+            android:id="@+id/widget_tall_empty"
+            layout="@layout/widget_v22_empty"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone" />
+    </LinearLayout>
+</FrameLayout>

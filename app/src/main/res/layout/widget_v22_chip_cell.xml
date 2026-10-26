@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  v37 物品 4×4 的 12 格分类格（稿 §2-4 .ch 大格版）：等高填满网格行（height=match_parent），
+  淡彩底 + 色点 + 13sp 分类名 + 15sp 族色件数；圆角 10（稿「网格子块 8~12dp」档内）。
+  与 widget_v22_chip（26dp 胶囊）同一套运行时上色（bg tint / dot d / value ink）。
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_v22_chip_cell_root"
+    android:layout_width="0dp"
+    android:layout_weight="1"
+    android:layout_height="match_parent">
+
+    <ImageView
+        android:id="@+id/widget_v22_chip_bg"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:src="@drawable/widget_v22_round10"
+        android:contentDescription="@null" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="12dp">
+
+        <ImageView
+            android:id="@+id/widget_v22_chip_dot"
+            android:layout_width="7dp"
+            android:layout_height="7dp"
+            android:src="@drawable/widget_shape_circle"
+            android:contentDescription="@null" />
+
+        <TextView
+            android:id="@+id/widget_v22_chip_name"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="6dp"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:textColor="@color/widget_v22_text_1"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <TextView
+            android:id="@+id/widget_v22_chip_value"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:textColor="@color/widget_v22_text_1"
+            android:maxLines="1"
+            android:includeFontPadding="false" />
+
+        <!-- 副文占位：格子里不显示，但 [WidgetV22.bindChip] 会按 id 置显隐，
+             缺了它每次 apply 都抛一次 ActionException（Web/JVM 渲染里尤其吵） -->
+        <TextView
+            android:id="@+id/widget_v22_chip_sub"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:textSize="11sp"
+            android:textColor="@color/widget_v22_text_2"
+            android:maxLines="1"
+            android:includeFontPadding="false"
+            android:visibility="gone" />
+    </LinearLayout>
+</FrameLayout>

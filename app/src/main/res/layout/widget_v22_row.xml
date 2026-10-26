@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  v37 .rows 单行明细（日期 + 色点 + 名 + 值）：widget_tall_rows 宿主的动态行。
+  旧静态四行版（已删）没有宿主布局引用，改为动态 addView 后本文件替代它。
+  日期 38dp / 点 6dp / 名 11sp 主色 / 值 11sp 族色 ink（运行时上色）。
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_v22_row_root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical">
+
+    <TextView
+        android:id="@+id/widget_v22_row_t"
+        android:layout_width="38dp"
+        android:layout_height="wrap_content"
+        android:textSize="10sp"
+        android:textStyle="bold"
+        android:includeFontPadding="false"
+        android:maxLines="1"
+        android:fontFeatureSettings="tnum"
+        android:textColor="@color/widget_v22_text_2" />
+
+    <ImageView
+        android:id="@+id/widget_v22_row_d"
+        android:layout_width="6dp"
+        android:layout_height="6dp"
+        android:layout_marginStart="2dp"
+        android:src="@drawable/widget_shape_circle"
+        android:contentDescription="@null" />
+
+    <TextView
+        android:id="@+id/widget_v22_row_n"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginStart="6dp"
+        android:textSize="11sp"
+        android:textStyle="bold"
+        android:includeFontPadding="false"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:textColor="@color/widget_v22_text_1" />
+
+    <TextView
+        android:id="@+id/widget_v22_row_v"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="6dp"
+        android:textSize="11sp"
+        android:textStyle="bold"
+        android:includeFontPadding="false"
+        android:maxLines="1"
+        android:fontFeatureSettings="tnum"
+        android:textColor="@color/widget_v22_text_1" />
+</LinearLayout>

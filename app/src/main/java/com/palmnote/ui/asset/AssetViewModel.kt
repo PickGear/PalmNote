@@ -620,6 +620,9 @@ class AssetViewModel @Inject constructor(
             }
 
             _formState.value = form.copy(isSaving = false, isSaved = true)
+            // 桌面组件即时刷新：物品新增/编辑会改分布与净资产合计，别等 30 分钟周期
+            com.palmnote.ui.widget.WidgetUpdateHelper.refreshAssetWidgets()
+            com.palmnote.ui.widget.WidgetUpdateHelper.refreshNetWorthWidgets()
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
             } catch (e: Exception) {

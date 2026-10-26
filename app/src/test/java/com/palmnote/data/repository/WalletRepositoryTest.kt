@@ -37,7 +37,8 @@ class WalletRepositoryTest {
             walletDao,
             mockk<BillRepository>(relaxUnitFun = true),
             mockk<AppDatabase>(relaxUnitFun = true),
-            context
+            context,
+            com.palmnote.data.event.EventBusImpl()
         )
     }
 

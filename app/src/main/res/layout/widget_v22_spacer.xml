@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  v22 弹性占位：RemoteViews 白名单不允许 inflate Space/View，等分槽位补位只能用无 src 的 ImageView。
+  与胶囊同权（0dp + weight 1）加进行宿主，保证「补位格」与真实格等宽。
+-->
+<ImageView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_v22_spacer"
+    android:layout_width="0dp"
+    android:layout_weight="1"
+    android:layout_height="match_parent"
+    android:contentDescription="@null" />

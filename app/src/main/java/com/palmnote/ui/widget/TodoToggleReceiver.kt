@@ -63,7 +63,12 @@ class TodoToggleReceiver : BroadcastReceiver() {
             return true
         }
 
-        /** 逐条目 PendingIntent（通知动作等直接持有一份的场景用）。 */
+        /**
+         * 逐条目 PendingIntent：通知动作直接持有，以及 **v22 待办静态行**的勾选入口
+         * （四档的行不是 ListView，吃不到 fill-in intent）：条目 id 直接写进 Intent，
+         * 请求码用 `SEG_TODO_TOGGLE + id` 保证每行各是一个 PendingIntent
+         * （同 receiver 同 action 时，请求码不同才会被视为不同的挂起意图）。
+         */
         fun togglePendingIntent(context: Context, itemId: Long): PendingIntent {
             val intent = Intent(context, TodoToggleReceiver::class.java)
                 .setAction(ACTION_TOGGLE)

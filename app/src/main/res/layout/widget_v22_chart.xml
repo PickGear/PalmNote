@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- v37 .chart：柱图（头行 + 柱区 + 轴行）。标题/注文**必须带 textColor**：
+     不写就落系统黑字，夜间卡上整行看不见（bind 只改文案不改色）。柱 = ClipDrawable level 0..10000；峰值列开 cv 文本。少柱 GONE 尾槽。 -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_v22_chart_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+    <LinearLayout android:id="@+id/widget_v22_chart_head" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+        <TextView android:id="@+id/widget_v22_chart_cl" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="11sp" android:textStyle="bold" android:textColor="@color/widget_v22_text_2" android:includeFontPadding="false" android:maxLines="1" />
+        <TextView android:id="@+id/widget_v22_chart_cm" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="end" android:textSize="10sp" android:textColor="@color/widget_v22_text_3" android:includeFontPadding="false" android:maxLines="1" />
+    </LinearLayout>
+    <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:orientation="horizontal">
+        <LinearLayout android:id="@+id/widget_v22_chart_col_1" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:gravity="center_horizontal">
+            <TextView android:id="@+id/widget_v22_chart_cv_1" android:layout_width="wrap_content" android:layout_height="14dp" android:textSize="10sp" android:includeFontPadding="false" android:gravity="bottom|center_horizontal" android:textStyle="bold" android:visibility="gone" android:maxLines="1" />
+            <ImageView android:id="@+id/widget_v22_chart_bar_1" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:layout_marginTop="3dp" android:layout_marginStart="2.5dp" android:layout_marginEnd="2.5dp" android:src="@drawable/widget_v22_chart_bar" android:contentDescription="@null" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/widget_v22_chart_col_2" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:gravity="center_horizontal">
+            <TextView android:id="@+id/widget_v22_chart_cv_2" android:layout_width="wrap_content" android:layout_height="14dp" android:textSize="10sp" android:includeFontPadding="false" android:gravity="bottom|center_horizontal" android:textStyle="bold" android:visibility="gone" android:maxLines="1" />
+            <ImageView android:id="@+id/widget_v22_chart_bar_2" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:layout_marginTop="3dp" android:layout_marginStart="2.5dp" android:layout_marginEnd="2.5dp" android:src="@drawable/widget_v22_chart_bar" android:contentDescription="@null" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/widget_v22_chart_col_3" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:gravity="center_horizontal">
+            <TextView android:id="@+id/widget_v22_chart_cv_3" android:layout_width="wrap_content" android:layout_height="14dp" android:textSize="10sp" android:includeFontPadding="false" android:gravity="bottom|center_horizontal" android:textStyle="bold" android:visibility="gone" android:maxLines="1" />
+            <ImageView android:id="@+id/widget_v22_chart_bar_3" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:layout_marginTop="3dp" android:layout_marginStart="2.5dp" android:layout_marginEnd="2.5dp" android:src="@drawable/widget_v22_chart_bar" android:contentDescription="@null" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/widget_v22_chart_col_4" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:gravity="center_horizontal">
+            <TextView android:id="@+id/widget_v22_chart_cv_4" android:layout_width="wrap_content" android:layout_height="14dp" android:textSize="10sp" android:includeFontPadding="false" android:gravity="bottom|center_horizontal" android:textStyle="bold" android:visibility="gone" android:maxLines="1" />
+            <ImageView android:id="@+id/widget_v22_chart_bar_4" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:layout_marginTop="3dp" android:layout_marginStart="2.5dp" android:layout_marginEnd="2.5dp" android:src="@drawable/widget_v22_chart_bar" android:contentDescription="@null" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/widget_v22_chart_col_5" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:gravity="center_horizontal">
+            <TextView android:id="@+id/widget_v22_chart_cv_5" android:layout_width="wrap_content" android:layout_height="14dp" android:textSize="10sp" android:includeFontPadding="false" android:gravity="bottom|center_horizontal" android:textStyle="bold" android:visibility="gone" android:maxLines="1" />
+            <ImageView android:id="@+id/widget_v22_chart_bar_5" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:layout_marginTop="3dp" android:layout_marginStart="2.5dp" android:layout_marginEnd="2.5dp" android:src="@drawable/widget_v22_chart_bar" android:contentDescription="@null" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/widget_v22_chart_col_6" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:gravity="center_horizontal">
+            <TextView android:id="@+id/widget_v22_chart_cv_6" android:layout_width="wrap_content" android:layout_height="14dp" android:textSize="10sp" android:includeFontPadding="false" android:gravity="bottom|center_horizontal" android:textStyle="bold" android:visibility="gone" android:maxLines="1" />
+            <ImageView android:id="@+id/widget_v22_chart_bar_6" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:layout_marginTop="3dp" android:layout_marginStart="2.5dp" android:layout_marginEnd="2.5dp" android:src="@drawable/widget_v22_chart_bar" android:contentDescription="@null" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/widget_v22_chart_col_7" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:gravity="center_horizontal">
+            <TextView android:id="@+id/widget_v22_chart_cv_7" android:layout_width="wrap_content" android:layout_height="14dp" android:textSize="10sp" android:includeFontPadding="false" android:gravity="bottom|center_horizontal" android:textStyle="bold" android:visibility="gone" android:maxLines="1" />
+            <ImageView android:id="@+id/widget_v22_chart_bar_7" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:layout_marginTop="3dp" android:layout_marginStart="2.5dp" android:layout_marginEnd="2.5dp" android:src="@drawable/widget_v22_chart_bar" android:contentDescription="@null" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/widget_v22_chart_col_8" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:gravity="center_horizontal">
+            <TextView android:id="@+id/widget_v22_chart_cv_8" android:layout_width="wrap_content" android:layout_height="14dp" android:textSize="10sp" android:includeFontPadding="false" android:gravity="bottom|center_horizontal" android:textStyle="bold" android:visibility="gone" android:maxLines="1" />
+            <ImageView android:id="@+id/widget_v22_chart_bar_8" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:layout_marginTop="3dp" android:layout_marginStart="2.5dp" android:layout_marginEnd="2.5dp" android:src="@drawable/widget_v22_chart_bar" android:contentDescription="@null" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/widget_v22_chart_col_9" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:gravity="center_horizontal">
+            <TextView android:id="@+id/widget_v22_chart_cv_9" android:layout_width="wrap_content" android:layout_height="14dp" android:textSize="10sp" android:includeFontPadding="false" android:gravity="bottom|center_horizontal" android:textStyle="bold" android:visibility="gone" android:maxLines="1" />
+            <ImageView android:id="@+id/widget_v22_chart_bar_9" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:layout_marginTop="3dp" android:layout_marginStart="2.5dp" android:layout_marginEnd="2.5dp" android:src="@drawable/widget_v22_chart_bar" android:contentDescription="@null" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/widget_v22_chart_col_10" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:gravity="center_horizontal">
+            <TextView android:id="@+id/widget_v22_chart_cv_10" android:layout_width="wrap_content" android:layout_height="14dp" android:textSize="10sp" android:includeFontPadding="false" android:gravity="bottom|center_horizontal" android:textStyle="bold" android:visibility="gone" android:maxLines="1" />
+            <ImageView android:id="@+id/widget_v22_chart_bar_10" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:layout_marginTop="3dp" android:layout_marginStart="2.5dp" android:layout_marginEnd="2.5dp" android:src="@drawable/widget_v22_chart_bar" android:contentDescription="@null" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/widget_v22_chart_col_11" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:gravity="center_horizontal">
+            <TextView android:id="@+id/widget_v22_chart_cv_11" android:layout_width="wrap_content" android:layout_height="14dp" android:textSize="10sp" android:includeFontPadding="false" android:gravity="bottom|center_horizontal" android:textStyle="bold" android:visibility="gone" android:maxLines="1" />
+            <ImageView android:id="@+id/widget_v22_chart_bar_11" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:layout_marginTop="3dp" android:layout_marginStart="2.5dp" android:layout_marginEnd="2.5dp" android:src="@drawable/widget_v22_chart_bar" android:contentDescription="@null" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/widget_v22_chart_col_12" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:gravity="center_horizontal">
+            <TextView android:id="@+id/widget_v22_chart_cv_12" android:layout_width="wrap_content" android:layout_height="14dp" android:textSize="10sp" android:includeFontPadding="false" android:gravity="bottom|center_horizontal" android:textStyle="bold" android:visibility="gone" android:maxLines="1" />
+            <ImageView android:id="@+id/widget_v22_chart_bar_12" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:layout_marginTop="3dp" android:layout_marginStart="2.5dp" android:layout_marginEnd="2.5dp" android:src="@drawable/widget_v22_chart_bar" android:contentDescription="@null" />
+        </LinearLayout>
+    </LinearLayout>
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:paddingTop="4px">
+        <TextView android:id="@+id/widget_v22_chart_ax_1" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:textSize="10sp" android:includeFontPadding="false" android:maxLines="1" />
+        <TextView android:id="@+id/widget_v22_chart_ax_2" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:textSize="10sp" android:includeFontPadding="false" android:maxLines="1" />
+        <TextView android:id="@+id/widget_v22_chart_ax_3" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:textSize="10sp" android:includeFontPadding="false" android:maxLines="1" />
+        <TextView android:id="@+id/widget_v22_chart_ax_4" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:textSize="10sp" android:includeFontPadding="false" android:maxLines="1" />
+        <TextView android:id="@+id/widget_v22_chart_ax_5" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:textSize="10sp" android:includeFontPadding="false" android:maxLines="1" />
+        <TextView android:id="@+id/widget_v22_chart_ax_6" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:textSize="10sp" android:includeFontPadding="false" android:maxLines="1" />
+        <TextView android:id="@+id/widget_v22_chart_ax_7" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:textSize="10sp" android:includeFontPadding="false" android:maxLines="1" />
+        <TextView android:id="@+id/widget_v22_chart_ax_8" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:textSize="10sp" android:includeFontPadding="false" android:maxLines="1" />
+        <TextView android:id="@+id/widget_v22_chart_ax_9" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:textSize="10sp" android:includeFontPadding="false" android:maxLines="1" />
+        <TextView android:id="@+id/widget_v22_chart_ax_10" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:textSize="10sp" android:includeFontPadding="false" android:maxLines="1" />
+        <TextView android:id="@+id/widget_v22_chart_ax_11" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:textSize="10sp" android:includeFontPadding="false" android:maxLines="1" />
+        <TextView android:id="@+id/widget_v22_chart_ax_12" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:textSize="10sp" android:includeFontPadding="false" android:maxLines="1" />
+    </LinearLayout>
+</LinearLayout>

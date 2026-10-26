@@ -65,6 +65,18 @@ internal class TodoViewsFactory(
 
     private var rows: List<AgendaRow> = emptyList()
 
+    /**
+     * 该实例的**内容色调**（[WidgetWallpaper.toneOnly]）。列表行由这里单独出 RemoteViews，
+     * 走不到发布出口的色调包装，所以自己取一次；行上的字才会和卡上的字同一个明暗。
+     */
+    private var tone: WidgetTone? = null
+
+    /** 该实例的不透明度：只乘进底色（行底），与卡面同一档，避免「卡边透、行里实色板」。 */
+    private var opacity: Float = 1f
+
+    /** 带色调的 Context：行上的取色（警示红、色族 hue）与 [widgetViews] 都走它。 */
+    private fun themed(): Context = WidgetToneContext.of(context, tone, opacity)
+
     override fun onCreate() = Unit
 
     /**
@@ -78,6 +90,8 @@ internal class TodoViewsFactory(
         )
         val prefs = entryPoint.preferencesManager()
         runBlocking {
+            tone = WidgetWallpaper.toneOnly(context, prefs, appWidgetId)
+            opacity = prefs.widgetOpacityFor(appWidgetId).first()
             val board = WidgetData.fetchTodoBoard(
                 entryPoint.lifeItemDao(),
                 entryPoint.lifeTemplateDao(),
@@ -163,7 +177,7 @@ internal class TodoViewsFactory(
     }
 
     private fun headerViews(row: AgendaRow.Header): RemoteViews {
-        val views = RemoteViews(context.packageName, R.layout.widget_todo_agenda_header)
+        val views = widgetViews(themed(), R.layout.widget_todo_agenda_header)
         views.setTextViewText(R.id.widget_todo_seghd_label, row.label)
         views.setTextViewText(
             R.id.widget_todo_seghd_count,
@@ -172,9 +186,9 @@ internal class TodoViewsFactory(
         // 段头配色按稿子：逾期段红（.seghd.rd），今天段 var(--h1)（计数 .em 恒为次级色，不跟着变）
         when (row.section) {
             AgendaSection.OVERDUE ->
-                views.setTextColor(R.id.widget_todo_seghd_label, context.getColor(R.color.widget_risk_red))
+                views.setTextColor(R.id.widget_todo_seghd_label, themed().getColor(R.color.widget_risk_red))
             AgendaSection.TODAY ->
-                views.setTextColor(R.id.widget_todo_seghd_label, WidgetData.colorFamily(context, 0).hue)
+                views.setTextColor(R.id.widget_todo_seghd_label, WidgetData.colorFamily(themed(), 0).hue)
             else -> Unit
         }
         return views
@@ -182,7 +196,7 @@ internal class TodoViewsFactory(
 
     private fun itemViews(row: AgendaRow.Item): RemoteViews =
         WidgetHelper.todoAgendaRowViews(
-            context,
+            themed(),
             row.item,
             timeTextOf(row),
             row.section == AgendaSection.OVERDUE

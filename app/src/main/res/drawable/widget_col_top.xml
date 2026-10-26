@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- 习惯今天列的列头顶（v4 .tct）：上圆角淡底，运行时 setColorFilter 上色族淡色 -->
-<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
-    <solid android:color="#FFFFFFFF" />
-    <corners android:topLeftRadius="8dp" android:topRightRadius="8dp" />
-</shape>

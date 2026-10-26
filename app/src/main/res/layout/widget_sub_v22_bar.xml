@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  订阅 4×1（v22 BAR）：徽章+订阅 | 三列读数（本月合计 / 下个扣费日 / 下个金额）| 分段条。
+  分段条一格 = 本月一笔待扣（段宽 = 金额占比，段色 = 该行胶囊的族色）。
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ImageView
+        android:id="@+id/widget_bg"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:contentDescription="@null"
+        android:scaleType="centerCrop" />
+
+    <LinearLayout
+        android:id="@+id/widget_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="15dp"
+        android:paddingVertical="9dp"
+        android:background="@drawable/widget_card_round">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <FrameLayout
+                android:layout_width="@dimen/widget_v22_badge_sm"
+                android:layout_height="@dimen/widget_v22_badge_sm">
+
+                <ImageView
+                    android:id="@+id/widget_subscription_badge"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/widget_shape_circle"
+                    android:contentDescription="@null" />
+
+                <ImageView
+                    android:layout_width="11dp"
+                    android:layout_height="11dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/widget_ic_refresh_white"
+                    android:contentDescription="@null" />
+            </FrameLayout>
+
+            <TextView
+                android:id="@+id/widget_subscription_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="7dp"
+                android:text="@string/widget_subscription_title_short"
+                android:textSize="@dimen/widget_v22_text_ttl"
+                android:textStyle="bold"
+                android:textColor="@color/widget_v22_text_1"
+                android:maxLines="1" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="horizontal"
+                android:layout_marginStart="12dp">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/widget_subscription_bar_month_lbl"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/widget_sub_label_month"
+                        android:textSize="@dimen/widget_v22_text_micro"
+                        android:textColor="@color/widget_v22_text_2"
+                        android:maxLines="1" />
+
+                    <TextView
+                        android:id="@+id/widget_subscription_bar_month"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="@dimen/widget_v22_text_val"
+                        android:textStyle="bold"
+                        android:textColor="@color/widget_v22_text_1"
+                        android:maxLines="1"
+                        android:includeFontPadding="false" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:layout_marginStart="8dp">
+
+                    <TextView
+                        android:id="@+id/widget_subscription_bar_next_lbl"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/widget_sub_label_next"
+                        android:textSize="@dimen/widget_v22_text_micro"
+                        android:textColor="@color/widget_v22_text_2"
+                        android:maxLines="1" />
+
+                    <TextView
+                        android:id="@+id/widget_subscription_bar_next"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="@dimen/widget_v22_text_val"
+                        android:textStyle="bold"
+                        android:textColor="@color/widget_v22_text_1"
+                        android:maxLines="1"
+                        android:includeFontPadding="false" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:layout_marginStart="8dp">
+
+                    <TextView
+                        android:id="@+id/widget_subscription_bar_amount_lbl"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/widget_sub_label_amount"
+                        android:textSize="@dimen/widget_v22_text_micro"
+                        android:textColor="@color/widget_v22_text_2"
+                        android:maxLines="1" />
+
+                    <TextView
+                        android:id="@+id/widget_subscription_bar_amount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="@dimen/widget_v22_text_val"
+                        android:textStyle="bold"
+                        android:textColor="@color/widget_v22_text_1"
+                        android:maxLines="1"
+                        android:includeFontPadding="false" />
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- 分段条宿主：addView(widget_v22_seg) -->
+        <LinearLayout
+            android:id="@+id/widget_subscription_seg_host"
+            android:layout_width="match_parent"
+            android:layout_height="10dp"
+            android:orientation="horizontal"
+            android:layout_marginTop="5dp"
+            android:visibility="gone" />
+
+    </LinearLayout>
+
+</FrameLayout>

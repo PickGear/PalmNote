@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  v22 打卡胶囊行（稿 .ch.sm：高 26、圆角 10、内边距 9）：淡彩底 + 习惯名 + 行内七天点。
+  点走 addView(widget_v22_dotr7)，亮 = 那天打了卡；整行是打卡热区（挂 check-in PendingIntent）。
+  行色按行位取族色（稿内取色：橙/蓝/青三行）—— 与徽章的橙同族轮转。
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_habit_row"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/widget_v22_chip_h"
+    android:layout_marginBottom="5dp">
+
+    <ImageView
+        android:id="@+id/widget_habit_row_bg"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:src="@drawable/widget_v22_round10"
+        android:contentDescription="@null" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="9dp">
+
+        <TextView
+            android:id="@+id/widget_habit_row_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="@dimen/widget_v22_text_lb"
+            android:textStyle="bold"
+            android:textColor="@color/widget_v22_text_1"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <!-- 七天点宿主：addView(widget_v22_dotr7) -->
+        <LinearLayout
+            android:id="@+id/widget_habit_row_dots"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginStart="8dp" />
+    </LinearLayout>
+</FrameLayout>

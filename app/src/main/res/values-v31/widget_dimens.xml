@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 12+ 卡片圆角跟系统走（默认 28dp，OEM 改了就跟着改） -->
+<resources>
+    <dimen name="widget_card_radius">@android:dimen/system_app_widget_background_radius</dimen>
+</resources>

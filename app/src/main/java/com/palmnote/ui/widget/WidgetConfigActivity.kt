@@ -13,7 +13,12 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 
 /**
- * 组件配置页（`android:configure`，**除账单外的组件都用这个**）：只调这个实例的透明度。
+ * 组件配置页（`android:configure`，只有**概览 / 接下来**在 provider XML 里声明它）：
+ * 只改这一个实例的**强调色覆盖**（这两类组件渲染吃强调色）。
+ *
+ * 不透明度与背景色不在这里 —— 它们在添加/编辑面板（`WidgetPinScreen`）里改，
+ * 与实例 id 一起直接落到 DataStore，不必等落桌确认。账单走它自己的
+ * `BillWidgetConfigActivity`（账本 + 配色 + 预算口径）。
  *
  * 桌面在摆放时拉起本页，用户确认后回传 RESULT_OK 才会真正落桌；
  * 桌面长按已放置的组件也能再次进这里改设置。
@@ -54,8 +59,6 @@ class WidgetConfigActivity : ComponentActivity() {
                     showAccent = showAccent,
                     booksFlow = flowOf(emptyList()),
                     selectedBookFlow = flowOf(null),
-                    opacityOverrideFlow = preferencesManager.widgetOpacityOverride(widgetId),
-                    defaultOpacityFlow = preferencesManager.widgetOpacity,
                     accentThemeOverrideFlow = preferencesManager.widgetAccentThemeFor(widgetId),
                     onConfirm = ::confirm,
                     onCancel = { finish() }
@@ -66,7 +69,6 @@ class WidgetConfigActivity : ComponentActivity() {
 
     private fun confirm(result: WidgetConfigResult) {
         lifecycleScope.launch {
-            preferencesManager.setWidgetOpacityFor(widgetId, result.opacityOverride)
             preferencesManager.setWidgetAccentThemeFor(widgetId, result.accentThemeId)
             // 这类组件只改了外观：整轮刷新一次最省事，不必按 provider 细分
             WidgetUpdateHelper.refreshAllWidgets()

@@ -49,3 +49,25 @@ private fun Bundle.exactSizes(): List<SizeF> =
 /** 取不到或拿到非正值（部分桌面会给 0）时用组件声明的尺寸兜底。 */
 private fun Bundle.positiveOr(key: String, fallback: Int): Int =
     getInt(key, fallback).takeIf { it > 0 } ?: fallback
+
+/**
+ * 组件当前占位的 dp 尺寸（壁纸层画 Bitmap 用）。
+ *
+ * 优先用桌面给出的精确尺寸（Android 12+）；拿不到时退回 min 宽高——那是竖屏单列时的值，
+ * 只会让壁纸画小一点（ImageView 是 centerCrop，放大后仍铺满，不会露白）。
+ * 两者都没有（个别桌面什么都不给）时用 4×2 的常见尺寸兜底。
+ */
+internal fun Bundle.widgetSizeDp(): Pair<Int, Int> {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        val exact = exactSizes().firstOrNull()
+        if (exact != null) {
+            return exact.width.toInt().coerceAtLeast(1) to exact.height.toInt().coerceAtLeast(1)
+        }
+    }
+    val width = positiveOr(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0)
+    val height = positiveOr(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0)
+    return if (width > 0 && height > 0) width to height else FALLBACK_WIDTH_DP to FALLBACK_HEIGHT_DP
+}
+
+private const val FALLBACK_WIDTH_DP = 200
+private const val FALLBACK_HEIGHT_DP = 150

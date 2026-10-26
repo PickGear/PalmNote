@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- v37 .empty：空白态（圆底图标 + 一句标题 + 一句引导），底与图形运行时按族上色 -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_v22_empty_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center">
+    <FrameLayout android:layout_width="40dp" android:layout_height="40dp">
+        <ImageView android:id="@+id/widget_v22_empty_circle" android:layout_width="match_parent" android:layout_height="match_parent" android:src="@drawable/widget_shape_circle" android:contentDescription="@null" />
+        <ImageView android:id="@+id/widget_v22_empty_ico" android:layout_width="20dp" android:layout_height="20dp" android:layout_gravity="center" android:contentDescription="@null" />
+    </FrameLayout>
+    <TextView android:id="@+id/widget_v22_empty_t" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:textSize="13sp" android:textStyle="bold" android:includeFontPadding="false" android:maxLines="1" />
+    <TextView android:id="@+id/widget_v22_empty_d" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:textSize="11sp" android:includeFontPadding="false" android:maxLines="1" />
+</LinearLayout>

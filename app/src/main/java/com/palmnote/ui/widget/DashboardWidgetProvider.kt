@@ -5,373 +5,515 @@ import android.content.Context
 import android.view.View
 import android.widget.RemoteViews
 import com.palmnote.app.R
-import com.palmnote.domain.util.LifeTemplateKind
-import com.palmnote.domain.util.getKind
+import com.palmnote.data.datastore.PreferencesManager
+import com.palmnote.data.db.dao.LIFE_DEMO_META
+import com.palmnote.data.db.dao.BillDao
+import com.palmnote.data.db.dao.LifeItemDao
+import com.palmnote.data.db.dao.LifeTemplateDao
+import com.palmnote.domain.util.BuiltinTemplates
+import com.palmnote.domain.model.BillType
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
-import kotlinx.coroutines.flow.first
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.time.format.TextStyle
+import java.util.Locale
+import kotlinx.coroutines.flow.first
 
 /**
- * 概览 4×3（v4 定稿）：2×2 大色块 tile + 每块一行语义化二级信息——
- * 预算=迷你用量条+本月已用百分比、目标=进度计数、待办=逾期红字（无逾期给今日已完成）、
- * 纪念日=目标日期与星期。右上角给「本周待办 N 项」（近 7 天内到期未完成）。
+ * 概览组件（v22）：「今天」一屏 —— 左 hero 今日支出，右三枚胶囊（待办 / 打卡 / 订阅）。
+ *
+ * 与 v4 的「四模块 tile（预算/目标/待办/纪念日）」是**两代设计**：v22 按稿改成
+ * 「今日快照」，预算/目标/纪念日的明细各自由自己的组件与页面承载（点胶囊进对应页）。
+ *
+ * 四档构图按 [WidgetSizeClass] 切档（稿 c-dash）：
+ * - WIDE 4×2：左 hero（今日支出 + 笔数 + 收入）+ 右三枚胶囊；
+ * - SQUARE 2×2：hero + 笔数 + 两枚胶囊（待办 / 打卡）；
+ * - BAR 4×1：四列读数（支出 / 待办 / 打卡 / 订阅），打卡列带 5 点；
+ * - CHIP 2×1：支出徽章 + 笔数 / 收入。
+ * TALL（4×4）稿未设计，复用 WIDE 构图。
+ *
+ * 点阵口径同打卡组件：只有打卡列画 5 点（分母 = 习惯数，≤5 才画）；
+ * 支出笔数、待办项数无上限，只给数字（用户 2026-10-23 定）。
  */
-class DashboardWidgetProvider : ScopedWidgetProvider() {
+// open：DashboardSquare / DashboardBar / DashboardTall 尺寸形态薄子类继承（v37 四档）
+open class DashboardWidgetProvider : ScopedWidgetProvider() {
 
     @EntryPoint
     @InstallIn(SingletonComponent::class)
     interface WidgetEntryPoint {
-        fun billDao(): com.palmnote.data.db.dao.BillDao
+        fun billDao(): BillDao
         fun budgetDao(): com.palmnote.data.db.dao.BudgetDao
-        fun lifeItemDao(): com.palmnote.data.db.dao.LifeItemDao
-        fun lifeTemplateDao(): com.palmnote.data.db.dao.LifeTemplateDao
-        fun anniversaryDao(): com.palmnote.data.db.dao.AnniversaryDao
-        fun preferencesManager(): com.palmnote.data.datastore.PreferencesManager
+        fun lifeItemDao(): LifeItemDao
+        fun lifeTemplateDao(): LifeTemplateDao
+        fun preferencesManager(): PreferencesManager
     }
 
-    override suspend fun onUpdateAsync(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
+    /** 概览的一屏数据（全部当天口径）。 */
+    internal data class DashboardSnapshot(
+        /** 今日支出合计（分）。 */
+        val todayExpense: Long,
+        /** 今日收入合计（分）。 */
+        val todayIncome: Long,
+        /** 今日支出笔数。 */
+        val todayExpenseCount: Int,
+        /** 星期简称（周四 / Wed）—— 头部「今日 · 周四」用。 */
+        val weekday: String,
+        /** 今日待办未完成数（胶囊数值）。 */
+        val todoRemaining: Int,
+        /** 今日待办总数（胶囊副信息「共 N 项」）。 */
+        val todoTotal: Int,
+        /** 今日打卡完成数 / 习惯总数（打卡胶囊 2/5 与五点）。 */
+        val habitDone: Int,
+        val habitTotal: Int,
+        /** 下次扣费日期文案（M/d）；没有订阅为 null（胶囊不摆）。 */
+        val subDateText: String?,
+        /** 距下次扣费天数；没有订阅为 null。 */
+        val subDaysLeft: Long?,
+        /** 近 7 天每日支出（分，含今天，旧→新）；4×4 柱图用。 */
+        val dailyExpense: List<Long> = emptyList(),
+        /** 本月预算已用百分比；无预算为 null（4×4 KPI）。 */
+        val budgetUsedPercent: Int? = null,
+        /** 预算剩余文案（「剩 ¥1.8k」）；无预算为 null。 */
+        val budgetRemainText: String? = null
+    )
+
+    override suspend fun onUpdateAsync(appContext: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
         val entryPoint = EntryPointAccessors.fromApplication(
-            context.applicationContext,
+            appContext.applicationContext,
             WidgetEntryPoint::class.java
         )
-        val snapshot = fetchSnapshot(context, entryPoint)
+        val snapshot = fetchSnapshot(appContext, entryPoint)
+        val prefs = entryPoint.preferencesManager()
 
-        publish(context, appWidgetManager, appWidgetIds) { appWidgetId, opacity ->
-            // 强调色逐实例：配置了配色覆盖就用它，否则跟随应用主题包
-            val accent = WidgetData.readAccentTheme(
-                context, entryPoint.preferencesManager(),
-                entryPoint.preferencesManager().widgetAccentThemeFor(appWidgetId).first()
-            )
-            bindDashboard(context, appWidgetId, snapshot, accent)
-        }
-    }
-
-    /** 构建 2×2 tile 概览。 */
-    private fun bindDashboard(
-        context: Context,
-        appWidgetId: Int,
-        snapshot: DashboardSnapshot,
-        accent: WidgetData.AccentTheme
-    ): RemoteViews {
-        val views = RemoteViews(context.packageName, R.layout.widget_dashboard_unified)
-        bindSnapshot(context, views, snapshot)
-        val families = (0..3).map { WidgetData.colorFamily(context, it) }
-        views.setInt(R.id.widget_dashboard_icon_bg, "setColorFilter", accent.accent)
-        // 右上角「本周待办 N 项」用第一色族前景
-        views.setTextColor(R.id.widget_dashboard_week_todo, families[0].hue)
-        // 四块 tile：淡底 + 同族色点 + 同族数值
-        val chips = listOf(
-            Triple(R.id.widget_dashboard_budget_tint, R.id.widget_dashboard_budget_dot, R.id.widget_dashboard_budget),
-            Triple(R.id.widget_dashboard_goal_tint, R.id.widget_dashboard_goal_dot, R.id.widget_dashboard_goal_pct),
-            Triple(R.id.widget_dashboard_todo_tint, R.id.widget_dashboard_todo_dot, R.id.widget_dashboard_todo),
-            Triple(R.id.widget_dashboard_anniversary_tint, R.id.widget_dashboard_anniversary_dot, R.id.widget_dashboard_days)
-        )
-        chips.forEachIndexed { index, (tintId, dotId, valueId) ->
-            views.setInt(tintId, "setColorFilter", families[index].tint)
-            views.setInt(dotId, "setColorFilter", families[index].hue)
-            views.setTextColor(valueId, families[index].hue)
-        }
-        // 预算 tile 的迷你用量条：填充随用量走（无预算时条隐藏）
-        if (snapshot.budgetPercent != null) {
-            views.setInt(R.id.widget_dashboard_budget_bar_fill, "setColorFilter", families[0].hue)
-            views.setInt(R.id.widget_dashboard_budget_bar_fill, "setImageLevel", snapshot.budgetPercent * 100)
-            // track 保持 widget_v2_ring 灰色，不随色族染色（设计稿 --track 是中性灰底）
-        } else {
-            views.setViewVisibility(R.id.widget_dashboard_budget_bar_wrap, View.GONE)
-        }
-        // 目标 tile 的迷你进度条：与预算 tile 同一根。
-        // pct 在 snapshot 里是展示文本（"64%"），这里回解析成 level；解析不出就当 0（空条不误导）
-        views.setInt(R.id.widget_dashboard_goal_bar_fill, "setColorFilter", families[1].hue)
-        views.setInt(
-            R.id.widget_dashboard_goal_bar_fill,
-            "setImageLevel",
-            snapshot.goalPct.removeSuffix("%").toIntOrNull()?.times(100) ?: 0
-        )
-        views.setOnClickPendingIntent(
-            R.id.widget_layout,
-            WidgetHelper.createPendingIntent(context, WidgetDeepLink.SEG_DASHBOARD + appWidgetId, WidgetDeepLink.TAB_DASHBOARD)
-        )
-        bindCardClicks(context, views, appWidgetId)
-        return views
-    }
-
-    /**
-     * 分区热区：四块 tile 各自深链。预算 → 预算页；待办 → 今日清单；目标/纪念 → 生活页。
-     * 号段必须互不相同，否则 FLAG_UPDATE_CURRENT 会让点击互相覆盖。
-     */
-    internal fun bindCardClicks(context: Context, views: RemoteViews, appWidgetId: Int) {
-        for (target in cardTargets()) {
-            val requestCode = target.segment + appWidgetId
-            val pendingIntent = if (target.listMode != null) {
-                WidgetHelper.createLifeListPendingIntent(context, requestCode, target.listMode)
-            } else {
-                WidgetHelper.createPendingIntent(context, requestCode, target.tab)
+        publish(appContext, appWidgetManager, appWidgetIds) { context, appWidgetId, _ ->
+            // 强调色：逐实例配色覆盖优先，否则概览族默认色（与徽章原先的 familyD(0) 一致）
+            val accent = WidgetData.accentColorOrDefault(context, prefs, appWidgetId, familyD(context, 0))
+            sizedRemoteViews(
+                appWidgetManager.getAppWidgetOptions(appWidgetId),
+                DEFAULT_WIDTH_DP,
+                DEFAULT_HEIGHT_DP
+            ) { width, height ->
+                bindViews(context, appWidgetId, snapshot, width, height, accent)
             }
-            views.setOnClickPendingIntent(target.viewId, pendingIntent)
         }
     }
-
-    internal data class CardTarget(
-        val viewId: Int,
-        val segment: Int,
-        val tab: String,
-        val listMode: String? = null
-    )
-
-    internal fun cardTargets(): List<CardTarget> = listOf(
-        CardTarget(R.id.widget_dashboard_budget_card, WidgetDeepLink.SEG_DASHBOARD_BUDGET, WidgetDeepLink.TAB_BUDGET),
-        CardTarget(R.id.widget_dashboard_goal_card, WidgetDeepLink.SEG_DASHBOARD_GOAL, WidgetDeepLink.TAB_LIFE),
-        // 待办 tile 看的是「今日还有几项」→ 直接落到今日清单（LifeFullListMode.AGENDA），不落首页
-        CardTarget(
-            R.id.widget_dashboard_todo_card,
-            WidgetDeepLink.SEG_DASHBOARD_TODO,
-            WidgetDeepLink.TAB_LIFE,
-            listMode = "AGENDA"
-        ),
-        // 纪念日 tile 单独热区 → 生活页
-        CardTarget(R.id.widget_dashboard_anniversary_card, WidgetDeepLink.SEG_DASHBOARD_ANNIVERSARY, WidgetDeepLink.TAB_LIFE)
-    )
-
-    internal data class DashboardSnapshot(
-        /** 右上角：近 7 天内到期未完成的待办数。 */
-        val weekTodoCount: Int,
-        val budgetCardAmount: String,
-        val budgetCardSub: String,
-        val goalPct: String,
-        val goalName: String,
-        /** 目标进度计数文案（如 32/50）；无目标为 "--"。 */
-        val goalCounts: String,
-        /** 今日未完成待办数（tile 数值）。 */
-        val todoRemaining: Int,
-        /** 今日已完成待办数（无逾期时的二级信息）。 */
-        val todoDoneToday: Int,
-        /** 逾期未完成数（二级信息红字）。 */
-        val overdueCount: Int,
-        /** 明日到期未完成数（二级信息；有逾期时与逾期数合并展示）。 */
-        val tomorrowCount: Int = 0,
-        /** 纪念日 tile：目标日期与星期（如 11/1 · 周日）。 */
-        val anniversaryDateText: String?,
-        val anniversaryTitle: String?,
-        val anniversaryDays: Long,
-        /** 预算用量百分比；无预算为 null（用量条隐藏）。 */
-        val budgetPercent: Int? = null
-    )
 
     private suspend fun fetchSnapshot(context: Context, entryPoint: WidgetEntryPoint): DashboardSnapshot {
         val today = LocalDate.now()
-        val zone = ZoneId.systemDefault()
-        val todayStart = today.atStartOfDay(zone).toInstant().toEpochMilli()
-        val weekEnd = today.plusDays(7).atStartOfDay(zone).toInstant().toEpochMilli()
+        val todayStart = today.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        val includeDemo = entryPoint.preferencesManager().lifeDemoMode.first()
 
-        val yearMonth = DateTimeFormatter.ofPattern("yyyy-MM").format(today)
-        val budgetTile = fetchBudget(context, entryPoint, yearMonth)
-        val goals = fetchGoalProgress(context, entryPoint, entryPoint.preferencesManager().lifeDemoMode.first())
-        val todoStats = fetchTodoStats(entryPoint, todayStart, weekEnd)
-        val anniversary = fetchAnniversary(context, entryPoint, today)
+        // 今日账单：支出合计 + 笔数、收入合计（TRANSFER 不计入任何一端）
+        val bills = entryPoint.billDao().getBillsByDate(todayStart).first()
+        val expense = bills.filter { it.type == BillType.EXPENSE }
+        val income = bills.filter { it.type == BillType.INCOME }
 
-        return DashboardSnapshot(
-            weekTodoCount = todoStats.weekTodo,
-            budgetCardAmount = budgetTile.amount,
-            budgetCardSub = context.getString(budgetTile.labelRes),
-            goalPct = goals.pctText,
-            goalName = goals.name,
-            goalCounts = goals.countsText,
-            todoRemaining = todoStats.remaining,
-            todoDoneToday = todoStats.doneToday,
-            overdueCount = todoStats.overdue,
-            tomorrowCount = todoStats.tomorrow,
-            anniversaryTitle = anniversary?.first,
-            anniversaryDays = anniversary?.second ?: -1L,
-            anniversaryDateText = anniversary?.third,
-            budgetPercent = budgetTile.percent
-        )
-    }
-
-    private data class BudgetTile(val amount: String, val labelRes: Int, val percent: Int?)
-
-    /** 预算 tile：有预算显示剩余，无预算显示结余；迷你用量条只在真有预算时给值。 */
-    private suspend fun fetchBudget(
-        context: Context,
-        entryPoint: WidgetEntryPoint,
-        yearMonth: String
-    ): BudgetTile {
-        val monthlyExpense = entryPoint.billDao().getMonthlyExpense(yearMonth).first() ?: 0L
-        val monthlyIncome = entryPoint.billDao().getMonthlyIncome(yearMonth).first() ?: 0L
-        val budget = entryPoint.budgetDao().getBudgetByMonth(yearMonth)
-            ?: entryPoint.budgetDao().getLatestBudget().first()
-        return if (budget != null && budget.totalBudget > 0) {
-            BudgetTile(
-                WidgetData.formatMoneyCompact(context, budget.totalBudget - monthlyExpense),
-                R.string.widget_budget_remaining,
-                (monthlyExpense * 100 / budget.totalBudget).toInt().coerceIn(0, 100)
-            )
-        } else {
-            BudgetTile(
-                WidgetData.formatMoneyCompact(context, monthlyIncome - monthlyExpense),
-                R.string.widget_net_income,
-                null
-            )
-        }
-    }
-
-    private data class TodoStats(
-        val remaining: Int,
-        val doneToday: Int,
-        val overdue: Int,
-        val tomorrow: Int,
-        val weekTodo: Int
-    )
-
-    /** 待办口径全走 fetchTodoBoard（与待办组件同源）：items=全部活跃+今日已完成。 */
-    private suspend fun fetchTodoStats(
-        entryPoint: WidgetEntryPoint,
-        todayStart: Long,
-        weekEnd: Long
-    ): TodoStats {
+        // 待办：与待办组件同源（今日到期口径）
         val board = WidgetData.fetchTodoBoard(
             entryPoint.lifeItemDao(),
             entryPoint.lifeTemplateDao(),
-            includeDemo = entryPoint.preferencesManager().lifeDemoMode.first(),
-            demoMeta = com.palmnote.data.db.dao.LIFE_DEMO_META
+            includeDemo = includeDemo,
+            demoMeta = LIFE_DEMO_META
         )
-        val active = board.items
-        // dueDate 是 core 模块的 public 属性，跨模块不能智能转换，先落局部 val
-        val overdue = active.count {
-            val due = it.dueDate
-            due != null && due < todayStart && it.status != "COMPLETED"
-        }
-        val weekTodo = active.count {
-            val due = it.dueDate
-            it.status != "COMPLETED" && due != null && due < weekEnd
-        }
-        // 明日到期（与逾期同口径：未完成且落在明天）——二级信息「明日 N 项」用
-        val tomorrowStart = todayStart + 86_400_000L
-        val tomorrow = active.count {
-            val due = it.dueDate
-            it.status != "COMPLETED" && due != null && due >= tomorrowStart && due < tomorrowStart + 86_400_000L
-        }
-        return TodoStats(
-            remaining = (board.todayTotal - board.todayDone).coerceAtLeast(0),
-            doneToday = board.todayDone,
-            overdue = overdue,
-            tomorrow = tomorrow,
-            weekTodo = weekTodo
+        // 打卡：与打卡组件同源
+        val habitRows = HabitWidgetProvider().fetchHabitRows(
+            context = context,
+            templateDao = entryPoint.lifeTemplateDao(),
+            itemDao = entryPoint.lifeItemDao(),
+            includeDemo = includeDemo
+        )
+        // 订阅：最近一笔待扣费（与订阅组件同源）
+        val subTemplate = entryPoint.lifeTemplateDao().getAllVisibleTemplates().first()
+            .firstOrNull { it.name.contains(BuiltinTemplates.SUBSCRIPTION_KEYWORD) }
+        val nextRenewal = subTemplate
+            ?.let { SubscriptionWidgetProvider().fetchRenewals(entryPoint.lifeItemDao(), it.id, includeDemo) }
+            ?.orEmpty()
+            ?.firstOrNull()
+
+        // 近 7 天每日支出（4×4 柱图）；月预算（4×4 KPI）
+        val weekStart = today.minusDays(6).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        val weekBills = entryPoint.billDao().getBillsByDate(weekStart).first()
+            .filter { it.type == BillType.EXPENSE }
+        val dailyExpense = sumByDay(weekBills, today, 7)
+        val budget = entryPoint.budgetDao().getBudgetByMonth(
+            java.time.format.DateTimeFormatter.ofPattern("yyyy-MM").format(today)
+        ) ?: entryPoint.budgetDao().getLatestBudget().first()
+
+        return DashboardSnapshot(
+            todayExpense = expense.sumOf { it.amount },
+            todayIncome = income.sumOf { it.amount },
+            todayExpenseCount = expense.size,
+            weekday = today.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault()),
+            todoRemaining = (board.todayTotal - board.todayDone).coerceAtLeast(0),
+            todoTotal = board.todayTotal,
+            habitDone = habitRows.count { it.checked },
+            habitTotal = habitRows.size,
+            subDateText = nextRenewal?.let {
+                today.plusDays(it.daysLeft).format(DateTimeFormatter.ofPattern("M/d"))
+            },
+            subDaysLeft = nextRenewal?.daysLeft,
+            dailyExpense = dailyExpense,
+            budgetUsedPercent = budget?.takeIf { b -> b.totalBudget > 0 && expense.isNotEmpty() }?.let { b ->
+                ((expense.sumOf { it.amount }.toDouble() / b.totalBudget) * 100).toInt().coerceIn(0, 100)
+            },
+            budgetRemainText = budget?.takeIf { b -> b.totalBudget > 0 }?.let { b ->
+                context.getString(
+                    R.string.widget_budget_remain_fmt,
+                    WidgetData.formatMoneyCompact(context, (b.totalBudget - expense.sumOf { it.amount }).coerceAtLeast(0))
+                )
+            }
         )
     }
 
-    /** 最近的一个纪念日 → (标题, 距今天数, 目标日期与星期)。 */
-    private suspend fun fetchAnniversary(
+    /** 按自然日聚合账单金额（分），旧→新共 [days] 天。 */
+    private fun sumByDay(bills: List<com.palmnote.data.db.entity.Bill>, today: LocalDate, days: Long): List<Long> =
+        (0 until days).map { offset ->
+            val day = today.minusDays(days - 1 - offset)
+            bills.filter {
+                java.time.Instant.ofEpochMilli(it.date).atZone(ZoneId.systemDefault()).toLocalDate() == day
+            }.sumOf { it.amount }
+        }
+
+    internal fun bindViews(
         context: Context,
-        entryPoint: WidgetEntryPoint,
-        today: LocalDate
-    ): Triple<String, Long, String>? {
-        val next = entryPoint.anniversaryDao().getAllAnniversaries().first()
-            .mapNotNull { ann ->
-                WidgetData.nextOccurrenceDaysIn(ann.solarDate, ann.isYearly)?.let { days -> ann.title to days }
-            }
-            .minByOrNull { it.second } ?: return null
-        val dateText = today.plusDays(next.second)
-            .format(DateTimeFormatter.ofPattern(context.getString(R.string.widget_date_md_week)))
-        return Triple(next.first, next.second, dateText)
+        appWidgetId: Int,
+        snapshot: DashboardSnapshot,
+        widthDp: Int = DEFAULT_WIDTH_DP,
+        heightDp: Int = DEFAULT_HEIGHT_DP,
+        accent: Int? = null
+    ): RemoteViews {
+        val size = WidgetSizeClass.of(widthDp, heightDp)
+        val layout = when (size) {
+            WidgetSizeClass.TALL -> R.layout.widget_v22_tall
+            WidgetSizeClass.WIDE -> R.layout.widget_dash_v22_wide
+            WidgetSizeClass.SQUARE -> R.layout.widget_dash_v22_square
+            WidgetSizeClass.BAR -> R.layout.widget_dash_v22_bar
+            WidgetSizeClass.CHIP -> R.layout.widget_dash_v22_bar
+        }
+        val views = widgetViews(context, layout)
+        WidgetV22.bindCardBg(views, size)
+        if (size == WidgetSizeClass.TALL) {
+            bindTall4x4(context, views, snapshot)
+            views.setOnClickPendingIntent(
+                R.id.widget_layout,
+                WidgetHelper.createPendingIntent(
+                    context,
+                    WidgetDeepLink.SEG_DASHBOARD + appWidgetId,
+                    WidgetDeepLink.TAB_DASHBOARD
+                )
+            )
+            return views
+        }
+        views.setInt(R.id.widget_dash_badge, "setColorFilter", accent ?: familyD(context, 0))
+        views.setTextViewText(
+            R.id.widget_dash_title,
+            context.getString(R.string.widget_dash_today_fmt, snapshot.weekday)
+        )
+        views.setTextViewText(
+            R.id.widget_dash_hero,
+            WidgetData.formatMoneyCompact(context, snapshot.todayExpense)
+        )
+        val billsText = context.getString(R.string.widget_dash_bills_fmt, snapshot.todayExpenseCount)
+        val incomeText = context.getString(
+            R.string.widget_dash_income_fmt,
+            WidgetData.formatMoneyCompact(context, snapshot.todayIncome)
+        )
+        when (size) {
+            WidgetSizeClass.WIDE ->
+                bindWide(context, views, snapshot, billsText, incomeText)
+            WidgetSizeClass.SQUARE -> bindSquare(context, views, snapshot, billsText)
+            WidgetSizeClass.BAR -> bindBar(context, views, snapshot, billsText)
+            WidgetSizeClass.CHIP -> bindBar(context, views, snapshot, billsText)
+            else -> {}
+        }
+        views.setOnClickPendingIntent(
+            R.id.widget_layout,
+            WidgetHelper.createPendingIntent(
+                context,
+                WidgetDeepLink.SEG_DASHBOARD + appWidgetId,
+                WidgetDeepLink.TAB_DASHBOARD
+            )
+        )
+        return views
+    }
+
+    /** 4×2：三枚胶囊（待办 / 打卡 / 订阅 —— 缺订阅不补位）。 */
+    /**
+     * 4×4 仪表盘（v37）：主数字 + 四 KPI + 近 7 天支出柱图（带轴与今天柱数值标）。
+     * 空数据（今天 0 笔）不摆柱图与 0 值 KPI，给空白引导（稿 §11）。
+     */
+    internal fun bindTall4x4(context: Context, views: RemoteViews, snapshot: DashboardSnapshot) {
+        WidgetV22.bindTallHeader(
+            context, views,
+            glyphRes = R.drawable.widget_ic_grid_white,
+            title = context.getString(R.string.widget_dash_today_fmt, snapshot.weekday),
+            meta = DateTimeFormatter.ofPattern("M/d").format(LocalDate.now()),
+            familyIdx = 0
+        )
+        val hasExpense = snapshot.todayExpense > 0
+        val avg = snapshot.todayExpenseCount.takeIf { it > 0 && hasExpense }
+            ?.let { WidgetData.formatMoneyCompact(context, snapshot.todayExpense / it) }
+        val heroLabel = when {
+            hasExpense && avg != null -> context.getString(R.string.widget_dash_bills_fmt, snapshot.todayExpenseCount) +
+                " · " + context.getString(R.string.widget_dash_avg_fmt, avg)
+            else -> null
+        }
+        WidgetV22.bindTallHero(
+            context, views,
+            WidgetData.formatMoneyCompact(context, snapshot.todayExpense),
+            heroLabel
+        )
+
+        // KPI：待办 / 打卡 / 订阅 / 预算（预算缺失则只摆三块）
+        WidgetV22.bindKpis(context, views, dashKpis(context, snapshot))
+
+        // 近 7 天柱图：空数据（全 0）整块 GONE，改空白引导。
+        // 稿 §02：数值标在**今天**柱（128）、峰值只在头部注名（峰值 ¥420）、峰柱着橙
+        val maxDaily = snapshot.dailyExpense.maxOrNull() ?: 0L
+        if (maxDaily > 0L) {
+            bindTallChart(context, views, snapshot, maxDaily)
+        } else {
+            WidgetV22.tallSection(context, views, "chart", false)
+            WidgetV22.tallSection(context, views, "empty", true)
+            WidgetV22.bindEmpty(
+                context, views,
+                iconRes = R.drawable.widget_ic_grid_white,
+                title = context.getString(R.string.widget_dash_empty_title),
+                hint = context.getString(R.string.widget_dash_empty_hint),
+                familyIdx = 0
+            )
+        }
+        // minichips / rows / footer / strip / grid 本族不用
+        WidgetV22.tallSections(context, views, "kpis", if (maxDaily > 0L) "chart" else "empty")
+    }
+
+    /** 4×4 柱图：近 7 天支出（今天柱带数值标、峰柱着橙、头部注名峰值）。 */
+    private fun bindTallChart(
+        context: Context,
+        views: RemoteViews,
+        snapshot: DashboardSnapshot,
+        maxDaily: Long
+    ) {
+        WidgetV22.tallSection(context, views, "chart", true)
+        WidgetV22.tallSection(context, views, "empty", false)
+        val peakText = WidgetData.formatMoneyCompact(context, maxDaily)
+        val axis = WidgetV22.last7Axis()
+        // 并列峰值只给最靠今天的一根着橙（稿每图一处峰值色）
+        val peak = snapshot.dailyExpense.lastIndexOf(maxDaily)
+        val bars = snapshot.dailyExpense.mapIndexed { i, v ->
+            WidgetV22.ChartBar(
+                percent = ((v.toDouble() / maxDaily) * 100).toInt(),
+                familyIdx = if (i == peak) 4 else 0,
+                label = if (i == snapshot.dailyExpense.lastIndex) {
+                    WidgetData.formatChartValue(v)
+                } else {
+                    null
+                },
+                // 轴末格 = 今天：族色深墨加粗（稿 .caxis .today）
+                today = i == snapshot.dailyExpense.lastIndex,
+                axis = axis[i]
+            )
+        }
+        WidgetV22.bindChart(
+            context, views,
+            context.getString(R.string.widget_chart_week),
+            context.getString(R.string.widget_chart_peak_fmt, peakText),
+            bars
+        )
+    }
+
+    /** 4×4 KPI 行：待办 / 打卡 / 订阅 / 预算（预算缺失只摆三块）。 */
+    private fun dashKpis(context: Context, snapshot: DashboardSnapshot): List<WidgetV22.Kpi> = buildList {
+        add(
+            WidgetV22.Kpi(
+                context.getString(R.string.widget_todo_title_short),
+                "${snapshot.todoRemaining}/${snapshot.todoTotal}",
+                context.getString(R.string.widget_dash_undone),
+                0
+            )
+        )
+        add(
+            WidgetV22.Kpi(
+                context.getString(R.string.widget_dash_habit_label),
+                "${snapshot.habitDone}/${snapshot.habitTotal}",
+                null,
+                1
+            )
+        )
+        snapshot.subDaysLeft?.let {
+            add(
+                WidgetV22.Kpi(
+                    context.getString(R.string.widget_dash_sub_label),
+                    "$it",
+                    context.getString(R.string.widget_dash_left_days_fmt, it),
+                    3
+                )
+            )
+        }
+        snapshot.budgetUsedPercent?.let {
+            add(
+                WidgetV22.Kpi(
+                    context.getString(R.string.widget_dash_budget_label),
+                    "$it%",
+                    snapshot.budgetRemainText,
+                    4
+                )
+            )
+        }
+    }
+
+    private fun bindWide(
+        context: Context,
+        views: RemoteViews,
+        snapshot: DashboardSnapshot,
+        billsText: String,
+        incomeText: String
+    ) {
+        views.setTextViewText(R.id.widget_dash_hero_sub, "$billsText · $incomeText")
+        bindChipsColumn(context, views, chipsOf(context, snapshot))
     }
 
     /**
-     * 目标进度：百分比文案、名称、进度计数（无目标时计数为 "--"）。
-     * 选卡与文案在 [WidgetData.goalTileData]；演示互斥（`includeDemo`）与待办 tile 同口径。
+     * 纵排胶囊：chip 根是横向 weight 语义（0dp+weight），直接塞进纵向 host 宽度会变 0 ——
+     * 每颗先包进一行（[R.layout.widget_v22_chiprow]），行内 weight 才能把宽度撑满。
+     * 末行走 [R.layout.widget_v22_chiprow_last]（无 6dp 底距）：4×2 三行正好填满中间行，
+     * 尾距会把整列撑到 96dp，第三颗底部 6dp 被容器裁掉（预览图里就是切平的）。
      */
-    private suspend fun fetchGoalProgress(
+    private fun bindChipsColumn(context: Context, views: RemoteViews, chips: List<RemoteViews>) {
+        views.removeAllViews(R.id.widget_dash_chips_host)
+        chips.forEachIndexed { index, chip ->
+            val rowLayout = if (index == chips.lastIndex) {
+                R.layout.widget_v22_chiprow_last
+            } else {
+                R.layout.widget_v22_chiprow
+            }
+            val row = widgetViews(context, rowLayout)
+            row.addView(R.id.widget_v22_chiprow, chip)
+            views.addView(R.id.widget_dash_chips_host, row)
+        }
+    }
+
+    /** 2×2：两枚胶囊（待办 / 打卡）。 */
+    private fun bindSquare(context: Context, views: RemoteViews, snapshot: DashboardSnapshot, billsText: String) {
+        views.setTextViewText(R.id.widget_dash_hero_sub, billsText)
+        bindChipsColumn(context, views, chipsOf(context, snapshot).take(2))
+    }
+
+    /** 4×1：四列读数。 */
+    private fun bindBar(
         context: Context,
-        entryPoint: WidgetEntryPoint,
-        includeDemo: Boolean
-    ): WidgetData.GoalTileData {
-        val noGoals = WidgetData.GoalTileData("--", context.getString(R.string.widget_no_goals), "--")
-        // kind = GOAL 可能不止一张（自建模板也能选 flag 图标）：优先内置那张，取数才不会落到别人的模板上
-        val templates = entryPoint.lifeTemplateDao().getAllVisibleTemplates().first()
-        val template = (templates.firstOrNull { it.isBuiltin && it.getKind() == LifeTemplateKind.GOAL }
-            ?: templates.firstOrNull { it.getKind() == LifeTemplateKind.GOAL }) ?: return noGoals
-        val items = entryPoint.lifeItemDao()
-            .getWidgetItemsByTemplate(template.id, includeDemo, com.palmnote.data.db.dao.LIFE_DEMO_META)
-            .first()
-        return WidgetData.goalTileData(
-            template.fieldsConfig,
-            items,
-            context.getString(R.string.widget_goal_all_done)
-        ) ?: noGoals
-    }
-
-    internal fun bindSnapshot(context: Context, views: RemoteViews, snapshot: DashboardSnapshot) {
-        // 右上角：本周待办（近 7 天内到期未完成）
+        views: RemoteViews,
+        snapshot: DashboardSnapshot,
+        billsText: String
+    ) {
+        views.setTextViewText(R.id.widget_dash_bar_expense_lbl, context.getString(R.string.widget_dash_expense_short))
         views.setTextViewText(
-            R.id.widget_dashboard_week_todo,
-            context.getString(R.string.widget_week_todo_count, snapshot.weekTodoCount)
+            R.id.widget_dash_bar_expense,
+            WidgetData.formatMoneyCompact(context, snapshot.todayExpense)
         )
-        views.setTextViewText(R.id.widget_dashboard_budget, snapshot.budgetCardAmount)
-        views.setTextViewText(R.id.widget_dashboard_budget_sub, snapshot.budgetCardSub)
-        // 预算二级信息：本月已用 82%；无预算时用量条整块隐藏（数据层决定可见性）
-        if (snapshot.budgetPercent != null) {
-            views.setTextViewText(
-                R.id.widget_dashboard_budget_used,
-                context.getString(R.string.widget_budget_used_pct, snapshot.budgetPercent)
-            )
-        } else {
-            views.setViewVisibility(R.id.widget_dashboard_budget_bar_wrap, View.GONE)
-        }
-        views.setTextViewText(R.id.widget_dashboard_goal_pct, snapshot.goalPct)
-        views.setTextViewText(R.id.widget_dashboard_goal_name, snapshot.goalName)
-        views.setTextViewText(R.id.widget_dashboard_goal_counts, snapshot.goalCounts)
+        views.setTextViewText(R.id.widget_dash_bar_expense_sub, billsText)
 
+        views.setTextViewText(R.id.widget_dash_bar_todo_lbl, context.getString(R.string.widget_todo_title_short))
+        views.setTextViewText(R.id.widget_dash_bar_todo, "${snapshot.todoRemaining}")
         views.setTextViewText(
-            R.id.widget_dashboard_todo,
-            context.getString(R.string.widget_todo_sect_count, snapshot.todoRemaining)
+            R.id.widget_dash_bar_todo_sub,
+            context.getString(R.string.widget_dash_todo_total_fmt, snapshot.todoTotal)
         )
-        // 待办二级信息（稿 .micro）：逾期与明日合并展示「逾期 1 项 · 明日 1 项」；
-        // 都没有时退回今日已完成数
-        val overdue = snapshot.overdueCount
-        val tomorrow = snapshot.tomorrowCount
-        val parts = buildList {
-            if (overdue > 0) add(context.getString(R.string.widget_overdue_count, overdue))
-            if (tomorrow > 0) add(context.getString(R.string.widget_tomorrow_count, tomorrow))
-        }
-        if (parts.isNotEmpty()) {
-            views.setTextViewText(R.id.widget_dashboard_todo_overdue, parts.joinToString(" · "))
-            views.setTextColor(
-                R.id.widget_dashboard_todo_overdue,
-                if (overdue > 0) context.getColor(R.color.widget_risk_red)
-                else context.getColor(R.color.widget_v2_text_tertiary)
-            )
+
+        views.setTextViewText(R.id.widget_dash_bar_habit_lbl, context.getString(R.string.widget_habit_title_short))
+        views.setTextViewText(
+            R.id.widget_dash_bar_habit,
+            context.getString(R.string.widget_habit_today_ratio, snapshot.habitDone, snapshot.habitTotal)
+        )
+        // 打卡列没有副信息行（5 点即可视化），副信息 TextView 留空
+        // 打卡列五个点：分母 = 习惯数，≤5 才画
+        views.removeAllViews(R.id.widget_dash_bar_habit_dots)
+        if (snapshot.habitTotal in 1..HABIT_DOTS_MAX) {
+            val dots = widgetViews(context, R.layout.widget_v22_dpd)
+            WidgetV22.bindDpd(context, dots, on = snapshot.habitDone, familyIdx = 1)
+            views.addView(R.id.widget_dash_bar_habit_dots, dots)
+            views.setViewVisibility(R.id.widget_dash_bar_habit_dots, View.VISIBLE)
         } else {
-            views.setTextViewText(
-                R.id.widget_dashboard_todo_overdue,
-                context.getString(R.string.widget_todo_done_today, snapshot.todoDoneToday)
-            )
-            views.setTextColor(R.id.widget_dashboard_todo_overdue, context.getColor(R.color.widget_v2_text_tertiary))
+            views.setViewVisibility(R.id.widget_dash_bar_habit_dots, View.GONE)
         }
 
-        // 纪念日 tile：数值 = N 天，二级信息 = 目标日期与星期
-        if (snapshot.anniversaryTitle != null) {
-            views.setTextViewText(R.id.widget_dashboard_days_title, snapshot.anniversaryTitle)
+        views.setTextViewText(R.id.widget_dash_bar_sub_lbl, context.getString(R.string.widget_dash_sub_label))
+        if (snapshot.subDaysLeft != null && snapshot.subDateText != null) {
             views.setTextViewText(
-                R.id.widget_dashboard_days,
-                "${snapshot.anniversaryDays} ${formatAnniversarySub(context, snapshot.anniversaryDays)}"
+                R.id.widget_dash_bar_sub,
+                "${snapshot.subDaysLeft} ${context.getString(R.string.widget_next_up_days_unit)}"
             )
-            views.setTextViewText(R.id.widget_dashboard_anniv_date, snapshot.anniversaryDateText ?: "")
+            views.setTextViewText(R.id.widget_dash_bar_sub_sub, snapshot.subDateText)
         } else {
-            views.setTextViewText(R.id.widget_dashboard_days_title, context.getString(R.string.widget_no_anniversary))
-            views.setTextViewText(R.id.widget_dashboard_days, "--")
-            views.setTextViewText(R.id.widget_dashboard_anniv_date, "")
+            views.setTextViewText(R.id.widget_dash_bar_sub, context.getString(R.string.widget_asset_dash))
+            views.setTextViewText(R.id.widget_dash_bar_sub_sub, "")
         }
     }
 
-    /** 砖里的单位词：数字在主角位置，这里只给「天后 / days」这种量词。 */
-    private fun formatAnniversarySub(context: Context, days: Long): String = if (days == 0L) {
-        context.getString(R.string.widget_today)
-    } else {
-        // 复数走 getQuantityString（en 要区分 day/days）
-        context.resources.getQuantityString(R.plurals.widget_days_unit, days.toInt(), days)
+    /** 2×1：hero + 右侧两行（笔数 / 收入）。 */
+
+
+    /**
+     * 三枚胶囊（4×2 全量 / 2×2 取前两枚）：
+     * - 待办：名字 + 「共 N 项」+ 未完成数（c1）；
+     * - 打卡：名字 + 5 点（≤5 习惯才画）+ 「done/total」（c2）；
+     * - 订阅：名字 + 下次扣费日 + 「N 天」（c4）；没有订阅整枚不摆。
+     */
+    private fun chipsOf(context: Context, snapshot: DashboardSnapshot): List<RemoteViews> {
+        val chips = mutableListOf<RemoteViews>()
+        val todoChip = widgetViews(context, R.layout.widget_v22_chip)
+        WidgetV22.bindChip(
+            context, todoChip,
+            name = context.getString(R.string.widget_todo_title_short),
+            sub = context.getString(R.string.widget_dash_todo_total_fmt, snapshot.todoTotal),
+            value = "${snapshot.todoRemaining}",
+            familyIdx = 0,
+            showDot = true
+        )
+        chips += todoChip
+
+        val habitChip = widgetViews(context, R.layout.widget_v22_chip)
+        WidgetV22.bindChip(
+            context, habitChip,
+            name = context.getString(R.string.widget_habit_title_short),
+            sub = null,
+            value = context.getString(
+                R.string.widget_habit_today_ratio,
+                snapshot.habitDone,
+                snapshot.habitTotal
+            ),
+            familyIdx = 1,
+            showDot = true
+        )
+        chips += habitChip
+
+        if (snapshot.subDateText != null && snapshot.subDaysLeft != null) {
+            val subChip = widgetViews(context, R.layout.widget_v22_chip)
+            WidgetV22.bindChip(
+                context, subChip,
+                name = context.getString(R.string.widget_dash_sub_label),
+                sub = snapshot.subDateText,
+                value = "${snapshot.subDaysLeft} ${context.getString(R.string.widget_next_up_days_unit)}",
+                familyIdx = 3,
+                showDot = true
+            )
+            chips += subChip
+        }
+        return chips
+    }
+
+    private fun familyD(context: Context, index: Int) = WidgetV22.family(context, index).d
+
+    private companion object {
+        /** 组件声明的默认尺寸（4×2），桌面没给尺寸时兜底。 */
+        const val DEFAULT_WIDTH_DP = 250
+        const val DEFAULT_HEIGHT_DP = 180
+
+        /** 打卡列 5 点的分母上限（习惯数 ≤5 才画）。 */
+        const val HABIT_DOTS_MAX = 5
     }
 }
