@@ -34,6 +34,11 @@ class PreferencesManager @Inject constructor(
     private val prefsFlow: Flow<Preferences> = context.dataStore.data.catch { emit(emptyPreferences()) }
     companion object {
         val THEME_MODE = stringPreferencesKey("theme_mode")
+        const val THEME_MODE_SYSTEM = "SYSTEM"
+
+        /** 启动窗口用的主题模式同步镜像（SharedPreferences，见 [themeModeForSplash]）。 */
+        private const val THEME_MIRROR_PREFS = "palmnote_theme_mirror"
+        private const val KEY_THEME_MODE_MIRROR = "theme_mode"
         val DEFAULT_BILL_TYPE = stringPreferencesKey("default_bill_type")
         val BUDGET_REMINDER_ENABLED = booleanPreferencesKey("budget_reminder_enabled")
         val ASSET_VIEW_MODE = booleanPreferencesKey("asset_view_mode")
@@ -61,6 +66,12 @@ class PreferencesManager @Inject constructor(
         val CALENDAR_SYNC_ENABLED = booleanPreferencesKey("calendar_sync_enabled")
         val DEFAULT_START_PAGE = stringPreferencesKey("default_start_page")
         val LANGUAGE = stringPreferencesKey("language")
+
+        /**
+         * 旧版语言方案的一次性迁移标记（v1.4.1 前：语言存 DataStore 且启动时手动恢复）。
+         * 迁移完成后语言持久化归系统/AppCompat 管（见 LanguageHelper），此键只防重复回灌。
+         */
+        val LANGUAGE_MIGRATED = booleanPreferencesKey("language_migrated")
         val APP_LOCK_ENABLED = booleanPreferencesKey("app_lock_enabled")
         val ENCRYPTED_PIN = stringPreferencesKey("encrypted_pin")
         /**
@@ -85,7 +96,6 @@ class PreferencesManager @Inject constructor(
         val DAILY_REMINDER_HOUR = intPreferencesKey("daily_reminder_hour")
         val DAILY_REMINDER_MINUTE = intPreferencesKey("daily_reminder_minute")
         val BIOMETRIC_ENABLED = booleanPreferencesKey("biometric_enabled")
-        val PRIVACY_AGREED = booleanPreferencesKey("privacy_agreed")
         val ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
         val LIFE_PLAN_EXPANDED = booleanPreferencesKey("life_plan_expanded")
         val LIFE_TIME_EXPANDED = booleanPreferencesKey("life_time_expanded")
@@ -143,8 +153,8 @@ class PreferencesManager @Inject constructor(
         const val DEFAULT_WALLPAPER_OPACITY = 1f
         const val DEFAULT_WALLPAPER_CUSTOM_COLOR = "#FFFFFF"
         const val DEFAULT_WIDGET_OPACITY = 1f
-        /** 下界 0.4：对应最透的一档底色，再低整卡就快看不见了。 */
-        const val MIN_WIDGET_OPACITY = 0.4f
+        /** 下界 0.2：最透的一档，再低整卡就快看不见了。语义是**不透明度**（1 = 完全不透明）。 */
+        const val MIN_WIDGET_OPACITY = 0.2f
 
         // ========== 自动备份 ==========
         const val DEFAULT_AUTO_BACKUP_INTERVAL_DAYS = 1
@@ -162,7 +172,12 @@ class PreferencesManager @Inject constructor(
     val budgetReminderEnabled: Flow<Boolean> = prefsFlow.map { it[BUDGET_REMINDER_ENABLED] ?: true }
     val assetViewMode: Flow<Boolean> = prefsFlow.map { it[ASSET_VIEW_MODE] ?: false }
 
-    suspend fun setThemeMode(mode: String) { context.dataStore.edit { it[THEME_MODE] = mode } }
+    suspend fun setThemeMode(mode: String) {
+        // 同步镜像给启动窗口用（见 themeModeForSplash）：DataStore 是异步的，MainActivity
+        // 在 super.onCreate() 之前读不到它。
+        themeMirrorPrefs().edit().putString(KEY_THEME_MODE_MIRROR, mode).apply()
+        context.dataStore.edit { it[THEME_MODE] = mode }
+    }
     suspend fun setDefaultBillType(type: String) { context.dataStore.edit { it[DEFAULT_BILL_TYPE] = type } }
     suspend fun setBudgetReminderEnabled(enabled: Boolean) { context.dataStore.edit { it[BUDGET_REMINDER_ENABLED] = enabled } }
     suspend fun setAssetViewMode(isGrid: Boolean) { context.dataStore.edit { it[ASSET_VIEW_MODE] = isGrid } }
@@ -214,7 +229,43 @@ class PreferencesManager @Inject constructor(
     suspend fun setWallpaperCustomUri(uri: String) { context.dataStore.edit { it[WALLPAPER_CUSTOM_URI] = uri } }
     suspend fun setWallpaperCustomColor(color: String) { context.dataStore.edit { it[WALLPAPER_CUSTOM_COLOR] = color } }
 
-    /** 桌面组件整卡透明度（1 = 不透明）。越界值一律夹回合法区间，避免坏值写进偏好后组件隐形。 */
+    /**
+     * 主题 / 壁纸偏好的**同步快照**，只给 UI 首帧用（为什么要它见 [ThemeSnapshot] 的类注释）。
+     *
+     * 取值一律走 [prefsState]（Eagerly 的 StateFlow，Application 启动即开始加载）：
+     * - 暖启动（进程存活、Activity 重建）时它必定已有值 → 首帧直接是真实偏好，跳变消失；
+     * - 冷启动若 DataStore 尚未读完则退化为默认值（等价于旧行为，此时开屏页仍在保持，看不到）。
+     *
+     * 刻意不阻塞主线程等 DataStore：那会把「首帧延迟」换成启动卡顿，得不偿失。
+     */
+    fun themeSnapshot(): ThemeSnapshot = resolveThemeSnapshot(prefsState.value)
+
+    // ── 启动首帧的深浅色：给 MainActivity 在 super.onCreate() 前同步读 ──
+
+    private fun themeMirrorPrefs() =
+        context.getSharedPreferences(THEME_MIRROR_PREFS, Context.MODE_PRIVATE)
+
+    /**
+     * 供 [androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode] 用的**同步**主题模式。
+     *
+     * 为什么不用 [themeSnapshot]：DataStore 是异步加载的，Activity 起来时 `prefsState` 可能
+     * 还是空的 → 开屏 / 窗口底色会退化成「跟随系统」，与应用内选的深浅色不一致（白闪/黑闪）。
+     * 所以 [setThemeMode] 额外写一份 SharedPreferences 镜像，这里同步读；镜像还没写过时
+     * （升级后首次启动）回退 DataStore 快照并回写，再回退 SYSTEM。
+     *
+     * 只影响 values-night 资源的解析（开屏、windowBackground、状态栏），运行中的配色仍由 Compose 管。
+     */
+    fun themeModeForSplash(): String {
+        val mirror = themeMirrorPrefs()
+        val stored = mirror.getString(KEY_THEME_MODE_MIRROR, null)
+        val resolved = stored ?: prefsState.value[THEME_MODE] ?: THEME_MODE_SYSTEM
+        if (stored != resolved) {
+            mirror.edit().putString(KEY_THEME_MODE_MIRROR, resolved).apply()
+        }
+        return resolved
+    }
+
+    /** 桌面组件整卡不透明度（1 = 不透明）。越界值一律夹回合法区间，避免坏值写进偏好后组件隐形。 */
     val widgetOpacity: Flow<Float> = prefsFlow.map {
         (it[WIDGET_OPACITY] ?: DEFAULT_WIDGET_OPACITY).coerceIn(MIN_WIDGET_OPACITY, 1f)
     }
@@ -230,6 +281,8 @@ class PreferencesManager @Inject constructor(
     private fun widgetOpacityKey(appWidgetId: Int) = floatPreferencesKey("widget_opacity_$appWidgetId")
 
     private fun widgetAccentThemeKey(appWidgetId: Int) = stringPreferencesKey("widget_accent_theme_$appWidgetId")
+
+    private fun widgetBackgroundKey(appWidgetId: Int) = stringPreferencesKey("widget_bg_color_$appWidgetId")
 
     /**
      * 某个组件实例的强调色覆盖：null = 跟随应用主题包；非 null = 强制用指定主题包的主色
@@ -252,7 +305,7 @@ class PreferencesManager @Inject constructor(
     }
 
     /**
-     * 某个组件实例的**实际**透明度：有按实例的覆盖就用它，没有就跟随全局默认。
+     * 某个组件实例的**实际**不透明度：有按实例的覆盖就用它，没有就跟随全局默认。
      * 「全局默认 + 单组件覆盖」是刻意的模型——多数人只想调一次，少数人想给某个组件特殊处理。
      */
     fun widgetOpacityFor(appWidgetId: Int): Flow<Float> = prefsFlow.map { prefs ->
@@ -274,6 +327,40 @@ class PreferencesManager @Inject constructor(
             } else {
                 prefs[key] = opacity.coerceIn(MIN_WIDGET_OPACITY, 1f)
             }
+        }
+    }
+
+    /**
+     * 某个组件实例的**背景色**（hex，如 "#RRGGBB"）；null = 默认卡片底色。
+     * 刻意与 app 的全局壁纸（WALLPAPER_*）脱钩：小组件的背景是逐实例的个性化项，
+     * 编辑入口在添加面板与配置页，不随 app 壁纸联动。
+     */
+    fun widgetBackgroundFor(appWidgetId: Int): Flow<String?> =
+        prefsFlow.map { prefs -> prefs[widgetBackgroundKey(appWidgetId)] }
+
+    /** colorHex 传 null = 回到默认卡片底色（直接删键，不留脏值）。 */
+    suspend fun setWidgetBackgroundFor(appWidgetId: Int, colorHex: String?) {
+        context.dataStore.edit { prefs ->
+            val key = widgetBackgroundKey(appWidgetId)
+            if (colorHex == null) prefs.remove(key) else prefs[key] = colorHex
+        }
+    }
+
+    // ── 图片背景的模糊度（逐实例；只对 img: 背景生效，0 = 不模糊） ──
+
+    private fun widgetBlurKey(appWidgetId: Int) =
+        floatPreferencesKey("widget_blur_$appWidgetId")
+
+    /** 该实例图片背景的模糊度 0..1；null/0 = 不模糊。 */
+    fun widgetBlurFor(appWidgetId: Int): Flow<Float> = prefsFlow.map { prefs ->
+        (prefs[widgetBlurKey(appWidgetId)] ?: 0f).coerceIn(0f, 1f)
+    }
+
+    /** blur 传 null 或 0 = 不模糊（直接删键，不留脏值）。 */
+    suspend fun setWidgetBlurFor(appWidgetId: Int, blur: Float?) {
+        context.dataStore.edit { prefs ->
+            val key = widgetBlurKey(appWidgetId)
+            if (blur == null || blur <= 0f) prefs.remove(key) else prefs[key] = blur.coerceIn(0f, 1f)
         }
     }
 
@@ -342,6 +429,11 @@ class PreferencesManager @Inject constructor(
     val language: Flow<String> = prefsFlow.map { it[LANGUAGE] ?: "SYSTEM" }
 
     suspend fun setLanguage(lang: String) { context.dataStore.edit { it[LANGUAGE] = lang } }
+
+    /** 仅在启动迁移时置 true（见 LanguageHelper.syncStoredLanguageFromSystem），此后不再读取。 */
+    val languageMigrated: Flow<Boolean> = prefsFlow.map { it[LANGUAGE_MIGRATED] ?: false }
+
+    suspend fun setLanguageMigrated() { context.dataStore.edit { it[LANGUAGE_MIGRATED] = true } }
 
     val dashboardCardConfigs: Flow<List<DashboardCardConfig>> = prefsFlow.map { prefs ->
         val json = prefs[DASHBOARD_CARD_CONFIGS]
@@ -522,10 +614,6 @@ class PreferencesManager @Inject constructor(
     val biometricEnabled: Flow<Boolean> = prefsFlow.map { it[BIOMETRIC_ENABLED] ?: false }
 
     suspend fun setBiometricEnabled(enabled: Boolean) { context.dataStore.edit { it[BIOMETRIC_ENABLED] = enabled } }
-
-    val privacyAgreed: Flow<Boolean> = prefsFlow.map { it[PRIVACY_AGREED] ?: false }
-
-    suspend fun setPrivacyAgreed(agreed: Boolean) { context.dataStore.edit { it[PRIVACY_AGREED] = agreed } }
 
     val onboardingCompleted: Flow<Boolean> = prefsFlow.map { it[ONBOARDING_COMPLETED] ?: false }
 

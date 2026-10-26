@@ -22,7 +22,6 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.Animatable
-import kotlinx.coroutines.delay
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
@@ -185,6 +184,14 @@ fun DashboardScreen(
         rawConfigs.filter(filterVisible)
     }
 
+    // 数据没到齐之前只渲染骨架，进入主结构前直接返回 —— 用户 2026-10-18 定：
+    // 「宁可先等，也不要页面已经在、卡片再一张张往外蹦」。冷启动时 SQLCipher 开库
+    // （实测 700~750ms）加上首批查询，用户看到的是同一个加载态；数据到齐后整页一次性出现。
+    if (!state.loaded) {
+        DashboardLoadingSkeleton()
+        return
+    }
+
     val scrollState = rememberScrollState()
     val boxGlobalY = remember { mutableFloatStateOf(0f) }
     val cardGlobalYs = remember { mutableStateMapOf<CardType, Float>() }
@@ -310,13 +317,14 @@ fun DashboardScreen(
                         .padding(horizontal = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    configs.forEachIndexed { index, config ->
+                    configs.forEach { config ->
                         key(config.type) {
                             val isDragged = draggedType == config.type
-                            val cardShape = MaterialTheme.shapes.large
                             val animProgress = remember { Animatable(0f) }
+                            // 数据到齐后**整页一次性**淡入，不做 index 错峰：用户 2026-10-18 定
+                            // 「宁可先等，也不要页面上已经在、卡片再一张张往外蹦」。
+                            // 300ms 淡入保留（节奏与原版一致），只是不再排队。
                             LaunchedEffect(Unit) {
-                                delay(index * 60L)
                                 animProgress.animateTo(1f, animationSpec = tween(300))
                             }
 
@@ -485,5 +493,41 @@ internal fun getWeekDay(context: android.content.Context): String {
         java.util.Calendar.FRIDAY -> context.getString(R.string.weekday_friday)
         java.util.Calendar.SATURDAY -> context.getString(R.string.weekday_saturday)
         else -> context.getString(R.string.weekday_sunday)
+    }
+}
+
+/**
+ * 首页加载骨架：数据未到齐时占满整屏，只画卡面轮廓，不画内容、不做 shimmer
+ * （与项目克制的视觉一致，也不额外引依赖）。
+ *
+ * 存在的理由（用户 2026-10-18 定）：冷启动时 SQLCipher 开库 + 首批查询期间，
+ * 与其让用户看到「页面已经在、物品分布卡几秒后才蹦出来」，不如用一个稳定的
+ * 加载态盖住，数据到齐后整页一次性出现。
+ *
+ * 三块高度对齐常见卡片量级，避免数据到达瞬间整页大幅跳动。
+ */
+@Composable
+private fun DashboardLoadingSkeleton() {
+    Column(modifier = Modifier.fillMaxSize()) {
+        // 顶栏占位（M3 TopAppBar 默认高度 64dp）：数据到达、真实顶栏出现时，
+        // 下面的卡片不会整体上跳一截。
+        Spacer(modifier = Modifier.height(64.dp))
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            listOf(148.dp, 124.dp, 104.dp).forEach { height ->
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(height),
+                    shape = MaterialTheme.shapes.large,
+                    color = MaterialTheme.colorScheme.surface,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                ) {}
+            }
+        }
     }
 }

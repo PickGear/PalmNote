@@ -41,6 +41,32 @@ class DbKeyStore @Inject constructor(@ApplicationContext context: Context) {
         return key
     }
 
+    /**
+     * SQLCipher 的**raw key 形态**：`x'<64 位十六进制>'`。
+     *
+     * 为什么必须用它：直接把 32 字节随机密钥当**口令**传进去，SQLCipher 每次开库都会跑
+     * 256000 轮 PBKDF2（真机实测 700~750ms）。而 raw key 形态下 SQLCipher 直接把这 32 字节
+     * 当密钥用、完全跳过 KDF —— 官方文档明确支持，且官方明确「密钥本身已是高熵随机值时
+     * 才适合跳过派生」，我们的密钥正是 SecureRandom 生成的 32 字节。
+     *
+     * @param raw [getOrCreateKey] 返回的原始 32 字节
+     */
+    fun rawKeyPassphrase(raw: ByteArray): ByteArray {
+        require(raw.size == KEY_SIZE) { "db key 必须为 $KEY_SIZE 字节" }
+        // Locale.ROOT：避免某些地区设置影响格式化（十六进制本身不该被本地化）
+        val hex = raw.joinToString("") { String.format(java.util.Locale.ROOT, "%02x", it.toInt() and 0xFF) }
+        return "x'$hex'".toByteArray(Charsets.UTF_8)
+    }
+
+    /** 该库是否已完成「口令形态 → raw key 形态」的重加密迁移。按库名分别记（主库 / 密码本库）。 */
+    fun isRawKeyMigrated(dbName: String): Boolean = prefs.getBoolean(rawMarkerKey(dbName), false)
+
+    fun markRawKeyMigrated(dbName: String) {
+        prefs.edit().putBoolean(rawMarkerKey(dbName), true).apply()
+    }
+
+    private fun rawMarkerKey(dbName: String) = KEY_RAW_MIGRATED_PREFIX + dbName
+
     /** 当前设备的 Keystore 密钥能否解开给定包裹（备份恢复前校验）。
      *  备份中的 db_key 由原设备 Keystore 包裹，跨设备/重装后无法解开 → 恢复不可行。 */
     fun canDecryptWrappedKey(wrappedB64: String): Boolean {
@@ -111,6 +137,10 @@ class DbKeyStore @Inject constructor(@ApplicationContext context: Context) {
         const val PREFS_NAME = "db_key_prefs"
         const val KEY_NAME = "db_key"
         const val KEY_SIZE = 32
+
+        /** 「该库已迁移到 raw key 形态」标记的前缀，实际 key 带库名后缀（主库与密码本库各一套）。 */
+        private const val KEY_RAW_MIGRATED_PREFIX = "db_raw_key_migrated_"
+
         private const val ALIAS = "palmnote_db_key"
     }
 }
