@@ -1,7 +1,9 @@
 name: Release
 
-# 触发：推送语义化版本 tag（v1.2.3 / v1.2.3-rc.1 等），或手动运行。
+# 触发：推送语义化版本 tag（v1.2.3 正式版；v1.2.3-beta1 这类预发布只会跑质量门与构建冒烟、不发布），
+# 或手动运行（workflow_dispatch 只构建 + 留档，不建 Release、不动资产）。
 # 流程：quality 检查 → assembleRelease（含 lintVital 门禁）→ 发布到 GitHub Release（APK + mapping.txt）。
+# 发布渠道（2026-10-23 定）：GitHub 只发**正式版**；beta 只发内测群，不进 GitHub Release。
 # 参考 docs/release-checklist.md。
 
 on:
@@ -101,7 +103,11 @@ jobs:
       # 否则会把已发布的签名包覆盖成未签名包，而 SHA256SUMS 是就地重算的、校验依然自洽，
       # 不专门验签根本发现不了。
       - name: Publish to GitHub Release
-        if: steps.signing.outputs.signed == 'true'
+        # 仅 tag 触发的**正式版**才建 Release / 动资产：
+        # - beta 不进 GitHub Release（2026-10-23 定：GitHub 只发正式版，beta 只发内测群）：
+        #   tag 名带 `-` 即视为预发布（如 v1.4.2-beta1），只跑质量门与构建冒烟；
+        # - workflow_dispatch 手动运行（ref 为分支）只构建 + 留档，不建 Release、不动任何资产。
+        if: steps.signing.outputs.signed == 'true' && startsWith(github.ref, 'refs/tags/') && !contains(github.ref_name, '-')
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}

@@ -117,7 +117,8 @@ class NoticeConsistencyTest {
         val SHIPPED_VERSION_KEYS = listOf(
             "kotlin", "room", "navigation", "compose-bom", "coil", "datastore",
             "sqlcipher", "work", "core-ktx", "activity-compose", "lifecycle",
-            "coroutines", "onnxruntime", "opencv", "lunar", "kotlinx-serialization-json",
+            "coroutines", "lunar", "kotlinx-serialization-json",
+            "core-splashscreen", "profileinstaller",
             "junit", "androidx-junit", "espresso", "mockk", "turbine", "robolectric",
             "hilt", "hilt-navigation-compose"
         )

@@ -5,6 +5,12 @@
 > **用法：** 打包前先做「清理 & 环境」，再按 1-9 顺序核对；其中第 8 项（真机回归）必须在 release 包上完成，不能用 debug 包替代。
 >
 > **校验产物：** 构建后 APK 必须是完整 ZIP（含 `META-INF` 与 `AndroidManifest.xml`）、已用正式证书签名（非 debug 签名）、`mapping.txt` 已生成。
+>
+> **发布渠道（2026-10-23 定）：**
+> - **正式版** → GitHub Release（本清单全量执行）+ 内测群同步。tag 形如 `v1.4.2`。
+> - **beta 版** → **不发 GitHub Release，只发内测群**。`versionName` 带后缀（`1.4.2-beta1`），tag 同形（`v1.4.2-beta1`）。
+>   `release.yml` 已加拦截：**tag 名含 `-` 视为预发布**，只跑质量门与构建冒烟，不建 Release、不上传资产。
+> - ⚠️ beta **不要**手跑 `tools/release-local.sh`——它「Release 不存在就创建」，会绕开 CI 拦截把 beta 发上 GitHub。
 
 ---
 

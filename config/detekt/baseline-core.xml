@@ -59,6 +59,7 @@
     <ID>MaxLineLength:IconPicker.kt$creativeLabel to listOf(AppIcon.Palette, AppIcon.MusicNote, AppIcon.Movie, AppIcon.Mic, AppIcon.CameraAlt, AppIcon.VideogameAsset, AppIcon.Brush, AppIcon.Headphones, AppIcon.Tv)</ID>
     <ID>MaxLineLength:IconPicker.kt$financeLabel to listOf(AppIcon.Savings, AppIcon.TrendingUp, AppIcon.AccountBalance, AppIcon.CreditCard, AppIcon.Percent, AppIcon.HealthAndSafety)</ID>
     <ID>MaxLineLength:IconPicker.kt$goalsLabel to listOf(AppIcon.CheckCircle, AppIcon.LocalFireDepartment, AppIcon.Repeat, AppIcon.CalendarMonth, AppIcon.Today, AppIcon.Assignment, AppIcon.EmojiEvents, AppIcon.Celebration)</ID>
+    <ID>LargeClass:LifeItemDao.kt$LifeItemDao</ID>
     <ID>MaxLineLength:IconPicker.kt$healthLabel to listOf(AppIcon.WaterDrop, AppIcon.Medication, AppIcon.WbSunny, AppIcon.SmokingRooms, AppIcon.Bedtime, AppIcon.Eco)</ID>
     <ID>MaxLineLength:IconPicker.kt$lifeLabel to listOf(AppIcon.Home, AppIcon.Restaurant, AppIcon.Coffee, AppIcon.CleaningServices, AppIcon.ShoppingCart, AppIcon.Pets, AppIcon.ContentCut, AppIcon.ChildCare, AppIcon.Chair, AppIcon.Kitchen, AppIcon.Checkroom, AppIcon.Face, AppIcon.Cookie, AppIcon.LocalCafe)</ID>
     <ID>MaxLineLength:IconPicker.kt$moodLabel to listOf(AppIcon.SentimentVerySatisfied, AppIcon.SentimentSatisfied, AppIcon.SentimentNeutral, AppIcon.SentimentDissatisfied, AppIcon.SentimentVeryDissatisfied, AppIcon.Mood, AppIcon.Favorite)</ID>
@@ -104,7 +105,7 @@
     <ID>NestedBlockDepth:Migration5To6.kt$Migration5To6$private fun preserveLegacyVault(db: SupportSQLiteDatabase)</ID>
     <ID>NestedBlockDepth:Migration8To9.kt$&lt;no name provided&gt;$override fun migrate(db: SupportSQLiteDatabase)</ID>
     <ID>ReturnCount:FieldContract.kt$DerivedEvaluator$private fun evalArithmetic(expr: String): Double?</ID>
-    <ID>ThrowsCount:EncryptedOpenHelperFactory.kt$EncryptedOpenHelperFactory.Companion$@Synchronized fun migrateIfPlaintext(context: Context, dbName: String, key: ByteArray)</ID>
+    <ID>ThrowsCount:EncryptedOpenHelperFactory.kt$EncryptedOpenHelperFactory.Companion$@Synchronized fun migrateIfPlaintext(context: Context, dbName: String, key: ByteArray): Boolean</ID>
     <ID>TooManyFunctions:BillDao.kt$BillDao</ID>
     <ID>TooManyFunctions:DateUtils.kt$DateUtils</ID>
     <ID>TooManyFunctions:PreferencesManager.kt$PreferencesManager</ID>

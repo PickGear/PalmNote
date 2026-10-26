@@ -39,6 +39,8 @@ internal val THIRD_PARTY_LIBRARIES = listOf(
     "AndroidX Paging Compose · 3.3.4 · Apache License 2.0",
     "AndroidX DocumentFile · 1.1.0 · Apache License 2.0",
     "AndroidX Biometric · 1.1.0 · Apache License 2.0",
+    "AndroidX Core SplashScreen · 1.0.1 · Apache License 2.0",
+    "AndroidX ProfileInstaller · 1.4.1 · Apache License 2.0",
     "AndroidX Material3 Window Size Class · Compose BOM 2025.06.01 · Apache License 2.0",
     "Jetpack Compose (BOM) · 2025.06.01 · Apache License 2.0",
     "Dagger Hilt · 2.58 · Apache License 2.0",
@@ -47,8 +49,6 @@ internal val THIRD_PARTY_LIBRARIES = listOf(
     "Kotlinx Serialization JSON · 1.8.1 · Apache License 2.0",
     "Coil · 3.3.0 · Apache License 2.0",
     "SQLCipher (Zetetic) · 4.17.0 · BSD 3-Clause",
-    "ONNX Runtime (Microsoft) · 1.29.0 · MIT",
-    "OpenCV · 4.14.0 · Apache License 2.0",
     "Lunar (6tail) · 1.7.7 · MIT"
 )
 

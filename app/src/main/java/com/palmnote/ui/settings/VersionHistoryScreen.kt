@@ -70,8 +70,14 @@ private data class VersionEntry(val version: String, val date: String, val secti
     val itemCount: Int get() = sections.sumOf { it.items.size }
 }
 
-/** 版本头行：如「1.4.0 (2026-09-17)」。 */
-private val VERSION_HEADER = Regex("""^(\d+(?:\.\d+){1,2}) \((\d{4}-\d{2}-\d{2})\)\s*$""")
+/**
+ * 版本头行：如「1.4.0 (2026-09-17)」。
+ *
+ * 版本号允许带预发布后缀（「1.4.2-beta1 (2026-10-23)」）：后缀会被原样保留在
+ * [VersionEntry.version] 里，好让「当前运行版本」的高亮仍能与 `BuildConfig.VERSION_NAME`
+ * 精确相等（开发期 versionName 就是带 beta 的）。历史版本无后缀，不受影响。
+ */
+private val VERSION_HEADER = Regex("""^(\d+(?:\.\d+){1,2}(?:-[\w.]+)?) \((\d{4}-\d{2}-\d{2})\)\s*$""")
 
 /** 语义色取中段亮度，深浅主题下都可读；**领域分组按多巴胺色轮转**（新增分区自动有色，不再一律灰）。 */
 private val SECTION_TINT_ADDED = Color(0xFF639922)

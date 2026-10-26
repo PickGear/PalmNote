@@ -11,43 +11,7 @@ Each component retains its own copyright and license terms.
 All components run fully on-device; PalmNote performs no network access.
 
 
-1. PaddleOCR (PP-OCRv6 SDK and models)
----------------------------------------
-  Component : com.paddle.ocr SDK (ppocr-sdk, vendored source)
-              + PP-OCRv6_tiny detection / recognition ONNX models
-  Source    : https://github.com/PaddlePaddle/PaddleOCR (deploy/ppocr-android)
-  Copyright : (c) 2026 PaddlePaddle Authors. All Rights Reserved.
-  License   : Apache License 2.0
-
-  The SDK is used for offline Chinese text recognition (bill image import),
-  running fully on-device via ONNX Runtime. No network access is performed.
-
-  Model files are redistributed under the terms of the Apache License 2.0:
-    - models/det/inference.onnx        (PP-OCRv6_tiny text detection)
-    - models/det/inference.yml
-    - models/rec/inference.onnx        (PP-OCRv6_tiny text recognition)
-    - models/rec/inference.yml
-
-
-2. ONNX Runtime
-----------------
-  Component : com.microsoft.onnxruntime:onnxruntime-android
-  Version   : 1.29.0
-  Copyright : (c) Microsoft Corporation
-  License   : MIT License
-  URL       : https://onnxruntime.ai
-
-
-3. OpenCV
-----------
-  Component : org.opencv:opencv (OpenCV 4.14.0 Android build)
-  Version   : 4.14.0
-  Copyright : (c) OpenCV team (Intel Corporation, Willow Garage, Itseez, etc.)
-  License   : Apache License 2.0
-  URL       : https://opencv.org
-
-
-4. Lunar (Solar / Chinese Lunar Calendar)
+1. Lunar (Solar / Chinese Lunar Calendar)
 -----------------------------------------
   Component : cn.6tail:lunar
   Version   : 1.7.7
@@ -56,7 +20,7 @@ All components run fully on-device; PalmNote performs no network access.
   URL       : https://github.com/6tail/lunar-java
 
 
-5. SQLCipher Android
+2. SQLCipher Android
 ----------------------
   Component : net.zetetic:sqlcipher-android
   Version   : 4.17.0
@@ -68,7 +32,7 @@ All components run fully on-device; PalmNote performs no network access.
   Runs fully on-device; no network access is performed.
 
 
-6. AndroidX Libraries
+3. AndroidX Libraries
 ----------------------
   Component : androidx.core:core-ktx 1.15.0, androidx.appcompat:appcompat 1.8.0,
               androidx.activity:activity-compose 1.9.3,
@@ -78,6 +42,8 @@ All components run fully on-device; PalmNote performs no network access.
               androidx.work:work-runtime-ktx 2.10.0,
               androidx.paging:paging-runtime-ktx 3.3.4, androidx.paging:paging-compose 3.3.4,
               androidx.documentfile:documentfile 1.1.0, androidx.biometric:biometric 1.1.0,
+              androidx.core:core-splashscreen 1.0.1,
+              androidx.profileinstaller:profileinstaller 1.4.1,
               androidx.compose.material3:material3-window-size-class,
               androidx.sqlite, androidx.test (test only)
   Copyright : (c) The Android Open Source Project
@@ -85,7 +51,7 @@ All components run fully on-device; PalmNote performs no network access.
   URL       : https://developer.android.com/jetpack
 
 
-7. Jetpack Compose / Material 3
+4. Jetpack Compose / Material 3
 --------------------------------
   Component : androidx.compose.* (ui, foundation, material3,
               material-icons-extended, animation, runtime;
@@ -95,7 +61,7 @@ All components run fully on-device; PalmNote performs no network access.
   URL       : https://developer.android.com/jetpack/compose
 
 
-8. Kotlin / Kotlin Coroutines / Serialization
+5. Kotlin / Kotlin Coroutines / Serialization
 -----------------------------------------------
   Component : org.jetbrains.kotlin (2.2.21),
               org.jetbrains.kotlinx:kotlinx-coroutines (1.10.2),
@@ -105,7 +71,7 @@ All components run fully on-device; PalmNote performs no network access.
   URL       : https://kotlinlang.org
 
 
-9. Hilt (Dagger)
+6. Hilt (Dagger)
 -----------------
   Component : com.google.dagger:hilt-android 2.58,
               androidx.hilt:hilt-navigation-compose 1.2.0
@@ -114,7 +80,7 @@ All components run fully on-device; PalmNote performs no network access.
   URL       : https://dagger.dev
 
 
-10. Coil
+7. Coil
 ---------
   Component : io.coil-kt.coil3:coil-compose
   Version   : 3.3.0
@@ -123,7 +89,7 @@ All components run fully on-device; PalmNote performs no network access.
   URL       : https://coil-kt.github.io/coil
 
 
-11. Test-Only Dependencies
+8. Test-Only Dependencies
 ---------------------------
   These are used by the test suite only and are not shipped in the release APK.
 
