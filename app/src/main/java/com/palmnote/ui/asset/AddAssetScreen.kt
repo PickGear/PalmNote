@@ -439,7 +439,8 @@ fun AddAssetScreen(
                                         Surface(
                                             shape = MaterialTheme.shapes.medium,
                                             color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                                            tonalElevation = 2.dp,
+                                            // 不挂 tonalElevation：色调高程会把面色蒙一层主色调灰纱
+                                            // （弹层发灰的根因），深度交给投影
                                             shadowElevation = 4.dp,
                                             modifier = Modifier.width(with(density) { costModeBoxWidth.toDp() })
                                         ) {
@@ -868,7 +869,7 @@ private fun ShelfLifeUnitPopup(
         Surface(
             shape = MaterialTheme.shapes.medium,
             color = MaterialTheme.colorScheme.surfaceContainerHigh,
-            tonalElevation = 2.dp,
+            // 同成本计算弹层：不挂 tonalElevation，深度交给投影
             shadowElevation = 4.dp,
             modifier = Modifier.width(with(density) { boxWidth.toDp() })
         ) {

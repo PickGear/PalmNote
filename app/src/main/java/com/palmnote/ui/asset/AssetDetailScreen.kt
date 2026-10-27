@@ -33,6 +33,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -571,7 +572,19 @@ fun AssetDetailScreen(
                     }
                 }
                 if (detailState.usageRecords.isEmpty()) {
-                    item { EmptyState(icon = Icons.Outlined.History, title = stringResource(R.string.asset_no_usage_records), subtitle = stringResource(R.string.asset_click_to_record_usage)) }
+                    // 分区级空态用一行紧凑提示：整页级 EmptyState（大图标+大留白）在详情页分区里过重
+                    item {
+                        Text(
+                            text = stringResource(R.string.asset_no_usage_records) + " · " +
+                                stringResource(R.string.asset_click_to_record_usage),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 12.dp)
+                        )
+                    }
                 } else {
                     val visibleRecords = if (showAllRecords) detailState.usageRecords else detailState.usageRecords.take(3)
                     items(visibleRecords, key = { it.id }) { record ->
