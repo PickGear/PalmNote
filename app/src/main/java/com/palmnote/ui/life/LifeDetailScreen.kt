@@ -146,9 +146,11 @@ fun LifeDetailScreen(
                 onFocusPause = viewModel::pauseFocusTimer
             )
         }
-
-        milestone?.let { streak -> MilestoneCelebration(streak = streak) }
     }
+
+    // 庆祝卡是浮层（fillMaxSize 居中）：此前排在 fillMaxSize().verticalScroll() 的
+    // DetailBody 之后、分到 0 剩余高度被推出屏幕，用户基本只能看到震动。挪进外层 Box。
+    milestone?.let { streak -> MilestoneCelebration(streak = streak) }
     }
 
     // 分享图卡：弹层里那张卡片就是截图对象（所见即所分享）

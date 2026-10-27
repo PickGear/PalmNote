@@ -55,7 +55,11 @@ internal fun LifeShareSheet(ui: DetailUi, onDismiss: () -> Unit) {
     val scope = rememberCoroutineScope()
     val layer = rememberGraphicsLayer()
 
-    ModalBottomSheet(onDismissRequest = onDismiss) {
+    // 容器色显式覆盖：默认吃 M3 surfaceContainerLow，壁纸模式下与全 app 弹层语言不齐
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = MaterialTheme.colorScheme.surface
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()

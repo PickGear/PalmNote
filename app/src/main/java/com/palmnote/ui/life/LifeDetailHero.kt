@@ -4,6 +4,7 @@
 
 package com.palmnote.ui.life
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -1270,7 +1271,7 @@ private fun HeroTimer(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Box(contentAlignment = Alignment.Center) {
-            LifeRing(fraction = fraction, color = ctx.accent, size = 84.dp, strokeWidth = 6.dp)
+            LifeRing(fraction = fraction, color = ctx.accent, size = 84.dp, strokeWidth = 6.dp, animate = false)
             Text(
                 formatElapsed(elapsedMs),
                 style = MaterialTheme.typography.headlineSmall,
@@ -1386,14 +1387,20 @@ private fun PlainHero(ctx: DetailCtx) {
 /** 勾选圆（§14.12(3) todo：r7.5；已勾 = 实心 + 对勾）。 */
 @Composable
 private fun CheckDot(done: Boolean, onClick: () -> Unit) {
+    // 填充/描边色过渡：与首页勾选行的过渡语言一致
+    val fill by animateColorAsState(if (done) Success else Color.Transparent, label = "checkDotFill")
+    val stroke by animateColorAsState(
+        if (done) Success else MaterialTheme.colorScheme.outline,
+        label = "checkDotStroke"
+    )
     Box(
         modifier = Modifier
             // 视觉 15dp、触达扩到 48dp（TalkBack/手指都不再点空；审计 #27）
             .minimumInteractiveComponentSize()
             .size(15.dp)
             .clip(CircleShape)
-            .background(if (done) Success else Color.Transparent)
-            .border(1.5.dp, if (done) Success else MaterialTheme.colorScheme.outline, CircleShape)
+            .background(fill)
+            .border(1.5.dp, stroke, CircleShape)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {

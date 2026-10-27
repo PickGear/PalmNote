@@ -465,7 +465,9 @@ private fun CategoryTemplateSection(
     // 排序已把完成沉底（sortForFirstDisplay）；这里只负责把完成态折叠或灰化
     val (active, completed) = items.partition { !it.status.equals("COMPLETED", ignoreCase = true) }
     active.forEach { item ->
-        CategoryItemRow(tpl, item, lifeItemMeta(tpl, item, today), accent, { onItemClick(item.id) }) {
+        // 行内元信息含多份 JSON 解析，按 (模板, 条目, 今天) 记忆化，勾选/折叠重组不再重算
+        val meta = remember(tpl, item, today) { lifeItemMeta(tpl, item, today) }
+        CategoryItemRow(tpl, item, meta, accent, { onItemClick(item.id) }) {
             onLongPressItem(tpl, item)
         }
         Spacer(Modifier.height(8.dp))
@@ -476,7 +478,8 @@ private fun CategoryTemplateSection(
             CompletedToggleRow(count = completed.size, expanded = completedExpanded, onToggle = onToggleCompleted)
             if (completedExpanded) {
                 completed.forEach { item ->
-                    CategoryItemRow(tpl, item, lifeItemMeta(tpl, item, today), accent, { onItemClick(item.id) }) {
+                    val meta = remember(tpl, item, today) { lifeItemMeta(tpl, item, today) }
+                    CategoryItemRow(tpl, item, meta, accent, { onItemClick(item.id) }) {
                         onLongPressItem(tpl, item)
                     }
                     Spacer(Modifier.height(8.dp))
@@ -484,7 +487,8 @@ private fun CategoryTemplateSection(
             }
         }
         else -> completed.forEach { item ->
-            CategoryItemRow(tpl, item, lifeItemMeta(tpl, item, today), accent, { onItemClick(item.id) }) {
+            val meta = remember(tpl, item, today) { lifeItemMeta(tpl, item, today) }
+            CategoryItemRow(tpl, item, meta, accent, { onItemClick(item.id) }) {
                 onLongPressItem(tpl, item)
             }
             Spacer(Modifier.height(8.dp))

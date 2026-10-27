@@ -3,6 +3,8 @@
 package com.palmnote.ui.life
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -1130,7 +1132,8 @@ private fun OverdueSection(
                 modifier = Modifier
                     .clip(RoundedCornerShape(8.dp))
                     .clickable(role = Role.Button) { onRescheduleAll(items.map { it.itemId }) }
-                    .padding(horizontal = 4.dp, vertical = 2.dp)
+                    // 触达从约 20dp 提到 32dp：批量操作按钮点空一次就要逐条补
+                    .padding(horizontal = 10.dp, vertical = 8.dp)
             )
         }
     }
@@ -1582,9 +1585,10 @@ private fun SwipeTaskContent(
             .padding(end = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        // 勾选区加宽到 40dp（触达 30dp 太窄，是全 app 最高频的操作点之一）
         Box(
             modifier = Modifier
-                .width(30.dp)
+                .width(40.dp)
                 .fillMaxHeight()
                 .clickable(
                     role = Role.Checkbox,
@@ -1592,33 +1596,49 @@ private fun SwipeTaskContent(
                 ),
             contentAlignment = Alignment.Center
         ) {
-            Icon(
-                if (completed) Icons.Filled.CheckCircle else Icons.Filled.RadioButtonUnchecked,
-                stringResource(R.string.life_item_toggle_complete),
-                tint = if (completed) ModuleLife else MaterialTheme.colorScheme.outline,
-                modifier = Modifier.size(15.dp)
-            )
+            SwipeCheckIcon(completed)
         }
         Spacer(modifier = Modifier.width(6.dp))
         if (category != null) {
             CategoryChip(category)
             Spacer(modifier = Modifier.width(8.dp))
         }
+        val titleColor by animateColorAsState(
+            targetValue = if (completed) {
+                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f)
+            } else {
+                MaterialTheme.colorScheme.onSurface
+            },
+            label = "taskTitle"
+        )
         Text(
             title,
             fontSize = TypeScale.bodyRead,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
-            color = if (completed) {
-                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f)
-            } else {
-                MaterialTheme.colorScheme.onSurface
-            },
+            color = titleColor,
             // 「已完成」的视觉语言与搜索结果卡（LifeRecordCard）统一：灰 + 删除线
             textDecoration = if (completed) TextDecoration.LineThrough else null
         )
         trailing?.invoke()
+    }
+}
+
+/** 勾选行行首图标：色过渡 + 交叉淡变，最高频操作的完成反馈不硬切。 */
+@Composable
+private fun SwipeCheckIcon(completed: Boolean) {
+    val tint by animateColorAsState(
+        targetValue = if (completed) ModuleLife else MaterialTheme.colorScheme.outline,
+        label = "checkTint"
+    )
+    Crossfade(targetState = completed, label = "checkIcon") { done ->
+        Icon(
+            if (done) Icons.Filled.CheckCircle else Icons.Filled.RadioButtonUnchecked,
+            stringResource(R.string.life_item_toggle_complete),
+            tint = tint,
+            modifier = Modifier.size(15.dp)
+        )
     }
 }
 
@@ -1860,10 +1880,11 @@ private fun UnscheduledRowTrailing(templateName: String, onSchedule: () -> Unit)
             maxLines = 1
         )
         Spacer(modifier = Modifier.width(6.dp))
+        // 触达从 24dp 提到 32dp：紧贴模板名的小图标按钮，误触重灾区
         Box(
             modifier = Modifier
-                .size(24.dp)
-                .clip(RoundedCornerShape(7.dp))
+                .size(32.dp)
+                .clip(RoundedCornerShape(8.dp))
                 .background(lerp(ModuleLife, MaterialTheme.colorScheme.surface, 0.88f))
                 .clickable(role = Role.Button, onClick = onSchedule),
             contentAlignment = Alignment.Center
@@ -1872,7 +1893,7 @@ private fun UnscheduledRowTrailing(templateName: String, onSchedule: () -> Unit)
                 Icons.Outlined.Event,
                 stringResource(R.string.life_unsched_schedule),
                 tint = ModuleLife,
-                modifier = Modifier.size(14.dp)
+                modifier = Modifier.size(16.dp)
             )
         }
     }

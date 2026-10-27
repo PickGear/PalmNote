@@ -210,15 +210,21 @@ fun LifeRing(
     strokeWidth: Dp,
     modifier: Modifier = Modifier,
     form: ProgressForm = ProgressForm.THICK_RING,
-    segments: Int = 0
+    segments: Int = 0,
+    /** 计时环这类高频更新场景传 false：700ms 补间被 200ms 心跳反复重启，环永远蠕动着追不上读数 */
+    animate: Boolean = true
 ) {
     // 入场动画 + 同色系微渐变弧（提亮 ≤25%，仍在身份色族内；轨道两色纪律不变）
-    val animated by animateFloatAsState(
-        targetValue = fraction.coerceIn(0f, 1f),
-        animationSpec = tween(700, easing = FastOutSlowInEasing),
-        label = "ringFill"
-    )
-    val f = animated
+    val f = if (animate) {
+        val animated by animateFloatAsState(
+            targetValue = fraction.coerceIn(0f, 1f),
+            animationSpec = tween(700, easing = FastOutSlowInEasing),
+            label = "ringFill"
+        )
+        animated
+    } else {
+        fraction.coerceIn(0f, 1f)
+    }
     val arcBrush = Brush.sweepGradient(listOf(color, lerp(color, Color.White, 0.25f), color))
     val track = color.copy(alpha = 0.15f)
     Canvas(modifier = modifier.size(size)) {
