@@ -136,14 +136,8 @@ class DashboardViewModel @Inject constructor(
     private val _dashboardMessageMode = MutableStateFlow(preferencesManager.getDashboardMessageModeSync())
     val dashboardMessageMode: StateFlow<Boolean> = _dashboardMessageMode.asStateFlow()
 
-    val dashboardMessageLastDate: StateFlow<String> = preferencesManager.dashboardMessageLastDate
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
-
     val profileNickname: StateFlow<String> = preferencesManager.profileNickname
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
-
-    val profileAvatar: StateFlow<String> = preferencesManager.profileAvatar
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "Spa")
 
     val profileAvatarPath: StateFlow<String> = preferencesManager.profileAvatarPath
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
@@ -234,12 +228,6 @@ class DashboardViewModel @Inject constructor(
         viewModelScope.launch {
             val current = dashboardMessageMode.value
             preferencesManager.setDashboardMessageMode(!current)
-        }
-    }
-
-    fun setDashboardMessageLastDate(date: String) {
-        viewModelScope.launch {
-            preferencesManager.setDashboardMessageLastDate(date)
         }
     }
 

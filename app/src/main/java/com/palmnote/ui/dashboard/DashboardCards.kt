@@ -444,22 +444,27 @@ internal fun AssetDistributionCard(
             ) {
                 AssetDistributionChart(state.assetDistribution, Modifier.size(100.dp), distPresetOverrides, categoryConfigs)
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    val longItems = mutableListOf<Pair<CategoryCount, Int>>()
-                    val shortItems = mutableListOf<Pair<CategoryCount, Int>>()
-                    state.assetDistribution.forEachIndexed { index, item ->
-                        val name = getCategoryDisplayName(item.category, context, distPresetOverrides)
-                        if (name.length > 5) {
-                            longItems.add(item to index)
-                        } else {
-                            shortItems.add(item to index)
+                    // 长短分类分行是纯计算，包 remember 避免随整页任何字段变化全量重跑
+                    //（含逐项 getCategoryDisplayName 的 getString）
+                    val rows = remember(state.assetDistribution, distPresetOverrides) {
+                        val longItems = mutableListOf<Pair<CategoryCount, Int>>()
+                        val shortItems = mutableListOf<Pair<CategoryCount, Int>>()
+                        state.assetDistribution.forEachIndexed { index, item ->
+                            val name = getCategoryDisplayName(item.category, context, distPresetOverrides)
+                            if (name.length > 5) {
+                                longItems.add(item to index)
+                            } else {
+                                shortItems.add(item to index)
+                            }
                         }
+                        val rows = mutableListOf<Pair<List<Pair<CategoryCount, Int>>, Boolean>>()
+                        val paired = shortItems.chunked(2)
+                        val hasOdd = paired.lastOrNull()?.size == 1
+                        paired.dropLast(if (hasOdd) 1 else 0).forEach { rows.add(it to false) }
+                        longItems.forEach { rows.add(listOf(it) to true) }
+                        if (hasOdd) rows.add(paired.last() to false)
+                        rows
                     }
-                    val rows = mutableListOf<Pair<List<Pair<CategoryCount, Int>>, Boolean>>()
-                    val paired = shortItems.chunked(2)
-                    val hasOdd = paired.lastOrNull()?.size == 1
-                    paired.dropLast(if (hasOdd) 1 else 0).forEach { rows.add(it to false) }
-                    longItems.forEach { rows.add(listOf(it) to true) }
-                    if (hasOdd) rows.add(paired.last() to false)
                     rows.forEach { (rowItems, fullWidth) ->
                         Row(
                             Modifier.fillMaxWidth(),
@@ -534,7 +539,9 @@ private fun JumpCapsule(label: String, color: Color, onClick: () -> Unit, modifi
             .clip(MaterialTheme.shapes.small)
             .background(color.copy(alpha = 0.08f))
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onClick)
-            .padding(horizontal = 8.dp, vertical = 3.dp),
+            // 纵向触达从约 22dp 提到 32dp：6 处卡片的主导航入口，误触重灾区；
+            // 不上 48dp 是为了不让卡片头部被撑高
+            .padding(horizontal = 8.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(2.dp)
     ) {
@@ -740,7 +747,8 @@ private fun SubscriptionRow(sub: com.palmnote.domain.model.SubscriptionDueItem, 
 @Composable
 internal fun TodayCard(state: DashboardState, onNavigateToLife: () -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
-    val weekDay = remember { getWeekDay(context) }
+    // 不包 remember：跨午夜后靠数据变化触发的重组重算星期，跟 VM 的 dayTick 对齐
+    val weekDay = getWeekDay(context)
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,

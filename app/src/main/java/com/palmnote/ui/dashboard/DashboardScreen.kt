@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -36,6 +37,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -72,13 +74,13 @@ fun DashboardScreen(
     val categoryConfigs by viewModel.categoryConfigs.collectAsStateWithLifecycle()
     val demoModeOn by viewModel.demoModeOn.collectAsStateWithLifecycle()
     val profileNickname by viewModel.profileNickname.collectAsStateWithLifecycle()
-    val profileAvatar by viewModel.profileAvatar.collectAsStateWithLifecycle()
     val profileAvatarPath by viewModel.profileAvatarPath.collectAsStateWithLifecycle()
 
     val hapticFeedback = LocalHapticFeedback.current
     val itemHeights = remember { mutableStateMapOf<CardType, Int>() }
     val context = androidx.compose.ui.platform.LocalContext.current
-    val greeting = remember { getGreeting(context) }
+    // 不包 remember：问候语按时段切换，长驻会话跨过时点后要靠重组时重算跟上
+    val greeting = getGreeting(context)
 
     val dashboardMessages = remember {
         listOf(
@@ -183,7 +185,72 @@ fun DashboardScreen(
 
     val scrollState = rememberScrollState()
     val boxGlobalY = remember { mutableFloatStateOf(0f) }
+    val boxHeightPx = remember { mutableIntStateOf(0) }
     val cardGlobalYs = remember { mutableStateMapOf<CardType, Float>() }
+    val density = LocalDensity.current
+    // 拖拽中指针的窗口 y：边缘自动滚动用
+    var dragPointerWindowY by remember { mutableFloatStateOf(0f) }
+
+    // 回归的两档制：会话首次进首页 = 卡片错峰游行；之后每次切回 = 整页一拍
+    // 上浮就位（240ms 淡入 + 10dp 上浮，减速曲线）——纯淡入偏平淡，位移给一拍
+    // 「落定归位」的到达感；游行中途切走，回来也走整页拍。
+    val pageEntered = rememberSaveable { mutableStateOf(false) }
+    val pageProgress = remember { Animatable(if (pageEntered.value) 0f else 1f) }
+    LaunchedEffect(Unit) {
+        if (pageEntered.value) {
+            pageProgress.animateTo(1f, animationSpec = tween(240, easing = FastOutSlowInEasing))
+        }
+    }
+
+    // 交换判定：onDrag 与边缘自动滚动共用——指针停在边缘不动时内容仍在滚过，
+    // 同样要触发换位（此前判定只在 onDrag 里跑，自动滚动换了位也不认）
+    fun trySwap(draggedType: CardType) {
+        val freshConfigs = viewModel.visibleConfigs.value.filter(filterVisible)
+        val idx = freshConfigs.indexOfFirst { it.type == draggedType }
+        val now = System.currentTimeMillis()
+        if (idx < 0 || now - lastSwapTime <= 50) return
+        val belowType = freshConfigs.getOrNull(idx + 1)?.type
+        val aboveType = freshConfigs.getOrNull(idx - 1)?.type
+        val selfH = itemHeights[draggedType] ?: 0
+        val overlayCenter = overlayTopPx + selfH * 0.5f
+        val belowCenterY = belowType?.let { t ->
+            cardGlobalYs[t]?.let { it - boxGlobalY.floatValue + (itemHeights[t]?.toFloat() ?: 0f) * 0.5f }
+        }
+        val aboveCenterY = aboveType?.let { t ->
+            cardGlobalYs[t]?.let { it - boxGlobalY.floatValue + (itemHeights[t]?.toFloat() ?: 0f) * 0.5f }
+        }
+        if (belowCenterY != null && overlayCenter > belowCenterY) {
+            viewModel.moveCardDown(draggedType)
+            hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+            lastSwapTime = now
+        } else if (aboveCenterY != null && overlayCenter < aboveCenterY) {
+            viewModel.moveCardUp(draggedType)
+            hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+            lastSwapTime = now
+        }
+    }
+
+    // 边缘自动滚动：拖拽手势消费了全部位移，父容器无法自然滚动——指针贴近上/下
+    // 边缘时按贴近程度程序化滚动，排在屏外的卡片因此可达。滚一帧做一次交换判定。
+    LaunchedEffect(draggedType) {
+        val type = draggedType ?: return@LaunchedEffect
+        val edgeZone = with(density) { 96.dp.toPx() }
+        while (true) {
+            val top = boxGlobalY.floatValue
+            val bottom = top + boxHeightPx.intValue
+            val py = dragPointerWindowY
+            val d = when {
+                py in top..(top + edgeZone) -> -((py - top) / edgeZone).coerceIn(0f, 1f)
+                py in (bottom - edgeZone)..bottom -> ((bottom - py) / edgeZone).coerceIn(0f, 1f)
+                else -> 0f
+            }
+            if (d != 0f && scrollState.maxValue > 0) {
+                scrollState.scrollTo((scrollState.value + d * 14f).roundToInt())
+                trySwap(type)
+            }
+            delay(16)
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -301,11 +368,18 @@ fun DashboardScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .onGloballyPositioned { boxGlobalY.floatValue = it.positionInWindow().y }
+                    .onGloballyPositioned {
+                        boxGlobalY.floatValue = it.positionInWindow().y
+                        boxHeightPx.intValue = it.size.height
+                    }
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
+                        .graphicsLayer {
+                            alpha = pageProgress.value
+                            translationY = (1f - pageProgress.value) * 10.dp.toPx()
+                        }
                         .verticalScroll(scrollState)
                         .padding(horizontal = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -313,14 +387,18 @@ fun DashboardScreen(
                     configs.forEachIndexed { index, config ->
                         key(config.type) {
                             val isDragged = draggedType == config.type
-                            val animProgress = remember { Animatable(0f) }
+                            val animProgress = remember { Animatable(if (pageEntered.value) 1f else 0f) }
                             // 错峰入场，动画规格与各页共用的 AnimatedCard 一致
                             // （340ms FastOutSlowIn、20dp 上滑）。间隔取 100ms = AnimatedCard
                             // 50ms × 2：观感快慢取决于「间隔 ÷ 卡片高度」的扫过速度，首页单卡
                             // 约为物品列表行的两倍高，间隔同步放倍后两种页面扫过速度一致。
                             // 不直接套 AnimatedCard：拖拽置顶的 zIndex 依赖本层 Box 的父子作用域。
                             // 无 NavHost 转场：内容动画独占入场，不被叠加掩盖。
+                            // 游行只在会话首次进首页跑（pageEntered 置位见上）；回归走整页一拍。
                             LaunchedEffect(Unit) {
+                                val first = !pageEntered.value
+                                pageEntered.value = true
+                                if (!first) return@LaunchedEffect
                                 delay(index * 100L)
                                 animProgress.animateTo(1f, animationSpec = tween(340, easing = FastOutSlowInEasing))
                             }
@@ -354,34 +432,8 @@ fun DashboardScreen(
                                                 // 累加增量位移（与布局无关），避免交换后节点坐标变化导致跳动
                                                 dragTotalY += dragAmount.y
                                                 overlayTopPx = dragStartOffsetPx + dragTotalY
-
-                                                val freshConfigs = viewModel.visibleConfigs.value.filter(filterVisible)
-                                                val idx = freshConfigs.indexOfFirst { it.type == config.type }
-                                                val now = System.currentTimeMillis()
-
-                                                if (idx >= 0 && now - lastSwapTime > 50) {
-                                                    val belowType = freshConfigs.getOrNull(idx + 1)?.type
-                                                    val aboveType = freshConfigs.getOrNull(idx - 1)?.type
-                                                    val selfH = itemHeights[config.type] ?: 0
-                                                    val overlayCenter = overlayTopPx + selfH * 0.5f
-
-                                                    val belowCenterY = belowType?.let { t ->
-                                                        cardGlobalYs[t]?.let { it - boxGlobalY.floatValue + (itemHeights[t]?.toFloat() ?: 0f) * 0.5f }
-                                                    }
-                                                    val aboveCenterY = aboveType?.let { t ->
-                                                        cardGlobalYs[t]?.let { it - boxGlobalY.floatValue + (itemHeights[t]?.toFloat() ?: 0f) * 0.5f }
-                                                    }
-
-                                                    if (belowCenterY != null && overlayCenter > belowCenterY) {
-                                                        viewModel.moveCardDown(config.type)
-                                                        hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                                        lastSwapTime = now
-                                                    } else if (aboveCenterY != null && overlayCenter < aboveCenterY) {
-                                                        viewModel.moveCardUp(config.type)
-                                                        hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                                        lastSwapTime = now
-                                                    }
-                                                }
+                                                dragPointerWindowY = (cardGlobalYs[config.type] ?: 0f) + change.position.y
+                                                trySwap(config.type)
                                             },
                                             onDragEnd = {
                                                 draggedType = null
