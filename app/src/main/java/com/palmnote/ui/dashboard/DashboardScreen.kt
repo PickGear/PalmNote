@@ -9,7 +9,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
@@ -175,11 +174,50 @@ fun DashboardScreen(
         rawConfigs.filter(filterVisible)
     }
 
-    // 数据没到齐之前只渲染骨架，进入主结构前直接返回 —— 用户 2026-10-18 定：
-    // 「宁可先等，也不要页面已经在、卡片再一张张往外蹦」。冷启动时 SQLCipher 开库
-    // （实测 700~750ms）加上首批查询，用户看到的是同一个加载态；数据到齐后整页一次性出现。
+    // 加载期不放骨架屏（2026-10-28 用户改定）：渲染页面框架（顶栏身份行），
+    // 数据到齐后无缝接卡片游行。门槛保留不能去——否则净资产卡会先以零值渲染
+    // 一秒再跳数。冷启动约 1 秒（SQLCipher 开库在 Application 阶段已并行预开，
+    // 这段主要是查询集 + 状态装配），用户看到的不再是空窗而是「页面已开、内容就位中」。
     if (!state.loaded) {
-        DashboardLoadingSkeleton()
+        Column(modifier = Modifier.fillMaxSize()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(64.dp)
+                    .padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // 静态身份行：与真顶栏同位同形（32dp 圆角方徽标 + 标题 + 三图标，
+                // 无交互），数据到齐后无缝换成真顶栏、不跳变
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(ModuleHome),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "P",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "PalmNote",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(modifier = Modifier.weight(1f))
+                Icon(Icons.Outlined.Search, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(modifier = Modifier.width(20.dp))
+                Icon(Icons.Outlined.GridView, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(modifier = Modifier.width(20.dp))
+                Icon(Icons.Outlined.Person, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
         return
     }
 
@@ -195,11 +233,19 @@ fun DashboardScreen(
     // 上浮就位（240ms 淡入 + 10dp 上浮，减速曲线）——纯淡入偏平淡，位移给一拍
     // 「落定归位」的到达感；游行中途切走，回来也走整页拍。
     val pageEntered = rememberSaveable { mutableStateOf(false) }
-    val pageProgress = remember { Animatable(if (pageEntered.value) 0f else 1f) }
+    // 「是否首次入场」必须在组合期一次性定格：九张卡的 LaunchedEffect 同一批次
+    // 顺序执行，谁先跑到谁就会把 pageEntered 置 true、把兄弟卡的入场全部短路
+    // （真机踩过：冷启动只有第一张卡出现，其余卡 alpha=0 永久隐身）
+    val firstEntrance = !pageEntered.value
+    val pageProgress = remember { Animatable(0f) }
     LaunchedEffect(Unit) {
-        if (pageEntered.value) {
-            pageProgress.animateTo(1f, animationSpec = tween(240, easing = FastOutSlowInEasing))
-        }
+        // 两个分支都以整页淡入开场：回归 240ms（上浮就位），首进 200ms——把
+        // 「顶栏框架 → 卡片游行」的内容出现切换盖住，不再有硬切
+        pageProgress.animateTo(
+            1f,
+            animationSpec = tween(if (firstEntrance) 200 else 240, easing = FastOutSlowInEasing)
+        )
+        pageEntered.value = true
     }
 
     // 交换判定：onDrag 与边缘自动滚动共用——指针停在边缘不动时内容仍在滚过，
@@ -387,18 +433,17 @@ fun DashboardScreen(
                     configs.forEachIndexed { index, config ->
                         key(config.type) {
                             val isDragged = draggedType == config.type
-                            val animProgress = remember { Animatable(if (pageEntered.value) 1f else 0f) }
+                            val animProgress = remember { Animatable(if (firstEntrance) 0f else 1f) }
                             // 错峰入场，动画规格与各页共用的 AnimatedCard 一致
                             // （340ms FastOutSlowIn、20dp 上滑）。间隔取 100ms = AnimatedCard
                             // 50ms × 2：观感快慢取决于「间隔 ÷ 卡片高度」的扫过速度，首页单卡
                             // 约为物品列表行的两倍高，间隔同步放倍后两种页面扫过速度一致。
                             // 不直接套 AnimatedCard：拖拽置顶的 zIndex 依赖本层 Box 的父子作用域。
                             // 无 NavHost 转场：内容动画独占入场，不被叠加掩盖。
-                            // 游行只在会话首次进首页跑（pageEntered 置位见上）；回归走整页一拍。
+                            // 游行只在会话首次进首页跑（firstEntrance 组合期定格见上）；
+                            // 回归走整页一拍，卡片直接就位。
                             LaunchedEffect(Unit) {
-                                val first = !pageEntered.value
-                                pageEntered.value = true
-                                if (!first) return@LaunchedEffect
+                                if (!firstEntrance) return@LaunchedEffect
                                 delay(index * 100L)
                                 animProgress.animateTo(1f, animationSpec = tween(340, easing = FastOutSlowInEasing))
                             }
@@ -545,38 +590,3 @@ internal fun getWeekDay(context: android.content.Context): String {
     }
 }
 
-/**
- * 首页加载骨架：数据未到齐时占满整屏，只画卡面轮廓，不画内容、不做 shimmer
- * （与项目克制的视觉一致，也不额外引依赖）。
- *
- * 存在的理由（用户 2026-10-18 定）：冷启动时 SQLCipher 开库 + 首批查询期间，
- * 与其让用户看到「页面已经在、物品分布卡几秒后才蹦出来」，不如用一个稳定的
- * 加载态盖住，数据到齐后整页一次性出现。
- *
- * 三块高度对齐常见卡片量级，避免数据到达瞬间整页大幅跳动。
- */
-@Composable
-private fun DashboardLoadingSkeleton() {
-    Column(modifier = Modifier.fillMaxSize()) {
-        // 顶栏占位（M3 TopAppBar 默认高度 64dp）：数据到达、真实顶栏出现时，
-        // 下面的卡片不会整体上跳一截。
-        Spacer(modifier = Modifier.height(64.dp))
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            listOf(148.dp, 124.dp, 104.dp).forEach { height ->
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(height),
-                    shape = MaterialTheme.shapes.large,
-                    color = MaterialTheme.colorScheme.surface,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-                ) {}
-            }
-        }
-    }
-}
