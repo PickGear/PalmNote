@@ -49,23 +49,38 @@ fun WallpaperBackground(
     Box(modifier = modifier) {
         // Render wallpaper background
         if (wallpaperData.style != "none") {
-            when {
-                wallpaperData.solidColor != null ->
-                    SolidWallpaper(
-                        color = wallpaperData.solidColor,
-                        opacity = wallpaperData.opacity,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                wallpaperData.bitmap != null ->
-                    WallpaperImage(
-                        bitmap = wallpaperData.bitmap,
-                        opacity = wallpaperData.opacity,
-                        blur = wallpaperData.blur,
-                        modifier = Modifier.fillMaxSize()
-                    )
-            }
+            WallpaperSurface(wallpaperData, modifier = Modifier.fillMaxSize())
         }
         content()
+    }
+}
+
+/**
+ * 把一份 [WallpaperData] 画进任意尺寸的盒子：纯色直接铺色，位图叠加透明度与模糊。
+ *
+ * 应用根部的整屏背景与设置页的**实时预览卡**共用这一份实现。预览卡是「拖动滑条时你看到的效果」，
+ * 两处若各写一遍，迟早只有一处记得加模糊 —— 预览和真实效果就会悄悄跑偏。
+ */
+@Composable
+fun WallpaperSurface(
+    wallpaper: WallpaperData,
+    modifier: Modifier = Modifier
+) {
+    when {
+        wallpaper.style == "none" -> {}
+        wallpaper.solidColor != null ->
+            SolidWallpaper(
+                color = wallpaper.solidColor,
+                opacity = wallpaper.opacity,
+                modifier = modifier
+            )
+        wallpaper.bitmap != null ->
+            WallpaperImage(
+                bitmap = wallpaper.bitmap,
+                opacity = wallpaper.opacity,
+                blur = wallpaper.blur,
+                modifier = modifier
+            )
     }
 }
 

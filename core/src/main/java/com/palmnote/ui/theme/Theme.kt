@@ -20,20 +20,22 @@ import com.palmnote.ui.components.toComposeColor
 val LocalIsDarkTheme = staticCompositionLocalOf { false }
 val LocalThemeColor = staticCompositionLocalOf { Color(0xFF0891B2) }
 
-// 自定义壁纸异步解码：IO 线程 + 按屏幕尺寸降采样，结果按来源缓存，
+// 自定义壁纸异步解码：IO 线程 + 按屏幕尺寸降采样，结果按「来源 + 代数」缓存，
 // 避免在组合中同步解码大图（主线程卡顿 + 数十 MB 内存峰值）
 @Composable
-private fun rememberCustomWallpaperBitmap(source: String): ImageBitmap? {
+private fun rememberCustomWallpaperBitmap(source: String, generation: Int): ImageBitmap? {
     if (source.isEmpty()) return null
     val context = LocalContext.current
     val metrics = context.resources.displayMetrics
     val reqWidth = metrics.widthPixels
     val reqHeight = metrics.heightPixels
-    val cached = CustomWallpaperCache.get(source)
-    return produceState<ImageBitmap?>(cached, source, reqWidth, reqHeight) {
+    // 精确命中（旋转 / 分屏重建）优先；只按来源兜底一次：换图后新代数还没解出来时先用上一张顶着，
+    // 等解码完再替换 —— 否则这一窗内 style 退回 "none"、顶栏又会先亮后暗闪一下。
+    val cached = CustomWallpaperCache.get(source, generation) ?: CustomWallpaperCache.getStale(source)
+    return produceState<ImageBitmap?>(cached, source, generation, reqWidth, reqHeight) {
         val decoded = decodeWallpaperBitmap(context, source, reqWidth, reqHeight)
         if (decoded != null) {
-            CustomWallpaperCache.put(source, decoded)
+            CustomWallpaperCache.put(source, generation, decoded)
             value = decoded
         }
         // 解码失败（文件被删 / 瞬时 OOM）时**不**把 value 置空：initialValue 里那张还在，
@@ -51,13 +53,15 @@ private fun rememberCustomWallpaperBitmap(source: String): ImageBitmap? {
  * [com.palmnote.data.datastore.PreferencesManager.themeSnapshot]）合起来覆盖全部壁纸类型。
  *
  * 设计取舍：
- * - **只当首帧兜底，不替代解码**：命中后仍照常重解一次并回写。自定义壁纸固定存到
- *   `filesDir/wallpaper_custom.jpg`（见 GeneralSettingsScreen），换图时 source 路径不变，
- *   若命中就跳过解码，新图要等进程重启才生效 —— 那是比闪变更糟的缺陷。
- * - **key 只按 source，不含屏幕尺寸**：旋转 / 分屏会让要求尺寸变化（宽高互换），若把尺寸
+ * - **只当首帧兜底，不替代解码**：自定义壁纸固定存到 `filesDir/wallpaper_custom.jpg`
+ *   （见 GeneralSettingsScreen），**换图时 source 路径不变、只有文件内容变了**。所以缓存 key 不能
+ *   只按 source —— 那样第二次换图会命中旧结果，新图要等进程重启才生效（正是这次要修的缺陷）。
+ *   带上代数后，换图 → 代数 +1 → key 必然 miss → 立刻重解；旧结果只在「新代数还没解完」那一窗里
+ *   当首帧兜底（`getStale`），避免顶栏又闪一次。
+ * - **key 按「来源 + 代数」，不含屏幕尺寸**：旋转 / 分屏会让要求尺寸变化（宽高互换），若把尺寸
  *   算进 key，那一次重建必然 miss —— 偏偏那一刻最需要它。尺寸不符只顶一两帧，随后的解码
  *   会换成新尺寸的位图。
- * - **只缓存成功结果、只留一条**：壁纸是单份的，换壁纸写新 source，旧的自然淘汰；
+ * - **只缓存成功结果、只留一条**：壁纸是单份的，换壁纸写新代数，旧的自然淘汰；
  *   失败（文件被删 / URI 失效）不缓存，下次仍重试。
  *
  * 内存：缓存持有的是「屏幕上正在显示的那张」位图本身（同一个对象），不是额外复制的一份；
@@ -67,12 +71,16 @@ private object CustomWallpaperCache {
     @Volatile
     private var cached: Entry? = null
 
-    private data class Entry(val source: String, val bitmap: ImageBitmap)
+    private data class Entry(val source: String, val generation: Int, val bitmap: ImageBitmap)
 
-    fun get(source: String): ImageBitmap? = cached?.takeIf { it.source == source }?.bitmap
+    fun get(source: String, generation: Int): ImageBitmap? =
+        cached?.takeIf { it.source == source && it.generation == generation }?.bitmap
 
-    fun put(source: String, bitmap: ImageBitmap) {
-        cached = Entry(source, bitmap)
+    /** 只按来源取（忽略代数）：换图后新代数尚未解出时，用上一张顶住首帧，避免顶栏闪一下。 */
+    fun getStale(source: String): ImageBitmap? = cached?.takeIf { it.source == source }?.bitmap
+
+    fun put(source: String, generation: Int, bitmap: ImageBitmap) {
+        cached = Entry(source, generation, bitmap)
     }
 }
 
@@ -82,10 +90,11 @@ private fun rememberWallpaperData(
     opacity: Float,
     blur: Float,
     customUri: String,
+    customGen: Int,
     customColor: String,
     darkTheme: Boolean
 ): WallpaperData {
-    val customBitmap = if (style == "custom") rememberCustomWallpaperBitmap(customUri) else null
+    val customBitmap = if (style == "custom") rememberCustomWallpaperBitmap(customUri, customGen) else null
     return when (style) {
         "none" -> WallpaperData(style = "none")
         "custom" -> customBitmap?.let {
@@ -119,6 +128,7 @@ fun PalmNoteTheme(
     wallpaperOpacity: Float = 1f,
     wallpaperBlur: Float = 0f,
     wallpaperCustomUri: String = "",
+    wallpaperCustomGen: Int = 0,
     wallpaperCustomColor: String = "#FFFFFF",
     content: @Composable () -> Unit
 ) {
@@ -127,6 +137,7 @@ fun PalmNoteTheme(
         opacity = wallpaperOpacity,
         blur = wallpaperBlur,
         customUri = wallpaperCustomUri,
+        customGen = wallpaperCustomGen,
         customColor = wallpaperCustomColor,
         darkTheme = darkTheme
     )

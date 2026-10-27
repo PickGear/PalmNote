@@ -13,7 +13,7 @@ import org.junit.Test
  * 所以这里钉两件事：
  * 1. **默认值必须与对应 Flow 的默认值逐个相同** —— 漏一个（比如把 customUri 默认写成 null）
  *    首帧就会和 Flow 到达后的值不一致，闪变原样复现；
- * 2. **键不能串位** —— 七个键值长得很像，写反了不报错，只是首帧错一下，靠人眼看很难发现。
+ * 2. **键不能串位** —— 八个键值长得很像，写反了不报错，只是首帧错一下，靠人眼看很难发现。
  */
 class ThemeSnapshotTest {
 
@@ -27,11 +27,12 @@ class ThemeSnapshotTest {
         assertEquals(PreferencesManager.DEFAULT_WALLPAPER_OPACITY, snapshot.wallpaperOpacity)
         assertEquals(PreferencesManager.DEFAULT_WALLPAPER_BLUR, snapshot.wallpaperBlur)
         assertEquals("", snapshot.wallpaperCustomUri)
+        assertEquals(PreferencesManager.DEFAULT_WALLPAPER_CUSTOM_GEN, snapshot.wallpaperCustomGen)
         assertEquals(PreferencesManager.DEFAULT_WALLPAPER_CUSTOM_COLOR, snapshot.wallpaperCustomColor)
     }
 
     @Test
-    fun `已设过的偏好逐项读出，七个键不能串位`() {
+    fun `已设过的偏好逐项读出，八个键不能串位`() {
         val prefs = preferencesOf(
             PreferencesManager.THEME_MODE to "DARK",
             PreferencesManager.THEME_COLOR to "purple",
@@ -39,6 +40,7 @@ class ThemeSnapshotTest {
             PreferencesManager.WALLPAPER_OPACITY to 0.6f,
             PreferencesManager.WALLPAPER_BLUR to 12f,
             PreferencesManager.WALLPAPER_CUSTOM_URI to "/data/user/0/com.palmnote/files/wallpaper_custom.jpg",
+            PreferencesManager.WALLPAPER_CUSTOM_GEN to 3,
             PreferencesManager.WALLPAPER_CUSTOM_COLOR to "#123456"
         )
 
@@ -50,6 +52,7 @@ class ThemeSnapshotTest {
         assertEquals(0.6f, snapshot.wallpaperOpacity, 0f)
         assertEquals(12f, snapshot.wallpaperBlur, 0f)
         assertEquals("/data/user/0/com.palmnote/files/wallpaper_custom.jpg", snapshot.wallpaperCustomUri)
+        assertEquals(3, snapshot.wallpaperCustomGen)
         assertEquals("#123456", snapshot.wallpaperCustomColor)
     }
 

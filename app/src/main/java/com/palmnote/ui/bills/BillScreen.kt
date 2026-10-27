@@ -105,6 +105,26 @@ fun BillScreen(
     }
 
     val groupedBills = remember(filteredBills) { filteredBills.groupBy { DateUtils.formatDate(it.date) }.mapValues { it.value.sortedByDescending { b -> b.createdAt } } }
+    // 明细区按「视觉位置」从上往下连续编号：日期头与账单行在同一条时间线里依次错峰，
+    // 入场是整块明细一次自上而下的扫过。之前每段日期各自从头编号（日期头固定 2、
+    // 段内行从 3 起）、同屏几段并行起波，观感杂乱。上限仍为 10（500ms 起始），
+    // 长列表尾部与首批一起就位，铺开时长不随记录数无限增长。
+    val detailIndexByDay = remember(groupedBills) {
+        var i = 2
+        groupedBills.entries.associate { entry ->
+            val idx = i
+            i += entry.value.size + 1
+            entry.key to idx
+        }
+    }
+    val detailIndexByBillId = remember(groupedBills) {
+        var i = 3
+        val map = mutableMapOf<Long, Int>()
+        groupedBills.forEach { (_, bills) ->
+            bills.forEach { bill -> map[bill.id] = i++ }
+        }
+        map
+    }
 
     var showBookMenu by remember { mutableStateOf(false) }
     var showSearch by remember { mutableStateOf(false) }
@@ -554,9 +574,12 @@ fun BillScreen(
                 ) {
                     // 待报销提示卡（列表首项，随列表滚走，不占固定高度）。
                     // 报销管理在顶栏只是溢出菜单里的二级入口，靠这张卡补上「进账单页就能看见」的曝光。
+                    // 列表内每张 AnimatedCard 都带 restartKey = calendarExpanded：
+                    // 周/月切换只改日历卡高度，已组好的卡片 key 不变不会重播，
+                    // 而新组出来的会从头播，混在一起看着像掉帧。统一重放保持一致。
                     if (pendingReimbursements.isNotEmpty()) {
                         item {
-                            AnimatedCard(index = 3, instant = isListScrolling) {
+                            AnimatedCard(index = 0, instant = isListScrolling, restartKey = calendarExpanded) {
                                 ReimbursementPendingCard(
                                     count = pendingReimbursements.size,
                                     remaining = pendingReimburseRemaining,
@@ -569,7 +592,7 @@ fun BillScreen(
                         }
                     }
                     item {
-                        AnimatedCard(index = 3, instant = billListState.isScrollInProgress) {
+                        AnimatedCard(index = 1, instant = billListState.isScrollInProgress, restartKey = calendarExpanded) {
                         Row(modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 4.dp, start = 12.dp, end = 12.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                             Text(
                                 text = stringResource(R.string.bill_detail),
@@ -599,11 +622,17 @@ fun BillScreen(
                     )
                 }
             } else {
-                groupedBills.forEach { (_, bills) ->
+                groupedBills.forEach { (day, bills) ->
                     item {
                         val dayIncome = bills.filter { it.type == BillType.INCOME }.sumOf { it.amount }
                         val dayExpense = bills.filter { it.type == BillType.EXPENSE }.sumOf { it.amount }
-                        AnimatedCard(instant = billListState.isScrollInProgress) {
+                        // 日期行矮小，20dp 滑距相当于自身高度大半，观感偏重偏慢；改 12dp
+                        AnimatedCard(
+                            index = (detailIndexByDay[day] ?: 2).coerceAtMost(10),
+                            instant = billListState.isScrollInProgress,
+                            restartKey = calendarExpanded,
+                            slideDistance = 12.dp
+                        ) {
                             Row(
                                 modifier = Modifier.fillMaxWidth()
                                     .padding(top = 12.dp, bottom = 4.dp, start = 12.dp, end = 12.dp),
@@ -642,7 +671,11 @@ fun BillScreen(
                         }
                     }
                     itemsIndexed(bills, key = { _, bill -> bill.id }) { index, bill ->
-                        AnimatedCard(index = (index + 4).coerceAtMost(10), instant = isListScrolling) {
+                        AnimatedCard(
+                            index = (detailIndexByBillId[bill.id] ?: 10).coerceAtMost(10),
+                            instant = isListScrolling,
+                            restartKey = calendarExpanded
+                        ) {
                         BillListItem(
                             bill = bill,
                             wallets = state.wallets,

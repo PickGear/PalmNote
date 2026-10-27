@@ -73,6 +73,7 @@ data class SettingsState(
     val wallpaperBlur: Float = PreferencesManager.DEFAULT_WALLPAPER_BLUR,
     val wallpaperOpacity: Float = PreferencesManager.DEFAULT_WALLPAPER_OPACITY,
     val wallpaperCustomUri: String = "",
+    val wallpaperCustomGen: Int = PreferencesManager.DEFAULT_WALLPAPER_CUSTOM_GEN,
     val wallpaperCustomColor: String = PreferencesManager.DEFAULT_WALLPAPER_CUSTOM_COLOR
 )
 
@@ -137,6 +138,7 @@ class SettingsViewModel @Inject constructor(
                 preferencesManager.wallpaperBlur,
                 preferencesManager.wallpaperOpacity,
                 preferencesManager.wallpaperCustomUri,
+                preferencesManager.wallpaperCustomGen,
                 preferencesManager.wallpaperCustomColor,
                 assetRepository.getTotalAssetCount(),
                 // 目标已并入生活模板：设置页「目标」计数 = 目标类模板下的生活条目数
@@ -174,13 +176,14 @@ class SettingsViewModel @Inject constructor(
                         wallpaperBlur = (i(22) as? Float) ?: PreferencesManager.DEFAULT_WALLPAPER_BLUR,
                         wallpaperOpacity = (i(23) as? Float) ?: PreferencesManager.DEFAULT_WALLPAPER_OPACITY,
                         wallpaperCustomUri = (i(24) as? String) ?: "",
-                        wallpaperCustomColor = (i(25) as? String) ?: PreferencesManager.DEFAULT_WALLPAPER_CUSTOM_COLOR,
-                        assetCount = (i(26) as? Int) ?: 0,
-                        goalCount = (i(27) as? Int) ?: 0,
-                        momentCount = (i(28) as? Int) ?: 0,
-                        anniversaryCount = (i(29) as? Int) ?: 0,
-                        autoLockTimeoutMinutes = (i(30) as? Int) ?: 5,
-                        demoModeEnabled = (i(31) as? Boolean) ?: true
+                        wallpaperCustomGen = (i(25) as? Int) ?: PreferencesManager.DEFAULT_WALLPAPER_CUSTOM_GEN,
+                        wallpaperCustomColor = (i(26) as? String) ?: PreferencesManager.DEFAULT_WALLPAPER_CUSTOM_COLOR,
+                        assetCount = (i(27) as? Int) ?: 0,
+                        goalCount = (i(28) as? Int) ?: 0,
+                        momentCount = (i(29) as? Int) ?: 0,
+                        anniversaryCount = (i(30) as? Int) ?: 0,
+                        autoLockTimeoutMinutes = (i(31) as? Int) ?: 5,
+                        demoModeEnabled = (i(32) as? Boolean) ?: true
                     )
                 }
             }.catch { AppLogger.w("SettingsVM", "Settings flow failed", it) }.collect()
@@ -302,8 +305,16 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { preferencesManager.setWallpaperOpacity(opacity) }
     }
 
-    fun setWallpaperCustomUri(uri: String) {
-        viewModelScope.launch { preferencesManager.setWallpaperCustomUri(uri) }
+    /**
+     * 换自定义图片壁纸的**唯一入口**：文件已经被选图回调覆盖写完，这里只做「落路径 + 落样式 + 抬代数」。
+     * 路径每次都是同一个文件，所以只有代数变化才能让界面收到通知并重新解码 —— 拆成两次写入的旧写法
+     * 正是「第二次换壁纸不生效」的根源。刻意不单独暴露 setWallpaperCustomUri，避免绕过代数。
+     */
+    fun applyCustomWallpaper(uri: String) {
+        viewModelScope.launch {
+            preferencesManager.setWallpaperCustomUri(uri)
+            preferencesManager.setWallpaperStyle("custom")
+        }
     }
 
     fun setWallpaperCustomColor(color: String) {

@@ -24,6 +24,7 @@ data class ThemeSnapshot(
     val wallpaperOpacity: Float,
     val wallpaperBlur: Float,
     val wallpaperCustomUri: String,
+    val wallpaperCustomGen: Int,
     val wallpaperCustomColor: String
 )
 
@@ -41,6 +42,8 @@ fun resolveThemeSnapshot(prefs: Preferences): ThemeSnapshot = ThemeSnapshot(
     wallpaperOpacity = prefs[PreferencesManager.WALLPAPER_OPACITY] ?: PreferencesManager.DEFAULT_WALLPAPER_OPACITY,
     wallpaperBlur = prefs[PreferencesManager.WALLPAPER_BLUR] ?: PreferencesManager.DEFAULT_WALLPAPER_BLUR,
     wallpaperCustomUri = prefs[PreferencesManager.WALLPAPER_CUSTOM_URI] ?: "",
+    wallpaperCustomGen = prefs[PreferencesManager.WALLPAPER_CUSTOM_GEN]
+        ?: PreferencesManager.DEFAULT_WALLPAPER_CUSTOM_GEN,
     wallpaperCustomColor = prefs[PreferencesManager.WALLPAPER_CUSTOM_COLOR]
         ?: PreferencesManager.DEFAULT_WALLPAPER_CUSTOM_COLOR
 )

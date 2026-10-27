@@ -758,10 +758,12 @@ private fun MainTabs(
                 NavHost(
                     navController = tabNavController,
                     startDestination = startTab,
-                    enterTransition = { fadeIn(animationSpec = tween(200)) },
-                    exitTransition = { fadeOut(animationSpec = tween(200)) },
-                    popEnterTransition = { fadeIn(animationSpec = tween(200)) },
-                    popExitTransition = { fadeOut(animationSpec = tween(200)) }
+                    // 转场必须显式给 None：不传参数时库默认是 fadeIn/fadeOut(tween(700))，
+                    // 会叠在各页自己的入场动画上把它掩盖掉（正是上一版误删参数后发生的事）。
+                    enterTransition = { EnterTransition.None },
+                    exitTransition = { ExitTransition.None },
+                    popEnterTransition = { EnterTransition.None },
+                    popExitTransition = { ExitTransition.None }
                 ) {
             composable<TabDashboard> {
                 DashboardScreen(

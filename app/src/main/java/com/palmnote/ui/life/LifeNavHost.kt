@@ -71,7 +71,13 @@ fun LifeNavHost(
         popEnterTransition = { fadeIn(animationSpec = tween(200)) },
         popExitTransition = { fadeOut(animationSpec = tween(200)) }
     ) {
-        composable<LifeHome> {
+        // 生活首页不叠 200ms 淡入：首页卡片有自己的错峰入场动画（AnimatedCard），
+        // popEnter 的转场叠加会把入场掩盖掉——与主 tab NavHost 置 None 同一原则。
+        // 二级页之间仍用 NavHost 级的 200ms 淡入淡出，与根壳层二级页规范一致。
+        composable<LifeHome>(
+            enterTransition = { EnterTransition.None },
+            popEnterTransition = { EnterTransition.None }
+        ) {
             val calendarVm = lifeCalendarViewModel
             val boardRows by calendarVm.boardRows.collectAsStateWithLifecycle()
             val calendarDayMap by calendarVm.calendarDayMap.collectAsStateWithLifecycle()

@@ -23,12 +23,19 @@ import androidx.compose.material.icons.automirrored.outlined.ViewList
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -46,7 +53,9 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -57,8 +66,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 import coil3.compose.AsyncImage
 import com.palmnote.app.R
 import com.palmnote.data.db.entity.Asset
@@ -228,7 +239,7 @@ fun AssetScreen(
         val listState = rememberLazyStaggeredGridState()
         var showScrollToTop by remember { mutableStateOf(false) }
         val scrolledPast by remember {
-            derivedStateOf { listState.firstVisibleItemIndex > 1 || listState.firstVisibleItemScrollOffset > 100 }
+            derivedStateOf { listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 100 }
         }
         LaunchedEffect(listState.isScrollInProgress, scrolledPast) {
             if (listState.isScrollInProgress && scrolledPast) {
@@ -246,69 +257,44 @@ fun AssetScreen(
                 .background(MaterialTheme.colorScheme.background)
                 .padding(padding)
         ) {
-            Column(modifier = Modifier.fillMaxSize()) {
-            // Summary Cards (animated hide during search, outside LazyColumn for smooth animation)
-            AnimatedVisibility(
-                visible = !showSearch,
-                enter = fadeIn(tween(120)) + expandVertically(tween(120)),
-                exit = fadeOut(tween(300)) + shrinkVertically(tween(300))
-            ) {
-                Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        AnimatedCard(Modifier.weight(1f), index = 0, instant = showSearch) {
-                        ModuleCard(
-                            tint = assetTint(),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(
-                                text = stringResource(R.string.asset_held),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = CurrencyUtils.formatCompact(LocalContext.current, state.heldValue.toMoney()),
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = ModuleItem
-                            )
-                            Text(
-                                text = pluralStringResource(R.plurals.asset_count, state.heldCount, state.heldCount),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+            // 布局：汇总卡（两档面板）与筛选行固定在网格上方，物品卡在网格里滚。
+            // 面板收合走**嵌套滚动消费**（CollapsingToolbar 同款）：上滑的滚动量先于
+            // 网格被消费、面板跟手 1:1 收合，收完之后网格才从 0 开始滚——面板收到位
+            // 时第一张物品卡必然完整贴合在筛选行下（不会被截）；下滑在网格顶部反向
+            // 先展开面板、网格归零后再跟随。松手停在中间时弹簧吸附到最近档位
+            // （两档 + 弹性）。想更 Q 弹调 dampingRatio，想更快调 stiffness。
+            var panelHeightPx by remember { mutableStateOf(0) }
+            // 筛选行**两档磁吸开关**：面板只有「展开」「收起」两个状态，两档之间没有
+            // 滑动过程——页面第一帧上滑即整帧消费并切到收起档（面板弹簧合拢，物品卡
+            // 从 0 开始滚，首卡必然完整贴合筛选行下）；网格顶部的下拉切回展开档
+            // （面板弹簧弹开，汇总卡展现）。弹性来自高度弹簧的回弹，
+            // 参数在 panelFraction 的 spring() 处可调。
+            var panelClosed by remember { mutableStateOf(false) }
+            val panelFraction by animateFloatAsState(
+                targetValue = if (panelClosed || showSearch) 0f else 1f,
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                    stiffness = Spring.StiffnessMediumLow
+                ),
+                label = "panelFraction"
+            )
+            val panelScrollConnection = remember {
+                object : NestedScrollConnection {
+                    override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                        // 上滑第一帧：整帧消费并切到收起档，物品卡从 0 开始滚（不被截）
+                        if (!panelClosed && available.y < 0f) {
+                            panelClosed = true
+                            return available
                         }
+                        return Offset.Zero
+                    }
+                    override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
+                        // 网格顶部的下拉：切回展开档，汇总卡弹开展现
+                        if (panelClosed && available.y > 0f) {
+                            panelClosed = false
+                            return available
                         }
-
-                        AnimatedCard(Modifier.weight(1f), index = 1, instant = showSearch) {
-                        ModuleCard(
-                            tint = billTint(),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(
-                                text = stringResource(R.string.asset_away),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = pluralStringResource(R.plurals.asset_count, state.awayCount, state.awayCount),
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = AccentOrange
-                            )
-                            Text(
-                                text = stringResource(R.string.asset_removed) + " " + pluralStringResource(
-                                    R.plurals.asset_count, state.removedCount, state.removedCount
-                                ),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        }
+                        return Offset.Zero
                     }
                 }
             }
@@ -316,9 +302,9 @@ fun AssetScreen(
             val assetIndexMap = remember(state.filteredAssets) {
                 state.filteredAssets.withIndex().associate { (i, a) -> a.id to i }
             }
-            // Filter Bar (fixed outside LazyColumn)
-            AnimatedCard(index = 2, instant = showSearch) {
-            Box(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background).padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp)) {
+            // 筛选行内容：常驻固定在汇总卡下方（见下方 Column），不随网格滚动。
+            val filterItem: @Composable () -> Unit = {
+            Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
             // Status + Category Filter Dropdowns + View Toggle
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -589,27 +575,125 @@ fun AssetScreen(
             // 「日期 / 价格」不再横向对齐，这是瀑布流的固有取舍而不是缺陷。
             // 奇数张时最后一张会落进较矮的列（可能居右）——2026-10-11 曾试过换
             // LazyVerticalGrid 等宽网格解决，用户权衡后仍要瀑布流的自然高度，放弃。
-            LazyVerticalStaggeredGrid(
-                columns = StaggeredGridCells.Fixed(if (isGridView) 2 else 1),
-                state = listState,
-                modifier = Modifier
-                    .weight(1f)
-                    .nestedScroll(object : NestedScrollConnection {
-                        override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                            focusManager.clearFocus()
-                            return Offset.Zero
-                        }
-                    })
-                    .pointerInput(Unit) {
-                        awaitEachGesture {
-                            awaitFirstDown(requireUnconsumed = false)
-                            focusManager.clearFocus()
-                        }
-                    },
-                contentPadding = PaddingValues(horizontal = 16.dp),
-                verticalItemSpacing = 8.dp,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            // 汇总卡（两档面板）+ 筛选行固定在网格上方，只有物品卡在网格里滚动：
+            // 筛选行「滑动后位置固定」——上滑汇总卡弹合收起时它上移到顶并常驻，
+            // 下拉面板弹开展现时它随之回落，始终不随内容滚走。
+            // 汇总卡（两档面板）+ 筛选行 + 网格的间距全部显式控制（不用 spacedBy）：
+            // 面板高度含其与筛选行间的 8dp（随收合消失），筛选行自带底部 8dp——
+            // 收起后筛选行贴着顶栏下缘（0dp 基准），间距不会残留
+            Column(
+                modifier = Modifier.fillMaxSize()
             ) {
+                val wasScrolling = remember { listState.isScrollInProgress }
+                // 面板高度 = （内容高度 + 与筛选行间的 8dp 间距） × 档位比例：
+                // 间距随面板一起收合，收起后筛选行贴着顶栏下缘（0dp 基准，与展开时
+                // 汇总卡的顶边一致）；内容锚定顶部、超出部分裁掉——收档时面板像被
+                // 筛选行「压」上去，弹簧回弹让切档带一次 Q 弹。
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .layout { measurable, constraints ->
+                            val placeable = measurable.measure(constraints)
+                            // 回弹过冲会低于 0（收起方向）或高于内容高（展开方向），展开方向
+                            // 的过冲保留为 Q 弹，收起方向钳到 0 防负尺寸崩溃
+                            val height = ((panelHeightPx + 8.dp.toPx()) * panelFraction)
+                                .coerceAtLeast(0f).roundToInt()
+                            layout(constraints.maxWidth, height) {
+                                placeable.place(0, 0)
+                            }
+                        }
+                        .clipToBounds()
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
+                            .onGloballyPositioned { panelHeightPx = it.size.height },
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        AnimatedCard(Modifier.weight(1f), index = 0, instant = showSearch || wasScrolling) {
+                        ModuleCard(
+                            tint = assetTint(),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = stringResource(R.string.asset_held),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = CurrencyUtils.formatCompact(LocalContext.current, state.heldValue.toMoney()),
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = ModuleItem
+                            )
+                            Text(
+                                text = pluralStringResource(R.plurals.asset_count, state.heldCount, state.heldCount),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        }
+
+                        AnimatedCard(Modifier.weight(1f), index = 1, instant = showSearch || wasScrolling) {
+                        ModuleCard(
+                            tint = billTint(),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = stringResource(R.string.asset_away),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = pluralStringResource(R.plurals.asset_count, state.awayCount, state.awayCount),
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = AccentOrange
+                            )
+                            Text(
+                                text = stringResource(R.string.asset_removed) + " " + pluralStringResource(
+                                    R.plurals.asset_count, state.removedCount, state.removedCount
+                                ),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        }
+                    }
+                }
+                // 筛选行：常驻固定在汇总卡下方，不随网格滚动（滑动后位置固定）。
+                AnimatedCard(
+                    modifier = Modifier.padding(bottom = 8.dp),
+                    index = 2,
+                    instant = showSearch
+                ) {
+                    filterItem()
+                }
+                LazyVerticalStaggeredGrid(
+                    columns = StaggeredGridCells.Fixed(if (isGridView) 2 else 1),
+                    state = listState,
+                    modifier = Modifier
+                        .weight(1f)
+                        .nestedScroll(panelScrollConnection)
+                        .nestedScroll(object : NestedScrollConnection {
+                            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                                focusManager.clearFocus()
+                                return Offset.Zero
+                            }
+                        })
+                        .pointerInput(Unit) {
+                            awaitEachGesture {
+                                awaitFirstDown(requireUnconsumed = false)
+                                focusManager.clearFocus()
+                            }
+                        },
+                    contentPadding = PaddingValues(horizontal = 16.dp),
+                    verticalItemSpacing = 8.dp,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
 
             // Asset List
             if (state.filteredAssets.isEmpty()) {
@@ -624,11 +708,20 @@ fun AssetScreen(
                 }
             } else {
                 items(state.filteredAssets, key = { it.id }) { asset ->
-                    val index = (assetIndexMap[asset.id] ?: 0) + 3
+                    // 错峰按「视觉上的行」推进，而不是按卡片序号：网格一行两张，
+                    // 直接用序号会让每往下一行实际推进 100ms，比列表视图慢一倍；
+                    // 除以列数后每行恒定 50ms，两种视图扫过速度一致。
+                    val index = (assetIndexMap[asset.id] ?: 0) / (if (isGridView) 2 else 1) + 3
                     AnimatedCard(
                         modifier = Modifier.fillMaxWidth(),
                         index = index.coerceAtMost(10),
-                        instant = remember(asset.id) { listState.isScrollInProgress }
+                        // instant 只在入场/重播那一刻读一次，所以 key 要带上 isGridView：
+                        // 只按 asset.id 记的话，"先滚动过再切换"的卡片会沿用旧的 instant=true 瞬跳，
+                        // 和旁边重播动画的卡片混在一起。带上 isGridView 就按切换当下的真实滚动状态算。
+                        instant = remember(asset.id, isGridView) { listState.isScrollInProgress },
+                        // 列表/网格是同一批卡片换排法，item 的 key（asset.id）不变，
+                        // 已经入场的卡片不会自动重播；这里显式重放，避免前几排静悄悄过去
+                        restartKey = isGridView
                     ) {
                         if (isGridView) {
                             GridAssetCard(
@@ -664,7 +757,11 @@ fun AssetScreen(
                     modifier = Modifier
                         .size(40.dp)
                         .clip(MaterialTheme.shapes.large)
-                        .clickable { scope.launch { listState.animateScrollToItem(0) } },
+                        .clickable {
+                            // 回到顶部 = 「筛选行吸顶、汇总卡收起」状态：只滚网格归零，
+                            // 面板保持收起；要看汇总卡请在顶部下拉
+                            scope.launch { listState.animateScrollToItem(0) }
+                        },
                     shape = MaterialTheme.shapes.large,
                     color = MaterialTheme.colorScheme.surface,
                     tonalElevation = 2.dp

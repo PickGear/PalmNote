@@ -126,6 +126,7 @@ class PreferencesManager @Inject constructor(
         val WALLPAPER_OPACITY = floatPreferencesKey("wallpaper_opacity")
         val WALLPAPER_CUSTOM_URI = stringPreferencesKey("wallpaper_custom_uri")
         val WALLPAPER_CUSTOM_COLOR = stringPreferencesKey("wallpaper_custom_color")
+        val WALLPAPER_CUSTOM_GEN = intPreferencesKey("wallpaper_custom_gen")
         val WIDGET_OPACITY = floatPreferencesKey("widget_opacity")
         val DASHBOARD_MESSAGE_MODE = booleanPreferencesKey("dashboard_message_mode")
         val DASHBOARD_MESSAGE_LAST_DATE = stringPreferencesKey("dashboard_message_last_date")
@@ -152,6 +153,8 @@ class PreferencesManager @Inject constructor(
         const val DEFAULT_WALLPAPER_BLUR = 0f
         const val DEFAULT_WALLPAPER_OPACITY = 1f
         const val DEFAULT_WALLPAPER_CUSTOM_COLOR = "#FFFFFF"
+        /** 自定义壁纸的「第几张」：每选一次新图 +1，是解码结果的失效凭据（见 setWallpaperCustomUri）。 */
+        const val DEFAULT_WALLPAPER_CUSTOM_GEN = 0
         const val DEFAULT_WIDGET_OPACITY = 1f
         /** 下界 0.2：最透的一档，再低整卡就快看不见了。语义是**不透明度**（1 = 完全不透明）。 */
         const val MIN_WIDGET_OPACITY = 0.2f
@@ -222,11 +225,21 @@ class PreferencesManager @Inject constructor(
     val wallpaperOpacity: Flow<Float> = prefsFlow.map { it[WALLPAPER_OPACITY] ?: DEFAULT_WALLPAPER_OPACITY }
     val wallpaperCustomUri: Flow<String> = prefsFlow.map { it[WALLPAPER_CUSTOM_URI] ?: "" }
     val wallpaperCustomColor: Flow<String> = prefsFlow.map { it[WALLPAPER_CUSTOM_COLOR] ?: DEFAULT_WALLPAPER_CUSTOM_COLOR }
+    val wallpaperCustomGen: Flow<Int> = prefsFlow.map { it[WALLPAPER_CUSTOM_GEN] ?: DEFAULT_WALLPAPER_CUSTOM_GEN }
 
     suspend fun setWallpaperStyle(style: String) { context.dataStore.edit { it[WALLPAPER_STYLE] = style } }
     suspend fun setWallpaperBlur(blur: Float) { context.dataStore.edit { it[WALLPAPER_BLUR] = blur } }
     suspend fun setWallpaperOpacity(opacity: Float) { context.dataStore.edit { it[WALLPAPER_OPACITY] = opacity } }
-    suspend fun setWallpaperCustomUri(uri: String) { context.dataStore.edit { it[WALLPAPER_CUSTOM_URI] = uri } }
+    suspend fun setWallpaperCustomUri(uri: String) {
+        // 自定义壁纸固定覆盖写到同一个文件，所以「再选一次图」时 uri 字符串**不变**、只有文件内容变了。
+        // 只写 uri 的话值前后相同 → 下游 MutableState 判等跳过 → 整条链路都不会重组，新图永远刷不出来。
+        // 因此在同一次 edit 里带上代数 +1：它是解码结果的失效凭据（缓存 key、produceState key 都含它），
+        // 换图后才会重新解码。合在一次 edit 里，保证两个值永远一致。
+        context.dataStore.edit {
+            it[WALLPAPER_CUSTOM_URI] = uri
+            it[WALLPAPER_CUSTOM_GEN] = (it[WALLPAPER_CUSTOM_GEN] ?: DEFAULT_WALLPAPER_CUSTOM_GEN) + 1
+        }
+    }
     suspend fun setWallpaperCustomColor(color: String) { context.dataStore.edit { it[WALLPAPER_CUSTOM_COLOR] = color } }
 
     /**

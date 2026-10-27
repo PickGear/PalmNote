@@ -85,6 +85,9 @@ fun GeneralSettingsScreen(
     val categoryCompactEnabled by viewModel.categoryCompactEnabled.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val isDarkTheme = LocalIsDarkTheme.current
+    // 实时预览卡要画「当前这张壁纸」。Dialog 是独立窗口，CompositionLocal 跨不过去，
+    // 所以在弹窗外（仍在 WallpaperBackground 子树内）先取好，再当普通值传进 text 里。
+    val wallpaperData = LocalWallpaperData.current
     var showThemePicker by remember { mutableStateOf(false) }
     var showLanguagePicker by remember { mutableStateOf(false) }
     var showThemeColorPicker by remember { mutableStateOf(false) }
@@ -339,12 +342,12 @@ fun GeneralSettingsScreen(
                     context.contentResolver.openInputStream(it)?.use { input ->
                         file.outputStream().use { output -> input.copyTo(output) }
                     }
-                    viewModel.setWallpaperCustomUri(file.absolutePath)
-                    viewModel.setWallpaperStyle("custom")
+                    viewModel.applyCustomWallpaper(file.absolutePath)
                 } catch (_: Exception) {
                     Toast.makeText(context, R.string.wallpaper_load_failed, Toast.LENGTH_SHORT).show()
                 }
-                showWallpaperPicker = false
+                // 不关弹窗：选完图还要调透明度/模糊度（与选预设不自动关闭同一逻辑），
+                // 用右下角「完成」退出。
             }
         }
         var customWallpaperColor by remember(showWallpaperPicker) {
@@ -402,9 +405,10 @@ fun GeneralSettingsScreen(
                                                         1.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f), CircleShape
                                                     )
                                                 )
+                                                // 点预设后不自动关弹窗：接下来还要调透明度/模糊度，
+                                                // 提前关掉会让实时预览白做；用右下角「完成」关闭。
                                                 .clickable {
                                                     viewModel.setWallpaperStyle(id)
-                                                    if (id != "color" && id != "custom") showWallpaperPicker = false
                                                 },
                                             contentAlignment = Alignment.Center
                                         ) {
@@ -497,6 +501,22 @@ fun GeneralSettingsScreen(
                         Spacer(Modifier.height(12.dp))
                         var blurValue by remember(state.wallpaperBlur) { mutableFloatStateOf(state.wallpaperBlur) }
                         var opacityValue by remember(state.wallpaperOpacity) { mutableFloatStateOf(state.wallpaperOpacity) }
+                        // 实时预览：内容取当前这张壁纸，透明度/模糊度取滑条的**实时**值 —— 拖动中就能看到
+                        // 结果，不必松手等落盘再刷新。和整屏背景共用 WallpaperSurface，保证所见即所得。
+                        WallpaperSurface(
+                            wallpaper = WallpaperData(
+                                bitmap = wallpaperData.bitmap,
+                                solidColor = wallpaperData.solidColor,
+                                style = wallpaperData.style,
+                                opacity = opacityValue,
+                                blur = blurValue
+                            ),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(140.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                        )
+                        Spacer(Modifier.height(12.dp))
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.fillMaxWidth()
@@ -522,30 +542,35 @@ fun GeneralSettingsScreen(
                                 textAlign = androidx.compose.ui.text.style.TextAlign.End
                             )
                         }
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(
-                                stringResource(R.string.wallpaper_blur),
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.width(48.dp)
-                            )
-                            Slider(
-                                value = blurValue,
-                                onValueChange = { blurValue = it },
-                                onValueChangeFinished = { viewModel.setWallpaperBlur(blurValue) },
-                                valueRange = 0f..30f,
-                                modifier = Modifier.weight(1f)
-                            )
-                            Text(
-                                "${blurValue.toInt()}",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.width(36.dp),
-                                textAlign = androidx.compose.ui.text.style.TextAlign.End
-                            )
+                        // 模糊只对位图壁纸有意义：预设与自定义纯色都是 solidColor，走不到模糊分支，
+                        // 留着就是「拖了没反应」的死滑条。按 bitmap 判定而非写死 "custom"，将来预设
+                        // 换成图片壁纸这行会自动出现；只隐藏不改值，切回来还是原来的模糊度。
+                        if (wallpaperData.bitmap != null) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    stringResource(R.string.wallpaper_blur),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.width(48.dp)
+                                )
+                                Slider(
+                                    value = blurValue,
+                                    onValueChange = { blurValue = it },
+                                    onValueChangeFinished = { viewModel.setWallpaperBlur(blurValue) },
+                                    valueRange = 0f..30f,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                Text(
+                                    "${blurValue.toInt()}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.width(36.dp),
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.End
+                                )
+                            }
                         }
                     }
                 }

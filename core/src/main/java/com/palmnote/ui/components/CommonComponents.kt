@@ -250,32 +250,33 @@ fun AnimatedCard(
     modifier: Modifier = Modifier,
     index: Int = 0,
     instant: Boolean = false,
+    /** 变化时重播整段入场动画。默认 null：只在首次出现时播一次，不因重组重放。 */
+    restartKey: Any? = null,
+    /**
+     * 上滑距离。矮小的元素（日期头这类小字行）用更短的行程：同样 20dp 对大卡是
+     * 轻微起落，对小字是自身高度的大半，观感上会显得又重又慢。
+     */
+    slideDistance: Dp = 20.dp,
     content: @Composable () -> Unit
 ) {
-    val visible = remember { mutableStateOf(false) }
-    val animDuration = if (instant) 0 else 300
+    // 单个进度值同时驱动位移与透明度（0f = 下沉 20dp + 全透明，1f = 就位），两条曲线天然同步。
+    // 用 remember 的 key 带上 restartKey 整体重建进度：animateDpAsState/animateFloatAsState
+    // 内部按 label 记住 Animatable，状态翻转时它停留在旧值上不会归零，所以只能看到一次入场，
+    // 切列表/网格这类"同一批卡片换个排法"的场景就静悄悄过去了。
+    val progressAnim = remember(restartKey) { Animatable(0f) }
+    val progress = progressAnim.value
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(restartKey) {
         if (!instant) delay(index * 50L)
-        visible.value = true
+        if (instant) progressAnim.snapTo(1f)
+        // 340ms：比标准 300ms 放缓约 12%，卡片间重叠更多、入场波更绵（2026-10-27 真机调优）
+        else progressAnim.animateTo(1f, tween(340, easing = FastOutSlowInEasing))
     }
-
-    val offsetY by animateDpAsState(
-        targetValue = if (visible.value) 0.dp else 20.dp,
-        animationSpec = tween(durationMillis = animDuration, easing = FastOutSlowInEasing),
-        label = "card_offset"
-    )
-
-    val alpha by animateFloatAsState(
-        targetValue = if (visible.value) 1f else 0f,
-        animationSpec = tween(durationMillis = animDuration),
-        label = "card_alpha"
-    )
 
     Box(
         modifier = modifier
-            .offset(y = offsetY)
-            .graphicsLayer(alpha = alpha)
+            .offset(y = slideDistance * (1f - progress))
+            .graphicsLayer(alpha = progress)
     ) {
         content()
     }

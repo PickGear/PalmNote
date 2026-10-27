@@ -52,6 +52,7 @@ private data class WallpaperPrefs(
     val opacity: Float,
     val blur: Float,
     val customUri: String,
+    val customGen: Int,
     val customColor: String
 )
 
@@ -210,13 +211,21 @@ class MainActivity : AppCompatActivity() {
                     preferencesManager.themeMode,
                     preferencesManager.themeColor
                 ) { mode, color -> mode to color }
+                // 自定义图片的 URI 与「代数」绑成一条流：两者语义是一体的（同一个文件 + 第几张图），
+                // 绑完顺带绕开 combine 只支持 5 个流的限制。
+                val wallpaperCustom = combine(
+                    preferencesManager.wallpaperCustomUri,
+                    preferencesManager.wallpaperCustomGen
+                ) { uri, gen -> uri to gen }
                 val wallpaper = combine(
                     preferencesManager.wallpaperStyle,
                     preferencesManager.wallpaperOpacity,
                     preferencesManager.wallpaperBlur,
-                    preferencesManager.wallpaperCustomUri,
-                    preferencesManager.wallpaperCustomColor
-                ) { style, opacity, blur, uri, color -> WallpaperPrefs(style, opacity, blur, uri, color) }
+                    preferencesManager.wallpaperCustomColor,
+                    wallpaperCustom
+                ) { style, opacity, blur, color, custom ->
+                    WallpaperPrefs(style, opacity, blur, custom.first, custom.second, color)
+                }
                 combine(theme, wallpaper) { t, w -> t to w }
             }.collectAsStateWithLifecycle(
                 initialValue = (initialTheme.themeMode to initialTheme.themeColor) to
@@ -225,6 +234,7 @@ class MainActivity : AppCompatActivity() {
                         initialTheme.wallpaperOpacity,
                         initialTheme.wallpaperBlur,
                         initialTheme.wallpaperCustomUri,
+                        initialTheme.wallpaperCustomGen,
                         initialTheme.wallpaperCustomColor
                     )
             )
@@ -270,6 +280,7 @@ class MainActivity : AppCompatActivity() {
                 wallpaperOpacity = wallpaper.opacity,
                 wallpaperBlur = wallpaper.blur,
                 wallpaperCustomUri = wallpaper.customUri,
+                wallpaperCustomGen = wallpaper.customGen,
                 wallpaperCustomColor = wallpaper.customColor
             ) {
                 WallpaperBackground(modifier = Modifier.fillMaxSize()) {

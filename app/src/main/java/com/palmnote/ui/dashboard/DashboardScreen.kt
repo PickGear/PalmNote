@@ -20,6 +20,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.Animatable
 import androidx.compose.material.icons.Icons
@@ -64,6 +65,7 @@ import com.palmnote.domain.util.DateUtils
 import com.palmnote.ui.components.*
 import com.palmnote.ui.theme.*
 import coil3.compose.AsyncImage
+import kotlinx.coroutines.delay
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -317,15 +319,19 @@ fun DashboardScreen(
                         .padding(horizontal = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    configs.forEach { config ->
+                    configs.forEachIndexed { index, config ->
                         key(config.type) {
                             val isDragged = draggedType == config.type
                             val animProgress = remember { Animatable(0f) }
-                            // 数据到齐后**整页一次性**淡入，不做 index 错峰：用户 2026-10-18 定
-                            // 「宁可先等，也不要页面上已经在、卡片再一张张往外蹦」。
-                            // 300ms 淡入保留（节奏与原版一致），只是不再排队。
+                            // 错峰入场，动画规格与各页共用的 AnimatedCard 一致
+                            // （340ms FastOutSlowIn、20dp 上滑）。间隔取 100ms = AnimatedCard
+                            // 50ms × 2：观感快慢取决于「间隔 ÷ 卡片高度」的扫过速度，首页单卡
+                            // 约为物品列表行的两倍高，间隔同步放倍后两种页面扫过速度一致。
+                            // 不直接套 AnimatedCard：拖拽置顶的 zIndex 依赖本层 Box 的父子作用域。
+                            // 无 NavHost 转场：内容动画独占入场，不被叠加掩盖。
                             LaunchedEffect(Unit) {
-                                animProgress.animateTo(1f, animationSpec = tween(300))
+                                delay(index * 100L)
+                                animProgress.animateTo(1f, animationSpec = tween(340, easing = FastOutSlowInEasing))
                             }
 
                             Box(
@@ -335,7 +341,7 @@ fun DashboardScreen(
                                     .graphicsLayer {
                                         // 拖拽时原卡片保留半透明占位，避免露出透明（0.3f 仍可看出位置）
                                         alpha = if (isDragged) 0.3f else animProgress.value
-                                        translationY = if (isDragged) 0f else (1f - animProgress.value) * 12.dp.toPx()
+                                        translationY = if (isDragged) 0f else (1f - animProgress.value) * 20.dp.toPx()
                                     }
                                     .onGloballyPositioned {
                                         cardGlobalYs[config.type] = it.positionInWindow().y
