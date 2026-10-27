@@ -697,7 +697,9 @@ fun AssetScreen(
             Column(
                 modifier = Modifier.fillMaxSize()
             ) {
-                val wasScrolling = remember { listState.isScrollInProgress }
+                // derivedStateOf 订阅滚动状态（裸 remember 只取首帧值、永远 false，
+                // instant 逃生口会失效）；与账单页 isListScrolling 同款写法
+                val wasScrolling by remember { derivedStateOf { listState.isScrollInProgress } }
                 // 面板高度 = （内容高度 + 与筛选行间的 8dp 间距） × 档位比例：
                 // 间距随面板一起收合，收起后筛选行贴着顶栏下缘（0dp 基准，与展开时
                 // 汇总卡的顶边一致）；内容锚定顶部、超出部分裁掉——收档时面板像被

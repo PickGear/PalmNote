@@ -43,6 +43,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -50,6 +51,7 @@ import com.palmnote.R
 import com.palmnote.domain.util.DateUtils
 import com.palmnote.ui.theme.*
 import kotlinx.coroutines.delay
+import kotlin.math.roundToInt
 
 val CATEGORY_COLOR_OPTIONS = listOf(
     "#4285F4", "#34A853", "#FBBC04", "#EA4335", "#FF6D00",
@@ -261,8 +263,8 @@ fun AnimatedCard(
     // 用 remember 的 key 带上 restartKey 整体重建进度：animateDpAsState/animateFloatAsState
     // 内部按 label 记住 Animatable，状态翻转时它停留在旧值上不会归零，所以只能看到一次入场，
     // 切列表/网格这类"同一批卡片换个排法"的场景就静悄悄过去了。
-    val progressAnim = remember(restartKey) { Animatable(0f) }
-    val progress = progressAnim.value
+    // 初始值带 instant：避免「首帧 alpha=0、下一帧才 snapTo(1)」的一帧闪现。
+    val progressAnim = remember(restartKey) { Animatable(if (instant) 1f else 0f) }
 
     LaunchedEffect(restartKey) {
         if (!instant) delay(index * 50L)
@@ -276,8 +278,12 @@ fun AnimatedCard(
 
     Box(
         modifier = modifier
-            .offset(y = slideDistance * (1f - progress))
-            .graphicsLayer(alpha = progress)
+            // lambda 版位移/透明度：动画帧只更新图层属性、不触发内容重组——
+            // 非 lambda 版会在入场期间让重内容卡（整页月历、看板）每帧整体重组
+            .offset {
+                IntOffset(0, (slideDistance.toPx() * (1f - progressAnim.value)).roundToInt())
+            }
+            .graphicsLayer { alpha = progressAnim.value }
     ) {
         content()
     }
