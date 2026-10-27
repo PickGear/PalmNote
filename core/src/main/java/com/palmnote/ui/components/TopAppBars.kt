@@ -65,14 +65,15 @@ fun CompactTopAppBar(
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Suppress("UnusedParameter")
 @Composable
 fun SecondaryTopAppBar(
     title: String,
     navigationIcon: @Composable () -> Unit = {},
     actions: @Composable RowScope.() -> Unit = {},
-    colors: TopAppBarColors = TopAppBarDefaults.topAppBarColors(),
-    backgroundColor: Color = MaterialTheme.colorScheme.background
+    colors: TopAppBarColors = TopAppBarDefaults.topAppBarColors(
+        containerColor = MaterialTheme.colorScheme.background
+    ),
+    backgroundColor: Color? = null
 ) {
     TopAppBar(
         title = {
@@ -87,26 +88,30 @@ fun SecondaryTopAppBar(
         actions = actions,
         // 同 CompactTopAppBar：容器色恒透明、底色自己画，绕开 M3 对 containerColor 的
         // 无条件 spring 动画（壁纸开关时会经过半透明灰）。
-        modifier = Modifier.background(colors.containerColor),
+        // 底色 = 显式 backgroundColor 优先，否则取 colors.containerColor（默认已落
+        // background）。此前 backgroundColor 从未被使用（参数是死的），传 Transparent
+        // 的页面全部渲染成 surface 白、与其他页米色不一致。
+        modifier = Modifier.background(backgroundColor ?: colors.containerColor),
         colors = colors.copy(containerColor = Color.Transparent),
     )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Suppress("UnusedParameter")
 @Composable
 fun SecondaryTopAppBar(
     title: @Composable () -> Unit,
     navigationIcon: @Composable () -> Unit = {},
     actions: @Composable RowScope.() -> Unit = {},
-    colors: TopAppBarColors = TopAppBarDefaults.topAppBarColors(),
-    backgroundColor: Color = MaterialTheme.colorScheme.background
+    colors: TopAppBarColors = TopAppBarDefaults.topAppBarColors(
+        containerColor = MaterialTheme.colorScheme.background
+    ),
+    backgroundColor: Color? = null
 ) {
     TopAppBar(
         title = title,
         navigationIcon = navigationIcon,
         actions = actions,
-        modifier = Modifier.background(colors.containerColor),
+        modifier = Modifier.background(backgroundColor ?: colors.containerColor),
         colors = colors.copy(containerColor = Color.Transparent),
     )
 }
