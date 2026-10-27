@@ -1,7 +1,4 @@
 package com.palmnote.ui.bills
-import androidx.hilt.navigation.compose.hiltViewModel
-import com.palmnote.domain.model.BillType
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -26,9 +23,11 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.palmnote.app.R
 import com.palmnote.data.db.entity.Bill
+import com.palmnote.domain.model.BillType
 import com.palmnote.domain.model.toMoney
 import com.palmnote.domain.util.CurrencyUtils
 import com.palmnote.domain.util.DateUtils
@@ -76,8 +75,12 @@ fun AddBillScreen(
             if (json != null) {
                 try {
                     org.json.JSONObject(json).optBoolean("enabled", true)
-                } catch (_: Exception) { true }
-            } else true
+                } catch (_: Exception) {
+                    true
+                }
+            } else {
+                true
+            }
         }.map { item ->
             val resolved = com.palmnote.ui.theme.ColorResolver.resolve(item.name, item.color)
             if (resolved != item.color) item.copy(color = resolved) else item
@@ -262,7 +265,7 @@ fun AddBillScreen(
                     )
                 }
             }
-            
+
             // Account/Wallet Selector
             item {
                 val wallets by viewModel.wallets.collectAsStateWithLifecycle()
@@ -280,7 +283,9 @@ fun AddBillScreen(
                             val isSelected = formState.walletId == wallet.id
                             val walletColor = try {
                                 wallet.color.toComposeColor()
-                            } catch (_: Exception) { AccentOrange }
+                            } catch (_: Exception) {
+                                AccentOrange
+                            }
 
                             Box(
                                 modifier = Modifier
@@ -383,7 +388,9 @@ fun AddBillScreen(
                                 val isSelected = formState.toWalletId == wallet.id
                                 val walletColor = try {
                                     wallet.color.toComposeColor()
-                                } catch (_: Exception) { AccentOrange }
+                                } catch (_: Exception) {
+                                    AccentOrange
+                                }
                                 Box(
                                     modifier = Modifier
                                         .size(width = 72.dp, height = 56.dp)
@@ -610,8 +617,11 @@ fun AddBillScreen(
 
             // Image Upload
             item {
-                val accentColor = if (formState.type == BillType.TRANSFER) InfoBlue
-                    else categories.find { it.name == formState.category }?.color ?: AccentOrange
+                val accentColor = if (formState.type == BillType.TRANSFER) {
+                    InfoBlue
+                } else {
+                    categories.find { it.name == formState.category }?.color ?: AccentOrange
+                }
                 ModuleCard(tint = MaterialTheme.colorScheme.surface) {
                     ImageGridPicker(
                         title = stringResource(R.string.bill_image_section),

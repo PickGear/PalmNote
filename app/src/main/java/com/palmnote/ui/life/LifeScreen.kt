@@ -4,14 +4,9 @@ package com.palmnote.ui.life
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.ui.graphics.lerp
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
@@ -34,19 +29,23 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.automirrored.filled.MenuBook
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.automirrored.outlined.EventNote
-import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.AutoStories
@@ -115,10 +114,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -133,9 +133,6 @@ import com.palmnote.data.db.entity.LifeTemplate
 import com.palmnote.data.db.entity.getDisplayName
 import com.palmnote.domain.model.parseChecklist
 import com.palmnote.domain.util.BuiltinTemplates
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
 import com.palmnote.ui.components.AnimatedCard
 import com.palmnote.ui.components.AppDialog
 import com.palmnote.ui.components.CompactTopAppBar
@@ -149,6 +146,9 @@ import com.palmnote.ui.theme.TypeScale
 import com.palmnote.ui.theme.lifePlanTint
 import com.palmnote.ui.theme.lifeRecordTint
 import com.palmnote.ui.theme.lifeTimeTint
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import java.time.DayOfWeek
 import java.time.LocalDate
 
@@ -396,7 +396,6 @@ fun LifeScreen(
                 }
             )
         }
-
     }
 }
 
@@ -483,11 +482,12 @@ private fun LifeSearchContent(
             emptyList()
         } else {
             rows.filter { r ->
-                r.status != "ARCHIVED" && (
-                    r.title.contains(query, true) ||
-                        r.templateName.contains(query, true) ||
-                        (snippets[r.itemId]?.contains(query, true) == true)
-                    )
+                r.status != "ARCHIVED" &&
+                    (
+                        r.title.contains(query, true) ||
+                            r.templateName.contains(query, true) ||
+                            (snippets[r.itemId]?.contains(query, true) == true)
+                        )
             }
         }
     }
@@ -521,7 +521,8 @@ private fun FlowCard(row: LifeItemDao.LifeBoardItemRow, showDoneState: Boolean =
     val done = showDoneState && row.status == "COMPLETED"
     // 「卡片字段」（showInCard）此前在这里没有任何渲染方，是死配置；现在与模板预览共用同一份卡片。
     val cardFields = remember(row.fieldsConfig, row.fieldsData, row.repeatYearly, context) {
-        localizedCardFieldValues(context, row.fieldsConfig, row.fieldsData, repeatYearly = row.repeatYearly)    }
+        localizedCardFieldValues(context, row.fieldsConfig, row.fieldsData, repeatYearly = row.repeatYearly)
+    }
     val progress = remember(row.fieldsConfig, row.fieldsData) {
         cardProgressFraction(row.fieldsConfig, row.fieldsData)
     }
@@ -1273,8 +1274,11 @@ private fun CompletedCollapsedSection(
     var expanded by rememberSaveable { mutableStateOf(false) }
     Text(
         stringResource(
-            if (expanded) R.string.life_board_completed_expanded
-            else R.string.life_board_completed_collapsed,
+            if (expanded) {
+                R.string.life_board_completed_expanded
+            } else {
+                R.string.life_board_completed_collapsed
+            },
             completed.size
         ),
         fontSize = TypeScale.bodyS,

@@ -1,28 +1,25 @@
 package com.palmnote.ui.dashboard
 
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.ui.layout.positionInWindow
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.core.Animatable
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
@@ -32,41 +29,28 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.zIndex
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import kotlin.math.roundToInt
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil3.compose.AsyncImage
 import com.palmnote.app.R
-import com.palmnote.data.db.dao.CategoryCount
-import com.palmnote.domain.model.toMoney
-import com.palmnote.domain.util.CurrencyUtils
-import com.palmnote.domain.util.DateUtils
 import com.palmnote.ui.components.*
 import com.palmnote.ui.theme.*
-import coil3.compose.AsyncImage
 import kotlinx.coroutines.delay
 import java.io.File
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -171,8 +155,11 @@ fun DashboardScreen(
         when (config.type) {
             CardType.BUDGET_ALERT -> {
                 val budget = state.budget
-                state.budgetReminderEnabled && budget != null && budget.totalBudget > 0 &&
-                    state.monthlyExpense > 0 && state.monthlyExpense > budget.totalBudget * 0.8
+                state.budgetReminderEnabled &&
+                    budget != null &&
+                    budget.totalBudget > 0 &&
+                    state.monthlyExpense > 0 &&
+                    state.monthlyExpense > budget.totalBudget * 0.8
             }
             CardType.ASSET_DISTRIBUTION -> state.assetDistribution.isNotEmpty()
             CardType.ANNIVERSARIES -> state.anniversaryCount > 0
@@ -230,7 +217,7 @@ fun DashboardScreen(
                             targetState = showMessage,
                             transitionSpec = {
                                 fadeIn(tween(200)) + slideInVertically(tween(200)) { it / 2 } togetherWith
-                                fadeOut(tween(150)) + slideOutVertically(tween(150)) { -it / 2 }
+                                    fadeOut(tween(150)) + slideOutVertically(tween(150)) { -it / 2 }
                             },
                             label = "titleTransition"
                         ) { showMsg ->
@@ -273,7 +260,11 @@ fun DashboardScreen(
                                 Text(
                                     text = if (showMsg) {
                                         if (messageIndex == 0) greeting else dashboardMessages[messageIndex - 1]
-                                    } else if (profileNickname.isNotBlank()) profileNickname else "PalmNote",
+                                    } else if (profileNickname.isNotBlank()) {
+                                        profileNickname
+                                    } else {
+                                        "PalmNote"
+                                    },
                                     style = MaterialTheme.typography.titleLarge,
                                     fontWeight = FontWeight.Bold,
                                     color = if (showMsg) ModuleHome else MaterialTheme.colorScheme.onSurface
@@ -284,11 +275,11 @@ fun DashboardScreen(
                 },
                 actions = {
                     IconButton(onClick = onNavigateToSearch) {
-                Icon(
-                    imageVector = Icons.Outlined.Search,
-                    contentDescription = stringResource(R.string.search),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                        Icon(
+                            imageVector = Icons.Outlined.Search,
+                            contentDescription = stringResource(R.string.search),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                     IconButton(onClick = { showCardDialog = true }) {
                         Icon(

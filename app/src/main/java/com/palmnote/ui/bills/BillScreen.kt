@@ -1,22 +1,19 @@
 package com.palmnote.ui.bills
-import androidx.hilt.navigation.compose.hiltViewModel
-import com.palmnote.domain.model.BillType
-
-import androidx.compose.animation.*
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.*
 import androidx.compose.material.icons.filled.*
@@ -25,34 +22,35 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import com.palmnote.ui.theme.ModuleBill
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
-import kotlin.math.roundToInt
-
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.res.pluralStringResource
-import androidx.compose.ui.res.stringResource
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.palmnote.app.R
 import com.palmnote.data.db.entity.Bill
-import com.palmnote.data.db.entity.getDisplayName
 import com.palmnote.data.db.entity.getDisplayDescription
+import com.palmnote.data.db.entity.getDisplayName
+import com.palmnote.domain.model.BillType
 import com.palmnote.domain.model.toMoney
 import com.palmnote.domain.util.CurrencyUtils
 import com.palmnote.domain.util.DateUtils
 import com.palmnote.ui.components.*
 import com.palmnote.ui.life.PillToggle
 import com.palmnote.ui.theme.*
+import com.palmnote.ui.theme.ModuleBill
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -82,7 +80,7 @@ fun BillScreen(
     DisposableEffect(Unit) {
         onDispose { viewModel.clearFilter() }
     }
-    
+
     var calendarExpanded by remember { mutableStateOf(false) }
     // 「回今天」令牌：点卡片左上的「日历」时写一个新时间戳。不能只靠 setMonth 触发 —— 已经在
     // 当月浏览别的周时，setMonth 写进去的是同一个值，StateFlow 不会重发，周视图也就等不到这一跳。
@@ -99,8 +97,11 @@ fun BillScreen(
                 else -> base
             }
             val sd = state.selectedDay
-            if (sd != null) byType.filter { DateUtils.getDayOfMonth(it.date) == sd }
-            else byType
+            if (sd != null) {
+                byType.filter { DateUtils.getDayOfMonth(it.date) == sd }
+            } else {
+                byType
+            }
         }
     }
 
@@ -129,11 +130,14 @@ fun BillScreen(
     var showBookMenu by remember { mutableStateOf(false) }
     var showSearch by remember { mutableStateOf(false) }
     var showOverflowMenu by remember { mutableStateOf(false) }
-    
-    BackHandler(enabled = showSearch) { showSearch = false; viewModel.clearSearch() }
+
+    BackHandler(enabled = showSearch) {
+        showSearch = false
+        viewModel.clearSearch()
+    }
     val currentBook = state.accountBooks.find { it.id == state.selectedBookId }
         ?: state.allAccountBooks.find { it.id == state.selectedBookId }
-    
+
     var billToDelete by remember { mutableStateOf<Bill?>(null) }
 
     Scaffold(
@@ -219,8 +223,12 @@ fun BillScreen(
                                                                     shape = MaterialTheme.shapes.extraSmall,
                                                                     color = AccentOrange.copy(alpha = 0.1f)
                                                                 ) {
-                                                                    Text(stringResource(R.string.bill_default), modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
-                                                                        style = MaterialTheme.typography.labelSmall, color = AccentOrange)
+                                                                    Text(
+                                                                        stringResource(R.string.bill_default),
+                                                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
+                                                                        style = MaterialTheme.typography.labelSmall,
+                                                                        color = AccentOrange
+                                                                    )
                                                                 }
                                                             }
                                                         }
@@ -261,7 +269,10 @@ fun BillScreen(
                 },
                 actions = {
                     if (showSearch) {
-                        TextButton(onClick = { showSearch = false; viewModel.clearSearch() }, modifier = Modifier.padding(end = 4.dp)) {
+                        TextButton(onClick = {
+                            showSearch = false
+                            viewModel.clearSearch()
+                        }, modifier = Modifier.padding(end = 4.dp)) {
                             Text(stringResource(R.string.cancel), style = MaterialTheme.typography.bodyMedium)
                         }
                     } else {
@@ -370,197 +381,204 @@ fun BillScreen(
                     exit = fadeOut(tween(300)) + shrinkVertically(tween(300))
                 ) {
                     AnimatedCard(index = 1) {
-                    ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
-                        // 头部一行三元素：左「日历」（点击 = 回今天）、中月份（相对整卡居中）、右「周 | 月」。
-                        // 月份用 Box 叠放而非 Row + weight：左右元素宽度天然不等（中文「日历」窄、
-                        // 英文 "Calendar" 宽），weight 版会把月份挤得偏离中心；叠放才是真正的整行居中。
-                        // 切月仍只靠左右滑动，滑动落定后才回写 currentYearMonth，故这里取外部当前月。
-                        val isOnToday = state.selectedDay == DateUtils.getDayOfMonth(System.currentTimeMillis()) &&
-                            state.currentYearMonth == DateUtils.getCurrentYearMonth()
-                        val todayLabel = stringResource(R.string.common_today)
-                        Box(modifier = Modifier.fillMaxWidth().height(40.dp)) {
-                            Text(
-                                text = DateUtils.formatDisplayMonth(LocalContext.current, state.currentYearMonth),
-                                fontSize = TypeScale.metricValue,
-                                fontWeight = FontWeight.Medium,
-                                // 与生活页月历标题（LifeMonthCalendar 的 displayMonth）同款：onSurface
-                                // 才是正文色。原先误用 onSurfaceVariant（#7A7570 次要灰）→ 15sp Medium
-                                // 的小字在白卡上对比度仅 4.6:1，看着「发虚」（用户 2026-10-10 截图指出）。
-                                color = MaterialTheme.colorScheme.onSurface,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.align(Alignment.Center)
-                            )
-                            // 左：点「日历」= 回到今天（切回当月并选中今日），取代原「今天」按钮；
-                            // 已在今天用常规色、离开后转主色，兼作「可点回今天」的提示。
-                            Row(
-                                modifier = Modifier
-                                    .align(Alignment.CenterStart)
-                                    .clip(CircleShape)
-                                    .clickable(onClickLabel = todayLabel) {
-                                        viewModel.setMonth(DateUtils.getCurrentYearMonth())
-                                        // 周视图下 month 可能本来就是当月，只靠上面这行不会引起任何
-                                        // 状态变化；补一个令牌，保证「回今天」在周视图里也真的跳回本周。
-                                        calendarTodayJump = System.currentTimeMillis()
-                                    }
-                                    // 上下 8dp 把点击区撑到整行 40dp（titleMedium 行高约 24dp）
-                                    .padding(horizontal = 6.dp, vertical = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
+                        ModuleCard(
+                            tint = MaterialTheme.colorScheme.surface,
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                        ) {
+                            // 头部一行三元素：左「日历」（点击 = 回今天）、中月份（相对整卡居中）、右「周 | 月」。
+                            // 月份用 Box 叠放而非 Row + weight：左右元素宽度天然不等（中文「日历」窄、
+                            // 英文 "Calendar" 宽），weight 版会把月份挤得偏离中心；叠放才是真正的整行居中。
+                            // 切月仍只靠左右滑动，滑动落定后才回写 currentYearMonth，故这里取外部当前月。
+                            val isOnToday = state.selectedDay == DateUtils.getDayOfMonth(System.currentTimeMillis()) &&
+                                state.currentYearMonth == DateUtils.getCurrentYearMonth()
+                            val todayLabel = stringResource(R.string.common_today)
+                            Box(modifier = Modifier.fillMaxWidth().height(40.dp)) {
                                 Text(
-                                    stringResource(R.string.bill_calendar),
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (isOnToday) MaterialTheme.colorScheme.onSurface
-                                    else MaterialTheme.colorScheme.primary
+                                    text = DateUtils.formatDisplayMonth(LocalContext.current, state.currentYearMonth),
+                                    fontSize = TypeScale.metricValue,
+                                    fontWeight = FontWeight.Medium,
+                                    // 与生活页月历标题（LifeMonthCalendar 的 displayMonth）同款：onSurface
+                                    // 才是正文色。原先误用 onSurfaceVariant（#7A7570 次要灰）→ 15sp Medium
+                                    // 的小字在白卡上对比度仅 4.6:1，看着「发虚」（用户 2026-10-10 截图指出）。
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.align(Alignment.Center)
+                                )
+                                // 左：点「日历」= 回到今天（切回当月并选中今日），取代原「今天」按钮；
+                                // 已在今天用常规色、离开后转主色，兼作「可点回今天」的提示。
+                                Row(
+                                    modifier = Modifier
+                                        .align(Alignment.CenterStart)
+                                        .clip(CircleShape)
+                                        .clickable(onClickLabel = todayLabel) {
+                                            viewModel.setMonth(DateUtils.getCurrentYearMonth())
+                                            // 周视图下 month 可能本来就是当月，只靠上面这行不会引起任何
+                                            // 状态变化；补一个令牌，保证「回今天」在周视图里也真的跳回本周。
+                                            calendarTodayJump = System.currentTimeMillis()
+                                        }
+                                        // 上下 8dp 把点击区撑到整行 40dp（titleMedium 行高约 24dp）
+                                        .padding(horizontal = 6.dp, vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        stringResource(R.string.bill_calendar),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (isOnToday) {
+                                            MaterialTheme.colorScheme.onSurface
+                                        } else {
+                                            MaterialTheme.colorScheme.primary
+                                        }
+                                    )
+                                }
+                                // 右：周 / 月 —— 沿用生活页月历同款 PillToggle（胶囊轨道 + 选中侧圆片），
+                                // 与原来的「展开 / 收起」是同一个状态，只是换成了全 App 统一的分段控件。
+                                // 选中片传品牌橙：账单页从顶栏到「记一笔」都是橙色系，默认主色（蓝）
+                                // 的胶囊夹在日历卡里突兀（用户 2026-10-11 截图反馈改橙）。
+                                PillToggle(
+                                    options = listOf(
+                                        stringResource(R.string.life_calendar_view_week),
+                                        stringResource(R.string.life_calendar_view_month)
+                                    ),
+                                    selectedIndex = if (calendarExpanded) 1 else 0,
+                                    onSelect = { calendarExpanded = it == 1 },
+                                    selectedColor = AccentOrange,
+                                    contentDescriptions = listOf(
+                                        stringResource(R.string.life_calendar_toggle_week),
+                                        stringResource(R.string.life_calendar_toggle_month)
+                                    ),
+                                    modifier = Modifier.align(Alignment.CenterEnd)
                                 )
                             }
-                            // 右：周 / 月 —— 沿用生活页月历同款 PillToggle（胶囊轨道 + 选中侧圆片），
-                            // 与原来的「展开 / 收起」是同一个状态，只是换成了全 App 统一的分段控件。
-                            // 选中片传品牌橙：账单页从顶栏到「记一笔」都是橙色系，默认主色（蓝）
-                            // 的胶囊夹在日历卡里突兀（用户 2026-10-11 截图反馈改橙）。
-                            PillToggle(
-                                options = listOf(
-                                    stringResource(R.string.life_calendar_view_week),
-                                    stringResource(R.string.life_calendar_view_month)
-                                ),
-                                selectedIndex = if (calendarExpanded) 1 else 0,
-                                onSelect = { calendarExpanded = it == 1 },
-                                selectedColor = AccentOrange,
-                                contentDescriptions = listOf(
-                                    stringResource(R.string.life_calendar_toggle_week),
-                                    stringResource(R.string.life_calendar_toggle_month)
-                                ),
-                                modifier = Modifier.align(Alignment.CenterEnd)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            CalendarView(
+                                yearMonth = state.currentYearMonth,
+                                dailyData = state.dailySummary,
+                                selectedDay = state.selectedDay,
+                                onDaySelected = { day ->
+                                    viewModel.setSelectedDay(if (state.selectedDay == day) null else day)
+                                },
+                                collapsed = !calendarExpanded,
+                                onMonthChanged = { newMonth -> viewModel.setMonth(newMonth) },
+                                todayJumpSignal = calendarTodayJump
                             )
                         }
-                        Spacer(modifier = Modifier.height(4.dp))
-                        CalendarView(
-                            yearMonth = state.currentYearMonth,
-                            dailyData = state.dailySummary,
-                            selectedDay = state.selectedDay,
-                            onDaySelected = { day ->
-                                viewModel.setSelectedDay(if (state.selectedDay == day) null else day)
-                            },
-                            collapsed = !calendarExpanded,
-                            onMonthChanged = { newMonth -> viewModel.setMonth(newMonth) },
-                            todayJumpSignal = calendarTodayJump
-                        )
-                    }
                     }
                 }
 
                 // Filter chips (fixed)
                 AnimatedCard(index = 2) {
-                Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    // 英文下四个 chip（All / Expense / Income / Transfer）比中文宽得多，
-                    // 挤在一行里会把末尾的 "Transfer" 拦腰折断成 "Tran/sfer"（真机截图 15-09-19）。
-                    // 改为：chip 行占满剩余宽度并**可横向滚动**——装得下就一行排开，
-                    // 装不下就滑，文案永远不折行。
-                    Row(
-                        modifier = Modifier
-                            .weight(1f, fill = false)
-                            .horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        val interactionSource = remember { MutableInteractionSource() }
-                        Surface(
-                            shape = MaterialTheme.shapes.extraLarge,
-                            color = if (selectedFilter == "ALL") ModuleBill.copy(alpha = 0.85f) else Color.Transparent,
-                            modifier = Modifier.clickable(interactionSource = interactionSource, indication = null) { viewModel.setFilterType("ALL") }
+                    Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        // 英文下四个 chip（All / Expense / Income / Transfer）比中文宽得多，
+                        // 挤在一行里会把末尾的 "Transfer" 拦腰折断成 "Tran/sfer"（真机截图 15-09-19）。
+                        // 改为：chip 行占满剩余宽度并**可横向滚动**——装得下就一行排开，
+                        // 装不下就滑，文案永远不折行。
+                        Row(
+                            modifier = Modifier
+                                .weight(1f, fill = false)
+                                .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
-                            Text(
-                                text = stringResource(R.string.bill_all),
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                                color = if (selectedFilter == "ALL") Color.White else MaterialTheme.colorScheme.onSurface,
-                                fontWeight = if (selectedFilter == "ALL") FontWeight.Bold else FontWeight.Normal,
-                                style = MaterialTheme.typography.labelLarge,
-                                maxLines = 1
+                            val interactionSource = remember { MutableInteractionSource() }
+                            Surface(
+                                shape = MaterialTheme.shapes.extraLarge,
+                                color = if (selectedFilter == "ALL") ModuleBill.copy(alpha = 0.85f) else Color.Transparent,
+                                modifier = Modifier.clickable(interactionSource = interactionSource, indication = null) { viewModel.setFilterType("ALL") }
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.bill_all),
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                    color = if (selectedFilter == "ALL") Color.White else MaterialTheme.colorScheme.onSurface,
+                                    fontWeight = if (selectedFilter == "ALL") FontWeight.Bold else FontWeight.Normal,
+                                    style = MaterialTheme.typography.labelLarge,
+                                    maxLines = 1
+                                )
+                            }
+                            val interactionSource2 = remember { MutableInteractionSource() }
+                            Surface(
+                                shape = MaterialTheme.shapes.extraLarge,
+                                color = if (selectedFilter == "EXPENSE") ExpenseRed.copy(alpha = 0.85f) else Color.Transparent,
+                                modifier = Modifier.clickable(interactionSource = interactionSource2, indication = null) { viewModel.setFilterType("EXPENSE") }
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+                                    Icon(
+                                        Icons.AutoMirrored.Outlined.TrendingDown,
+                                        null,
+                                        Modifier.size(16.dp),
+                                        tint = if (selectedFilter == "EXPENSE") Color.White else MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Spacer(Modifier.width(4.dp))
+                                    Text(
+                                        text = stringResource(R.string.bill_expense),
+                                        color = if (selectedFilter == "EXPENSE") Color.White else MaterialTheme.colorScheme.onSurface,
+                                        fontWeight = if (selectedFilter == "EXPENSE") FontWeight.Bold else FontWeight.Normal,
+                                        style = MaterialTheme.typography.labelLarge,
+                                        maxLines = 1
+                                    )
+                                }
+                            }
+                            val interactionSource3 = remember { MutableInteractionSource() }
+                            Surface(
+                                shape = MaterialTheme.shapes.extraLarge,
+                                color = if (selectedFilter == "INCOME") StatusActive.copy(alpha = 0.85f) else Color.Transparent,
+                                modifier = Modifier.clickable(interactionSource = interactionSource3, indication = null) { viewModel.setFilterType("INCOME") }
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+                                    Icon(
+                                        Icons.AutoMirrored.Outlined.TrendingUp,
+                                        null,
+                                        Modifier.size(16.dp),
+                                        tint = if (selectedFilter == "INCOME") Color.White else MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Spacer(Modifier.width(4.dp))
+                                    Text(
+                                        text = stringResource(R.string.bill_income),
+                                        color = if (selectedFilter == "INCOME") Color.White else MaterialTheme.colorScheme.onSurface,
+                                        fontWeight = if (selectedFilter == "INCOME") FontWeight.Bold else FontWeight.Normal,
+                                        style = MaterialTheme.typography.labelLarge,
+                                        maxLines = 1
+                                    )
+                                }
+                            }
+                            val interactionSource4 = remember { MutableInteractionSource() }
+                            Surface(
+                                shape = MaterialTheme.shapes.extraLarge,
+                                color = if (selectedFilter == "TRANSFER") InfoBlue.copy(alpha = 0.85f) else Color.Transparent,
+                                modifier = Modifier.clickable(
+                                    interactionSource = interactionSource4,
+                                    indication = null
+                                ) { viewModel.setFilterType("TRANSFER") }
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+                                    Icon(
+                                        Icons.Outlined.SwapVert,
+                                        null,
+                                        Modifier.size(16.dp),
+                                        tint = if (selectedFilter == "TRANSFER") Color.White else MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Spacer(Modifier.width(4.dp))
+                                    Text(
+                                        text = stringResource(R.string.bill_transfer),
+                                        color = if (selectedFilter == "TRANSFER") Color.White else MaterialTheme.colorScheme.onSurface,
+                                        fontWeight = if (selectedFilter == "TRANSFER") FontWeight.Bold else FontWeight.Normal,
+                                        style = MaterialTheme.typography.labelLarge,
+                                        maxLines = 1
+                                    )
+                                }
+                            }
+                        }
+                        val hasAdvancedFilter = state.currentFilter.category != null ||
+                            state.currentFilter.amountMin != null ||
+                            state.currentFilter.amountMax != null
+                        IconButton(onClick = { viewModel.toggleFilterSheet() }) {
+                            Icon(
+                                imageVector = if (hasAdvancedFilter) Icons.Filled.FilterList else Icons.Outlined.FilterList,
+                                contentDescription = stringResource(R.string.bill_filter),
+                                tint = if (hasAdvancedFilter) AccentOrange else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                        val interactionSource2 = remember { MutableInteractionSource() }
-                        Surface(
-                            shape = MaterialTheme.shapes.extraLarge,
-                            color = if (selectedFilter == "EXPENSE") ExpenseRed.copy(alpha = 0.85f) else Color.Transparent,
-                            modifier = Modifier.clickable(interactionSource = interactionSource2, indication = null) { viewModel.setFilterType("EXPENSE") }
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
-                                Icon(
-                                    Icons.AutoMirrored.Outlined.TrendingDown,
-                                    null,
-                                    Modifier.size(16.dp),
-                                    tint = if (selectedFilter == "EXPENSE") Color.White else MaterialTheme.colorScheme.onSurface
-                                )
-                                Spacer(Modifier.width(4.dp))
-                                Text(
-                                    text = stringResource(R.string.bill_expense),
-                                    color = if (selectedFilter == "EXPENSE") Color.White else MaterialTheme.colorScheme.onSurface,
-                                    fontWeight = if (selectedFilter == "EXPENSE") FontWeight.Bold else FontWeight.Normal,
-                                    style = MaterialTheme.typography.labelLarge,
-                                    maxLines = 1
-                                )
-                            }
-                        }
-                        val interactionSource3 = remember { MutableInteractionSource() }
-                        Surface(
-                            shape = MaterialTheme.shapes.extraLarge,
-                            color = if (selectedFilter == "INCOME") StatusActive.copy(alpha = 0.85f) else Color.Transparent,
-                            modifier = Modifier.clickable(interactionSource = interactionSource3, indication = null) { viewModel.setFilterType("INCOME") }
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
-                                Icon(
-                                    Icons.AutoMirrored.Outlined.TrendingUp,
-                                    null,
-                                    Modifier.size(16.dp),
-                                    tint = if (selectedFilter == "INCOME") Color.White else MaterialTheme.colorScheme.onSurface
-                                )
-                                Spacer(Modifier.width(4.dp))
-                                Text(
-                                    text = stringResource(R.string.bill_income),
-                                    color = if (selectedFilter == "INCOME") Color.White else MaterialTheme.colorScheme.onSurface,
-                                    fontWeight = if (selectedFilter == "INCOME") FontWeight.Bold else FontWeight.Normal,
-                                    style = MaterialTheme.typography.labelLarge,
-                                    maxLines = 1
-                                )
-                            }
-                        }
-                        val interactionSource4 = remember { MutableInteractionSource() }
-                        Surface(
-                            shape = MaterialTheme.shapes.extraLarge,
-                            color = if (selectedFilter == "TRANSFER") InfoBlue.copy(alpha = 0.85f) else Color.Transparent,
-                            modifier = Modifier.clickable(
-                                interactionSource = interactionSource4,
-                                indication = null
-                            ) { viewModel.setFilterType("TRANSFER") }
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
-                                Icon(
-                                    Icons.Outlined.SwapVert,
-                                    null,
-                                    Modifier.size(16.dp),
-                                    tint = if (selectedFilter == "TRANSFER") Color.White else MaterialTheme.colorScheme.onSurface
-                                )
-                                Spacer(Modifier.width(4.dp))
-                                Text(
-                                    text = stringResource(R.string.bill_transfer),
-                                    color = if (selectedFilter == "TRANSFER") Color.White else MaterialTheme.colorScheme.onSurface,
-                                    fontWeight = if (selectedFilter == "TRANSFER") FontWeight.Bold else FontWeight.Normal,
-                                    style = MaterialTheme.typography.labelLarge,
-                                    maxLines = 1
-                                )
-                            }
-                        }
                     }
-                    val hasAdvancedFilter = state.currentFilter.category != null ||
-                        state.currentFilter.amountMin != null || state.currentFilter.amountMax != null
-                    IconButton(onClick = { viewModel.toggleFilterSheet() }) {
-                        Icon(
-                            imageVector = if (hasAdvancedFilter) Icons.Filled.FilterList else Icons.Outlined.FilterList,
-                            contentDescription = stringResource(R.string.bill_filter),
-                            tint = if (hasAdvancedFilter) AccentOrange else MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
                 }
 
                 // Bill list (scrollable)
@@ -593,109 +611,111 @@ fun BillScreen(
                     }
                     item {
                         AnimatedCard(index = 1, instant = billListState.isScrollInProgress, restartKey = calendarExpanded) {
-                        Row(modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 4.dp, start = 12.dp, end = 12.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = stringResource(R.string.bill_detail),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                text = pluralStringResource(
-                                    R.plurals.bill_count, filteredBills.size, filteredBills.size
-                                ),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                textAlign = TextAlign.End,
-                                modifier = Modifier.width(100.dp)
-                            )
+                            Row(modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 4.dp, start = 12.dp, end = 12.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = stringResource(R.string.bill_detail),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = pluralStringResource(
+                                        R.plurals.bill_count,
+                                        filteredBills.size,
+                                        filteredBills.size
+                                    ),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.End,
+                                    modifier = Modifier.width(100.dp)
+                                )
+                            }
                         }
                     }
-                }
 
                     if (filteredBills.isEmpty()) {
-                item {
-                    EmptyState(
-                        icon = Icons.Outlined.Receipt,
-                        title = stringResource(R.string.bill_no_records),
-                        subtitle = stringResource(R.string.bill_start_recording),
-                        tint = AccentOrange
-                    )
-                }
-            } else {
-                groupedBills.forEach { (day, bills) ->
-                    item {
-                        val dayIncome = bills.filter { it.type == BillType.INCOME }.sumOf { it.amount }
-                        val dayExpense = bills.filter { it.type == BillType.EXPENSE }.sumOf { it.amount }
-                        // 日期行矮小，20dp 滑距相当于自身高度大半，观感偏重偏慢；改 12dp
-                        AnimatedCard(
-                            index = (detailIndexByDay[day] ?: 2).coerceAtMost(10),
-                            instant = billListState.isScrollInProgress,
-                            restartKey = calendarExpanded,
-                            slideDistance = 12.dp
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth()
-                                    .padding(top = 12.dp, bottom = 4.dp, start = 12.dp, end = 12.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = DateUtils.formatDisplayDateWithWeekday(context, bills.first().date),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                                    Spacer(modifier = Modifier.weight(1f))
-                                    if (dayIncome > 0) {
+                        item {
+                            EmptyState(
+                                icon = Icons.Outlined.Receipt,
+                                title = stringResource(R.string.bill_no_records),
+                                subtitle = stringResource(R.string.bill_start_recording),
+                                tint = AccentOrange
+                            )
+                        }
+                    } else {
+                        groupedBills.forEach { (day, bills) ->
+                            item {
+                                val dayIncome = bills.filter { it.type == BillType.INCOME }.sumOf { it.amount }
+                                val dayExpense = bills.filter { it.type == BillType.EXPENSE }.sumOf { it.amount }
+                                // 日期行矮小，20dp 滑距相当于自身高度大半，观感偏重偏慢；改 12dp
+                                AnimatedCard(
+                                    index = (detailIndexByDay[day] ?: 2).coerceAtMost(10),
+                                    instant = billListState.isScrollInProgress,
+                                    restartKey = calendarExpanded,
+                                    slideDistance = 12.dp
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth()
+                                            .padding(top = 12.dp, bottom = 4.dp, start = 12.dp, end = 12.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
                                         Text(
-                                            text = stringResource(
-                                                R.string.bill_income_short,
-                                                CurrencyUtils.formatCurrency(context, dayIncome.toMoney())
-                                            ),
+                                            text = DateUtils.formatDisplayDateWithWeekday(context, bills.first().date),
                                             style = MaterialTheme.typography.labelSmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
+                                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                                            Spacer(modifier = Modifier.weight(1f))
+                                            if (dayIncome > 0) {
+                                                Text(
+                                                    text = stringResource(
+                                                        R.string.bill_income_short,
+                                                        CurrencyUtils.formatCurrency(context, dayIncome.toMoney())
+                                                    ),
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
+                                            if (dayExpense > 0) {
+                                                Text(
+                                                    text = stringResource(
+                                                        R.string.bill_expense_short,
+                                                        CurrencyUtils.formatCurrency(context, dayExpense.toMoney())
+                                                    ),
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
+                                        }
                                     }
-                                    if (dayExpense > 0) {
-                                        Text(
-                                            text = stringResource(
-                                                R.string.bill_expense_short,
-                                                CurrencyUtils.formatCurrency(context, dayExpense.toMoney())
-                                            ),
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
+                                }
+                            }
+                            itemsIndexed(bills, key = { _, bill -> bill.id }) { index, bill ->
+                                AnimatedCard(
+                                    index = (detailIndexByBillId[bill.id] ?: 10).coerceAtMost(10),
+                                    instant = isListScrolling,
+                                    restartKey = calendarExpanded
+                                ) {
+                                    BillListItem(
+                                        bill = bill,
+                                        wallets = state.wallets,
+                                        onDetail = { onNavigateToDetail(bill.id) },
+                                        onDelete = { billToDelete = bill },
+                                        customExpenseItems = allCustomExpenseCategories,
+                                        customIncomeItems = allCustomIncomeCategories,
+                                        presetOverrides = billPresetOverrides
+                                    )
                                 }
                             }
                         }
                     }
-                    itemsIndexed(bills, key = { _, bill -> bill.id }) { index, bill ->
-                        AnimatedCard(
-                            index = (detailIndexByBillId[bill.id] ?: 10).coerceAtMost(10),
-                            instant = isListScrolling,
-                            restartKey = calendarExpanded
-                        ) {
-                        BillListItem(
-                            bill = bill,
-                            wallets = state.wallets,
-                            onDetail = { onNavigateToDetail(bill.id) },
-                            onDelete = { billToDelete = bill },
-                            customExpenseItems = allCustomExpenseCategories,
-                            customIncomeItems = allCustomIncomeCategories,
-                            presetOverrides = billPresetOverrides
-                        )
-                        }
-                    }
+
+                    item { Spacer(modifier = Modifier.height(80.dp)) }
                 }
             }
-
-            item { Spacer(modifier = Modifier.height(80.dp)) }
-            }
-        }
         }
     }
-    
+
     // 删除确认弹窗
     billToDelete?.let { bill ->
         AppDialog(
@@ -717,7 +737,7 @@ fun BillScreen(
             }
         )
     }
-    
+
     // 高级筛选Sheet
     if (state.showFilterSheet) {
         val resolvedExpense = expenseCategoryItems.map { item ->
@@ -806,9 +826,15 @@ private fun ReimbursementPendingCard(
 }
 
 @Composable
-fun BillListItem(bill: Bill, wallets: Map<Long, String> = emptyMap(), onDetail: () -> Unit, onDelete: () -> Unit,
-    customExpenseItems: List<CategoryItem>? = null, customIncomeItems: List<CategoryItem>? = null,
-    presetOverrides: Map<String, String> = emptyMap()) {
+fun BillListItem(
+    bill: Bill,
+    wallets: Map<Long, String> = emptyMap(),
+    onDetail: () -> Unit,
+    onDelete: () -> Unit,
+    customExpenseItems: List<CategoryItem>? = null,
+    customIncomeItems: List<CategoryItem>? = null,
+    presetOverrides: Map<String, String> = emptyMap()
+) {
     val context = LocalContext.current
     val isExpense = bill.type == BillType.EXPENSE
     val categoryItem = remember(bill.category, bill.type, customExpenseItems, customIncomeItems, presetOverrides) {
@@ -830,17 +856,7 @@ fun BillListItem(bill: Bill, wallets: Map<Long, String> = emptyMap(), onDetail: 
     val thresholdPx = with(density) { 60.dp.toPx() }
 
     Box(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
-        Box(
-            modifier = Modifier.fillMaxHeight().width(80.dp).clip(MaterialTheme.shapes.medium).background(MaterialTheme.colorScheme.errorContainer).clickable { onDelete() }.align(Alignment.CenterEnd),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(Icons.Outlined.Delete, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(20.dp))
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(stringResource(R.string.delete), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error)
-            }
-        }
-
+        BillItemDeleteBackdrop(onDelete = onDelete, modifier = Modifier.align(Alignment.CenterEnd))
         Box(
             modifier = Modifier.fillMaxWidth().offset { IntOffset(offsetX.roundToInt(), 0) }
                 .background(MaterialTheme.colorScheme.surface)
@@ -854,81 +870,138 @@ fun BillListItem(bill: Bill, wallets: Map<Long, String> = emptyMap(), onDetail: 
                 .clickable { if (offsetX == 0f) onDetail() else offsetX = 0f }
         ) {
             Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp).padding(start = 12.dp, end = 12.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Top) {
-                Row(modifier = Modifier.weight(1f, false), verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(if (bill.type == BillType.TRANSFER) InfoBlue.copy(alpha = 0.12f) else catColor.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) {
-                        Icon(
-                            if (bill.type == BillType.TRANSFER) Icons.Outlined.SwapVert else categoryItem?.icon ?: Icons.Outlined.Cancel,
-                            null, tint = if (bill.type == BillType.TRANSFER) InfoBlue else catColor, modifier = Modifier.size(20.dp)
-                        )
-                    }
-                    Column {
-                        Text(
-                            if (bill.type == BillType.TRANSFER)
-                                stringResource(R.string.bill_transfer)
-                            else displayName,
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Medium
-                        )
-                        val merchantText = if (bill.type == BillType.TRANSFER) null else if (bill.merchant.isNotEmpty() && bill.location.isNotEmpty()) {
-                            "${bill.merchant} · ${bill.location}"
-                        } else if (bill.merchant.isNotEmpty()) {
-                            bill.merchant
-                        } else if (bill.location.isNotEmpty()) {
-                            bill.location
-                        } else null
-                        if (merchantText != null) {
-                            Text(merchantText, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 2.dp))
-                        }
-                        if (bill.type == BillType.TRANSFER && bill.walletId != null && bill.toWalletId != null) {
-                            val fromName = wallets[bill.walletId] ?: ""
-                            val toName = wallets[bill.toWalletId] ?: ""
-                            Text(
-                                "$fromName \u2192 $toName",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(top = 2.dp)
-                            )
-                        }
-                    }
-                }
-                // 尾部列：金额 + 钱包名。银行卡的显示名是「招商银行 ****6214」，比普通钱包名长得多。
-                // 原先这里写死 `width(100.dp)`，那个长度正好比它短一点点，于是字符串在空格处折成两行，
-                // 白占一行高度（用户 2026-10-10 反馈：右边明明还有空位却折了行）。
-                // 现改为「下限 100dp、上限 180dp」：普通行仍是 100dp、外观与原先完全一致；
-                // 名字偏长的行按内容撑开，一行放得下就不再折行。
-                // 注意两个子项都不再 `fillMaxWidth()` —— 列宽要按内容撑开，右对齐交给
-                // Column 的 horizontalAlignment = End（带 fillMaxWidth 的子项会把列直接撑到行满宽）。
-                Column(horizontalAlignment = Alignment.End, modifier = Modifier.widthIn(min = 100.dp, max = 180.dp)) {
-                    val prefix = if (bill.type == BillType.EXPENSE) "-"
-                    else if (bill.type == BillType.TRANSFER) "" else "+"
-                    val amountText = "$prefix${CurrencyUtils.formatCompact(context, bill.amount.toMoney())}"
-                    val amountColor = if (bill.type == BillType.EXPENSE) ExpenseRed
-                    else if (bill.type == BillType.TRANSFER) InfoBlue else StatusActive
-                    Text(
-                        text = amountText,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = amountColor,
-                        textAlign = TextAlign.End
-                    )
-                    bill.walletId?.let { walletId ->
-                        wallets[walletId]?.let { walletName ->
-                            // 单行显示：撑开列宽就是为了这一行不折行；真的长到 180dp 还放不下
-                            // （银行名起得很长的用户）才退化为省略号，此时至少不会挤掉金额。
-                            Text(
-                                walletName,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                textAlign = TextAlign.End,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.padding(top = 2.dp)
-                            )
-                        }
-                    }
-                }
+                BillItemLeadingColumn(bill, categoryItem, catColor, displayName, wallets)
+                BillItemTrailingColumn(bill, wallets)
             }
         }
         HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.outlineVariant)
+    }
+}
+
+/** 左滑露出的红色删除背板：常驻在行底下，前景层滑开多少就露多少。 */
+@Composable
+private fun BillItemDeleteBackdrop(onDelete: () -> Unit, modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier.fillMaxHeight().width(80.dp).clip(MaterialTheme.shapes.medium)
+            .background(MaterialTheme.colorScheme.errorContainer)
+            .clickable { onDelete() },
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(Icons.Outlined.Delete, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(20.dp))
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(stringResource(R.string.delete), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error)
+        }
+    }
+}
+
+/** 左侧列：分类图标 + 标题/转账方向 + 商户·地点/转账钱包对等说明行。 */
+@Composable
+private fun RowScope.BillItemLeadingColumn(
+    bill: Bill,
+    categoryItem: CategoryItem?,
+    catColor: Color,
+    displayName: String,
+    wallets: Map<Long, String>
+) {
+    Row(modifier = Modifier.weight(1f, false), verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Box(
+            modifier = Modifier.size(36.dp).clip(CircleShape).background(
+                if (bill.type == BillType.TRANSFER) InfoBlue.copy(alpha = 0.12f) else catColor.copy(alpha = 0.12f)
+            ),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                if (bill.type == BillType.TRANSFER) Icons.Outlined.SwapVert else categoryItem?.icon ?: Icons.Outlined.Cancel,
+                null,
+                tint = if (bill.type == BillType.TRANSFER) InfoBlue else catColor,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+        Column {
+            Text(
+                if (bill.type == BillType.TRANSFER) {
+                    stringResource(R.string.bill_transfer)
+                } else {
+                    displayName
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium
+            )
+            val merchantText = billMerchantText(bill)
+            if (merchantText != null) {
+                Text(merchantText, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 2.dp))
+            }
+            if (bill.type == BillType.TRANSFER && bill.walletId != null && bill.toWalletId != null) {
+                val fromName = wallets[bill.walletId] ?: ""
+                val toName = wallets[bill.toWalletId] ?: ""
+                Text(
+                    "$fromName \u2192 $toName",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+            }
+        }
+    }
+}
+
+/** 「商户 · 地点」说明行文案：转账行没有商户概念，返回 null 不显示。 */
+private fun billMerchantText(bill: Bill): String? = when {
+    bill.type == BillType.TRANSFER -> null
+    bill.merchant.isNotEmpty() && bill.location.isNotEmpty() -> "${bill.merchant} · ${bill.location}"
+    bill.merchant.isNotEmpty() -> bill.merchant
+    bill.location.isNotEmpty() -> bill.location
+    else -> null
+}
+
+// 尾部列：金额 + 钱包名。银行卡的显示名是「招商银行 ****6214」，比普通钱包名长得多。
+// 原先这里写死 `width(100.dp)`，那个长度正好比它短一点点，于是字符串在空格处折成两行，
+// 白占一行高度（用户 2026-10-10 反馈：右边明明还有空位却折了行）。
+// 现改为「下限 100dp、上限 180dp」：普通行仍是 100dp、外观与原先完全一致；
+// 名字偏长的行按内容撑开，一行放得下就不再折行。
+// 注意两个子项都不再 `fillMaxWidth()` —— 列宽要按内容撑开，右对齐交给
+// Column 的 horizontalAlignment = End（带 fillMaxWidth 的子项会把列直接撑到行满宽）。
+@Composable
+private fun BillItemTrailingColumn(bill: Bill, wallets: Map<Long, String>) {
+    val context = LocalContext.current
+    Column(horizontalAlignment = Alignment.End, modifier = Modifier.widthIn(min = 100.dp, max = 180.dp)) {
+        val prefix = if (bill.type == BillType.EXPENSE) {
+            "-"
+        } else if (bill.type == BillType.TRANSFER) {
+            ""
+        } else {
+            "+"
+        }
+        val amountText = "$prefix${CurrencyUtils.formatCompact(context, bill.amount.toMoney())}"
+        val amountColor = if (bill.type == BillType.EXPENSE) {
+            ExpenseRed
+        } else if (bill.type == BillType.TRANSFER) {
+            InfoBlue
+        } else {
+            StatusActive
+        }
+        Text(
+            text = amountText,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Bold,
+            color = amountColor,
+            textAlign = TextAlign.End
+        )
+        bill.walletId?.let { walletId ->
+            wallets[walletId]?.let { walletName ->
+                // 单行显示：撑开列宽就是为了这一行不折行；真的长到 180dp 还放不下
+                // （银行名起得很长的用户）才退化为省略号，此时至少不会挤掉金额。
+                Text(
+                    walletName,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.End,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+            }
+        }
     }
 }

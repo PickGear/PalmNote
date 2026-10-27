@@ -9,7 +9,6 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
@@ -19,9 +18,9 @@ import androidx.compose.ui.unit.dp
 import com.palmnote.R
 import com.palmnote.domain.model.FieldConfig
 import com.palmnote.domain.model.FieldType
-import com.palmnote.ui.theme.Spacing
 import com.palmnote.ui.components.CapsuleSwitch
 import com.palmnote.ui.components.NoDialogWindowAnimation
+import com.palmnote.ui.theme.Spacing
 
 @Composable
 fun FieldInputComponent(
@@ -75,8 +74,14 @@ private fun NumberInputField(config: FieldConfig, value: String, onValueChange: 
 private fun DateInputField(config: FieldConfig, value: String, onValueChange: (String) -> Unit) {
     var showPicker by remember { mutableStateOf(false) }
     val displayText = if (value.isNotEmpty()) {
-        try { java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date(value.toLong())) } catch (_: Exception) { value }
-    } else ""
+        try {
+            java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date(value.toLong()))
+        } catch (_: Exception) {
+            value
+        }
+    } else {
+        ""
+    }
     Box(modifier = Modifier.fillMaxWidth()) {
         OutlinedTextField(
             value = displayText,
@@ -93,7 +98,9 @@ private fun DateInputField(config: FieldConfig, value: String, onValueChange: (S
         DatePickerDialog(
             onDismissRequest = { showPicker = false },
             tonalElevation = 0.dp,
-            colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+            colors = DatePickerDefaults.colors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+            ),
             confirmButton = {
                 TextButton(onClick = {
                     pickerState.selectedDateMillis?.let { onValueChange(it.toString()) }
@@ -103,7 +110,10 @@ private fun DateInputField(config: FieldConfig, value: String, onValueChange: (S
             dismissButton = { TextButton(onClick = { showPicker = false }) { Text(stringResource(R.string.cancel), fontWeight = FontWeight.Bold) } }
         ) {
             NoDialogWindowAnimation()
-            DatePicker(state = pickerState, colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh))
+            DatePicker(
+                state = pickerState,
+                colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)
+            )
         }
     }
 }
@@ -137,7 +147,10 @@ private fun SelectInputField(config: FieldConfig, value: String, onValueChange: 
         )
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             config.options.forEach { option ->
-                DropdownMenuItem(text = { Text(option) }, onClick = { onValueChange(option); expanded = false })
+                DropdownMenuItem(text = { Text(option) }, onClick = {
+                    onValueChange(option)
+                    expanded = false
+                })
             }
         }
     }

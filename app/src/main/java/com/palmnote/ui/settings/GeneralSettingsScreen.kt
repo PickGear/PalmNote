@@ -1,26 +1,28 @@
 package com.palmnote.ui.settings
 
 import android.Manifest
-import android.widget.Toast
-import com.palmnote.domain.model.BillType
-import com.palmnote.data.datastore.PreferencesManager
-import com.palmnote.data.wallpaper.WallpaperPresets
+import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.provider.Settings
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.Image
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
+import androidx.compose.material.icons.outlined.ReceiptLong
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -33,27 +35,25 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.shape.RoundedCornerShape
-import com.palmnote.ui.components.ModuleCard
-import com.palmnote.ui.components.CapsuleSwitch
-import com.palmnote.ui.components.AppDialog
-import com.palmnote.ui.components.InlineColorPicker
-import com.palmnote.ui.components.toComposeColor
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.content.ContextCompat
 import androidx.core.app.ActivityCompat
-import android.app.Activity
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.palmnote.ui.components.CompactTopAppBar
-import com.palmnote.ui.components.ChoiceDialog
-import com.palmnote.ui.components.SectionHeader
-import com.palmnote.ui.components.SettingRowContent
-import com.palmnote.ui.components.SettingRow
 import com.palmnote.app.R
+import com.palmnote.data.datastore.PreferencesManager
+import com.palmnote.data.wallpaper.WallpaperPresets
+import com.palmnote.domain.model.BillType
+import com.palmnote.ui.components.AppDialog
+import com.palmnote.ui.components.CapsuleSwitch
+import com.palmnote.ui.components.ChoiceDialog
+import com.palmnote.ui.components.CompactTopAppBar
+import com.palmnote.ui.components.InlineColorPicker
+import com.palmnote.ui.components.ModuleCard
+import com.palmnote.ui.components.SectionHeader
+import com.palmnote.ui.components.SettingRow
+import com.palmnote.ui.components.SettingRowContent
+import com.palmnote.ui.components.toComposeColor
 import com.palmnote.ui.theme.*
 import com.palmnote.ui.theme.ModuleBill
-import androidx.compose.material.icons.outlined.ReceiptLong
 
 private val iconVisuals = linkedMapOf(
     PreferencesManager.APP_ICON_GREEN_WHITE to Pair(Color(0xFF2D4A3E), Color.White),
@@ -73,7 +73,6 @@ private fun wallpaperLabelRes(id: String): Int = when (id) {
     "custom" -> R.string.wallpaper_custom
     else -> R.string.wallpaper_none
 }
-
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -110,8 +109,9 @@ fun GeneralSettingsScreen(
     }
 
     val calendarPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { granted ->
-        if (granted.values.all { it }) viewModel.setCalendarSyncEnabled(true)
-        else {
+        if (granted.values.all { it }) {
+            viewModel.setCalendarSyncEnabled(true)
+        } else {
             (context as? Activity)?.let { ctx ->
                 if (!ActivityCompat.shouldShowRequestPermissionRationale(ctx, Manifest.permission.WRITE_CALENDAR)) {
                     permissionPermanentlyDenied = true
@@ -245,7 +245,9 @@ fun GeneralSettingsScreen(
                         CapsuleSwitch(checked = state.calendarSyncEnabled, onCheckedChange = { enabled ->
                             if (enabled && ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_CALENDAR) != PackageManager.PERMISSION_GRANTED) {
                                 showCalendarPermissionDialog = true
-                            } else { viewModel.setCalendarSyncEnabled(enabled) }
+                            } else {
+                                viewModel.setCalendarSyncEnabled(enabled)
+                            }
                         }, checkedTrackColor = MaterialTheme.colorScheme.primary)
                     }
                 }
@@ -400,10 +402,15 @@ fun GeneralSettingsScreen(
                                                 .clip(CircleShape)
                                                 .background(color)
                                                 .then(
-                                                    if (selected) Modifier.border(3.dp, MaterialTheme.colorScheme.primary, CircleShape)
-                                                    else Modifier.border(
-                                                        1.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f), CircleShape
-                                                    )
+                                                    if (selected) {
+                                                        Modifier.border(3.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                                                    } else {
+                                                        Modifier.border(
+                                                            1.5.dp,
+                                                            MaterialTheme.colorScheme.outline.copy(alpha = 0.35f),
+                                                            CircleShape
+                                                        )
+                                                    }
                                                 )
                                                 // 点预设后不自动关弹窗：接下来还要调透明度/模糊度，
                                                 // 提前关掉会让实时预览白做；用右下角「完成」关闭。
@@ -420,8 +427,11 @@ fun GeneralSettingsScreen(
                                         Text(
                                             label,
                                             style = MaterialTheme.typography.labelSmall,
-                                            color = if (selected) MaterialTheme.colorScheme.primary
-                                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                                            color = if (selected) {
+                                                MaterialTheme.colorScheme.primary
+                                            } else {
+                                                MaterialTheme.colorScheme.onSurfaceVariant
+                                            },
                                             maxLines = 1
                                         )
                                     }
@@ -468,8 +478,11 @@ fun GeneralSettingsScreen(
                                     .clip(CircleShape)
                                     .background(previewColor)
                                     .then(
-                                        if (isValid) Modifier.border(2.dp, MaterialTheme.colorScheme.primary, CircleShape)
-                                        else Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape)
+                                        if (isValid) {
+                                            Modifier.border(2.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                                        } else {
+                                            Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape)
+                                        }
                                     ),
                                 contentAlignment = Alignment.Center
                             ) {
@@ -652,8 +665,11 @@ fun GeneralSettingsScreen(
                                             }
                                         }
                                         .then(
-                                            if (isSelected) Modifier.border(3.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(14.dp))
-                                            else Modifier.border(1.5.dp, Color.Gray.copy(alpha = 0.4f), RoundedCornerShape(14.dp))
+                                            if (isSelected) {
+                                                Modifier.border(3.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(14.dp))
+                                            } else {
+                                                Modifier.border(1.5.dp, Color.Gray.copy(alpha = 0.4f), RoundedCornerShape(14.dp))
+                                            }
                                         ),
                                     contentAlignment = Alignment.Center
                                 ) {
@@ -712,7 +728,10 @@ fun GeneralSettingsScreen(
             title = { Text(stringResource(R.string.settings_calendar_permission_title), fontWeight = FontWeight.Bold) },
             text = { Text(stringResource(R.string.settings_calendar_permission_text), fontWeight = FontWeight.Bold) },
             confirmButton = {
-                TextButton(onClick = { showCalendarPermissionDialog = false; calendarPermissionLauncher.launch(arrayOf(Manifest.permission.WRITE_CALENDAR, Manifest.permission.READ_CALENDAR)) }) { Text(stringResource(R.string.settings_calendar_permission_action), fontWeight = FontWeight.Bold) }
+                TextButton(onClick = {
+                    showCalendarPermissionDialog = false
+                    calendarPermissionLauncher.launch(arrayOf(Manifest.permission.WRITE_CALENDAR, Manifest.permission.READ_CALENDAR))
+                }) { Text(stringResource(R.string.settings_calendar_permission_action), fontWeight = FontWeight.Bold) }
             },
             dismissButton = { TextButton(onClick = { showCalendarPermissionDialog = false }) { Text(stringResource(R.string.settings_cancel), fontWeight = FontWeight.Bold) } }
         )
@@ -726,9 +745,11 @@ fun GeneralSettingsScreen(
             confirmButton = {
                 TextButton(onClick = {
                     permissionPermanentlyDenied = false
-                    context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                        data = Uri.parse("package:${context.packageName}")
-                    })
+                    context.startActivity(
+                        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                            data = Uri.parse("package:${context.packageName}")
+                        }
+                    )
                 }) { Text(stringResource(R.string.settings_calendar_permission_action), fontWeight = FontWeight.Bold) }
             },
             dismissButton = { TextButton(onClick = { permissionPermanentlyDenied = false }) { Text(stringResource(R.string.settings_cancel), fontWeight = FontWeight.Bold) } }

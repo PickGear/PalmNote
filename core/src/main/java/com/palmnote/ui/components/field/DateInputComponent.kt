@@ -6,9 +6,9 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import com.palmnote.R
 import com.palmnote.ui.components.NoDialogWindowAnimation
 
@@ -23,8 +23,12 @@ fun DateInputComponent(
     val displayText = if (value.isNotEmpty()) {
         try {
             java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date(value.toLong()))
-        } catch (_: Exception) { value }
-    } else ""
+        } catch (_: Exception) {
+            value
+        }
+    } else {
+        ""
+    }
 
     OutlinedTextField(
         value = displayText,
@@ -44,7 +48,9 @@ fun DateInputComponent(
         DatePickerDialog(
             onDismissRequest = { showPicker = false },
             tonalElevation = 0.dp,
-            colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+            colors = DatePickerDefaults.colors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+            ),
             confirmButton = {
                 TextButton(onClick = {
                     pickerState.selectedDateMillis?.let { onValueChange(it.toString()) }
@@ -54,7 +60,10 @@ fun DateInputComponent(
             dismissButton = { TextButton(onClick = { showPicker = false }) { Text(stringResource(R.string.cancel), fontWeight = FontWeight.Bold) } }
         ) {
             NoDialogWindowAnimation()
-            DatePicker(state = pickerState, colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh))
+            DatePicker(
+                state = pickerState,
+                colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)
+            )
         }
     }
 }

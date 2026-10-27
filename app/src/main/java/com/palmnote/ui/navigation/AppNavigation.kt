@@ -1,5 +1,6 @@
 package com.palmnote.ui.navigation
 
+import androidx.annotation.StringRes
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
@@ -13,70 +14,68 @@ import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSiz
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.*
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.annotation.StringRes
-import androidx.compose.ui.res.stringResource
-import androidx.navigation.NavHostController
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import com.palmnote.PalmNoteApp
 import com.palmnote.app.BuildConfig
 import com.palmnote.app.R
+import com.palmnote.feature.vault.vault.VaultDetailScreen
+import com.palmnote.feature.vault.vault.VaultEditScreen
+import com.palmnote.feature.vault.vault.VaultScreen
+import com.palmnote.feature.vault.vault.VaultSettingsScreen
 import com.palmnote.ui.asset.AddAssetScreen
 import com.palmnote.ui.asset.AssetDetailScreen
 import com.palmnote.ui.asset.AssetScreen
+import com.palmnote.ui.backup.BackupScreen
+import com.palmnote.ui.bills.AccountBookManageScreen
 import com.palmnote.ui.bills.AddBillScreen
-import com.palmnote.ui.bills.BillScreen
-import com.palmnote.ui.bills.BillViewModel
 import com.palmnote.ui.bills.BillDetailScreen
-import com.palmnote.ui.bills.BudgetScreen
 import com.palmnote.ui.bills.BillExportScreen
 import com.palmnote.ui.bills.BillImportHubScreen
 import com.palmnote.ui.bills.BillImportScreen
-import com.palmnote.ui.bills.ReportScreen
+import com.palmnote.ui.bills.BillScreen
+import com.palmnote.ui.bills.BillViewModel
+import com.palmnote.ui.bills.BudgetScreen
 import com.palmnote.ui.bills.ReimbursementScreen
-import com.palmnote.ui.bills.AccountBookManageScreen
+import com.palmnote.ui.bills.ReportScreen
 import com.palmnote.ui.dashboard.DashboardScreen
+import com.palmnote.ui.life.LifeNavHost
 import com.palmnote.ui.search.SearchScreen
 import com.palmnote.ui.settings.AboutScreen
-import com.palmnote.ui.settings.PrivacyPolicyScreen
-import com.palmnote.ui.settings.LicenseScreen
-import com.palmnote.ui.settings.VersionHistoryScreen
+import com.palmnote.ui.settings.AppLockSettingsScreen
 import com.palmnote.ui.settings.CategoryScreen
+import com.palmnote.ui.settings.DataClearScreen
+import com.palmnote.ui.settings.DataExchangeScreen
+import com.palmnote.ui.settings.DataStorageScreen
+import com.palmnote.ui.settings.GeneralSettingsScreen
+import com.palmnote.ui.settings.LicenseScreen
+import com.palmnote.ui.settings.ManageCategoryScreen
+import com.palmnote.ui.settings.PrivacyPolicyScreen
 import com.palmnote.ui.settings.RecycleBinScreen
+import com.palmnote.ui.settings.ReminderSettingsScreen
 import com.palmnote.ui.settings.SettingsScreen
+import com.palmnote.ui.settings.VersionHistoryScreen
 import com.palmnote.ui.settings.WalletEditScreen
 import com.palmnote.ui.settings.WalletScreen
-import com.palmnote.ui.settings.DataClearScreen
-import com.palmnote.ui.settings.GeneralSettingsScreen
-import com.palmnote.ui.settings.ReminderSettingsScreen
-import com.palmnote.ui.settings.ManageCategoryScreen
-import com.palmnote.ui.settings.DataStorageScreen
-import com.palmnote.ui.settings.AppLockSettingsScreen
 import com.palmnote.ui.settings.WidgetPinScreen
-
-import com.palmnote.PalmNoteApp
-import androidx.hilt.navigation.compose.hiltViewModel
-import com.palmnote.ui.life.LifeNavHost
-import com.palmnote.ui.backup.BackupScreen
-import com.palmnote.ui.settings.DataExchangeScreen
 import com.palmnote.ui.theme.*
 import com.palmnote.ui.widget.WidgetPinViewModel
-import com.palmnote.feature.vault.vault.VaultScreen
-import com.palmnote.feature.vault.vault.VaultDetailScreen
-import com.palmnote.feature.vault.vault.VaultEditScreen
-import com.palmnote.feature.vault.vault.VaultSettingsScreen
 
 data class BottomNavItem(
     @StringRes val labelRes: Int,
@@ -634,12 +633,15 @@ private fun MainTabs(
         }
         lifeChildAtHome = true
     }
-    val showBottomBar = lifeChildAtHome && (currentTabDestination?.hierarchy?.any {
-        it.hasRoute<TabDashboard>() || it.hasRoute<TabAsset>() || it.hasRoute<TabBill>() || it.hasRoute<TabLife>()
-    } ?: true)
+    val showBottomBar = lifeChildAtHome && (
+        currentTabDestination?.hierarchy?.any {
+            it.hasRoute<TabDashboard>() || it.hasRoute<TabAsset>() || it.hasRoute<TabBill>() || it.hasRoute<TabLife>()
+        } ?: true
+        )
 
     // 平板/折叠屏宽屏适配：宽度 Expanded 时用 NavigationRail 替代底部导航
     val activity = androidx.compose.ui.platform.LocalContext.current as? android.app.Activity
+
     @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
     val isWide = activity != null &&
         calculateWindowSizeClass(activity).widthSizeClass == WindowWidthSizeClass.Expanded
@@ -755,100 +757,100 @@ private fun MainTabs(
                 // MainTabs 只负责上报当前 tab（见上方 LaunchedEffect），横幅本体
                 // 与文案切换都在根壳层渲染。
                 Box(modifier = Modifier.weight(1f)) {
-                NavHost(
-                    navController = tabNavController,
-                    startDestination = startTab,
-                    // 转场必须显式给 None：不传参数时库默认是 fadeIn/fadeOut(tween(700))，
-                    // 会叠在各页自己的入场动画上把它掩盖掉（正是上一版误删参数后发生的事）。
-                    enterTransition = { EnterTransition.None },
-                    exitTransition = { ExitTransition.None },
-                    popEnterTransition = { EnterTransition.None },
-                    popExitTransition = { ExitTransition.None }
-                ) {
-            composable<TabDashboard> {
-                DashboardScreen(
-                    // Simple navigation — keeps Dashboard in back stack
-                    // (matches original behavior)
-                    onNavigateToAsset = {
-                        tabNavController.navigate(TabAsset)
-                    },
-                    onNavigateToBill = {
-                        tabNavController.navigate(TabBill)
-                    },
-                    onNavigateToLife = {
-                        tabNavController.navigate(TabLife)
-                    },
-                    onNavigateToSettings = onNavigateToSettings,
-                    onNavigateToSearch = onNavigateToSearch,
-                    onNavigateToVault = onNavigateToVault,
-                    onNavigateToAddBill = { onNavigateToAddBill(System.currentTimeMillis()) },
-                    onNavigateToAddAsset = onNavigateToAddAsset
-                )
-            }
+                    NavHost(
+                        navController = tabNavController,
+                        startDestination = startTab,
+                        // 转场必须显式给 None：不传参数时库默认是 fadeIn/fadeOut(tween(700))，
+                        // 会叠在各页自己的入场动画上把它掩盖掉（正是上一版误删参数后发生的事）。
+                        enterTransition = { EnterTransition.None },
+                        exitTransition = { ExitTransition.None },
+                        popEnterTransition = { EnterTransition.None },
+                        popExitTransition = { ExitTransition.None }
+                    ) {
+                        composable<TabDashboard> {
+                            DashboardScreen(
+                                // Simple navigation — keeps Dashboard in back stack
+                                // (matches original behavior)
+                                onNavigateToAsset = {
+                                    tabNavController.navigate(TabAsset)
+                                },
+                                onNavigateToBill = {
+                                    tabNavController.navigate(TabBill)
+                                },
+                                onNavigateToLife = {
+                                    tabNavController.navigate(TabLife)
+                                },
+                                onNavigateToSettings = onNavigateToSettings,
+                                onNavigateToSearch = onNavigateToSearch,
+                                onNavigateToVault = onNavigateToVault,
+                                onNavigateToAddBill = { onNavigateToAddBill(System.currentTimeMillis()) },
+                                onNavigateToAddAsset = onNavigateToAddAsset
+                            )
+                        }
 
-            composable<TabAsset> {
-                AssetScreen(
-                    onNavigateToDetail = { assetId ->
-                        onNavigateToAssetDetail(assetId)
-                    },
-                    onNavigateToAdd = {
-                        onNavigateToAddAsset()
-                    }
-                )
-            }
+                        composable<TabAsset> {
+                            AssetScreen(
+                                onNavigateToDetail = { assetId ->
+                                    onNavigateToAssetDetail(assetId)
+                                },
+                                onNavigateToAdd = {
+                                    onNavigateToAddAsset()
+                                }
+                            )
+                        }
 
-            composable<TabBill> {
-                val billViewModel: BillViewModel = hiltViewModel()
+                        composable<TabBill> {
+                            val billViewModel: BillViewModel = hiltViewModel()
 
-                // Observe date saved from AddBillScreen.
-                // onBillDateSaved reads from the outer navController's
-                // savedStateHandle (MainTabs entry), not the inner one.
-                val savedBillDate by appNavController.currentBackStackEntry
-                    ?.savedStateHandle
-                    ?.getStateFlow<Long?>("savedBillDate", null)
-                    ?.collectAsStateWithLifecycle()
-                    ?: remember { mutableStateOf(null) }
-                LaunchedEffect(savedBillDate) {
-                    savedBillDate?.let { date ->
-                        billViewModel.syncDateFromSaved(date)
-                        appNavController.currentBackStackEntry
-                            ?.savedStateHandle
-                            ?.remove<Long>("savedBillDate")
+                            // Observe date saved from AddBillScreen.
+                            // onBillDateSaved reads from the outer navController's
+                            // savedStateHandle (MainTabs entry), not the inner one.
+                            val savedBillDate by appNavController.currentBackStackEntry
+                                ?.savedStateHandle
+                                ?.getStateFlow<Long?>("savedBillDate", null)
+                                ?.collectAsStateWithLifecycle()
+                                ?: remember { mutableStateOf(null) }
+                            LaunchedEffect(savedBillDate) {
+                                savedBillDate?.let { date ->
+                                    billViewModel.syncDateFromSaved(date)
+                                    appNavController.currentBackStackEntry
+                                        ?.savedStateHandle
+                                        ?.remove<Long>("savedBillDate")
+                                }
+                            }
+
+                            BillScreen(
+                                viewModel = billViewModel,
+                                onNavigateToAdd = { date ->
+                                    onNavigateToAddBill(date)
+                                },
+                                onNavigateToDetail = { billId ->
+                                    onNavigateToBillDetail(billId)
+                                },
+                                onNavigateToBudget = onNavigateToBudget,
+                                onNavigateToReport = { selectedBookId, bookName ->
+                                    onNavigateToReport(selectedBookId, bookName)
+                                },
+                                onNavigateToImportCsv = onNavigateToImportCsv,
+                                onNavigateToAccountBook = onNavigateToAccountBook,
+                                onNavigateToReimbursement = onNavigateToReimbursement
+                            )
+                        }
+
+                        composable<TabLife> {
+                            LifeNavHost(
+                                onChildNavigated = { lifeChildAtHome = it },
+                                pendingDetailItemId = pendingLifeDetailId,
+                                onPendingDetailConsumed = { pendingLifeDetailId = null },
+                                pendingListMode = pendingLifeListTarget,
+                                onPendingListConsumed = { pendingLifeListTarget = null }
+                            )
+                        }
                     }
                 }
-
-                BillScreen(
-                    viewModel = billViewModel,
-                    onNavigateToAdd = { date ->
-                        onNavigateToAddBill(date)
-                    },
-                    onNavigateToDetail = { billId ->
-                        onNavigateToBillDetail(billId)
-                    },
-                    onNavigateToBudget = onNavigateToBudget,
-                    onNavigateToReport = { selectedBookId, bookName ->
-                        onNavigateToReport(selectedBookId, bookName)
-                    },
-                    onNavigateToImportCsv = onNavigateToImportCsv,
-                    onNavigateToAccountBook = onNavigateToAccountBook,
-                    onNavigateToReimbursement = onNavigateToReimbursement
-                )
-            }
-
-            composable<TabLife> {
-                LifeNavHost(
-                    onChildNavigated = { lifeChildAtHome = it },
-                    pendingDetailItemId = pendingLifeDetailId,
-                    onPendingDetailConsumed = { pendingLifeDetailId = null },
-                    pendingListMode = pendingLifeListTarget,
-                    onPendingListConsumed = { pendingLifeListTarget = null }
-                )
-            }
             }
         }
     }
-    }
-}
 }
 
 @Composable

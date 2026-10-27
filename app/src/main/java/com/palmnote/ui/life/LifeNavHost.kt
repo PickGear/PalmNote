@@ -129,8 +129,11 @@ fun LifeNavHost(
                 onCalendarWeekModeChange = { calendarVm.setWeekMode(it) },
                 // completed = null ⇒ 点击勾圈，翻转；非 null ⇒ 滑动确认，按对话框承诺的方向显式设置
                 onSetItemStatus = { id, completed ->
-                    if (completed == null) calendarVm.toggleItemStatus(id)
-                    else calendarVm.setItemCompleted(id, completed)
+                    if (completed == null) {
+                        calendarVm.toggleItemStatus(id)
+                    } else {
+                        calendarVm.setItemCompleted(id, completed)
+                    }
                 },
                 onReschedule = { calendarVm.rescheduleToToday(it) },
                 onRescheduleAllOverdue = { ids -> calendarVm.rescheduleAllToToday(ids) },

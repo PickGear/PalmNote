@@ -1,16 +1,19 @@
 package com.palmnote.ui.asset
 
+import android.app.Activity
+import android.os.Build
+import android.view.WindowInsetsController
+import android.view.WindowManager
 import androidx.compose.foundation.BorderStroke
-import com.palmnote.domain.model.AssetStatus
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.automirrored.outlined.*
@@ -21,40 +24,37 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import android.app.Activity
-import android.os.Build
-import android.view.WindowInsetsController
-import android.view.WindowManager
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil3.compose.AsyncImage
+import com.palmnote.app.R
 import com.palmnote.data.db.entity.Asset
 import com.palmnote.data.db.entity.UsageRecord
-import com.palmnote.data.db.entity.getNearestExpiryText
 import com.palmnote.data.db.entity.getInsuranceStatusText
+import com.palmnote.data.db.entity.getNearestExpiryText
 import com.palmnote.data.db.entity.nearestExpiryDate
+import com.palmnote.domain.model.AssetStatus
 import com.palmnote.domain.model.Money
 import com.palmnote.domain.model.ShelfLifeUnit
 import com.palmnote.domain.model.toMoney
 import com.palmnote.domain.util.CurrencyUtils
 import com.palmnote.domain.util.DateUtils
-import androidx.compose.ui.res.pluralStringResource
-import androidx.compose.ui.res.stringResource
-import com.palmnote.app.R
 import com.palmnote.ui.components.*
 import com.palmnote.ui.theme.*
-import kotlin.math.roundToInt
 import java.io.File
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -116,537 +116,650 @@ fun AssetDetailScreen(
     Box(Modifier.fillMaxSize()) {
         Scaffold(
             topBar = {
-            CompactTopAppBar(
-                title = stringResource(R.string.asset_detail_page_title),
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { onNavigateToEdit(assetId) }) {
-                        Icon(Icons.Outlined.Edit, contentDescription = stringResource(R.string.edit))
-                    }
-                    IconButton(onClick = { viewModel.showDeleteDialog() }) {
-                        Icon(Icons.Outlined.Delete, contentDescription = stringResource(R.string.delete))
-                    }
-                }
-            )
-        }
-    ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-                .padding(padding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            item {
-                ModuleCard(tint = assetTint(), modifier = Modifier.fillMaxWidth()) {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            Modifier.size(72.dp).background(if (asset.images.isEmpty()) catInfo.color.copy(alpha = 0.12f) else Color.Transparent, MaterialTheme.shapes.large),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            val firstImage = imageList.firstOrNull()
-                            if (firstImage != null) {
-                                AsyncImage(
-                                    model = File(firstImage),
-                                    contentDescription = asset.name,
-                                    modifier = Modifier.fillMaxSize().clip(MaterialTheme.shapes.large),
-                                    contentScale = ContentScale.Crop
-                                )
-                            } else {
-                                Icon(imageVector = catInfo.icon, contentDescription = null, tint = catInfo.color, modifier = Modifier.size(36.dp))
-                            }
+                CompactTopAppBar(
+                    title = stringResource(R.string.asset_detail_page_title),
+                    navigationIcon = {
+                        IconButton(onClick = onNavigateBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                         }
-                        Column(Modifier.weight(1f)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(text = asset.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-                                if (asset.quantity > 1) {
-                                    Spacer(Modifier.width(6.dp))
-                                    Surface(shape = MaterialTheme.shapes.small, color = AccentOrange.copy(alpha = 0.12f)) {
-                                        Text(text = "×${asset.quantity}", modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp), style = MaterialTheme.typography.titleSmall, color = AccentOrange, fontWeight = FontWeight.Bold)
+                    },
+                    actions = {
+                        IconButton(onClick = { onNavigateToEdit(assetId) }) {
+                            Icon(Icons.Outlined.Edit, contentDescription = stringResource(R.string.edit))
+                        }
+                        IconButton(onClick = { viewModel.showDeleteDialog() }) {
+                            Icon(Icons.Outlined.Delete, contentDescription = stringResource(R.string.delete))
+                        }
+                    }
+                )
+            }
+        ) { padding ->
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background)
+                    .padding(padding),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                item {
+                    ModuleCard(tint = assetTint(), modifier = Modifier.fillMaxWidth()) {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                Modifier.size(72.dp).background(if (asset.images.isEmpty()) catInfo.color.copy(alpha = 0.12f) else Color.Transparent, MaterialTheme.shapes.large),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                val firstImage = imageList.firstOrNull()
+                                if (firstImage != null) {
+                                    AsyncImage(
+                                        model = File(firstImage),
+                                        contentDescription = asset.name,
+                                        modifier = Modifier.fillMaxSize().clip(MaterialTheme.shapes.large),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                } else {
+                                    Icon(imageVector = catInfo.icon, contentDescription = null, tint = catInfo.color, modifier = Modifier.size(36.dp))
+                                }
+                            }
+                            Column(Modifier.weight(1f)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(text = asset.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                                    if (asset.quantity > 1) {
+                                        Spacer(Modifier.width(6.dp))
+                                        Surface(shape = MaterialTheme.shapes.small, color = AccentOrange.copy(alpha = 0.12f)) {
+                                            Text(text = "×${asset.quantity}", modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp), style = MaterialTheme.typography.titleSmall, color = AccentOrange, fontWeight = FontWeight.Bold)
+                                        }
+                                    }
+                                }
+                                Spacer(Modifier.height(4.dp))
+                                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    StatusChip(text = statusText, color = statusColor)
+                                    // 与列表/网格卡同一套口径：取质保/保质期里更紧迫的那个，按紧迫度着色。
+                                    // 以前这里只看质保、且用「有效就绿」的老口径，同一个日期在两处颜色不一样。
+                                    asset.nearestExpiryDate?.let { deadline ->
+                                        StatusChip(
+                                            text = asset.getNearestExpiryText(context),
+                                            color = expiryAccentColor(deadline)
+                                        )
                                     }
                                 }
                             }
-                            Spacer(Modifier.height(4.dp))
-                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                StatusChip(text = statusText, color = statusColor)
-                                // 与列表/网格卡同一套口径：取质保/保质期里更紧迫的那个，按紧迫度着色。
-                                // 以前这里只看质保、且用「有效就绿」的老口径，同一个日期在两处颜色不一样。
-                                asset.nearestExpiryDate?.let { deadline ->
-                                    StatusChip(
-                                        text = asset.getNearestExpiryText(context),
-                                        color = expiryAccentColor(deadline)
-                                    )
+                        }
+                        Spacer(Modifier.height(20.dp))
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                            StatItem(
+                                label = when {
+                                    asset.status == AssetStatus.REMOVED -> stringResource(R.string.asset_sold_price_label)
+                                    asset.acquisitionType == "PURCHASE" -> stringResource(R.string.asset_price)
+                                    else -> stringResource(R.string.asset_valuation_price)
+                                },
+                                value = CurrencyUtils.formatCurrency(LocalContext.current, asset.displayPrice.toMoney()),
+                                color = AccentOrange
+                            )
+                            StatItem(label = stringResource(R.string.asset_days_owned), value = "${detailState.daysOwned}", color = MaterialTheme.colorScheme.primary)
+                            StatItem(
+                                label = if (asset.costMode == "PER_USE") {
+                                    stringResource(R.string.asset_cost_single)
+                                } else {
+                                    stringResource(R.string.asset_cost_daily_avg)
+                                },
+                                value = CurrencyUtils.formatCurrency(
+                                    context,
+                                    Money.fromYuan(if (asset.costMode == "PER_USE") detailState.costPerUse else detailState.costPerDay)
+                                ),
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+                }
+                // Image Gallery
+                if (imageList.isNotEmpty()) {
+                    item {
+                        ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
+                            Text(text = stringResource(R.string.asset_images_count, imageList.size), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Row(modifier = Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                imageList.forEachIndexed { index, imagePath ->
+                                    Box(Modifier.size(120.dp).clip(MaterialTheme.shapes.medium).clickable { previewIndex = index }) {
+                                        AsyncImage(model = File(imagePath), contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                                    }
                                 }
                             }
                         }
                     }
-                    Spacer(Modifier.height(20.dp))
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                        StatItem(label = when {
-                            asset.status == AssetStatus.REMOVED -> stringResource(R.string.asset_sold_price_label)
-                            asset.acquisitionType == "PURCHASE" -> stringResource(R.string.asset_price)
-                            else -> stringResource(R.string.asset_valuation_price)
-                        }, value = CurrencyUtils.formatCurrency(LocalContext.current, asset.displayPrice.toMoney()), color = AccentOrange)
-                        StatItem(label = stringResource(R.string.asset_days_owned), value = "${detailState.daysOwned}", color = MaterialTheme.colorScheme.primary)
-                        StatItem(
-                                    label = if (asset.costMode == "PER_USE") stringResource(R.string.asset_cost_single)
-                                    else stringResource(R.string.asset_cost_daily_avg),
-                                    value = CurrencyUtils.formatCurrency(
-                                        context,
-                                        Money.fromYuan(if (asset.costMode == "PER_USE") detailState.costPerUse else detailState.costPerDay)
-                                    ),
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                    }
                 }
-            }
-            // Image Gallery
-            if (imageList.isNotEmpty()) {
+                // Basic Info Section
                 item {
                     ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
-                        Text(text = stringResource(R.string.asset_images_count, imageList.size), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(modifier = Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            imageList.forEachIndexed { index, imagePath ->
-                                Box(Modifier.size(120.dp).clip(MaterialTheme.shapes.medium).clickable { previewIndex = index }) {
-                                    AsyncImage(model = File(imagePath), contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-                                }
+                        Text(text = stringResource(R.string.asset_basic_info), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Spacer(modifier = Modifier.height(12.dp))
+                        DetailRow(stringResource(R.string.asset_category), com.palmnote.ui.asset.getCategoryDisplayName(asset.category, context, presetVer))
+                        if (asset.subCategory.isNotEmpty()) DetailRow(stringResource(R.string.asset_subcategory), asset.subCategory)
+                        if (asset.brand.isNotEmpty()) DetailRow(stringResource(R.string.asset_brand), asset.brand)
+                        if (asset.model.isNotEmpty()) DetailRow(stringResource(R.string.asset_model_name), asset.model)
+                        if (asset.serialNumber.isNotEmpty()) DetailRow(stringResource(R.string.asset_serial_number), asset.serialNumber)
+                        DetailRow(
+                            stringResource(R.string.asset_condition),
+                            when (asset.condition) {
+                                "NEW" -> stringResource(R.string.asset_condition_new)
+                                "GOOD" -> stringResource(R.string.asset_condition_good)
+                                "FAIR" -> stringResource(R.string.asset_condition_fair)
+                                "POOR" -> stringResource(R.string.asset_condition_poor)
+                                else -> asset.condition
                             }
-                        }
-                    }
-                }
-            }
-            // Basic Info Section
-            item {
-                ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
-                    Text(text = stringResource(R.string.asset_basic_info), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.height(12.dp))
-                    DetailRow(stringResource(R.string.asset_category), com.palmnote.ui.asset.getCategoryDisplayName(asset.category, context, presetVer))
-                    if (asset.subCategory.isNotEmpty()) DetailRow(stringResource(R.string.asset_subcategory), asset.subCategory)
-                    if (asset.brand.isNotEmpty()) DetailRow(stringResource(R.string.asset_brand), asset.brand)
-                    if (asset.model.isNotEmpty()) DetailRow(stringResource(R.string.asset_model_name), asset.model)
-                    if (asset.serialNumber.isNotEmpty()) DetailRow(stringResource(R.string.asset_serial_number), asset.serialNumber)
-                    DetailRow(stringResource(R.string.asset_condition), when (asset.condition) { "NEW" -> stringResource(R.string.asset_condition_new); "GOOD" -> stringResource(R.string.asset_condition_good); "FAIR" -> stringResource(R.string.asset_condition_fair); "POOR" -> stringResource(R.string.asset_condition_poor); else -> asset.condition })
-                    if (asset.quantity > 1) DetailRow(stringResource(R.string.asset_quantity_label), "×${asset.quantity}")
-                    if (tags.isNotEmpty()) DetailRow(stringResource(R.string.asset_tags_label), tags.joinToString("、"))
-                    if (asset.isFavorite) DetailRow(stringResource(R.string.asset_favorite), stringResource(R.string.asset_yes))
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-                    DetailRow(stringResource(R.string.asset_acquisition_type), getAcquisitionText(asset.acquisitionType))
-                    asset.acquisitionDate?.let { DetailRow(if (asset.acquisitionType == "PURCHASE") stringResource(R.string.asset_purchase_date) else stringResource(R.string.asset_acquisition_date), DateUtils.formatDisplayFullDate(context, it)) }
-                    if (asset.acquisitionType == "PURCHASE" && asset.purchaseChannel.isNotEmpty()) DetailRow(stringResource(R.string.asset_purchase_channel), asset.purchaseChannel)
-                    if (asset.location.isNotEmpty()) DetailRow(stringResource(R.string.asset_location), asset.location)
-                    if (asset.room.isNotEmpty()) DetailRow(stringResource(R.string.asset_room), asset.room)
-                    if (asset.description.isNotEmpty()) {
+                        )
+                        if (asset.quantity > 1) DetailRow(stringResource(R.string.asset_quantity_label), "×${asset.quantity}")
+                        if (tags.isNotEmpty()) DetailRow(stringResource(R.string.asset_tags_label), tags.joinToString("、"))
+                        if (asset.isFavorite) DetailRow(stringResource(R.string.asset_favorite), stringResource(R.string.asset_yes))
                         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-                        Text(text = stringResource(R.string.asset_description), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Spacer(Modifier.height(4.dp))
-                        Text(text = asset.description, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
-                    }
-                }
-            }
-            // Valuation Info
-            item {
-                ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
-                    Text(text = stringResource(R.string.asset_value_info), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.height(12.dp))
-if (asset.purchasePrice > 0) DetailRow(
-                                        stringResource(R.string.asset_price),
-                                        CurrencyUtils.formatCurrency(context, asset.purchasePrice.toMoney())
-                                    )
-                                if (asset.currentValue > 0) DetailRow(
-                                        stringResource(R.string.asset_current_value),
-                                        CurrencyUtils.formatCurrency(context, asset.currentValue.toMoney())
-                                    )
-                    if (asset.depreciationRate > 0) DetailRow(stringResource(R.string.asset_depreciation_rate), "${"%.1f".format(asset.depreciationRate)}%")
-                    DetailRow(stringResource(R.string.asset_cost_calculation), when (asset.costMode) { "DAILY" -> stringResource(R.string.asset_cost_daily); "PER_USE" -> stringResource(R.string.asset_cost_per_use); "DEPRECIATION" -> stringResource(R.string.asset_depreciation); else -> asset.costMode })
-                }
-            }
-
-            // Warranty Info
-            if (asset.warrantyExpireDate != null) {
-                val warrantyExpireDate = asset.warrantyExpireDate!!
-                item {
-                    ModuleCard(tint = if (asset.isWarrantyValid) goalTint() else anniversaryTint(), modifier = Modifier.fillMaxWidth()) {
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(imageVector = if (asset.isWarrantyValid) Icons.Filled.VerifiedUser else Icons.Outlined.GppBad, contentDescription = null, tint = if (asset.isWarrantyValid) StatusActive else StatusLost, modifier = Modifier.size(24.dp))
-                                Spacer(Modifier.width(8.dp))
-                                Column {
-                                    Text(text = stringResource(R.string.asset_warranty_info), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                                    Text(
-                                        text = stringResource(
-                                            R.string.asset_warranty_expiry_format,
-                                            DateUtils.formatDisplayYearDate(context, warrantyExpireDate)
-                                        ),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-                            val daysLeft = DateUtils.getDaysUntil(warrantyExpireDate)
-                            if (daysLeft >= 0) StatusChip(text = pluralStringResource(
-                                R.plurals.asset_warranty_remaining_days, daysLeft, daysLeft
-                            ), color = StatusActive)
-                            else StatusChip(text = pluralStringResource(
-                                R.plurals.asset_warranty_expired_days, -daysLeft, -daysLeft
-                            ), color = StatusRetired)
+                        DetailRow(stringResource(R.string.asset_acquisition_type), getAcquisitionText(asset.acquisitionType))
+                        asset.acquisitionDate?.let { DetailRow(if (asset.acquisitionType == "PURCHASE") stringResource(R.string.asset_purchase_date) else stringResource(R.string.asset_acquisition_date), DateUtils.formatDisplayFullDate(context, it)) }
+                        if (asset.acquisitionType == "PURCHASE" && asset.purchaseChannel.isNotEmpty()) DetailRow(stringResource(R.string.asset_purchase_channel), asset.purchaseChannel)
+                        if (asset.location.isNotEmpty()) DetailRow(stringResource(R.string.asset_location), asset.location)
+                        if (asset.room.isNotEmpty()) DetailRow(stringResource(R.string.asset_room), asset.room)
+                        if (asset.description.isNotEmpty()) {
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                            Text(text = stringResource(R.string.asset_description), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Spacer(Modifier.height(4.dp))
+                            Text(text = asset.description, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
                         }
                     }
                 }
-            }
-            // Shelf Life Info
-            if (asset.shelfLifeExpireDate != null) {
-                item { ShelfLifeCard(asset) }
-            }
-            // Maintenance Info
-            if (asset.maintenanceIntervalDays > 0 || asset.lastMaintenanceDate != null) {
+                // Valuation Info
                 item {
-                    val isDue = asset.isMaintenanceDue
-                    ModuleCard(tint = if (isDue) anniversaryTint() else goalTint(), modifier = Modifier.fillMaxWidth()) {
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Outlined.Build, contentDescription = null, tint = if (isDue) AccentOrange else MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
-                                Spacer(Modifier.width(8.dp))
-                                Column {
-                                    Text(text = stringResource(R.string.asset_maintenance_info), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                                    if (asset.lastMaintenanceDate != null) {
-                                        val lastMaintenanceDate = asset.lastMaintenanceDate!!
+                    ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
+                        Text(text = stringResource(R.string.asset_value_info), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Spacer(modifier = Modifier.height(12.dp))
+                        if (asset.purchasePrice > 0) {
+                            DetailRow(
+                                stringResource(R.string.asset_price),
+                                CurrencyUtils.formatCurrency(context, asset.purchasePrice.toMoney())
+                            )
+                        }
+                        if (asset.currentValue > 0) {
+                            DetailRow(
+                                stringResource(R.string.asset_current_value),
+                                CurrencyUtils.formatCurrency(context, asset.currentValue.toMoney())
+                            )
+                        }
+                        if (asset.depreciationRate > 0) DetailRow(stringResource(R.string.asset_depreciation_rate), "${"%.1f".format(asset.depreciationRate)}%")
+                        DetailRow(
+                            stringResource(R.string.asset_cost_calculation),
+                            when (asset.costMode) {
+                                "DAILY" -> stringResource(R.string.asset_cost_daily)
+                                "PER_USE" -> stringResource(R.string.asset_cost_per_use)
+                                "DEPRECIATION" -> stringResource(R.string.asset_depreciation)
+                                else -> asset.costMode
+                            }
+                        )
+                    }
+                }
+
+                // Warranty Info
+                if (asset.warrantyExpireDate != null) {
+                    val warrantyExpireDate = asset.warrantyExpireDate!!
+                    item {
+                        ModuleCard(
+                            tint = if (asset.isWarrantyValid) goalTint() else anniversaryTint(),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(imageVector = if (asset.isWarrantyValid) Icons.Filled.VerifiedUser else Icons.Outlined.GppBad, contentDescription = null, tint = if (asset.isWarrantyValid) StatusActive else StatusLost, modifier = Modifier.size(24.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    Column {
+                                        Text(text = stringResource(R.string.asset_warranty_info), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                                         Text(
-                                        text = stringResource(
-                                            R.string.asset_last_maintenance_format,
-                                            DateUtils.formatDisplayYearDate(context, lastMaintenanceDate)
-                                        ),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                    }
-                                    if (asset.maintenanceIntervalDays > 0) {
-                                        Text(
-                                            text = pluralStringResource(
-                                                R.plurals.asset_maintenance_cycle_format,
-                                                asset.maintenanceIntervalDays,
-                                                asset.maintenanceIntervalDays
+                                            text = stringResource(
+                                                R.string.asset_warranty_expiry_format,
+                                                DateUtils.formatDisplayYearDate(context, warrantyExpireDate)
                                             ),
                                             style = MaterialTheme.typography.bodySmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
                                 }
-                            }
-                            if (isDue) StatusChip(text = stringResource(R.string.asset_maintenance_needed), color = AccentOrange)
-                            else if (asset.nextMaintenanceDate != null) {
-                                val nextMaintenanceDate = asset.nextMaintenanceDate!!
-                                val daysUntil = DateUtils.getDaysUntil(nextMaintenanceDate)
-                                StatusChip(
-                                    text = if (daysUntil >= 0) {
-                                        pluralStringResource(
-                                            R.plurals.asset_days_later_format, daysUntil, daysUntil
-                                        )
-                                    } else {
-                                        stringResource(R.string.asset_maintenance_expired)
-                                    },
-                                    color = if (daysUntil < 7) AccentOrange else StatusActive
-                                )
+                                val daysLeft = DateUtils.getDaysUntil(warrantyExpireDate)
+                                if (daysLeft >= 0) {
+                                    StatusChip(
+                                        text = pluralStringResource(
+                                            R.plurals.asset_warranty_remaining_days,
+                                            daysLeft,
+                                            daysLeft
+                                        ),
+                                        color = StatusActive
+                                    )
+                                } else {
+                                    StatusChip(
+                                        text = pluralStringResource(
+                                            R.plurals.asset_warranty_expired_days,
+                                            -daysLeft,
+                                            -daysLeft
+                                        ),
+                                        color = StatusRetired
+                                    )
+                                }
                             }
                         }
-                        if (isDue) {
+                    }
+                }
+                // Shelf Life Info
+                if (asset.shelfLifeExpireDate != null) {
+                    item { ShelfLifeCard(asset) }
+                }
+                // Maintenance Info
+                if (asset.maintenanceIntervalDays > 0 || asset.lastMaintenanceDate != null) {
+                    item {
+                        val isDue = asset.isMaintenanceDue
+                        ModuleCard(tint = if (isDue) anniversaryTint() else goalTint(), modifier = Modifier.fillMaxWidth()) {
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Outlined.Build, contentDescription = null, tint = if (isDue) AccentOrange else MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    Column {
+                                        Text(text = stringResource(R.string.asset_maintenance_info), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                                        if (asset.lastMaintenanceDate != null) {
+                                            val lastMaintenanceDate = asset.lastMaintenanceDate!!
+                                            Text(
+                                                text = stringResource(
+                                                    R.string.asset_last_maintenance_format,
+                                                    DateUtils.formatDisplayYearDate(context, lastMaintenanceDate)
+                                                ),
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                        if (asset.maintenanceIntervalDays > 0) {
+                                            Text(
+                                                text = pluralStringResource(
+                                                    R.plurals.asset_maintenance_cycle_format,
+                                                    asset.maintenanceIntervalDays,
+                                                    asset.maintenanceIntervalDays
+                                                ),
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
+                                }
+                                if (isDue) {
+                                    StatusChip(text = stringResource(R.string.asset_maintenance_needed), color = AccentOrange)
+                                } else if (asset.nextMaintenanceDate != null) {
+                                    val nextMaintenanceDate = asset.nextMaintenanceDate!!
+                                    val daysUntil = DateUtils.getDaysUntil(nextMaintenanceDate)
+                                    StatusChip(
+                                        text = if (daysUntil >= 0) {
+                                            pluralStringResource(
+                                                R.plurals.asset_days_later_format,
+                                                daysUntil,
+                                                daysUntil
+                                            )
+                                        } else {
+                                            stringResource(R.string.asset_maintenance_expired)
+                                        },
+                                        color = if (daysUntil < 7) AccentOrange else StatusActive
+                                    )
+                                }
+                            }
+                            if (isDue) {
+                                Spacer(Modifier.height(8.dp))
+                                var showMaintConfirm by remember { mutableStateOf(false) }
+                                Button(onClick = { showMaintConfirm = true }, modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium, colors = ButtonDefaults.buttonColors(containerColor = AccentOrange)) {
+                                    Icon(Icons.Filled.Check, null, modifier = Modifier.size(18.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    Text(stringResource(R.string.asset_complete_maintenance), fontWeight = FontWeight.Bold)
+                                }
+                                if (showMaintConfirm) {
+                                    AppDialog(
+                                        onDismissRequest = { showMaintConfirm = false },
+                                        title = { Text(stringResource(R.string.asset_maintenance_info), fontWeight = FontWeight.Bold) },
+                                        text = { Text(stringResource(R.string.asset_maintenance_complete_confirm)) },
+                                        confirmButton = {
+                                            TextButton(onClick = {
+                                                viewModel.completeMaintenance(assetId)
+                                                showMaintConfirm = false
+                                            }) { Text(stringResource(R.string.confirm)) }
+                                        },
+                                        dismissButton = { TextButton(onClick = { showMaintConfirm = false }) { Text(stringResource(R.string.cancel)) } }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+                // Insurance Info
+                if (asset.insuranceExpireDate != null || asset.insuranceCompany.isNotEmpty()) {
+                    item {
+                        ModuleCard(
+                            tint = if (asset.isInsuranceValid) goalTint() else anniversaryTint(),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(text = stringResource(R.string.asset_insurance_info), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                             Spacer(Modifier.height(8.dp))
-                            var showMaintConfirm by remember { mutableStateOf(false) }
-                            Button(onClick = { showMaintConfirm = true }, modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium, colors = ButtonDefaults.buttonColors(containerColor = AccentOrange)) {
-                                Icon(Icons.Filled.Check, null, modifier = Modifier.size(18.dp))
-                                Spacer(Modifier.width(8.dp))
-                                Text(stringResource(R.string.asset_complete_maintenance), fontWeight = FontWeight.Bold)
-                            }
-                            if (showMaintConfirm) {
-                                AppDialog(
-                                    onDismissRequest = { showMaintConfirm = false },
-                                    title = { Text(stringResource(R.string.asset_maintenance_info), fontWeight = FontWeight.Bold) },
-                                    text = { Text(stringResource(R.string.asset_maintenance_complete_confirm)) },
-                                    confirmButton = { TextButton(onClick = { viewModel.completeMaintenance(assetId); showMaintConfirm = false }) { Text(stringResource(R.string.confirm)) } },
-                                    dismissButton = { TextButton(onClick = { showMaintConfirm = false }) { Text(stringResource(R.string.cancel)) } }
+                            if (asset.insuranceCompany.isNotEmpty()) DetailRow(stringResource(R.string.asset_insurance_company), asset.insuranceCompany)
+                            if (asset.insurancePolicyNo.isNotEmpty()) DetailRow(stringResource(R.string.asset_insurance_policy), asset.insurancePolicyNo)
+                            if (asset.insuranceExpireDate != null) {
+                                val insuranceExpireDate = asset.insuranceExpireDate!!
+                                DetailRow(
+                                    stringResource(R.string.asset_insurance_expiry),
+                                    DateUtils.formatDisplayYearDate(context, insuranceExpireDate)
                                 )
                             }
+                            if (asset.getInsuranceStatusText(context).isNotEmpty()) DetailRow(stringResource(R.string.asset_status), asset.getInsuranceStatusText(context))
                         }
                     }
                 }
-            }
-            // Insurance Info
-            if (asset.insuranceExpireDate != null || asset.insuranceCompany.isNotEmpty()) {
-                item {
-                    ModuleCard(tint = if (asset.isInsuranceValid) goalTint() else anniversaryTint(), modifier = Modifier.fillMaxWidth()) {
-                        Text(text = stringResource(R.string.asset_insurance_info), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                        Spacer(Modifier.height(8.dp))
-                        if (asset.insuranceCompany.isNotEmpty()) DetailRow(stringResource(R.string.asset_insurance_company), asset.insuranceCompany)
-                        if (asset.insurancePolicyNo.isNotEmpty()) DetailRow(stringResource(R.string.asset_insurance_policy), asset.insurancePolicyNo)
-                        if (asset.insuranceExpireDate != null) {
-                            val insuranceExpireDate = asset.insuranceExpireDate!!
-                            DetailRow(
-                            stringResource(R.string.asset_insurance_expiry),
-                            DateUtils.formatDisplayYearDate(context, insuranceExpireDate)
-                        )
+                // Status Info (for non-held)
+                if (asset.status != AssetStatus.HELD) {
+                    item {
+                        val statusBg = when (asset.status) {
+                            AssetStatus.AWAY -> billTint()
+                            AssetStatus.REMOVED -> anniversaryTint()
+                            else -> MaterialTheme.colorScheme.surface
                         }
-                        if (asset.getInsuranceStatusText(context).isNotEmpty()) DetailRow(stringResource(R.string.asset_status), asset.getInsuranceStatusText(context))
-                    }
-                }
-            }
-            // Status Info (for non-held)
-            if (asset.status != AssetStatus.HELD) {
-                item {
-                    val statusBg = when (asset.status) {
-                        AssetStatus.AWAY -> billTint()
-                        AssetStatus.REMOVED -> anniversaryTint()
-                        else -> MaterialTheme.colorScheme.surface
-                    }
 
-                    ModuleCard(tint = statusBg, modifier = Modifier.fillMaxWidth()) {
-                        val statusTitle = when (asset.status) { AssetStatus.AWAY -> stringResource(R.string.asset_away_info); AssetStatus.REMOVED -> stringResource(R.string.asset_removed_info); else -> stringResource(R.string.asset_status_info_label) }
-                        Text(text = statusTitle, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        when (asset.status) {
-                            AssetStatus.AWAY -> {
-                                tags.takeIf { it.isNotEmpty() }?.let { DetailRow(stringResource(R.string.asset_away_reason), it.joinToString("、")) }
-                                asset.retireDate?.let { DetailRow(stringResource(R.string.asset_away_date), DateUtils.formatDisplayFullDate(context, it)) }
-                                if (asset.retireReason.isNotEmpty()) DetailRow(stringResource(R.string.asset_description), asset.retireReason)
+                        ModuleCard(tint = statusBg, modifier = Modifier.fillMaxWidth()) {
+                            val statusTitle = when (asset.status) {
+                                AssetStatus.AWAY -> stringResource(R.string.asset_away_info)
+                                AssetStatus.REMOVED -> stringResource(R.string.asset_removed_info)
+                                else -> stringResource(R.string.asset_status_info_label)
                             }
-                            AssetStatus.REMOVED -> {
-                                tags.takeIf { it.isNotEmpty() }?.let { DetailRow(stringResource(R.string.asset_clear_reason), it.joinToString("、")) }
-                                asset.retireDate?.let { DetailRow(stringResource(R.string.asset_retire_date), DateUtils.formatDisplayFullDate(context, it)) }
-                                if (asset.retireReason.isNotEmpty()) DetailRow(stringResource(R.string.asset_retire_reason), asset.retireReason)
-                                asset.lostDate?.let { DetailRow(stringResource(R.string.asset_lost_date), DateUtils.formatDisplayFullDate(context, it)) }
-                                if (asset.lostReason.isNotEmpty()) DetailRow(stringResource(R.string.asset_lost_reason), asset.lostReason)
-                                asset.soldDate?.let { DetailRow(stringResource(R.string.asset_sold_date), DateUtils.formatDisplayFullDate(context, it)) }
-                                asset.soldPrice?.let { soldPrice ->
+                            Text(text = statusTitle, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            when (asset.status) {
+                                AssetStatus.AWAY -> {
+                                    tags.takeIf { it.isNotEmpty() }?.let { DetailRow(stringResource(R.string.asset_away_reason), it.joinToString("、")) }
+                                    asset.retireDate?.let { DetailRow(stringResource(R.string.asset_away_date), DateUtils.formatDisplayFullDate(context, it)) }
+                                    if (asset.retireReason.isNotEmpty()) DetailRow(stringResource(R.string.asset_description), asset.retireReason)
+                                }
+                                AssetStatus.REMOVED -> {
+                                    tags.takeIf { it.isNotEmpty() }?.let { DetailRow(stringResource(R.string.asset_clear_reason), it.joinToString("、")) }
+                                    asset.retireDate?.let { DetailRow(stringResource(R.string.asset_retire_date), DateUtils.formatDisplayFullDate(context, it)) }
+                                    if (asset.retireReason.isNotEmpty()) DetailRow(stringResource(R.string.asset_retire_reason), asset.retireReason)
+                                    asset.lostDate?.let { DetailRow(stringResource(R.string.asset_lost_date), DateUtils.formatDisplayFullDate(context, it)) }
+                                    if (asset.lostReason.isNotEmpty()) {
+                                        DetailRow(stringResource(R.string.asset_lost_reason), asset.lostReason)
+                                    }
+                                    asset.soldDate?.let { DetailRow(stringResource(R.string.asset_sold_date), DateUtils.formatDisplayFullDate(context, it)) }
+                                    asset.soldPrice?.let { soldPrice ->
                                         DetailRow(
                                             stringResource(R.string.asset_sold_price_label),
                                             CurrencyUtils.formatCurrency(context, soldPrice.toMoney())
                                         )
                                     }
-                                asset.soldChannel?.let { DetailRow(stringResource(R.string.asset_sold_channel), it) }
-                                asset.soldToWhom?.takeIf { it.isNotEmpty() }?.let { DetailRow(stringResource(R.string.asset_sold_to), it) }
-                                if (asset.purchasePrice > 0 && asset.soldPrice != null) {
-                                    val soldPrice = asset.soldPrice!!
-                                    DetailRow(
-                                    stringResource(R.string.asset_profit_loss),
-                                    (if (soldPrice >= asset.purchasePrice) "+" else "") +
-                                        CurrencyUtils.formatCurrency(LocalContext.current, (soldPrice - asset.purchasePrice).toMoney())
-                                )
+                                    asset.soldChannel?.let { DetailRow(stringResource(R.string.asset_sold_channel), it) }
+                                    asset.soldToWhom?.takeIf { it.isNotEmpty() }?.let {
+                                        DetailRow(stringResource(R.string.asset_sold_to), it)
+                                    }
+                                    if (asset.purchasePrice > 0 && asset.soldPrice != null) {
+                                        val soldPrice = asset.soldPrice!!
+                                        DetailRow(
+                                            stringResource(R.string.asset_profit_loss),
+                                            (if (soldPrice >= asset.purchasePrice) "+" else "") +
+                                                CurrencyUtils.formatCurrency(
+                                                    LocalContext.current,
+                                                    (soldPrice - asset.purchasePrice).toMoney()
+                                                )
+                                        )
+                                    }
                                 }
+                                else -> {}
                             }
-                            else -> {}
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        var showReactConfirm by remember { mutableStateOf(false) }
-                        OutlinedButton(onClick = { showReactConfirm = true }, modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium) {
-                            Icon(Icons.Filled.Restore, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text(stringResource(R.string.asset_reactivate))
-                        }
-                        if (showReactConfirm) {
-                            AppDialog(
-                                onDismissRequest = { showReactConfirm = false },
-                                title = { Text(stringResource(R.string.asset_status_held), fontWeight = FontWeight.Bold) },
-                                text = { Text(stringResource(R.string.asset_restore_confirm)) },
-                                confirmButton = { TextButton(onClick = { viewModel.reactivateAsset(assetId); showReactConfirm = false }) { Text(stringResource(R.string.confirm), color = MaterialTheme.colorScheme.primary) } },
-                                dismissButton = { TextButton(onClick = { showReactConfirm = false }) { Text(stringResource(R.string.cancel)) } }
-                            )
-                        }
-                    }
-                }
-            }
-
-            // Other Info
-            item {
-                ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
-                    Text(text = stringResource(R.string.asset_other_info), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.height(12.dp))
-                    DetailRow(stringResource(R.string.asset_created_at), DateUtils.formatDisplayYearDate(context, asset.createdAt))
-                    DetailRow(stringResource(R.string.asset_updated_at), DateUtils.formatDisplayYearDate(context, asset.updatedAt))
-                    if (asset.linkedBillId != null) DetailRow(stringResource(R.string.asset_linked_bill), "#${asset.linkedBillId}")
-                    if (asset.linkedMomentId != null) DetailRow(stringResource(R.string.asset_linked_moment), "#${asset.linkedMomentId}")
-                }
-            }
-
-            // Usage Records
-            item {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    Column {
-                        Text(text = stringResource(R.string.asset_usage_records), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        Text(
-                            text = pluralStringResource(
-                                R.plurals.asset_usage_count_format, asset.useCount, asset.useCount
-                            ),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    FilledTonalButton(
-                        onClick = { viewModel.addUsageRecord(assetId) },
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                        colors = ButtonDefaults.filledTonalButtonColors(containerColor = MaterialTheme.colorScheme.surface)
-                    ) {
-                        Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(4.dp))
-                        Text(stringResource(R.string.asset_record_usage))
-                    }
-                }
-            }
-            if (detailState.usageRecords.isEmpty()) {
-                item { EmptyState(icon = Icons.Outlined.History, title = stringResource(R.string.asset_no_usage_records), subtitle = stringResource(R.string.asset_click_to_record_usage)) }
-            } else {
-                val visibleRecords = if (showAllRecords) detailState.usageRecords else detailState.usageRecords.take(3)
-                items(visibleRecords, key = { it.id }) { record ->
-                    val density = LocalDensity.current
-                    val actionWidthPx = with(density) { 140.dp.toPx() }
-                    var editRecord by remember { mutableStateOf<UsageRecord?>(null) }
-                    UsageRecordItem(record, actionWidthPx, { editRecord = it }, { viewModel.deleteUsageRecord(it) })
-                    UsageRecordEditDialog(editRecord, viewModel, { editRecord = null })
-                }
-                if (detailState.usageRecords.size > 3) {
-                    item {
-                        TextButton(onClick = { showAllRecords = !showAllRecords }, modifier = Modifier.fillMaxWidth()) {
-                            Text(if (showAllRecords) stringResource(R.string.asset_collapse) else pluralStringResource(
-                                R.plurals.asset_expand_all_format, detailState.usageRecords.size, detailState.usageRecords.size
-                            ), color = MaterialTheme.colorScheme.primary)
-                        }
-                    }
-                }
-            }
-
-            item {
-                ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
-                    Text(text = stringResource(R.string.asset_status_change), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Spacer(Modifier.height(12.dp))
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        StatusActionButton(
-                            onClick = { viewModel.reactivateAsset(assetId) },
-                            label = stringResource(R.string.asset_status_held), icon = Icons.Outlined.CheckCircle,
-                            color = StatusHeld, enabled = asset.status != AssetStatus.HELD
-                        )
-                        StatusActionButton(
-                            onClick = { viewModel.showAwayDialog() },
-                            label = stringResource(R.string.asset_status_away), icon = Icons.Outlined.Schedule,
-                            color = StatusAway, enabled = asset.status == AssetStatus.HELD
-                        )
-                        StatusActionButton(
-                            onClick = { viewModel.showClearDialog() },
-                            label = stringResource(R.string.asset_status_removed_label), icon = Icons.Outlined.Archive,
-                            color = StatusRemoved, enabled = asset.status == AssetStatus.HELD,
-                            filled = true
-                        )
-                    }
-                }
-            }
-            item { Spacer(Modifier.height(16.dp)) }
-        }
-    }
-
-    AppImagePreview(
-        showPreview = showPreview,
-        imageList = imageList,
-        previewIndex = previewIndex,
-        onClose = { previewIndex = -1 },
-        onSaveImage = { com.palmnote.ui.components.saveImageToGallery(context, imageList[it]) }
-    )
-
-    if (showAwayDialog) {
-        var reason by remember { mutableStateOf("") }
-        SurfaceAlertDialog(
-            onDismissRequest = { viewModel.hideAwayDialog() },
-            title = { Text(stringResource(R.string.asset_dialog_away_title)) },
-            text = {
-                Column {
-                    Text(stringResource(R.string.asset_dialog_away_confirm, asset.name))
-                    Spacer(Modifier.height(12.dp))
-                    OutlinedTextField(value = reason, onValueChange = { reason = it }, label = { Text(stringResource(R.string.asset_dialog_away_reason_hint)) }, modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium)
-                }
-            },
-            confirmButton = { TextButton(onClick = { viewModel.awayAsset(assetId, asset.tags, reason) }) { Text(stringResource(R.string.asset_dialog_away_action), color = StatusAway) } }
-        )
-    }
-    if (showClearDialog) {
-        var clearType by remember { mutableIntStateOf(0) } // 0=退役, 1=丢失, 2=售出
-        var reason by remember { mutableStateOf("") }
-        var selectedPreset by remember { mutableIntStateOf(-1) }
-        var price by remember { mutableStateOf("") }
-        var channel by remember { mutableStateOf("") }
-        val typeColors = listOf(StatusRemoved, StatusLost, AccentOrange)
-        val typeIcons = listOf(Icons.Outlined.Archive, Icons.AutoMirrored.Outlined.HelpOutline, Icons.Outlined.Sell)
-        val retirePresets = listOf(stringResource(R.string.asset_preset_scrapped), stringResource(R.string.asset_preset_expired), stringResource(R.string.asset_preset_damaged), stringResource(R.string.asset_preset_upgrade), stringResource(R.string.asset_preset_no_use))
-        val lostPresets = listOf(stringResource(R.string.asset_preset_lost), stringResource(R.string.asset_preset_stolen), stringResource(R.string.asset_preset_forgotten), stringResource(R.string.asset_preset_missing))
-        val sellPresets = listOf(stringResource(R.string.asset_preset_xianyu), stringResource(R.string.asset_preset_secondhand), stringResource(R.string.asset_preset_gift_others))
-        SurfaceAlertDialog(
-            onDismissRequest = { viewModel.hideClearDialog() },
-            title = { Text(stringResource(R.string.asset_dialog_clear_title)) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        listOf(stringResource(R.string.asset_clear_type_retire), stringResource(R.string.asset_clear_type_lost), stringResource(R.string.asset_clear_type_sell)).forEachIndexed { i, label ->
-                            FilterChip(
-                                selected = clearType == i,
-                                onClick = { clearType = i; reason = ""; selectedPreset = -1 },
-                                label = { Text(label) },
-                                leadingIcon = { Icon(typeIcons[i], null, Modifier.size(16.dp)) },
-                                colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = typeColors[i].copy(alpha = 0.15f),
-                                    selectedLabelColor = typeColors[i],
-                                    selectedLeadingIconColor = typeColors[i]
+                            Spacer(modifier = Modifier.height(8.dp))
+                            var showReactConfirm by remember { mutableStateOf(false) }
+                            OutlinedButton(onClick = { showReactConfirm = true }, modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium) {
+                                Icon(Icons.Filled.Restore, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text(stringResource(R.string.asset_reactivate))
+                            }
+                            if (showReactConfirm) {
+                                AppDialog(
+                                    onDismissRequest = { showReactConfirm = false },
+                                    title = { Text(stringResource(R.string.asset_status_held), fontWeight = FontWeight.Bold) },
+                                    text = { Text(stringResource(R.string.asset_restore_confirm)) },
+                                    confirmButton = {
+                                        TextButton(onClick = {
+                                            viewModel.reactivateAsset(assetId)
+                                            showReactConfirm = false
+                                        }) { Text(stringResource(R.string.confirm), color = MaterialTheme.colorScheme.primary) }
+                                    },
+                                    dismissButton = { TextButton(onClick = { showReactConfirm = false }) { Text(stringResource(R.string.cancel)) } }
                                 )
-                            )
+                            }
                         }
-                    }
-                    HorizontalDivider()
-                    val presets = when (clearType) { 0 -> retirePresets; 1 -> lostPresets; else -> sellPresets }
-                    Text(stringResource(R.string.asset_quick_select), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        presets.forEachIndexed { i, label ->
-                            SuggestionChip(
-                                onClick = { selectedPreset = i; reason = label },
-                                label = { Text(label, style = MaterialTheme.typography.labelSmall) },
-                                border = BorderStroke(if (selectedPreset == i) 1.dp else 0.dp, if (selectedPreset == i) typeColors[clearType] else MaterialTheme.colorScheme.outline)
-                            )
-                        }
-                    }
-                    HorizontalDivider()
-                    val reasonLabel = listOf(stringResource(R.string.asset_retire_reason_hint), stringResource(R.string.asset_lost_reason_hint), stringResource(R.string.asset_remark_hint))
-                    if (clearType < 2) {
-                        OutlinedTextField(value = reason, onValueChange = { reason = it; selectedPreset = -1 }, label = { Text(reasonLabel[clearType]) }, modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium)
-                    } else {
-                        OutlinedTextField(value = price, onValueChange = { price = it }, label = { Text(stringResource(R.string.asset_sell_price)) }, prefix = { Text(stringResource(R.string.currency_symbol)) }, modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium)
-                        OutlinedTextField(value = channel, onValueChange = { channel = it }, label = { Text(stringResource(R.string.asset_sell_channel_hint)) }, modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium)
-                        OutlinedTextField(value = reason, onValueChange = { reason = it; selectedPreset = -1 }, label = { Text(reasonLabel[2]) }, modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium)
                     }
                 }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    when (clearType) {
-                        0 -> viewModel.retireAsset(assetId, reason)
-                        1 -> viewModel.markAssetLost(assetId, reason)
-                        2 -> viewModel.sellAsset(assetId, com.palmnote.domain.model.Money.parse(price)?.cents ?: 0L, channel)
+
+                // Other Info
+                item {
+                    ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
+                        Text(text = stringResource(R.string.asset_other_info), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Spacer(modifier = Modifier.height(12.dp))
+                        DetailRow(stringResource(R.string.asset_created_at), DateUtils.formatDisplayYearDate(context, asset.createdAt))
+                        DetailRow(stringResource(R.string.asset_updated_at), DateUtils.formatDisplayYearDate(context, asset.updatedAt))
+                        if (asset.linkedBillId != null) DetailRow(stringResource(R.string.asset_linked_bill), "#${asset.linkedBillId}")
+                        if (asset.linkedMomentId != null) {
+                            DetailRow(stringResource(R.string.asset_linked_moment), "#${asset.linkedMomentId}")
+                        }
                     }
-                }) { Text(stringResource(R.string.confirm), color = typeColors[clearType]) }
+                }
+
+                // Usage Records
+                item {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Column {
+                            Text(text = stringResource(R.string.asset_usage_records), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            Text(
+                                text = pluralStringResource(
+                                    R.plurals.asset_usage_count_format,
+                                    asset.useCount,
+                                    asset.useCount
+                                ),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        FilledTonalButton(
+                            onClick = { viewModel.addUsageRecord(assetId) },
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                            colors = ButtonDefaults.filledTonalButtonColors(containerColor = MaterialTheme.colorScheme.surface)
+                        ) {
+                            Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text(stringResource(R.string.asset_record_usage))
+                        }
+                    }
+                }
+                if (detailState.usageRecords.isEmpty()) {
+                    item { EmptyState(icon = Icons.Outlined.History, title = stringResource(R.string.asset_no_usage_records), subtitle = stringResource(R.string.asset_click_to_record_usage)) }
+                } else {
+                    val visibleRecords = if (showAllRecords) detailState.usageRecords else detailState.usageRecords.take(3)
+                    items(visibleRecords, key = { it.id }) { record ->
+                        val density = LocalDensity.current
+                        val actionWidthPx = with(density) { 140.dp.toPx() }
+                        var editRecord by remember { mutableStateOf<UsageRecord?>(null) }
+                        UsageRecordItem(record, actionWidthPx, { editRecord = it }, { viewModel.deleteUsageRecord(it) })
+                        UsageRecordEditDialog(editRecord, viewModel, { editRecord = null })
+                    }
+                    if (detailState.usageRecords.size > 3) {
+                        item {
+                            TextButton(onClick = { showAllRecords = !showAllRecords }, modifier = Modifier.fillMaxWidth()) {
+                                Text(
+                                    if (showAllRecords) {
+                                        stringResource(R.string.asset_collapse)
+                                    } else {
+                                        pluralStringResource(
+                                            R.plurals.asset_expand_all_format,
+                                            detailState.usageRecords.size,
+                                            detailState.usageRecords.size
+                                        )
+                                    },
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                    }
+                }
+
+                item {
+                    ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
+                        Text(text = stringResource(R.string.asset_status_change), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Spacer(Modifier.height(12.dp))
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            StatusActionButton(
+                                onClick = { viewModel.reactivateAsset(assetId) },
+                                label = stringResource(R.string.asset_status_held),
+                                icon = Icons.Outlined.CheckCircle,
+                                color = StatusHeld,
+                                enabled = asset.status != AssetStatus.HELD
+                            )
+                            StatusActionButton(
+                                onClick = { viewModel.showAwayDialog() },
+                                label = stringResource(R.string.asset_status_away),
+                                icon = Icons.Outlined.Schedule,
+                                color = StatusAway,
+                                enabled = asset.status == AssetStatus.HELD
+                            )
+                            StatusActionButton(
+                                onClick = { viewModel.showClearDialog() },
+                                label = stringResource(R.string.asset_status_removed_label),
+                                icon = Icons.Outlined.Archive,
+                                color = StatusRemoved,
+                                enabled = asset.status == AssetStatus.HELD,
+                                filled = true
+                            )
+                        }
+                    }
+                }
+                item { Spacer(Modifier.height(16.dp)) }
             }
+        }
+
+        AppImagePreview(
+            showPreview = showPreview,
+            imageList = imageList,
+            previewIndex = previewIndex,
+            onClose = { previewIndex = -1 },
+            onSaveImage = { com.palmnote.ui.components.saveImageToGallery(context, imageList[it]) }
         )
-    }
-    if (showDeleteDialog) {
-        SurfaceAlertDialog(
-            onDismissRequest = { viewModel.hideDeleteDialog() },
-            title = { Text(stringResource(R.string.asset_dialog_delete_title)) },
-            text = { Text(stringResource(R.string.asset_dialog_delete_confirm, asset.name)) },
-            confirmButton = {
-                TextButton(onClick = {
-                    viewModel.deleteAsset(assetId)
-                    viewModel.hideDeleteDialog()
-                    onNavigateBack()
-                }) { Text(stringResource(R.string.delete), color = ErrorLight) }
-            }
-        )
-    }
+
+        if (showAwayDialog) {
+            var reason by remember { mutableStateOf("") }
+            SurfaceAlertDialog(
+                onDismissRequest = { viewModel.hideAwayDialog() },
+                title = { Text(stringResource(R.string.asset_dialog_away_title)) },
+                text = {
+                    Column {
+                        Text(stringResource(R.string.asset_dialog_away_confirm, asset.name))
+                        Spacer(Modifier.height(12.dp))
+                        OutlinedTextField(value = reason, onValueChange = { reason = it }, label = { Text(stringResource(R.string.asset_dialog_away_reason_hint)) }, modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium)
+                    }
+                },
+                confirmButton = { TextButton(onClick = { viewModel.awayAsset(assetId, asset.tags, reason) }) { Text(stringResource(R.string.asset_dialog_away_action), color = StatusAway) } }
+            )
+        }
+        if (showClearDialog) {
+            var clearType by remember { mutableIntStateOf(0) } // 0=退役, 1=丢失, 2=售出
+            var reason by remember { mutableStateOf("") }
+            var selectedPreset by remember { mutableIntStateOf(-1) }
+            var price by remember { mutableStateOf("") }
+            var channel by remember { mutableStateOf("") }
+            val typeColors = listOf(StatusRemoved, StatusLost, AccentOrange)
+            val typeIcons = listOf(Icons.Outlined.Archive, Icons.AutoMirrored.Outlined.HelpOutline, Icons.Outlined.Sell)
+            val retirePresets = listOf(stringResource(R.string.asset_preset_scrapped), stringResource(R.string.asset_preset_expired), stringResource(R.string.asset_preset_damaged), stringResource(R.string.asset_preset_upgrade), stringResource(R.string.asset_preset_no_use))
+            val lostPresets = listOf(stringResource(R.string.asset_preset_lost), stringResource(R.string.asset_preset_stolen), stringResource(R.string.asset_preset_forgotten), stringResource(R.string.asset_preset_missing))
+            val sellPresets = listOf(stringResource(R.string.asset_preset_xianyu), stringResource(R.string.asset_preset_secondhand), stringResource(R.string.asset_preset_gift_others))
+            SurfaceAlertDialog(
+                onDismissRequest = { viewModel.hideClearDialog() },
+                title = { Text(stringResource(R.string.asset_dialog_clear_title)) },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            listOf(stringResource(R.string.asset_clear_type_retire), stringResource(R.string.asset_clear_type_lost), stringResource(R.string.asset_clear_type_sell)).forEachIndexed { i, label ->
+                                FilterChip(
+                                    selected = clearType == i,
+                                    onClick = {
+                                        clearType = i
+                                        reason = ""
+                                        selectedPreset = -1
+                                    },
+                                    label = { Text(label) },
+                                    leadingIcon = { Icon(typeIcons[i], null, Modifier.size(16.dp)) },
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = typeColors[i].copy(alpha = 0.15f),
+                                        selectedLabelColor = typeColors[i],
+                                        selectedLeadingIconColor = typeColors[i]
+                                    )
+                                )
+                            }
+                        }
+                        HorizontalDivider()
+                        val presets = when (clearType) {
+                            0 -> retirePresets
+                            1 -> lostPresets
+                            else -> sellPresets
+                        }
+                        Text(stringResource(R.string.asset_quick_select), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            presets.forEachIndexed { i, label ->
+                                SuggestionChip(
+                                    onClick = {
+                                        selectedPreset = i
+                                        reason = label
+                                    },
+                                    label = { Text(label, style = MaterialTheme.typography.labelSmall) },
+                                    border = BorderStroke(if (selectedPreset == i) 1.dp else 0.dp, if (selectedPreset == i) typeColors[clearType] else MaterialTheme.colorScheme.outline)
+                                )
+                            }
+                        }
+                        HorizontalDivider()
+                        val reasonLabel = listOf(stringResource(R.string.asset_retire_reason_hint), stringResource(R.string.asset_lost_reason_hint), stringResource(R.string.asset_remark_hint))
+                        if (clearType < 2) {
+                            OutlinedTextField(
+                                value = reason,
+                                onValueChange = {
+                                    reason = it
+                                    selectedPreset = -1
+                                },
+                                label = { Text(reasonLabel[clearType]) },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = MaterialTheme.shapes.medium
+                            )
+                        } else {
+                            OutlinedTextField(value = price, onValueChange = { price = it }, label = { Text(stringResource(R.string.asset_sell_price)) }, prefix = { Text(stringResource(R.string.currency_symbol)) }, modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium)
+                            OutlinedTextField(value = channel, onValueChange = { channel = it }, label = { Text(stringResource(R.string.asset_sell_channel_hint)) }, modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium)
+                            OutlinedTextField(value = reason, onValueChange = {
+                                reason = it
+                                selectedPreset = -1
+                            }, label = { Text(reasonLabel[2]) }, modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium)
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        when (clearType) {
+                            0 -> viewModel.retireAsset(assetId, reason)
+                            1 -> viewModel.markAssetLost(assetId, reason)
+                            2 -> viewModel.sellAsset(assetId, com.palmnote.domain.model.Money.parse(price)?.cents ?: 0L, channel)
+                        }
+                    }) { Text(stringResource(R.string.confirm), color = typeColors[clearType]) }
+                }
+            )
+        }
+        if (showDeleteDialog) {
+            SurfaceAlertDialog(
+                onDismissRequest = { viewModel.hideDeleteDialog() },
+                title = { Text(stringResource(R.string.asset_dialog_delete_title)) },
+                text = { Text(stringResource(R.string.asset_dialog_delete_confirm, asset.name)) },
+                confirmButton = {
+                    TextButton(onClick = {
+                        viewModel.deleteAsset(assetId)
+                        viewModel.hideDeleteDialog()
+                        onNavigateBack()
+                    }) { Text(stringResource(R.string.delete), color = ErrorLight) }
+                }
+            )
+        }
     } // closes Box wrapper
 }
 
@@ -671,7 +784,12 @@ private fun UsageRecordEditDialog(record: UsageRecord?, viewModel: AssetViewMode
                     OutlinedTextField(value = editNote, onValueChange = { editNote = it }, label = { Text(stringResource(R.string.asset_description)) }, modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium)
                 }
             },
-            confirmButton = { TextButton(onClick = { viewModel.updateUsageRecord(r.id, editDate, editNote); onDismiss() }) { Text(stringResource(R.string.save)) } },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.updateUsageRecord(r.id, editDate, editNote)
+                    onDismiss()
+                }) { Text(stringResource(R.string.save)) }
+            },
             dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } }
         )
         if (showDatePicker) {
@@ -680,7 +798,12 @@ private fun UsageRecordEditDialog(record: UsageRecord?, viewModel: AssetViewMode
                 onDismissRequest = { showDatePicker = false },
                 tonalElevation = 0.dp,
                 colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
-                confirmButton = { TextButton(onClick = { datePickerState.selectedDateMillis?.let { editDate = it }; showDatePicker = false }) { Text(stringResource(R.string.confirm), color = AccentOrange) } },
+                confirmButton = {
+                    TextButton(onClick = {
+                        datePickerState.selectedDateMillis?.let { editDate = it }
+                        showDatePicker = false
+                    }) { Text(stringResource(R.string.confirm), color = AccentOrange) }
+                },
                 dismissButton = { TextButton(onClick = { showDatePicker = false }) { Text(stringResource(R.string.cancel)) } }
             ) {
                 NoDialogWindowAnimation()
@@ -751,13 +874,18 @@ private fun DarkSystemBarsForPreview(showPreview: Boolean) {
 
 @Composable
 private fun RowScope.StatusActionButton(
-    onClick: () -> Unit, label: String, icon: ImageVector,
-    color: Color, enabled: Boolean, filled: Boolean = false
+    onClick: () -> Unit,
+    label: String,
+    icon: ImageVector,
+    color: Color,
+    enabled: Boolean,
+    filled: Boolean = false
 ) {
     if (filled) {
         Button(
             onClick = onClick,
-            modifier = Modifier.weight(1f), shape = MaterialTheme.shapes.medium,
+            modifier = Modifier.weight(1f),
+            shape = MaterialTheme.shapes.medium,
             colors = ButtonDefaults.buttonColors(containerColor = color),
             enabled = enabled
         ) {
@@ -768,7 +896,8 @@ private fun RowScope.StatusActionButton(
     } else {
         OutlinedButton(
             onClick = onClick,
-            modifier = Modifier.weight(1f), shape = MaterialTheme.shapes.medium,
+            modifier = Modifier.weight(1f),
+            shape = MaterialTheme.shapes.medium,
             colors = ButtonDefaults.outlinedButtonColors(contentColor = color),
             enabled = enabled
         ) {
@@ -792,7 +921,8 @@ private fun UsageRecordItem(record: UsageRecord, actionsWidthPx: Float, onEdit: 
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min).align(Alignment.CenterEnd).padding(end = 4.dp),
-            horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = { onEdit(record) }, modifier = Modifier.size(48.dp)) { Icon(Icons.Outlined.Edit, stringResource(R.string.edit), tint = MaterialTheme.colorScheme.primary) }
             Spacer(Modifier.width(4.dp))
@@ -873,13 +1003,32 @@ internal fun ShelfLifeCard(asset: Asset, modifier: Modifier = Modifier) {
                     }
                 }
             }
-            if (!expired) StatusChip(text = pluralStringResource(
-                R.plurals.asset_shelf_life_remaining_days, daysLeft, daysLeft
-            ), color = StatusActive)
-            else StatusChip(text = pluralStringResource(
-                R.plurals.asset_shelf_life_expired_days, -daysLeft, -daysLeft
-            ), color = StatusRetired)
+            ShelfLifeDaysChip(daysLeft)
         }
+    }
+}
+
+/** 剩余/已过期天数徽标：颜色与卡片图标、过期判定同口径（自然日，负数即过期）。 */
+@Composable
+private fun ShelfLifeDaysChip(daysLeft: Int) {
+    if (daysLeft >= 0) {
+        StatusChip(
+            text = pluralStringResource(
+                R.plurals.asset_shelf_life_remaining_days,
+                daysLeft,
+                daysLeft
+            ),
+            color = StatusActive
+        )
+    } else {
+        StatusChip(
+            text = pluralStringResource(
+                R.plurals.asset_shelf_life_expired_days,
+                -daysLeft,
+                -daysLeft
+            ),
+            color = StatusRetired
+        )
     }
 }
 

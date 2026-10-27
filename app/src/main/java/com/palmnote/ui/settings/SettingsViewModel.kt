@@ -1,38 +1,36 @@
 package com.palmnote.ui.settings
-import javax.inject.Inject
-import com.palmnote.domain.model.BillType
-import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
-
 import android.content.Context
 import android.net.Uri
 import androidx.compose.runtime.Stable
-import coil3.imageLoader
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.palmnote.app.R
-import com.palmnote.data.datastore.PreferencesManager
-import com.palmnote.data.db.dao.LifeItemDao
-import com.palmnote.domain.util.LifeTemplateKind
-import com.palmnote.data.AppIconManager
-import com.palmnote.data.DemoDataSeeder
-import com.palmnote.data.export.CsvDataExporter
-import com.palmnote.data.export.ExportScope
-import com.palmnote.data.lock.AppLockManager
-import com.palmnote.domain.repository.*
-import com.palmnote.data.sync.CalendarSyncManager
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
+import coil3.imageLoader
+import com.palmnote.app.R
+import com.palmnote.data.AppIconManager
+import com.palmnote.data.DemoDataSeeder
+import com.palmnote.data.datastore.PreferencesManager
+import com.palmnote.data.db.dao.LifeItemDao
+import com.palmnote.data.export.CsvDataExporter
+import com.palmnote.data.export.ExportScope
+import com.palmnote.data.lock.AppLockManager
+import com.palmnote.data.sync.CalendarSyncManager
 import com.palmnote.data.worker.LifeDailyCheckWorker
+import com.palmnote.domain.model.BillType
+import com.palmnote.domain.repository.*
 import com.palmnote.domain.util.AppLogger
-import java.util.Calendar
-import java.util.concurrent.TimeUnit
+import com.palmnote.domain.util.LifeTemplateKind
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-
+import java.util.Calendar
+import java.util.concurrent.TimeUnit
+import javax.inject.Inject
 
 @Stable
 data class SettingsState(
@@ -223,7 +221,9 @@ class SettingsViewModel @Inject constructor(
             com.palmnote.ui.widget.WidgetUpdateHelper.refreshAllWidgets()
             _state.value = _state.value.copy(
                 resultMessage = context.getString(
-                    R.string.settings_demo_cleared, result.removed, result.kept
+                    R.string.settings_demo_cleared,
+                    result.removed,
+                    result.kept
                 )
             )
         }
@@ -402,10 +402,18 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { preferencesManager.setAutoLockTimeoutMinutes(minutes) }
     }
 
-    fun setProfileNickname(name: String) { viewModelScope.launch { preferencesManager.setProfileNickname(name) } }
-    fun setProfileSignature(sig: String) { viewModelScope.launch { preferencesManager.setProfileSignature(sig) } }
-    fun setProfileAvatar(avatar: String) { viewModelScope.launch { preferencesManager.setProfileAvatar(avatar) } }
-    fun setProfileAvatarPath(path: String) { viewModelScope.launch { preferencesManager.setProfileAvatarPath(path) } }
+    fun setProfileNickname(name: String) {
+        viewModelScope.launch { preferencesManager.setProfileNickname(name) }
+    }
+    fun setProfileSignature(sig: String) {
+        viewModelScope.launch { preferencesManager.setProfileSignature(sig) }
+    }
+    fun setProfileAvatar(avatar: String) {
+        viewModelScope.launch { preferencesManager.setProfileAvatar(avatar) }
+    }
+    fun setProfileAvatarPath(path: String) {
+        viewModelScope.launch { preferencesManager.setProfileAvatarPath(path) }
+    }
 
     fun exportData(uri: Uri, scope: ExportScope = ExportScope.ALL) {
         viewModelScope.launch {
@@ -416,7 +424,6 @@ class SettingsViewModel @Inject constructor(
             }
         }
     }
-
 
     fun clearCache(@ApplicationContext context: Context) {
         viewModelScope.launch {

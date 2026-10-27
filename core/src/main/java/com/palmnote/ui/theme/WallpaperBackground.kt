@@ -4,7 +4,10 @@
 package com.palmnote.ui.theme
 
 import android.graphics.Bitmap
+import android.graphics.BitmapShader
 import android.graphics.BlurMaskFilter
+import android.graphics.Paint
+import android.graphics.Shader
 import android.os.Build
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -23,10 +26,7 @@ import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
-import android.graphics.BitmapShader
 import android.graphics.Canvas as AndroidCanvas
-import android.graphics.Paint
-import android.graphics.Shader
 
 @Immutable
 data class WallpaperData(
@@ -136,10 +136,8 @@ private fun WallpaperImage(
 }
 
 @Composable
-private fun rememberBlurredBitmap(bitmap: ImageBitmap, blurRadius: Float): ImageBitmap {
-    return remember(bitmap, blurRadius) {
-        blurBitmap(bitmap.asAndroidBitmap(), blurRadius).asImageBitmap()
-    }
+private fun rememberBlurredBitmap(bitmap: ImageBitmap, blurRadius: Float): ImageBitmap = remember(bitmap, blurRadius) {
+    blurBitmap(bitmap.asAndroidBitmap(), blurRadius).asImageBitmap()
 }
 
 private fun blurBitmap(source: Bitmap, radius: Float): Bitmap {

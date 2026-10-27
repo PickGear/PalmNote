@@ -1,5 +1,6 @@
 package com.palmnote.ui.components
 
+import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.*
 import androidx.compose.animation.fadeIn
@@ -12,13 +13,13 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
@@ -29,29 +30,26 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.palmnote.R
+import com.palmnote.domain.util.DateUtils
 import com.palmnote.ui.theme.*
 import kotlinx.coroutines.delay
-import androidx.annotation.StringRes
-import androidx.compose.ui.platform.LocalContext
-import com.palmnote.domain.util.DateUtils
 
 val CATEGORY_COLOR_OPTIONS = listOf(
     "#4285F4", "#34A853", "#FBBC04", "#EA4335", "#FF6D00",
@@ -268,9 +266,12 @@ fun AnimatedCard(
 
     LaunchedEffect(restartKey) {
         if (!instant) delay(index * 50L)
-        if (instant) progressAnim.snapTo(1f)
-        // 340ms：比标准 300ms 放缓约 12%，卡片间重叠更多、入场波更绵（2026-10-27 真机调优）
-        else progressAnim.animateTo(1f, tween(340, easing = FastOutSlowInEasing))
+        if (instant) {
+            progressAnim.snapTo(1f)
+        } // 340ms：比标准 300ms 放缓约 12%，卡片间重叠更多、入场波更绵（2026-10-27 真机调优）
+        else {
+            progressAnim.animateTo(1f, tween(340, easing = FastOutSlowInEasing))
+        }
     }
 
     Box(
@@ -327,7 +328,10 @@ fun MonthSelector(
     ) {
         IconButton(onClick = {
             month--
-            if (month < 1) { month = 12; year-- }
+            if (month < 1) {
+                month = 12
+                year--
+            }
             onMonthChange("$year-${month.toString().padStart(2, '0')}")
         }) {
             Icon(Icons.Filled.ChevronLeft, contentDescription = stringResource(R.string.common_previous_month))
@@ -342,13 +346,17 @@ fun MonthSelector(
 
         IconButton(onClick = {
             month++
-            if (month > 12) { month = 1; year++ }
+            if (month > 12) {
+                month = 1
+                year++
+            }
             onMonthChange("$year-${month.toString().padStart(2, '0')}")
         }) {
             Icon(Icons.Filled.ChevronRight, contentDescription = stringResource(R.string.common_next_month))
         }
     }
 }
+
 @Composable
 fun AppDialog(
     onDismissRequest: () -> Unit,
@@ -364,7 +372,10 @@ fun AppDialog(
     LaunchedEffect(Unit) { visible = true }
 
     Dialog(
-        onDismissRequest = { visible = false; onDismissRequest() },
+        onDismissRequest = {
+            visible = false
+            onDismissRequest()
+        },
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
         // 必须在 Dialog 内容内调用，LocalView 才会解析到弹窗自身的 decor view
@@ -538,7 +549,10 @@ fun CategoryPicker(
             confirmButton = {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     if (onManageCategories != null) {
-                        TextButton(onClick = { showPopup = false; onManageCategories() }) {
+                        TextButton(onClick = {
+                            showPopup = false
+                            onManageCategories()
+                        }) {
                             Text(stringResource(R.string.common_manage_categories), color = AccentOrange)
                         }
                     }
@@ -650,7 +664,9 @@ fun parseTags(json: String): List<String> {
     return try {
         val arr = org.json.JSONArray(json)
         (0 until arr.length()).map { arr.getString(it) }
-    } catch (_: Exception) { emptyList() }
+    } catch (_: Exception) {
+        emptyList()
+    }
 }
 
 @Composable
@@ -685,8 +701,11 @@ fun TagPicker(
                         isSelected = tag in selectedTags,
                         onClick = {
                             onTagsChanged(
-                                if (tag in selectedTags) selectedTags - tag
-                                else selectedTags + tag
+                                if (tag in selectedTags) {
+                                    selectedTags - tag
+                                } else {
+                                    selectedTags + tag
+                                }
                             )
                         }
                     )
@@ -716,8 +735,11 @@ fun TagPicker(
                             isSelected = tag in selectedTags,
                             onClick = {
                                 onTagsChanged(
-                                    if (tag in selectedTags) selectedTags - tag
-                                    else selectedTags + tag
+                                    if (tag in selectedTags) {
+                                        selectedTags - tag
+                                    } else {
+                                        selectedTags + tag
+                                    }
                                 )
                             }
                         )
@@ -791,8 +813,11 @@ fun TagPicker(
                                         isSelected = tag in selectedTags,
                                         onClick = {
                                             onTagsChanged(
-                                                if (tag in selectedTags) selectedTags - tag
-                                                else selectedTags + tag
+                                                if (tag in selectedTags) {
+                                                    selectedTags - tag
+                                                } else {
+                                                    selectedTags + tag
+                                                }
                                             )
                                         }
                                     )
@@ -839,7 +864,9 @@ fun TagChip(
 
 fun String.toComposeColor(fallback: Color = AccentOrange): Color = try {
     Color(android.graphics.Color.parseColor(this))
-} catch (_: Exception) { fallback }
+} catch (_: Exception) {
+    fallback
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -913,17 +940,41 @@ fun DatePickerField(
 
     if (showDatePicker) {
         val initialDate = selectedDate ?: java.time.LocalDate.now().atStartOfDay(java.time.ZoneOffset.UTC).toInstant().toEpochMilli()
-        val datePickerState = rememberDatePickerState(initialSelectedDateMillis = initialDate)
-        DatePickerDialog(
-            onDismissRequest = { showDatePicker = false },
-            tonalElevation = 0.dp,
-            colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
-            confirmButton = { TextButton(onClick = { datePickerState.selectedDateMillis?.let { onDateSelected(it) }; showDatePicker = false }) { Text(stringResource(R.string.confirm), fontWeight = FontWeight.Bold) } },
-            dismissButton = { TextButton(onClick = { showDatePicker = false }) { Text(stringResource(R.string.cancel), fontWeight = FontWeight.Bold) } }
-        ) {
-            NoDialogWindowAnimation()
-            DatePicker(state = datePickerState, colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh))
-        }
+        DatePickerFieldDialog(
+            initialDate = initialDate,
+            onDateSelected = onDateSelected,
+            onDismiss = { showDatePicker = false }
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DatePickerFieldDialog(
+    initialDate: Long,
+    onDateSelected: (Long) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val datePickerState = rememberDatePickerState(initialSelectedDateMillis = initialDate)
+    DatePickerDialog(
+        onDismissRequest = onDismiss,
+        tonalElevation = 0.dp,
+        colors = DatePickerDefaults.colors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+        ),
+        confirmButton = {
+            TextButton(onClick = {
+                datePickerState.selectedDateMillis?.let { onDateSelected(it) }
+                onDismiss()
+            }) { Text(stringResource(R.string.confirm), fontWeight = FontWeight.Bold) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel), fontWeight = FontWeight.Bold) } }
+    ) {
+        NoDialogWindowAnimation()
+        DatePicker(
+            state = datePickerState,
+            colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)
+        )
     }
 }
 
@@ -993,9 +1044,12 @@ fun CapsuleSwitch(
             .size(width = 46.dp, height = 26.dp)
             .clip(RoundedCornerShape(13.dp))
             .background(
-                if (checked) checkedTrackColor
-                else if (enabled) if (isDark) Color(0xFF3A3A3C) else Color(0xFFD9D9D9)
-                else Color(0xFFE8E8E8)
+                if (checked) {
+                    checkedTrackColor
+                } else if (enabled) if (isDark) Color(0xFF3A3A3C) else Color(0xFFD9D9D9)
+                else {
+                    Color(0xFFE8E8E8)
+                }
             )
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
@@ -1191,4 +1245,3 @@ fun ColorPicker(
         }
     }
 }
-

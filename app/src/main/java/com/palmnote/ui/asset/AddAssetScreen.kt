@@ -2,6 +2,7 @@ package com.palmnote.ui.asset
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -17,31 +18,28 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
-import kotlin.math.roundToInt
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
-import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.palmnote.app.R
-import com.palmnote.ui.components.*
-import com.palmnote.ui.components.SectionHeader
 import com.palmnote.domain.model.ShelfLifeUnit
 import com.palmnote.domain.util.DateUtils
 import com.palmnote.domain.util.shelfLifeExpiryOrNull
+import com.palmnote.ui.components.*
+import com.palmnote.ui.components.SectionHeader
 import com.palmnote.ui.theme.*
 
 private data class AcquisitionTypeOption(
@@ -122,8 +120,11 @@ fun AddAssetScreen(
                 },
                 actions = {
                     TextButton(onClick = { viewModel.saveAsset() }, enabled = !formState.isSaving) {
-                        if (formState.isSaving) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                        else Text(stringResource(R.string.save), fontWeight = FontWeight.Bold, color = AccentOrange)
+                        if (formState.isSaving) {
+                            CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                        } else {
+                            Text(stringResource(R.string.save), fontWeight = FontWeight.Bold, color = AccentOrange)
+                        }
                     }
                 }
             )
@@ -178,7 +179,15 @@ fun AddAssetScreen(
                         assetCategoryItems.filter { item ->
                             val key = "preset_${item.name}"
                             val json = presetOverrides[key]
-                            if (json != null) try { org.json.JSONObject(json).optBoolean("enabled", true) } catch (_: Exception) { true } else true
+                            if (json != null) {
+                                try {
+                                    org.json.JSONObject(json).optBoolean("enabled", true)
+                                } catch (_: Exception) {
+                                    true
+                                }
+                            } else {
+                                true
+                            }
                         }.map { item ->
                             val resolvedColor = ColorResolver.resolve(item.name, item.color)
                             if (resolvedColor != item.color) item.copy(color = resolvedColor) else item
@@ -188,7 +197,12 @@ fun AddAssetScreen(
                     fun presetDisplayName(key: String): String {
                         val overrideKey = "preset_$key"
                         val json = presetOverrides[overrideKey]
-                        if (json != null) try { val obj = org.json.JSONObject(json); if (obj.has("name")) return obj.getString("name") } catch (_: Exception) {}
+                        if (json != null) {
+                            try {
+                                val obj = org.json.JSONObject(json)
+                                if (obj.has("name")) return obj.getString("name")
+                            } catch (_: Exception) {}
+                        }
                         return if (assetCategoryItems.any { it.name == key }) com.palmnote.ui.components.getCategoryName(key, context) else key
                     }
                     CategoryPicker(
@@ -209,11 +223,17 @@ fun AddAssetScreen(
                     ) {
                         Text(stringResource(R.string.asset_quantity_label), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            IconButton(onClick = { val q = ((formState.quantity.toIntOrNull() ?: 1) - 1).coerceAtLeast(1); viewModel.updateFormField { copy(quantity = q.toString()) } }, modifier = Modifier.size(32.dp)) {
+                            IconButton(onClick = {
+                                val q = ((formState.quantity.toIntOrNull() ?: 1) - 1).coerceAtLeast(1)
+                                viewModel.updateFormField { copy(quantity = q.toString()) }
+                            }, modifier = Modifier.size(32.dp)) {
                                 Icon(Icons.Filled.Remove, stringResource(R.string.field_decrease), modifier = Modifier.size(18.dp))
                             }
                             Text(formState.quantity, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.width(40.dp), textAlign = TextAlign.Center)
-                            IconButton(onClick = { val q = (formState.quantity.toIntOrNull() ?: 1) + 1; viewModel.updateFormField { copy(quantity = q.toString()) } }, modifier = Modifier.size(32.dp)) {
+                            IconButton(onClick = {
+                                val q = (formState.quantity.toIntOrNull() ?: 1) + 1
+                                viewModel.updateFormField { copy(quantity = q.toString()) }
+                            }, modifier = Modifier.size(32.dp)) {
                                 Icon(Icons.Filled.Add, stringResource(R.string.field_increase), modifier = Modifier.size(18.dp))
                             }
                         }
@@ -252,7 +272,9 @@ fun AddAssetScreen(
                             value = formState.customAcquisitionLabel,
                             onValueChange = { viewModel.updateFormField { copy(customAcquisitionLabel = it) } },
                             label = { Text(stringResource(R.string.asset_custom_acquisition)) },
-                            modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium, singleLine = true
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = MaterialTheme.shapes.medium,
+                            singleLine = true
                         )
                     }
 
@@ -264,7 +286,8 @@ fun AddAssetScreen(
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 if (formState.acquisitionType == "PURCHASE") stringResource(R.string.asset_price) else stringResource(R.string.asset_valuation_optional),
-                                style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             OutlinedTextField(
@@ -282,7 +305,8 @@ fun AddAssetScreen(
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 if (formState.acquisitionType == "PURCHASE") stringResource(R.string.asset_purchase_date) else stringResource(R.string.asset_acquisition_date),
-                                style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             DatePickerField(
@@ -369,7 +393,12 @@ fun AddAssetScreen(
                             var costModeBoxHeight by remember { mutableIntStateOf(0) }
                             var costModeBoxWidth by remember { mutableIntStateOf(0) }
                             val density = LocalDensity.current
-                            Box(modifier = Modifier.onSizeChanged { costModeBoxHeight = it.height; costModeBoxWidth = it.width }) {
+                            Box(
+                                modifier = Modifier.onSizeChanged {
+                                    costModeBoxHeight = it.height
+                                    costModeBoxWidth = it.width
+                                }
+                            ) {
                                 OutlinedTextField(
                                     value = when (formState.costMode) {
                                         "DAILY" -> stringResource(R.string.asset_cost_daily)
@@ -417,11 +446,17 @@ fun AddAssetScreen(
                                             Column {
                                                 DropdownMenuItem(
                                                     text = { Text(stringResource(R.string.asset_cost_daily)) },
-                                                    onClick = { viewModel.updateFormField { copy(costMode = "DAILY") }; costModeExpanded = false }
+                                                    onClick = {
+                                                        viewModel.updateFormField { copy(costMode = "DAILY") }
+                                                        costModeExpanded = false
+                                                    }
                                                 )
                                                 DropdownMenuItem(
                                                     text = { Text(stringResource(R.string.asset_cost_per_use)) },
-                                                    onClick = { viewModel.updateFormField { copy(costMode = "PER_USE") }; costModeExpanded = false }
+                                                    onClick = {
+                                                        viewModel.updateFormField { copy(costMode = "PER_USE") }
+                                                        costModeExpanded = false
+                                                    }
                                                 )
                                             }
                                         }
@@ -499,7 +534,8 @@ fun AddAssetScreen(
                                         onValueChange = { viewModel.updateFormField { copy(brand = it) } },
                                         modifier = Modifier.fillMaxWidth(),
                                         placeholder = { Text(stringResource(R.string.asset_brand_hint), maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                                        shape = MaterialTheme.shapes.medium, singleLine = true
+                                        shape = MaterialTheme.shapes.medium,
+                                        singleLine = true
                                     )
                                 }
                                 Column(modifier = Modifier.weight(1f)) {
@@ -510,7 +546,8 @@ fun AddAssetScreen(
                                         onValueChange = { viewModel.updateFormField { copy(model = it) } },
                                         modifier = Modifier.fillMaxWidth(),
                                         placeholder = { Text(stringResource(R.string.asset_model_hint), maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                                        shape = MaterialTheme.shapes.medium, singleLine = true
+                                        shape = MaterialTheme.shapes.medium,
+                                        singleLine = true
                                     )
                                 }
                             }
@@ -525,7 +562,8 @@ fun AddAssetScreen(
                                 onValueChange = { viewModel.updateFormField { copy(serialNumber = it) } },
                                 modifier = Modifier.fillMaxWidth(),
                                 placeholder = { Text(stringResource(R.string.asset_serial_number_hint), maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                                shape = MaterialTheme.shapes.medium, singleLine = true
+                                shape = MaterialTheme.shapes.medium,
+                                singleLine = true
                             )
 
                             Spacer(modifier = Modifier.height(12.dp))
@@ -586,7 +624,6 @@ fun AddAssetScreen(
                                     OutlinedTextField(value = formState.currentValue, onValueChange = { if (it.isEmpty() || it.matches(Regex("^\\d{0,10}(\\.\\d{0,2})?$"))) viewModel.updateFormField { copy(currentValue = it) } }, modifier = Modifier.fillMaxWidth(), placeholder = { Text(stringResource(R.string.asset_current_value_hint), maxLines = 1, overflow = TextOverflow.Ellipsis) }, prefix = { Text(stringResource(R.string.currency_symbol)) }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), shape = MaterialTheme.shapes.medium, singleLine = true)
                                 }
                             }
-
                         }
                     }
                 }
@@ -603,8 +640,13 @@ fun AddAssetScreen(
                     shape = MaterialTheme.shapes.medium,
                     colors = ButtonDefaults.buttonColors(containerColor = AccentOrange)
                 ) {
-                    if (formState.isSaving) CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 2.dp)
-                    else {
+                    if (formState.isSaving) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
                         Icon(Icons.Filled.Check, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(if (isEditing) stringResource(R.string.save_changes) else stringResource(R.string.asset_add_button), fontWeight = FontWeight.Bold)
@@ -627,8 +669,12 @@ private fun ImageSection(formState: AddAssetFormState, viewModel: AssetViewModel
         if (fromPreset != null) {
             val resolved = ColorResolver.resolve(formState.category, fromPreset.color)
             if (resolved != fromPreset.color) fromPreset.copy(color = resolved) else fromPreset
-        } else customAssetCategories.find { it.name == formState.category }
-    } else null
+        } else {
+            customAssetCategories.find { it.name == formState.category }
+        }
+    } else {
+        null
+    }
     val accentColor = catInfo?.color ?: AccentOrange
 
     ModuleCard(tint = MaterialTheme.colorScheme.surface) {
@@ -766,8 +812,12 @@ private fun ShelfLifeDurationField(
     var expanded by remember { mutableStateOf(false) }
     var boxHeight by remember { mutableIntStateOf(0) }
     var boxWidth by remember { mutableIntStateOf(0) }
-    val density = LocalDensity.current
-    Box(modifier = Modifier.onSizeChanged { boxHeight = it.height; boxWidth = it.width }) {
+    Box(
+        modifier = Modifier.onSizeChanged {
+            boxHeight = it.height
+            boxWidth = it.width
+        }
+    ) {
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
@@ -791,26 +841,46 @@ private fun ShelfLifeDurationField(
             }
         )
         if (expanded) {
-            Popup(
-                onDismissRequest = { expanded = false },
-                alignment = Alignment.TopEnd,
-                offset = IntOffset(x = 0, y = boxHeight)
-            ) {
-                Surface(
-                    shape = MaterialTheme.shapes.medium,
-                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    tonalElevation = 2.dp,
-                    shadowElevation = 4.dp,
-                    modifier = Modifier.width(with(density) { boxWidth.toDp() })
-                ) {
-                    Column {
-                        shelfLifeUnitOptions.forEach { (unitValue, labelRes) ->
-                            DropdownMenuItem(
-                                text = { Text(stringResource(labelRes)) },
-                                onClick = { onUnitChange(unitValue); expanded = false }
-                            )
+            ShelfLifeUnitPopup(
+                boxHeight = boxHeight,
+                boxWidth = boxWidth,
+                onUnitChange = onUnitChange,
+                onDismiss = { expanded = false }
+            )
+        }
+    }
+}
+
+/** 期限单位的下拉弹层：与同一张卡「成本计算方式」同款——框宽 + `TopEnd` 对齐，弹层贴箭头侧正下方。 */
+@Composable
+private fun ShelfLifeUnitPopup(
+    boxHeight: Int,
+    boxWidth: Int,
+    onUnitChange: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val density = LocalDensity.current
+    Popup(
+        onDismissRequest = onDismiss,
+        alignment = Alignment.TopEnd,
+        offset = IntOffset(x = 0, y = boxHeight)
+    ) {
+        Surface(
+            shape = MaterialTheme.shapes.medium,
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            tonalElevation = 2.dp,
+            shadowElevation = 4.dp,
+            modifier = Modifier.width(with(density) { boxWidth.toDp() })
+        ) {
+            Column {
+                shelfLifeUnitOptions.forEach { (unitValue, labelRes) ->
+                    DropdownMenuItem(
+                        text = { Text(stringResource(labelRes)) },
+                        onClick = {
+                            onUnitChange(unitValue)
+                            onDismiss()
                         }
-                    }
+                    )
                 }
             }
         }
@@ -843,4 +913,3 @@ private fun ShelfLifeExpiryPreview(form: AddAssetFormState) {
         color = MaterialTheme.colorScheme.onSurfaceVariant
     )
 }
-
