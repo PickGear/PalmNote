@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.*
@@ -24,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -644,8 +646,13 @@ fun BillScreen(
                     } else {
                         groupedBills.forEach { (day, bills) ->
                             item {
-                                val dayIncome = bills.filter { it.type == BillType.INCOME }.sumOf { it.amount }
-                                val dayExpense = bills.filter { it.type == BillType.EXPENSE }.sumOf { it.amount }
+                                // 天小计按天分组缓存，避免该行随整页任何状态变化反复 filter+sumOf
+                                val (dayIncome, dayExpense) = remember(bills) {
+                                    Pair(
+                                        bills.filter { it.type == BillType.INCOME }.sumOf { it.amount },
+                                        bills.filter { it.type == BillType.EXPENSE }.sumOf { it.amount }
+                                    )
+                                }
                                 // 日期行矮小，20dp 滑距相当于自身高度大半，观感偏重偏慢；改 12dp
                                 AnimatedCard(
                                     index = (detailIndexByDay[day] ?: 2).coerceAtMost(10),
@@ -696,15 +703,31 @@ fun BillScreen(
                                     instant = isListScrolling,
                                     restartKey = calendarExpanded
                                 ) {
-                                    BillListItem(
-                                        bill = bill,
-                                        wallets = state.wallets,
-                                        onDetail = { onNavigateToDetail(bill.id) },
-                                        onDelete = { billToDelete = bill },
-                                        customExpenseItems = allCustomExpenseCategories,
-                                        customIncomeItems = allCustomIncomeCategories,
-                                        presetOverrides = billPresetOverrides
-                                    )
+                                    // 天块圆角：首行圆上角、末行圆下角、单行整天全圆，
+                                    // 与 ModuleCard 同为 shapes.large（16dp）。裁切包住行的
+                                    // 不透明 surface 与滑动删除背板——不透明度不变（背板仍被
+                                    // 压住，壁纸模式重叠修复不受影响），只是整组边缘随圆角。
+                                    Box(
+                                        modifier = Modifier.clip(
+                                            when {
+                                                bills.size == 1 -> RoundedCornerShape(16.dp)
+                                                index == 0 -> RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
+                                                index == bills.size - 1 -> RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp)
+                                                else -> RectangleShape
+                                            }
+                                        )
+                                    ) {
+                                        BillListItem(
+                                            bill = bill,
+                                            wallets = state.wallets,
+                                            onDetail = { onNavigateToDetail(bill.id) },
+                                            onDelete = { billToDelete = bill },
+                                            customExpenseItems = allCustomExpenseCategories,
+                                            customIncomeItems = allCustomIncomeCategories,
+                                            presetOverrides = billPresetOverrides,
+                                            showDivider = index != bills.size - 1
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -833,7 +856,8 @@ fun BillListItem(
     onDelete: () -> Unit,
     customExpenseItems: List<CategoryItem>? = null,
     customIncomeItems: List<CategoryItem>? = null,
-    presetOverrides: Map<String, String> = emptyMap()
+    presetOverrides: Map<String, String> = emptyMap(),
+    showDivider: Boolean = true
 ) {
     val context = LocalContext.current
     val isExpense = bill.type == BillType.EXPENSE
@@ -874,7 +898,11 @@ fun BillListItem(
                 BillItemTrailingColumn(bill, wallets)
             }
         }
-        HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.outlineVariant)
+        // 分隔线起点贴齐文字列（12 边距 + 36 图标 + 10 间距）；天块末行不画——
+        // 圆角下边缘再压一条线很难看，且下一天有自己的日期头作分隔。
+        if (showDivider) {
+            HorizontalDivider(modifier = Modifier.padding(start = 58.dp), color = MaterialTheme.colorScheme.outlineVariant)
+        }
     }
 }
 
@@ -882,7 +910,9 @@ fun BillListItem(
 @Composable
 private fun BillItemDeleteBackdrop(onDelete: () -> Unit, modifier: Modifier = Modifier) {
     Box(
-        modifier = modifier.fillMaxHeight().width(80.dp).clip(MaterialTheme.shapes.medium)
+        // 不自带圆角：边缘全交给外层天块裁切——背板若自带圆角，左缘两个圆角与
+        // 前景滑开的直边衔接会豁口，右缘也会和外层 16dp 圆角叠加出双曲率
+        modifier = modifier.fillMaxHeight().width(80.dp)
             .background(MaterialTheme.colorScheme.errorContainer)
             .clickable { onDelete() },
         contentAlignment = Alignment.Center
