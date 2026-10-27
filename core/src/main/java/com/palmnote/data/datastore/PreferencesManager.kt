@@ -4,7 +4,6 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
-import com.palmnote.domain.model.AutoLockMode
 import com.palmnote.ui.dashboard.DashboardCardConfig
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
@@ -49,6 +48,7 @@ class PreferencesManager @Inject constructor(
         val LIFE_DEMO_SEED_VERSION = intPreferencesKey("life_demo_seed_version")
         val WEALTH_DEMO_SEEDED = booleanPreferencesKey("wealth_demo_seeded")
         val WEALTH_DEMO_SEED_VERSION = intPreferencesKey("wealth_demo_seed_version")
+
         /**
          * 播种演示数据时的应用**语言码**（`zh` / `en`）：演示内容是**存库的文案**，
          * 切语言后要整批重播（见 DemoDataSeeder）。只记语言码不记完整 locale——
@@ -57,6 +57,7 @@ class PreferencesManager @Inject constructor(
         val DEMO_SEED_LANGUAGE = stringPreferencesKey("demo_seed_language")
         val LIFE_FOCUS_TIMER_START_AT = longPreferencesKey("life_focus_timer_start_at")
         val LIFE_FOCUS_TIMER_ACCUM_MS = longPreferencesKey("life_focus_timer_accum_ms")
+
         /** 计时归属的条目 id（0 = 旧版遗留/无归属）：会话必须记回开始计时的那条记录。 */
         val LIFE_FOCUS_TIMER_ITEM_ID = longPreferencesKey("life_focus_timer_item_id")
         val LIFE_CALENDAR_SELECTED_DATE = longPreferencesKey("life_calendar_selected_date")
@@ -74,6 +75,7 @@ class PreferencesManager @Inject constructor(
         val LANGUAGE_MIGRATED = booleanPreferencesKey("language_migrated")
         val APP_LOCK_ENABLED = booleanPreferencesKey("app_lock_enabled")
         val ENCRYPTED_PIN = stringPreferencesKey("encrypted_pin")
+
         /**
          * 统一的「提前几天提醒」。
          *
@@ -100,6 +102,7 @@ class PreferencesManager @Inject constructor(
         val LIFE_PLAN_EXPANDED = booleanPreferencesKey("life_plan_expanded")
         val LIFE_TIME_EXPANDED = booleanPreferencesKey("life_time_expanded")
         val LIFE_RECORD_EXPANDED = booleanPreferencesKey("life_record_expanded")
+        val ASSET_PANEL_EXPANDED = booleanPreferencesKey("asset_panel_expanded")
         val PROFILE_NICKNAME = stringPreferencesKey("profile_nickname")
         val PROFILE_SIGNATURE = stringPreferencesKey("profile_signature")
         val PROFILE_AVATAR = stringPreferencesKey("profile_avatar")
@@ -145,6 +148,7 @@ class PreferencesManager @Inject constructor(
         const val APP_ICON_BLACK_WHITE = "black_white"
         const val APP_ICON_WHITE_BLACK = "white_black"
         const val APP_ICON_CYAN_WHITE = "cyan_white"
+
         // 旧版图标别名（对应 alias 已从 Manifest 移除），仅为老用户升级后归一化保留
         const val APP_ICON_WHITE_GREEN_LEGACY = "white_green"
         const val DEFAULT_APP_ICON_STYLE = APP_ICON_CYAN_WHITE
@@ -153,19 +157,24 @@ class PreferencesManager @Inject constructor(
         const val DEFAULT_WALLPAPER_BLUR = 0f
         const val DEFAULT_WALLPAPER_OPACITY = 1f
         const val DEFAULT_WALLPAPER_CUSTOM_COLOR = "#FFFFFF"
+
         /** 自定义壁纸的「第几张」：每选一次新图 +1，是解码结果的失效凭据（见 setWallpaperCustomUri）。 */
         const val DEFAULT_WALLPAPER_CUSTOM_GEN = 0
         const val DEFAULT_WIDGET_OPACITY = 1f
+
         /** 下界 0.2：最透的一档，再低整卡就快看不见了。语义是**不透明度**（1 = 完全不透明）。 */
         const val MIN_WIDGET_OPACITY = 0.2f
 
         // ========== 自动备份 ==========
         const val DEFAULT_AUTO_BACKUP_INTERVAL_DAYS = 1
         const val DEFAULT_AUTO_BACKUP_KEEP_COUNT = 7
+
         /** 频率上界：超过一周的间隔在"记录类 App"场景里已失去备份意义，且容易被用户误设。 */
         const val MAX_AUTO_BACKUP_INTERVAL_DAYS = 7
+
         /** 频率可选项（天）。 */
         val AUTO_BACKUP_INTERVAL_OPTIONS = listOf(1, 3, 7)
+
         /** 本机备份保留份数可选项。份数越多占用越大，交给用户按存储情况决定。 */
         val AUTO_BACKUP_KEEP_OPTIONS = listOf(3, 7, 15, 30)
     }
@@ -181,13 +190,21 @@ class PreferencesManager @Inject constructor(
         themeMirrorPrefs().edit().putString(KEY_THEME_MODE_MIRROR, mode).apply()
         context.dataStore.edit { it[THEME_MODE] = mode }
     }
-    suspend fun setDefaultBillType(type: String) { context.dataStore.edit { it[DEFAULT_BILL_TYPE] = type } }
-    suspend fun setBudgetReminderEnabled(enabled: Boolean) { context.dataStore.edit { it[BUDGET_REMINDER_ENABLED] = enabled } }
-    suspend fun setAssetViewMode(isGrid: Boolean) { context.dataStore.edit { it[ASSET_VIEW_MODE] = isGrid } }
+    suspend fun setDefaultBillType(type: String) {
+        context.dataStore.edit { it[DEFAULT_BILL_TYPE] = type }
+    }
+    suspend fun setBudgetReminderEnabled(enabled: Boolean) {
+        context.dataStore.edit { it[BUDGET_REMINDER_ENABLED] = enabled }
+    }
+    suspend fun setAssetViewMode(isGrid: Boolean) {
+        context.dataStore.edit { it[ASSET_VIEW_MODE] = isGrid }
+    }
 
     val calendarSyncEnabled: Flow<Boolean> = prefsFlow.map { it[CALENDAR_SYNC_ENABLED] ?: false }
 
-    suspend fun setCalendarSyncEnabled(enabled: Boolean) { context.dataStore.edit { it[CALENDAR_SYNC_ENABLED] = enabled } }
+    suspend fun setCalendarSyncEnabled(enabled: Boolean) {
+        context.dataStore.edit { it[CALENDAR_SYNC_ENABLED] = enabled }
+    }
 
     // ── 专注计时持久化：离屏/杀进程后计时继续 ──
     // startAt > 0 = 计时中；accumMs = 暂停前累计。elapsed = accumMs + (now - startAt)。
@@ -207,7 +224,9 @@ class PreferencesManager @Inject constructor(
 
     val themeColor: Flow<String> = prefsFlow.map { it[THEME_COLOR] ?: DEFAULT_THEME_COLOR }
 
-    suspend fun setThemeColor(color: String) { context.dataStore.edit { it[THEME_COLOR] = color } }
+    suspend fun setThemeColor(color: String) {
+        context.dataStore.edit { it[THEME_COLOR] = color }
+    }
 
     val appIconStyle: Flow<String> = prefsFlow.map {
         when (val style = it[APP_ICON_STYLE]) {
@@ -218,7 +237,9 @@ class PreferencesManager @Inject constructor(
         }
     }
 
-    suspend fun setAppIconStyle(style: String) { context.dataStore.edit { it[APP_ICON_STYLE] = style } }
+    suspend fun setAppIconStyle(style: String) {
+        context.dataStore.edit { it[APP_ICON_STYLE] = style }
+    }
 
     val wallpaperStyle: Flow<String> = prefsFlow.map { it[WALLPAPER_STYLE] ?: DEFAULT_WALLPAPER_STYLE }
     val wallpaperBlur: Flow<Float> = prefsFlow.map { it[WALLPAPER_BLUR] ?: DEFAULT_WALLPAPER_BLUR }
@@ -227,9 +248,15 @@ class PreferencesManager @Inject constructor(
     val wallpaperCustomColor: Flow<String> = prefsFlow.map { it[WALLPAPER_CUSTOM_COLOR] ?: DEFAULT_WALLPAPER_CUSTOM_COLOR }
     val wallpaperCustomGen: Flow<Int> = prefsFlow.map { it[WALLPAPER_CUSTOM_GEN] ?: DEFAULT_WALLPAPER_CUSTOM_GEN }
 
-    suspend fun setWallpaperStyle(style: String) { context.dataStore.edit { it[WALLPAPER_STYLE] = style } }
-    suspend fun setWallpaperBlur(blur: Float) { context.dataStore.edit { it[WALLPAPER_BLUR] = blur } }
-    suspend fun setWallpaperOpacity(opacity: Float) { context.dataStore.edit { it[WALLPAPER_OPACITY] = opacity } }
+    suspend fun setWallpaperStyle(style: String) {
+        context.dataStore.edit { it[WALLPAPER_STYLE] = style }
+    }
+    suspend fun setWallpaperBlur(blur: Float) {
+        context.dataStore.edit { it[WALLPAPER_BLUR] = blur }
+    }
+    suspend fun setWallpaperOpacity(opacity: Float) {
+        context.dataStore.edit { it[WALLPAPER_OPACITY] = opacity }
+    }
     suspend fun setWallpaperCustomUri(uri: String) {
         // 自定义壁纸固定覆盖写到同一个文件，所以「再选一次图」时 uri 字符串**不变**、只有文件内容变了。
         // 只写 uri 的话值前后相同 → 下游 MutableState 判等跳过 → 整条链路都不会重组，新图永远刷不出来。
@@ -240,7 +267,9 @@ class PreferencesManager @Inject constructor(
             it[WALLPAPER_CUSTOM_GEN] = (it[WALLPAPER_CUSTOM_GEN] ?: DEFAULT_WALLPAPER_CUSTOM_GEN) + 1
         }
     }
-    suspend fun setWallpaperCustomColor(color: String) { context.dataStore.edit { it[WALLPAPER_CUSTOM_COLOR] = color } }
+    suspend fun setWallpaperCustomColor(color: String) {
+        context.dataStore.edit { it[WALLPAPER_CUSTOM_COLOR] = color }
+    }
 
     /**
      * 主题 / 壁纸偏好的**同步快照**，只给 UI 首帧用（为什么要它见 [ThemeSnapshot] 的类注释）。
@@ -392,8 +421,12 @@ class PreferencesManager @Inject constructor(
     val dashboardMessageMode: Flow<Boolean> = prefsFlow.map { it[DASHBOARD_MESSAGE_MODE] ?: false }
     val dashboardMessageLastDate: Flow<String> = prefsFlow.map { it[DASHBOARD_MESSAGE_LAST_DATE] ?: "" }
 
-    suspend fun setDashboardMessageMode(enabled: Boolean) { context.dataStore.edit { it[DASHBOARD_MESSAGE_MODE] = enabled } }
-    suspend fun setDashboardMessageLastDate(date: String) { context.dataStore.edit { it[DASHBOARD_MESSAGE_LAST_DATE] = date } }
+    suspend fun setDashboardMessageMode(enabled: Boolean) {
+        context.dataStore.edit { it[DASHBOARD_MESSAGE_MODE] = enabled }
+    }
+    suspend fun setDashboardMessageLastDate(date: String) {
+        context.dataStore.edit { it[DASHBOARD_MESSAGE_LAST_DATE] = date }
+    }
     fun getDashboardMessageModeSync(): Boolean = prefsState.value[DASHBOARD_MESSAGE_MODE] ?: false
 
     // ========== 自动备份 ==========
@@ -406,11 +439,14 @@ class PreferencesManager @Inject constructor(
         prefsFlow.map { it[AUTO_BACKUP_INTERVAL_DAYS] ?: DEFAULT_AUTO_BACKUP_INTERVAL_DAYS }
     val autoBackupKeepCount: Flow<Int> =
         prefsFlow.map { it[AUTO_BACKUP_KEEP_COUNT] ?: DEFAULT_AUTO_BACKUP_KEEP_COUNT }
+
     /** 最近一次自动备份失败的时间戳（0 = 无失败记录）。 */
     val autoBackupLastErrorAt: Flow<Long> = prefsFlow.map { it[AUTO_BACKUP_LAST_ERROR_AT] ?: 0L }
     val autoBackupLastErrorMsg: Flow<String> = prefsFlow.map { it[AUTO_BACKUP_LAST_ERROR_MSG] ?: "" }
 
-    suspend fun setAutoBackupEnabled(enabled: Boolean) { context.dataStore.edit { it[AUTO_BACKUP_ENABLED] = enabled } }
+    suspend fun setAutoBackupEnabled(enabled: Boolean) {
+        context.dataStore.edit { it[AUTO_BACKUP_ENABLED] = enabled }
+    }
 
     suspend fun setAutoBackupIntervalDays(days: Int) {
         context.dataStore.edit { it[AUTO_BACKUP_INTERVAL_DAYS] = days.coerceIn(1, MAX_AUTO_BACKUP_INTERVAL_DAYS) }
@@ -437,16 +473,22 @@ class PreferencesManager @Inject constructor(
 
     val defaultStartPage: Flow<String> = prefsFlow.map { it[DEFAULT_START_PAGE] ?: "dashboard" }
 
-    suspend fun setDefaultStartPage(route: String) { context.dataStore.edit { it[DEFAULT_START_PAGE] = route } }
+    suspend fun setDefaultStartPage(route: String) {
+        context.dataStore.edit { it[DEFAULT_START_PAGE] = route }
+    }
 
     val language: Flow<String> = prefsFlow.map { it[LANGUAGE] ?: "SYSTEM" }
 
-    suspend fun setLanguage(lang: String) { context.dataStore.edit { it[LANGUAGE] = lang } }
+    suspend fun setLanguage(lang: String) {
+        context.dataStore.edit { it[LANGUAGE] = lang }
+    }
 
     /** 仅在启动迁移时置 true（见 LanguageHelper.syncStoredLanguageFromSystem），此后不再读取。 */
     val languageMigrated: Flow<Boolean> = prefsFlow.map { it[LANGUAGE_MIGRATED] ?: false }
 
-    suspend fun setLanguageMigrated() { context.dataStore.edit { it[LANGUAGE_MIGRATED] = true } }
+    suspend fun setLanguageMigrated() {
+        context.dataStore.edit { it[LANGUAGE_MIGRATED] = true }
+    }
 
     val dashboardCardConfigs: Flow<List<DashboardCardConfig>> = prefsFlow.map { prefs ->
         val json = prefs[DASHBOARD_CARD_CONFIGS]
@@ -580,7 +622,9 @@ class PreferencesManager @Inject constructor(
         context.dataStore.edit { it[APP_LOCK_ENABLED] = enabled }
     }
 
-    fun setAppLockEnabledSync(enabled: Boolean) { scope.launch { setAppLockEnabled(enabled) } }
+    fun setAppLockEnabledSync(enabled: Boolean) {
+        scope.launch { setAppLockEnabled(enabled) }
+    }
 
     fun getEncryptedPin(): String = prefsState.value[ENCRYPTED_PIN] ?: ""
 
@@ -602,53 +646,90 @@ class PreferencesManager @Inject constructor(
 
     val reminderAdvanceDays: Flow<Int> = prefsFlow.map { resolveReminderAdvanceDays(it) }
 
-    suspend fun setReminderAdvanceDays(days: Int) { context.dataStore.edit { it[REMINDER_ADVANCE_DAYS] = days } }
+    suspend fun setReminderAdvanceDays(days: Int) {
+        context.dataStore.edit { it[REMINDER_ADVANCE_DAYS] = days }
+    }
 
     val assetExpiryReminderEnabled: Flow<Boolean> = prefsFlow.map { it[ASSET_EXPIRY_REMINDER_ENABLED] ?: true }
 
-    suspend fun setAssetExpiryReminderEnabled(enabled: Boolean) { context.dataStore.edit { it[ASSET_EXPIRY_REMINDER_ENABLED] = enabled } }
+    suspend fun setAssetExpiryReminderEnabled(enabled: Boolean) {
+        context.dataStore.edit { it[ASSET_EXPIRY_REMINDER_ENABLED] = enabled }
+    }
 
     val dailyReminderEnabled: Flow<Boolean> = prefsFlow.map { it[DAILY_REMINDER_ENABLED] ?: true }
 
-    suspend fun setDailyReminderEnabled(enabled: Boolean) { context.dataStore.edit { it[DAILY_REMINDER_ENABLED] = enabled } }
+    suspend fun setDailyReminderEnabled(enabled: Boolean) {
+        context.dataStore.edit { it[DAILY_REMINDER_ENABLED] = enabled }
+    }
 
     val billReminderEnabled: Flow<Boolean> = prefsFlow.map { it[BILL_REMINDER_ENABLED] ?: true }
 
-    suspend fun setBillReminderEnabled(enabled: Boolean) { context.dataStore.edit { it[BILL_REMINDER_ENABLED] = enabled } }
+    suspend fun setBillReminderEnabled(enabled: Boolean) {
+        context.dataStore.edit { it[BILL_REMINDER_ENABLED] = enabled }
+    }
 
     val dailyReminderHour: Flow<Int> = prefsFlow.map { it[DAILY_REMINDER_HOUR] ?: 9 }
 
-    suspend fun setDailyReminderHour(hour: Int) { context.dataStore.edit { it[DAILY_REMINDER_HOUR] = hour } }
+    suspend fun setDailyReminderHour(hour: Int) {
+        context.dataStore.edit { it[DAILY_REMINDER_HOUR] = hour }
+    }
 
     val dailyReminderMinute: Flow<Int> = prefsFlow.map { it[DAILY_REMINDER_MINUTE] ?: 0 }
 
-    suspend fun setDailyReminderMinute(minute: Int) { context.dataStore.edit { it[DAILY_REMINDER_MINUTE] = minute } }
+    suspend fun setDailyReminderMinute(minute: Int) {
+        context.dataStore.edit { it[DAILY_REMINDER_MINUTE] = minute }
+    }
 
     val biometricEnabled: Flow<Boolean> = prefsFlow.map { it[BIOMETRIC_ENABLED] ?: false }
 
-    suspend fun setBiometricEnabled(enabled: Boolean) { context.dataStore.edit { it[BIOMETRIC_ENABLED] = enabled } }
+    suspend fun setBiometricEnabled(enabled: Boolean) {
+        context.dataStore.edit { it[BIOMETRIC_ENABLED] = enabled }
+    }
 
     val onboardingCompleted: Flow<Boolean> = prefsFlow.map { it[ONBOARDING_COMPLETED] ?: false }
 
-    suspend fun setOnboardingCompleted(completed: Boolean) { context.dataStore.edit { it[ONBOARDING_COMPLETED] = completed } }
+    suspend fun setOnboardingCompleted(completed: Boolean) {
+        context.dataStore.edit { it[ONBOARDING_COMPLETED] = completed }
+    }
 
     val lifePlanExpanded: Flow<Boolean> = prefsFlow.map { it[LIFE_PLAN_EXPANDED] ?: true }
     val lifeTimeExpanded: Flow<Boolean> = prefsFlow.map { it[LIFE_TIME_EXPANDED] ?: true }
     val lifeRecordExpanded: Flow<Boolean> = prefsFlow.map { it[LIFE_RECORD_EXPANDED] ?: true }
 
-    suspend fun setLifePlanExpanded(v: Boolean) { context.dataStore.edit { it[LIFE_PLAN_EXPANDED] = v } }
-    suspend fun setLifeTimeExpanded(v: Boolean) { context.dataStore.edit { it[LIFE_TIME_EXPANDED] = v } }
-    suspend fun setLifeRecordExpanded(v: Boolean) { context.dataStore.edit { it[LIFE_RECORD_EXPANDED] = v } }
+    suspend fun setLifePlanExpanded(v: Boolean) {
+        context.dataStore.edit { it[LIFE_PLAN_EXPANDED] = v }
+    }
+    suspend fun setLifeTimeExpanded(v: Boolean) {
+        context.dataStore.edit { it[LIFE_TIME_EXPANDED] = v }
+    }
+    suspend fun setLifeRecordExpanded(v: Boolean) {
+        context.dataStore.edit { it[LIFE_RECORD_EXPANDED] = v }
+    }
+    // 资产汇总卡面板展开/收起状态（默认展开）。prefsState 是 Application 启动即加载的
+    // StateFlow，读取 assetPanelExpandedInitial 可同步拿到当前持久化值，供页面首帧初始化。
+    val assetPanelExpanded: Flow<Boolean> = prefsFlow.map { it[ASSET_PANEL_EXPANDED] ?: true }
+    val assetPanelExpandedInitial: Boolean get() = prefsState.value[ASSET_PANEL_EXPANDED] ?: true
+    suspend fun setAssetPanelExpanded(expanded: Boolean) {
+        context.dataStore.edit { it[ASSET_PANEL_EXPANDED] = expanded }
+    }
 
     val profileNickname: Flow<String> = prefsFlow.map { it[PROFILE_NICKNAME] ?: "" }
     val profileSignature: Flow<String> = prefsFlow.map { it[PROFILE_SIGNATURE] ?: "" }
     val profileAvatar: Flow<String> = prefsFlow.map { it[PROFILE_AVATAR] ?: "Spa" }
     val profileAvatarPath: Flow<String> = prefsFlow.map { it[PROFILE_AVATAR_PATH] ?: "" }
 
-    suspend fun setProfileNickname(name: String) { context.dataStore.edit { it[PROFILE_NICKNAME] = name } }
-    suspend fun setProfileSignature(sig: String) { context.dataStore.edit { it[PROFILE_SIGNATURE] = sig } }
-    suspend fun setProfileAvatar(avatar: String) { context.dataStore.edit { it[PROFILE_AVATAR] = avatar } }
-    suspend fun setProfileAvatarPath(path: String) { context.dataStore.edit { it[PROFILE_AVATAR_PATH] = path } }
+    suspend fun setProfileNickname(name: String) {
+        context.dataStore.edit { it[PROFILE_NICKNAME] = name }
+    }
+    suspend fun setProfileSignature(sig: String) {
+        context.dataStore.edit { it[PROFILE_SIGNATURE] = sig }
+    }
+    suspend fun setProfileAvatar(avatar: String) {
+        context.dataStore.edit { it[PROFILE_AVATAR] = avatar }
+    }
+    suspend fun setProfileAvatarPath(path: String) {
+        context.dataStore.edit { it[PROFILE_AVATAR_PATH] = path }
+    }
 
     val categoryColorOverrides: Flow<Map<String, String>> = prefsFlow.map { prefs ->
         val json = prefs[CATEGORY_COLOR_OVERRIDES]
@@ -656,8 +737,12 @@ class PreferencesManager @Inject constructor(
             try {
                 val obj = org.json.JSONObject(json)
                 obj.keys().asSequence().associateWith { obj.getString(it) }
-            } catch (_: Exception) { emptyMap() }
-        } else emptyMap()
+            } catch (_: Exception) {
+                emptyMap()
+            }
+        } else {
+            emptyMap()
+        }
     }
 
     suspend fun saveCategoryColorOverrides(overrides: Map<String, String>) {
@@ -670,8 +755,12 @@ class PreferencesManager @Inject constructor(
             try {
                 val obj = org.json.JSONObject(json)
                 obj.keys().asSequence().associateWith { obj.getString(it) }
-            } catch (_: Exception) { emptyMap() }
-        } else emptyMap()
+            } catch (_: Exception) {
+                emptyMap()
+            }
+        } else {
+            emptyMap()
+        }
     }
 
     suspend fun savePresetCategoryOverrides(overrides: Map<String, String>) {
@@ -783,10 +872,15 @@ class PreferencesManager @Inject constructor(
     /** 生活页搜索页最近搜索词（最多 8 条，最新在前）。 */
     val recentSearches: Flow<List<String>> = prefsFlow.map { prefs ->
         val raw = prefs[RECENT_SEARCHES]
-        if (raw.isNullOrBlank()) emptyList()
-        else try {
-            kotlinx.serialization.json.Json.decodeFromString<List<String>>(raw)
-        } catch (_: Exception) { emptyList() }
+        if (raw.isNullOrBlank()) {
+            emptyList()
+        } else {
+            try {
+                kotlinx.serialization.json.Json.decodeFromString<List<String>>(raw)
+            } catch (_: Exception) {
+                emptyList()
+            }
+        }
     }
 
     suspend fun addRecentSearch(query: String) {
@@ -797,7 +891,9 @@ class PreferencesManager @Inject constructor(
             val current = prefs[RECENT_SEARCHES]?.let { raw ->
                 try {
                     kotlinx.serialization.json.Json.decodeFromString<List<String>>(raw)
-                } catch (_: Exception) { emptyList() }
+                } catch (_: Exception) {
+                    emptyList()
+                }
             } ?: emptyList()
             val updated = (listOf(text) + current.filter { !it.equals(text, ignoreCase = true) }).take(8)
             prefs[RECENT_SEARCHES] = kotlinx.serialization.json.Json.encodeToString(updated)

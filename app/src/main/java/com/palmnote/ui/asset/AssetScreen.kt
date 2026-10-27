@@ -23,11 +23,8 @@ import androidx.compose.material.icons.automirrored.outlined.ViewList
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.*
@@ -53,6 +50,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.graphics.graphicsLayer
@@ -66,9 +64,18 @@ import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import android.provider.Settings
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import kotlin.math.roundToInt
 import coil3.compose.AsyncImage
 import com.palmnote.app.R
@@ -114,6 +121,21 @@ fun getStatusColor(status: AssetStatus): Color = statusColorMap[status] ?: Statu
 
 /** 「临期」门槛：距到期 7 天内。 */
 internal const val EXPIRY_SOON_DAYS = 7
+
+/** 面板吸附的「快甩」速度门槛（panelFraction 每秒变化量）：超过即由甩动方向定收/开。 */
+private const val PANEL_FLING_FRACTION_VELOCITY = 1.5f
+
+/**
+ * 松手吸附目标：快甩看方向（iOS 大标题/苹果地图同款），慢放看位置（0.8 分界防误展开）。
+ *
+ * 速度为 panelFraction 每秒变化量（上滑收合方向为负）。抽成纯函数供单元测试穷举分支。
+ */
+internal fun panelSnapTarget(fraction: Float, velocity: Float): Float = when {
+    velocity < -PANEL_FLING_FRACTION_VELOCITY -> 0f
+    velocity > PANEL_FLING_FRACTION_VELOCITY -> 1f
+    fraction > 0.8f -> 1f
+    else -> 0f
+}
 
 /**
  * 到期徽标的紧迫度配色：已过期=红，[EXPIRY_SOON_DAYS] 天内=橙，其余=物品模块蓝。
@@ -257,45 +279,136 @@ fun AssetScreen(
                 .background(MaterialTheme.colorScheme.background)
                 .padding(padding)
         ) {
-            // 布局：汇总卡（两档面板）与筛选行固定在网格上方，物品卡在网格里滚。
+            // 布局：汇总卡（跟手面板）与筛选行固定在网格上方，物品卡在网格里滚。
             // 面板收合走**嵌套滚动消费**（CollapsingToolbar 同款）：上滑的滚动量先于
             // 网格被消费、面板跟手 1:1 收合，收完之后网格才从 0 开始滚——面板收到位
             // 时第一张物品卡必然完整贴合在筛选行下（不会被截）；下滑在网格顶部反向
             // 先展开面板、网格归零后再跟随。松手停在中间时弹簧吸附到最近档位
-            // （两档 + 弹性）。想更 Q 弹调 dampingRatio，想更快调 stiffness。
+            // （跟手 + 弹性吸附，不是两档磁吸）。吸附方向「快甩看方向、慢放看位置」见
+            // [panelSnapTarget]；想更 Q 弹调 dampingRatio，想更快调 stiffness
+            // （磁吸强度：stiffness 越高吸附越快越果断，dampingRatio 越高越少回弹）。
             var panelHeightPx by remember { mutableStateOf(0) }
-            // 筛选行**两档磁吸开关**：面板只有「展开」「收起」两个状态，两档之间没有
-            // 滑动过程——页面第一帧上滑即整帧消费并切到收起档（面板弹簧合拢，物品卡
-            // 从 0 开始滚，首卡必然完整贴合筛选行下）；网格顶部的下拉切回展开档
-            // （面板弹簧弹开，汇总卡展现）。弹性来自高度弹簧的回弹，
-            // 参数在 panelFraction 的 spring() 处可调。
-            var panelClosed by remember { mutableStateOf(false) }
-            val panelFraction by animateFloatAsState(
-                targetValue = if (panelClosed || showSearch) 0f else 1f,
-                animationSpec = spring(
-                    dampingRatio = Spring.DampingRatioMediumBouncy,
-                    stiffness = Spring.StiffnessMediumLow
-                ),
-                label = "panelFraction"
-            )
+            // 面板与筛选行之间的 8dp 间距（收合时随面板一起消失）
+            val panelGapPx = with(LocalDensity.current) { 8.dp.toPx() }
+            // 面板开合比例：1 = 展开（汇总卡全显），0 = 收起（只剩筛选行）。跟手时直接
+            // 写入（1:1 消费滚动量），松手/搜索时经 settlePanel 弹簧吸附或收合。
+            // 初始值取 DataStore 的**实时**状态（panelExpanded StateFlow），而不是 ViewModel
+            // 构造时的快照——页面切换到别处再回来时 remember 会重置，用快照会回到进入页面
+            // 时的旧状态，用实时 StateFlow 才能保持用户**操作后**的最新收起/展开状态。
+            val panelExpanded by viewModel.panelExpanded.collectAsStateWithLifecycle()
+            var panelFraction by remember { mutableStateOf(if (panelExpanded) 1f else 0f) }
+            // 跟手末速度记录：跟手时逐帧算 panelFraction 变化速度，松手时既作为「快甩
+            // 看方向」的判据，也传给弹簧做初速度（速度连续才丝滑，否则从 0 起步会顿挫）。
+            val followRef = remember { floatArrayOf(1f, 0f) } // [上一帧 fraction, 速度(每秒)]
+            val followNanos = remember { longArrayOf(0L) }
+            // 逐帧记录跟手速度（panelFraction 每秒变化量），供吸附继承末速度/判方向
+            fun recordFollowVelocity(newFraction: Float) {
+                val now = System.nanoTime()
+                val prevNanos = followNanos[0]
+                if (prevNanos != 0L) {
+                    val dt = (now - prevNanos) / 1e9f
+                    if (dt > 0f) followRef[1] = (newFraction - followRef[0]) / dt
+                }
+                followRef[0] = newFraction
+                followNanos[0] = now
+            }
+            // 面板动画**单一所有权**：所有收/开动画只从 settlePanel 走，同一时刻只有这一个
+            // Job 在写 panelFraction（新 settle 先 cancel 旧的）——松手吸附、搜索联动、
+            // 无障碍动作互不打架；跟手抢回控制权靠 onPreScroll 消费时先 cancel。
+            val panelScope = rememberCoroutineScope()
+            val settleJob = remember { mutableStateOf<Job?>(null) }
+            // 面板是否在**当前手势**里被消费过：松手吸附只在这个手势真动过面板时才结算，
+            // 纯滚动网格的松手不能拿上一手势的陈旧末速度判方向（会误开/误收）。
+            val panelTouched = remember { mutableStateOf(false) }
+            // 落位触觉反馈（iOS 底部卡片同款）：只给手势结算，搜索联动/无障碍动作不给。
+            val hapticFeedback = LocalHapticFeedback.current
+            // 系统「移除动画」无障碍开关（动画时长缩放=0）：结算不做弹簧、直接落位，
+            // Reduce Motion 同款语义（iOS 行为对齐）。
+            val panelHostContext = LocalContext.current
+            val reduceMotion = remember {
+                Settings.Global.getFloat(
+                    panelHostContext.contentResolver,
+                    Settings.Global.ANIMATOR_DURATION_SCALE, 1f
+                ) == 0f
+            }
+            fun settlePanel(target: Float, initialVelocity: Float = 0f, persist: Boolean = true, haptic: Boolean = false) {
+                settleJob.value?.cancel()
+                settleJob.value = panelScope.launch {
+                    if (reduceMotion) {
+                        panelFraction = target
+                    } else {
+                        animate(
+                            initialValue = panelFraction,
+                            targetValue = target,
+                            initialVelocity = initialVelocity.coerceIn(-3f, 3f),
+                            animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMedium)
+                        ) { value, _ -> panelFraction = value }
+                    }
+                    if (haptic) hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    if (persist) viewModel.setPanelExpanded(target == 1f)
+                }
+            }
             val panelScrollConnection = remember {
                 object : NestedScrollConnection {
                     override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                        // 上滑第一帧：整帧消费并切到收起档，物品卡从 0 开始滚（不被截）
-                        if (!panelClosed && available.y < 0f) {
-                            panelClosed = true
-                            return available
+                        // 上滑：面板跟手 1:1 收合，收完前的滚动量被面板消费（不让网格滚）
+                        if (available.y < 0f && panelFraction > 0f) {
+                            // 手指接住面板 = 收回动画控制权（settleJob 在飞时就地取消）
+                            settleJob.value?.cancel()
+                            panelTouched.value = true
+                            val maxH = panelHeightPx + panelGapPx
+                            val oldH = panelFraction * maxH
+                            val newH = (oldH + available.y).coerceAtLeast(0f)
+                            val newFraction = newH / maxH
+                            recordFollowVelocity(newFraction)
+                            panelFraction = newFraction
+                            // 完全收到底：立即持久化收起（中途松手时由吸附分支写回）
+                            if (newH <= 0f) viewModel.setPanelExpanded(false)
+                            return Offset(0f, newH - oldH)
+                        }
+                        // 网格在顶部时下拉：面板跟手 1:1 展开（网格无法再下拉，滚动量给面板）
+                        val atTop = listState.firstVisibleItemIndex == 0 &&
+                            listState.firstVisibleItemScrollOffset == 0
+                        if (available.y > 0f && panelFraction < 1f && atTop) {
+                            settleJob.value?.cancel()
+                            panelTouched.value = true
+                            val maxH = panelHeightPx + panelGapPx
+                            val oldH = panelFraction * maxH
+                            val newH = (oldH + available.y).coerceAtMost(maxH)
+                            val newFraction = newH / maxH
+                            recordFollowVelocity(newFraction)
+                            panelFraction = newFraction
+                            // 完全展开到顶：立即持久化展开（中途松手时由吸附分支写回）
+                            if (newH >= maxH) viewModel.setPanelExpanded(true)
+                            return Offset(0f, newH - oldH)
                         }
                         return Offset.Zero
                     }
-                    override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
-                        // 网格顶部的下拉：切回展开档，汇总卡弹开展现
-                        if (panelClosed && available.y > 0f) {
-                            panelClosed = false
-                            return available
-                        }
-                        return Offset.Zero
-                    }
+                }
+            }
+            // 搜索时面板收起；退出搜索**回到搜索前的状态**（持久化里存的就是它——
+            // 搜索收合从不写持久化），而不是无条件展开：先收起了面板再搜索的用户，
+            // 关掉搜索后应该还在收起态。首次不动画（面板已按持久化状态初始化）。
+            var searchApplied by remember { mutableStateOf(false) }
+            LaunchedEffect(showSearch) {
+                if (!searchApplied) { searchApplied = true; return@LaunchedEffect }
+                settlePanel(
+                    if (showSearch) 0f else if (panelExpanded) 1f else 0f,
+                    persist = false
+                )
+            }
+            // 松手必收档：面板静止时永远停在展开(1)/收起(0)两档之一，不停半路。
+            // 方向由 [panelSnapTarget] 定——快甩看方向、慢放看 0.8 分界（收 20% 即收，
+            // 拉过 80% 才开，更稳、不易误展开；调 0.6/0.9 改松紧）。搜索态不吸附。
+            LaunchedEffect(listState.isScrollInProgress) {
+                if (listState.isScrollInProgress) {
+                    panelTouched.value = false
+                } else if (!showSearch && panelTouched.value) {
+                    settlePanel(
+                        panelSnapTarget(panelFraction, followRef[1]),
+                        initialVelocity = followRef[1],
+                        haptic = true
+                    )
                 }
             }
 
@@ -589,6 +702,13 @@ fun AssetScreen(
                 // 间距随面板一起收合，收起后筛选行贴着顶栏下缘（0dp 基准，与展开时
                 // 汇总卡的顶边一致）；内容锚定顶部、超出部分裁掉——收档时面板像被
                 // 筛选行「压」上去，弹簧回弹让切档带一次 Q 弹。
+                // 无障碍：滚动手势/拖卡片之外，再给 TalkBack 补 stateDescription 与
+                // 自定义「展开/收起」动作（零视觉变化），面板操作不依赖手势。
+                val panelStateText = stringResource(
+                    if (panelFraction > 0.5f) R.string.asset_panel_expanded else R.string.asset_panel_collapsed
+                )
+                val panelExpandActionLabel = stringResource(R.string.asset_panel_action_expand)
+                val panelCollapseActionLabel = stringResource(R.string.asset_panel_action_collapse)
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -603,10 +723,57 @@ fun AssetScreen(
                             }
                         }
                         .clipToBounds()
+                        .semantics {
+                            stateDescription = panelStateText
+                            customActions = listOf(
+                                CustomAccessibilityAction(panelExpandActionLabel) { settlePanel(1f); true },
+                                CustomAccessibilityAction(panelCollapseActionLabel) { settlePanel(0f); true }
+                            )
+                        }
+                        // 直接拖汇总卡本身也能收合/展开（iOS 大标题的导航栏区域同款）——
+                        // 消费与结算和网格滚动共用同一套（fraction 消费 + panelSnapTarget）。
+                        .pointerInput(Unit) {
+                            detectVerticalDragGestures(
+                                onDragStart = { settleJob.value?.cancel() },
+                                onVerticalDrag = { change, dragAmount ->
+                                    change.consume()
+                                    val maxH = panelHeightPx + panelGapPx
+                                    val newH = (panelFraction * maxH + dragAmount).coerceIn(0f, maxH)
+                                    val newFraction = newH / maxH
+                                    recordFollowVelocity(newFraction)
+                                    panelFraction = newFraction
+                                    // 拖到两档端点同样即时持久化
+                                    if (newH <= 0f) viewModel.setPanelExpanded(false)
+                                    if (newH >= maxH) viewModel.setPanelExpanded(true)
+                                },
+                                onDragEnd = {
+                                    settlePanel(
+                                        panelSnapTarget(panelFraction, followRef[1]),
+                                        initialVelocity = followRef[1],
+                                        haptic = true
+                                    )
+                                },
+                                onDragCancel = {
+                                    settlePanel(
+                                        panelSnapTarget(panelFraction, followRef[1]),
+                                        initialVelocity = followRef[1],
+                                        haptic = true
+                                    )
+                                }
+                            )
+                        }
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
+                            // 收合后段渐隐（iOS 大标题同款）：内容被筛选行压到快截断时开始
+                            // 淡出——0.65 起淡、0.15 全隐（expand 同一条曲线渐显）。顺带替代
+                            // 原先的 alpha=0 兜底：面板高度为 0 时 clipToBounds 不裁剪、内容会
+                            // 画到筛选行后面（Compose 特性），如今淡到全透明后自然不再可见。
+                            // 只在 lambda 里读 fraction，拖动期间只更新图层不重组。
+                            .graphicsLayer {
+                                alpha = ((panelFraction - 0.15f) / 0.5f).coerceIn(0f, 1f)
+                            }
                             .padding(horizontal = 16.dp)
                             .onGloballyPositioned { panelHeightPx = it.size.height },
                         horizontalArrangement = Arrangement.spacedBy(12.dp)

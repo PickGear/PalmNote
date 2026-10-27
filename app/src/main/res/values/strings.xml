@@ -20,6 +20,10 @@
     <!-- Asset Status -->
     <string name="asset_held">持有中</string>
     <string name="asset_away">暂离中</string>
+    <string name="asset_panel_expanded">汇总卡已展开</string>
+    <string name="asset_panel_collapsed">汇总卡已收起</string>
+    <string name="asset_panel_action_expand">展开汇总卡</string>
+    <string name="asset_panel_action_collapse">收起汇总卡</string>
     <string name="asset_removed">已清出</string>
     <!-- 计数文案：数量为 1 时英文要用单数（%d items → 1 item），故用 plurals。 -->
     <plurals name="asset_count">

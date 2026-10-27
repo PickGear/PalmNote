@@ -168,6 +168,19 @@ class AssetViewModel @Inject constructor(
         preferencesManager.presetCategoryOverrides
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
+    // 资产汇总卡面板展开/收起状态的持久化：首帧初始值（同步读 DataStore）+ 写入方法。
+    // panelExpandedInitial 是构造时的同步快照（首帧用）；panelExpanded 是 DataStore 的实时
+    // StateFlow，页面切换后回到本页时读它拿**用户最新**的收起/展开状态（构造快照会过期）。
+    val panelExpandedInitial: Boolean = preferencesManager.assetPanelExpandedInitial
+    val panelExpanded: StateFlow<Boolean> = preferencesManager.assetPanelExpanded
+        .stateIn(viewModelScope, SharingStarted.Eagerly, panelExpandedInitial)
+    fun setPanelExpanded(expanded: Boolean) {
+        // 值未变不落盘：松手吸附每次滚动手势结束都会结算一次，不挡重复写会把
+        // DataStore 当成逐帧写字
+        if (panelExpanded.value == expanded) return
+        viewModelScope.launch { preferencesManager.setAssetPanelExpanded(expanded) }
+    }
+
     val categoryConfigs: StateFlow<List<CategoryConfig>> = cachedCategoryConfigs
 
     enum class DialogType { AWAY, CLEAR, DELETE }

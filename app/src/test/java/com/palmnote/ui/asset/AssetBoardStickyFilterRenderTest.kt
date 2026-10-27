@@ -1,6 +1,7 @@
 package com.palmnote.ui.asset
 
 import android.app.Application
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -10,11 +11,15 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipe
+import androidx.compose.ui.unit.dp
 import com.palmnote.data.db.entity.Asset
 import com.palmnote.ui.components.CategoryItem
 import com.palmnote.ui.theme.PalmNoteTheme
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -42,13 +47,15 @@ class AssetBoardStickyFilterRenderTest {
         Asset(id = i.toLong(), name = "测试物品%02d".format(i), category = "数码")
     }
 
-    private fun mockViewModel(): AssetViewModel =
+    private fun mockViewModel(panelExpandedInitial: Boolean = true): AssetViewModel =
         mockk(relaxed = true) {
             every { state } returns MutableStateFlow(
                 AssetState(assets = assets, filteredAssets = assets, heldCount = 20, heldValue = 100_00)
             )
             every { customCategories } returns MutableStateFlow<List<CategoryItem>>(emptyList())
             every { presetCategoryOverrides } returns MutableStateFlow<Map<String, String>>(emptyMap())
+            every { this@mockk.panelExpandedInitial } returns panelExpandedInitial
+            every { this@mockk.panelExpanded } returns MutableStateFlow(panelExpandedInitial)
         }
 
     @Test
@@ -120,5 +127,101 @@ class AssetBoardStickyFilterRenderTest {
             "回顶后面板应保持收起：筛选行 top 收起=$collapsedTop 回顶后=$topAfter",
             topAfter < collapsedTop + 100
         )
+    }
+
+    @Test
+    fun `上滑跟手收合面板`() {
+        compose.setContent {
+            PalmNoteTheme { AssetScreen(viewModel = mockViewModel()) }
+        }
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithText("全部").onFirst().fetchSemanticsNode().boundsInRoot.top > 100
+        }
+        val expandedTop = compose.onAllNodesWithText("全部").onFirst().fetchSemanticsNode().boundsInRoot.top
+        // 上滑 96dp：面板跟手 1:1 收合，筛选行随之上移
+        compose.onAllNodes(hasScrollAction()).onFirst().performTouchInput {
+            swipe(start = center, end = center - Offset(0f, 96.dp.toPx()), durationMillis = 800)
+        }
+        compose.mainClock.advanceTimeBy(2_000)
+        val collapsedTop = compose.onAllNodesWithText("全部").onFirst().fetchSemanticsNode().boundsInRoot.top
+        assertTrue(
+            "上滑后面板应收起：展开=$expandedTop 收起=$collapsedTop",
+            collapsedTop < expandedTop - 40
+        )
+    }
+
+    @Test
+    fun `顶部下拉展开面板`() {
+        compose.setContent {
+            PalmNoteTheme { AssetScreen(viewModel = mockViewModel()) }
+        }
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithText("全部").onFirst().fetchSemanticsNode().boundsInRoot.top > 100
+        }
+        // 先上滑收起面板
+        compose.onAllNodes(hasScrollAction()).onFirst().performTouchInput {
+            swipe(start = center, end = center - Offset(0f, 96.dp.toPx()), durationMillis = 800)
+        }
+        compose.mainClock.advanceTimeBy(2_000)
+        val collapsedTop = compose.onAllNodesWithText("全部").onFirst().fetchSemanticsNode().boundsInRoot.top
+        // 在网格顶部下拉：面板跟手 1:1 展开（下拉 160dp 开过 80% 分界，松手吸附展开）
+        compose.onAllNodes(hasScrollAction()).onFirst().performTouchInput {
+            swipe(start = center, end = center + Offset(0f, 160.dp.toPx()), durationMillis = 800)
+        }
+        compose.mainClock.advanceTimeBy(2_000)
+        val expandedTop = compose.onAllNodesWithText("全部").onFirst().fetchSemanticsNode().boundsInRoot.top
+        assertTrue(
+            "下拉后面板应展开：收起=$collapsedTop 展开=$expandedTop",
+            expandedTop > collapsedTop + 40
+        )
+    }
+
+    @Test
+    fun `面板收起状态持久化，进入页面保持收起`() {
+        compose.setContent {
+            PalmNoteTheme { AssetScreen(viewModel = mockViewModel(panelExpandedInitial = false)) }
+        }
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithText("全部").onFirst().fetchSemanticsNode().boundsInRoot.top < 100
+        }
+        val top = compose.onAllNodesWithText("全部").onFirst().fetchSemanticsNode().boundsInRoot.top
+        assertTrue(
+            "持久化收起状态进入页面应保持收起（筛选行在顶部，无汇总卡）：top=$top",
+            top < 100
+        )
+    }
+
+    @Test
+    fun `用户上滑收起后面板写回收起状态`() {
+        val vm = mockViewModel()
+        compose.setContent {
+            PalmNoteTheme { AssetScreen(viewModel = vm) }
+        }
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithText("全部").onFirst().fetchSemanticsNode().boundsInRoot.top > 100
+        }
+        // 上滑收起面板
+        compose.onAllNodes(hasScrollAction()).onFirst().performTouchInput {
+            swipe(start = center, end = center - Offset(0f, 96.dp.toPx()), durationMillis = 800)
+        }
+        compose.mainClock.advanceTimeBy(2_000)
+        verify { vm.setPanelExpanded(false) }
+    }
+
+    @Test
+    fun `上滑完全收到底后面板写回收起状态`() {
+        val vm = mockViewModel()
+        compose.setContent {
+            PalmNoteTheme { AssetScreen(viewModel = vm) }
+        }
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithText("全部").onFirst().fetchSemanticsNode().boundsInRoot.top > 100
+        }
+        // 上滑足够多，面板完全收到底（frac=0），此时必须持久化收起
+        compose.onAllNodes(hasScrollAction()).onFirst().performTouchInput {
+            swipe(start = center, end = center - Offset(0f, 200.dp.toPx()), durationMillis = 800)
+        }
+        compose.mainClock.advanceTimeBy(2_000)
+        verify { vm.setPanelExpanded(false) }
     }
 }
