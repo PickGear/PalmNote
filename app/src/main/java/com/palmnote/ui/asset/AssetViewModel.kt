@@ -380,6 +380,12 @@ class AssetViewModel @Inject constructor(
             ) { asset, records ->
                 Pair(asset, records)
             }.collect { (asset, records) ->
+                // 自愈：修复前的版本删除使用记录只删行、不减 useCount，存量物品计数漂移
+                // （记录已空仍显示「共 N 次」）。以记录表为准回填；写回触发资产流重发，
+                // 重入时计数已一致、不再写入，自然收敛。
+                if (asset != null && asset.useCount != records.size) {
+                    assetRepository.setUseCount(asset.id, records.size)
+                }
                 val daysOwned = asset?.let { DateUtils.getDaysSince(it.effectiveDate).coerceAtLeast(1) } ?: 1
                 val costPerDay = if (daysOwned > 0) (asset?.purchasePrice ?: 0L) / 100.0 / daysOwned else 0.0
                 val costPerUse = if ((asset?.useCount ?: 0) > 0) {
@@ -410,13 +416,16 @@ class AssetViewModel @Inject constructor(
                 usedAt = System.currentTimeMillis(),
                 note = note
             )
+            // 只写记录行：useCount 由详情页自愈以记录表为准回填（双写会竞态漂移）
             usageRecordRepository.insertUsageRecord(record)
-            assetRepository.incrementUseCount(assetId)
         }
     }
 
     fun deleteUsageRecord(id: Long) {
-        viewModelScope.launch { usageRecordRepository.deleteUsageRecordById(id) }
+        viewModelScope.launch {
+            // 只删记录行：useCount 由详情页自愈回填（旧版只增不减导致计数漂移）
+            usageRecordRepository.deleteUsageRecordById(id)
+        }
     }
 
     fun updateUsageRecord(id: Long, usedAt: Long, note: String) {

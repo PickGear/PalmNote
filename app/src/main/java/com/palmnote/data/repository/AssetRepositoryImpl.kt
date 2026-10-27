@@ -71,7 +71,7 @@ class AssetRepositoryImpl @Inject constructor(
     override suspend fun hardDeleteAsset(id: Long) = assetRecycleBinDao.deleteById(id)
 
 
-    override suspend fun incrementUseCount(assetId: Long) = assetDao.incrementUseCount(assetId)
+    override suspend fun setUseCount(assetId: Long, count: Int) = assetDao.setUseCount(assetId, count)
 
     override suspend fun awayAsset(id: Long, tags: String, reason: String) =
         changeAssetStatus(id) { assetDao.awayAsset(id, System.currentTimeMillis(), tags, reason) }

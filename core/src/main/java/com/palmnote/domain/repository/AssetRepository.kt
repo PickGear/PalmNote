@@ -26,7 +26,7 @@ interface AssetRepository {
     suspend fun insertAsset(asset: Asset): Long
     suspend fun updateAsset(asset: Asset)
     suspend fun deleteAsset(id: Long)
-    suspend fun incrementUseCount(assetId: Long)
+    suspend fun setUseCount(assetId: Long, count: Int)
     suspend fun awayAsset(id: Long, tags: String, reason: String)
     suspend fun retireAsset(id: Long, reason: String)
     suspend fun markAssetLost(id: Long, reason: String)

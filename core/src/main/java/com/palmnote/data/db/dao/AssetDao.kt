@@ -123,8 +123,10 @@ interface AssetDao {
     @Query("DELETE FROM assets WHERE id = :id")
     suspend fun deleteAsset(id: Long)
 
-    @Query("UPDATE assets SET useCount = useCount + 1, updatedAt = :now WHERE id = :assetId")
-    suspend fun incrementUseCount(assetId: Long, now: Long = System.currentTimeMillis())
+    /** useCount 的唯一写入口是 AssetViewModel 详情页自愈（以使用记录表为准回填）。
+     *  加/删记录各自只写记录行，这里不提供增减 API——双写会与自愈竞态漂移。 */
+    @Query("UPDATE assets SET useCount = :count, updatedAt = :now WHERE id = :assetId")
+    suspend fun setUseCount(assetId: Long, count: Int, now: Long = System.currentTimeMillis())
 
     @Query("UPDATE assets SET totalUsageHours = totalUsageHours + :hours, updatedAt = :now WHERE id = :assetId")
     suspend fun addUsageHours(assetId: Long, hours: Double, now: Long = System.currentTimeMillis())
