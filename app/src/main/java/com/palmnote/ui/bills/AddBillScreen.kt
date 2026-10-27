@@ -497,7 +497,7 @@ fun AddBillScreen(
                         DatePickerDialog(
                             onDismissRequest = { showDatePicker = false },
                             tonalElevation = 0.dp,
-                            colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.background),
+                            colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
                             confirmButton = {
                                 TextButton(onClick = {
                                     state.selectedDateMillis?.let { utcDate ->
@@ -513,7 +513,10 @@ fun AddBillScreen(
                             }
                         ) {
                             NoDialogWindowAnimation()
-                            DatePicker(state = state, colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.background))
+                            DatePicker(
+                                state = state,
+                                colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)
+                            )
                         }
                     }
 
@@ -527,7 +530,7 @@ fun AddBillScreen(
                         )
                         AlertDialog(
                             onDismissRequest = { showTimePicker = false },
-                            containerColor = MaterialTheme.colorScheme.background,
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                             confirmButton = {
                                 TextButton(onClick = {
                                     val newLdt = ldt.withHour(timeState.hour).withMinute(timeState.minute)

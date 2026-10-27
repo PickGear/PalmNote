@@ -1885,7 +1885,7 @@ private fun ScheduleDatePickerDialog(onConfirm: (LocalDate) -> Unit, onDismiss: 
     DatePickerDialog(
         onDismissRequest = onDismiss,
         tonalElevation = 0.dp,
-        colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.background),
+        colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
         confirmButton = {
             TextButton(
                 onClick = {
@@ -1902,7 +1902,7 @@ private fun ScheduleDatePickerDialog(onConfirm: (LocalDate) -> Unit, onDismiss: 
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.settings_cancel)) }
         }
     ) {
-        DatePicker(state = pickerState, colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.background))
+        DatePicker(state = pickerState, colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh))
     }
 }
 

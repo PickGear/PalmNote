@@ -917,12 +917,12 @@ fun DatePickerField(
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
             tonalElevation = 0.dp,
-            colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.background),
+            colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
             confirmButton = { TextButton(onClick = { datePickerState.selectedDateMillis?.let { onDateSelected(it) }; showDatePicker = false }) { Text(stringResource(R.string.confirm), fontWeight = FontWeight.Bold) } },
             dismissButton = { TextButton(onClick = { showDatePicker = false }) { Text(stringResource(R.string.cancel), fontWeight = FontWeight.Bold) } }
         ) {
             NoDialogWindowAnimation()
-            DatePicker(state = datePickerState, colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.background))
+            DatePicker(state = datePickerState, colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh))
         }
     }
 }

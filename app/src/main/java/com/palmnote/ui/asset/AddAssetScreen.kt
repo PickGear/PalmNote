@@ -409,7 +409,7 @@ fun AddAssetScreen(
                                     ) {
                                         Surface(
                                             shape = MaterialTheme.shapes.medium,
-                                            color = MaterialTheme.colorScheme.background,
+                                            color = MaterialTheme.colorScheme.surfaceContainerHigh,
                                             tonalElevation = 2.dp,
                                             shadowElevation = 4.dp,
                                             modifier = Modifier.width(with(density) { costModeBoxWidth.toDp() })
@@ -798,7 +798,7 @@ private fun ShelfLifeDurationField(
             ) {
                 Surface(
                     shape = MaterialTheme.shapes.medium,
-                    color = MaterialTheme.colorScheme.background,
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
                     tonalElevation = 2.dp,
                     shadowElevation = 4.dp,
                     modifier = Modifier.width(with(density) { boxWidth.toDp() })

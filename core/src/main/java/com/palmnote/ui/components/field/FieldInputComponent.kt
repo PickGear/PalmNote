@@ -93,7 +93,7 @@ private fun DateInputField(config: FieldConfig, value: String, onValueChange: (S
         DatePickerDialog(
             onDismissRequest = { showPicker = false },
             tonalElevation = 0.dp,
-            colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.background),
+            colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
             confirmButton = {
                 TextButton(onClick = {
                     pickerState.selectedDateMillis?.let { onValueChange(it.toString()) }
@@ -103,7 +103,7 @@ private fun DateInputField(config: FieldConfig, value: String, onValueChange: (S
             dismissButton = { TextButton(onClick = { showPicker = false }) { Text(stringResource(R.string.cancel), fontWeight = FontWeight.Bold) } }
         ) {
             NoDialogWindowAnimation()
-            DatePicker(state = pickerState, colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.background))
+            DatePicker(state = pickerState, colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh))
         }
     }
 }

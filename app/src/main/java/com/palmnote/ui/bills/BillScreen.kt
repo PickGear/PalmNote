@@ -180,7 +180,7 @@ fun BillScreen(
                                 ) {
                                     Surface(
                                         shape = MaterialTheme.shapes.medium,
-                                        color = MaterialTheme.colorScheme.background,
+                                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
                                         shadowElevation = 3.dp
                                     ) {
                                         // 账本数无上界（用户可自建）：菜单封顶可滚，否则账本一多下半截就点不到
@@ -843,7 +843,7 @@ fun BillListItem(bill: Bill, wallets: Map<Long, String> = emptyMap(), onDetail: 
 
         Box(
             modifier = Modifier.fillMaxWidth().offset { IntOffset(offsetX.roundToInt(), 0) }
-                .background(MaterialTheme.colorScheme.background)
+                .background(MaterialTheme.colorScheme.surface)
                 .pointerInput(bill.id) {
                     detectHorizontalDragGestures(
                         onDragEnd = { offsetX = if (offsetX < -thresholdPx) -deleteWidthPx else 0f },

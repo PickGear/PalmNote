@@ -679,12 +679,15 @@ private fun UsageRecordEditDialog(record: UsageRecord?, viewModel: AssetViewMode
             DatePickerDialog(
                 onDismissRequest = { showDatePicker = false },
                 tonalElevation = 0.dp,
-                colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.background),
+                colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
                 confirmButton = { TextButton(onClick = { datePickerState.selectedDateMillis?.let { editDate = it }; showDatePicker = false }) { Text(stringResource(R.string.confirm), color = AccentOrange) } },
                 dismissButton = { TextButton(onClick = { showDatePicker = false }) { Text(stringResource(R.string.cancel)) } }
             ) {
                 NoDialogWindowAnimation()
-                DatePicker(state = datePickerState, colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.background))
+                DatePicker(
+                    state = datePickerState,
+                    colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)
+                )
             }
         }
     }
