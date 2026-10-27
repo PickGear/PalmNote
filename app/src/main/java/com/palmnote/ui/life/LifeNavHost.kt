@@ -1,6 +1,7 @@
 package com.palmnote.ui.life
 
 import androidx.compose.animation.*
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -66,10 +67,17 @@ fun LifeNavHost(
         navController = navController,
         startDestination = LifeHome,
         modifier = Modifier,
-        enterTransition = { fadeIn(animationSpec = tween(200)) },
-        exitTransition = { fadeOut(animationSpec = tween(200)) },
-        popEnterTransition = { fadeIn(animationSpec = tween(200)) },
-        popExitTransition = { fadeOut(animationSpec = tween(200)) }
+        // 与根壳层同一套推入式层级转场：子页从右滑入/返回向右滑出，被覆盖页原地淡入淡出
+        enterTransition = {
+            slideInHorizontally(tween(300, easing = FastOutSlowInEasing)) { it } +
+                fadeIn(tween(200))
+        },
+        exitTransition = { fadeOut(tween(200)) },
+        popEnterTransition = { fadeIn(tween(200)) },
+        popExitTransition = {
+            slideOutHorizontally(tween(300, easing = FastOutSlowInEasing)) { it } +
+                fadeOut(tween(200))
+        }
     ) {
         // 生活首页不叠 200ms 淡入：首页卡片有自己的错峰入场动画（AnimatedCard），
         // popEnter 的转场叠加会把入场掩盖掉——与主 tab NavHost 置 None 同一原则。

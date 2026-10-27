@@ -2,6 +2,7 @@ package com.palmnote.ui.navigation
 
 import androidx.annotation.StringRes
 import androidx.compose.animation.*
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -193,10 +194,19 @@ fun PalmNoteNavHost() {
             navController = navController,
             startDestination = MainTabs,
             modifier = Modifier.weight(1f).fillMaxWidth(),
-            enterTransition = { fadeIn(animationSpec = tween(200)) },
-            exitTransition = { fadeOut(animationSpec = tween(200)) },
-            popEnterTransition = { fadeIn(animationSpec = tween(200)) },
-            popExitTransition = { fadeOut(animationSpec = tween(200)) }
+            // 层级导航 = 推入式：子页从右滑入盖住上层、返回时向右滑出；被覆盖的页
+            // （MainTabs/上级子页）原地淡入淡出、不做位移——首页自己的入场动画
+            // （两档制/卡片游行）在 pop 回来时接管，整页位移会跟它打架。
+            enterTransition = {
+                slideInHorizontally(tween(300, easing = FastOutSlowInEasing)) { it } +
+                    fadeIn(tween(200))
+            },
+            exitTransition = { fadeOut(tween(200)) },
+            popEnterTransition = { fadeIn(tween(200)) },
+            popExitTransition = {
+                slideOutHorizontally(tween(300, easing = FastOutSlowInEasing)) { it } +
+                    fadeOut(tween(200))
+            }
         ) {
             // ── Main tabs container ──────────────────────────────────
             composable<MainTabs> {
