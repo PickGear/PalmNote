@@ -408,6 +408,19 @@ class BillViewModel @Inject constructor(
 
     fun setSelectedDay(day: Int?) { _selectedDay.value = day }
 
+    /**
+     * 进入账单页时补默认选中：看的是当月且没有选中日，就选中今天。
+     *
+     * 只在 init 里设一次不够——本页点同一天会取消选中（null），而从其他 tab 切回时
+     * ViewModel 复用、不会重跑 init，于是回来看到的是「整月流水、日历无选中」。
+     * 由页面进入时调用，保证每次进来都是「默认选今天」。
+     */
+    fun ensureTodaySelected() {
+        if (_selectedDay.value == null && _currentYearMonth.value == DateUtils.getCurrentYearMonth()) {
+            _selectedDay.value = DateUtils.getDayOfMonth(System.currentTimeMillis())
+        }
+    }
+
     fun onSearchQueryChanged(query: String) {
         _searchQuery.value = query
         _isSearching.value = query.isNotBlank()

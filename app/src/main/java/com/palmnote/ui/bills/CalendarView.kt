@@ -80,9 +80,16 @@ fun CalendarView(
     }
     val pagerState = rememberPagerState(initialPage = BILL_CAL_CENTER_PAGE) { BILL_CAL_PAGE_COUNT }
     // 周视图（`collapsed`）另起一套「按周分页」的 Pager：基准周 + 居中页，page ↔ 周一一映射，
-    // 与月 Pager 同构。基准周 = 选中日（无选中则当月 1 日）所在的那一周，周首与月历一致取周日。
+    // 与月 Pager 同构。基准周的锚点：看当月就锚**今天所在周**（此前用「选中日 ?: 当月1日」，
+    // 进入时选中尚为 null → 锁到 1 日那周，今天可能落在下一周、屏幕上根本看不到选中态），
+    // 看历史月份则锚当月 1 日。
     val baseWeek = remember {
-        billCalWeekStart(baseMonth.atDay((selectedDay ?: 1).coerceIn(1, baseMonth.lengthOfMonth())))
+        val anchor = if (baseMonth == YearMonth.now()) {
+            LocalDate.now()
+        } else {
+            baseMonth.atDay((selectedDay ?: 1).coerceIn(1, baseMonth.lengthOfMonth()))
+        }
+        billCalWeekStart(anchor)
     }
     val weekPagerState = rememberPagerState(initialPage = BILL_CAL_CENTER_PAGE) { BILL_CAL_PAGE_COUNT }
     val scope = rememberCoroutineScope()

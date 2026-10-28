@@ -68,6 +68,9 @@ fun BillScreen(
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val state by viewModel.state.collectAsStateWithLifecycle()
+    // 每次进入本页补默认选中今天（见 ensureTodaySelected：VM 复用不重跑 init，
+    // 本页取消过选中后切 tab 回来会停在「整月、无选中」）
+    LaunchedEffect(Unit) { viewModel.ensureTodaySelected() }
     val customExpenseCategories by viewModel.customExpenseCategories.collectAsStateWithLifecycle()
     val customIncomeCategories by viewModel.customIncomeCategories.collectAsStateWithLifecycle()
     val allCustomExpenseCategories by viewModel.allCustomExpenseCategories.collectAsStateWithLifecycle()
