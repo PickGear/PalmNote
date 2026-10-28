@@ -131,6 +131,8 @@ fun BillScreen(
 
     var showBookMenu by remember { mutableStateOf(false) }
     var showSearch by remember { mutableStateOf(false) }
+    // 每日小票：点日期行弹出当日流水的热敏小票预览（可保存/分享）
+    var receiptDayKey by remember { mutableStateOf<String?>(null) }
     var showOverflowMenu by remember { mutableStateOf(false) }
 
     BackHandler(enabled = showSearch) {
@@ -662,6 +664,8 @@ fun BillScreen(
                                 ) {
                                     Row(
                                         modifier = Modifier.fillMaxWidth()
+                                            .clip(MaterialTheme.shapes.small)
+                                            .clickable { receiptDayKey = day }
                                             .padding(top = 12.dp, bottom = 4.dp, start = 12.dp, end = 12.dp),
                                         horizontalArrangement = Arrangement.SpaceBetween,
                                         verticalAlignment = Alignment.CenterVertically
@@ -693,6 +697,13 @@ fun BillScreen(
                                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                                 )
                                             }
+                                            // 小票入口：点日期行任意处弹出，图标只作可见暗示
+                                            Icon(
+                                                Icons.AutoMirrored.Outlined.ReceiptLong,
+                                                contentDescription = stringResource(R.string.bill_receipt_title),
+                                                modifier = Modifier.size(16.dp),
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
                                         }
                                     }
                                 }
@@ -779,6 +790,31 @@ fun BillScreen(
             incomeCategories = resolvedIncome + customIncomeCategories,
             presetOverrides = billPresetOverrides
         )
+    }
+
+    // 每日小票：当日流水预览（分类名解析与列表同口径）
+    receiptDayKey?.let { key ->
+        groupedBills[key]?.let { dayBills ->
+            val entries = dayBills.map { b ->
+                DailyReceiptEntry(
+                    bill = b,
+                    categoryName = if (b.type == BillType.TRANSFER) {
+                        stringResource(R.string.bill_transfer)
+                    } else {
+                        resolvePresetCategoryName(billPresetOverrides, b.category, b.type.value, context)
+                    }
+                )
+            }
+            DailyReceiptSheet(
+                dayKey = key,
+                entries = entries,
+                wallets = state.wallets,
+                bookName = currentBook?.name ?: stringResource(R.string.bill_all_books),
+                monthExpense = state.monthlyExpense,
+                monthIncome = state.monthlyIncome,
+                onDismiss = { receiptDayKey = null }
+            )
+        }
     }
 }
 
