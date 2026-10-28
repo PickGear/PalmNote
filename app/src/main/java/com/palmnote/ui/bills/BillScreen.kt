@@ -937,10 +937,16 @@ fun BillListItem(
                 BillItemTrailingColumn(bill, wallets)
             }
         }
-        // 分隔线起点贴齐文字列（12 边距 + 36 图标 + 10 间距）；天块末行不画——
-        // 圆角下边缘再压一条线很难看，且下一天有自己的日期头作分隔。
+        // 分隔线必须显式贴行底：它是外层 Box 的直接子节点，而 Box 的子节点重叠叠放，
+        // 不指定对齐时线会画在**行顶**——于是"行间线"其实是下一行的顶线，末行不画线
+        // 就出现「末行与上一行之间缺线」。起点贴齐文字列（12 边距 + 36 图标 + 10 间距）。
         if (showDivider) {
-            HorizontalDivider(modifier = Modifier.padding(start = 58.dp), color = MaterialTheme.colorScheme.outlineVariant)
+            HorizontalDivider(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(start = 58.dp),
+                color = MaterialTheme.colorScheme.outlineVariant
+            )
         }
     }
 }
