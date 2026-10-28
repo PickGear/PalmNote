@@ -18,14 +18,17 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -91,8 +94,14 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-/** 小票一行：账单 + 已解析的分类名（解析在调用方完成，与列表同口径）。 */
-private const val MAX_PRINTED_ITEMS = 8
+/**
+ * 预览默认印几笔：固定 5 笔。
+ *
+ * 折叠态必须整张纸（含合计、本月累计、条码、落款）一屏可见、不用滑动——
+ * 印太多就得滚动才能看到底部，打印动画的意义也没了。多出的笔数折成
+ * 「另 N 笔」，点一下可以展开看全部；保存/分享始终是完整明细。
+ */
+private const val DEFAULT_PRINTED_ITEMS = 5
 
 // 纸面配色：纯白纸 + 暖调收尾（与弹层米色底拉开明度差，齿形才靠明度自然浮现；
 // 旧值 #FFFEFA 与米色底只差 3% 明度，齿完全看不出来）
@@ -122,10 +131,13 @@ internal fun DailyReceiptSheet(
     monthIncome: Long,
     onDismiss: () -> Unit
 ) {
-    val layer = rememberGraphicsLayer()
     // 打印动画：纸从顶部逐帧「吐出」（可视高度随进度增长），到位后按钮才淡入
     val printProgress = remember { Animatable(0f) }
     var printed by remember { mutableStateOf(false) }
+    // 完整纸的录制层：保存/分享永远导出**全部明细**，与预览截断与否无关
+    val fullLayer = rememberGraphicsLayer()
+    // 「另 N 笔」点开后预览切到完整纸（可滚动查看），不影响打印动画
+    var showFull by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         // 热敏打印机匀速出纸：2s 线性，看得出新内容一行行从缝口冒出来
         printProgress.animateTo(1f, tween(2000, easing = LinearEasing))
@@ -142,36 +154,64 @@ internal fun DailyReceiptSheet(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null
                 ) { onDismiss() },
-            // 整组居中：纸槽高度恒定（占位撑开），打印期间高度不变、居中不漂移
             contentAlignment = Alignment.Center
         ) {
+            // 隐形完整纸：只为录制（保存/分享永远导出全部明细）。
+            // 要点：① forceFull 必须为 true（否则按预览笔数截断）；
+            // ② 节点保持完整尺寸并移出屏幕——不能压成 0×0（graphicsLayer 的 alpha 层
+            //    尺寸等于节点尺寸，0×0 会把内容裁没）；
+            // ③ wrapContentHeight(unbounded) ：Dialog 的屏高约束会截掉纸的下半段
+            //    （条码/落款录不到），这里放开高度上限按内容真实高度测量。
+            Box(
+                modifier = Modifier
+                    .graphicsLayer { alpha = 0.01f }
+                    .offset(x = (-600).dp, y = 0.dp)
+                    .wrapContentHeight(align = Alignment.Top, unbounded = true)
+            ) {
+                Box(modifier = Modifier.recordInto(fullLayer)) {
+                    DailyReceiptPaper(
+                        dayKey = dayKey,
+                        entries = entries,
+                        wallets = wallets,
+                        bookName = bookName,
+                        monthExpense = monthExpense,
+                        monthIncome = monthIncome,
+                        onShowAll = null,
+                        forceFull = true
+                    )
+                }
+            }
             ReceiptDialogContent(
-                layer = layer,
-                dayKey = dayKey,
-                entries = entries,
-                wallets = wallets,
-                bookName = bookName,
-                monthExpense = monthExpense,
-                monthIncome = monthIncome,
+                args = ReceiptArgs(dayKey, entries, wallets, bookName, monthExpense, monthIncome),
+                layer = fullLayer,
                 printProgress = printProgress.value,
-                printed = printed
+                printed = printed,
+                showFull = showFull,
+                onShowFull = { showFull = true }
             )
         }
     }
 }
 
+/** 小票数据的打包（避免对话框参数列表过长）。 */
+private data class ReceiptArgs(
+    val dayKey: String,
+    val entries: List<DailyReceiptEntry>,
+    val wallets: Map<Long, String>,
+    val bookName: String,
+    val monthExpense: Long,
+    val monthIncome: Long
+)
+
 /** 对话框主体：打印机 + 纸（按进度长出）+ 按钮槽（固定高，打完淡入）。 */
 @Composable
 private fun ReceiptDialogContent(
+    args: ReceiptArgs,
     layer: androidx.compose.ui.graphics.layer.GraphicsLayer,
-    dayKey: String,
-    entries: List<DailyReceiptEntry>,
-    wallets: Map<Long, String>,
-    bookName: String,
-    monthExpense: Long,
-    monthIncome: Long,
     printProgress: Float,
-    printed: Boolean
+    printed: Boolean,
+    showFull: Boolean,
+    onShowFull: () -> Unit
 ) {
     val actionsAlpha by animateFloatAsState(
         targetValue = if (printed) 1f else 0f,
@@ -180,8 +220,8 @@ private fun ReceiptDialogContent(
     )
     Column(
         modifier = Modifier
-            .verticalScroll(rememberScrollState())
-            .padding(vertical = 24.dp)
+            .fillMaxHeight()
+            .padding(top = 24.dp)
             // 吞掉点击，避免点内容区误关
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
@@ -189,20 +229,31 @@ private fun ReceiptDialogContent(
             ) {},
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        ReceiptPrinter(
-            layer = layer,
-            printProgress = printProgress,
-            printing = !printed
+        // 滚动区只装小票：机身与按钮在下面固定，滑动时只有纸在动
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            // 纸贴在机身上（内容不足一屏时也贴底）
+            verticalArrangement = Arrangement.Bottom
         ) {
-            DailyReceiptPaper(
-                dayKey = dayKey,
-                entries = entries,
-                wallets = wallets,
-                bookName = bookName,
-                monthExpense = monthExpense,
-                monthIncome = monthIncome
-            )
+            ReceiptPrinter(printProgress = printProgress) {
+                DailyReceiptPaper(
+                    dayKey = args.dayKey,
+                    entries = args.entries,
+                    wallets = args.wallets,
+                    bookName = args.bookName,
+                    monthExpense = args.monthExpense,
+                    monthIncome = args.monthIncome,
+                    onShowAll = if (showFull) null else onShowFull,
+                    forceFull = showFull
+                )
+            }
         }
+        // 固定底部：打印机机身 + 按钮（不随小票滚动）
+        PrinterBody(printing = !printed)
         Spacer(Modifier.height(16.dp))
         // 按钮槽固定 48dp：显示/隐藏不改变整组高度，打印期间画面不跳动
         Box(
@@ -212,25 +263,22 @@ private fun ReceiptDialogContent(
                 .padding(horizontal = 32.dp)
                 .alpha(actionsAlpha)
         ) {
-            if (printed) ReceiptActions(layer, dayKey)
+            if (printed) ReceiptActions(layer, args.dayKey)
         }
+        Spacer(Modifier.height(24.dp))
     }
 }
 
 /**
- * 打印机出纸：机身（打印中显示，打完淡出）+ 纸面按进度从缝里长出。
+ * 打印机出纸：机身固定在滚动区外、纸在滚动区内按进度从缝口长出。
  *
- * - 纸面锚顶、容器高度随进度增长 → 先露店头、再逐行吐出；
- * - layout 的容器宽度取**父给的 maxWidth**（早前用子节点自然宽，导致纸不居中），
- *   纸在其中水平居中；
- * - 录制层在裁剪容器内部：GraphicsLayer 记录子节点自身绘制，不受父级 clip 影响，
- *   保存/分享拿到的仍是完整小票。
+ * - 纸槽高度恒定（占位撑开），纸在其中整体向上平移、超出部分裁掉：
+ *   先出头（店头先出现），落款最后从缝口冒出；
+ * - 位移走 graphicsLayer 图层属性，逐帧必然生效（布局/重组路径曾导致真机不更新）。
  */
 @Composable
 private fun ReceiptPrinter(
-    layer: androidx.compose.ui.graphics.layer.GraphicsLayer,
     printProgress: Float,
-    printing: Boolean,
     content: @Composable () -> Unit
 ) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -256,12 +304,10 @@ private fun ReceiptPrinter(
                         },
                     contentAlignment = Alignment.TopCenter
                 ) {
-                    Box(modifier = Modifier.recordInto(layer)) { content() }
+                    content()
                 }
             }
         }
-        // 机身：在纸下方，出纸缝朝上（打印全程位置固定）
-        PrinterBody(printing = printing)
     }
 }
 
@@ -391,8 +437,14 @@ private fun DailyReceiptPaper(
     wallets: Map<Long, String>,
     bookName: String,
     monthExpense: Long,
-    monthIncome: Long
+    monthIncome: Long,
+    /** 「另 N 笔」的可点回调；null 表示不显示入口（隐形录制层/已展开时）。 */
+    onShowAll: (() -> Unit)? = null,
+    /** true = 不分页，印全部明细（预览展开态与隐形录制层用）。 */
+    forceFull: Boolean = false
 ) {
+    // forceFull：预览展开「全部」或隐形录制层时不分页，印全部明细
+    val maxItems = if (forceFull) Int.MAX_VALUE else DEFAULT_PRINTED_ITEMS
     val paper = Brush.verticalGradient(listOf(PaperTop, PaperBottom))
     val dayExpense = entries.filter { it.bill.type == BillType.EXPENSE }.sumOf { it.bill.amount }
     val dayIncome = entries.filter { it.bill.type == BillType.INCOME }.sumOf { it.bill.amount }
@@ -410,19 +462,35 @@ private fun DailyReceiptPaper(
             ReceiptHeader(entries, bookName)
             DoubleRule()
             // 纸质小票印不下几十笔：超过 9 笔截断到前 8 笔 + 省略行（合计仍按全日算）
-            val shown = sorted.take(MAX_PRINTED_ITEMS)
+            val shown = sorted.take(maxItems)
             shown.forEachIndexed { index, entry ->
                 ReceiptItem(index, entry, wallets)
                 if (index != shown.lastIndex) DashedDivider()
             }
             if (sorted.size > shown.size) {
-                Text(
-                    stringResource(R.string.bill_receipt_more_items, sorted.size - shown.size),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = InkLight,
-                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                )
+                val moreText = stringResource(R.string.bill_receipt_more_items, sorted.size - shown.size)
+                if (onShowAll != null) {
+                    // 可点展开：点一下预览切到完整纸（外层可滚动查看全部明细）
+                    Text(
+                        text = moreText,
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Medium,
+                        color = Ink,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 4.dp)
+                            .clickable { onShowAll() },
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    )
+                } else {
+                    Text(
+                        text = moreText,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = InkLight,
+                        modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    )
+                }
             }
             DoubleRule()
             ReceiptTotals(dayExpense, dayIncome, dayIncome - dayExpense)
