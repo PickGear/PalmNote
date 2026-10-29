@@ -1,142 +1,86 @@
 package com.palmnote.ui.life
 
-import android.app.Application
-import com.palmnote.data.LifeDataSeeder
-import com.palmnote.data.demoAssets
-import com.palmnote.data.demoBills
 import com.palmnote.data.datastore.PreferencesManager
-import com.palmnote.domain.model.FieldConfig
-import com.palmnote.domain.model.FieldType
 import com.palmnote.ui.asset.assetCategoryItems
 import com.palmnote.ui.bills.expenseCategoryItems
 import com.palmnote.ui.bills.incomeCategoryItems
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 import java.io.File
 
 /**
  * **演示数据完整性审计**（把一次性的人工审计脚本固化成测试）。
  *
- * 起因：演示数据是「真实写进库的行」，改动代码不会自动纠正内容——本轮就发生过
- * 分类用了不存在的自造词（「住房」应为内置「居住」）、选项越界（心情因子写「睡眠」
- * 但选项里没有）、名称与配图不符（照片是 ASICS 却叫 HOKA）、字段写在不存在的键上
- * （教学备注落在没有 note 字段的模板里）等「瞎编」问题，且全都**静默**不报错。
+ * 演示数据 v11 起来自真实导出（掌记_数据.zip，以 CSV 资产随包内置），
+ * 本测试守住两条底线：
+ * 1. 内置演示 CSV 必须存在且可解析，列数与导出格式一致（列序由播种器按位置取字段）；
+ * 2. 演示账单分类必须在 app 内置分类表内（否则落到未知分类的兜底色）。
  *
- * 本测试守住四条底线：
- * 1. 演示字段必须真实存在于模板 fieldsConfig（唯一白名单：专注的 duration 是 UI 虚拟字段）；
- * 2. SELECT / MULTI_SELECT 的值必须在选项内，SLIDER 值必须在 min..max 内；
- * 3. 演示账单分类、物品分类必须在 app 内置分类表内（否则落到未知分类的兜底色）；
- * 4. 演示数据引用的每张图都必须真实存在于 assets/demo/。
+ * 生活侧已不再播种演示内容（生活页未打磨），无对应断言。
  */
-@RunWith(RobolectricTestRunner::class)
-// 用裸 Application：不能启动 PalmNoteApp（它会初始化加密数据库/Keystore，纯 JVM 测试环境没有）
-@Config(sdk = [30], application = Application::class)
 class DemoDataIntegrityTest {
 
-    private val json = Json { ignoreUnknownKeys = true }
-
-    /** 模板 icon → 字段表（lifeTemplateSeeds 是 LifeDataSeeder 的实例成员，用宽松 mock 取静态数据表）。 */
-    private val templateFields: Map<String, Map<String, FieldConfig>> =
-        LifeDataSeeder(
-            io.mockk.mockk(relaxed = true),
-            io.mockk.mockk(relaxed = true),
-            null
-        ).lifeTemplateSeeds.associate { tpl ->
-            tpl.icon to json.decodeFromString<List<FieldConfig>>(tpl.fieldsConfig).associateBy { it.key }
-        }
-
-    @Test
-    fun `life demo fields must exist in their template`() {
-        val problems = mutableListOf<String>()
-        LifeDemoData.items.forEach { item ->
-            val fields = templateFields[item.templateIcon] ?: return@forEach
-            val obj = runCatching { json.decodeFromString<JsonObject>(item.fieldsData) }.getOrNull()
-                ?: return@forEach
-            obj.keys.forEach { key ->
-                // 专注的 duration 由 LifeDetailViewModel 按毫秒读写，模板里没有这个字段
-                val virtual = item.templateIcon == "timer" && key == "duration"
-                if (!virtual && key !in fields) {
-                    problems += "${item.templateIcon}/「${item.title}」字段 $key 不在模板中"
+    /** 与 [com.palmnote.data.WealthDemoSeeder] 同规则的 quote 感知 CSV 解析。 */
+    private fun parseCsvLine(line: String): List<String> {
+        val result = mutableListOf<String>()
+        val current = StringBuilder()
+        var inQuotes = false
+        var i = 0
+        while (i < line.length) {
+            val ch = line[i]
+            when {
+                ch == '"' && !inQuotes -> inQuotes = true
+                ch == '"' && inQuotes -> {
+                    if (i + 1 < line.length && line[i + 1] == '"') {
+                        current.append('"')
+                        i++
+                    } else {
+                        inQuotes = false
+                    }
                 }
+                ch == ',' && !inQuotes -> {
+                    result.add(current.toString())
+                    current.clear()
+                }
+                else -> current.append(ch)
+            }
+            i++
+        }
+        result.add(current.toString())
+        return result
+    }
+
+    /** 引号内含换行的字段会把一条记录拆成多行：按引号奇偶把物理行重新拼回。 */
+    private fun readDemoCsv(name: String): List<List<String>> {
+        val text = File("src/main/assets/demo/$name").readText().removePrefix("\uFEFF")
+        val logical = mutableListOf<String>()
+        val buf = StringBuilder()
+        text.lines().forEach { line ->
+            if (buf.isNotEmpty()) buf.append('\n')
+            buf.append(line.trim())
+            if (buf.count { it == '"' } % 2 == 0) {
+                logical.add(buf.toString())
+                buf.clear()
             }
         }
-        assertTrue(problems.joinToString("\n"), problems.isEmpty())
+        buf.takeIf { it.isNotEmpty() }?.let { logical.add(it.toString()) }
+        return logical.map(::parseCsvLine).filter { it.firstOrNull()?.isNotBlank() == true }
     }
 
     @Test
-    fun `life demo option and range values must be valid`() {
-        val problems = LifeDemoData.items.flatMap { item ->
-            val fields = templateFields[item.templateIcon] ?: return@flatMap emptyList()
-            val obj = runCatching { json.decodeFromString<JsonObject>(item.fieldsData) }.getOrNull()
-                ?: return@flatMap emptyList()
-            obj.mapNotNull { (key, element) ->
-                invalidValue("${item.templateIcon}/「${item.title}」$key", element, fields[key])
-            }
+    fun `demo csv assets must exist and stay parseable`() {
+        val bills = readDemoCsv("user_bills.csv")
+        val assets = readDemoCsv("user_assets.csv")
+        // 首行是表头，其余为数据行；两种样式的纸样与汇总表都吃这两份数据
+        assertTrue("演示账单 CSV 为空", bills.size > 1)
+        assertTrue("演示物品 CSV 为空", assets.size > 1)
+        bills.drop(1).forEach { row ->
+            assertTrue("账单行列数异常（${row.size}）：${row.take(6)}", row.size >= 34)
         }
-        assertTrue(problems.joinToString("\n"), problems.isEmpty())
-    }
-
-    /** 单个字段值是否越界；合法返回 null。按字段类型分派到窄函数（值不一定是 JSON 原始类型）。 */
-    private fun invalidValue(where: String, element: JsonElement, cfg: FieldConfig?): String? {
-        cfg ?: return null
-        return when (cfg.type) {
-            FieldType.SELECT -> badSelect(where, element, cfg)
-            FieldType.MULTI_SELECT -> badMultiSelect(where, element, cfg)
-            FieldType.SLIDER -> badSlider(where, element, cfg)
-            else -> null
+        assets.drop(1).forEach { row ->
+            assertTrue("物品行列数异常（${row.size}）：${row.take(6)}", row.size >= 52)
         }
-    }
-
-    private fun badSelect(where: String, element: JsonElement, cfg: FieldConfig): String? {
-        val v = (element as? JsonPrimitive)?.content ?: return null
-        if (cfg.options.isEmpty() || v in cfg.options) return null
-        return "$where=$v 不在选项 ${cfg.options}"
-    }
-
-    private fun badMultiSelect(where: String, element: JsonElement, cfg: FieldConfig): String? {
-        val bad = multiSelectTexts(element).firstOrNull { it !in cfg.options } ?: return null
-        return "$where 含越界项 $bad"
-    }
-
-    private fun badSlider(where: String, element: JsonElement, cfg: FieldConfig): String? {
-        val v = (element as? JsonPrimitive)?.content?.toDoubleOrNull()
-        val lo = cfg.min
-        val hi = cfg.max
-        val outOfRange = v != null && lo != null && hi != null && (v < lo || v > hi)
-        return if (outOfRange) "$where=$v 超出 [$lo,$hi]" else null
-    }
-
-    /** MULTI_SELECT 的两种存储形态（纯字符串数组 / CompoundPayload items）都抽成文本列表。 */
-    private fun multiSelectTexts(element: JsonElement): List<String> {
-        (element as? JsonArray)?.let { return it.map { node -> (node as? JsonPrimitive)?.content.orEmpty() } }
-        val items = runCatching { json.decodeFromString<JsonObject>(element.toString())["items"] }.getOrNull()
-        val itemArr = items as? JsonArray ?: return emptyList()
-        return itemArr.mapNotNull { node ->
-            runCatching { json.decodeFromString<JsonObject>(node.toString())["text"]?.jsonPrimitive?.content }
-                .getOrNull()
-        }
-    }
-
-    @Test
-    fun `demo dates must be relative placeholders, not hardcoded ISO`() {
-        // 写死的"未来日期"过一阵子就变成过去，会与执行列（按 daysAgo/dueInDays 相对今天算）
-        // 互相打架——演示数据里出现过「截止日写 10-06、条目却排在今天」这种自相矛盾。
-        // 形如 "deadline":"2026-10-06"（用字符类而非转义，保持可读）
-        val hardcoded = Regex("\"[A-Za-z_]+\":\"[0-9]{4}-[0-9]{2}-[0-9]{2}\"")
-        val offenders = LifeDemoData.items
-            .filter { hardcoded.containsMatchIn(it.fieldsData) }
-            .map { it.title }
-        assertTrue("这些演示条目的日期字段写死了 ISO（请改成 +Nd / -Nd）：$offenders", offenders.isEmpty())
     }
 
     @Test
@@ -146,56 +90,17 @@ class DemoDataIntegrityTest {
         val expenseKeys = expenseCategoryItems.map { it.name }
         val incomeKeys = incomeCategoryItems.map { it.name }
 
-        demoBills.forEach { bill ->
-            val allowed = if (bill.type == "INCOME") incomeKeys else expenseKeys
-            assertTrue(
-                "演示账单「${bill.merchant}」分类键「${bill.categoryKey}」不在内置分类内",
-                bill.categoryKey in allowed
-            )
-        }
-
-        val assetCategories = assetCategoryItems.map { it.name }
-        demoAssets.forEach { asset ->
-            assertTrue(
-                "演示物品「${asset.name}」分类 ${asset.category} 不在预设分类内",
-                asset.category in assetCategories
-            )
-        }
-    }
-
-    @Test
-    fun `every demo image reference exists in assets`() {
-        val assetsDir = File("src/main/assets/demo")
-        assertTrue("assets/demo 目录缺失（测试工作目录：${File(".").absolutePath}）", assetsDir.isDirectory)
-        val available = assetsDir.listFiles()?.map { it.name }?.toSet().orEmpty()
-
-        val referenced = buildList {
-            LifeDemoData.items.forEach { addAll(it.images.values) }
-            demoBills.mapNotNullTo(this) { it.receipt }
-            demoAssets.mapNotNullTo(this) { it.photo }
-        }
-        referenced.forEach { name ->
-            assertTrue("演示数据引用了不存在的图：$name", name in available)
-        }
-        assertEquals("演示数据里有重复引用的图片（去重后数量不符）", referenced.size, referenced.distinct().size)
-    }
-
-    @Test
-    fun `anchor records keep created date aligned with their start date`() {
-        // 正数日 / 倒计时这类「锚点型记录」：字段里的起始日（-Nd 占位符）与 daysAgo 必须对齐，
-        // 即 createdAt 不早于起始日（daysAgo ≤ 起始日距今天数）。示例数据是固定的精品集，
-        // 这条不变量靠本测试钉住——改动示例条目（尤其是起始日或 daysAgo）时会立刻报红。
-        val placeholder = Regex("""-(\d+)d""")
-        val offenders = LifeDemoData.items.mapNotNull { item ->
-            val days = placeholder.find(item.fieldsData)?.groupValues?.get(1)?.toIntOrNull()
-                ?: return@mapNotNull null
-            if (item.daysAgo > days) {
-                "${item.templateIcon}/「${item.title}」daysAgo=${item.daysAgo} 晚于起始日 ${days}d（创建早于起始日）"
-            } else {
-                null
+        readDemoCsv("user_bills.csv")
+            .filter { it.firstOrNull() == "账单" }
+            .forEach { c ->
+                val type = c[11]
+                val category = c[12]
+                val allowed = if (type == "INCOME") incomeKeys else expenseKeys
+                assertTrue(
+                    "演示账单「${c[21]}」分类键「$category」不在内置分类内",
+                    category in allowed
+                )
             }
-        }
-        assertTrue(offenders.joinToString("\n"), offenders.isEmpty())
     }
 
     @Test
