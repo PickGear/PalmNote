@@ -125,11 +125,6 @@ class BillViewModel @Inject constructor(
     private val _formState = MutableStateFlow(AddBillFormState())
     val formState: StateFlow<AddBillFormState> = _formState.asStateFlow()
 
-    /** 待报销支出：录入「报销」分类的收入时供勾选关联。 */
-    val pendingReimbursements: StateFlow<List<Bill>> =
-        billRepository.getUnreimbursedBills()
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-
     // 本次会话新建的图片文件（保存成功后统一清理，避免取消编辑留下孤儿文件）
     private val pendingNewFiles = mutableSetOf<String>()
 
@@ -145,6 +140,17 @@ class BillViewModel @Inject constructor(
     private val _searchResults = MutableStateFlow<List<Bill>>(emptyList())
 
     // ============ Derived reactive data ============
+
+    /**
+     * 待报销支出：录入「报销」分类的收入时供勾选关联 + 列表首项提示卡。
+     * 提示卡只跟当前账本走：选中具体账本只显示该本的待报销，全部账本才显示全部；
+     * 报销管理页与分摊勾选仍走仓库的全局查询，不受此过滤影响。
+     */
+    val pendingReimbursements: StateFlow<List<Bill>> =
+        combine(billRepository.getUnreimbursedBills(), _selectedBookId) { bills, bookId ->
+            if (bookId == AccountBook.ALL_BOOKS_ID) bills
+            else bills.filter { it.accountBookId == bookId }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val wallets: StateFlow<List<Wallet>> = cachedWallets
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
