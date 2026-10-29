@@ -611,7 +611,7 @@ fun BillScreen(
                                     remaining = pendingReimburseRemaining,
                                     // 列表 contentPadding 已给 16dp 页边距；不再加内边距，
                                     // 让卡片与上方日历卡左右对齐（列表行才缩进 12dp）。
-                                    modifier = Modifier.padding(top = 4.dp, bottom = 4.dp),
+                                    modifier = Modifier.padding(top = 0.dp, bottom = 4.dp),
                                     onClick = onNavigateToReimbursement
                                 )
                             }
@@ -670,7 +670,7 @@ fun BillScreen(
                                         modifier = Modifier.fillMaxWidth()
                                             .clip(MaterialTheme.shapes.small)
                                             .clickable { receiptDayKey = day }
-                                            .padding(top = 12.dp, bottom = 4.dp, start = 12.dp, end = 12.dp),
+                                            .padding(top = 4.dp, bottom = 4.dp, start = 12.dp, end = 12.dp),
                                         horizontalArrangement = Arrangement.SpaceBetween,
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
