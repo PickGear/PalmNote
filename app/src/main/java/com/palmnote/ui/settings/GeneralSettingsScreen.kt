@@ -78,6 +78,7 @@ private fun wallpaperLabelRes(id: String): Int = when (id) {
 @Composable
 fun GeneralSettingsScreen(
     onNavigateBack: () -> Unit,
+    onNavigateToReceiptStyle: () -> Unit,
     viewModel: SettingsViewModel
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -126,6 +127,10 @@ fun GeneralSettingsScreen(
     val languageLabels = mapOf("SYSTEM" to stringResource(R.string.settings_follow_system), "zh" to stringResource(R.string.settings_language_chinese), "en" to stringResource(R.string.settings_language_english))
     val startPages = mapOf("dashboard" to stringResource(R.string.settings_home), "asset" to stringResource(R.string.settings_items), "bill" to stringResource(R.string.bill_title), "life" to stringResource(R.string.life_title))
     val billTypes = mapOf(BillType.EXPENSE.value to stringResource(R.string.settings_bill_expense), BillType.INCOME.value to stringResource(R.string.settings_bill_income))
+    val receiptStyleLabels = mapOf(
+        PreferencesManager.RECEIPT_STYLE_DETAIL to stringResource(R.string.settings_receipt_style_detail),
+        PreferencesManager.RECEIPT_STYLE_SUMMARY to stringResource(R.string.settings_receipt_style_summary)
+    )
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -249,6 +254,14 @@ fun GeneralSettingsScreen(
                                 viewModel.setCalendarSyncEnabled(enabled)
                             }
                         }, checkedTrackColor = MaterialTheme.colorScheme.primary)
+                    }
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                    SettingRow(clickable = onNavigateToReceiptStyle) {
+                        SettingRowContent(
+                            title = stringResource(R.string.settings_receipt_style),
+                            value = receiptStyleLabels[state.receiptStyle] ?: stringResource(R.string.settings_receipt_style_detail),
+                            showChevron = true
+                        )
                     }
                 }
             }

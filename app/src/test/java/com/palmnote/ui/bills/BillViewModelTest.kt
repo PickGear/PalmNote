@@ -76,6 +76,8 @@ class BillViewModelTest {
         every { accountBookRepository.getAllBooksIncludingHidden() } returns flowOf(emptyList())
         every { preferencesManager.defaultBillType } returns flowOf("EXPENSE")
         every { preferencesManager.presetCategoryOverrides } returns flowOf(emptyMap())
+        // 小票样式：VM 构造时即订阅（stateIn），未打桩会抛 no answer found
+        every { preferencesManager.receiptStyle } returns flowOf(PreferencesManager.RECEIPT_STYLE_DETAIL)
 
         viewModel = BillViewModel(
             context, SavedStateHandle(), cachedWallets, cachedCategoryConfigs, cachedAccountBooks,

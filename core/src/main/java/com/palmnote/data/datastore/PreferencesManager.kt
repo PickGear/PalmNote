@@ -68,6 +68,11 @@ class PreferencesManager @Inject constructor(
         val DEFAULT_START_PAGE = stringPreferencesKey("default_start_page")
         val LANGUAGE = stringPreferencesKey("language")
 
+        /** 每日小票的纸面样式：明细流水 / 分类汇总（账单页点日期行弹出的小票）。 */
+        const val RECEIPT_STYLE_DETAIL = "detail"
+        const val RECEIPT_STYLE_SUMMARY = "summary"
+        val RECEIPT_STYLE = stringPreferencesKey("receipt_style")
+
         /**
          * 旧版语言方案的一次性迁移标记（v1.4.1 前：语言存 DataStore 且启动时手动恢复）。
          * 迁移完成后语言持久化归系统/AppCompat 管（见 LanguageHelper），此键只防重复回灌。
@@ -481,6 +486,12 @@ class PreferencesManager @Inject constructor(
 
     suspend fun setLanguage(lang: String) {
         context.dataStore.edit { it[LANGUAGE] = lang }
+    }
+
+    val receiptStyle: Flow<String> = prefsFlow.map { it[RECEIPT_STYLE] ?: RECEIPT_STYLE_DETAIL }
+
+    suspend fun setReceiptStyle(style: String) {
+        context.dataStore.edit { it[RECEIPT_STYLE] = style }
     }
 
     /** 仅在启动迁移时置 true（见 LanguageHelper.syncStoredLanguageFromSystem），此后不再读取。 */

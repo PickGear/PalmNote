@@ -66,6 +66,7 @@ import com.palmnote.ui.settings.DataExchangeScreen
 import com.palmnote.ui.settings.DataStorageScreen
 import com.palmnote.ui.settings.GeneralSettingsScreen
 import com.palmnote.ui.settings.LicenseScreen
+import com.palmnote.ui.settings.ReceiptStyleScreen
 import com.palmnote.ui.settings.ManageCategoryScreen
 import com.palmnote.ui.settings.PrivacyPolicyScreen
 import com.palmnote.ui.settings.RecycleBinScreen
@@ -390,6 +391,14 @@ fun PalmNoteNavHost() {
 
             composable<GeneralSettings> {
                 GeneralSettingsScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    onNavigateToReceiptStyle = { navController.navigate(ReceiptStyleSettings) },
+                    viewModel = hiltViewModel()
+                )
+            }
+
+            composable<ReceiptStyleSettings> {
+                ReceiptStyleScreen(
                     onNavigateBack = { navController.popBackStack() },
                     viewModel = hiltViewModel()
                 )

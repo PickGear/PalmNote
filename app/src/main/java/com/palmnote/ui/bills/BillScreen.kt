@@ -73,6 +73,7 @@ fun BillScreen(
     LaunchedEffect(Unit) { viewModel.ensureTodaySelected() }
     val customExpenseCategories by viewModel.customExpenseCategories.collectAsStateWithLifecycle()
     val customIncomeCategories by viewModel.customIncomeCategories.collectAsStateWithLifecycle()
+    val receiptStyle by viewModel.receiptStyle.collectAsStateWithLifecycle()
     val allCustomExpenseCategories by viewModel.allCustomExpenseCategories.collectAsStateWithLifecycle()
     val allCustomIncomeCategories by viewModel.allCustomIncomeCategories.collectAsStateWithLifecycle()
     val billPresetOverrides by viewModel.presetCategoryOverrides.collectAsStateWithLifecycle()
@@ -809,6 +810,7 @@ fun BillScreen(
                 )
             }
             DailyReceiptSheet(
+                style = receiptStyle,
                 dayKey = key,
                 entries = entries,
                 wallets = state.wallets,

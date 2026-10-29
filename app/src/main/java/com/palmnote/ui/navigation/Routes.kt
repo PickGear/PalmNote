@@ -97,6 +97,10 @@ data object DataExchange
 @Serializable
 data object GeneralSettings
 
+/** 小票样式选择：两种纸样全尺寸展示，点选切换。 */
+@Serializable
+data object ReceiptStyleSettings
+
 @Serializable
 data object ReminderSettings
 

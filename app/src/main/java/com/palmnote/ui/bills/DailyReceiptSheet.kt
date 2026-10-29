@@ -62,6 +62,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.drawscope.Fill
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
@@ -73,6 +74,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.palmnote.app.R
+import com.palmnote.data.datastore.PreferencesManager
 import com.palmnote.data.db.entity.Bill
 import com.palmnote.domain.model.BillType
 import com.palmnote.domain.model.toMoney
@@ -93,6 +95,7 @@ import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.math.roundToInt
 
 /**
  * 预览默认印几笔：固定 5 笔。
@@ -103,12 +106,24 @@ import java.util.Locale
  */
 private const val DEFAULT_PRINTED_ITEMS = 5
 
-// 纸面配色：纯白纸 + 暖调收尾（与弹层米色底拉开明度差，齿形才靠明度自然浮现；
-// 旧值 #FFFEFA 与米色底只差 3% 明度，齿完全看不出来）
-private val PaperTop = Color(0xFFFFFFFF)
-private val PaperBottom = Color(0xFFFBF6EC)
-private val Ink = Color(0xFF3D3A33)
-private val InkLight = Ink.copy(alpha = 0.55f)
+// 纸面配色：暖白纯色（用户定稿：不要渐变）；与黑遮罩拉开明度差，齿形靠明度自然浮现
+internal val PaperColor = Color(0xFFFDFBF5)
+internal val Ink = Color(0xFF3D3A33)
+
+// 打印机壳面：浅银灰磨砂（黑遮罩上靠明度差立得住）；顶边中段下沉 ShellNotchDepth 形成出纸缺口
+private val ShellTop = Color(0xFFEAE8EC)
+private val ShellBottom = Color(0xFFD9D7DB)
+private val ShellNotchDepth = 10.dp
+private val ExitStripHeight = 3.dp
+private val ShellHeight = 34.dp
+
+// 中段壳面比整机矮 ShellNotchDepth：渐变按它在整机里的真实纵向位置对齐，
+// 中段与两肩的壳面颜色才连成一体、看不出拼接
+private val ShellMouthBrush = Brush.verticalGradient(
+    0f to lerp(ShellTop, ShellBottom, ShellNotchDepth.value / ShellHeight.value),
+    1f to ShellBottom
+)
+internal val InkLight = Ink.copy(alpha = 0.55f)
 private val PaperRule = Ink.copy(alpha = 0.30f)
 
 /**
@@ -123,6 +138,7 @@ private val PaperRule = Ink.copy(alpha = 0.30f)
  */
 @Composable
 internal fun DailyReceiptSheet(
+    style: String,
     dayKey: String,
     entries: List<DailyReceiptEntry>,
     wallets: Map<Long, String>,
@@ -169,19 +185,20 @@ internal fun DailyReceiptSheet(
                     .wrapContentHeight(align = Alignment.Top, unbounded = true)
             ) {
                 Box(modifier = Modifier.recordInto(fullLayer)) {
-                    DailyReceiptPaper(
+                    ReceiptPaperFor(
+                        style = style,
                         dayKey = dayKey,
                         entries = entries,
                         wallets = wallets,
                         bookName = bookName,
                         monthExpense = monthExpense,
                         monthIncome = monthIncome,
-                        onShowAll = null,
                         forceFull = true
                     )
                 }
             }
             ReceiptDialogContent(
+                style = style,
                 args = ReceiptArgs(dayKey, entries, wallets, bookName, monthExpense, monthIncome),
                 layer = fullLayer,
                 printProgress = printProgress.value,
@@ -206,6 +223,7 @@ private data class ReceiptArgs(
 /** 对话框主体：打印机 + 纸（按进度长出）+ 按钮槽（固定高，打完淡入）。 */
 @Composable
 private fun ReceiptDialogContent(
+    style: String,
     args: ReceiptArgs,
     layer: androidx.compose.ui.graphics.layer.GraphicsLayer,
     printProgress: Float,
@@ -221,7 +239,8 @@ private fun ReceiptDialogContent(
     Column(
         modifier = Modifier
             .fillMaxHeight()
-            .padding(top = 24.dp)
+            // 40dp：纸的锯齿不顶状态栏，顶部留一口气
+            .padding(top = 40.dp)
             // 吞掉点击，避免点内容区误关
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
@@ -240,7 +259,8 @@ private fun ReceiptDialogContent(
             verticalArrangement = Arrangement.Bottom
         ) {
             ReceiptPrinter(printProgress = printProgress) {
-                DailyReceiptPaper(
+                ReceiptPaperFor(
+                    style = style,
                     dayKey = args.dayKey,
                     entries = args.entries,
                     wallets = args.wallets,
@@ -252,9 +272,14 @@ private fun ReceiptDialogContent(
                 )
             }
         }
-        // 固定底部：打印机机身 + 按钮（不随小票滚动）
-        PrinterBody(printing = !printed)
-        Spacer(Modifier.height(16.dp))
+        // 固定底部：打印机机身 + 按钮（不随小票滚动）。
+        // 机身上移 9dp：小票尾部收进凹陷缺口、缩在灰色出口条后 2dp，出口条在小票下方露出 3dp；
+        // 上移量小于纸 14dp 的底部内边距，落款不受影响。Spacer 相应补偿，视觉间距不变。
+        PrinterBody(
+            printing = !printed,
+            modifier = Modifier.offset(y = (-9).dp)
+        )
+        Spacer(Modifier.height(7.dp))
         // 按钮槽固定 48dp：显示/隐藏不改变整组高度，打印期间画面不跳动
         Box(
             modifier = Modifier
@@ -311,49 +336,51 @@ private fun ReceiptPrinter(
     }
 }
 
-/** 打印机机身：底座式壳体，**出纸缝在上边缘**（纸从缝里向上出）+ 指示灯 + 装饰横条。 */
+/**
+ * 打印机机身：浅银灰磨砂壳（黑遮罩上靠明度差立得住）。
+ * 顶边不是一条平线：左右凸肩高出中间 10dp，中间下沉的部分就是出纸缺口，
+ * 小票末端没进口内、从两肩之间钻出来（两端突出、与出口不平齐）。
+ */
 @Composable
-private fun PrinterBody(printing: Boolean) {
-    val pulse = rememberInfiniteTransition(label = "printerLamp")
-    val breathing by pulse.animateFloat(
-        initialValue = 0.2f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(520), RepeatMode.Reverse),
-        label = "printerLampAlpha"
-    )
-    Box(
-        modifier = Modifier
-            // 机身比纸（300dp）略宽，左右各多出 10dp：像机器比纸口宽、纸从中间吐出
-            .width(320.dp)
-            .height(34.dp)
-            .clip(
-                RoundedCornerShape(
-                    topStart = 5.dp,
-                    topEnd = 5.dp,
-                    bottomStart = 10.dp,
-                    bottomEnd = 10.dp
-                )
-            )
-            .background(Brush.verticalGradient(listOf(Color(0xFF3A3630), Color(0xFF211F1B))))
-    ) {
-        // 出纸缝：贴**上边缘**（出票口朝上，纸从这条缝里冒出来）
+private fun PrinterBody(printing: Boolean, modifier: Modifier = Modifier) {
+    // 机身比纸（300dp）略宽，左右各多出 15dp：两肩在纸两侧，纸从中间的缺口出
+    Box(modifier = modifier.width(330.dp).height(ShellHeight)) {
+        // 缺口底板：只垫缺口底部 3dp——灰色出口条在小票末端的下方露出，
+        // 纸尾缩在它后面 2dp（防发丝缝）；缺口上半段透出纸面与背景
         Box(
             Modifier
                 .align(Alignment.TopCenter)
-                .fillMaxWidth()
-                .padding(horizontal = 14.dp)
-                .height(6.dp)
-                .background(Color(0xFF0F0D0A))
+                .padding(top = ShellNotchDepth - ExitStripHeight)
+                .width(300.dp)
+                .height(ExitStripHeight)
+                .background(Color(0xFFC9C7CC))
         )
-        // 指示灯：左下角（打印中呼吸，打完常亮弱光）
+        // 中段壳面：顶边下沉形成出纸缺口，与纸同宽，纸的末端没进口内
         Box(
             Modifier
-                .align(Alignment.BottomStart)
-                .padding(start = 14.dp, bottom = 9.dp)
-                .size(6.dp)
-                .clip(CircleShape)
-                .background(StatusActive.copy(alpha = if (printing) breathing else 0.35f))
+                .align(Alignment.BottomCenter)
+                .fillMaxHeight()
+                .padding(top = ShellNotchDepth)
+                .width(300.dp)
+                .background(ShellMouthBrush)
         )
+        PrinterShoulder(isLeft = true, modifier = Modifier.align(Alignment.TopStart))
+        PrinterShoulder(isLeft = false, modifier = Modifier.align(Alignment.TopEnd))
+        PrinterMouthShading(modifier = Modifier.align(Alignment.TopCenter))
+        // 底边环境光遮蔽：机身落地的一圈微暗，底部不至于轻飘飘
+        Box(
+            Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .height(4.dp)
+                .background(
+                    Brush.verticalGradient(
+                        listOf(Color.Transparent, Color.Black.copy(alpha = 0.10f))
+                    ),
+                    RoundedCornerShape(bottomStart = 10.dp, bottomEnd = 10.dp)
+                )
+        )
+        PrinterLamp(printing = printing, modifier = Modifier.align(Alignment.BottomStart))
         // 底部装饰横条（机身"铭牌"）
         Box(
             Modifier
@@ -362,7 +389,106 @@ private fun PrinterBody(printing: Boolean) {
                 .width(72.dp)
                 .height(3.dp)
                 .clip(RoundedCornerShape(2.dp))
-                .background(Color(0xFF4A4640))
+                .background(Color(0xFFC2C0C5))
+        )
+    }
+}
+
+/** 左右凸肩：比出纸缺口高 ShellNotchDepth，出口两端「突出、不平齐」。宽 16dp = 15dp + 1dp 叠压在中段上——15dp 在屏上非整数像素，两块矩形平铺会漏出一条发丝缝（背后暗色透出来像一根线），叠压后缝不可能存在。 */
+@Composable
+private fun PrinterShoulder(isLeft: Boolean, modifier: Modifier = Modifier) {
+    val shape = if (isLeft) {
+        RoundedCornerShape(topStart = 5.dp, bottomStart = 10.dp)
+    } else {
+        RoundedCornerShape(topEnd = 5.dp, bottomEnd = 10.dp)
+    }
+    Box(
+        modifier
+            .width(16.dp)
+            .fillMaxHeight()
+            .clip(shape)
+            .background(Brush.verticalGradient(listOf(ShellTop, ShellBottom)))
+    ) {
+        // 凸肩顶棱高光：塑料壳斜面的一道反光。画在肩体内部、随肩体轮廓裁切——
+        // 独立画小条会脱离机身圆角
+        Box(
+            Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
+                .height(1.dp)
+                .background(Color.White.copy(alpha = 0.55f))
+        )
+    }
+}
+
+/** 口内的两层阴影：槽内暗部贴着口沿 6dp、不随缺口加深拉高；沿口下的落影让纸与壳的交接是凹口、不是一根硬线。 */
+@Composable
+private fun PrinterMouthShading(modifier: Modifier = Modifier) {
+    Box(modifier.width(300.dp).height(ShellNotchDepth + 5.dp)) {
+        // 槽内暗部：出纸口内侧是黑的，纸刚钻出来的那截被「口」罩住变暗
+        Box(
+            Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
+                .height(ShellNotchDepth)
+        ) {
+            Box(
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .height(6.dp)
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(Color.Transparent, Color.Black.copy(alpha = 0.30f))
+                        )
+                    )
+            )
+        }
+        // 口内落影
+        Box(
+            Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .height(5.dp)
+                .background(
+                    Brush.verticalGradient(
+                        listOf(Color(0xFFBEBCC1).copy(alpha = 0.4f), Color.Transparent)
+                    )
+                )
+        )
+    }
+}
+
+/** 指示灯 + 光晕：整体挂在机身左下角，光晕与 LED 同心（圆心距底 12dp）。打印中呼吸闪烁（光晕随动），打完常亮。 */
+@Composable
+private fun PrinterLamp(printing: Boolean, modifier: Modifier = Modifier) {
+    val pulse = rememberInfiniteTransition(label = "printerLamp")
+    val breathing by pulse.animateFloat(
+        initialValue = 0.2f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(520), RepeatMode.Reverse),
+        label = "printerLampAlpha"
+    )
+    Box(modifier.width(23.dp).height(18.dp)) {
+        // 光晕：LED 读作光源，打印中随呼吸明暗
+        Box(
+            Modifier
+                .align(Alignment.TopStart)
+                .padding(start = 11.dp)
+                .size(12.dp)
+                .clip(CircleShape)
+                .background(
+                    StatusActive.copy(alpha = if (printing) breathing * 0.22f else 0.22f)
+                )
+        )
+        // LED 本体
+        Box(
+            Modifier
+                .align(Alignment.TopStart)
+                .padding(start = 14.dp, top = 3.dp)
+                .size(6.dp)
+                .clip(CircleShape)
+                .background(if (printing) StatusActive.copy(alpha = breathing) else StatusActive)
         )
     }
 }
@@ -429,9 +555,9 @@ private fun ReceiptActions(layer: androidx.compose.ui.graphics.layer.GraphicsLay
     }
 }
 
-/** 纸面：锯齿顶边 + 暖白渐变纸身 + 内容 + 锯齿底边。宽度固定 300dp，保证截图尺寸稳定。 */
+/** 纸面：锯齿顶边 + 暖白渐变纸身 + 内容，底边平直没进机身出纸缺口。宽度固定 300dp，保证截图尺寸稳定。 */
 @Composable
-private fun DailyReceiptPaper(
+internal fun DailyReceiptPaper(
     dayKey: String,
     entries: List<DailyReceiptEntry>,
     wallets: Map<Long, String>,
@@ -445,27 +571,29 @@ private fun DailyReceiptPaper(
 ) {
     // forceFull：预览展开「全部」或隐形录制层时不分页，印全部明细
     val maxItems = if (forceFull) Int.MAX_VALUE else DEFAULT_PRINTED_ITEMS
-    val paper = Brush.verticalGradient(listOf(PaperTop, PaperBottom))
+    // 条码数字 = 打印时间的年月日时分（yyyyMMddHHmm，恰好 12 位 EAN-13 数据位），扫码读到的就是这一刻
+    val printCode = remember { SimpleDateFormat("yyyyMMddHHmm", Locale.getDefault()).format(Date()) }
     val dayExpense = entries.filter { it.bill.type == BillType.EXPENSE }.sumOf { it.bill.amount }
     val dayIncome = entries.filter { it.bill.type == BillType.INCOME }.sumOf { it.bill.amount }
     val sorted = remember(entries) { entries.sortedBy { it.bill.createdAt } }
 
     Column(modifier = Modifier.width(300.dp)) {
-        ZigzagEdge(top = true, seed = dayKey.hashCode())
+        ScallopedEdge()
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(paper)
+                .background(PaperColor)
                 .thermalPaperTexture(seed = dayKey.hashCode())
                 .padding(horizontal = 20.dp, vertical = 14.dp)
         ) {
-            ReceiptHeader(entries, bookName)
+            ReceiptHeader(dayKey, entries, bookName)
             DoubleRule()
+            ReceiptTableHeader()
             // 纸质小票印不下几十笔：超过 9 笔截断到前 8 笔 + 省略行（合计仍按全日算）
             val shown = sorted.take(maxItems)
             shown.forEachIndexed { index, entry ->
-                ReceiptItem(index, entry, wallets)
-                if (index != shown.lastIndex) DashedDivider()
+                if (index > 0) DashedDivider()
+                ReceiptItem(entry, wallets)
             }
             if (sorted.size > shown.size) {
                 val moreText = stringResource(R.string.bill_receipt_more_items, sorted.size - shown.size)
@@ -497,80 +625,109 @@ private fun DailyReceiptPaper(
             Spacer(Modifier.height(8.dp))
             ReceiptMonthSummary(monthExpense, monthIncome)
             Spacer(Modifier.height(12.dp))
-            Barcode(dayKey)
+            Barcode(ean13Digits(printCode), printCode.chunked(4).joinToString(" "))
             Spacer(Modifier.height(10.dp))
             ReceiptFooter()
         }
-        ZigzagEdge(top = false, seed = dayKey.hashCode())
+    }
+}
+
+/** 按设置的小票样式渲染纸面：明细流水（默认）/ 分类汇总。 */
+@Composable
+private fun ReceiptPaperFor(
+    style: String,
+    dayKey: String,
+    entries: List<DailyReceiptEntry>,
+    wallets: Map<Long, String>,
+    bookName: String,
+    monthExpense: Long,
+    monthIncome: Long,
+    onShowAll: (() -> Unit)? = null,
+    forceFull: Boolean = false
+) {
+    if (style == PreferencesManager.RECEIPT_STYLE_SUMMARY) {
+        DailySummaryPaper(dayKey = dayKey, entries = entries)
+    } else {
+        DailyReceiptPaper(
+            dayKey = dayKey,
+            entries = entries,
+            wallets = wallets,
+            bookName = bookName,
+            monthExpense = monthExpense,
+            monthIncome = monthIncome,
+            onShowAll = onShowAll,
+            forceFull = forceFull
+        )
     }
 }
 
 /**
- * 热敏纸质感：3dp 一档的极淡横向纤维线（热敏纸卷材留下的细纹）+ 稀疏暖灰噪点。
- * 两者 alpha 都压在 0.02 以下——只在近看时"有纸"，不抢内容；确定性序列，
- * 同一天永远同一张纸。
+ * 热敏纸质感：3dp 一档的横向纤维线（热敏纸卷材留下的细纹）+ 稀疏暖灰噪点。
+ * alpha 压在 0.04 以下——纹理可见但不抢内容；确定性序列，同一天永远同一张纸。
  */
-private fun Modifier.thermalPaperTexture(seed: Int): Modifier = drawBehind {
-    val fiber = Ink.copy(alpha = 0.016f)
+internal fun Modifier.thermalPaperTexture(seed: Int): Modifier = drawBehind {
+    val fiber = Ink.copy(alpha = 0.035f)
     var y = 0f
     while (y < size.height) {
         drawLine(fiber, Offset(0f, y), Offset(size.width, y), strokeWidth = 1f)
         y += 3.dp.toPx()
     }
     var state = seed * 31 + 17
-    repeat(140) {
+    repeat(220) {
         state = state * 1103515245 + 12345
         val px = ((state ushr 8) and 0xFFFF) % size.width.toInt().coerceAtLeast(1)
         state = state * 1103515245 + 12345
         val py = ((state ushr 8) and 0xFFFF) % size.height.toInt().coerceAtLeast(1)
-        drawCircle(Ink.copy(alpha = 0.018f), radius = 0.8f, center = Offset(px.toFloat(), py.toFloat()))
+        drawCircle(Ink.copy(alpha = 0.032f), radius = 0.8f, center = Offset(px.toFloat(), py.toFloat()))
     }
 }
 
 /**
- * 锯齿撕边（撕纸风）。
- *
- * 三条让它「像撕的」而不是「画上去的」：
- * 1. 齿不等宽（半齿 6–12dp 确定性随机，种子 = 日期）——等距三角一眼假；
- * 2. 不描边、改**软投影**：齿形整体偏移一层 7% 墨色垫在纸下，
- *    描边是印刷感，投影才是「一张纸放在桌上」；
- * 3. 纸面纯白 + 弹层米色底，靠明度差让齿自然浮现。
+ * 撕边（参考主流记账 App 的小票纸）：打孔撕边——纸沿打孔线撕下，顶边留下一排
+ * 半圆缺口。缺口与平面相间、等距铺满整行，缺口内衬弧形
+ * 软投影。只用于纸的**顶边**（底边平直，收进机身缺口）；旧版扇贝/三角已废弃。
  */
 @Composable
-private fun ZigzagEdge(top: Boolean, seed: Int) {
-    Canvas(modifier = Modifier.fillMaxWidth().height(15.dp)) {
-        // 齿宽的确定性抖动：线性同余（纯算术，不是随机数生成器），同一天永远同一张纸
-        var state = seed * 31 + if (top) 7 else 13
-        fun nextHalfDp(): Float {
-            state = state * 1103515245 + 12345
-            return (6 + ((state ushr 16) and 0x7) % 7).dp.toPx()
-        }
-        val baseY = if (top) size.height else 0f
-        val peakY = if (top) 0f else size.height
+internal fun ScallopedEdge() {
+    Canvas(modifier = Modifier.fillMaxWidth().height(5.dp)) {
+        val pitch = 15.dp.toPx()
+        val r = 5.dp.toPx()
+        val count = (size.width / pitch).toInt().coerceAtLeast(8)
+        // 缺口中心：整组居中，两端各留半个平面段
+        val start = (size.width - count * pitch) / 2f + pitch / 2f
         val path = Path()
-        path.moveTo(0f, baseY)
-        var x = 0f
-        var toPeak = true
-        while (x < size.width) {
-            x = (x + nextHalfDp()).coerceAtMost(size.width)
-            path.lineTo(x, if (toPeak) peakY else baseY)
-            toPeak = !toPeak
+        path.moveTo(0f, size.height)
+        path.lineTo(0f, 0f)
+        var cx = start
+        repeat(count) {
+            // 半圆缺口：从缺口左缘沿弧底绕到右缘（y 向下，-180 扫角经过 90°=弧底）
+            path.arcTo(
+                androidx.compose.ui.geometry.Rect(cx - r, -r, cx + r, r),
+                180f, -180f, false
+            )
+            cx += pitch
         }
-        path.lineTo(size.width, baseY)
+        path.lineTo(size.width, 0f)
+        path.lineTo(size.width, size.height)
+        path.lineTo(0f, size.height)
         path.close()
-        // 软投影：齿形整体下/上偏移 2dp 的低 alpha 墨层，垫在纸面之下
+        // 缺口内衬软投影（整体下移 2dp 的 7% 墨层）：每个缺口的下半出现弧形暗影
         val shadow = Path().apply {
-            addPath(path, Offset(0f, if (top) 2.dp.toPx() else -2.dp.toPx()))
+            addPath(path, Offset(0f, 2.dp.toPx()))
         }
         drawPath(shadow, Ink.copy(alpha = 0.07f))
-        drawPath(path, Brush.verticalGradient(listOf(PaperTop, PaperBottom)), style = Fill)
+        drawPath(path, PaperColor, style = Fill)
     }
 }
 
 @Composable
-private fun ReceiptHeader(entries: List<DailyReceiptEntry>, bookName: String) {
+private fun ReceiptHeader(dayKey: String, entries: List<DailyReceiptEntry>, bookName: String) {
     val context = LocalContext.current
-    val bill = entries.firstOrNull()?.bill ?: return
+    // 空流水防御：唯一调用口按「有流水的日期」分组，理论到不了这里；日期退回从 dayKey 解析
+    val date = entries.firstOrNull()?.bill?.date
+        ?: runCatching {
+            SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(dayKey)?.time
+        }.getOrNull()
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -589,16 +746,21 @@ private fun ReceiptHeader(entries: List<DailyReceiptEntry>, bookName: String) {
             color = InkLight
         )
         Spacer(Modifier.height(10.dp))
+        if (date != null) {
+            Text(
+                DateUtils.formatDisplayDateWithWeekday(context, date),
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+                color = Ink
+            )
+            Spacer(Modifier.height(2.dp))
+        }
         Text(
-            DateUtils.formatDisplayDateWithWeekday(context, bill.date),
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Medium,
-            color = Ink
-        )
-        Spacer(Modifier.height(2.dp))
-        Text(
-            stringResource(R.string.bill_book) + "：" + bookName + " · " +
-                pluralStringResource(R.plurals.bill_count, entries.size, entries.size),
+            stringResource(
+                R.string.bill_receipt_book_line,
+                bookName,
+                pluralStringResource(R.plurals.bill_count, entries.size, entries.size)
+            ),
             style = MaterialTheme.typography.bodySmall,
             color = InkLight,
             maxLines = 1,
@@ -608,9 +770,9 @@ private fun ReceiptHeader(entries: List<DailyReceiptEntry>, bookName: String) {
     Spacer(Modifier.height(10.dp))
 }
 
-/** 小票一行：序号 + 分类（·备注/商家）+ 金额；第二行 钱包（转账显示 A → B）。 */
+/** 小票一行：时间 + 分类 + 金额；第二行「－ 钱包 · 备注/商家」（转账显示钱包对）。 */
 @Composable
-private fun ReceiptItem(index: Int, entry: DailyReceiptEntry, wallets: Map<Long, String>) {
+private fun ReceiptItem(entry: DailyReceiptEntry, wallets: Map<Long, String>) {
     val context = LocalContext.current
     val bill = entry.bill
     val amountColor = when (bill.type) {
@@ -626,20 +788,22 @@ private fun ReceiptItem(index: Int, entry: DailyReceiptEntry, wallets: Map<Long,
     Column(modifier = Modifier.fillMaxWidth().padding(vertical = 7.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                "%02d".format(index + 1),
-                style = MaterialTheme.typography.labelMedium,
+                SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(bill.createdAt)),
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold,
                 fontFamily = FontFamily.Monospace,
-                color = InkLight
+                color = Ink
             )
             Spacer(Modifier.width(8.dp))
             Text(
                 entry.categoryName,
                 style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium,
+                fontWeight = FontWeight.Bold,
                 color = Ink,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f, fill = false)
+                // 占满剩余宽度把金额推到右缘，与表头「金 额」同一条线；中间空隙即弹性的
+                modifier = Modifier.weight(1f)
             )
             Spacer(Modifier.width(8.dp))
             Text(
@@ -654,7 +818,41 @@ private fun ReceiptItem(index: Int, entry: DailyReceiptEntry, wallets: Map<Long,
     }
 }
 
-/** 小票行的说明行：备注/商家/地点（转账显示钱包对），右侧钱包名。 */
+/** 表头：时 间 / 项 目 / 金 额。透明 "00:00" 占位把「项 目」顶到与数据行的分类同一 x。 */
+@Composable
+private fun ReceiptTableHeader() {
+    Row(modifier = Modifier.fillMaxWidth()) {
+        Box {
+            Text(
+                "00:00",
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold,
+                fontFamily = FontFamily.Monospace,
+                color = Color.Transparent
+            )
+            Text(
+                stringResource(R.string.bill_receipt_col_time),
+                style = MaterialTheme.typography.labelMedium,
+                color = InkLight,
+                modifier = Modifier.align(Alignment.CenterStart)
+            )
+        }
+        Spacer(Modifier.width(8.dp))
+        Text(
+            stringResource(R.string.bill_receipt_col_category),
+            style = MaterialTheme.typography.labelMedium,
+            color = InkLight,
+            modifier = Modifier.weight(1f)
+        )
+        Text(
+            stringResource(R.string.bill_receipt_col_amount),
+            style = MaterialTheme.typography.labelMedium,
+            color = InkLight
+        )
+    }
+}
+
+/** 小票行的说明行：商家/备注/地点在左（分类名下），钱包名在右（金额下）。转账显示「A → B」、右侧不重复。 */
 @Composable
 private fun ReceiptItemDetailRow(bill: Bill, wallets: Map<Long, String>) {
     val detail = when (bill.type) {
@@ -665,7 +863,15 @@ private fun ReceiptItemDetailRow(bill: Bill, wallets: Map<Long, String>) {
         }
         else -> listOf(bill.merchant, bill.note, bill.location).firstOrNull { it.isNotBlank() }.orEmpty()
     }
-    Row(modifier = Modifier.fillMaxWidth().padding(start = 24.dp, top = 1.dp)) {
+    Row(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            "00:00",
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Bold,
+            fontFamily = FontFamily.Monospace,
+            color = Color.Transparent
+        )
+        Spacer(Modifier.width(8.dp))
         if (detail.isNotBlank()) {
             Text(
                 detail,
@@ -678,15 +884,17 @@ private fun ReceiptItemDetailRow(bill: Bill, wallets: Map<Long, String>) {
         } else {
             Spacer(Modifier.weight(1f))
         }
-        bill.walletId?.let { wid ->
-            wallets[wid]?.let { name ->
-                Text(
-                    name,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = InkLight,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+        if (bill.type != BillType.TRANSFER) {
+            bill.walletId?.let { wid ->
+                wallets[wid]?.let { name ->
+                    Text(
+                        name,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = InkLight,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
             }
         }
     }
@@ -694,7 +902,7 @@ private fun ReceiptItemDetailRow(bill: Bill, wallets: Map<Long, String>) {
 
 /** 虚线分隔（油墨虚线，非实线——热敏小票的典型分栏）。 */
 @Composable
-private fun DashedDivider() {
+internal fun DashedDivider() {
     Canvas(modifier = Modifier.fillMaxWidth().height(1.dp)) {
         val dash = 5.dp.toPx()
         val gap = 4.dp.toPx()
@@ -731,12 +939,14 @@ private fun ReceiptTotals(dayExpense: Long, dayIncome: Long, dayBalance: Long) {
 }
 
 @Composable
-private fun TotalRow(label: String, amount: Long, color: Color, bold: Boolean = false) {
+internal fun TotalRow(label: String, amount: Long, color: Color, bold: Boolean = false) {
     val context = LocalContext.current
+    // 负号在货币符前（-¥1.00），与明细行的 prefix 口径一致；formatCurrency 会输出 ¥-1.00
+    val prefix = if (amount < 0) "-" else ""
     Row(modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
         Text(label, style = MaterialTheme.typography.bodyMedium, color = Ink, modifier = Modifier.weight(1f))
         Text(
-            CurrencyUtils.formatCurrency(context, amount.toMoney()),
+            prefix + CurrencyUtils.formatCurrency(context, (if (amount < 0) -amount else amount).toMoney()),
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = if (bold) FontWeight.Bold else FontWeight.Medium,
             fontFamily = FontFamily.Monospace,
@@ -745,21 +955,27 @@ private fun TotalRow(label: String, amount: Long, color: Color, bold: Boolean = 
     }
 }
 
-/** 本月累计（内容丰富度：当日之外再给当月视角）。 */
+/** 本月累计（内容丰富度：当日之外再给当月视角）。对齐口径与合计行一致：标签左、数字右。 */
 @Composable
 private fun ReceiptMonthSummary(monthExpense: Long, monthIncome: Long) {
-    val context = LocalContext.current
     Column(modifier = Modifier.fillMaxWidth()) {
+        MonthSummaryRow(stringResource(R.string.bill_receipt_month_expense), monthExpense)
+        MonthSummaryRow(stringResource(R.string.bill_receipt_month_income), monthIncome)
+    }
+}
+
+@Composable
+private fun MonthSummaryRow(label: String, amount: Long) {
+    val context = LocalContext.current
+    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 1.dp)) {
         Text(
-            stringResource(R.string.bill_receipt_month_expense) + " " +
-                CurrencyUtils.formatCurrency(context, monthExpense.toMoney()),
+            label,
             style = MaterialTheme.typography.bodySmall,
-            fontFamily = FontFamily.Monospace,
-            color = InkLight
+            color = InkLight,
+            modifier = Modifier.weight(1f)
         )
         Text(
-            stringResource(R.string.bill_receipt_month_income) + " " +
-                CurrencyUtils.formatCurrency(context, monthIncome.toMoney()),
+            CurrencyUtils.formatCurrency(context, amount.toMoney()),
             style = MaterialTheme.typography.bodySmall,
             fontFamily = FontFamily.Monospace,
             color = InkLight
@@ -767,20 +983,71 @@ private fun ReceiptMonthSummary(monthExpense: Long, monthIncome: Long) {
     }
 }
 
-/** 装饰条码：以日期为种子的确定性假条码（同一天同一张，纯氛围）。 */
+/**
+ * 条码：真·EAN-13。digits13 = 13 位编号（含校验位，内容是打印时间的年月日时分），
+ * 用标准编码表逐模块绘制（101 + 左 6 位 + 01010 + 右 6 位 + 101，共 95 模块）——
+ * 扫码器真的能扫出来。全部条形等高（起始/中间/结尾的定位条不另加长，排版更整洁）。
+ * 装饰用途、非加密场景。
+ */
 @Composable
-private fun Barcode(dayKey: String) {
-    Canvas(modifier = Modifier.fillMaxWidth().height(34.dp)) {
-        val rng = kotlin.random.Random(dayKey.hashCode())
-        var x = 0f
-        while (x < size.width) {
-            val w = listOf(2f, 3f, 5f)[rng.nextInt(3)]
-            if (rng.nextBoolean()) {
-                drawRect(Ink, Offset(x, 0f), androidx.compose.ui.geometry.Size(w, size.height))
+internal fun Barcode(digits13: String, display: String? = null) {
+    val ean = remember(digits13) { ean13Bits(digits13) }
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Canvas(modifier = Modifier.fillMaxWidth().height(34.dp)) {
+            val quiet = 9.dp.toPx()
+            val moduleW = (size.width - 2 * quiet) / 95f
+            for (i in ean.indices) {
+                if (ean[i] != '1') continue
+                drawRect(
+                    Ink,
+                    Offset(quiet + i * moduleW, 0f),
+                    androidx.compose.ui.geometry.Size(moduleW.coerceAtLeast(1f), size.height)
+                )
             }
-            x += w + 2f + rng.nextInt(3)
         }
+        Spacer(Modifier.height(3.dp))
+        Text(
+            // 默认按 EAN-13 的印刷习惯分组：首位 + 6 位 + 6 位；汇总样式用 * 号框（Code39 风）
+            display ?: "${digits13[0]} ${digits13.substring(1, 7)} ${digits13.substring(7)}",
+            style = MaterialTheme.typography.labelSmall,
+            fontFamily = FontFamily.Monospace,
+            color = InkLight,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            modifier = Modifier.fillMaxWidth()
+        )
     }
+}
+
+/** EAN-13 人读编号：内容 12 位由调用方给（打印时间的 yyyyMMddHHmm），校验位按标准公式计算，共 13 位。 */
+internal fun ean13Digits(data12: String): String {
+    val data = data12.take(12).padEnd(12, '0')
+    val digits = data.map { it - '0' }
+    // 校验位：第 2/4/…/12 位 ×3 + 其余 ×1，(10 − 和 mod 10) mod 10
+    val check = (10 - (digits.withIndex().sumOf { (i, d) -> if (i % 2 == 1) d * 3 else d } % 10)) % 10
+    return data + check.toString()
+}
+
+/** EAN-13 位串（95 模块，'1'=条）：由 13 位编号按标准表绘制。 */
+internal fun ean13Bits(digits13: String): String {
+    val all = digits13
+    // 左侧 6 位按首位套 L/G 奇偶模板，右侧 6 位全 R（标准表：
+    // G = L 反转再取反，R = L 只取反——两者不同，混用就扫不出来）
+    val parity = listOf(
+        "LLLLLL", "LLGLGG", "LLGGLG", "LLGGGL", "LGLLGG",
+        "LGGLLG", "LGGGLL", "LGLGLG", "LGLGGL", "LGGLGL"
+    )
+    val l = listOf(
+        "0001101", "0011001", "0010011", "0111101", "0100011",
+        "0110001", "0101111", "0111011", "0110111", "0001011"
+    )
+    val g = l.map { p -> p.reversed().map { if (it == '1') '0' else '1' }.joinToString("") }
+    val r = l.map { p -> p.map { if (it == '1') '0' else '1' }.joinToString("") }
+    val left = (1..6).joinToString("") { i ->
+        val d = all[i] - '0'
+        if (parity[all[0] - '0'][i - 1] == 'L') l[d] else g[d]
+    }
+    val right = (7..12).joinToString("") { i -> r[all[i] - '0'] }
+    return "101" + left + "01010" + right + "101"
 }
 
 @Composable

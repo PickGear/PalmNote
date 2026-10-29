@@ -44,6 +44,7 @@ data class SettingsState(
     val demoClearPromptKept: Int? = null,
     val defaultStartPage: String = "dashboard",
     val language: String = "SYSTEM",
+    val receiptStyle: String = PreferencesManager.RECEIPT_STYLE_DETAIL,
     val assetCount: Int = 0,
     val goalCount: Int = 0,
     val momentCount: Int = 0,
@@ -144,7 +145,8 @@ class SettingsViewModel @Inject constructor(
                 momentRepository.getMomentCount(),
                 anniversaryRepository.getAnniversaryCount(),
                 preferencesManager.autoLockTimeoutMinutes,
-                preferencesManager.lifeDemoMode
+                preferencesManager.lifeDemoMode,
+                preferencesManager.receiptStyle
             ) { args ->
                 val i = { idx: Int -> args.getOrNull(idx) }
                 _state.update { current ->
@@ -181,7 +183,8 @@ class SettingsViewModel @Inject constructor(
                         momentCount = (i(29) as? Int) ?: 0,
                         anniversaryCount = (i(30) as? Int) ?: 0,
                         autoLockTimeoutMinutes = (i(31) as? Int) ?: 5,
-                        demoModeEnabled = (i(32) as? Boolean) ?: true
+                        demoModeEnabled = (i(32) as? Boolean) ?: true,
+                        receiptStyle = (i(33) as? String) ?: PreferencesManager.RECEIPT_STYLE_DETAIL
                     )
                 }
             }.catch { AppLogger.w("SettingsVM", "Settings flow failed", it) }.collect()
@@ -194,6 +197,10 @@ class SettingsViewModel @Inject constructor(
 
     fun setDefaultBillType(type: String) {
         viewModelScope.launch { preferencesManager.setDefaultBillType(type) }
+    }
+
+    fun setReceiptStyle(style: String) {
+        viewModelScope.launch { preferencesManager.setReceiptStyle(style) }
     }
 
     fun setBudgetReminderEnabled(enabled: Boolean) {

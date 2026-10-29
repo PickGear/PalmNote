@@ -153,6 +153,10 @@ class BillViewModel @Inject constructor(
         preferencesManager.presetCategoryOverrides
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
+    /** 小票纸面样式（明细流水 / 分类汇总），设置页可切换。 */
+    val receiptStyle: StateFlow<String> = preferencesManager.receiptStyle
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), PreferencesManager.RECEIPT_STYLE_DETAIL)
+
     val customExpenseCategories: StateFlow<List<CategoryItem>> = cachedCategoryConfigs
         .map { configs -> configs.filter { it.type == "BILL_EXPENSE" && it.isEnabled }
             .map { CategoryItem(it.name, it.icon.imageVector, it.color.toComposeColor()) } }
