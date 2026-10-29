@@ -87,6 +87,7 @@ class DemoDataIntegrityTest {
     fun `wealth demo categories must use built-in keys`() {
         // 演示账单存的是分类的**内部键**（与 BillCategoryData 的 name 一致的中文常量），
         // 不是本地化后的显示名 —— 存显示名会让英文环境下按键查图标/颜色全部落空。
+        // 转账行没有分类（空值跳过）。
         val expenseKeys = expenseCategoryItems.map { it.name }
         val incomeKeys = incomeCategoryItems.map { it.name }
 
@@ -94,6 +95,7 @@ class DemoDataIntegrityTest {
             .filter { it.firstOrNull() == "账单" }
             .forEach { c ->
                 val type = c[11]
+                if (type == "TRANSFER") return@forEach
                 val category = c[12]
                 val allowed = if (type == "INCOME") incomeKeys else expenseKeys
                 assertTrue(

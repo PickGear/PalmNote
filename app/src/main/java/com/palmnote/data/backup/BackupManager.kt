@@ -49,17 +49,15 @@ class BackupManager(
         /** 恢复前快照默认保留份数：独立计量，不与自动备份抢同一个名额窗口 */
         private const val DEFAULT_KEEP_SNAPSHOTS = 3
 
-        /** 便携数据库密钥条目：ZIP 内存放 Base64 原始 db_key，用于跨设备/重装恢复。
-         *  **仅写入加密备份**——该条目若与 SQLCipher 密文同处一个未加密的包里，等于把钥匙和保险箱
-         *  一起交出去；明文备份不含本条目，故只能在原设备恢复。见 [includePortableKeyInBackup]。 */
+        /**
+         * 便携数据库密钥条目：ZIP 内存放 Base64 原始 db_key，用于跨设备/重装恢复。
+         *
+         * **无条件写入**（2026-10-30 定案，用户明确推翻旧的「钥匙和保险箱不同包」契约）：
+         * 备份文件必须自包含、换机直接可恢复；保密需求由**可选的备份密码**（整包加密 PNB2）承担，
+         * 不再依赖设备绑定的 SQLCipher 密钥。明文备份因此等于明文数据——由用户自行保管文件。
+         */
         const val PORTABLE_KEY_ENTRY = "db_key.txt"
         private const val TAG = "BackupManager"
-
-        /**
-         * 便携密钥是否随备份写入：仅当设置了备份密码（产出加密包 PNB2）时写入。
-         * 明文包写入便携密钥会使其自带解密钥匙，数据加密因此归零。
-         */
-        internal fun includePortableKeyInBackup(password: String?): Boolean = !password.isNullOrBlank()
 
         // 获取备份存储目录：统一使用应用内部存储，其他应用无法读取。
         // 旧版本使用应用专属外部存储，在 Android 10 及以下可被文件管理器读取，明文备份会经此目录外泄。
@@ -135,7 +133,7 @@ class BackupManager(
         // 创建临时ZIP文件（UUID 命名避免并发冲突）
         val tempZip = File(context.cacheDir, "temp_backup_${java.util.UUID.randomUUID()}.zip")
         try {
-            createZipFile(context, db, tempZip, includePortableKey = includePortableKeyInBackup(password))
+            createZipFile(context, db, tempZip)
 
             // 如果有密码，加密ZIP文件（流式处理避免OOM）
             if (!password.isNullOrBlank()) {
@@ -169,14 +167,14 @@ class BackupManager(
         return backupFile
     }
 
-    // 创建ZIP文件；[includePortableKey] 为真时额外写入便携密钥条目（仅加密备份）
-    private fun createZipFile(context: Context, db: AppDatabase, zipFile: File, includePortableKey: Boolean) {
+    // 创建ZIP文件；便携密钥条目**无条件写入**（见 addPortableKeyEntry 的定案说明）。
+    private fun createZipFile(context: Context, db: AppDatabase, zipFile: File) {
         // 先做 WAL checkpoint 再复制主库文件，保证快照一致（避免 -wal/-shm 与主库不一致）
         val snapshot = File(context.cacheDir, "db_snapshot_${System.currentTimeMillis()}")
         val hasSnapshot = checkpointAndSnapshot(context, db, snapshot)
 
         ZipOutputStream(FileOutputStream(zipFile)).use { zipOut ->
-            writeZipEntries(context, zipOut, snapshot, hasSnapshot, includePortableKey)
+            writeZipEntries(context, zipOut, snapshot, hasSnapshot)
         }
 
         if (hasSnapshot) snapshot.delete()
@@ -187,8 +185,7 @@ class BackupManager(
         context: Context,
         zipOut: ZipOutputStream,
         snapshot: File,
-        hasSnapshot: Boolean,
-        includePortableKey: Boolean
+        hasSnapshot: Boolean
     ) {
         addMainDbToZip(context, zipOut, snapshot, hasSnapshot) // 1. 主库
         addVaultDbToZip(context, zipOut) // 2. 密码本库
@@ -196,7 +193,7 @@ class BackupManager(
         addDirectoryToZip(zipOut, File(context.filesDir, "images"), "images") // 4. 图片
         addDirectoryToZip(zipOut, File(context.filesDir, "vault_avatars"), "vault-images") // 5. 密码本图片
         addSharedPrefsToZip(context, zipOut) // 6/7. 应用锁 + db_key
-        if (includePortableKey) addPortableKeyEntry(zipOut) // 8. 便携密钥
+        addPortableKeyEntry(zipOut) // 8. 便携密钥（无条件写入，见类内定案说明）
     }
 
     /** 打包主库：优先用 WAL checkpoint 后的一致快照，checkpoint 未完成时回退为 db + wal + shm 三件套。 */

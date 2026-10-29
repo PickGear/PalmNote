@@ -101,15 +101,6 @@ class BackupManagerTest {
     }
 
     @Test
-    fun includePortableKeyInBackup_onlyWhenPasswordSet() {
-        // 明文包若携带便携密钥 db_key.txt，等于把密文与钥匙装在同一个包里 → 该契约不得回退
-        assertFalse(BackupManager.includePortableKeyInBackup(null))
-        assertFalse(BackupManager.includePortableKeyInBackup(""))
-        assertFalse(BackupManager.includePortableKeyInBackup("   "))
-        assertTrue(BackupManager.includePortableKeyInBackup("secret"))
-    }
-
-    @Test
     fun selectBackupsToPrune_snapshotPoolIsCountedSeparately() {
         // 恢复前快照是恢复失败后的唯一退路，不能和每天新增的自动备份抢同一个名额窗口
         val autos = (1..10).map { i ->

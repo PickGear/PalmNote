@@ -7,17 +7,17 @@ import org.junit.Test
 /**
  * 演示数据本地化的**完整性守卫**。
  *
- * 演示内容是固定精品集（中文文案写在 `LifeDemoData` / `DemoWealthData` 里），
- * 英文界面下由 [DemoTexts] 映射成英文。本测试扫描这两个源文件里的**全部中文串**，
+ * 演示内容里的中文文案写在 `DemoWallet.kt`（示例钱包）里，
+ * 英文界面下由 [DemoTexts] 映射成英文。本测试扫描源文件里的**全部中文串**，
  * 断言每一条都在映射表里——新增演示内容忘了翻译会直接报红（英文截图里冒出中文就是这么来的）。
+ * （账单 / 物品的主体数据 2026-10-30 起来自真实导出的 CSV 资产，不经过 DemoTexts。）
  */
 class DemoTextsCoverageTest {
 
     private val repoRoot: File by lazy { locateRepoRoot() }
 
     private val sources = listOf(
-        "app/src/main/java/com/palmnote/ui/life/LifeDemoData.kt",
-        "app/src/main/java/com/palmnote/data/DemoWealthData.kt"
+        "app/src/main/java/com/palmnote/data/DemoWallet.kt"
     )
 
     /** 从测试工作目录向上查找含 settings.gradle.kts 的仓库根（同 ChangelogAssetTest 的定位法）。 */
