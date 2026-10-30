@@ -160,6 +160,7 @@
     <string name="settings_default_bill_type">Default Bill Type</string>
     <string name="settings_budget_reminder">Budget Reminder</string>
     <string name="settings_calendar_sync">Sync Anniversaries to Calendar</string>
+    <string name="demo_read_only">Sample data is read-only</string>
     <string name="settings_demo_mode">Demo Mode</string>
     <string name="settings_demo_mode_subtitle">Loads a set of sample records; turning it on again resets them</string>
     <string tools:ignore="PluralsCandidate" name="settings_demo_cleared">Removed %1$d sample records · kept %2$d you created</string>
@@ -196,7 +197,7 @@
     <string name="onboarding_demo_opt_on_body">A set of sample life records to help you explore</string>
     <string name="onboarding_demo_opt_off_title">Start empty</string>
     <string name="onboarding_demo_opt_off_body">No samples — everything will be created by you</string>
-    <string name="onboarding_demo_footnote">Samples can be viewed, edited and deleted. Turn them off in Settings → Data &amp; Backup → Sample data; that removes them completely.</string>
+    <string name="onboarding_demo_footnote">Sample data is read-only; your own records are kept. Turn samples off in Settings → Data &amp; Backup → Sample data to remove them completely.</string>
     <string name="settings_life_category_compact">Compact category chips</string>
     <string name="settings_life_category_compact_subtitle">One row, more room for today</string>
     <string name="settings_calendar_sync_subtitle">Sync anniversaries to system calendar</string>

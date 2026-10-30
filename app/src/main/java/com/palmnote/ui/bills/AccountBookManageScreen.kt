@@ -151,10 +151,15 @@ fun AccountBookManageScreen(
         AccountBookDetailDialog(
             book = book,
             onEdit = { editingBook = book; showAddDialog = true; detailBook = null },
-            onDelete = {
-                bookToDelete = book
-                showDeleteDialog = true
-                detailBook = null
+            // 示例账本禁删（仓库层同样兜底）：入口直接不出现，避免"点了没反应"
+            onDelete = if (book.isDemo) {
+                null
+            } else {
+                {
+                    bookToDelete = book
+                    showDeleteDialog = true
+                    detailBook = null
+                }
             },
             onSetDefault = { viewModel.setDefaultBook(book.id); detailBook = null },
             onDismiss = { detailBook = null }
@@ -279,7 +284,7 @@ private fun AccountBookItem(
 private fun AccountBookDetailDialog(
     book: AccountBook,
     onEdit: () -> Unit,
-    onDelete: () -> Unit,
+    onDelete: (() -> Unit)?,
     onSetDefault: () -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -305,7 +310,10 @@ private fun AccountBookDetailDialog(
         confirmButton = {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (!book.isAllBooks) {
-                    TextButton(onClick = onDelete) { Text(stringResource(R.string.delete), color = ErrorLight) }
+                    // 示例账本禁删：不渲染删除按钮（仓库层同样兜底）
+                    onDelete?.let { del ->
+                        TextButton(onClick = del) { Text(stringResource(R.string.delete), color = ErrorLight) }
+                    }
                 }
                 if (!book.isDefault) {
                     TextButton(onClick = { onSetDefault(); onDismiss() }) { Text(stringResource(R.string.account_book_set_default), color = StatusActive) }

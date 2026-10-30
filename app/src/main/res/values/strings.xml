@@ -163,7 +163,8 @@
     <string name="onboarding_demo_opt_on_body">预置一套生活记录示例，帮你快速了解各功能</string>
     <string name="onboarding_demo_opt_off_title">空白开始</string>
     <string name="onboarding_demo_opt_off_body">不放示例，所有记录都由你自己创建</string>
-    <string name="onboarding_demo_footnote">示例记录可查看、编辑、删除；不想要时到「设置 → 数据与备份 → 示例数据」关掉即可彻底移除</string>
+    <string name="onboarding_demo_footnote">示例数据只能查看、不可修改；你自己记的内容会保留。不想要时到「设置 → 数据与备份 → 示例数据」关掉即可彻底移除</string>
+    <string name="demo_read_only">示例数据不可修改</string>
     <string name="settings_demo_mode">演示模式</string>
     <string name="settings_demo_mode_subtitle">载入一套示例记录供参考；再次开启会重置为初始示例</string>
     <string tools:ignore="PluralsCandidate" name="settings_demo_cleared">已移除 %1$d 条示例记录，保留你创建的 %2$d 条</string>

@@ -65,7 +65,10 @@ class BillImportViewModelImportTest {
         db = Room.inMemoryDatabaseBuilder(ctx, AppDatabase::class.java)
             .allowMainThreadQueries()
             .build()
-        repo = BillRepositoryImpl(db.billDao(), db.walletDao(), db.billRecycleBinDao(), db)
+        repo = BillRepositoryImpl(
+            db.billDao(), db.walletDao(), db.billRecycleBinDao(), db,
+            db.accountBookDao(), com.palmnote.data.repository.demoOffPrefs()
+        )
         walletId = runBlocking {
             db.walletDao().insert(Wallet(name = "现金", initialBalance = 100000, currentBalance = 100000))
         }
@@ -93,7 +96,10 @@ class BillImportViewModelImportTest {
         wallets,
         MutableStateFlow<List<CategoryConfig>>(emptyList()),
         MutableStateFlow<List<AccountBook>>(emptyList()),
-        mockk(relaxed = true)
+        // 演示开关：导入入口会读它（演示模式拦保存），relaxed mock 的 Flow 永不发射会等到超时
+        mockk<com.palmnote.data.datastore.PreferencesManager>(relaxed = true) {
+            every { lifeDemoMode } returns kotlinx.coroutines.flow.flowOf(false)
+        }
     ).also { createdViewModels += it }
 
     /** 反复推进测试调度器并短暂让出真实 IO 线程，直到条件成立或超时。 */

@@ -38,7 +38,8 @@ class WalletRepositoryTest {
             mockk<BillRepository>(relaxUnitFun = true),
             mockk<AppDatabase>(relaxUnitFun = true),
             context,
-            com.palmnote.data.event.EventBusImpl()
+            com.palmnote.data.event.EventBusImpl(),
+            demoOffPrefs()
         )
     }
 
@@ -147,7 +148,7 @@ class WalletRepositoryTest {
 
     @Test
     fun `getTotalBalance returns sum`() = runTest {
-        coEvery { walletDao.getTotalBalance() } returns flowOf(150000L)
+        coEvery { walletDao.getTotalBalance(any()) } returns flowOf(150000L)
 
         val result = walletRepository.getTotalBalance().first()
 
@@ -163,7 +164,7 @@ class WalletRepositoryTest {
 
     @Test
     fun `getEnabledWalletCount returns count`() = runTest {
-        coEvery { walletDao.getEnabledWalletCount() } returns flowOf(3)
+        coEvery { walletDao.getEnabledWalletCount(any()) } returns flowOf(3)
 
         val result = walletRepository.getEnabledWalletCount().first()
 

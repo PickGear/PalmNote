@@ -78,6 +78,8 @@ class BillViewModelTest {
         every { preferencesManager.presetCategoryOverrides } returns flowOf(emptyMap())
         // 小票样式：VM 构造时即订阅（stateIn），未打桩会抛 no answer found
         every { preferencesManager.receiptStyle } returns flowOf(PreferencesManager.RECEIPT_STYLE_DETAIL)
+        // VM 构造时会读演示开关（演示模式下把口径钉到示例账本），未打桩会抛 no answer found
+        every { preferencesManager.lifeDemoMode } returns flowOf(false)
 
         viewModel = BillViewModel(
             context, SavedStateHandle(), cachedWallets, cachedCategoryConfigs, cachedAccountBooks,

@@ -9,6 +9,8 @@ interface AccountBookRepository {
     fun getHiddenBooks(): Flow<List<AccountBook>>
     suspend fun getBookById(id: Long): AccountBook?
     suspend fun getDefaultBook(): AccountBook?
+    /** 示例账本 id（演示模式的取数口径落点）；无示例账本时为 null。 */
+    suspend fun demoBookId(): Long?
     suspend fun insertBook(book: AccountBook): Long
     suspend fun updateBook(book: AccountBook)
     suspend fun setDefault(id: Long)

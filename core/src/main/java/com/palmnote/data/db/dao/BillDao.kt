@@ -371,6 +371,24 @@ interface BillDao {
     )
     fun getPendingReimbursementSummary(): Flow<ReimbursementSummary?>
 
+    /**
+     * 同上，但限定账本：演示模式只算示例账本（`demoBookId` 传 null 时不过滤）。
+     * 报销汇总原本没有账本维度，不加这个就会把真实待报销金额算进演示页。
+     */
+    @Query(
+        "SELECT SUM(amount - reimbursedAmount) AS remaining, COUNT(*) AS count FROM bills " +
+            "WHERE isReimbursable = 1 AND isReimbursed = 0 AND type = 'EXPENSE' " +
+            "AND (:demoBookId IS NULL OR accountBookId = :demoBookId)"
+    )
+    fun getPendingReimbursementSummaryIn(demoBookId: Long?): Flow<ReimbursementSummary?>
+
+    /** 累计已报回金额（限定账本版，口径同上）。 */
+    @Query(
+        "SELECT SUM(reimbursedAmount) FROM bills WHERE isReimbursable = 1 AND type = 'EXPENSE' " +
+            "AND (:demoBookId IS NULL OR accountBookId = :demoBookId)"
+    )
+    fun getTotalReimbursedAmountIn(demoBookId: Long?): Flow<Long?>
+
     /** 累计已报回金额（含部分报销部分），报销页统计用。 */
     @Query("SELECT SUM(reimbursedAmount) FROM bills WHERE isReimbursable = 1 AND type = 'EXPENSE'")
     fun getTotalReimbursedAmount(): Flow<Long?>
@@ -550,20 +568,37 @@ interface BillDao {
     suspend fun countByBook(bookId: Long): Int
 
 
-    /** 演示数据清理（v14 isDemo 列）：演示模式关闭时物理删除示例行。 */
-    @Query("DELETE FROM bills WHERE isDemo = 1 OR accountBookId IN (SELECT id FROM account_books WHERE isDemo = 1)")
+    /**
+     * 演示数据清理：**只删示例种子**（v19 `demoOrigin = 'SEED'`）。
+     * 演示期用户自建的行标 `USER`，由 [graduateUserBillsFromDemoBooks] 迁走，不在此列。
+     */
+    @Query("DELETE FROM bills WHERE demoOrigin = 'SEED'")
     suspend fun clearDemoBills()
+
+    /** 「一并删除」分支：把演示期自建的账单也清掉（用户明确不要这些内容）。 */
+    @Query("DELETE FROM bills WHERE demoOrigin = 'USER'")
+    suspend fun clearUserBillsFromDemo()
 
     /** 当前示例行数（关演示反馈 / 幂等判断用）。 */
     @Query("SELECT COUNT(*) FROM bills WHERE isDemo = 1")
     suspend fun countDemoBills(): Int
 
-    /** 演示期用户在示例账本里自建的账单数（关演示「毕业询问」的保留规模）。 */
-    @Query("SELECT COUNT(*) FROM bills WHERE accountBookId IN (SELECT id FROM account_books WHERE isDemo = 1) AND isDemo = 0")
+    /** 演示期用户自建的账单数（v19 `demoOrigin = 'USER'`）。 */
+    @Query("SELECT COUNT(*) FROM bills WHERE demoOrigin = 'USER'")
     suspend fun countUserBillsInDemoBooks(): Int
 
-    /** 毕业：把示例账本里用户自建的账单迁到真实账本（关演示选「保留」时）。 */
-    @Query("UPDATE bills SET accountBookId = :targetBookId WHERE accountBookId IN (SELECT id FROM account_books WHERE isDemo = 1) AND isDemo = 0")
+    /** 同上，但走 Flow。 */
+    @Query("SELECT COUNT(*) FROM bills WHERE demoOrigin = 'USER'")
+    fun userBillsInDemoBookFlow(): Flow<Int>
+
+    /**
+     * 毕业：把演示期自建的账单迁到真实账本并转成真实数据
+     * （`isDemo = 0` 让它离开演示数据集，`demoOrigin = NONE` 让它成为普通行）。
+     */
+    @Query(
+        "UPDATE bills SET accountBookId = :targetBookId, isDemo = 0, demoOrigin = 'NONE' " +
+            "WHERE demoOrigin = 'USER'"
+    )
     suspend fun graduateUserBillsFromDemoBooks(targetBookId: Long)
 }
 

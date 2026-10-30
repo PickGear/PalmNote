@@ -71,6 +71,12 @@ data class Bill(
      */
     @ColumnInfo(defaultValue = "0")
     val isDemo: Boolean = false,
+    /**
+     * 演示数据来源（v19）：示例种子 / 演示期自建 / 真实数据。
+     * 见 [com.palmnote.domain.model.DemoOrigin]。
+     */
+    @androidx.room.ColumnInfo(defaultValue = "NONE")
+    val demoOrigin: com.palmnote.domain.model.DemoOrigin = com.palmnote.domain.model.DemoOrigin.NONE,
     val createdAt: Long = System.currentTimeMillis(),
 
     val updatedAt: Long = System.currentTimeMillis()

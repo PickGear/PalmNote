@@ -34,6 +34,7 @@ open class BillWidgetProvider : ScopedWidgetProvider() {
         fun billDao(): com.palmnote.data.db.dao.BillDao
         fun budgetDao(): com.palmnote.data.db.dao.BudgetDao
         fun preferencesManager(): com.palmnote.data.datastore.PreferencesManager
+        fun accountBookDao(): com.palmnote.data.db.dao.AccountBookDao
     }
 
     override suspend fun onUpdateAsync(appContext: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
@@ -47,7 +48,10 @@ open class BillWidgetProvider : ScopedWidgetProvider() {
         // 强调色同样逐实例：配置了配色覆盖（强制主题包主色）就用它，否则按稿 V22 的账单族色。
         publish(appContext, appWidgetManager, appWidgetIds) { context, appWidgetId, _ ->
             val accent = accentOf(context, prefs, appWidgetId)
-            val snapshot = fetchSnapshot(entryPoint, prefs.widgetBook(appWidgetId).first())
+            // 演示模式下没配账本（= 全部账本）会读到真实账单：钉到示例账本
+            val configured = prefs.widgetBook(appWidgetId).first()
+            val demoBook = if (prefs.lifeDemoMode.first()) entryPoint.accountBookDao().demoBookId() else null
+            val snapshot = fetchSnapshot(entryPoint, demoBook ?: configured)
             sizedRemoteViews(
                 appWidgetManager.getAppWidgetOptions(appWidgetId),
                 WidgetSizeClass.WIDE.designWidthDp,
@@ -381,11 +385,13 @@ open class BillWidgetProvider : ScopedWidgetProvider() {
             bookId: Long?
         ): BillSnapshot {
             val yearMonth = DateTimeFormatter.ofPattern("yyyy-MM").format(LocalDate.now())
+            val includeDemo = entryPoint.preferencesManager().lifeDemoMode.first()
             // 预算表没有账本维度：选中某个账本时不能再拿全局预算去算「已用百分比」，
             // 那是把 A 账本的支出除以全账本的预算。此时 budget 置空。
+            // 演示口径同理（v20 起 SEED/USER 行与真实行并存，直连 DAO 必须自带口径）。
             val budget = if (bookId == null) {
-                entryPoint.budgetDao().getBudgetByMonth(yearMonth)
-                    ?: entryPoint.budgetDao().getLatestBudget().first()
+                entryPoint.budgetDao().getBudgetByMonthScoped(yearMonth, includeDemo)
+                    ?: entryPoint.budgetDao().getLatestBudgetScoped(includeDemo)
             } else {
                 null
             }

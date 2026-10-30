@@ -64,4 +64,8 @@ interface AccountBookDao {
     /** 演示期用户自建账单的毕业迁移目标：优先默认账本，其次最早的普通账本。 */
     @Query("SELECT id FROM account_books WHERE isDemo = 0 ORDER BY isDefault DESC, sortOrder ASC LIMIT 1")
     suspend fun firstRealBookId(): Long?
+
+    /** 示例账本 id（演示模式的取数口径落点：账单页 / 报表 / 小组件都按账本取数）。 */
+    @Query("SELECT id FROM account_books WHERE isDemo = 1 ORDER BY id ASC LIMIT 1")
+    suspend fun demoBookId(): Long?
 }

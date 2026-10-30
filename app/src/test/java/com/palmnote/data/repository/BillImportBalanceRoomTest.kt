@@ -40,7 +40,10 @@ class BillImportBalanceRoomTest {
         db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java)
             .allowMainThreadQueries()
             .build()
-        repo = BillRepositoryImpl(db.billDao(), db.walletDao(), db.billRecycleBinDao(), db)
+        repo = BillRepositoryImpl(
+            db.billDao(), db.walletDao(), db.billRecycleBinDao(), db,
+            db.accountBookDao(), demoOffPrefs()
+        )
     }
 
     @After

@@ -45,6 +45,7 @@ import com.palmnote.data.db.entity.Bill
 import com.palmnote.data.db.entity.getDisplayDescription
 import com.palmnote.data.db.entity.getDisplayName
 import com.palmnote.domain.model.BillType
+import com.palmnote.domain.model.DemoOrigin
 import com.palmnote.domain.model.toMoney
 import com.palmnote.domain.util.CurrencyUtils
 import com.palmnote.domain.util.DateUtils
@@ -919,19 +920,28 @@ fun BillListItem(
     var offsetX by remember { mutableFloatStateOf(0f) }
     val deleteWidthPx = with(density) { 80.dp.toPx() }
     val thresholdPx = with(density) { 60.dp.toPx() }
+    // 演示种子行只读：无滑动删除（关演示时 SEED 整批清理，单行删除入口不暴露）；
+    // 详情查看不受限
+    val deletable = bill.demoOrigin != DemoOrigin.SEED
 
     Box(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
-        BillItemDeleteBackdrop(onDelete = onDelete, modifier = Modifier.align(Alignment.CenterEnd))
+        if (deletable) {
+            BillItemDeleteBackdrop(onDelete = onDelete, modifier = Modifier.align(Alignment.CenterEnd))
+        }
         Box(
             modifier = Modifier.fillMaxWidth().offset { IntOffset(offsetX.roundToInt(), 0) }
                 .background(MaterialTheme.colorScheme.surface)
-                .pointerInput(bill.id) {
-                    detectHorizontalDragGestures(
-                        onDragEnd = { offsetX = if (offsetX < -thresholdPx) -deleteWidthPx else 0f },
-                        onDragCancel = { offsetX = 0f },
-                        onHorizontalDrag = { _, dragAmount -> offsetX = (offsetX + dragAmount).coerceIn(-deleteWidthPx, 0f) }
-                    )
-                }
+                .then(
+                    if (deletable) {
+                        Modifier.pointerInput(bill.id) {
+                            detectHorizontalDragGestures(
+                                onDragEnd = { offsetX = if (offsetX < -thresholdPx) -deleteWidthPx else 0f },
+                                onDragCancel = { offsetX = 0f },
+                                onHorizontalDrag = { _, dragAmount -> offsetX = (offsetX + dragAmount).coerceIn(-deleteWidthPx, 0f) }
+                            )
+                        }
+                    } else Modifier
+                )
                 .clickable { if (offsetX == 0f) onDetail() else offsetX = 0f }
         ) {
             Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp).padding(start = 12.dp, end = 12.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Top) {

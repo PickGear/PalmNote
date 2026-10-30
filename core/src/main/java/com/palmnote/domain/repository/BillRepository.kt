@@ -109,6 +109,9 @@ interface BillRepository {
     // ---------------- 报销管理 ----------------
 
     /** 待报销的支出（含只报了一部分的，只要没报完就算待报销）。 */
+    /** 演示期用户自建账单数（示例账本内、非示例行）：自动毕业提示的判据。 */
+    fun userBillsInDemoBookFlow(): Flow<Int>
+
     fun getUnreimbursedBills(): Flow<List<Bill>>
 
     /** 已报完的支出。 */

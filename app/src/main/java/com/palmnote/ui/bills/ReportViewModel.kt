@@ -13,6 +13,7 @@ import com.palmnote.data.db.entity.CategoryConfig
 import com.palmnote.domain.repository.BillRepository
 import com.palmnote.domain.repository.groupToDailySummaries
 import com.palmnote.domain.util.DateUtils
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -51,8 +52,21 @@ data class ReportState(
 @HiltViewModel
 class ReportViewModel @Inject constructor(
     private val billRepository: BillRepository,
-    private val cachedCategoryConfigs: @JvmSuppressWildcards StateFlow<List<CategoryConfig>>
+    private val cachedCategoryConfigs: @JvmSuppressWildcards StateFlow<List<CategoryConfig>>,
+    private val accountBookRepository: com.palmnote.domain.repository.AccountBookRepository,
+    preferencesManager: com.palmnote.data.datastore.PreferencesManager
 ) : ViewModel() {
+
+    init {
+        // 演示模式：默认「全部账本」会把真实账单一起算进来，先把口径钉到示例账本
+        viewModelScope.launch {
+            if (preferencesManager.lifeDemoMode.first()) {
+                accountBookRepository.demoBookId()?.let { book ->
+                    _state.value = _state.value.copy(selectedBookId = book)
+                }
+            }
+        }
+    }
 
     private val _state = MutableStateFlow(ReportState())
     val state: StateFlow<ReportState> = _state.asStateFlow()

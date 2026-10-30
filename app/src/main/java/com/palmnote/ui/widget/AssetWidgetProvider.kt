@@ -37,13 +37,16 @@ open class AssetWidgetProvider : ScopedWidgetProvider() {
     @InstallIn(SingletonComponent::class)
     interface WidgetEntryPoint {
         fun assetDao(): com.palmnote.data.db.dao.AssetDao
+        fun preferencesManager(): com.palmnote.data.datastore.PreferencesManager
     }
 
     override suspend fun onUpdateAsync(appContext: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
         val entryPoint = EntryPointAccessors.fromApplication(
             appContext.applicationContext, WidgetEntryPoint::class.java
         )
-        val categories = entryPoint.assetDao().getHeldCategoryCounts().first()
+        // 演示模式下组件也只数示例（与物品页同口径）
+        val includeDemo = entryPoint.preferencesManager().lifeDemoMode.first()
+        val categories = entryPoint.assetDao().getHeldCategoryCounts(includeDemo).first()
         val recent = entryPoint.assetDao().getMostRecentHeldAsset()?.let { AssetRecent.from(it) }
 
         publish(appContext, appWidgetManager, appWidgetIds) { context, appWidgetId, _ ->

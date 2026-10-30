@@ -131,6 +131,15 @@ class BillViewModel @Inject constructor(
     // ============ Ephemeral state (user actions) ============
 
     private val _selectedBookId = MutableStateFlow(AccountBook.ALL_BOOKS_ID)
+
+    init {
+        // 演示模式：默认「全部账本」会把真实账单一起读出来，落到示例账本上才同口径
+        viewModelScope.launch {
+            if (preferencesManager.lifeDemoMode.first()) {
+                accountBookRepository.demoBookId()?.let { _selectedBookId.value = it }
+            }
+        }
+    }
     private val _currentYearMonth = MutableStateFlow(DateUtils.getCurrentYearMonth())
     private val _selectedDay = MutableStateFlow<Int?>(null)
     private val _searchQuery = MutableStateFlow("")

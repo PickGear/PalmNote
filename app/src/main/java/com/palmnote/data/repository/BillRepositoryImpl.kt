@@ -17,6 +17,10 @@ import com.palmnote.data.db.entity.toBill
 import com.palmnote.data.db.entity.toRecycleBin
 import com.palmnote.domain.model.BillType
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import com.palmnote.domain.repository.BillRepository
 import com.palmnote.domain.repository.ReimbursementAllocation
 import kotlinx.serialization.json.Json
@@ -39,13 +43,18 @@ private fun deleteImageFiles(images: String) {
     }
 }
 
+@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 class BillRepositoryImpl @Inject constructor(
     private val billDao: BillDao,
     private val walletDao: WalletDao,
     private val recycleBinDao: BillRecycleBinDao,
-    private val appDatabase: AppDatabase
+    private val appDatabase: AppDatabase,
+    private val accountBookDao: com.palmnote.data.db.dao.AccountBookDao,
+    private val preferencesManager: com.palmnote.data.datastore.PreferencesManager
 ) : BillRepository {
     override fun getAllBills(): Flow<List<Bill>> = billDao.getAllBills()
+
+    override fun userBillsInDemoBookFlow(): Flow<Int> = billDao.userBillsInDemoBookFlow()
 
     override suspend fun getBillById(id: Long): Bill? = billDao.getBillById(id)
 
@@ -81,7 +90,16 @@ class BillRepositoryImpl @Inject constructor(
 
     override fun getAllYearMonths(): Flow<List<String>> = billDao.getAllYearMonths()
 
-    override suspend fun insertBill(bill: Bill): Long = billDao.insertBill(bill)
+    /**
+     * 演示模式下新建的账单自动归入演示数据集并标 `USER`：
+     * 它出现在示例列表里、可改可删，关闭演示时会被迁回真实账本（不会丢）。
+     */
+    override suspend fun insertBill(bill: Bill): Long {
+        val demo = preferencesManager.lifeDemoMode.first()
+        return billDao.insertBill(
+            if (demo) bill.copy(isDemo = true, demoOrigin = com.palmnote.domain.model.DemoOrigin.USER) else bill
+        )
+    }
 
     override suspend fun updateBill(bill: Bill) = billDao.updateBill(bill)
 
@@ -172,14 +190,38 @@ class BillRepositoryImpl @Inject constructor(
 
     // ---------------- 报销管理 ----------------
 
-    override fun getUnreimbursedBills(): Flow<List<Bill>> = billDao.getUnreimbursedBills()
+    /**
+     * 报销口径是**全局查询**（没有账本参数），演示模式下不拦就会把真实待报销账单翻出来。
+     * 这里按示例账本收口——与账单页、报表「口径唯一」同一条规则。
+     */
+    private fun scopedToDemoBook(source: Flow<List<Bill>>): Flow<List<Bill>> =
+        preferencesManager.lifeDemoMode.flatMapLatest { demo ->
+            if (!demo) {
+                source
+            } else {
+                val demoBook = accountBookDao.demoBookId()
+                source.map { list ->
+                    if (demoBook == null) emptyList() else list.filter { it.accountBookId == demoBook }
+                }
+            }
+        }
 
-    override fun getReimbursedBills(): Flow<List<Bill>> = billDao.getReimbursedBills()
+    override fun getUnreimbursedBills(): Flow<List<Bill>> = scopedToDemoBook(billDao.getUnreimbursedBills())
+
+    override fun getReimbursedBills(): Flow<List<Bill>> = scopedToDemoBook(billDao.getReimbursedBills())
 
     override fun getPendingReimbursementSummary(): Flow<ReimbursementSummary?> =
-        billDao.getPendingReimbursementSummary()
+        preferencesManager.lifeDemoMode.flatMapLatest { demo ->
+            val book = if (demo) accountBookDao.demoBookId() else null
+            // 演示模式却拿不到示例账本 → 给空，绝不回落到真实数据
+            if (demo && book == null) flowOf(null) else billDao.getPendingReimbursementSummaryIn(book)
+        }
 
-    override fun getTotalReimbursedAmount(): Flow<Long?> = billDao.getTotalReimbursedAmount()
+    override fun getTotalReimbursedAmount(): Flow<Long?> =
+        preferencesManager.lifeDemoMode.flatMapLatest { demo ->
+            val book = if (demo) accountBookDao.demoBookId() else null
+            if (demo && book == null) flowOf(null) else billDao.getTotalReimbursedAmountIn(book)
+        }
 
     override suspend fun getBillsReimbursedBy(billId: Long): List<Bill> =
         billDao.getBillsReimbursedBy(billId)

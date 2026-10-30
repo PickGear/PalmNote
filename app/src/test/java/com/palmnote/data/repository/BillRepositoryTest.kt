@@ -24,7 +24,7 @@ class BillRepositoryTest {
     @Before
     fun setUp() {
         billDao = mockk(relaxUnitFun = true)
-        billRepository = BillRepositoryImpl(billDao, mockk(), mockk(), mockk())
+        billRepository = BillRepositoryImpl(billDao, mockk(), mockk(), mockk(), mockk(), demoOffPrefs())
     }
 
     @Test

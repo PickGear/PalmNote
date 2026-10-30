@@ -60,33 +60,51 @@ interface AssetDao {
     @Query("SELECT DISTINCT brand FROM assets WHERE brand != '' ORDER BY brand ASC")
     fun getAllBrands(): Flow<List<String>>
 
-    @Query("SELECT COUNT(*) FROM assets WHERE 1=1")
-    fun getTotalAssetCount(): Flow<Int>
+    /** 演示口径：`includeDemo = true` 只数示例行，`false` 只数真实行（见 [getTotalAssetCount] 说明）。 */
+    @Query("SELECT COUNT(*) FROM assets WHERE isDemo = :includeDemo")
+    fun getTotalAssetCount(includeDemo: Boolean): Flow<Int>
 
-    @Query("SELECT COUNT(*) FROM assets WHERE status = :status")
-    fun getAssetCountByStatus(status: AssetStatus): Flow<Int>
+    @Query("SELECT COUNT(*) FROM assets WHERE status = :status AND isDemo = :includeDemo")
+    fun getAssetCountByStatus(status: AssetStatus, includeDemo: Boolean): Flow<Int>
 
-    @Query("SELECT SUM(purchasePrice) FROM assets WHERE status != 'REMOVED'")
-    fun getTotalAssetValue(): Flow<Long?>
+    @Query("SELECT SUM(purchasePrice) FROM assets WHERE status != 'REMOVED' AND isDemo = :includeDemo")
+    fun getTotalAssetValue(includeDemo: Boolean): Flow<Long?>
 
-    @Query("SELECT SUM(purchasePrice) FROM assets WHERE status = 'HELD'")
-    fun getHeldAssetValue(): Flow<Long?>
+    @Query("SELECT SUM(purchasePrice) FROM assets WHERE status = 'HELD' AND isDemo = :includeDemo")
+    fun getHeldAssetValue(includeDemo: Boolean): Flow<Long?>
 
-    @Query("SELECT SUM(soldPrice) FROM assets WHERE status = 'REMOVED' AND soldPrice IS NOT NULL")
-    fun getTotalSoldValue(): Flow<Long?>
+    @Query("SELECT SUM(soldPrice) FROM assets WHERE status = 'REMOVED' AND soldPrice IS NOT NULL AND isDemo = :includeDemo")
+    fun getTotalSoldValue(includeDemo: Boolean): Flow<Long?>
 
-    @Query("SELECT SUM(currentValue) FROM assets WHERE status = 'HELD' AND currentValue > 0")
-    fun getTotalCurrentValue(): Flow<Long?>
+    @Query("SELECT SUM(currentValue) FROM assets WHERE status = 'HELD' AND currentValue > 0 AND isDemo = :includeDemo")
+    fun getTotalCurrentValue(includeDemo: Boolean): Flow<Long?>
 
-    @Query("SELECT category, COUNT(*) as count, SUM(purchasePrice) as totalValue FROM assets GROUP BY category ORDER BY count DESC")
-    fun getCategoryDistribution(): Flow<List<CategoryCount>>
+    @Query(
+        """
+        SELECT category, COUNT(*) as count, SUM(purchasePrice) as totalValue FROM assets
+        WHERE isDemo = :includeDemo GROUP BY category ORDER BY count DESC
+        """
+    )
+    fun getCategoryDistribution(includeDemo: Boolean): Flow<List<CategoryCount>>
 
     /** 在用物品按分类的件数分布（物品组件用）。只数 HELD，与组件头部「共 N 件」同口径。 */
-    @Query("SELECT category, COUNT(*) as count FROM assets WHERE status = 'HELD' GROUP BY category ORDER BY count DESC, category ASC")
-    fun getHeldCategoryCounts(): Flow<List<HeldCategoryCount>>
+    @Query(
+        """
+        SELECT category, COUNT(*) as count FROM assets
+        WHERE status = 'HELD' AND isDemo = :includeDemo
+        GROUP BY category ORDER BY count DESC, category ASC
+        """
+    )
+    fun getHeldCategoryCounts(includeDemo: Boolean): Flow<List<HeldCategoryCount>>
 
-    @Query("SELECT brand, COUNT(*) as count, SUM(purchasePrice) as totalValue FROM assets WHERE brand != '' GROUP BY brand ORDER BY count DESC LIMIT 10")
-    fun getBrandDistribution(): Flow<List<BrandCount>>
+    @Query(
+        """
+        SELECT brand, COUNT(*) as count, SUM(purchasePrice) as totalValue FROM assets
+        WHERE brand != '' AND isDemo = :includeDemo
+        GROUP BY brand ORDER BY count DESC LIMIT 10
+        """
+    )
+    fun getBrandDistribution(includeDemo: Boolean): Flow<List<BrandCount>>
 
 
     @Query("SELECT * FROM assets WHERE warrantyExpireDate IS NOT NULL AND warrantyExpireDate > :now ORDER BY warrantyExpireDate ASC")
@@ -185,13 +203,25 @@ interface AssetDao {
     suspend fun countByCategory(category: String): Int
 
 
-    /** 演示数据清理（v14 isDemo 列）：演示模式关闭时物理删除示例行。 */
-    @Query("DELETE FROM assets WHERE isDemo = 1")
+    /** 演示数据清理：只删示例种子（v19 `demoOrigin = 'SEED'`）。 */
+    @Query("DELETE FROM assets WHERE demoOrigin = 'SEED'")
     suspend fun clearDemoAssets()
 
     /** 当前示例行数（关演示反馈 / 幂等判断用）。 */
     @Query("SELECT COUNT(*) FROM assets WHERE isDemo = 1")
     suspend fun countDemoAssets(): Int
+
+    /** 演示期自建物品数（毕业询问计数用）。 */
+    @Query("SELECT COUNT(*) FROM assets WHERE demoOrigin = 'USER'")
+    suspend fun countUserAssets(): Int
+
+    /** 关演示·保留：演示期自建的物品毕业为真实行（物品没有账本维度，原地翻标记）。 */
+    @Query("UPDATE assets SET isDemo = 0, demoOrigin = 'NONE' WHERE demoOrigin = 'USER'")
+    suspend fun graduateUserAssets()
+
+    /** 关演示·一并删：演示期自建的物品也清掉（用户明确不要这些内容）。 */
+    @Query("DELETE FROM assets WHERE demoOrigin = 'USER'")
+    suspend fun clearUserAssetsFromDemo()
 }
 
 data class CategoryCount(

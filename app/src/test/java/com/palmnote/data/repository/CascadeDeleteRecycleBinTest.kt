@@ -10,6 +10,9 @@ import com.palmnote.data.db.entity.Bill
 import com.palmnote.data.db.entity.Wallet
 import com.palmnote.domain.model.BillType
 import kotlinx.coroutines.flow.first
+import io.mockk.every
+import io.mockk.mockk
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -47,16 +50,26 @@ class CascadeDeleteRecycleBinTest {
         db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java)
             .allowMainThreadQueries()
             .build()
-        billRepo = BillRepositoryImpl(db.billDao(), db.walletDao(), db.billRecycleBinDao(), db)
-        walletRepo = WalletRepositoryImpl(db.walletDao(), billRepo, db, context, com.palmnote.data.event.EventBusImpl())
-        bookRepo = AccountBookRepositoryImpl(db.accountBookDao(), billRepo, db, context)
-        assetRepo = AssetRepositoryImpl(db.assetDao(), db.assetRecycleBinDao(), db, com.palmnote.data.event.EventBusImpl())
+        billRepo = BillRepositoryImpl(
+            db.billDao(), db.walletDao(), db.billRecycleBinDao(), db,
+            db.accountBookDao(), com.palmnote.data.repository.demoOffPrefs()
+        )
+        walletRepo = WalletRepositoryImpl(
+            db.walletDao(), billRepo, db, context,
+            com.palmnote.data.event.EventBusImpl(), com.palmnote.data.repository.demoOffPrefs()
+        )
+        bookRepo = AccountBookRepositoryImpl(db.accountBookDao(), billRepo, db, context, com.palmnote.data.repository.demoOffPrefs())
+        assetRepo = AssetRepositoryImpl(
+            db.assetDao(), db.assetRecycleBinDao(), db,
+            com.palmnote.data.event.EventBusImpl(), com.palmnote.data.repository.demoOffPrefs()
+        )
     }
 
     @After
     fun tearDown() {
         db.close()
     }
+
 
     private fun expense(amount: Long) = Bill(
         amount = amount,

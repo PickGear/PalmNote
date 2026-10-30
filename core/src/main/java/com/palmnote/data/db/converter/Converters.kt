@@ -34,6 +34,17 @@ class Converters {
     @TypeConverter
     fun toAppIcon(name: String): AppIcon = AppIcon.fromName(name)
 
+    // ---- 演示数据来源（v19） ----
+
+    @TypeConverter
+    fun fromDemoOrigin(v: com.palmnote.domain.model.DemoOrigin): String = v.name
+
+    @TypeConverter
+    fun toDemoOrigin(name: String): com.palmnote.domain.model.DemoOrigin =
+        try { com.palmnote.domain.model.DemoOrigin.valueOf(name) } catch (_: Exception) {
+            com.palmnote.domain.model.DemoOrigin.NONE
+        }
+
     // ---- 新增枚举 ----
 
     @TypeConverter

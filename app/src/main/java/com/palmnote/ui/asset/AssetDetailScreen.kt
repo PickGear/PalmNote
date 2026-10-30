@@ -4,6 +4,7 @@ import android.app.Activity
 import android.os.Build
 import android.view.WindowInsetsController
 import android.view.WindowManager
+import com.palmnote.domain.model.DemoOrigin
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -125,10 +126,11 @@ fun AssetDetailScreen(
                         }
                     },
                     actions = {
-                        IconButton(onClick = { onNavigateToEdit(assetId) }) {
+                        // 示例物品只读：编辑入口不渲染（你自己加的不受影响）
+                        if (asset.demoOrigin != DemoOrigin.SEED) IconButton(onClick = { onNavigateToEdit(assetId) }) {
                             Icon(Icons.Outlined.Edit, contentDescription = stringResource(R.string.edit))
                         }
-                        IconButton(onClick = { viewModel.showDeleteDialog() }) {
+                        if (asset.demoOrigin != DemoOrigin.SEED) IconButton(onClick = { viewModel.showDeleteDialog() }) {
                             Icon(Icons.Outlined.Delete, contentDescription = stringResource(R.string.delete))
                         }
                     }

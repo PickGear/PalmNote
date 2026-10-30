@@ -44,9 +44,9 @@ class DemoDataSeeder @Inject constructor(
     /** 全量演示数据的清理结果：移除的示例条数 / 保留（毕业）的用户自建条数。 */
     data class ClearResult(val removed: Int, val kept: Int)
 
-    /** 演示期用户自建、关演示时需要决定归宿的条数（目前只有生活模块的 meta 自建；0 = 不必询问）。 */
+    /** 演示期用户自建、关演示时需要决定归宿的条数（生活自建 + 财富 USER 行；0 = 不必询问）。 */
     suspend fun countUserCreatedInDemo(preferences: PreferencesManager): Int =
-        life.countDemoCreated(preferences)
+        life.countDemoCreated(preferences) + wealth.countUserRows()
 
     /**
      * 保证所有模块的示例内容存在且为最新（幂等，多调用点安全）。
@@ -92,18 +92,18 @@ class DemoDataSeeder @Inject constructor(
     /**
      * 关闭演示：所有模块的示例整批物理移除。
      * [keepUserCreated] = 演示期自建数据的归宿（true=毕业保留 / false=一并删除），
-     * 由「毕业询问」对话框决定——只有生活模块需要问（记账/物品的自建数据本就不带标记，
-     * 打标模型下天然保留；习惯同理）。
+     * 由「毕业询问」对话框决定——生活自建条目与财富模块的 USER 行都参与计数与归宿；
+     * 预算例外（无账本维度可毕业，两个分支都随演示清掉）。
      *
      * 与 [ensureSeeded] 共用闸门：两者都是「先删后插」，交叠执行会留下半新半旧的数据。
      */
     suspend fun clearAll(preferences: PreferencesManager, keepUserCreated: Boolean = true): ClearResult =
         seedMutex.withLock {
             val lifeResult = life.clearAll(preferences, keepUserCreated)
-            val wealthResult = wealth.clearAll(preferences)
+            val wealthResult = wealth.clearAll(preferences, keepUserCreated)
             ClearResult(
                 removed = lifeResult.removed + wealthResult.removed,
-                kept = lifeResult.kept
+                kept = lifeResult.kept + wealthResult.kept
             )
         }
 }

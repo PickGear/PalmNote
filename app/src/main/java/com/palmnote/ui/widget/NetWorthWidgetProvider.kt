@@ -44,6 +44,7 @@ open class NetWorthWidgetProvider : ScopedWidgetProvider() {
     interface WidgetEntryPoint {
         fun walletDao(): com.palmnote.data.db.dao.WalletDao
         fun billDao(): com.palmnote.data.db.dao.BillDao
+        fun preferencesManager(): com.palmnote.data.datastore.PreferencesManager
     }
 
     override suspend fun onUpdateAsync(appContext: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
@@ -52,8 +53,10 @@ open class NetWorthWidgetProvider : ScopedWidgetProvider() {
             WidgetEntryPoint::class.java
         )
         // 资产 = 非信用卡合计；负债 = 信用卡余额绝对值（库里正负号两种记法都认）
-        val assets = entryPoint.walletDao().getTotalBalance().first() ?: 0L
-        val liabs = kotlin.math.abs(entryPoint.walletDao().getTotalCreditCardBalance().first() ?: 0L)
+        // 演示模式下净资产只算示例钱包（与首页 / 钱包页同口径）
+        val includeDemo = entryPoint.preferencesManager().lifeDemoMode.first()
+        val assets = entryPoint.walletDao().getTotalBalance(includeDemo).first() ?: 0L
+        val liabs = kotlin.math.abs(entryPoint.walletDao().getTotalCreditCardBalance(includeDemo).first() ?: 0L)
         val delta = fetchMonthDelta(entryPoint)
         // 近 12 个月净值序列：月度收支差额倒推（见类 KDoc）
         val fromMonth = DateTimeFormatter.ofPattern("yyyy-MM").format(LocalDate.now().minusMonths(11))

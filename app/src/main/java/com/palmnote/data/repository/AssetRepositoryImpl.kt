@@ -11,48 +11,79 @@ import com.palmnote.data.db.entity.toRecycleBin
 import com.palmnote.data.db.entity.toAsset
 import com.palmnote.domain.event.DomainEvent
 import com.palmnote.domain.repository.AssetRepository
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
+/**
+ * 演示模式下**只看示例行、关闭演示只看真实行**（「全 App 口径唯一」）。
+ *
+ * 物品没有账本维度，只能在取数处按 `isDemo` 分流：列表在内存过滤，
+ * 聚合值把开关透传给 DAO 的同一条 SQL（`includeDemo`），保证列表与汇总永远同口径。
+ */
+@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 class AssetRepositoryImpl @Inject constructor(
     private val assetDao: AssetDao,
     private val assetRecycleBinDao: AssetRecycleBinDao,
     private val appDatabase: AppDatabase,
-    private val eventBus: com.palmnote.domain.event.EventBus
+    private val eventBus: com.palmnote.domain.event.EventBus,
+    private val preferencesManager: com.palmnote.data.datastore.PreferencesManager
 ) : AssetRepository {
-    override fun getAllAssets() = assetDao.getAllAssets()
+
+    /** 列出口径：示例模式只留 `isDemo`，否则只留真实行。 */
+    private fun scopedList(source: kotlinx.coroutines.flow.Flow<List<Asset>>) =
+        preferencesManager.lifeDemoMode.flatMapLatest { demo ->
+            source.map { list -> list.filter { it.isDemo == demo } }
+        }
+
+    /** 标量口径：把开关透传给 DAO，SQL 里用 `includeDemo` 选行。 */
+    private fun <T> scoped(block: (Boolean) -> kotlinx.coroutines.flow.Flow<T>) =
+        preferencesManager.lifeDemoMode.flatMapLatest { demo -> block(demo) }
+    override fun getAllAssets() = scopedList(assetDao.getAllAssets())
 
     override suspend fun getAssetById(id: Long): Asset? = assetDao.getAssetById(id)
 
     override fun getAssetByIdFlow(id: Long) = assetDao.getAssetByIdFlow(id)
 
-    override fun getAssetsByCategory(category: String) = assetDao.getAssetsByCategory(category)
+    override fun getAssetsByCategory(category: String) = scopedList(assetDao.getAssetsByCategory(category))
 
-    override fun getAssetsByStatus(status: String) = assetDao.getAssetsByStatus(status)
+    override fun getAssetsByStatus(status: String) = scopedList(assetDao.getAssetsByStatus(status))
 
-    override fun getAssetsByAcquisitionType(type: String) = assetDao.getAssetsByAcquisitionType(type)
+    override fun getAssetsByAcquisitionType(type: String) =
+        scopedList(assetDao.getAssetsByAcquisitionType(type))
 
-    override fun searchAssets(query: String) = assetDao.searchAssets(query)
+    override fun searchAssets(query: String) = scopedList(assetDao.searchAssets(query))
 
-    override fun getTotalAssetCount() = assetDao.getTotalAssetCount()
+    override fun getTotalAssetCount() = scoped { assetDao.getTotalAssetCount(it) }
 
-    override fun getAssetCountByStatus(status: AssetStatus) = assetDao.getAssetCountByStatus(status)
+    override fun getAssetCountByStatus(status: AssetStatus) =
+        scoped { assetDao.getAssetCountByStatus(status, it) }
 
-    override fun getTotalAssetValue() = assetDao.getTotalAssetValue()
+    override fun getTotalAssetValue() = scoped { assetDao.getTotalAssetValue(it) }
 
-    override fun getHeldAssetValue() = assetDao.getHeldAssetValue()
+    override fun getHeldAssetValue() = scoped { assetDao.getHeldAssetValue(it) }
 
-    override fun getTotalSoldValue() = assetDao.getTotalSoldValue()
+    override fun getTotalSoldValue() = scoped { assetDao.getTotalSoldValue(it) }
 
-    override fun getCategoryDistribution() = assetDao.getCategoryDistribution()
+    override fun getCategoryDistribution() = scoped { assetDao.getCategoryDistribution(it) }
 
 
-    override fun getAssetsWithValidWarranty() = assetDao.getAssetsWithValidWarranty()
+    override fun getAssetsWithValidWarranty() = scopedList(assetDao.getAssetsWithValidWarranty())
 
-    override fun getAssetsWithExpiredWarranty() = assetDao.getAssetsWithExpiredWarranty()
+    override fun getAssetsWithExpiredWarranty() =
+        scopedList(assetDao.getAssetsWithExpiredWarranty())
 
-    override fun getHeldAssetsWithExpiry() = assetDao.getHeldAssetsWithExpiry()
+    override fun getHeldAssetsWithExpiry() = scopedList(assetDao.getHeldAssetsWithExpiry())
 
-    override fun getAllAssetsSortedByStatus() = assetDao.getAllAssetsSortedByStatus()
+    override fun getAllAssetsSortedByStatus() =
+        scopedList(assetDao.getAllAssetsSortedByStatus())
 
-    override suspend fun insertAsset(asset: Asset): Long = assetDao.insertAsset(asset)
+    /** 演示模式下新建的物品同样标 `USER`（可见可改，关闭时迁回真实数据）。 */
+    override suspend fun insertAsset(asset: Asset): Long {
+        val demo = preferencesManager.lifeDemoMode.first()
+        return assetDao.insertAsset(
+            if (demo) asset.copy(isDemo = true, demoOrigin = com.palmnote.domain.model.DemoOrigin.USER) else asset
+        )
+    }
 
     override suspend fun updateAsset(asset: Asset) = assetDao.updateAsset(asset)
 

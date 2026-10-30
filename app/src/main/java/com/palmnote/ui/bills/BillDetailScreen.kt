@@ -2,6 +2,7 @@ package com.palmnote.ui.bills
 
 import androidx.compose.foundation.background
 import com.palmnote.domain.model.BillType
+import com.palmnote.domain.model.DemoOrigin
 import com.palmnote.domain.model.PaymentMethod
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -105,8 +106,11 @@ fun BillDetailScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { showDeleteDialog = true }) {
-                        Icon(Icons.Outlined.Delete, contentDescription = stringResource(R.string.delete), tint = ExpenseRed)
+                    // 演示种子行只读：删除入口不渲染（关演示时 SEED 整批清理）
+                    if (bill?.demoOrigin != DemoOrigin.SEED) {
+                        IconButton(onClick = { showDeleteDialog = true }) {
+                            Icon(Icons.Outlined.Delete, contentDescription = stringResource(R.string.delete), tint = ExpenseRed)
+                        }
                     }
                 }
             )

@@ -139,9 +139,10 @@ open class DashboardWidgetProvider : ScopedWidgetProvider() {
         val weekBills = entryPoint.billDao().getBillsByDate(weekStart).first()
             .filter { it.type == BillType.EXPENSE }
         val dailyExpense = sumByDay(weekBills, today, 7)
-        val budget = entryPoint.budgetDao().getBudgetByMonth(
-            java.time.format.DateTimeFormatter.ofPattern("yyyy-MM").format(today)
-        ) ?: entryPoint.budgetDao().getLatestBudget().first()
+        val budget = entryPoint.budgetDao().getBudgetByMonthScoped(
+            java.time.format.DateTimeFormatter.ofPattern("yyyy-MM").format(today),
+            includeDemo
+        ) ?: entryPoint.budgetDao().getLatestBudgetScoped(includeDemo)
 
         return DashboardSnapshot(
             todayExpense = expense.sumOf { it.amount },

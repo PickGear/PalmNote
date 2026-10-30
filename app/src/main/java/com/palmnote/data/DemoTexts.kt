@@ -246,6 +246,10 @@ internal object DemoTexts {
         "洗牙" to "Dental cleaning",
         "《奥本海默》重映" to "Oppenheimer re-release",
 
+        // ── 账本 ──
+        "示例账本" to "Sample book",
+        "默认账本" to "Default book",
+
         // ── 物品 ──
         "罗技 G903 无线鼠标" to "Logitech G903 Wireless Mouse",
         "罗技" to "Logitech",

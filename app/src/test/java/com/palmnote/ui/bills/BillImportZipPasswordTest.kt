@@ -59,7 +59,10 @@ class BillImportZipPasswordTest {
         Dispatchers.setMain(testDispatcher)
         ctx = InstrumentationRegistry.getInstrumentation().targetContext
         db = Room.inMemoryDatabaseBuilder(ctx, AppDatabase::class.java).allowMainThreadQueries().build()
-        repo = BillRepositoryImpl(db.billDao(), db.walletDao(), db.billRecycleBinDao(), db)
+        repo = BillRepositoryImpl(
+            db.billDao(), db.walletDao(), db.billRecycleBinDao(), db,
+            db.accountBookDao(), com.palmnote.data.repository.demoOffPrefs()
+        )
         val walletId = runBlocking {
             db.walletDao().insert(Wallet(name = "现金", initialBalance = 100000, currentBalance = 100000))
         }

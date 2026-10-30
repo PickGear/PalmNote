@@ -37,7 +37,10 @@ class AssetRecycleBinShelfLifeTest {
         db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java)
             .allowMainThreadQueries()
             .build()
-        repo = AssetRepositoryImpl(db.assetDao(), db.assetRecycleBinDao(), db, com.palmnote.data.event.EventBusImpl())
+        repo = AssetRepositoryImpl(
+            db.assetDao(), db.assetRecycleBinDao(), db,
+            com.palmnote.data.event.EventBusImpl(), demoOffPrefs()
+        )
     }
 
     @After

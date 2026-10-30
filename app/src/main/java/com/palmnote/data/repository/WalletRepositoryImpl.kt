@@ -9,20 +9,34 @@ import com.palmnote.data.db.dao.WalletDao
 import com.palmnote.data.db.entity.Wallet
 import com.palmnote.ui.bills.walletPresets
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import com.palmnote.domain.event.DomainEvent
 import com.palmnote.domain.repository.BillRepository
 import com.palmnote.domain.repository.WalletRepository
 
+/** 演示模式下钱包同样分流：只暴露示例钱包，余额也只算示例（见 AssetRepositoryImpl 说明）。 */
+@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 class WalletRepositoryImpl @Inject constructor(
     private val walletDao: WalletDao,
     private val billRepository: BillRepository,
     private val appDatabase: AppDatabase,
     @ApplicationContext private val context: Context,
-    private val eventBus: com.palmnote.domain.event.EventBus
+    private val eventBus: com.palmnote.domain.event.EventBus,
+    private val preferencesManager: com.palmnote.data.datastore.PreferencesManager
 ) : WalletRepository {
-    override fun getEnabledWallets(): Flow<List<Wallet>> = walletDao.getEnabledWallets()
 
-    override fun getAllWallets(): Flow<List<Wallet>> = walletDao.getAllWallets()
+    private fun scopedList(source: kotlinx.coroutines.flow.Flow<List<com.palmnote.data.db.entity.Wallet>>) =
+        preferencesManager.lifeDemoMode.flatMapLatest { demo ->
+            source.map { list -> list.filter { it.isDemo == demo } }
+        }
+
+    private fun <T> scoped(block: (Boolean) -> kotlinx.coroutines.flow.Flow<T>) =
+        preferencesManager.lifeDemoMode.flatMapLatest { demo -> block(demo) }
+    override fun getEnabledWallets(): Flow<List<Wallet>> = scopedList(walletDao.getEnabledWallets())
+
+    override fun getAllWallets(): Flow<List<Wallet>> = scopedList(walletDao.getAllWallets())
 
     override suspend fun getWalletById(id: Long): Wallet? = walletDao.getWalletById(id)
 
@@ -34,13 +48,20 @@ class WalletRepositoryImpl @Inject constructor(
 
     override fun getDefaultWalletFlow(): Flow<Wallet?> = walletDao.getDefaultWalletFlow()
 
-    override fun getTotalBalance(): Flow<Long?> = walletDao.getTotalBalance()
+    override fun getTotalBalance(): Flow<Long?> = scoped { walletDao.getTotalBalance(it) }
 
-    override fun getTotalCreditCardBalance(): Flow<Long?> = walletDao.getTotalCreditCardBalance()
+    override fun getTotalCreditCardBalance(): Flow<Long?> =
+        scoped { walletDao.getTotalCreditCardBalance(it) }
 
-    override fun getEnabledWalletCount(): Flow<Int> = walletDao.getEnabledWalletCount()
+    override fun getEnabledWalletCount(): Flow<Int> = scoped { walletDao.getEnabledWalletCount(it) }
 
-    override suspend fun insert(wallet: Wallet): Long = walletDao.insert(wallet)
+    /** 演示模式下新建的钱包标 `USER`（同账单口径）。 */
+    override suspend fun insert(wallet: Wallet): Long {
+        val demo = preferencesManager.lifeDemoMode.first()
+        return walletDao.insert(
+            if (demo) wallet.copy(isDemo = true, demoOrigin = com.palmnote.domain.model.DemoOrigin.USER) else wallet
+        )
+    }
 
     override suspend fun update(wallet: Wallet) = walletDao.update(wallet)
 

@@ -155,7 +155,9 @@ object DatabaseModule {
                 com.palmnote.data.db.migration.MIGRATION_14_15,
                 com.palmnote.data.db.migration.MIGRATION_15_16,
                 com.palmnote.data.db.migration.MIGRATION_16_17,
-                com.palmnote.data.db.migration.MIGRATION_17_18
+                com.palmnote.data.db.migration.MIGRATION_17_18,
+                com.palmnote.data.db.migration.MIGRATION_18_19,
+                com.palmnote.data.db.migration.MIGRATION_19_20
             )
             .addCallback(object : androidx.room.RoomDatabase.Callback() {
                 override fun onCreate(db: SupportSQLiteDatabase) {
@@ -255,21 +257,28 @@ object RepositoryModule {
         assetRecycleBinDao: AssetRecycleBinDao,
         appDatabase: AppDatabase,
         eventBus: com.palmnote.domain.event.EventBus
+    ,
+        preferencesManager: com.palmnote.data.datastore.PreferencesManager
     ): AssetRepository =
-        AssetRepositoryImpl(dao, assetRecycleBinDao, appDatabase, eventBus)
+        AssetRepositoryImpl(dao, assetRecycleBinDao, appDatabase, eventBus, preferencesManager)
 
     @Provides @Singleton
     fun provideBillRepository(
         dao: BillDao,
         walletDao: WalletDao,
         recycleBinDao: BillRecycleBinDao,
-        appDatabase: AppDatabase
+        appDatabase: AppDatabase,
+        accountBookDao: AccountBookDao,
+        preferencesManager: com.palmnote.data.datastore.PreferencesManager
     ): BillRepository =
-        BillRepositoryImpl(dao, walletDao, recycleBinDao, appDatabase)
+        BillRepositoryImpl(dao, walletDao, recycleBinDao, appDatabase, accountBookDao, preferencesManager)
 
     @Provides @Singleton
-    fun provideBudgetRepository(dao: BudgetDao): BudgetRepository =
-        BudgetRepositoryImpl(dao)
+    fun provideBudgetRepository(
+        dao: BudgetDao,
+        preferencesManager: com.palmnote.data.datastore.PreferencesManager
+    ): BudgetRepository =
+        BudgetRepositoryImpl(dao, preferencesManager)
 
     @Provides @Singleton
     fun provideAnniversaryRepository(dao: AnniversaryDao): AnniversaryRepository =
@@ -302,18 +311,20 @@ object RepositoryModule {
         billRepository: BillRepository,
         appDatabase: AppDatabase,
         @ApplicationContext context: Context,
-        eventBus: com.palmnote.domain.event.EventBus
+        eventBus: com.palmnote.domain.event.EventBus,
+        preferencesManager: com.palmnote.data.datastore.PreferencesManager
     ): WalletRepository =
-        WalletRepositoryImpl(dao, billRepository, appDatabase, context, eventBus)
+        WalletRepositoryImpl(dao, billRepository, appDatabase, context, eventBus, preferencesManager)
 
     @Provides @Singleton
     fun provideAccountBookRepository(
         dao: AccountBookDao,
         billRepository: BillRepository,
         appDatabase: AppDatabase,
-        @ApplicationContext context: Context
+        @ApplicationContext context: Context,
+        preferencesManager: com.palmnote.data.datastore.PreferencesManager
     ): AccountBookRepository =
-        AccountBookRepositoryImpl(dao, billRepository, appDatabase, context)
+        AccountBookRepositoryImpl(dao, billRepository, appDatabase, context, preferencesManager)
 
     @Provides @Singleton
     fun providePlanListRepository(
