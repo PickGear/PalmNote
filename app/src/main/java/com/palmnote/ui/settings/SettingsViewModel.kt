@@ -45,6 +45,8 @@ data class SettingsState(
     val defaultStartPage: String = "dashboard",
     val language: String = "SYSTEM",
     val receiptStyle: String = PreferencesManager.RECEIPT_STYLE_DETAIL,
+    /** 网格视图物品卡样式（小图 / 大图）；只影响物品页网格，列表视图不跟它走。 */
+    val assetGridCardStyle: String = PreferencesManager.ASSET_GRID_STYLE_SMALL,
     val assetCount: Int = 0,
     val goalCount: Int = 0,
     val momentCount: Int = 0,
@@ -146,7 +148,8 @@ class SettingsViewModel @Inject constructor(
                 anniversaryRepository.getAnniversaryCount(),
                 preferencesManager.autoLockTimeoutMinutes,
                 preferencesManager.lifeDemoMode,
-                preferencesManager.receiptStyle
+                preferencesManager.receiptStyle,
+                preferencesManager.assetGridCardStyle
             ) { args ->
                 val i = { idx: Int -> args.getOrNull(idx) }
                 _state.update { current ->
@@ -184,7 +187,8 @@ class SettingsViewModel @Inject constructor(
                         anniversaryCount = (i(30) as? Int) ?: 0,
                         autoLockTimeoutMinutes = (i(31) as? Int) ?: 5,
                         demoModeEnabled = (i(32) as? Boolean) ?: true,
-                        receiptStyle = (i(33) as? String) ?: PreferencesManager.RECEIPT_STYLE_DETAIL
+                        receiptStyle = (i(33) as? String) ?: PreferencesManager.RECEIPT_STYLE_DETAIL,
+                        assetGridCardStyle = (i(34) as? String) ?: PreferencesManager.ASSET_GRID_STYLE_SMALL
                     )
                 }
             }.catch { AppLogger.w("SettingsVM", "Settings flow failed", it) }.collect()
@@ -201,6 +205,11 @@ class SettingsViewModel @Inject constructor(
 
     fun setReceiptStyle(style: String) {
         viewModelScope.launch { preferencesManager.setReceiptStyle(style) }
+    }
+
+    /** 网格物品卡样式：切换即刻落盘，物品页订阅同一偏好，返回时已是新样式。 */
+    fun setAssetGridCardStyle(style: String) {
+        viewModelScope.launch { preferencesManager.setAssetGridCardStyle(style) }
     }
 
     fun setBudgetReminderEnabled(enabled: Boolean) {

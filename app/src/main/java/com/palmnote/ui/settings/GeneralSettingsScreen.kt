@@ -94,6 +94,7 @@ fun GeneralSettingsScreen(
     var showWallpaperPicker by remember { mutableStateOf(false) }
     var showStartPagePicker by remember { mutableStateOf(false) }
     var showBillTypePicker by remember { mutableStateOf(false) }
+    var showAssetGridStylePicker by remember { mutableStateOf(false) }
     var showIconPicker by remember { mutableStateOf(false) }
     var pendingIconStyle by remember { mutableStateOf<String?>(null) }
     var showCalendarPermissionDialog by remember { mutableStateOf(false) }
@@ -260,6 +261,25 @@ fun GeneralSettingsScreen(
                         SettingRowContent(
                             title = stringResource(R.string.settings_receipt_style),
                             value = receiptStyleLabels[state.receiptStyle] ?: stringResource(R.string.settings_receipt_style_detail),
+                            showChevron = true
+                        )
+                    }
+                }
+            }
+
+            // 物品相关偏好独立成区：只影响物品页网格卡片的排版，与小票样式同属「模块自己的形态」。
+            item { SectionHeader(stringResource(R.string.settings_asset_section), Icons.Outlined.Inventory2, ModuleItem) }
+            item {
+                ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
+                    SettingRow(clickable = { showAssetGridStylePicker = true }) {
+                        SettingRowContent(
+                            title = stringResource(R.string.settings_asset_grid_style),
+                            subtitle = stringResource(R.string.settings_asset_grid_style_subtitle),
+                            value = if (state.assetGridCardStyle == PreferencesManager.ASSET_GRID_STYLE_LARGE) {
+                                stringResource(R.string.asset_grid_style_large)
+                            } else {
+                                stringResource(R.string.asset_grid_style_small)
+                            },
                             showChevron = true
                         )
                     }
@@ -638,6 +658,36 @@ fun GeneralSettingsScreen(
             optionTint = { billTypeColors[it.first] ?: fallbackTint },
             onSelect = { (type, _, _) -> viewModel.setDefaultBillType(type) },
             onDismiss = { showBillTypePicker = false }
+        )
+    }
+
+    if (showAssetGridStylePicker) {
+        // 未知值按小图归一：将来若新增第三种样式、被旧版本读到，弹窗里不会出现「两个都没选中」
+        val currentGridStyle =
+            if (state.assetGridCardStyle == PreferencesManager.ASSET_GRID_STYLE_LARGE) {
+                PreferencesManager.ASSET_GRID_STYLE_LARGE
+            } else {
+                PreferencesManager.ASSET_GRID_STYLE_SMALL
+            }
+        // 两个选项用同一枚图标：差别在排版不在功能，换图标反而暗示「两种东西」
+        val gridStyleOptions = listOf(
+            PreferencesManager.ASSET_GRID_STYLE_SMALL,
+            PreferencesManager.ASSET_GRID_STYLE_LARGE
+        )
+        ChoiceDialog(
+            title = stringResource(R.string.settings_asset_grid_style),
+            options = gridStyleOptions,
+            selected = currentGridStyle,
+            optionLabel = {
+                stringResource(
+                    if (it == PreferencesManager.ASSET_GRID_STYLE_LARGE) R.string.asset_grid_style_large
+                    else R.string.asset_grid_style_small
+                )
+            },
+            optionIcon = { Icons.Outlined.Inventory2 },
+            optionTint = { ModuleItem },
+            onSelect = { viewModel.setAssetGridCardStyle(it) },
+            onDismiss = { showAssetGridStylePicker = false }
         )
     }
 

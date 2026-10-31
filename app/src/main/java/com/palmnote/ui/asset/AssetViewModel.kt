@@ -183,6 +183,20 @@ class AssetViewModel @Inject constructor(
 
     val categoryConfigs: StateFlow<List<CategoryConfig>> = cachedCategoryConfigs
 
+    /**
+     * 网格视图的卡片样式（小图 / 大图），只在设置页切换、全局一套。
+     *
+     * 初始值取**同步快照**而不是常量「小图」：从设置页切完返回物品页时，若首帧先按小图渲染，
+     * 下一帧才切到大图，整屏卡片会跳一下（同 `panelExpanded` 的首帧处理）。
+     * 用 Eagerly：物品页是用户反复进出的主页面，订阅成本远小于每次重建再拉一次 DataStore。
+     */
+    val gridCardStyle: StateFlow<String> = preferencesManager.assetGridCardStyle
+        .stateIn(
+            viewModelScope,
+            SharingStarted.Eagerly,
+            preferencesManager.assetGridCardStyleInitial
+        )
+
     enum class DialogType { AWAY, CLEAR, DELETE }
 
     private val _dialogType = MutableStateFlow<DialogType?>(null)

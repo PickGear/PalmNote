@@ -108,6 +108,11 @@ class PreferencesManager @Inject constructor(
         val LIFE_TIME_EXPANDED = booleanPreferencesKey("life_time_expanded")
         val LIFE_RECORD_EXPANDED = booleanPreferencesKey("life_record_expanded")
         val ASSET_PANEL_EXPANDED = booleanPreferencesKey("asset_panel_expanded")
+
+        /** 网格视图物品卡样式：小图（默认，两列密排）/ 大图（图占上半）。全局一套，切换即生效。 */
+        const val ASSET_GRID_STYLE_SMALL = "small"
+        const val ASSET_GRID_STYLE_LARGE = "large"
+        val ASSET_GRID_CARD_STYLE = stringPreferencesKey("asset_grid_card_style")
         val PROFILE_NICKNAME = stringPreferencesKey("profile_nickname")
         val PROFILE_SIGNATURE = stringPreferencesKey("profile_signature")
         val PROFILE_AVATAR = stringPreferencesKey("profile_avatar")
@@ -732,6 +737,29 @@ class PreferencesManager @Inject constructor(
     val assetPanelExpandedInitial: Boolean get() = prefsState.value[ASSET_PANEL_EXPANDED] ?: true
     suspend fun setAssetPanelExpanded(expanded: Boolean) {
         context.dataStore.edit { it[ASSET_PANEL_EXPANDED] = expanded }
+    }
+
+    /**
+     * 网格视图物品卡样式（[ASSET_GRID_STYLE_SMALL] / [ASSET_GRID_STYLE_LARGE]）。
+     *
+     * 只有网格视图读它；列表视图的卡片形态固定，不跟这个开关走。
+     * 存字符串而不是布尔：以后加第三种样式不用改键名，也不用迁移已存的用户选择。
+     */
+    val assetGridCardStyle: Flow<String> =
+        prefsFlow.map { it[ASSET_GRID_CARD_STYLE] ?: ASSET_GRID_STYLE_SMALL }
+
+    /**
+     * 首帧用的同步快照（同 [assetPanelExpandedInitial] 的做法）。
+     *
+     * 从设置页返回物品页时，`stateIn` 的初始值若写死「小图」，第一帧会先按小图画一遍、
+     * 下一帧才切成真正选中的大图——整屏卡片当场跳一下。prefsState 在 Application 启动时就已加载，
+     * 这里直接读它，首帧即正确。
+     */
+    val assetGridCardStyleInitial: String
+        get() = prefsState.value[ASSET_GRID_CARD_STYLE] ?: ASSET_GRID_STYLE_SMALL
+
+    suspend fun setAssetGridCardStyle(style: String) {
+        context.dataStore.edit { it[ASSET_GRID_CARD_STYLE] = style }
     }
 
     val profileNickname: Flow<String> = prefsFlow.map { it[PROFILE_NICKNAME] ?: "" }

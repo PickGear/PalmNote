@@ -79,6 +79,7 @@ import androidx.compose.ui.semantics.stateDescription
 import kotlin.math.roundToInt
 import coil3.compose.AsyncImage
 import com.palmnote.app.R
+import com.palmnote.data.datastore.PreferencesManager
 import com.palmnote.data.db.entity.Asset
 import com.palmnote.data.db.entity.getWarrantyStatusText
 import com.palmnote.data.db.entity.getShelfLifeStatusText
@@ -257,6 +258,8 @@ fun AssetScreen(
         }
     ) { padding ->
         val isGridView = state.isGridView
+        // 网格卡片样式（小图 / 大图）由设置页统一切换，切换即生效；列表视图不跟它走
+        val gridCardStyle by viewModel.gridCardStyle.collectAsStateWithLifecycle()
         // 用**错落网格**的状态（瀑布流）而不是 LazyListState：见下方列表处的说明。
         val listState = rememberLazyStaggeredGridState()
         var showScrollToTop by remember { mutableStateOf(false) }
@@ -893,13 +896,24 @@ fun AssetScreen(
                         restartKey = isGridView
                     ) {
                         if (isGridView) {
-                            GridAssetCard(
-                                modifier = Modifier.fillMaxWidth(),
-                                asset = asset,
-                                onClick = { onNavigateToDetail(asset.id) },
-                                presetOverrides = assetPresetOverrides,
-                                customItems = assetCustomItems
-                            )
+                            // 样式是全局的（设置里一个开关），不按卡片逐个记：同一批卡片要么全小图要么全大图
+                            if (gridCardStyle == PreferencesManager.ASSET_GRID_STYLE_LARGE) {
+                                LargeGridAssetCard(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    asset = asset,
+                                    onClick = { onNavigateToDetail(asset.id) },
+                                    presetOverrides = assetPresetOverrides,
+                                    customItems = assetCustomItems
+                                )
+                            } else {
+                                GridAssetCard(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    asset = asset,
+                                    onClick = { onNavigateToDetail(asset.id) },
+                                    presetOverrides = assetPresetOverrides,
+                                    customItems = assetCustomItems
+                                )
+                            }
                         } else {
                             EnhancedAssetCard(
                                 asset = asset,
@@ -1032,9 +1046,10 @@ fun EnhancedAssetCard(
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(4.dp))
-                Row(
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     if (asset.warrantyExpireDate != null) {
                         StatusChip(
@@ -1222,54 +1237,11 @@ fun GridAssetCard(
 
                     Spacer(modifier = Modifier.height(2.dp))
 
-                    // 徽标行用 FlowRow：两列窄卡里「到期 + 持有中」放不下时**换行**，
-                    // 而不是把最后一个徽标的文字挤成一条缝（真机截图 16:00：持有中被压成绿细条）。
-                    // 放得下时仍是单行右对齐，观感不变。
-                    FlowRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End),
-                        verticalArrangement = Arrangement.spacedBy(2.dp)
-                    ) {
-                        // 窄卡只放一个到期徽标：取质保 / 保质期里更紧迫的那个，按紧迫度着色。
-                        // 加第三个徽标在英文（"Warranty" + "Shelf life"）下会顶出两列卡片宽度。
-                        val deadline = asset.nearestExpiryDate
-                        if (deadline != null) {
-                            val deadlineColor = expiryAccentColor(deadline)
-                            Surface(
-                                shape = MaterialTheme.shapes.medium,
-                                color = deadlineColor.copy(alpha = 0.12f)
-                            ) {
-                                Text(
-                                    text = asset.getNearestExpiryText(context),
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Medium,
-                                    color = deadlineColor,
-                                    maxLines = 1
-                                )
-                            }
-                        }
-                        Surface(
-                            shape = MaterialTheme.shapes.medium,
-                            color = statusColor.copy(alpha = 0.12f)
-                        ) {
-                            Text(
-                                text = statusText,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Medium,
-                                color = statusColor,
-                                maxLines = 1
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(2.dp))
-
+                    // 数量与已使用天数**左对齐**挂在名称下当副标题：原先右对齐是为了
+                    // 与右侧的徽标行打对角，徽标行移到全宽后右锚点消失，孤悬一格很怪
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         if (asset.quantity > 1) {
                             Text(
@@ -1278,8 +1250,6 @@ fun GridAssetCard(
                                 color = AccentOrange,
                                 fontWeight = FontWeight.Bold
                             )
-                        } else {
-                            Spacer(modifier = Modifier.weight(1f))
                         }
                         Text(
                             text = pluralStringResource(R.plurals.asset_used_days, daysOwned, daysOwned),
@@ -1290,6 +1260,18 @@ fun GridAssetCard(
                     }
                 }
             }
+
+            // 徽标行升到**卡片全宽**：原先挤在图片右侧内容列（约 66dp）里，英文
+            // "Under warranty" / "%d days to expiry" 都被 Clip 成 "Under" / "2 days to"。
+            // 全宽后单行放得下；仍保留省略号兜底。
+            AssetCardBadgeRow(
+                asset = asset,
+                statusColor = statusColor,
+                statusText = statusText,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 12.dp, end = 12.dp)
+            )
 
             Row(
                 modifier = Modifier
@@ -1354,6 +1336,231 @@ fun GridAssetCard(
                     overflow = TextOverflow.Ellipsis
                 )
             }
+        }
+    }
+}
+
+/**
+ * 网格卡共用的徽标行：到期徽标（按紧迫度配色）+ 状态徽标，横向换行。
+ *
+ * 抽出来是因为小图卡与大图卡要**同一套配色与文案**：两处各写一遍时改一处忘另一处，
+ * 同一件物品在两种样式下会显示成两种颜色。左右边距由调用方给（小图卡贴卡片边、
+ * 大图卡贴内容区内边），这里只管内容排布。
+ */
+@Composable
+internal fun AssetCardBadgeRow(
+    asset: Asset,
+    statusColor: Color,
+    statusText: String,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    FlowRow(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp)
+    ) {
+        val deadline = asset.nearestExpiryDate
+        if (deadline != null) {
+            val deadlineColor = expiryAccentColor(deadline)
+            Surface(shape = MaterialTheme.shapes.medium, color = deadlineColor.copy(alpha = 0.12f)) {
+                Text(
+                    text = asset.getNearestExpiryText(context),
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Medium,
+                    color = deadlineColor,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+        Surface(shape = MaterialTheme.shapes.medium, color = statusColor.copy(alpha = 0.12f)) {
+            Text(
+                text = statusText,
+                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Medium,
+                color = statusColor,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+/**
+ * 网格大图卡：**[GridAssetCard] 的另一种排版**，不是另一套信息。
+ *
+ * 名称、数量、已使用天数、到期/状态徽标、分类、日均成本、取得日期、价格——与小图卡逐项相同，
+ * 差别只在图片从 56dp 缩略图变成整幅 120dp，信息列从图片右侧挪到图片下方。
+ * 因此两张卡不会因为切换样式而「少显示点什么东西」，也不存在字段级开关。
+ *
+ * 样式由设置页的「网格卡片样式」全局切换（`PreferencesManager.assetGridCardStyle`），
+ * 同一屏里不会混排两种卡：混排会让瀑布流失去对齐的节奏，而收益只有「突出某一件」。
+ */
+@Composable
+fun LargeGridAssetCard(
+    modifier: Modifier = Modifier,
+    asset: Asset,
+    onClick: () -> Unit,
+    presetOverrides: Map<String, String>? = null,
+    customItems: List<CategoryItem>? = null
+) {
+    val context = LocalContext.current
+    val statusColor = getStatusColor(asset.status)
+    val catInfo = remember(asset.category, presetOverrides, customItems) { getCategoryIcon(asset.category, customItems) }
+    val daysOwned = DateUtils.getDaysSince(asset.effectiveDate).coerceAtLeast(1)
+
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.large)
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, MaterialTheme.shapes.large)
+            .clickable(onClick = onClick),
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surface
+    ) {
+        Column {
+            // Surface 会把子内容裁到自身形状，图片贴顶不需要再单独 clip 圆角
+            LargeCardImageBlock(asset = asset, catInfo = catInfo)
+            Column(modifier = Modifier.padding(12.dp)) {
+                LargeCardTitle(asset = asset, daysOwned = daysOwned)
+                Spacer(modifier = Modifier.height(6.dp))
+                AssetCardBadgeRow(
+                    asset = asset,
+                    statusColor = statusColor,
+                    statusText = getStatusText(asset.status)
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                LargeCardFooter(
+                    categoryText = getCategoryDisplayName(asset.category, context, presetOverrides),
+                    costText = getCostText(asset.costMode, asset.purchasePrice, asset.useCount, daysOwned),
+                    dateText = DateUtils.formatDisplayYearDate(context, asset.effectiveDate),
+                    priceText = CurrencyUtils.formatCurrency(context, asset.purchasePrice.toMoney())
+                )
+            }
+        }
+    }
+}
+
+/** 大图卡的图片块：整幅 120dp；无图时回落分类色底 + 分类图标（与小图卡的缩略图同源）。 */
+@Composable
+private fun LargeCardImageBlock(asset: Asset, catInfo: CategoryItem) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(120.dp)
+            .background(catInfo.color.copy(alpha = 0.12f)),
+        contentAlignment = Alignment.Center
+    ) {
+        val firstImage = asset.images.toImageList().firstOrNull()
+        if (firstImage != null) {
+            AsyncImage(
+                model = firstImage,
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+        } else {
+            Icon(
+                imageVector = catInfo.icon,
+                contentDescription = null,
+                tint = catInfo.color,
+                modifier = Modifier.size(34.dp)
+            )
+        }
+    }
+}
+
+/** 大图卡标题块：名称最多两行 + 「×数量 / 已使用 N 天」副行，左对齐挂在名称下（同小图卡的 2026-10-31 定稿）。 */
+@Composable
+private fun LargeCardTitle(asset: Asset, daysOwned: Int) {
+    Column {
+        Text(
+            text = asset.name,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(2.dp))
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            if (asset.quantity > 1) {
+                Text(
+                    text = "×${asset.quantity}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = AccentOrange,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            Text(
+                text = pluralStringResource(R.plurals.asset_used_days, daysOwned, daysOwned),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1
+            )
+        }
+    }
+}
+
+/** 大图卡页脚：分类 / 日均成本一行，取得日期 / 价格现值一行——与小图卡同一组数据同样的位置关系。 */
+@Composable
+private fun LargeCardFooter(
+    categoryText: String,
+    costText: String,
+    dateText: String,
+    priceText: String
+) {
+    Column {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = categoryText,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f, fill = false)
+            )
+            Spacer(Modifier.width(6.dp))
+            Text(
+                text = costText,
+                style = MaterialTheme.typography.labelSmall,
+                color = AccentOrange,
+                fontWeight = FontWeight.Medium,
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+        Spacer(modifier = Modifier.height(4.dp))
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = dateText,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Ellipsis
+            )
+            Spacer(modifier = Modifier.weight(1f))
+            Text(
+                text = priceText,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }

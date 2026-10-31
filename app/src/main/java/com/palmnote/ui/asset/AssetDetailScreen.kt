@@ -9,6 +9,9 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -38,6 +41,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
@@ -896,29 +900,44 @@ private fun RowScope.StatusActionButton(
     enabled: Boolean,
     filled: Boolean = false
 ) {
+    // 三颗按钮平分一行，默认 24dp 水平内边距会把文字区挤到放不下 "Remove"（英文
+    // 直接折成 "Rem/ove"）——收窄内边距，标签单行 + 自动缩号（大字体下也放得下）
+    val compactPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp)
     if (filled) {
         Button(
             onClick = onClick,
             modifier = Modifier.weight(1f),
             shape = MaterialTheme.shapes.medium,
+            contentPadding = compactPadding,
             colors = ButtonDefaults.buttonColors(containerColor = color),
             enabled = enabled
         ) {
             Icon(icon, null, Modifier.size(18.dp))
             Spacer(Modifier.width(4.dp))
-            Text(label)
+            BasicText(
+                text = label,
+                style = MaterialTheme.typography.labelLarge.copy(color = LocalContentColor.current),
+                maxLines = 1,
+                autoSize = TextAutoSize.StepBased(minFontSize = 9.sp, maxFontSize = 14.sp, stepSize = 1.sp)
+            )
         }
     } else {
         OutlinedButton(
             onClick = onClick,
             modifier = Modifier.weight(1f),
             shape = MaterialTheme.shapes.medium,
+            contentPadding = compactPadding,
             colors = ButtonDefaults.outlinedButtonColors(contentColor = color),
             enabled = enabled
         ) {
             Icon(icon, null, Modifier.size(18.dp))
             Spacer(Modifier.width(4.dp))
-            Text(label)
+            BasicText(
+                text = label,
+                style = MaterialTheme.typography.labelLarge.copy(color = LocalContentColor.current),
+                maxLines = 1,
+                autoSize = TextAutoSize.StepBased(minFontSize = 9.sp, maxFontSize = 14.sp, stepSize = 1.sp)
+            )
         }
     }
 }

@@ -179,6 +179,11 @@
 
     <string name="settings_demo_section">Sample data</string>
     <string name="settings_bill_section">Bills</string>
+    <string name="settings_asset_section">Items</string>
+    <string name="settings_asset_grid_style">Grid card style</string>
+    <string name="settings_asset_grid_style_subtitle">Affects the grid view only, applies immediately</string>
+    <string name="asset_grid_style_small">Small</string>
+    <string name="asset_grid_style_large">Large</string>
     <string name="settings_life_section">Life</string>
     <string name="widget_pin_background_label">Background color</string>
     <string name="widget_pin_background_permission_failed">Can\'t keep long-term access to this image — pick another one or use a preset color</string>

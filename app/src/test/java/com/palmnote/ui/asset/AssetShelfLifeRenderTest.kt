@@ -128,15 +128,14 @@ class AssetShelfLifeRenderTest {
     }
 
     /**
-     * 真机两列网格下卡片的文字列只有约 90dp：「保质期21天」+「持有中」两个徽标放不下。
-     * 此前徽标行是一个带 `weight(1f)` 撑杆的 `Row`——放不下时最后一个徽标（状态）的文字会被挤成
-     * 零宽（真机截图 16:00 的绿色细条）。现在改用 FlowRow，放不下就换行。
+     * 网格卡的徽标行已升到**卡片全宽**（原先挤在图片右侧约 66dp 的内容列里，英文
+     * "Under warranty" / "%d days to expiry" 会被 Clip 成 "Under" / "2 days to"）。
      *
-     * 注意：Robolectric 的文字度量是桩值（每字约 1px），真机 186dp 窄卡里的真实溢出在这里复现不出来，
-     * 所以把容器再收窄到 120dp 人为制造「放不下」，验证的是**换行**而不是被压扁。
+     * 这里把容器收窄到 120dp 钉两条底线：两个徽标都保持正宽（不被压扁），
+     * 且都落在卡片右缘之内（不被无声 Clip 裁掉）。放不下时 FlowRow 会换行兜底。
      */
     @Test
-    fun `网格卡徽标放不下时换行而不是压扁状态徽标`() {
+    fun `网格卡徽标升到卡片全宽后不压扁不截断`() {
         compose.setContent {
             PalmNoteTheme {
                 Box(Modifier.width(120.dp)) {
@@ -146,8 +145,57 @@ class AssetShelfLifeRenderTest {
         }
         val expiry = compose.onNodeWithText("保质期21天", useUnmergedTree = true).getBoundsInRoot()
         val status = compose.onNodeWithText("持有中", useUnmergedTree = true).getBoundsInRoot()
-        println("DIAG expiry=$expiry status=$status")
-        assertTrue("状态徽标被压成零宽", status.right - status.left > 0.dp)
-        assertTrue("状态徽标应换到下一行，而不是与到期徽标挤在同一行", status.top > expiry.top)
+        assertTrue("到期徽标被压扁", expiry.right - expiry.left > 0.dp)
+        assertTrue("状态徽标被压扁", status.right - status.left > 0.dp)
+        assertTrue("到期徽标不应超出卡片左缘", expiry.left >= 0.dp)
+        assertTrue("状态徽标不应被挤出卡片右缘", status.right <= 120.dp)
+    }
+
+    /**
+     * 大图卡是**同一份信息的另一种排版**（不在测试里比高度：Robolectric 的文字度量不等于真机，
+     * 高度差看着对也不代表真机对）。这里钉的是"信息没丢"——名称、到期徽标、状态徽标都在。
+     */
+    @Test
+    fun `大图卡渲染与小图卡同一组信息`() {
+        compose.setContent { PalmNoteTheme { LargeGridAssetCard(asset = assetExpiringIn(10), onClick = {}) } }
+        compose.onNodeWithText("牛奶").assertExists()
+        compose.onNodeWithText("保质期10天").assertExists()
+        compose.onNodeWithText("持有中").assertExists()
+    }
+
+    /** 大图卡复用 [AssetCardBadgeRow]：窄容器下同样不许压扁或裁掉（与小图卡同一条底线）。 */
+    @Test
+    fun `大图卡窄容器下徽标不压扁不截断`() {
+        compose.setContent {
+            PalmNoteTheme {
+                Box(Modifier.width(120.dp)) {
+                    LargeGridAssetCard(asset = assetExpiringIn(21), onClick = {})
+                }
+            }
+        }
+        val expiry = compose.onNodeWithText("保质期21天", useUnmergedTree = true).getBoundsInRoot()
+        val status = compose.onNodeWithText("持有中", useUnmergedTree = true).getBoundsInRoot()
+        assertTrue("到期徽标被压扁", expiry.right - expiry.left > 0.dp)
+        assertTrue("状态徽标被压扁", status.right - status.left > 0.dp)
+        assertTrue("到期徽标不应超出卡片左缘", expiry.left >= 0.dp)
+        assertTrue("状态徽标不应被挤出卡片右缘", status.right <= 120.dp)
+    }
+
+    /**
+     * 无照片的物品：大图卡回落成 120dp 分类色块 + 分类图标。
+     *
+     * 钉的是"没图也不塌"——图片块仍占满 120dp（否则无图卡片会比有图的矮一截，瀑布流里参差不齐），
+     * 名称与分类照常渲染。有图路径由上面几条用例覆盖（[assetExpiringIn] 造的就是无图资产）。
+     */
+    @Test
+    fun `大图卡无照片时图片块仍占 120dp 且信息照常渲染`() {
+        compose.setContent { PalmNoteTheme { LargeGridAssetCard(asset = assetExpiringIn(10), onClick = {}) } }
+        compose.onNodeWithText("牛奶").assertExists()
+        compose.onNodeWithText("食品").assertExists()
+        val card = compose.onRoot().getBoundsInRoot()
+        assertTrue(
+            "无图时卡片高度应 ≥ 图片块 120dp，实际 ${card.bottom - card.top}",
+            card.bottom - card.top >= 120.dp
+        )
     }
 }
