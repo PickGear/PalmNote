@@ -36,7 +36,7 @@ class BackupManager(
         private const val MAGIC_ENCRYPTED_V2 = "PNB2"
 
         /** 新版明文备份 MAGIC（ZIP + SHA-256 校验） */
-        private const val MAGIC_PLAIN_V3 = "PNB3"
+        internal const val MAGIC_PLAIN_V3 = "PNB3"
         private const val HASH_SIZE = 32
         private const val LOCK_PREFS_NAME = "app_lock_prefs"
 
@@ -304,12 +304,7 @@ class BackupManager(
                     if (password.isNullOrBlank()) {
                         throw IllegalArgumentException(context.getString(com.palmnote.app.R.string.backup_password_required))
                     }
-                    // 流式解密避免OOM；先用当前迭代，失败则用旧版本（100k）迭代重试以兼容旧备份
-                    val currentOk = runCatching { decryptToTemp(backupFile, password, tempZip, CryptoUtils.CURRENT_PBKDF2_ITERATIONS) }
-                    if (currentOk.isFailure) {
-                        if (tempZip.exists()) tempZip.delete()
-                        decryptToTemp(backupFile, password, tempZip, CryptoUtils.LEGACY_PBKDF2_ITERATIONS)
-                    }
+                    decryptEncryptedToTemp(context, backupFile, password, tempZip)
                     restoreFromZipWithPlan(context, tempZip)
                 }
                 // 新明文备份：PNB3 + ZIP + SHA-256 校验
@@ -317,13 +312,40 @@ class BackupManager(
                     extractPlainWithChecksum(backupFile, tempZip)
                     restoreFromZipWithPlan(context, tempZip)
                 }
-                // 旧明文备份：纯 ZIP
-                else -> restoreFromZipWithPlan(context, backupFile)
+                // 旧明文备份：纯 ZIP。连 ZIP 头都没有的文件直接按损坏处理，
+                // 别把底层 ZipException 原样抛给用户
+                else -> restorePlainLegacy(context, backupFile)
             }
         } finally {
             // 无论成功失败都清理临时文件
             if (tempZip.exists()) tempZip.delete()
         }
+    }
+
+    /**
+     * 解密整包到临时 ZIP：先用当前迭代，失败再用旧版本（100k）迭代重试以兼容旧备份。
+     * 两次都失败时把底层异常翻译成用户能行动的话：GCM 校验不过 = 密码不对；
+     * 其余（截断/IO）按损坏处理。不翻译的话用户会看到 AEADBadTagException 这类原始异常。
+     */
+    private fun decryptEncryptedToTemp(context: Context, backupFile: File, password: String, tempZip: File) {
+        val currentOk = runCatching { decryptToTemp(backupFile, password, tempZip, CryptoUtils.CURRENT_PBKDF2_ITERATIONS) }
+        if (currentOk.isSuccess) return
+        if (tempZip.exists()) tempZip.delete()
+        try {
+            decryptToTemp(backupFile, password, tempZip, CryptoUtils.LEGACY_PBKDF2_ITERATIONS)
+        } catch (e: javax.crypto.AEADBadTagException) {
+            throw IllegalArgumentException(context.getString(R.string.backup_password_wrong), e)
+        } catch (e: Exception) {
+            throw IllegalArgumentException(context.getString(R.string.backup_error_corrupted), e)
+        }
+    }
+
+    /** 旧明文备份路径（纯 ZIP，无魔数无校验和）：先验 ZIP 头再走恢复。 */
+    private fun restorePlainLegacy(context: Context, backupFile: File) {
+        if (!isZipFile(backupFile)) {
+            throw IllegalArgumentException(context.getString(R.string.backup_error_corrupted))
+        }
+        restoreFromZipWithPlan(context, backupFile)
     }
 
     /** 规划 db_key 恢复方案并执行 ZIP 恢复；方案不可行时在写盘前抛错。 */
@@ -349,6 +371,16 @@ class BackupManager(
         }
     } catch (_: Exception) {
         ""
+    }
+
+    /** 是否为标准 ZIP 头（PK\x03\x04）：旧明文备份路径的前置校验。 */
+    private fun isZipFile(file: File): Boolean = try {
+        FileInputStream(file).use { fis ->
+            val head = ByteArray(4)
+            fis.read(head) == 4 && head.contentEquals(byteArrayOf(0x50, 0x4B, 0x03, 0x04))
+        }
+    } catch (_: Exception) {
+        false
     }
 
     /** 提取 PNB3 明文 ZIP 并验证末尾 SHA-256 校验和 */
@@ -396,15 +428,16 @@ class BackupManager(
      * - [SAME_DEVICE]：备份中 wrapped key 本机 Keystore 能解开 → 原样恢复 prefs 条目；
      * - [PORTABLE]：本机解不开（换机/重装），但备份含便携密钥 → 跳过 prefs 条目，
      *   恢复完成后用 [DbKeyStore.importRawKey] 以本机 Keystore 重新包裹导入；
-     * - [UNSUPPORTED]：备份由旧版本创建且无便携密钥 → 拒绝恢复（写盘前拦截）。
+     * - [UNSUPPORTED]：备份由旧版本创建且无便携密钥（2026-10-30 前的备份都没有），
+     *   本机也没有当初的密钥 → 数据库解不开，写盘前拦截并给出可行动的提示。
      */
-    private sealed interface DbKeyPlan {
+    internal sealed interface DbKeyPlan {
         data object SameDevice : DbKeyPlan
         class Portable(val rawKey: ByteArray) : DbKeyPlan
         data object Unsupported : DbKeyPlan
     }
 
-    private fun planDbKeyRestore(zipFile: File): DbKeyPlan {
+    internal fun planDbKeyRestore(zipFile: File): DbKeyPlan {
         val keyStore = dbKeyStore ?: return DbKeyPlan.SameDevice
         val wrapped = readZipEntryText(zipFile, "shared_prefs/${DbKeyStore.PREFS_NAME}.xml")
             ?.let { parseDbKeyFromPrefsXml(it) }
@@ -478,7 +511,7 @@ class BackupManager(
         )
         val backedUpFiles = backupCurrentData(dirs)
         try {
-            extractEntries(zipFile, dirs, skipDbKeyPrefs)
+            extractEntries(context, zipFile, dirs, skipDbKeyPrefs)
             // WAL（2026-10-18 起开启）：备份可能只含主库（checkpoint 快照路径，zip 里没有 -wal/-shm）。
             // 此时本地残留的侧车文件属于**旧库**，SQLite 会把它当成刚恢复主库的未提交数据
             // → 数据损坏。所以备份里没有的侧车一律删除（删除前已由 backupCurrentData 拷进回滚目录）。
@@ -555,21 +588,29 @@ class BackupManager(
     }
 
     // Phase 2: 遍历 ZIP 条目逐个解压
-    private fun extractEntries(zipFile: File, dirs: RestoreDirs, skipDbKeyPrefs: Boolean) {
+    private fun extractEntries(context: Context, zipFile: File, dirs: RestoreDirs, skipDbKeyPrefs: Boolean) {
+        var recognized = 0
         ZipInputStream(FileInputStream(zipFile)).use { zipIn ->
             var entry = zipIn.nextEntry
             while (entry != null) {
-                extractEntry(zipIn, entry.name, dirs, skipDbKeyPrefs)
+                if (extractEntry(zipIn, entry.name, dirs, skipDbKeyPrefs)) recognized++
                 zipIn.closeEntry()
                 entry = zipIn.nextEntry
             }
         }
+        // 一个备份前缀都没命中：这是个普通 ZIP 而不是掌记备份。
+        // 不拦的话会「恢复成功」却什么都没换，用户以为数据回来了。
+        if (recognized == 0) {
+            throw IllegalArgumentException(
+                context.getString(com.palmnote.app.R.string.backup_error_corrupted)
+            )
+        }
     }
 
-    /** 按条目前缀分发解压；跨设备便携密钥模式下跳过备份的 wrapped key 条目。 */
-    private fun extractEntry(zipIn: ZipInputStream, entryName: String, dirs: RestoreDirs, skipDbKeyPrefs: Boolean) {
+    /** 按条目前缀分发解压；跨设备便携密钥模式下跳过备份的 wrapped key 条目。返回是否命中备份条目。 */
+    private fun extractEntry(zipIn: ZipInputStream, entryName: String, dirs: RestoreDirs, skipDbKeyPrefs: Boolean): Boolean {
         val cleanName = entryName.substringAfter('/')
-        when {
+        return when {
             entryName.startsWith("db/") -> extractSafe(zipIn, cleanName, dirs.dbDir)
             // 密码本独立库，同样落在 databases 目录，由 dbDir 回滚保护覆盖
             entryName.startsWith("vault-db/") -> extractSafe(zipIn, cleanName, dirs.dbDir)
@@ -577,19 +618,24 @@ class BackupManager(
             entryName.startsWith("images/") -> extractSafe(zipIn, cleanName, dirs.imagesDir)
             entryName.startsWith("vault-images/") -> extractSafe(zipIn, cleanName, dirs.vaultImagesDir)
             entryName.startsWith("shared_prefs/") -> {
-                if (skipDbKeyPrefs && cleanName == "${DbKeyStore.PREFS_NAME}.xml") return
-                extractSafe(zipIn, cleanName, dirs.sharedPrefsDir)
+                if (skipDbKeyPrefs && cleanName == "${DbKeyStore.PREFS_NAME}.xml") {
+                    false
+                } else {
+                    extractSafe(zipIn, cleanName, dirs.sharedPrefsDir)
+                }
             }
+            else -> false
         }
     }
 
-    /** 安全校验后解压单个条目：拒绝路径穿越，目标必须位于目标目录内。 */
-    private fun extractSafe(zipIn: ZipInputStream, cleanName: String, targetDir: File) {
-        if (cleanName.contains("..") || cleanName.startsWith("/")) return
+    /** 安全校验后解压单个条目：拒绝路径穿越，目标必须位于目标目录内。返回是否真的解压。 */
+    private fun extractSafe(zipIn: ZipInputStream, cleanName: String, targetDir: File): Boolean {
+        if (cleanName.contains("..") || cleanName.startsWith("/")) return false
         val targetFile = File(targetDir, cleanName).canonicalFile
-        if (!targetFile.canonicalPath.startsWith(targetDir.canonicalPath)) return
+        if (!targetFile.canonicalPath.startsWith(targetDir.canonicalPath)) return false
         targetFile.parentFile?.mkdirs()
         extractFile(zipIn, targetFile)
+        return true
     }
 
     // 恢复失败回滚：还原已备份文件，并清理恢复过程新产生的 -wal/-shm 残留，

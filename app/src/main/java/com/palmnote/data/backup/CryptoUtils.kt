@@ -81,9 +81,18 @@ object CryptoUtils {
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         val parameterSpec = GCMParameterSpec(GCM_TAG_LENGTH, iv)
         cipher.init(Cipher.DECRYPT_MODE, key, parameterSpec)
-        val cis = javax.crypto.CipherInputStream(input, cipher)
-        cis.copyTo(output)
-        cis.close()
+        // 不用 CipherInputStream：AEAD 模式下它把 AEADBadTagException 吞成正常 EOF（JDK 已知行为），
+        // 密码错了不报错，垃圾数据流到下游才炸出莫名其妙的异常。手动分块 update + doFinal，
+        // 让标签校验失败的异常原样抛出。
+        val buffer = ByteArray(8192)
+        while (true) {
+            val read = input.read(buffer)
+            if (read < 0) break
+            val decoded = cipher.update(buffer, 0, read)
+            if (decoded.isNotEmpty()) output.write(decoded)
+        }
+        val tail = cipher.doFinal()
+        if (tail.isNotEmpty()) output.write(tail)
     }
 
     fun isEncryptedBackup(file: java.io.File): Boolean {

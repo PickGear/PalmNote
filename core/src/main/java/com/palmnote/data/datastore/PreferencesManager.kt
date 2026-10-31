@@ -143,6 +143,9 @@ class PreferencesManager @Inject constructor(
         val AUTO_BACKUP_KEEP_COUNT = intPreferencesKey("auto_backup_keep_count")
         val AUTO_BACKUP_LAST_ERROR_AT = longPreferencesKey("auto_backup_last_error_at")
         val AUTO_BACKUP_LAST_ERROR_MSG = stringPreferencesKey("auto_backup_last_error_msg")
+        // 非敏感痕迹位：用户设置过备份密码。备份密码本体绑定设备 Keystore、不随快照走，
+        // 重装/换机后「记住」失效并静默退回明文——靠这一位随快照恢复，把静默降级变成显式提示
+        val BACKUP_PASSWORD_EVER_SET = booleanPreferencesKey("backup_password_ever_set")
 
         const val AUTO_LOCK_MODE_IMMEDIATE = "immediate"
         const val AUTO_LOCK_MODE_SYSTEM = "system"
@@ -448,6 +451,13 @@ class PreferencesManager @Inject constructor(
     /** 最近一次自动备份失败的时间戳（0 = 无失败记录）。 */
     val autoBackupLastErrorAt: Flow<Long> = prefsFlow.map { it[AUTO_BACKUP_LAST_ERROR_AT] ?: 0L }
     val autoBackupLastErrorMsg: Flow<String> = prefsFlow.map { it[AUTO_BACKUP_LAST_ERROR_MSG] ?: "" }
+
+    /** 只置 true、不清 false：「曾用过加密备份」是历史事实，用户清掉密码后仍要据此提示明文降级。 */
+    val backupPasswordEverSet: Flow<Boolean> = prefsFlow.map { it[BACKUP_PASSWORD_EVER_SET] ?: false }
+
+    suspend fun setBackupPasswordEverSet(everSet: Boolean) {
+        context.dataStore.edit { it[BACKUP_PASSWORD_EVER_SET] = everSet }
+    }
 
     suspend fun setAutoBackupEnabled(enabled: Boolean) {
         context.dataStore.edit { it[AUTO_BACKUP_ENABLED] = enabled }

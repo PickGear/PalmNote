@@ -1035,7 +1035,7 @@
     <string name="bill_error_category_required">请选择分类</string>
     <!-- Backup Error Messages -->
     <string name="backup_error_corrupted">备份文件损坏或为空</string>
-    <string name="backup_error_cross_device">此备份无法在当前设备恢复：它不含跨设备恢复所需的密钥（通常是不设密码的明文备份，或由旧版本创建）。请在原设备上恢复，或设置密码后重新备份再换机</string>
+    <string name="backup_error_cross_device">此备份由旧版本创建，文件内未携带数据库密钥（新版本起随备份内置），本机也没有当初加密数据的密钥，数据库无法在这里解密。请在创建此备份的设备上打开掌记重新备份一次——新备份自带密钥，换机、重装都能直接恢复</string>
     <string name="backup_error_create_failed">备份失败</string>
     <!-- Calendar Sync -->
     <string name="calendar_sync_name">掌记</string>
@@ -1553,6 +1553,9 @@
     <string name="backup_password_desc">设置后所有备份加密，可换机恢复</string>
     <string name="backup_password_set">已设置</string>
     <string name="backup_password_unset">未设置</string>
+    <string name="backup_password_wrong">密码不正确，请重试</string>
+    <string name="backup_password_unset_hint">未设置密码的备份等同明文，请妥善保管；设置后所有备份加密，可换机恢复</string>
+    <string name="backup_password_used_before_hint">你曾使用备份密码，当前未设置——自动备份已退回明文；重新设置即可恢复加密</string>
     <string name="backup_error_export_failed">无法写入所选文件夹，请确认该文件夹可写或换一个目录</string>
     <string name="backup_existing_count">本机 %1$d · 可换机 %2$d</string>
     <string name="backup_source_local">本机</string>

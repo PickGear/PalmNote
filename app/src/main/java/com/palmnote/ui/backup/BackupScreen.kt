@@ -84,6 +84,7 @@ fun BackupScreen(
     val backupState by viewModel.backupState.collectAsStateWithLifecycle()
     val autoBackupSettings by viewModel.autoBackupSettings.collectAsStateWithLifecycle()
     val backupPasswordSet by viewModel.backupPasswordSet.collectAsStateWithLifecycle()
+    val backupPasswordEverSet by viewModel.backupPasswordEverSet.collectAsStateWithLifecycle(initialValue = false)
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -325,7 +326,15 @@ fun BackupScreen(
                     SettingRow(clickable = { showPasswordDialog = true }) {
                         SettingRowContent(
                             title = stringResource(R.string.backup_password_label),
-                            subtitle = stringResource(R.string.backup_password_desc),
+                            // 副标题三态：已设置讲功能；未设置且曾用过要点破「已退回明文」；
+                            // 从未用过讲「无密码=明文」。后两态都把风险在导出前告诉用户
+                            subtitle = stringResource(
+                                when {
+                                    backupPasswordSet -> R.string.backup_password_desc
+                                    backupPasswordEverSet -> R.string.backup_password_used_before_hint
+                                    else -> R.string.backup_password_unset_hint
+                                }
+                            ),
                             value = stringResource(
                                 if (backupPasswordSet) R.string.backup_password_set else R.string.backup_password_unset
                             ),

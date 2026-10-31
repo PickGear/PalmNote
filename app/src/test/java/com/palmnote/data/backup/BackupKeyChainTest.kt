@@ -71,7 +71,12 @@ class BackupKeyChainTest {
         val rawKey = ByteArray(DbKeyStore.KEY_SIZE) { it.toByte() }
         val backup = pnb3Backup(
             "portable.palmnote",
-            listOf(dbKeyPrefsEntry() to dbKeyPrefsXml(), BackupManager.PORTABLE_KEY_ENTRY to portableKeyXml(rawKey))
+            listOf(
+                // 至少带一个备份条目：恢复会对「一个备份前缀都没命中」的包按损坏拒绝
+                "db/palmnote_db" to "db-bytes",
+                dbKeyPrefsEntry() to dbKeyPrefsXml(),
+                BackupManager.PORTABLE_KEY_ENTRY to portableKeyXml(rawKey)
+            )
         )
         BackupManager(keyStore).restoreBackup(context, backup, null)
 

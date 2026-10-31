@@ -861,7 +861,7 @@
     <string name="bill_error_category_required">Please select a category</string>
     <!-- Backup Error Messages -->
     <string name="backup_error_corrupted">Backup file is corrupted or empty</string>
-    <string name="backup_error_cross_device">This backup cannot be restored on this device: it lacks the key required for cross-device restore (usually an unencrypted backup, or one created by an older version). Restore it on the original device, or set a password and create a new backup before switching phones</string>
+    <string name="backup_error_cross_device">This backup was created by an older version and does not carry the database key (new versions embed it in the file), and this device does not hold the original key either, so the database cannot be decrypted here. On the device that created this backup, open PalmNote and back up again; new backups restore directly on any device</string>
     <string name="backup_error_create_failed">Backup failed</string>
     <!-- Calendar Sync -->
     <string name="calendar_sync_name">PalmNote</string>
@@ -1384,6 +1384,9 @@
     <string name="backup_password_desc">When set, all backups are encrypted and restorable on a new phone</string>
     <string name="backup_password_set">Set</string>
     <string name="backup_password_unset">Not set</string>
+    <string name="backup_password_wrong">Incorrect password, please try again</string>
+    <string name="backup_password_unset_hint">Backups without a password are effectively unencrypted; keep the file safe. Set one to encrypt all backups for cross-device restore</string>
+    <string name="backup_password_used_before_hint">You used a backup password before but none is set now, so automatic backups have reverted to unencrypted. Set one to re-enable encryption</string>
     <string name="backup_error_export_failed">Could not write to the selected folder. Make sure it is writable or choose another folder.</string>
     <string name="backup_existing_count">On-device %1$d · Portable %2$d</string>
     <string name="backup_source_local">This device</string>

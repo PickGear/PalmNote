@@ -105,6 +105,9 @@ class BackupViewModel @Inject constructor(
     private val _backupPasswordSet = MutableStateFlow(passwordStore.load() != null)
     val backupPasswordSet: StateFlow<Boolean> = _backupPasswordSet
 
+    /** 曾设置过备份密码（布尔痕迹位，随快照走）：恢复旧快照后据此提示「曾加密、当前明文」。 */
+    val backupPasswordEverSet: Flow<Boolean> = preferencesManager.backupPasswordEverSet
+
     private val autoBackupConfig: Flow<AutoBackupSettings> = combine(
         preferencesManager.autoBackupEnabled,
         preferencesManager.autoBackupIntervalDays,
@@ -129,6 +132,10 @@ class BackupViewModel @Inject constructor(
     fun setBackupPassword(password: String?) {
         passwordStore.save(password?.takeIf { it.isNotBlank() })
         _backupPasswordSet.value = passwordStore.load() != null
+        if (!password.isNullOrBlank()) {
+            // 历史痕迹位只置 true 不清 false：清掉密码后仍要据此提示「曾加密、当前明文」
+            viewModelScope.launch { preferencesManager.setBackupPasswordEverSet(true) }
+        }
     }
 
     /** 对话框预填用：读当前已保存的备份密码（Keystore 解不开时为 null）。 */
