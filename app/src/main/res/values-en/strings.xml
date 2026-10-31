@@ -2110,6 +2110,7 @@
     <string name="import_bill_file_title">This is a bill file</string>
     <string name="import_bill_file_body">For WeChat/Alipay bills, generic CSV and Excel, use the import entry at the top of the Bills tab. This page only imports full app-data packages.</string>
     <string name="import_error_too_large">File too large to import (limit ~300MB)</string>
+    <string name="import_error_format_newer">This export uses a newer format (v%1$d); update the app before importing</string>
     <string tools:ignore="PluralsCandidate" name="import_full_done_wallets">Recalculated %1$d wallet balance(s)</string>
     <string tools:ignore="PluralsCandidate" name="import_full_legacy_checkins">%1$d goal check-in(s) from the legacy package were not imported (habits are tracked by the Check-in template)</string>
     <string name="backup_file_is_data">This is a data file — import it via "Data &amp; Backup → Import/Export"</string>

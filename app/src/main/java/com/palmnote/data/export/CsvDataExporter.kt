@@ -15,8 +15,10 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.contentOrNull
 import com.palmnote.data.db.AppDatabase
 import com.palmnote.data.db.entity.*
@@ -79,6 +81,17 @@ class CsvDataExporter(
         private val LIST_FIELDS = setOf("tags", "applicableTypes", "multiRemindJson")
         private const val IMAGE_PREFIX = "img_"
         private const val PREFERENCES_ENTRY = "preferences.json"
+
+        /**
+         * 交换包格式版本与清单条目（2026-10-31 版本化）。
+         *
+         * v1 = 中文语义表头 + images/ + preferences.json——即当前格式；
+         * 版本化之前的「字母表头」旧格式不兼容（已拍板不做兼容），导入会得到
+         * 明确的失败而不是半截数据。清单让格式演进从此有版本可协商：
+         * 导入侧遇到**更新的版本**时明确报错请用户升级，而不是静默解析出垃圾。
+         */
+        const val FORMAT_VERSION = 1
+        const val MANIFEST_ENTRY = "manifest.json"
         val ENTITY_CLASSES = listOf(
             Asset::class.java, Bill::class.java, Wallet::class.java,
             Anniversary::class.java,
@@ -212,8 +225,19 @@ class CsvDataExporter(
             "applicableTypes" to "适用类型",
             "assetCategory" to "物品分类", "billCategory" to "账单分类",
             "assetId" to "物品ID", "usedAt" to "使用时间",
-            "usageRecords" to "使用记录"
+            "usageRecords" to "使用记录",
+            "accountBookId" to "账本",
+            "fieldsConfig" to "字段配置", "layoutType" to "布局类型",
+            "availableLayouts" to "可用布局", "statusFlowConfig" to "状态流配置",
+            "linkConfig" to "关联配置", "reminderConfig" to "提醒配置",
+            "isBuiltin" to "内置", "isHidden" to "隐藏", "isSpecial" to "特殊",
+            "kind" to "模板种类", "repeatYearly" to "每年重复",
+            "templateId" to "所属模板", "fieldsData" to "字段数据",
+            "meta" to "元数据", "remindBeforeDays" to "提前提醒天数"
         )
+
+        // 机制痕迹列不进交换包：导出已滤示例行，这两列恒为「否/NONE」，纯冗余
+        private val MECHANISM_EXCLUDED = setOf("isDemo", "demoOrigin")
     }
 
     private val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
@@ -334,6 +358,33 @@ class CsvDataExporter(
                             imageCount++
                         }
 
+                        // 格式自描述：导入侧据此协商版本（过新 → 明确报错请升级，
+                        // 而不是按当前格式硬解析出垃圾或静默 0 条）
+                        val manifestData = buildManifestJson(totalCount, imageCount).toByteArray(Charsets.UTF_8)
+                        val manifestEntry = ZipEntry(MANIFEST_ENTRY)
+                        manifestEntry.size = manifestData.size.toLong()
+                        zos.putNextEntry(manifestEntry)
+                        zos.write(manifestData)
+                        zos.closeEntry()
+
+                        // 格式说明：让拿到包的人不开 App 也能读懂结构与导入方式
+                        val readmeData = buildString {
+                            appendLine("掌记数据交换包（格式 v$FORMAT_VERSION）")
+                            appendLine()
+                            appendLine("记账.csv / 物品.csv / 生活.csv —— 数据（UTF-8 编码，首列为「实体类型」）")
+                            appendLine("images/ —— 物品图片（CSV 的「图片」列按文件名引用）")
+                            appendLine("preferences.json —— 部分应用设置")
+                            appendLine("manifest.json —— 格式版本与统计（导入时用于版本协商）")
+                            appendLine()
+                            appendLine("金额单位为元（两位小数）；日期格式为 yyyy-MM-dd HH:mm:ss；枚举值为中文。")
+                            appendLine("本包可由掌记「数据交换 → 导入」恢复：已存在的记录自动跳过，不覆盖。")
+                        }.toByteArray(Charsets.UTF_8)
+                        val readmeEntry = ZipEntry("格式说明.txt")
+                        readmeEntry.size = readmeData.size.toLong()
+                        zos.putNextEntry(readmeEntry)
+                        zos.write(readmeData)
+                        zos.closeEntry()
+
                         zos.flush()
                     }
                 }
@@ -351,6 +402,22 @@ class CsvDataExporter(
                 Result.failure(AppException.Unknown(context.getString(R.string.export_error_unknown, e.message), e))
             }
         }
+    }
+
+    /** 构建交换包清单：全数字字段，手工拼接即可（格式见 [FORMAT_VERSION] 注释）。 */
+    internal fun buildManifestJson(totalRecords: Int, imageCount: Int): String =
+        """{"formatVersion":$FORMAT_VERSION,"exportedAt":${System.currentTimeMillis()},"totalRecords":$totalRecords,"images":$imageCount}"""
+
+    /**
+     * 读清单里的格式版本；无清单 / 损坏 = 版本化之前的包，返回 null（按当前格式尽力导入）。
+     * 清单只是元数据，解析失败不拦数据——拦的只有「声明了更新版本」这一种情况。
+     */
+    internal fun manifestFormatVersion(manifestBytes: ByteArray?): Int? {
+        if (manifestBytes == null) return null
+        return runCatching {
+            json.parseToJsonElement(String(manifestBytes, Charsets.UTF_8)).jsonObject["formatVersion"]
+                ?.jsonPrimitive?.intOrNull
+        }.getOrNull()
     }
 
     suspend fun importFromUri(uri: Uri): Result<ImportReport> {
@@ -387,6 +454,18 @@ class CsvDataExporter(
                 val imagesDir = File(context.filesDir, "images")
                 if (!imagesDir.exists()) imagesDir.mkdirs()
                 val pathMapping = mutableMapOf<String, String>()
+
+                // 版本协商：清单声明了更新的格式版本 → 当前代码解析不了，明确请用户升级，
+                // 而不是按旧代码硬解析出垃圾。无清单（版本化之前的包）按当前格式尽力解析。
+                manifestFormatVersion(zipEntries[MANIFEST_ENTRY])?.let { version ->
+                    if (version > FORMAT_VERSION) {
+                        return@withContext Result.failure(
+                            AppException.Unknown(
+                                context.getString(R.string.import_error_format_newer, version)
+                            )
+                        )
+                    }
+                }
 
                 for ((name, bytes) in zipEntries) {
                     if (name.startsWith("images/") && name.length > 7) {
@@ -509,7 +588,11 @@ class CsvDataExporter(
             if (entities.isEmpty()) continue
             val clazz = (entities.first() ?: continue)::class.java
             entityFieldMaps[clazz]?.keys
-                ?.filter { it !in EXCLUDED_FIELDS[clazz].orEmpty() && it !in extraExcluded[clazz].orEmpty() }
+                ?.filter {
+                    it !in EXCLUDED_FIELDS[clazz].orEmpty() &&
+                        it !in extraExcluded[clazz].orEmpty() &&
+                        it !in MECHANISM_EXCLUDED
+                }
                 ?.let { reorderFields(it, clazz) }
                 ?.let { allFields.addAll(it) }
             extraColumns[clazz]?.let { cols ->
@@ -913,6 +996,11 @@ class CsvDataExporter(
             idMaps.getOrPut(LifeTemplate::class.java) { mutableMapOf() }[goalTemplateId] = goalTemplateId
         }
 
+        // 账本落位：包里的「账本」列是导出设备的账本 id，本机不一定存在——
+        // 存在就用（同机往返原样），不存在（跨设备）回落到默认账本，绝不挂悬空引用
+        val localBookIds = db.accountBookDao().getAllBooks().first().map { it.id }.toSet()
+        val fallbackBookId = db.accountBookDao().firstRealBookId() ?: 1L
+
         for ((filename, bytes) in zipEntries) {
             if (filename.startsWith("images/") || !filename.endsWith(".csv")) continue
             val rawRows = csvToRows(String(bytes, Charsets.UTF_8))
@@ -928,7 +1016,13 @@ class CsvDataExporter(
                 // 先把「此刻已经能确定」的交叉引用落到本机 id 上再算键，
                 // 否则跨设备合并时同一次打卡会因为目标 id 不同而被当成两条。
                 // （导出侧父行一定排在子行之前，所以映射此时已就绪。）
-                val resolved = resolveIncomingRefs(clazz, parsed, idMaps)
+                var resolved = resolveIncomingRefs(clazz, parsed, idMaps)
+                if (clazz == Bill::class.java) {
+                    val bill = resolved as Bill
+                    val wanted = translated["accountBookId"]?.toLongOrNull()
+                    val target = if (wanted != null && wanted in localBookIds) wanted else fallbackBookId
+                    if (target != bill.accountBookId) resolved = bill.copy(accountBookId = target)
+                }
                 val key = businessKeyOf(clazz, resolved)
 
                 if (key != null) {

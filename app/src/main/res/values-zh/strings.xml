@@ -2089,6 +2089,7 @@
     <string name="import_bill_file_title">这是账单文件</string>
     <string name="import_bill_file_body">微信/支付宝账单、通用 CSV、Excel，请在「账单」页右上角的导入入口操作。本页只导入应用全量数据包。</string>
     <string name="import_error_too_large">文件过大，无法导入（上限约 300MB）</string>
+    <string name="import_error_format_newer">导出包格式版本过新（v%1$d），请先升级应用后再导入</string>
     <string tools:ignore="PluralsCandidate" name="import_full_done_wallets">已按账单重算 %1$d 个钱包余额</string>
     <string tools:ignore="PluralsCandidate" name="import_full_legacy_checkins">旧版数据包里的 %1$d 条目标打卡记录未导入（习惯已由「打卡」模板记录）</string>
     <string name="backup_file_is_data">这是数据文件，请到「数据与备份 → 导入导出」页导入</string>
