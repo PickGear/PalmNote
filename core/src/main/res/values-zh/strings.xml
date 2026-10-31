@@ -86,10 +86,15 @@
     <string name="account_book_study_desc">学习培训相关费用</string>
     <string name="account_book_investment_name">投资</string>
     <string name="account_book_investment_desc">投资理财记录</string>
-    <string name="asset_warranty_days">质保%d天</string>
+    <!-- 天数为 1 时英文要用单数，故用 plurals（中文只有 other 一档） -->
+    <plurals name="asset_warranty_days">
+        <item quantity="other">质保%d天</item>
+    </plurals>
     <string name="asset_insurance_active">保险有效</string>
     <string name="asset_insurance_expired">保险过期</string>
-    <string name="asset_shelf_life_days">保质期%d天</string>
+    <plurals name="asset_shelf_life_days">
+        <item quantity="other">保质期%d天</item>
+    </plurals>
     <string name="asset_shelf_life_active">保质期内</string>
     <string name="asset_shelf_life_expired">已过期</string>
     <string name="template_savings_name">存钱计划</string>

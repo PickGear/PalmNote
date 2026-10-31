@@ -86,10 +86,17 @@
     <string name="account_book_study_desc">Education and training expenses</string>
     <string name="account_book_investment_name">Investment</string>
     <string name="account_book_investment_desc">Investment records</string>
-    <string name="asset_warranty_days">%d days warranty</string>
+    <!-- 天数为 1 时英文要用单数，故用 plurals（中文只有 other 一档） -->
+    <plurals name="asset_warranty_days">
+        <item quantity="one">%d day warranty</item>
+        <item quantity="other">%d days warranty</item>
+    </plurals>
     <string name="asset_insurance_active">Insurance valid</string>
     <string name="asset_insurance_expired">Insurance expired</string>
-    <string name="asset_shelf_life_days">%d days to expiry</string>
+    <plurals name="asset_shelf_life_days">
+        <item quantity="one">%d day to expiry</item>
+        <item quantity="other">%d days to expiry</item>
+    </plurals>
     <string name="asset_shelf_life_active">Before expiry</string>
     <string name="asset_shelf_life_expired">Expired</string>
     <string name="template_savings_name">Savings Plan</string>

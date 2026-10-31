@@ -125,12 +125,16 @@ data class Asset(
         get() = nextMaintenanceDate != null && nextMaintenanceDate <= System.currentTimeMillis()
 }
 
+/**
+ * 剩余天数文案。**走 plurals 而不是普通字符串**：英文的 `1 days to expiry` 是实打实的语病
+ * （2026-11-01 切英文时被真机截图抓到），只有带数量的复数资源才能分出 day / days。
+ */
 fun Asset.getWarrantyStatusText(context: Context): String {
     val expire = warrantyExpireDate ?: return ""
     val days = DateUtils.getDaysUntil(expire)
     return when {
         days < 0 -> context.getString(R.string.asset_warranty_expired)
-        days <= 30 -> context.getString(R.string.asset_warranty_days, days)
+        days <= 30 -> context.resources.getQuantityString(R.plurals.asset_warranty_days, days, days)
         else -> context.getString(R.string.asset_warranty_active)
     }
 }
@@ -143,12 +147,13 @@ fun Asset.getInsuranceStatusText(context: Context): String {
     }
 }
 
+/** 保质期剩余天数文案；同 [getWarrantyStatusText]，走 plurals 以区分英文的 day / days。 */
 fun Asset.getShelfLifeStatusText(context: Context): String {
     val expire = shelfLifeExpireDate ?: return ""
     val days = DateUtils.getDaysUntil(expire)
     return when {
         days < 0 -> context.getString(R.string.asset_shelf_life_expired)
-        days <= 30 -> context.getString(R.string.asset_shelf_life_days, days)
+        days <= 30 -> context.resources.getQuantityString(R.plurals.asset_shelf_life_days, days, days)
         else -> context.getString(R.string.asset_shelf_life_active)
     }
 }
