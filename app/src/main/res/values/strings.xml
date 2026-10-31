@@ -1555,7 +1555,7 @@
     <string name="backup_password_unset">未设置</string>
     <string name="backup_password_wrong">密码不正确，请重试</string>
     <string name="backup_password_unset_hint">未设置密码的备份等同明文，请妥善保管；设置后所有备份加密，可换机恢复</string>
-    <string name="backup_password_used_before_hint">你曾使用备份密码，当前未设置——自动备份已退回明文；重新设置即可恢复加密</string>
+    <string name="backup_password_used_before_hint">曾设置过备份密码，当前未设置——自动备份已退回明文</string>
     <string name="backup_error_export_failed">无法写入所选文件夹，请确认该文件夹可写或换一个目录</string>
     <string name="backup_existing_count">本机 %1$d · 可换机 %2$d</string>
     <string name="backup_pool_note">恢复前快照独立保留（最多 3 份），不占备份名额；文件夹里的导出包由你自行管理</string>
@@ -1583,7 +1583,7 @@
     <!-- 自动备份设置 -->
     <string name="backup_auto_interval">备份频率</string>
     <string name="backup_auto_interval_desc_off">开启后按所选周期自动备份，开启当天先备份一次</string>
-    <string name="backup_auto_interval_desc_on">按所选周期自动备份；与手动备份共用保留名额，超出自动删除最老的</string>
+    <string name="backup_auto_interval_desc_on">按所选周期自动备份；与手动备份共用轮转名额</string>
     <string name="backup_auto_off">不自动备份</string>
     <string name="backup_auto_daily">每天</string>
     <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
@@ -2075,7 +2075,7 @@
     <string name="import_pick_file">选择文件导入</string>
     <string name="import_pick_file_hint">支持本应用导出的全量数据包（ZIP），自动识别</string>
     <string name="import_help_title">关于导入</string>
-    <string name="import_help_body">全量数据包按业务键判重，重复记录自动跳过、不覆盖已有数据；完整备份文件请到「备份与恢复」页恢复；微信/支付宝账单请到「账单」页导入</string>
+    <string name="import_help_body">导入自动判重，不覆盖已有数据；包类型自动识别</string>
     <string name="import_full_done_title">导入完成</string>
     <string tools:ignore="PluralsCandidate" name="import_full_done_body">新增 %1$d 条，跳过重复 %2$d 条</string>
     <string name="import_full_running">正在导入</string>
@@ -2091,7 +2091,7 @@
     <string name="backup_restoring_block_hint">恢复期间不能操作应用，完成后将自动重启</string>
     <string name="settings_data_transfer">备份与迁移</string>
     <string name="backup_location">备份位置</string>
-    <string name="backup_location_desc">「立即备份」与自动备份的保存位置；手机存储的备份会随卸载应用消失</string>
+    <string name="backup_location_desc">「立即备份」与自动备份的保存位置；本机备份随卸载消失</string>
     <string name="backup_location_internal">手机存储</string>
     <string name="backup_location_folder_set">已选文件夹</string>
     <string name="backup_location_first_body">备份将保存在这里，之后可随时修改。默认位置是应用私有目录（其他应用无法读取，但卸载应用会丢失）；也可以选择手机里的任意文件夹长期保存，例如网盘同步目录。</string>
