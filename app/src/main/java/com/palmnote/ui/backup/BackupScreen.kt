@@ -299,6 +299,10 @@ fun BackupScreen(
                     SettingRow(clickable = { showIntervalPicker = true }) {
                         SettingRowContent(
                             title = stringResource(R.string.backup_auto_interval),
+                            subtitle = stringResource(
+                                if (autoBackupSettings.enabled) R.string.backup_auto_interval_desc_on
+                                else R.string.backup_auto_interval_desc_off
+                            ),
                             value = autoIntervalLabel(selectedInterval),
                             showChevron = true
                         )
@@ -308,6 +312,7 @@ fun BackupScreen(
                         SettingRow(clickable = { showKeepPicker = true }) {
                             SettingRowContent(
                                 title = stringResource(R.string.backup_auto_keep),
+                                subtitle = stringResource(R.string.backup_auto_keep_desc),
                                 value = pluralStringResource(
                                     R.plurals.backup_auto_keep_option,
                                     autoBackupSettings.keepCount,
@@ -380,6 +385,13 @@ fun BackupScreen(
                                     )
                                 }
                             }
+                            // 池逻辑说明：本机名额 / 快照独立 / 导出包归用户，只在展开看列表时出现
+                            Text(
+                                text = stringResource(R.string.backup_pool_note),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                            )
                             Spacer(modifier = Modifier.height(8.dp))
                         }
                         HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))

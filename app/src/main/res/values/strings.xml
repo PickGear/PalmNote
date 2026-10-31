@@ -1558,6 +1558,7 @@
     <string name="backup_password_used_before_hint">你曾使用备份密码，当前未设置——自动备份已退回明文；重新设置即可恢复加密</string>
     <string name="backup_error_export_failed">无法写入所选文件夹，请确认该文件夹可写或换一个目录</string>
     <string name="backup_existing_count">本机 %1$d · 可换机 %2$d</string>
+    <string name="backup_pool_note">恢复前快照独立保留（最多 3 份），不占备份名额；文件夹里的导出包由你自行管理</string>
     <string name="backup_source_local">本机</string>
     <string name="backup_source_folder">文件夹</string>
     <string name="backup_time_today">今天 %1$s</string>
@@ -1566,7 +1567,7 @@
     <string name="backup_backing_up">正在备份…</string>
     <string name="backup_restore_title">恢复</string>
     <string name="backup_restore_from_file">从文件恢复</string>
-    <string name="backup_restore_from_file_desc">支持加密或明文的备份包</string>
+    <string name="backup_restore_from_file_desc">支持加密或明文的备份包；恢复前当前数据会自动留存一份快照</string>
     <string name="backup_file_not_package">不是备份文件；CSV 数据请在「导出与导入」页导入</string>
     <string name="backup_restoring">正在恢复数据…</string>
     <string name="backup_restore_confirm">恢复会用这份备份替换当前数据。恢复前会自动保存一份本机快照，可再恢复回来。</string>
@@ -1581,6 +1582,8 @@
 
     <!-- 自动备份设置 -->
     <string name="backup_auto_interval">备份频率</string>
+    <string name="backup_auto_interval_desc_off">开启后按所选周期自动备份，开启当天先备份一次</string>
+    <string name="backup_auto_interval_desc_on">按所选周期自动备份；与手动备份共用保留名额，超出自动删除最老的</string>
     <string name="backup_auto_off">不自动备份</string>
     <string name="backup_auto_daily">每天</string>
     <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
@@ -1589,6 +1592,7 @@
         <item quantity="other">每 %1$d 天</item>
     </plurals>
     <string name="backup_auto_keep">保留份数</string>
+    <string name="backup_auto_keep_desc">只保留最近的备份，更早的自动删除；恢复前快照不受影响</string>
     <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
     <plurals name="backup_auto_keep_option">
         <item quantity="one">None</item>
@@ -1597,7 +1601,7 @@
 
     <!-- 备份状态（健康度）：给结论，不给一串时间戳 -->
     <string name="backup_health_last_success">上次备份：%1$s</string>
-    <string name="backup_health_never">还没有备份</string>
+    <string name="backup_health_never">还没有备份 · 点「立即备份」生成第一份</string>
     <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
     <plurals name="backup_health_stale">
         <item quantity="one">None</item>
@@ -2087,7 +2091,7 @@
     <string name="backup_restoring_block_hint">恢复期间不能操作应用，完成后将自动重启</string>
     <string name="settings_data_transfer">备份与迁移</string>
     <string name="backup_location">备份位置</string>
-    <string name="backup_location_desc">「立即备份」与自动备份的保存位置</string>
+    <string name="backup_location_desc">「立即备份」与自动备份的保存位置；手机存储的备份会随卸载应用消失</string>
     <string name="backup_location_internal">手机存储</string>
     <string name="backup_location_folder_set">已选文件夹</string>
     <string name="backup_location_first_body">备份将保存在这里，之后可随时修改。默认位置是应用私有目录（其他应用无法读取，但卸载应用会丢失）；也可以选择手机里的任意文件夹长期保存，例如网盘同步目录。</string>

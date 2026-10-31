@@ -1389,6 +1389,7 @@
     <string name="backup_password_used_before_hint">You used a backup password before but none is set now, so automatic backups have reverted to unencrypted. Set one to re-enable encryption</string>
     <string name="backup_error_export_failed">Could not write to the selected folder. Make sure it is writable or choose another folder.</string>
     <string name="backup_existing_count">On-device %1$d · Portable %2$d</string>
+    <string name="backup_pool_note">Pre-restore snapshots are kept separately (up to 3) and do not count toward the rotation; exports in your folder are managed by you</string>
     <string name="backup_source_local">This device</string>
     <string name="backup_source_folder">Folder</string>
     <string name="backup_time_today">Today %1$s</string>
@@ -1397,7 +1398,7 @@
     <string name="backup_backing_up">Backing up…</string>
     <string name="backup_restore_title">Restore</string>
     <string name="backup_restore_from_file">Restore from file</string>
-    <string name="backup_restore_from_file_desc">Supports encrypted and plain backup packages</string>
+    <string name="backup_restore_from_file_desc">Supports encrypted and plain backup packages; the current data is automatically snapshotted before a restore</string>
     <string name="backup_file_not_package">Not a backup file. Import CSV data on the Export &amp; Import page</string>
     <string name="backup_restoring">Restoring data…</string>
     <string name="backup_restore_confirm">Restoring replaces current data with this backup. A snapshot of current data is saved first, so you can restore it back.</string>
@@ -1412,6 +1413,8 @@
 
     <!-- Automatic backup settings -->
     <string name="backup_auto_interval">Frequency</string>
+    <string name="backup_auto_interval_desc_off">Once enabled, backups run on the chosen schedule and the first one happens the same day</string>
+    <string name="backup_auto_interval_desc_on">Backups run on the chosen schedule; manual backups share the same rotation, and the oldest ones are deleted first</string>
     <string name="backup_auto_off">Off</string>
     <string name="backup_auto_daily">Daily</string>
     <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
@@ -1420,6 +1423,7 @@
         <item quantity="other">Every %1$d days</item>
     </plurals>
     <string name="backup_auto_keep">Copies kept</string>
+    <string name="backup_auto_keep_desc">Only the most recent backups are kept; older ones are deleted automatically. Pre-restore snapshots are not affected</string>
     <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
     <plurals name="backup_auto_keep_option">
         <item quantity="one">%1$d copy</item>
@@ -1428,7 +1432,7 @@
 
     <!-- Backup health -->
     <string name="backup_health_last_success">Last backup: %1$s</string>
-    <string name="backup_health_never">No backup yet</string>
+    <string name="backup_health_never">No backup yet · tap "Back up now" to create the first one</string>
     <!-- 计数文案：数量为 1 时英文用单数，故用 plurals。 -->
     <plurals name="backup_health_stale">
         <item quantity="one">No new backup for %1$d day</item>
@@ -2100,7 +2104,7 @@
     <string name="backup_restoring_block_hint">The app cannot be used during restore. It will restart automatically when finished.</string>
     <string name="settings_data_transfer">Backup &amp; Migration</string>
     <string name="backup_location">Backup location</string>
-    <string name="backup_location_desc">Where "Back up now" and auto backups are saved</string>
+    <string name="backup_location_desc">Where "Back up now" and auto backups are saved; on-device backups are gone if the app is uninstalled</string>
     <string name="backup_location_internal">Phone storage</string>
     <string name="backup_location_folder_set">Folder selected</string>
     <string name="backup_location_first_body">Backups will be saved here; you can change this anytime. The default is app-private storage (invisible to other apps, but lost if the app is uninstalled). You can also pick any folder on the phone for long-term keeping, e.g. a cloud-synced directory.</string>
