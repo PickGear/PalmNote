@@ -47,7 +47,7 @@ import com.palmnote.ui.components.CapsuleSwitch
 import com.palmnote.ui.components.ChoiceDialog
 import com.palmnote.ui.components.CompactTopAppBar
 import com.palmnote.ui.components.InlineColorPicker
-import com.palmnote.ui.components.ModuleCard
+import com.palmnote.ui.components.SettingsCard
 import com.palmnote.ui.components.SectionHeader
 import com.palmnote.ui.components.SettingRow
 import com.palmnote.ui.components.SettingRowContent
@@ -154,7 +154,7 @@ fun GeneralSettingsScreen(
             // 分区色用设置页多巴胺装饰色；「记账」分区归属记账模块 → 保留 ModuleBill
             item { SectionHeader(stringResource(R.string.settings_general), Icons.Default.Tune, DopamineMint) }
             item {
-                ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
+                SettingsCard(modifier = Modifier.fillMaxWidth()) {
                     SettingRow(clickable = { showLanguagePicker = true }) {
                         SettingRowContent(title = stringResource(R.string.settings_language), subtitle = stringResource(R.string.settings_language_subtitle), value = languageLabels[state.language], showChevron = true)
                     }
@@ -167,7 +167,7 @@ fun GeneralSettingsScreen(
 
             item { SectionHeader(stringResource(R.string.settings_appearance), Icons.Default.Palette, DopamineCoral) }
             item {
-                ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
+                SettingsCard(modifier = Modifier.fillMaxWidth()) {
                     SettingRow(clickable = { showThemePicker = true }) {
                         SettingRowContent(title = stringResource(R.string.settings_dark_mode), subtitle = stringResource(R.string.settings_dark_mode_subtitle), value = themes[state.themeMode], showChevron = true)
                     }
@@ -232,7 +232,7 @@ fun GeneralSettingsScreen(
             // 账单相关偏好独立成区：它们只影响记账模块，和「语言/启动页」这类全局通用项不同关切点
             item { SectionHeader(stringResource(R.string.settings_bill_section), Icons.Outlined.ReceiptLong, ModuleBill) }
             item {
-                ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
+                SettingsCard(modifier = Modifier.fillMaxWidth()) {
                     SettingRow(clickable = { showBillTypePicker = true }) {
                         SettingRowContent(title = stringResource(R.string.settings_default_bill_type), value = billTypes[state.defaultBillType.value], showChevron = true)
                     }
@@ -270,7 +270,7 @@ fun GeneralSettingsScreen(
             // 物品相关偏好独立成区：只影响物品页网格卡片的排版，与小票样式同属「模块自己的形态」。
             item { SectionHeader(stringResource(R.string.settings_asset_section), Icons.Outlined.Inventory2, ModuleItem) }
             item {
-                ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
+                SettingsCard(modifier = Modifier.fillMaxWidth()) {
                     SettingRow(clickable = { showAssetGridStylePicker = true }) {
                         SettingRowContent(
                             title = stringResource(R.string.settings_asset_grid_style),
@@ -291,7 +291,7 @@ fun GeneralSettingsScreen(
             // 信息密度，属于生活模块自己的形态，用户 2026-10-18 要求归到本分区。
             item { SectionHeader(stringResource(R.string.settings_life_section), Icons.Filled.Favorite, ModuleLife) }
             item {
-                ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
+                SettingsCard(modifier = Modifier.fillMaxWidth()) {
                     SettingRow {
                         SettingRowContent(
                             title = stringResource(R.string.settings_life_category_compact),

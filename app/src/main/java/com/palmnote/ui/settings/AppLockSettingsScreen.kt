@@ -31,8 +31,8 @@ import com.palmnote.data.lock.AppLockManager
 import com.palmnote.ui.components.AppDialog
 import com.palmnote.ui.components.CapsuleSwitch
 import com.palmnote.ui.components.CompactTopAppBar
-import com.palmnote.ui.components.ModuleCard
 import com.palmnote.ui.components.SectionHeader
+import com.palmnote.ui.components.SettingsCard
 import com.palmnote.ui.components.ChoiceDialog
 import com.palmnote.ui.components.SettingRowContent
 import com.palmnote.ui.components.SettingRow
@@ -284,7 +284,8 @@ private fun LockSettingsCard(
     onToggleBiometric: (Boolean) -> Unit,
     onChangePin: () -> Unit
 ) {
-    ModuleCard(modifier = Modifier.fillMaxWidth()) {
+    // 行数随「应用锁」开关变化（1~3 行）：用 SettingsCard 让边缘恒为 12dp，开关不影响卡片高度
+    SettingsCard(modifier = Modifier.fillMaxWidth()) {
         SettingRow {
             SettingRowContent(
                 title = stringResource(R.string.settings_app_lock),
@@ -331,7 +332,8 @@ private fun AutoLockSettingsCard(
 ) {
     val context = LocalContext.current
 
-    ModuleCard(modifier = Modifier.fillMaxWidth()) {
+    // 同样随「自动锁定」模式变化（1~2 行）
+    SettingsCard(modifier = Modifier.fillMaxWidth()) {
         SettingRow(clickable = onAutoLock) {
             SettingRowContent(
                 title = stringResource(R.string.app_lock_auto_lock),

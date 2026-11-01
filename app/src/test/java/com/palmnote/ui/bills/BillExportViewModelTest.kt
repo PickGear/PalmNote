@@ -1,6 +1,7 @@
 package com.palmnote.ui.bills
 
 import android.app.Application
+import androidx.lifecycle.viewModelScope
 import androidx.test.core.app.ApplicationProvider
 import com.palmnote.data.db.entity.AccountBook
 import com.palmnote.data.db.entity.Bill
@@ -14,6 +15,7 @@ import java.time.ZoneId
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
@@ -75,6 +77,10 @@ class BillExportViewModelTest {
 
     @After
     fun tearDown() {
+        // 必须先收掉 viewModelScope：它还在收集 getAllBills()，直接 resetMain 会撞上
+        // 「Dispatchers.Main is used concurrently with setting it」，测试随机红。
+        viewModel.viewModelScope.cancel()
+        dispatcher.scheduler.advanceUntilIdle()
         Dispatchers.resetMain()
     }
 

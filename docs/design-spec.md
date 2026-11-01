@@ -764,10 +764,46 @@ Card(
 
 | 组件 | 规则 |
 |------|------|
-| `SettingRow` | 56dp 行高，12dp 上下 + 16dp 左右内边距，`clip(medium)` + `clickable` |
+| `SettingsCard` | 设置页所有卡的**唯一容器**：零上下内边距，水平留白由内部元素各自提供（16dp） |
+| `SettingRow` | **最小行高 56dp** + **16dp 上下** + 16dp 左右内边距，`clip(medium)` + `clickable` |
 | `SettingRowContent` | 标题 `bodyLarge` + 副标题 `bodySmall`，右侧可选值 + ChevronRight |
-| `SettingsMenuItem` | 带 40dp 圆形彩色衬底 + 20dp 线性图标，`padding(vertical = 12.dp, horizontal = 16.dp)` |
+| `SettingsMenuItem` | 带 40dp 圆形彩色衬底 + 20dp 线性图标，同样 **16dp 上下** + 16dp 左右 |
 | `SectionHeader` | `titleSmall`，Bold，`onSurfaceVariant`，距上 8dp |
+
+**行高按标准三档取（2026-11-01 定）：**
+
+列表类行的高度由**行内最高的元素**决定，落到三个标准高度之一：**56dp / 72dp / 88dp**。
+我们的排版只会用到前两档：
+
+| 行类型 | 高度 | 构成 |
+|------|------|------|
+| 纯标题 / 标题 + 控件（开关、值 + 箭头） | **56dp** | 文字 24 + 上下 16×2，取 `heightIn(min = 56.dp)` |
+| 标题 + 副标题 | **72dp** | 文字 40 + 上下 16×2 |
+| 带 40dp 圆形图标 | **72dp** | 图标 40 + 上下 16×2 |
+| 副标题折两行 | **88dp** | 内容自然撑开，不主动使用 |
+
+元素在行内垂直居中（只有 88dp 那档才需要顶部对齐，我们不用）。
+
+> **行高不能用字号算式倒推，但必须给下限。** 真机实测过：行高完全由内容撑开时，
+> 同一张卡里会出现「仅标题 46dp / 标题 + 开关 51dp / 标题 + 副标题 62dp」三种高度，看着参差。
+> 加 `heightIn(min = 56.dp)` 后单行统一 56dp、双行 72dp，档位清晰。
+
+**卡片与行的分工（2026-11-01 定，机制化）：**
+
+边缘留白**只能由一方负责**。`ModuleCard` 四周各 12dp，`SettingRow` 上下还有 16dp，两者一叠
+卡片上边到第一行文字就是 28dp；卡里只有一行时，这两圈空白会显得凭空多出来。
+
+因此：**设置页的卡一律用 `SettingsCard`**（`contentPadding = PaddingValues(horizontal = 0.dp)`，即零内边距）：
+
+```
+SettingsCard   → 边缘 16dp（由行/内容自己给），与卡里有几行无关
+ModuleCard     → 12dp(卡) + 16dp(行) = 28dp，且随行数变化
+```
+
+这样**行数变化不影响卡片边缘**——「应用锁」卡在开关关闭时一行、开启后三行，两种状态边缘一致，
+不需要任何条件判断。
+
+卡里的非行内容（按钮、脚注、状态块）**自己带 16dp 水平内边距**，与行对齐；垂直间距按各自语义给。
 
 **分隔线规则：**
 - SettingRow 之间：`HorizontalDivider(padding(horizontal = 16.dp))`

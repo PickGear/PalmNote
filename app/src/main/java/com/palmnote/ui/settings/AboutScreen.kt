@@ -173,7 +173,7 @@ fun AboutScreen(
             // ── 项目信息：版本历史 / 项目源码（卡片之间的留白即分组，本页不设分区标题：
             // 条目只有 6 行且标题自解释，加标题只多三行噪声；见 2026-10-05 与用户的对齐）──
             item {
-                ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
+                SettingsCard(modifier = Modifier.fillMaxWidth()) {
                     SettingsMenuItem(
                         icon = Icons.Outlined.History,
                         title = stringResource(R.string.about_version_history),
@@ -195,7 +195,7 @@ fun AboutScreen(
             // ── 反馈交流：两个渠道各占一行、**直接是动作**（用户 2026-10-05 定：
             // 关于页只要一级菜单，不套二级面板）；行标题即渠道名，副标题写各自适合什么。──
             item {
-                ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
+                SettingsCard(modifier = Modifier.fillMaxWidth()) {
                     SettingsMenuItem(
                         icon = Icons.Outlined.Feedback,
                         title = stringResource(R.string.about_feedback_github_title),
@@ -218,7 +218,7 @@ fun AboutScreen(
 
             // ── 法律信息：隐私 / 开源许可 ──
             item {
-                ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
+                SettingsCard(modifier = Modifier.fillMaxWidth()) {
                     SettingsMenuItem(
                         icon = Icons.Outlined.PrivacyTip,
                         title = stringResource(R.string.about_privacy_policy),

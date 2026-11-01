@@ -31,7 +31,7 @@ import com.palmnote.data.export.ImportFileDetector
 import com.palmnote.ui.components.AppDialog
 import com.palmnote.ui.components.BlockingProgressDialog
 import com.palmnote.ui.components.CompactTopAppBar
-import com.palmnote.ui.components.ModuleCard
+import com.palmnote.ui.components.SettingsCard
 import com.palmnote.ui.components.SettingRowContent
 import com.palmnote.ui.components.SettingRow
 import com.palmnote.ui.components.ChoiceDialog
@@ -176,7 +176,7 @@ fun DataExchangeScreen(
         ) {
             // ── 导入：选择一个文件，应用自动识别类型并分流 ──
             item {
-                ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
+                SettingsCard(modifier = Modifier.fillMaxWidth()) {
                     SettingRow {
                         Button(
                             onClick = {
@@ -195,14 +195,14 @@ fun DataExchangeScreen(
                         text = stringResource(R.string.import_pick_file_hint),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 12.dp)
+                        modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 16.dp)
                     )
                 }
             }
 
             // ── 导出 CSV：范围行 + 按钮 + 脚注，卡内自名无需另立标题 ──
             item {
-                ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
+                SettingsCard(modifier = Modifier.fillMaxWidth()) {
                     // 范围只对 CSV 有意义（备份恒为全量）
                     SettingRow(clickable = { showScopePicker = true }) {
                         SettingRowContent(
@@ -235,14 +235,14 @@ fun DataExchangeScreen(
                         text = stringResource(R.string.data_exchange_export_footnote),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 12.dp)
+                        modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 16.dp)
                     )
                 }
             }
 
             // ── 关于导入：让用户在选文件之前就能预判能不能导 ──
             item {
-                ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
+                SettingsCard(modifier = Modifier.fillMaxWidth()) {
                     SettingRow {
                         SettingRowContent(
                             title = stringResource(R.string.import_help_title),

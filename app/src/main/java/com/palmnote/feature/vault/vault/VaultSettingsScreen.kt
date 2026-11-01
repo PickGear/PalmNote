@@ -43,7 +43,7 @@ import com.palmnote.app.R
 import com.palmnote.ui.components.AppDialog
 import com.palmnote.ui.components.CapsuleSwitch
 import com.palmnote.ui.components.CompactTopAppBar
-import com.palmnote.ui.components.ModuleCard
+import com.palmnote.ui.components.SettingsCard
 import com.palmnote.ui.lock.PinDotsDisplay
 import com.palmnote.ui.lock.PinKeyboard
 import com.palmnote.ui.lock.PinVerifyDialog
@@ -129,7 +129,7 @@ fun VaultSettingsScreen(
         ) {
             item { SectionHeader(stringResource(R.string.vault_settings_section_security), Icons.Outlined.Fingerprint, vaultTint()) }
             item {
-                ModuleCard(modifier = Modifier.fillMaxWidth()) {
+                SettingsCard(modifier = Modifier.fillMaxWidth()) {
                     if (state.initialized) {
                         SettingRow(clickable = { showChangePin = true }) {
                             SettingRowContent(
@@ -220,7 +220,7 @@ fun VaultSettingsScreen(
 
             item { SectionHeader(stringResource(R.string.vault_settings_section_general), Icons.Outlined.Settings, vaultTint()) }
             item {
-                ModuleCard(modifier = Modifier.fillMaxWidth()) {
+                SettingsCard(modifier = Modifier.fillMaxWidth()) {
                     SettingRow(clickable = { showClipboardDialog = true }) {
                         SettingRowContent(
                             title = stringResource(R.string.vault_settings_clipboard),
@@ -237,7 +237,7 @@ fun VaultSettingsScreen(
 
             item { SectionHeader(stringResource(R.string.vault_settings_section_card_display), Icons.Outlined.GridView, vaultTint()) }
             item {
-                ModuleCard(modifier = Modifier.fillMaxWidth()) {
+                SettingsCard(modifier = Modifier.fillMaxWidth()) {
                     SettingRow(clickable = { showCardIdentityDialog = true }) {
                         SettingRowContent(
                             title = stringResource(R.string.vault_settings_card_identity),

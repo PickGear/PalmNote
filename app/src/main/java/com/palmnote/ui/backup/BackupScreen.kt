@@ -44,7 +44,7 @@ import com.palmnote.data.datastore.PreferencesManager
 import com.palmnote.ui.components.AppDialog
 import com.palmnote.ui.components.BlockingProgressDialog
 import com.palmnote.ui.components.CompactTopAppBar
-import com.palmnote.ui.components.ModuleCard
+import com.palmnote.ui.components.SettingsCard
 import com.palmnote.ui.components.ChoiceDialog
 import com.palmnote.ui.components.SettingRow
 import com.palmnote.ui.components.SettingRowContent
@@ -236,7 +236,7 @@ fun BackupScreen(
             // 页面标题已是「备份与恢复」；这一层不再另立标题
             // 分区标题——状态行和「立即备份」按钮自己就能说明这块是什么。
             item {
-                ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
+                SettingsCard(modifier = Modifier.fillMaxWidth()) {
                     BackupStatusRow(
                         settings = autoBackupSettings,
                         candidates = candidates,
@@ -295,7 +295,7 @@ fun BackupScreen(
             // 自动备份只留一行「备份频率」，选项里含「不自动备份」= 关，
             // 不再单设开关——少一个概念、少一行；「备份计划」这类造词主流产品不用。
             item {
-                ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
+                SettingsCard(modifier = Modifier.fillMaxWidth()) {
                     SettingRow(clickable = { showIntervalPicker = true }) {
                         SettingRowContent(
                             title = stringResource(R.string.backup_auto_interval),
@@ -327,7 +327,7 @@ fun BackupScreen(
 
             // ── 备份密码：一个开关决定所有备份加不加密（自动 / 手动 / 文件夹共用）──
             item {
-                ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
+                SettingsCard(modifier = Modifier.fillMaxWidth()) {
                     SettingRow(clickable = { showPasswordDialog = true }) {
                         SettingRowContent(
                             title = stringResource(R.string.backup_password_label),
@@ -351,7 +351,7 @@ fun BackupScreen(
 
             // ── 恢复：列表行「已有备份」自名分组，不另立标题 ──
             item {
-                ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
+                SettingsCard(modifier = Modifier.fillMaxWidth()) {
                     // 列表已提到 Screen 顶层：「备份」卡的状态行与这里共用同一份数据，避免两处各算一遍导致对不上
                     if (candidates.isNotEmpty()) {
                         // 两类分开计数：本机自动备份只能本机恢复；文件夹里的导出包才可换机。
@@ -373,7 +373,7 @@ fun BackupScreen(
                             )
                         }
                         if (listExpanded) {
-                            Column(modifier = Modifier.padding(horizontal = 12.dp)) {
+                            Column(modifier = Modifier.padding(horizontal = 16.dp)) {
                                 candidates.forEach { candidate ->
                                     RestoreCandidateRow(
                                         date = candidate.date,
@@ -390,7 +390,7 @@ fun BackupScreen(
                                 text = stringResource(R.string.backup_pool_note),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                         }
@@ -754,7 +754,7 @@ private fun BackupStatusRow(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp)
+            .padding(horizontal = 16.dp, vertical = 16.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(

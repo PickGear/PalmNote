@@ -5,10 +5,13 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -58,7 +61,7 @@ fun SettingsMenuItem(
     trailing: @Composable (() -> Unit)? = null
 ) {
     val rowModifier = if (onClick != null) Modifier.fillMaxWidth().clickable(onClick = onClick) else Modifier.fillMaxWidth()
-    Row(modifier = rowModifier.padding(vertical = 10.dp, horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(modifier = rowModifier.padding(vertical = 16.dp, horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(tint.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) {
             Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(20.dp))
         }
@@ -83,7 +86,11 @@ fun SectionHeader(title: String, icon: ImageVector = Icons.Filled.Settings, colo
 
 @Composable
 fun RowScope.SettingRowContent(title: String, subtitle: String? = null, value: String? = null, showChevron: Boolean = false) {
-    Column(modifier = Modifier.weight(1f)) {
+    // 文字块按「档位」给最小高度：单行 24dp、双行 40dp。
+    // 这样行高不用靠 padding 凑：40 + 上下 16×2 = 72dp，24 + 32 由 SettingRow 的 min 56 兜住。
+    // （实测文字块只有 36.7dp，若不强制，双行行会落在 68.7 而不是规范的 72。）
+    val minTextHeight = if (subtitle != null) 40.dp else 24.dp
+    Column(modifier = Modifier.weight(1f).heightIn(min = minTextHeight), verticalArrangement = Arrangement.Center) {
         Text(title, style = MaterialTheme.typography.bodyLarge)
         if (subtitle != null) Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
     }
@@ -95,10 +102,57 @@ fun RowScope.SettingRowContent(title: String, subtitle: String? = null, value: S
     }
 }
 
+/**
+ * 设置卡：**零内边距**，水平 16dp 与垂直留白全部交给内部的行 / 按钮 / 脚注自己（design-spec §6.15）。
+ *
+ * 为什么不直接用 [ModuleCard]：`ModuleCard` 默认四周各 12dp，`SettingRow` 左右还有 16dp、上下 16dp，
+ * 一叠之后卡片边缘到文字的水平缩进变成 28dp、垂直留白随行数变化。卡里只有一行时那两圈空白尤其显眼，
+ * 而行数还会变（「应用锁」卡锁关闭时一行、开启后三行），静态「单行卡去边距」根本管不住。
+ *
+ * 所以把规则钉死在组件里：卡片不参与留白，一切由内容自己给 16dp。
+ * 于是**边缘恒为 16dp、行高恒为 56dp（单行）或 72dp（双行），与卡里有几行无关**。
+ */
 @Composable
-fun SettingRow(clickable: (() -> Unit)? = null, content: @Composable RowScope.() -> Unit) {
-    val mod = if (clickable != null) Modifier.fillMaxWidth().clip(MaterialTheme.shapes.medium).clickable(onClick = clickable) else Modifier.fillMaxWidth()
-    Row(modifier = mod.padding(vertical = 12.dp, horizontal = 16.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically, content = content)
+fun SettingsCard(
+    modifier: Modifier = Modifier,
+    tint: Color = MaterialTheme.colorScheme.surface,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    ModuleCard(
+        modifier = modifier,
+        tint = tint,
+        // 零内边距：水平 16dp 由内部的行 / 按钮 / 脚注各自提供，卡片不再叠一圈，
+        // 否则 12(卡) + 16(行) = 28dp，与「所有元素对齐到 16dp」的约定冲突
+        contentPadding = PaddingValues(0.dp),
+        content = content
+    )
+}
+
+/**
+ * 设置行：12dp 上下 + 16dp 左右内边距（design-spec §6.15）。
+ *
+ * 上下取 12dp 而不是 10dp：[SettingsMenuItem] 同为 12dp，两者同值才能让 [SettingsCard]
+ * 里的一行与另一张卡里的一行严格等高。差 4dp 肉眼能看出来。
+ */
+@Composable
+fun SettingRow(
+    clickable: (() -> Unit)? = null,
+    content: @Composable RowScope.() -> Unit
+) {
+    val mod = if (clickable != null) {
+        Modifier.fillMaxWidth().clip(MaterialTheme.shapes.medium).clickable(onClick = clickable)
+    } else {
+        Modifier.fillMaxWidth()
+    }
+    Row(
+        // 最小行高 56dp（design-spec §6.8）：行高完全由内容撑开时，只有标题的行 46dp、
+        // 带开关的行 51dp、带副标题的行 62dp，同一张卡里三种高度，看着参差。
+        // 给一个下限后，单行统一 56dp，带副标题的自然更高（62dp），层级关系仍然清楚。
+        modifier = mod.heightIn(min = 56.dp).padding(vertical = 16.dp, horizontal = 16.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+        content = content
+    )
 }
 
 /**

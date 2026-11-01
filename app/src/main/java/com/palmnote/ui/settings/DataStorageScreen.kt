@@ -111,7 +111,7 @@ fun DataStorageScreen(
             // 分区色用设置页多巴胺装饰色；「存储与清理」保留 Amber（语义色：提醒这是需要谨慎的操作）
             item { SectionHeader(stringResource(R.string.settings_data_transfer), Icons.Outlined.Backup, DopamineSky) }
             item {
-                ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
+                SettingsCard(modifier = Modifier.fillMaxWidth()) {
                     SettingsMenuItem(
                         icon = Icons.Outlined.Backup,
                         title = stringResource(R.string.settings_data_backup),
@@ -133,7 +133,7 @@ fun DataStorageScreen(
             // ── 存储与清理 ──
             item { SectionHeader(stringResource(R.string.settings_data_cleanup), Icons.Outlined.CleaningServices, Amber) }
             item {
-                ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
+                SettingsCard(modifier = Modifier.fillMaxWidth()) {
                     SettingsMenuItem(icon = Icons.Outlined.DeleteOutline, title = stringResource(R.string.settings_recycle_bin), subtitle = stringResource(R.string.settings_recycle_bin_subtitle), tint = StatusActive, onClick = onNavigateToRecycleBin)
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 12.dp))
                     SettingsMenuItem(icon = Icons.Outlined.DeleteForever, title = stringResource(R.string.settings_clear_data), subtitle = stringResource(R.string.settings_clear_data_subtitle), tint = ErrorLight, onClick = onNavigateToDataClear)
@@ -164,12 +164,7 @@ fun DataStorageScreen(
             // 排序上收在最后：备份与清理都是对「自己的数据」动手，演示模式只切展示来源，风险最低。
             item { SectionHeader(stringResource(R.string.settings_demo_section), Icons.Outlined.AutoAwesome, DopamineViolet) }
             item {
-                // 单行卡：去掉上下内边距，整卡高度与多行卡里的单行一致（否则 12dp×2 只包这一行，会比别行显高）。
-                ModuleCard(
-                    tint = MaterialTheme.colorScheme.surface,
-                    modifier = Modifier.fillMaxWidth(),
-                    contentPadding = PaddingValues(horizontal = 12.dp)
-                ) {
+                SettingsCard(modifier = Modifier.fillMaxWidth()) {
                     SettingsMenuItem(
                         icon = Icons.Outlined.AutoAwesome,
                         title = stringResource(R.string.settings_demo_mode),

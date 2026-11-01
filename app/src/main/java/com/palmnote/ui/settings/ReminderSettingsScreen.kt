@@ -91,7 +91,7 @@ fun ReminderSettingsScreen(
             // 三行几乎一模一样，用户分不清谁是谁）。
             item { SectionHeader(stringResource(R.string.settings_reminder_time_section), Icons.Outlined.Schedule, DopamineAmber) }
             item {
-                ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
+                SettingsCard(modifier = Modifier.fillMaxWidth()) {
                     SettingRow(clickable = { pickerTarget = TimePickerTarget(state.dailyReminderHour, state.dailyReminderMinute) { h, m -> viewModel.setDailyReminderTime(h, m) } }) {
                         SettingRowContent(
                             title = stringResource(R.string.settings_reminder_time),
@@ -131,7 +131,7 @@ fun ReminderSettingsScreen(
                 )
             }
             item {
-                ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
+                SettingsCard(modifier = Modifier.fillMaxWidth()) {
                     SettingRow {
                         SettingRowContent(
                             title = stringResource(R.string.settings_daily_reminder),
@@ -186,7 +186,7 @@ fun ReminderSettingsScreen(
             // ── 通知渠道 ──
             item { SectionHeader(stringResource(R.string.settings_reminder_channel_section), Icons.Outlined.Tune, DopamineSky) }
             item {
-                ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
+                SettingsCard(modifier = Modifier.fillMaxWidth()) {
                     SettingRow(clickable = { openSystemNotificationSettings(context) }) {
                         SettingRowContent(
                             title = stringResource(R.string.settings_system_notification),

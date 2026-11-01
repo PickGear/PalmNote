@@ -15,7 +15,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.palmnote.ui.components.CompactTopAppBar
-import com.palmnote.ui.components.ModuleCard
+import com.palmnote.ui.components.SettingsCard
 import com.palmnote.ui.components.SettingsMenuItem
 import com.palmnote.ui.components.SectionHeader
 import com.palmnote.app.R
@@ -51,7 +51,7 @@ fun ManageCategoryScreen(
         ) {
             item { SectionHeader(stringResource(R.string.settings_account_category), Icons.Outlined.Category, DopamineSky) }
             item {
-                ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
+                SettingsCard(modifier = Modifier.fillMaxWidth()) {
                     // 设置页装饰色统一用多巴胺色（纯视觉节奏，不表达归属）
                     SettingsMenuItem(
                         icon = Icons.Outlined.AccountBalanceWallet,
