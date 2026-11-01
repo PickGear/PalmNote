@@ -84,6 +84,33 @@ fun SectionHeader(title: String, icon: ImageVector = Icons.Filled.Settings, colo
     }
 }
 
+/**
+ * 分区脚注：解释性文字挂在**卡片外面**，不进卡（分组列表页的通用做法）。
+ *
+ * 卡片只装可点的行，卡片高度就只由行数决定；一旦卡里塞进小字段落，
+ * 它就从「一列可点项」变成内容块，扫读节奏断掉。缩进对齐卡片左缘（4dp 补差），
+ * 与行内文字的 16dp 缩进形成两档：行文字更深、脚注更浅也更靠外。
+ *
+ * @param paragraphs 段落列表，每段一行独立小字，段间 2dp——同组的多条规则不挤成一段。
+ */
+@Composable
+fun SettingsSectionFooter(paragraphs: List<String>, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 4.dp, vertical = 2.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp)
+    ) {
+        paragraphs.forEach { text ->
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
 @Composable
 fun RowScope.SettingRowContent(title: String, subtitle: String? = null, value: String? = null, showChevron: Boolean = false) {
     // 文字块按「档位」给最小高度：单行 24dp、双行 40dp。

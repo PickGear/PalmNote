@@ -232,12 +232,17 @@
     <string name="settings_category_manage_subtitle">管理物品和账单分类</string>
     <string name="settings_recycle_bin">回收站</string>
     <string name="settings_recycle_bin_subtitle">查看已删除的记录</string>
-    <string name="settings_export_file_suffix">_数据.zip</string>
+    <string name="settings_export_file_suffix">.zip</string>
     <string name="settings_data_backup">备份与恢复</string>
     <string name="settings_data_backup_subtitle">本机与文件夹备份，可换机或回退</string>
     <string name="settings_data_exchange">导入导出</string>
     <string name="settings_data_exchange_subtitle">应用数据包导入，CSV 导出给其他软件</string>
     <string name="settings_data_cleanup">存储与清理</string>
+    <string name="data_exchange_hero_title">数据包</string>
+    <string name="data_exchange_hero_subtitle">导入合并，导出打包为明文 ZIP，全程在本机完成。</string>
+    <string name="data_exchange_export_row_subtitle">ZIP · 明文 CSV，Excel 可直接打开</string>
+    <string name="data_exchange_section_import">导入与合并</string>
+    <string name="data_exchange_section_export">导出与打包</string>
     <string name="data_exchange_export_scope">导出范围</string>
     <string name="data_exchange_scope_all">全部</string>
     <string name="data_exchange_scope_bill">记账</string>
@@ -247,8 +252,8 @@
     <string name="data_exchange_scope_bill_desc">含 账单 · 钱包 · 周期 · 预算 · 分类</string>
     <string name="data_exchange_scope_asset_desc">含 物品 · 使用记录 · 图片</string>
     <string name="data_exchange_scope_life_desc">含 目标 · 打卡 · 纪念日 · 瞬间 · 标签</string>
-    <string name="data_exchange_export_action">导出 CSV</string>
-    <string name="data_exchange_export_footnote">不加密；密码本永不导出，待办 · 心情 · 专注 · 成就暂不支持</string>
+    <string name="data_exchange_export_action">导出数据包</string>
+    <string name="data_exchange_export_footnote">导出包不加密，请妥善保管；密码本与待办、心情、专注、成就不在导出范围。整体备份（含密码本）请用「备份与恢复」</string>
     <string name="settings_clear_data">清除数据</string>
     <string name="settings_clear_data_subtitle">删除个人数据，不可恢复</string>
     <string name="settings_clear_cache">清除缓存</string>
@@ -1548,6 +1553,10 @@
     <string name="search_section_anniversaries">纪念日</string>
     <string name="search_section_moments">时刻</string>
     <!-- Backup -->
+    <string name="backup_section_backup">备份</string>
+    <string name="backup_section_restore">恢复</string>
+    <string name="backup_existing_desc">最近的在前；点按某一份恢复，右侧删除</string>
+    <string name="backup_restore_footer">本机与文件夹里的备份内容完全相同，区别只在存放位置：本机随卸载消失，文件夹归你保管——换机恢复靠文件夹里的那份</string>
     <string name="backup_title">备份与恢复</string>
     <string name="backup_operation_success">操作成功</string>
     <string name="backup_now">立即备份</string>
@@ -1562,8 +1571,8 @@
     <string name="backup_password_unset_hint">未设置密码的备份等同明文；设置后所有备份加密，可换机恢复</string>
     <string name="backup_password_used_before_hint">曾设置过备份密码，当前未设置——自动备份已退回明文</string>
     <string name="backup_error_export_failed">无法写入所选文件夹，请确认该文件夹可写或换一个目录</string>
-    <string name="backup_existing_count">本机 %1$d · 可换机 %2$d</string>
-    <string name="backup_pool_note">恢复前快照独立保留（最多 3 份），不占备份名额；文件夹里的导出包由你自行管理</string>
+    <string name="backup_existing_count">本机 %1$d · 文件夹 %2$d</string>
+    <string name="backup_pool_note">「恢复前快照」是每次恢复前自动生成的保险，失败可退回；独立保留最多 3 份，不占备份名额</string>
     <string name="backup_source_local">本机</string>
     <string name="backup_source_folder">文件夹</string>
     <string name="backup_time_today">今天 %1$s</string>
@@ -2077,10 +2086,11 @@
     <string name="wallpaper_done">完成</string>
     <string name="wallpaper_preset">预设</string>
     <string name="wallpaper_from_gallery">从相册选择</string>
-    <string name="import_pick_file">选择文件导入</string>
-    <string name="import_pick_file_hint">支持本应用导出的全量数据包（ZIP），自动识别</string>
-    <string name="import_help_title">关于导入</string>
-    <string name="import_help_body">导入自动判重，不覆盖已有数据；包类型自动识别</string>
+    <string name="import_pick_file">从文件导入</string>
+    <string name="import_pick_file_hint">数据包（ZIP）· 账单 CSV · 完整备份包</string>
+    <string name="data_exchange_rule_import_body">重复记录会自动跳过，不会覆盖已有数据</string>
+    <string name="data_exchange_redirect_note">账单 CSV 与完整备份包会引导到对应页面</string>
+    <string name="data_exchange_rule_export_body">整包可原样回导；包内 CSV 不能单独导回</string>
     <string name="import_full_done_title">导入完成</string>
     <string tools:ignore="PluralsCandidate" name="import_full_done_body">新增 %1$d 条，跳过重复 %2$d 条</string>
     <string name="import_full_running">正在导入</string>
@@ -2096,7 +2106,7 @@
     <string name="backup_restoring_block_hint">恢复期间不能操作应用，完成后将自动重启</string>
     <string name="settings_data_transfer">备份与迁移</string>
     <string name="backup_location">备份位置</string>
-    <string name="backup_location_desc">「立即备份」与自动备份的保存位置；本机备份随卸载消失</string>
+    <string name="backup_location_desc">「立即备份」与自动备份的保存位置；本机随卸载消失，要换机请选文件夹</string>
     <string name="backup_location_internal">手机存储</string>
     <string name="backup_location_folder_set">已选文件夹</string>
     <string name="backup_location_first_body">备份将保存在这里，之后可随时修改。默认位置是应用私有目录（其他应用无法读取，但卸载应用会丢失）；也可以选择手机里的任意文件夹长期保存，例如网盘同步目录。</string>

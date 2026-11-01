@@ -7,26 +7,36 @@ import androidx.documentfile.provider.DocumentFile
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.outlined.Archive
 import androidx.compose.material.icons.outlined.Backup
+import androidx.compose.material.icons.outlined.FileDownload
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.FolderOpen
+import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Inventory2
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -35,6 +45,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.palmnote.app.R
@@ -46,8 +57,9 @@ import com.palmnote.ui.components.BlockingProgressDialog
 import com.palmnote.ui.components.CompactTopAppBar
 import com.palmnote.ui.components.SettingsCard
 import com.palmnote.ui.components.ChoiceDialog
-import com.palmnote.ui.components.SettingRow
-import com.palmnote.ui.components.SettingRowContent
+import com.palmnote.ui.components.SectionHeader
+import com.palmnote.ui.components.SettingsMenuItem
+import com.palmnote.ui.components.SettingsSectionFooter
 import com.palmnote.ui.theme.*
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -72,8 +84,8 @@ private const val BYTES_PER_GB = BYTES_PER_MB * 1024
  * 带便携密钥（可换机恢复）；没设 → 全部明文（仅本机可恢复）。
  * CSV 导入导出是给其他软件的数据交换，另一件事，见「导出与导入」页。
  *
- * 版面：**状态在最上 → 主动作紧跟 → 其余全是标准设置行**。设置行一律是
- * 「标签 —— 当前值 ▸」，点开才在对话框里列互斥选项。
+ * 版面照「导入导出」页同一套：摘要卡（备份健康度）→「备份」「恢复」两个分区，
+ * 动作都是带图标衬底的行；解释性文字挂卡片外面的脚注，卡里只放可点的行。
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -232,196 +244,270 @@ fun BackupScreen(
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // ── 状态 + 动作，同一张卡 ──
-            // 页面标题已是「备份与恢复」；这一层不再另立标题
-            // 分区标题——状态行和「立即备份」按钮自己就能说明这块是什么。
+            // ── 页面摘要：备份健康度。打开这一页先回答「备份是不是真的在跑」──
+            item {
+                BackupHero(
+                    settings = autoBackupSettings,
+                    candidates = candidates,
+                    onDismissError = { viewModel.dismissAutoBackupError() }
+                )
+            }
+
+            // ── 备份：主动作在前，其余全是「标签 —— 当前值 ▸」──
+            item {
+                SectionHeader(stringResource(R.string.backup_section_backup), Icons.Outlined.Backup, DopamineSky)
+            }
             item {
                 SettingsCard(modifier = Modifier.fillMaxWidth()) {
-                    BackupStatusRow(
-                        settings = autoBackupSettings,
-                        candidates = candidates,
-                        onDismissError = { viewModel.dismissAutoBackupError() }
-                    )
-                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-
-                    SettingRow {
-                        Button(
-                            onClick = {
-                                if (backupLocation.chosen) viewModel.createBackupNow()
-                                else {
-                                    pendingFirstBackup = true
-                                    showLocationDialog = true
-                                }
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            enabled = backupState !is BackupState.Progress
-                        ) {
-                            Icon(
-                                Icons.Outlined.Backup,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(stringResource(R.string.backup_now))
-                        }
-                    }
-
-                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-
-                    // 备份位置：决定「立即备份」与自动备份写到哪里，首次备份时询问，之后可改
-                    SettingRow(clickable = { showLocationDialog = true }) {
-                        val locationValue = if (backupLocation.folderUri == null) {
-                            stringResource(R.string.backup_location_internal)
-                        } else {
-                            locationLabel ?: stringResource(R.string.backup_location_folder_set)
-                        }
-                        SettingRowContent(
-                            title = stringResource(R.string.backup_location),
-                            subtitle = stringResource(R.string.backup_location_desc),
-                            value = locationValue,
-                            showChevron = true
+                    // 唯一的主动作保留实心按钮：点了立刻执行、不进任何下一层，
+                    // 与下面「标签 —— 当前值 ▸」的设置行是两类东西，不共用行样式
+                    // 主动作不用实心 Button：这一页的视觉词汇是「淡主色」（摘要卡 10%、
+                    // 图标衬底 12~14%），一块高饱和色会跳出整页。tonal 底 12% 与衬底同源，
+                    // 主色文字保住「这是主动作」的分量。
+                    FilledTonalButton(
+                        onClick = {
+                            if (backupLocation.chosen) viewModel.createBackupNow()
+                            else {
+                                pendingFirstBackup = true
+                                showLocationDialog = true
+                            }
+                        },
+                        colors = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                            contentColor = MaterialTheme.colorScheme.primary
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
+                            .padding(top = 16.dp, bottom = 12.dp),
+                        enabled = backupState !is BackupState.Progress
+                    ) {
+                        Icon(
+                            Icons.Outlined.Backup,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
                         )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(stringResource(R.string.backup_now))
                     }
-
                     if (backupState is BackupState.Progress && !isRestoring) {
                         BackupProgressBar(
                             percent = (backupState as BackupState.Progress).percent,
                             label = stringResource(R.string.backup_backing_up)
                         )
                     }
-                }
-            }
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
 
-            // 自动备份只留一行「备份频率」，选项里含「不自动备份」= 关，
-            // 不再单设开关——少一个概念、少一行；「备份计划」这类造词主流产品不用。
-            item {
-                SettingsCard(modifier = Modifier.fillMaxWidth()) {
-                    SettingRow(clickable = { showIntervalPicker = true }) {
-                        SettingRowContent(
-                            title = stringResource(R.string.backup_auto_interval),
-                            subtitle = stringResource(
-                                if (autoBackupSettings.enabled) R.string.backup_auto_interval_desc_on
-                                else R.string.backup_auto_interval_desc_off
-                            ),
-                            value = autoIntervalLabel(selectedInterval),
-                            showChevron = true
-                        )
-                    }
+                    // 备份位置：决定「立即备份」与自动备份写到哪里，首次备份时询问，之后可改
+                    SettingsMenuItem(
+                        icon = Icons.Outlined.FolderOpen,
+                        title = stringResource(R.string.backup_location),
+                        subtitle = stringResource(R.string.backup_location_desc),
+                        tint = DopamineSky,
+                        onClick = { showLocationDialog = true },
+                        trailing = {
+                            val locationValue = if (backupLocation.folderUri == null) {
+                                stringResource(R.string.backup_location_internal)
+                            } else {
+                                locationLabel ?: stringResource(R.string.backup_location_folder_set)
+                            }
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Text(
+                                    text = locationValue,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Icon(
+                                    Icons.Filled.ChevronRight,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+
+                    // 自动备份只留一行「备份频率」，选项里含「不自动备份」= 关，
+                    // 不再单设开关——少一个概念、少一行；「备份计划」这类造词主流产品不用。
+                    SettingsMenuItem(
+                        icon = Icons.Outlined.Schedule,
+                        title = stringResource(R.string.backup_auto_interval),
+                        subtitle = stringResource(
+                            if (autoBackupSettings.enabled) R.string.backup_auto_interval_desc_on
+                            else R.string.backup_auto_interval_desc_off
+                        ),
+                        tint = DopamineSky,
+                        onClick = { showIntervalPicker = true },
+                        trailing = {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Text(
+                                    text = autoIntervalLabel(selectedInterval),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Icon(
+                                    Icons.Filled.ChevronRight,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    )
                     if (autoBackupSettings.enabled) {
                         HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-                        SettingRow(clickable = { showKeepPicker = true }) {
-                            SettingRowContent(
-                                title = stringResource(R.string.backup_auto_keep),
-                                subtitle = stringResource(R.string.backup_auto_keep_desc),
-                                value = pluralStringResource(
-                                    R.plurals.backup_auto_keep_option,
-                                    autoBackupSettings.keepCount,
-                                    autoBackupSettings.keepCount
-                                ),
-                                showChevron = true
-                            )
-                        }
-                    }
-                }
-            }
-
-            // ── 备份密码：一个开关决定所有备份加不加密（自动 / 手动 / 文件夹共用）──
-            item {
-                SettingsCard(modifier = Modifier.fillMaxWidth()) {
-                    SettingRow(clickable = { showPasswordDialog = true }) {
-                        SettingRowContent(
-                            title = stringResource(R.string.backup_password_label),
-                            // 副标题三态：已设置讲功能；未设置且曾用过要点破「已退回明文」；
-                            // 从未用过讲「无密码=明文」。后两态都把风险在导出前告诉用户
-                            subtitle = stringResource(
-                                when {
-                                    backupPasswordSet -> R.string.backup_password_desc
-                                    backupPasswordEverSet -> R.string.backup_password_used_before_hint
-                                    else -> R.string.backup_password_unset_hint
-                                }
-                            ),
-                            value = stringResource(
-                                if (backupPasswordSet) R.string.backup_password_set else R.string.backup_password_unset
-                            ),
-                            showChevron = true
-                        )
-                    }
-                }
-            }
-
-            // ── 恢复：列表行「已有备份」自名分组，不另立标题 ──
-            item {
-                SettingsCard(modifier = Modifier.fillMaxWidth()) {
-                    // 列表已提到 Screen 顶层：「备份」卡的状态行与这里共用同一份数据，避免两处各算一遍导致对不上
-                    if (candidates.isNotEmpty()) {
-                        // 两类分开计数：本机自动备份只能本机恢复；文件夹里的导出包才可换机。
-                        // 混成一个总数会让用户误以为"备份很多=很安全"。
-                        val localCount = candidates.count { it.source is RestoreSource.FromLocal }
-                        SettingRow(clickable = { listExpanded = !listExpanded }) {
-                            SettingRowContent(
-                                title = stringResource(R.string.backup_existing),
-                                value = stringResource(
-                                    R.string.backup_existing_count,
-                                    localCount,
-                                    candidates.size - localCount
-                                )
-                            )
-                            Icon(
-                                if (listExpanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        if (listExpanded) {
-                            Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-                                candidates.forEach { candidate ->
-                                    RestoreCandidateRow(
-                                        date = candidate.date,
-                                        size = candidate.size,
-                                        kind = candidate.kind,
-                                        fromLocal = candidate.source is RestoreSource.FromLocal,
-                                        onClick = { if (!backupBusy) restoreSource = candidate.source },
-                                        onDelete = { if (!backupBusy) pendingDelete = candidate }
+                        SettingsMenuItem(
+                            icon = Icons.Outlined.History,
+                            title = stringResource(R.string.backup_auto_keep),
+                            subtitle = stringResource(R.string.backup_auto_keep_desc),
+                            tint = DopamineSky,
+                            onClick = { showKeepPicker = true },
+                            trailing = {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Text(
+                                        text = pluralStringResource(
+                                            R.plurals.backup_auto_keep_option,
+                                            autoBackupSettings.keepCount,
+                                            autoBackupSettings.keepCount
+                                        ),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Icon(
+                                        Icons.Filled.ChevronRight,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             }
-                            // 池逻辑说明：本机名额 / 快照独立 / 导出包归用户，只在展开看列表时出现
-                            Text(
-                                text = stringResource(R.string.backup_pool_note),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
+                        )
+                    }
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+
+                    // 备份密码：一个开关决定所有备份加不加密（自动 / 手动 / 文件夹共用）
+                    SettingsMenuItem(
+                        icon = Icons.Outlined.Lock,
+                        title = stringResource(R.string.backup_password_label),
+                        // 副标题三态：已设置讲功能；未设置且曾用过要点破「已退回明文」；
+                        // 从未用过讲「无密码=明文」。后两态都把风险在导出前告诉用户
+                        subtitle = stringResource(
+                            when {
+                                backupPasswordSet -> R.string.backup_password_desc
+                                backupPasswordEverSet -> R.string.backup_password_used_before_hint
+                                else -> R.string.backup_password_unset_hint
+                            }
+                        ),
+                        tint = DopamineSky,
+                        onClick = { showPasswordDialog = true },
+                        trailing = {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Text(
+                                    text = stringResource(
+                                        if (backupPasswordSet) R.string.backup_password_set else R.string.backup_password_unset
+                                    ),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Icon(
+                                    Icons.Filled.ChevronRight,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
-                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-                    }
-
-                    SettingRow(clickable = {
-                        if (backupBusy) return@SettingRow
-                        // .palmnote/.zip 都没有注册的 MIME 类型，部分文件管理器会把它判为不可选而灰掉；
-                        // 放宽到任意类型，选错文件由文件识别拦下
-                        restoreLauncher.launch(arrayOf("*/*"))
-                    }) {
-                        SettingRowContent(
-                            title = stringResource(R.string.backup_restore_from_file),
-                            subtitle = stringResource(R.string.backup_restore_from_file_desc),
-                            showChevron = true
-                        )
-                    }
-
-                    // 恢复期间不允许任何交互（见 performRestore 的窗口封堵）：
-                    // 阻断对话框替代普通进度条，用户唯一的操作就是等待
-                    if (isRestoring && backupState is BackupState.Progress) {
-                        BlockingProgressDialog(
-                            message = stringResource(R.string.backup_restoring),
-                            detail = stringResource(R.string.backup_restoring_block_hint)
-                        )
-                    }
+                    )
                 }
             }
 
-            item { Spacer(modifier = Modifier.height(16.dp)) }
+            // ── 恢复：已有备份池在前（自名分组），从文件恢复收尾 ──
+            item {
+                SectionHeader(stringResource(R.string.backup_section_restore), Icons.Outlined.FileDownload, DopamineSky)
+            }
+            item {
+                SettingsCard(modifier = Modifier.fillMaxWidth()) {
+                    // 列表提到 Screen 顶层：Hero 与这里共用同一份 candidates，避免两处各算一遍
+                    val localCount = candidates.count { it.source is RestoreSource.FromLocal }
+                    SettingsMenuItem(
+                        icon = Icons.Outlined.Archive,
+                        title = stringResource(R.string.backup_existing),
+                        subtitle = stringResource(R.string.backup_existing_desc),
+                        tint = DopamineSky,
+                        onClick = { listExpanded = !listExpanded },
+                        trailing = {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Text(
+                                    text = stringResource(
+                                        R.string.backup_existing_count,
+                                        localCount,
+                                        candidates.size - localCount
+                                    ),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Icon(
+                                    if (listExpanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    )
+                    if (listExpanded) {
+                        Column(modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 12.dp)) {
+                            candidates.forEach { candidate ->
+                                RestoreCandidateRow(
+                                    date = candidate.date,
+                                    size = candidate.size,
+                                    kind = candidate.kind,
+                                    fromLocal = candidate.source is RestoreSource.FromLocal,
+                                    onClick = { if (!backupBusy) restoreSource = candidate.source },
+                                    onDelete = { if (!backupBusy) pendingDelete = candidate }
+                                )
+                            }
+                            // 池逻辑说明：本机名额 / 快照独立 / 导出包归用户，只在展开看列表时出现
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = stringResource(R.string.backup_pool_note),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+
+                    SettingsMenuItem(
+                        icon = Icons.Outlined.FileDownload,
+                        title = stringResource(R.string.backup_restore_from_file),
+                        subtitle = stringResource(R.string.backup_restore_from_file_desc),
+                        tint = DopamineSky,
+                        onClick = {
+                            if (backupBusy) return@SettingsMenuItem
+                            // .palmnote/.zip 都没有注册的 MIME 类型，部分文件管理器会把它判为不可选而灰掉；
+                            // 放宽到任意类型，选错文件由文件识别拦下
+                            restoreLauncher.launch(arrayOf("*/*"))
+                        }
+                    )
+                }
+            }
+            item {
+                // 「本机 / 文件夹」的区别是这一页最容易困惑的点：两种备份内容相同，
+                // 差别只在文件放在哪、卸载后还在不在。规则常驻卡外脚注，不藏在展开列表里
+                SettingsSectionFooter(listOf(stringResource(R.string.backup_restore_footer)))
+            }
         }
     }
 
@@ -720,24 +806,29 @@ private fun BackupProgressBar(percent: Int, label: String) {
 }
 
 /**
- * 状态行：给结论，不给一串时间戳。
+ * 页面摘要卡：备份健康度。给结论，不给一串时间戳。
  *
  * 系统级 Auto Backup 已关闭（`AndroidManifest: allowBackup="false"`，因为包内含密码本密钥，
  * 不允许外流到云端），因此 App 内备份是用户唯一的数据退路。既然没有第二条命，
  * 「备份是不是真的在跑」就必须在打开这一页时一眼可见，而不是等到需要恢复那天才发现从来没备上。
+ *
+ * 形态与「导出与打包」页的摘要卡一致：淡主色底、不可点。健康信号由图标衬底的颜色承载
+ * （正常 = primary / 出错或过期 = error），标题与副标题保持默认色——整卡染红会喧宾夺主，
+ * 也让「摘要卡」看起来像一张错误卡。
  */
 @Composable
-private fun BackupStatusRow(
+private fun BackupHero(
     settings: BackupViewModel.AutoBackupSettings,
     candidates: List<RestoreCandidate>,
     onDismissError: () -> Unit
 ) {
+    val scheme = MaterialTheme.colorScheme
+
     // 只把自动/手动备份算作「最近一次保护」：快照是恢复前临时生成的，把它算进来会让
     // 从未正常备份过的用户看到一条乐观的时间 —— 那恰好掩盖了唯一要暴露的问题。
     val protectedBackups = remember(candidates) { candidates.filter { !it.isSnapshot } }
     val lastBackupAt = remember(protectedBackups) { protectedBackups.maxOfOrNull { it.date } ?: 0L }
-    // 备份体积是「我一共占了多少空间」的唯一答案，备份页就该给这个数
-    // 状态行给出。这里给的是全部留存备份之和，与左侧「最近一次」互补，不是重复。
+    // 备份体积是「我一共占了多少空间」的唯一答案，与「最近一次」互补，不是重复。
     val totalBytes = remember(protectedBackups) { protectedBackups.sumOf { it.size } }
 
     val staleAfterDays = settings.intervalDays * 2
@@ -746,80 +837,131 @@ private fun BackupStatusRow(
     val hasError = settings.lastErrorAt > 0L
 
     val statusColor = when {
-        hasError || isStale -> MaterialTheme.colorScheme.error
-        lastBackupAt > 0L -> MaterialTheme.colorScheme.primary
-        else -> MaterialTheme.colorScheme.onSurfaceVariant
+        hasError || isStale -> scheme.error
+        lastBackupAt > 0L -> scheme.primary
+        else -> scheme.onSurfaceVariant
     }
 
-    Column(
+    // 先合成到不透明面色上：壁纸模式下 background 可能是透明的，直接铺会压在照片上
+    val heroContainer = scheme.primary.copy(alpha = 0.10f).compositeOver(scheme.surface)
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 16.dp)
+            .clip(MaterialTheme.shapes.extraLarge)
+            .background(heroContainer)
+            .padding(horizontal = 20.dp, vertical = 18.dp)
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Column {
+            BackupHealthSummaryRow(
+                lastBackupAt = lastBackupAt,
+                hasError = hasError,
+                statusColor = statusColor,
+                protectedCount = protectedBackups.size,
+                totalBytes = totalBytes
+            )
+
+            if (isStale) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = pluralStringResource(R.plurals.backup_health_stale, staleAfterDays, staleAfterDays),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = scheme.error
+                )
+            }
+
+            if (hasError) {
+                Spacer(modifier = Modifier.height(10.dp))
+                BackupErrorBlock(lastErrorMsg = settings.lastErrorMsg, onDismissError = onDismissError)
+            }
+        }
+    }
+}
+
+/**
+ * 摘要卡的标题行：48dp 健康徽标 + 「上次备份：<时间>」+「共 N 份 · 体积」。
+ * 从 [BackupHero] 拆出来让摘要卡只保留「算状态 → 摆区块」的骨架；
+ * 状态逻辑（哪些备份算保护、过期怎么判）留在 Hero 里，这里只管画。
+ */
+@Composable
+private fun BackupHealthSummaryRow(
+    lastBackupAt: Long,
+    hasError: Boolean,
+    statusColor: Color,
+    protectedCount: Int,
+    totalBytes: Long
+) {
+    val scheme = MaterialTheme.colorScheme
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            modifier = Modifier
+                .size(48.dp)
+                .clip(CircleShape)
+                .background(statusColor.copy(alpha = 0.14f)),
+            contentAlignment = Alignment.Center
+        ) {
             Icon(
                 if (lastBackupAt > 0L && !hasError) Icons.Outlined.CheckCircle else Icons.Outlined.Info,
                 contentDescription = null,
-                modifier = Modifier.size(18.dp),
-                tint = statusColor
+                tint = statusColor,
+                modifier = Modifier.size(24.dp)
             )
-            Spacer(modifier = Modifier.width(8.dp))
+        }
+        Spacer(modifier = Modifier.width(16.dp))
+        Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = if (lastBackupAt > 0L) {
                     stringResource(R.string.backup_health_last_success, backupTimeText(lastBackupAt))
                 } else {
                     stringResource(R.string.backup_health_never)
                 },
-                style = MaterialTheme.typography.bodyMedium,
-                color = statusColor,
-                modifier = Modifier.weight(1f)
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
             )
             // 份数只给总数：快照是恢复失败的退路，明细在下方列表里，不必在这里再拆一遍。
-            // 一份都没有时不显示「共 0 份」——那只是把左边那句话又说了一遍。
-            if (protectedBackups.isNotEmpty()) {
+            // 一份都没有时不显示「共 0 份」——那只是把标题那句话又说了一遍。
+            if (protectedCount > 0) {
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = if (totalBytes > 0L) {
                         stringResource(
                             R.string.backup_health_counts_size,
-                            protectedBackups.size,
+                            protectedCount,
                             formatBackupSize(totalBytes)
                         )
                     } else {
-                        stringResource(R.string.backup_health_counts, protectedBackups.size)
+                        stringResource(R.string.backup_health_counts, protectedCount)
                     },
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = scheme.onSurfaceVariant,
+                    lineHeight = 18.sp
                 )
             }
         }
+    }
+}
 
-        if (isStale) {
-            Spacer(modifier = Modifier.height(6.dp))
+/**
+ * 自动备份失败块：errorContainer 底 + 报错文案 + 「知道了」。
+ * 从 [BackupHero] 拆出来纯粹是因为 detekt：摘要卡本体刚好压在 LongMethod 阈值上，
+ * 错误块自成一体后语义也更清楚——它是「一次失败的详情」，不是摘要卡的一部分。
+ */
+@Composable
+private fun BackupErrorBlock(lastErrorMsg: String, onDismissError: () -> Unit) {
+    val scheme = MaterialTheme.colorScheme
+    Surface(shape = MaterialTheme.shapes.medium, color = scheme.errorContainer) {
+        Column(modifier = Modifier.padding(12.dp)) {
             Text(
-                text = pluralStringResource(R.plurals.backup_health_stale, staleAfterDays, staleAfterDays),
+                text = if (lastErrorMsg.isBlank()) {
+                    stringResource(R.string.backup_health_failed_unknown)
+                } else {
+                    stringResource(R.string.backup_health_failed, lastErrorMsg)
+                },
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.error
+                color = scheme.onErrorContainer
             )
-        }
-
-        if (hasError) {
-            Spacer(modifier = Modifier.height(10.dp))
-            Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.errorContainer) {
-                Column(modifier = Modifier.padding(12.dp)) {
-                    Text(
-                        text = if (settings.lastErrorMsg.isBlank()) {
-                            stringResource(R.string.backup_health_failed_unknown)
-                        } else {
-                            stringResource(R.string.backup_health_failed, settings.lastErrorMsg)
-                        },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onErrorContainer
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    TextButton(onClick = onDismissError, contentPadding = PaddingValues(0.dp)) {
-                        Text(stringResource(R.string.backup_health_dismiss))
-                    }
-                }
+            Spacer(modifier = Modifier.height(4.dp))
+            TextButton(onClick = onDismissError, contentPadding = PaddingValues(0.dp)) {
+                Text(stringResource(R.string.backup_health_dismiss))
             }
         }
     }

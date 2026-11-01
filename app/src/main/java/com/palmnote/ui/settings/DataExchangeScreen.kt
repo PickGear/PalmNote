@@ -1,28 +1,37 @@
 package com.palmnote.ui.settings
 
-import android.content.Context
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
+import androidx.compose.material.icons.outlined.Archive
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.FileDownload
 import androidx.compose.material.icons.outlined.FileUpload
+import androidx.compose.material.icons.outlined.FolderOpen
+import androidx.compose.material.icons.outlined.ImportExport
 import androidx.compose.material.icons.outlined.Inventory2
+import androidx.compose.material.icons.outlined.Layers
 import androidx.compose.material.icons.outlined.SelectAll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.palmnote.app.R
@@ -30,15 +39,20 @@ import com.palmnote.data.export.ExportScope
 import com.palmnote.data.export.ImportFileDetector
 import com.palmnote.ui.components.AppDialog
 import com.palmnote.ui.components.BlockingProgressDialog
-import com.palmnote.ui.components.CompactTopAppBar
-import com.palmnote.ui.components.SettingsCard
-import com.palmnote.ui.components.SettingRowContent
-import com.palmnote.ui.components.SettingRow
 import com.palmnote.ui.components.ChoiceDialog
+import com.palmnote.ui.components.CompactTopAppBar
+import com.palmnote.ui.components.SectionHeader
+import com.palmnote.ui.components.SettingsCard
+import com.palmnote.ui.components.SettingsMenuItem
+import com.palmnote.ui.components.SettingsSectionFooter
+import com.palmnote.ui.theme.DopamineSky
 import com.palmnote.ui.theme.InfoBlue
 import com.palmnote.ui.theme.ModuleBill
 import com.palmnote.ui.theme.ModuleItem
 import com.palmnote.ui.theme.ModuleLife
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -51,6 +65,9 @@ import kotlinx.coroutines.withContext
  * - 账单文件 → 明确指路「账单」页（账单导入/导出与本页完全分开）
  * 导出侧把明文 CSV 交给表格软件 / 其他 App（依赖闭包自动带上钱包/分类）。
  * 整份可恢复的数据走「备份与恢复」页——各走各的入口，互不掺杂。
+ *
+ * 版面按分组列表惯例组织：顶部一张摘要卡交代「这一页搬的是什么」，
+ * 下面「导入 / 导出」两组各一张卡；卡里只放可点行，规则一律写在卡外脚注里。
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -75,6 +92,8 @@ fun DataExchangeScreen(
     var csvScope by remember { mutableStateOf(ExportScope.ALL) }
     val appName = stringResource(R.string.app_name)
     val exportSuffix = stringResource(R.string.settings_export_file_suffix)
+    // 同名文件会互相覆盖，而用户事后在网盘/文件管理器里只看得见文件名 —— 日期必须进名字
+    val fileDate = remember { DateTimeFormatter.ofPattern("yyyyMMdd").withZone(ZoneId.systemDefault()) }
     val csvScopeLabel = exportScopeLabel(csvScope)
 
     // 导入：选择一个文件，自动识别类型并分流
@@ -174,85 +193,104 @@ fun DataExchangeScreen(
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // ── 导入：选择一个文件，应用自动识别类型并分流 ──
+            // ── 页面摘要：只交代这一页在搬什么，不放可点入口 ──
+            item { DataExchangeHero() }
+
+            // ── 导入：一个入口，文件类型由应用自己识别并分流 ──
+            // 说明文字一律挂在卡片**外面**（分组列表页的通用做法）：卡里只放可点的行，
+            // 卡片高度就只由行数决定；一旦卡里塞进两段小字，它就从「一列可点项」变成内容块，
+            // 扫读节奏断掉，也再没有「这张卡有几项」可言。
+            item {
+                SectionHeader(
+                    stringResource(R.string.data_exchange_section_import),
+                    Icons.Outlined.FileDownload,
+                    DopamineSky
+                )
+            }
             item {
                 SettingsCard(modifier = Modifier.fillMaxWidth()) {
-                    SettingRow {
-                        Button(
-                            onClick = {
-                                // 导出包没有注册的 MIME 类型，部分文件管理器会灰掉；
-                                // 放宽到任意类型，识别不出的文件由兜底提示拦下
-                                filePickerLauncher.launch(arrayOf("*/*"))
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(Icons.Outlined.FileDownload, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(stringResource(R.string.import_pick_file))
+                    SettingsMenuItem(
+                        icon = Icons.Outlined.FolderOpen,
+                        title = stringResource(R.string.import_pick_file),
+                        // 「吃什么样的文件」属于这个入口本身，留在行里；规则放卡外脚注
+                        subtitle = stringResource(R.string.import_pick_file_hint),
+                        tint = DopamineSky,
+                        onClick = {
+                            // 导出包没有注册的 MIME 类型，部分文件管理器会灰掉；
+                            // 放宽到任意类型，识别不出的文件由兜底提示拦下
+                            filePickerLauncher.launch(arrayOf("*/*"))
                         }
-                    }
-                    Text(
-                        text = stringResource(R.string.import_pick_file_hint),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 16.dp)
                     )
                 }
             }
+            item {
+                SettingsSectionFooter(
+                    listOf(
+                        stringResource(R.string.data_exchange_rule_import_body),
+                        stringResource(R.string.data_exchange_redirect_note)
+                    )
+                )
+            }
 
-            // ── 导出 CSV：范围行 + 按钮 + 脚注，卡内自名无需另立标题 ──
+            // ── 导出：先定范围、再执行；范围只对导出有意义，所以两行同卡 ──
+            item {
+                SectionHeader(
+                    stringResource(R.string.data_exchange_section_export),
+                    Icons.Outlined.FileUpload,
+                    DopamineSky
+                )
+            }
             item {
                 SettingsCard(modifier = Modifier.fillMaxWidth()) {
-                    // 范围只对 CSV 有意义（备份恒为全量）
-                    SettingRow(clickable = { showScopePicker = true }) {
-                        SettingRowContent(
-                            title = stringResource(R.string.data_exchange_export_scope),
-                            // 「含什么」必须写在点击之前：依赖闭包会自动带上钱包/分类，用户需要能预判
-                            subtitle = exportScopeSummary(csvScope),
-                            value = csvScopeLabel,
-                            showChevron = true
-                        )
-                    }
+                    SettingsMenuItem(
+                        icon = Icons.Outlined.Layers,
+                        title = stringResource(R.string.data_exchange_export_scope),
+                        // 「含什么」必须写在点击之前：依赖闭包会自动带上钱包/分类，用户需要能预判
+                        subtitle = exportScopeSummary(csvScope),
+                        tint = DopamineSky,
+                        onClick = { showScopePicker = true },
+                        trailing = {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Text(
+                                    text = csvScopeLabel,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Icon(
+                                    Icons.Filled.ChevronRight,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    )
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-
-                    SettingRow {
-                        Button(
-                            onClick = {
-                                // 文件名承载范围：用户事后在网盘里只看得见文件名
-                                val fileName = if (csvScope.isComplete) appName + exportSuffix
-                                               else "${appName}_$csvScopeLabel$exportSuffix"
-                                csvExportLauncher.launch(fileName)
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(Icons.Outlined.FileUpload, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(stringResource(R.string.data_exchange_export_action))
+                    SettingsMenuItem(
+                        icon = Icons.Outlined.Archive,
+                        title = stringResource(R.string.data_exchange_export_action),
+                        subtitle = stringResource(R.string.data_exchange_export_row_subtitle),
+                        tint = DopamineSky,
+                        onClick = {
+                            // 文件名承载范围与日期：用户事后在网盘里只看得见文件名
+                            val fileName = "${appName}_${csvScopeLabel}_${fileDate.format(Instant.now())}$exportSuffix"
+                            csvExportLauncher.launch(fileName)
                         }
-                    }
-
-                    Text(
-                        text = stringResource(R.string.data_exchange_export_footnote),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 16.dp)
                     )
                 }
             }
-
-            // ── 关于导入：让用户在选文件之前就能预判能不能导 ──
             item {
-                SettingsCard(modifier = Modifier.fillMaxWidth()) {
-                    SettingRow {
-                        SettingRowContent(
-                            title = stringResource(R.string.import_help_title),
-                            subtitle = stringResource(R.string.import_help_body)
-                        )
-                    }
-                }
+                SettingsSectionFooter(
+                    listOf(
+                        stringResource(R.string.data_exchange_export_footnote),
+                        stringResource(R.string.data_exchange_rule_export_body)
+                    )
+                )
             }
 
-            item { Spacer(modifier = Modifier.height(16.dp)) }
+            item { Spacer(Modifier.height(24.dp)) }
         }
     }
 
@@ -311,6 +349,60 @@ fun DataExchangeScreen(
                 }
             }
         )
+    }
+}
+
+/**
+ * 页面摘要卡：回答「这一页在搬什么、往哪搬」，不承担任何操作。
+ *
+ * 动作仍然只出现在下面的分组卡里——摘要卡如果也能点，同一个动作就有了两种长相，
+ * 用户会开始猜「点上面和点下面有什么区别」。淡主色底 + 单枚双向箭头，
+ * 只在首屏建立层级，不承担按钮职责。
+ */
+@Composable
+private fun DataExchangeHero() {
+    val scheme = MaterialTheme.colorScheme
+    // 先合成到不透明面色上：壁纸模式下 background 可能是透明的，
+    // 直接铺 primary@10% 会让文字压在照片上，读不出来
+    val heroContainer = scheme.primary.copy(alpha = 0.10f).compositeOver(scheme.surface)
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.extraLarge)
+            .background(heroContainer)
+            .padding(horizontal = 20.dp, vertical = 18.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.data_exchange_hero_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = stringResource(R.string.data_exchange_hero_subtitle),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = scheme.onSurfaceVariant,
+                    lineHeight = 18.sp
+                )
+            }
+            Spacer(Modifier.width(16.dp))
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(scheme.primary.copy(alpha = 0.14f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Outlined.ImportExport,
+                    contentDescription = null,
+                    tint = scheme.primary,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+        }
     }
 }
 
