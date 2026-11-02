@@ -170,7 +170,6 @@ git clone https://github.com/PickGear/PalmNote.git
 ## Design Spec
 
 - Global design system (colors, typography, spacing, components, animations): [docs/design-spec.md](docs/design-spec.md)
-- Password vault module design: [docs/feature-vault.md](docs/feature-vault.md)
 
 ## Privacy
 

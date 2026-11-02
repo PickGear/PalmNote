@@ -19,7 +19,7 @@
 >
 > **v4.5 变更说明：** 生活模板字段类型扩充（TOGGLE / RATING / IMAGE / URL / CURRENCY / TAG）。
 >
-> **v4.4 变更说明：** 新增密码本模块设计文档（[feature-vault.md](feature-vault.md)）；权限章节补充 INTERNET 运行时请求规范；架构章节补充 Vault + 未来 AI/Cloud 模块引用。
+> **v4.4 变更说明：** 新增密码本模块设计文档（feature-vault.md，后移出仓库）；权限章节补充 INTERNET 运行时请求规范；架构章节补充 Vault + 未来 AI/Cloud 模块引用。
 >
 > **v4.3 变更说明：** 对齐代码实际实现；修正颜色值（ExpenseRed/IncomeGreen/Amber/底部导航选中色）；修正组件命名（开关组件统一命名为 CapsuleSwitch）；修正模板颜色引用方式（composable 函数 → val 属性）；修正备份方式（WebDAV → 本地 ZIP）；补全技术栈（Paging3/Biometric/Lunar）；修正 AppIcon 查询方式（valueOf → fromName）。
 
@@ -121,6 +121,7 @@
 | StatusLost | `#FF6B6B` | 状态丢失 |
 | StatusActive | `#34A853` | 状态活跃、设置项图标 |
 | IncomeGreen | `#34A853` | 收入（绿） |
+| IncomeGreenLight | `#8FE8C0` | 彩底卡面（品牌青）上的收入数值与上涨方向 |
 | ExpenseRed | `#EA4335` | 支出（红） |
 | Amber | `#FBBC04` | 缓存、设置项图标 |
 | Purple | `#9C27B0` | 搜索分类图标 |
@@ -810,6 +811,11 @@ ModuleCard     → 12dp(卡) + 16dp(行) = 28dp，且随行数变化
 - SettingsMenuItem 之间：`HorizontalDivider(padding(vertical = 4.dp))`
 - 弹窗选项行之间：`HorizontalDivider(padding(horizontal = 52.dp))`
 
+**页面组装约定（2026-11-01 定）：**
+- **箭头 = 进下一层**（选值、选择器、二级页）；**立即执行的动作 = 按钮**——「立即备份」点了就执行、不进下一层，不能做成带箭头的行
+- 按钮配色跟页面词汇走：整页淡主色的页面用 FilledTonalButton（primary@12% 底 + primary 文字），不用实心 Button
+- 页面结构：摘要 Hero 卡（非可点）+ 分区 SectionHeader + 行式入口；脚注挂卡外（`SettingsSectionFooter`），卡片只装可点行
+
 **选择弹窗规范：**
 - 每行：36dp 圆形彩色衬底 + 20dp 图标 + 12dp 间距 + 文字 + RadioButton
 - 行高：8dp 上下内边距
@@ -1097,6 +1103,7 @@ ModuleCard     → 12dp(卡) + 16dp(行) = 28dp，且随行数变化
 | 商家占位 | "商家名称（可选）" |
 | 加载中 | "加载中..." |
 | 空状态 | "暂无备份" / "还没有生活瞬间" / "今天还没记录" 等具体文案 |
+| 密码本术语 | 一律「密码」，不用「主密码」；生物识别文案只提指纹 |
 
 `[Life]` 生活模块补充：
 
@@ -1246,9 +1253,11 @@ LifeMoodAngry = Color(0xFFE53935)   // 生气
 
 | 属性 | 规则 |
 |------|------|
-| 备份目标 | App 专属外部存储 `getExternalFilesDir(DIRECTORY_DOWNLOADS)/PalmNote/` |
-| 备份格式 | ZIP 打包（DB + DataStore + 图片） |
-| 文件名 | `palmnote_backup_{timestamp}.palmnote` |
+| 备份目标 | 本机私有目录 / 用户自选文件夹（SAF）/ 自动快照，三处只决定文件放哪 |
+| 备份格式 | ZIP 打包（DB + DataStore + 图片），**三种备份格式完全相同**，任何一份都能恢复 |
+| 文件名 | 自动备份 `palmnote_auto_{timestamp}.palmnote`（旧版 `palmnote_backup_*` 同按轮转清理） |
+| 便携密钥 | `db_key.txt` 无条件随包写入——换机/重装/任何设备可直接恢复；可选备份密码，设置后整包加密（PNB2） |
+| 轮转 | 自动备份保留份数 3/7/15/30（默认 7）；恢复前快照独立保留 3 份，不与自动备份抢名额；文件夹侧只清理自动备份，按文件名内嵌时间戳排序删旧 |
 | 恢复方式 | 文件列表中选择 → 确认弹窗 → 关闭 Room → 解压覆盖 → 强制重开 Room |
 | 存储权限 | 无需额外权限（使用 `getExternalFilesDir`） |
 
@@ -1304,7 +1313,9 @@ LifeScreen
 │   └── 右侧三图标（onSurfaceVariant）：统计 Outlined.BarChart · 搜索 Outlined.Search · 模板管理 Outlined.GridView
 ├── 三张分类卡（计划 / 时间 / 记录）：计数走真实 category，非动态分类
 ├── 今日看板：周历点选 / 展开月历 + 逾期置顶红色区 + 一键推迟到今天
-│   └──「📋 今日安排 · M月d日 周X」分类 chip 时间序列表
+│   ├──「📋 今日安排 · M月d日 周X」分类 chip 时间序列表
+│   ├── 快捷添加条（QuickAddBar）：一句话记一笔，解析日期/时间落到待办模板，结果转 snackbar（成功可撤销）
+│   └──「⏳ 那年今天 · N 条」胶囊（默认收起一行，点击展开粉彩回忆条，点条目进详情）
 ├── 待办卡（待安排）：未完成清单 take 4 + 逾期计数
 └── FAB：自绘「+ 新建」胶囊（**不是** Material FAB）
     ├── 单击 → ModalBottomSheet 模板宫格（分类筛选 chip + 搜索 + 模板卡）
@@ -1371,8 +1382,9 @@ LifeScreen（动态 Section 渲染）  ← v4.6 蓝图，未实施
 > 为 **35 个枚举常量 / 34 个逻辑类型**：原子 26 + 复合 4（`CHECKLIST/TABLE/RANGE/PERSON`）+ 派生 4（`FORMULA/REMAINING/STREAK/ELAPSED`）。
 > `PERCENTAGE` 是 `PERCENT` 的旧别名，**仅为读取旧数据保留**，契约层两者同槽。
 > 原记的「当前实现 11 种」及「`SHORT_TEXT/SLIDER/URL/EMAIL/PHONE/COLOR/DURATION/TAG` 规划中」均已过时。
-> ⚠️ 但**表单控件并未覆盖全部类型**：`DATETIME/SLIDER/COLOR/VIDEO/AUDIO/FILE` 目前降级为普通文本框，
-> `TABLE`/`RANGE` 只读不能编辑（依据：审计记录 §13.2）。
+> ⚠️ 但**表单控件并未覆盖全部类型**：`FieldInputComponent` 的 `when` 只显式接了
+> TEXT/NUMBER/DATE/BOOLEAN/SELECT/MULTI_SELECT/TIME/PERCENT/RATING 九类，
+> 其余（`DATETIME/SLIDER/COLOR/VIDEO/AUDIO/FILE/TABLE/RANGE` 等）一律 `else` 降级为普通文本框。
 
 #### 15.3.1 统一 FieldType 枚举
 
@@ -1392,7 +1404,7 @@ enum class FieldType {
 
 > **红线：序列化名即存储名，只增不改不删**（改枚举名 = 静默丢掉存量数据）。
 > `PERCENTAGE` 已并入 `PERCENT`（§3.2），枚举值保留**只为读取旧数据**，契约层两者同槽。
-> ⚠️ 上表是**契约**，不等于表单控件：`DATETIME/SLIDER/COLOR/VIDEO/AUDIO/FILE` 当前降级为普通文本框，`TABLE`/`RANGE` 只读不能编辑（见 15.3 顶部注记）。
+> ⚠️ 上表是**契约**，不等于表单控件：输入侧只显式覆盖九类，其余（`DATETIME/SLIDER/COLOR/VIDEO/AUDIO/FILE/TABLE/RANGE` 等）一律 `else` 降级为普通文本框（见 15.3 顶部注记）。
 
 **变更要点：**
 
@@ -1413,12 +1425,18 @@ data class FieldConfig(
     val defaultValue: String = "",
     val options: List<String> = emptyList(),  // 仅 SELECT / MULTI_SELECT
     val placeholder: String = "",
-    val validation: String = "",             // 正则校验（预留）
-    val unit: String = "",                   // 仅 NUMBER
-    val min: Double? = null,                 // 仅 NUMBER / SLIDER
-    val max: Double? = null,                 // 仅 NUMBER / SLIDER
-    val showInCard: Boolean = false,         // 是否显示在预览卡片
-    val showInList: Boolean = false,
+    val validation: String = "",             // ⚠️ 目前无消费方（键位保留，启用需先定校验语法）
+    val unit: String = "",
+    val min: Double? = null,                 // 进度分母
+    val max: Double? = null,
+    val step: Double? = null,                // 步进器步长（CURRENCY 默认步长由模板给，如存钱 500）
+    val showInCard: Boolean = false,
+    val showInList: Boolean = false,         // ⚠️ 目前无消费方（列表行是固定 44dp 胶囊）
+    val showAsProgress: Boolean = false,
+    val disabled: Boolean = false,           // 停用字段：内置模板有数据的字段不能删，只能停用
+    val progressStyle: String? = null,       // 进度形态覆盖（null = AUTO 按语义推导，认不出回落 AUTO）
+    val progressTargetKey: String = "",      // 进度分母字段的 key（空 = 用 min/max）
+    val progressStartKey: String = "",       // 进度起始值字段：方向写在数据里（起始 > 目标 = 递减）
     val sortOrder: Int = 0
 )
 ```
@@ -1474,24 +1492,26 @@ data class FieldConfig(
 | 类型 | 输入组件 | 显示组件 |
 |------|---------|---------|
 | TEXT | OutlinedTextField（多行） | 纯文本 |
-| SHORT_TEXT | OutlinedTextField（单行） | 纯文本 |
-| URL | OutlinedTextField + URI 键盘 | 链接样式（primary 色） |
-| EMAIL | OutlinedTextField + Email 键盘 | 链接样式 |
-| PHONE | OutlinedTextField + Phone 键盘 | 链接样式 |
+| SHORT_TEXT | 文本框（降级） | 纯文本 |
+| URL | 文本框（降级） | 链接样式（primary 色） |
+| EMAIL | 文本框（降级） | 链接样式 |
+| PHONE | 文本框（降级） | 链接样式 |
 | NUMBER | OutlinedTextField + Decimal 键盘 + 后缀单位 | 数值 + 单位（¥ 格式当 unit="元"） |
 | PERCENT | Slider 0-100 | 进度条 + 百分比 |
 | RATING | 5 星点击 | 5 星显示 |
-| SLIDER | Slider 可配置值域 + 步长 | 值 + 单位 |
+| SLIDER | 文本框（降级） | 值 + 单位 |
 | SELECT | ExposedDropdownMenu | 选项文字 |
 | MULTI_SELECT | Checkbox 列表 | 逗号分隔 |
 | BOOLEAN | CapsuleSwitch | ✓/✗ |
-| COLOR | 色板 + HEX 输入 | 色块 + HEX |
-| TAG | 自由输入 + Chips | Chips 排列 |
+| COLOR | 文本框（降级） | 色块 + HEX |
+| TAG | 文本框（降级） | Chips 排列 |
 | DATE | DatePickerDialog | yyyy-MM-dd |
 | TIME | TimePicker | HH:mm |
 | DURATION | OutlinedTextField | HH:MM:SS |
 | IMAGE | 系统相册/拍照 | 缩略图 Grid |
 | LOCATION | OutlinedTextField + Place 图标 | 纯文本 |
+
+> 派生类型（`FORMULA/REMAINING/STREAK/ELAPSED`）不进表单：详情页 / 列表卡 / 小组件由 `evalProgress` 派生只读展示；`MAP/VIDEO/AUDIO/FILE/DATETIME/RICH_TEXT` 的显示侧见 `LifeDetailModel`。
 
 #### 15.3.6 模板编辑功能
 
@@ -1686,7 +1706,7 @@ categories.forEach { category ->
 | 农历 | Lunar |
 | 生物识别 | AndroidX Biometric |
 | 分页 | Paging3（预留；账单月度聚合视图不适用，LIMIT 5000） |
-| 密码本加密 | AES-256-GCM + 密钥包裹（独立主密码 → PBKDF2 → 数据密钥 DK） |
+| 密码本加密 | AES-256-GCM + 密钥包裹（独立密码 → PBKDF2 → 数据密钥 DK） |
 
 ### 16.5 功能模块架构
 
@@ -1694,7 +1714,7 @@ categories.forEach { category ->
 
 所有非 Tab 功能模块（密码本、未来 AI、云备份等）统一采用 Dashboard 卡片入口模式，不占用底部 Tab。
 
-> 详见 [feature-vault.md](feature-vault.md)。
+> 密码本模块实现细节以 `feature/vault` 代码与本文 §16 为准。
 
 ### 16.2 依赖注入架构（Hilt）
 
@@ -1754,10 +1774,11 @@ MainActivity.onCreate()  (@AndroidEntryPoint)
 | 4.0 | 2026-07-03 | 生活模块集成：新增 1.7 生活模块色彩体系、5.3 生活模块图标规范、6.17 生活模块专属组件、7.2 生活模块动画补充、8 权限补充、10 文案补充、11 图表补充、13.3 生活模块颜色引用、15 生活模块导航结构与路由定义 |
 | **4.2** | **2026-07-22** | **架构重构：移除 Hilt → 手动 DI（AppContainer）。底部导航栏：60dp、CenterVertically、无动画、缓存 inset。卡片间距统一 8dp。移除 Dashboard 内部 Scaffold。导航动画 spring → tween(200)。新增架构与性能章节。** |
 | **4.3** | **2026-07-28** | **对齐代码实现：修正颜色值（ExpenseRed/IncomeGreen/Amber/底部导航选中色）；组件命名统一为 CapsuleSwitch；模板颜色引用 val 属性替代 composable 函数；AppIcon 查询 fromName 替代 valueOf；ModuleCard 内边距 12dp；备份方式 WebDAV → 本地 ZIP；补全技术栈（Paging3/Biometric/Lunar/WorkManager/Serialization）；移除 Hilt 残留。** |
-| **4.4** | **2026-07-28** | **新增密码本模块设计文档（[feature-vault.md](feature-vault.md)）；权限章节补充 INTERNET 运行时请求规范；架构章节补充 Vault + 未来 AI/Cloud 模块引用。** |
+| **4.4** | **2026-07-28** | **新增密码本模块设计文档（feature-vault.md，后移出仓库）；权限章节补充 INTERNET 运行时请求规范；架构章节补充 Vault + 未来 AI/Cloud 模块引用。** |
 | **4.5** | **2026-07-28** | **生活模板字段类型扩充（TOGGLE / RATING / IMAGE / URL / CURRENCY / TAG）。** |
 | **4.6** | **2026-07-28** | **分类系统重构：静态三分类 → 用户可定义动态分类（LifeCategory 实体 / categoryId FK / 动态 Section 渲染 / 分类管理 UI）。FieldType 类型系统统一（enum 扩展至 19 种，Wizard 全量暴露，DECIMAL 移除）。卡片渲染解耦（基于 layoutType 而非分类）。分类色重命名（时间→纪念）。预置分类判定规则文档化。IMAGE 字段重新设计（系统相册/拍照）。模板编辑功能规范。** |
 | **4.7** | **2026-07-28** | **取消模块化架构（PalmModule / ModuleRegistry / Tab 动态配置），底栏恢复为固定 4 Tab。新增模块均通过 Dashboard 卡片入口（不占 Tab）。删除第 17 章。** |
 | **5.0** | **2026-08-02** | **架构对齐当前实现：依赖注入回归 Hilt（手动 DI / AppContainer 已移除）；密码本 v1.3.0 已实现（feature/vault，字段级 AES-256-GCM + 独立主密码密钥包裹，DB v5 Migration4To5）；15.4 动态分类标注为规划中未实现；版本升 1.3.0。** |
 | **5.1** | **2026-08-02** | **安全与 OCR 升级：数据库 SQLCipher 全库加密（EncryptedOpenHelperFactory，明文库自动迁移）；OCR 引擎 ML Kit → PaddleOCR PP-OCRv6（OcrEngine 接口 + PaddleOcrEngine，ONNX Runtime 离线推理，模型打包 assets，release 仅 arm64-v8a）；APK 体积 86MB → 42.6MB。对齐修正：15.2 路由改类型安全路由（LifeRoute.kt）；15.3 FieldType 扩充标注为规划（当前 11 种）；INTERNET 权限标注预留未声明。** |
+| **5.2** | **2026-11-03** | **对齐当前实现：密码本移除剪贴板自动清除（平台限制：后台/无焦点读不到剪贴板、输入法历史无法清除，保留 EXTRA_IS_SENSITIVE 标记）；新增关闭密码保护（convertToNoLock 原地降级，条目不重加密）与收藏；术语统一「密码」（注释、文案与隐私文档）；色彩注册 IncomeGreenLight #8FE8C0（彩底卡面收入色）；备份章节对齐三处目标/便携密钥/轮转；新增设置类页面组装约定（箭头=进下一层、立即执行=按钮）；§15 生活模块对齐（15.1 现状树补快捷添加条与那年今天回忆条，15.3 表单控件覆盖口径改为九类显式+其余降级、FieldConfig 同步至现行 19 字段、15.3.5 渲染对照表输入列对齐实际实现）；feature-vault.md 与 demo-mode-handoff.md 移出仓库（README 中英链接移除，历史条目去链保留提及）。** |
 | **5.2** | **2026-09-29** | **生活模块规范回写至 v1.40 现状（纯文档校准，未改代码）：§15.1 首页树（按 LifeScreen.kt）/ §15.2 路由（实际 11 个目的地）/ §15.3.1 FieldType（35 常量 / 34 逻辑类型）/ §6.12 与 §5.3.2 统计入口（顶栏图标）/ §5.3 AppIcon 零接线标注 / §6.5 生活页 FAB（自绘胶囊，StaggeredFabMenuItem 未使用）。v4.6 动态分类蓝图与 8 项展开式 FAB 均标注作废并保留历史。** |

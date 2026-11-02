@@ -17,7 +17,7 @@
 ## 一、版本号
 
 - [ ] `app/build.gradle.kts` 的 `versionCode` 已递增（单调递增，禁止回退，上架场景尤其重要）
-- [ ] `gradle/libs.versions.toml` 的 `palmnote` 键与本次发布的语义化版本一致（如 `1.4.0`）——这是唯一手改点，`versionName` 与 `resValue` 生成的 `app_version` 都由它派生
+- [ ] `gradle/libs.versions.toml` 的 `palmnote` 键与本次发布的语义化版本一致（如 `1.4.0`）——这是唯一手改点，`versionName` 由它派生（界面读 `BuildConfig.VERSION_NAME`）
 - [ ] `versionName` 与 Git tag 一致（`app/build.gradle.kts` 只写 `libs.versions.palmnote.get()`，不要手改）
 - [ ] `settings_about_version` 为格式串（`版本 %1$s`），版本值由 `BuildConfig.VERSION_NAME` 填充，**不再**写死在 `strings.xml`
 - [ ] 输出的 APK 文件名符合 `PalmNote-<version>.apk`（`app/build.gradle.kts` 的 `outputFileName` 自动生成）

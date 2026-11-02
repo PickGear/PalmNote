@@ -173,7 +173,6 @@ git clone https://github.com/PickGear/PalmNote.git
 ## 设计规范
 
 - 全局设计系统（色彩、字体、间距、组件、动画）：[docs/design-spec.md](docs/design-spec.md)
-- 密码本模块设计：[docs/feature-vault.md](docs/feature-vault.md)
 
 ## 隐私
 

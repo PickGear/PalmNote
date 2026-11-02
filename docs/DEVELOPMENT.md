@@ -233,6 +233,9 @@ v1.4.0            # 正式发布
 | 1.3.0 | 4 |
 | 1.4.0 | 6 |
 | 1.4.1 | 8 |
+| 1.4.2-beta1/2/3 | 9/10/11 |
+| 1.4.3-beta1 | 12 |
+| 1.4.3-beta2 | 13 |
 
 > ⚠️ 上表是**已发布版本的历史记录**，不是「下一个版本该填几」的预测值——新增版本时在末尾**追加**一行。
 > `versionCode` 必须**单调递增**，禁止回退，也禁止重用已用过的值（上架场景尤其重要）。
@@ -247,16 +250,18 @@ v1.4.0            # 正式发布
 gradle/libs.versions.toml   → [versions] palmnote = "X.Y.Z"   ← 唯一手改点
 app/build.gradle.kts        → versionName = libs.versions.palmnote.get()
                               versionCode = N（仍需手动 +1，见 3.4）
-                              resValue("string","app_version","v${libs.versions.palmnote.get()}")
-core/build.gradle.kts       → resValue("string","app_version",...)（core 的 R 独立，需各自声明）
+```
+
+> 原 `resValue` 生成的 `app_version` 字符串资源已删（app 与 core 两处均移除，全仓无消费方）：
+> 关于页读 `BuildConfig.VERSION_NAME`，应用锁（core）经 `PackageManager` 读取。
 CHANGELOG.md                → 添加版本条目
 README.md                   → 如果有版本相关描述
 ```
 
-> `app_version` 字符串**不再**写在 `strings.xml` 里，而由 `resValue` 编译期注入。
-> 因 AGP 的非传递 R（non-transitive R），app 与 core 各自引用 `R.string.app_version`，
-> 所以两处 `build.gradle.kts` 都要有 `resValue`。`settings_about_version` 是格式串
-> （`版本 %1$s`），在 `SettingsScreen.kt` 用 `BuildConfig.VERSION_NAME` 填充。
+> `app_version` 字符串资源已**整体移除**（app 与 core 两处 `resValue` 均删，无任何消费方）：
+> AboutScreen 与 SettingsScreen 读 app 的 `BuildConfig.VERSION_NAME`；
+> core 拿不到 BuildConfig，AppLockScreen 经 `PackageManager` 读取 versionName。
+> `settings_about_version` 是格式串（`版本 %1$s`），在 `SettingsScreen.kt` 用 `BuildConfig.VERSION_NAME` 填充。
 
 ---
 
@@ -1498,7 +1503,7 @@ PalmNote 处理敏感数据（密码、财务信息），安全审查是强制�
 | 加密相关 | 密钥管理、加密模式、IV/nonce 生成 |
 | 数据库变更 | 是否有明文敏感数据泄露风险 |
 | 备份/恢复 | 备份文件是否加密、恢复是否校验完整性 |
-| 剪贴板操作 | 自动清除机制、敏感数据是否残留 |
+| 剪贴板操作 | 敏感内容是否标记 EXTRA_IS_SENSITIVE、复制内容是否残留 |
 | 生物识别 | Keystore 密钥是否不可导出、降级策略 |
 | 网络请求 | PalmNote 理论上无网络请求，审查是否有意外外连 |
 | 日志输出 | 是否有敏感数据写入日志 |
@@ -1524,7 +1529,7 @@ PalmNote 处理敏感数据（密码、财务信息），安全审查是强制�
 ### 用户界面
 - [ ] FLAG_SECURE 在敏感页面启用
 - [ ] 密码输入框默认遮罩
-- [ ] 剪贴板 30 秒自动清除
+- [ ] 复制敏感内容已标记 EXTRA_IS_SENSITIVE
 - [ ] 密码遮罩查看（👁 切换）
 
 ### 备份
