@@ -1,5 +1,8 @@
 package com.palmnote.ui.dashboard
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
@@ -8,8 +11,12 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
@@ -18,14 +25,22 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -59,13 +74,23 @@ internal fun DashboardCardContent(
     categoryConfigs: List<com.palmnote.data.db.entity.CategoryConfig>,
     cardConfigs: List<DashboardCardConfig> = emptyList(),
     /** 演示模式开启中：净资产等含示例的数字需要标注（「含示例数据」）。 */
-    demoModeOn: Boolean = false
+    demoModeOn: Boolean = false,
+    /** 金额隐私：净资产卡遮住四组金额与涨跌方向。 */
+    amountsHidden: Boolean = false,
+    onToggleAmounts: () -> Unit = {}
 ) {
     val netWorthColor = cardConfigs.find { it.type == CardType.NET_WORTH }?.customColor?.toComposeColor() ?: ModuleHome
     when (type) {
-        CardType.NET_WORTH -> NetWorthCard(state, cardColor = netWorthColor, onNavigateToBill, demoModeOn)
+        CardType.NET_WORTH -> NetWorthCard(
+            state = state,
+            cardColor = netWorthColor,
+            onNavigateToBill = onNavigateToBill,
+            demoModeOn = demoModeOn,
+            amountsHidden = amountsHidden,
+            onToggleAmounts = onToggleAmounts
+        )
         CardType.QUICK_ACTIONS -> QuickActionsCard(onNavigateToAddBill, onNavigateToAddAsset, onNavigateToLife)
-        CardType.BUDGET_ALERT -> BudgetAlertCard(state, onNavigateToBill)
+        CardType.BUDGET_ALERT -> BudgetAlertCard(state, onNavigateToBill, amountsHidden)
         CardType.ANNIVERSARIES -> AnniversariesCard(state, onNavigateToLife)
         CardType.ASSET_DISTRIBUTION -> AssetDistributionCard(state, onNavigateToAsset, presetCategoryOverrides, categoryConfigs)
         CardType.TODAY -> TodayCard(state, onNavigateToLife)
@@ -136,7 +161,9 @@ internal fun NetWorthCard(
     state: DashboardState,
     cardColor: Color = ModuleHome,
     onNavigateToBill: () -> Unit,
-    demoModeOn: Boolean = false
+    demoModeOn: Boolean = false,
+    amountsHidden: Boolean = false,
+    onToggleAmounts: () -> Unit = {}
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     Card(
@@ -156,19 +183,46 @@ internal fun NetWorthCard(
                 .padding(16.dp)
         ) {
             Column {
-                Text(
-                    text = stringResource(R.string.dashboard_net_worth),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
-                )
+                // 标题行：左「净资产」，右「账单 ›」＋ 眼睛。
+                // 眼睛放这一行几乎不花高度——标题行 20dp 只是被 24dp 的按钮顶到 24dp；
+                // 之前放在结余行（那行本来只有 16dp）会把整张卡撑高 16dp。
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = stringResource(R.string.dashboard_net_worth),
+                        style = MaterialTheme.typography.bodyMedium,
+                        // 比 bodyMedium 的 400 重一档：0.8 透明度的小字在青底上偏飘，
+                        // 上 Medium 就够，别上 Bold（会抢金额的视觉重心）
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f),
+                        modifier = Modifier.weight(1f)
+                    )
+                    BillEntryLink(onClick = onNavigateToBill)
+                    Spacer(modifier = Modifier.width(6.dp))
+                    AmountPrivacyToggle(hidden = amountsHidden, onToggle = onToggleAmounts)
+                }
                 Spacer(modifier = Modifier.height(4.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = CurrencyUtils.formatCompact(context, state.totalAssetValue.toMoney()),
-                        style = MaterialTheme.typography.displaySmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
+                    if (amountsHidden) {
+                        // 币种符号留着：藏的是数，不是「这是钱」
+                        Text(
+                            text = stringResource(R.string.money_symbol),
+                            style = MaterialTheme.typography.displaySmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        AmountMaskBlock(width = 136.dp, height = 28.dp, corner = 8.dp)
+                    } else {
+                        Text(
+                            text = CurrencyUtils.formatCompact(context, state.totalAssetValue.toMoney()),
+                            style = MaterialTheme.typography.displaySmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
                     // 演示模式下资产/钱包含示例：必须标注，否则用户会把示例余额当成自己的
                     if (demoModeOn) {
                         Spacer(modifier = Modifier.width(8.dp))
@@ -185,75 +239,210 @@ internal fun NetWorthCard(
                         )
                     }
                 }
-                Spacer(modifier = Modifier.height(24.dp))
+                // 总资产与「本月收支」的分组间距：16dp，仍比下方结余那段的 12dp 大，
+                // 但不会在 178dp 的卡中间空出一整块（原 24dp 占卡高 13%，看着像漏了内容）
+                Spacer(modifier = Modifier.height(16.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Column {
                         Text(stringResource(R.string.dashboard_monthly_expense), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f))
-                        Text(
-                            CurrencyUtils.formatCurrency(context, state.monthlyExpense.toMoney()),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimary
+                        MoneyValue(
+                            text = CurrencyUtils.formatCurrency(context, state.monthlyExpense.toMoney()),
+                            hidden = amountsHidden,
+                            maskWidth = 60.dp
                         )
                     }
                     Column(horizontalAlignment = Alignment.End) {
                         Text(stringResource(R.string.dashboard_monthly_income), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f))
-                        Text(
-                            CurrencyUtils.formatCurrency(context, state.monthlyIncome.toMoney()),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimary
+                        MoneyValue(
+                            text = CurrencyUtils.formatCurrency(context, state.monthlyIncome.toMoney()),
+                            hidden = amountsHidden,
+                            maskWidth = 54.dp,
+                            // 收入用浅薄荷绿跟支出（白）分开：IncomeGreen 压在这张青卡上只有 1.02:1
+                            valueColor = IncomeGreenLight
                         )
                     }
                 }
                 Spacer(modifier = Modifier.height(12.dp))
                 val netIncome = state.monthlyIncome - state.monthlyExpense
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        if (netIncome >= 0) Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown,
-                        contentDescription = null,
-                        tint = if (netIncome >= 0) IncomeGreen else StatusLost,
-                        modifier = Modifier.size(16.dp)
+                val balanceText = if (netIncome >= 0) {
+                    stringResource(
+                        R.string.dashboard_monthly_balance,
+                        CurrencyUtils.formatCurrency(context, netIncome.toMoney())
                     )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = if (netIncome >= 0) stringResource(R.string.dashboard_monthly_balance, CurrencyUtils.formatCurrency(context, netIncome.toMoney()))
-                               else stringResource(R.string.dashboard_monthly_over_budget, CurrencyUtils.formatCurrency(context, (-netIncome).toMoney())),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f)
+                } else {
+                    stringResource(
+                        R.string.dashboard_monthly_over_budget,
+                        CurrencyUtils.formatCurrency(context, (-netIncome).toMoney())
                     )
                 }
-            }
-            Column(
-                modifier = Modifier.align(Alignment.TopEnd),
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Surface(
-                    shape = MaterialTheme.shapes.medium,
-                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(Icons.Outlined.Inventory2, null, Modifier.size(14.dp), MaterialTheme.colorScheme.onPrimary)
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(pluralStringResource(
-                            R.plurals.dashboard_items_count, state.activeAssetCount, state.activeAssetCount
-                        ), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimary)
+                    if (amountsHidden) {
+                        // 涨跌方向本身也是财务信息：不给箭头，用中性块占住原位（与小组件同口径）
+                        AmountMaskBlock(width = 14.dp, height = 14.dp, corner = 4.dp)
+                    } else {
+                        Icon(
+                            if (netIncome >= 0) Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown,
+                            contentDescription = null,
+                            // 涨用彩底版浅绿（IncomeGreen 压在青卡上只有 1.02:1）；
+                            // 跌保留原深红，用户明确不要那版浅粉
+                            tint = if (netIncome >= 0) IncomeGreenLight else StatusLost,
+                            modifier = Modifier.size(16.dp)
+                        )
                     }
+                    Spacer(modifier = Modifier.width(4.dp))
+                    if (amountsHidden) {
+                        Text(
+                            text = stringResource(R.string.dashboard_monthly_balance_label),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        AmountMaskBlock(width = 72.dp, height = 12.dp, corner = 4.dp)
+                        Spacer(modifier = Modifier.weight(1f))
+                    } else {
+                        Text(
+                            text = balanceText,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    // 「N 件」徽标按新稿挪到最后一行右端，右上角只留「账单 ›」与眼睛
+                    ItemCountBadge(count = state.activeAssetCount)
                 }
-                JumpCapsule(
-                    label = stringResource(R.string.nav_bill),
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    onClick = onNavigateToBill
-                )
             }
         }
+    }
+}
+
+/**
+ * 遮罩块：隐藏金额时的占位灰块（2026-11-02 稿）。
+ *
+ * 宽度写死、不跟真实数字走——按真实位数画块等于把「这个月花了十万还是几百」也一起泄露了。
+ */
+@Composable
+private fun AmountMaskBlock(width: Dp, height: Dp, corner: Dp) {
+    Box(
+        modifier = Modifier
+            .size(width, height)
+            .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.25f), RoundedCornerShape(corner))
+    )
+}
+
+/** 支出/收入数值：显示态走文本，隐藏态留币种符号 + 灰块（与主金额同一套遮法）。 */
+@Composable
+private fun MoneyValue(
+    text: String,
+    hidden: Boolean,
+    maskWidth: Dp,
+    valueColor: Color = MaterialTheme.colorScheme.onPrimary
+) {
+    if (hidden) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = stringResource(R.string.money_symbol),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = valueColor
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            AmountMaskBlock(width = maskWidth, height = 14.dp, corner = 4.dp)
+        }
+    } else {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = valueColor
+        )
+    }
+}
+
+/**
+ * 标题行右侧的「账单 ›」chip。
+ *
+ * 不复用 [JumpCapsule]：那个的竖向 padding 是 8dp，落到标题行会把整行从 24dp 顶到 30dp。
+ * 这里用 4dp，chip 高 22dp，与「N 件」徽标同一套（同 rounding / 同内边距 / 同透明度）。
+ */
+@Composable
+private fun BillEntryLink(onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .clip(MaterialTheme.shapes.medium)
+            .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 10.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = stringResource(R.string.nav_bill),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onPrimary
+        )
+        Icon(
+            Icons.AutoMirrored.Filled.KeyboardArrowRight,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onPrimary,
+            modifier = Modifier.size(14.dp)
+        )
+    }
+}
+
+/** 物品件数徽标（新稿从右上角挪到卡片最后一行右端）。 */
+@Composable
+private fun ItemCountBadge(count: Int) {
+    Surface(
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(Icons.Outlined.Inventory2, null, Modifier.size(14.dp), MaterialTheme.colorScheme.onPrimary)
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(
+                pluralStringResource(R.plurals.dashboard_items_count, count, count),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onPrimary
+            )
+        }
+    }
+}
+
+/**
+ * 金额隐私小眼睛：点一下遮住净资产卡上的四组数字。
+ *
+ * 24dp 触控：它跟「账单 ›」并排待在标题行，撑到 48dp 会把标题行顶高；24dp 让这一行只长 4dp。
+ */
+@Composable
+private fun AmountPrivacyToggle(hidden: Boolean, onToggle: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .size(24.dp)
+            .clip(CircleShape)
+            .clickable(onClick = onToggle),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            imageVector = if (hidden) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
+            contentDescription = stringResource(
+                if (hidden) R.string.dashboard_amount_show else R.string.dashboard_amount_hide
+            ),
+            // 不压 alpha：卡右端（渐变变浅处）85% 白只有 2.57:1，纯白才到 2.99:1，
+            // 这是个可点控件，不能再往下让
+            tint = MaterialTheme.colorScheme.onPrimary,
+            modifier = Modifier.size(18.dp)
+        )
     }
 }
 
@@ -310,7 +499,11 @@ private fun QuickActionButton(icon: ImageVector, label: String, color: Color, on
 }
 
 @Composable
-internal fun BudgetAlertCard(state: DashboardState, onNavigateToBill: () -> Unit) {
+internal fun BudgetAlertCard(
+    state: DashboardState,
+    onNavigateToBill: () -> Unit,
+    amountsHidden: Boolean = false
+) {
     val budget = state.budget
     if (state.budgetReminderEnabled && budget != null && budget.totalBudget > 0 &&
         state.monthlyExpense > 0 && state.monthlyExpense > budget.totalBudget * 0.8
@@ -318,7 +511,12 @@ internal fun BudgetAlertCard(state: DashboardState, onNavigateToBill: () -> Unit
         AlertCard(
             icon = Icons.Outlined.Warning,
             title = stringResource(R.string.dashboard_budget_alert),
-            message = stringResource(R.string.dashboard_budget_alert_message, state.monthlyExpense / 100.0),
+            // 这张卡把本月支出原样印在首页上——不跟着一起遮，净资产卡藏了也等于没藏
+            message = if (amountsHidden) {
+                stringResource(R.string.dashboard_budget_alert_message_hidden)
+            } else {
+                stringResource(R.string.dashboard_budget_alert_message, state.monthlyExpense / 100.0)
+            },
             color = if (state.monthlyExpense > budget.totalBudget) ErrorLight else AccentOrange,
             onClick = onNavigateToBill
         )
@@ -416,81 +614,173 @@ internal fun AnniversariesCard(state: DashboardState, onNavigateToLife: () -> Un
 }
 
 @Composable
-@Suppress("LongMethod")
 internal fun AssetDistributionCard(
     state: DashboardState,
     onNavigateToAsset: () -> Unit,
     presetCategoryOverrides: Map<String, String>,
     categoryConfigs: List<com.palmnote.data.db.entity.CategoryConfig>
 ) {
-    if (state.assetDistribution.isEmpty()) return
-    val distPresetOverrides = presetCategoryOverrides
+    // 按数量降序：第一页永远是最重要的分类（环形图扇区顺序随之对齐）
+    val items = remember(state.assetDistribution) {
+        state.assetDistribution.sortedByDescending { it.count }
+    }
+    if (items.isEmpty()) return
 
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val rows = remember(items, presetCategoryOverrides, categoryConfigs) {
+        buildDistributionRows(items) { getCategoryDisplayName(it.category, context, presetCategoryOverrides) }
+    }
+    // 页 = 4 行；只有一页时行数自适应，多页时页高恒定
+    val rowsPerPage = 4
+    val pages = maxOf(1, (rows.size + rowsPerPage - 1) / rowsPerPage)
+    val pagerState = rememberPagerState(pageCount = { pages })
+    val gridRows = if (pages > 1) rowsPerPage else rows.size
+    // 分页区高度必须跟着胶囊高与间距走，否则末行被裁
+    val pagerHeight = DistributionChipHeight * gridRows + DistributionChipGap * (gridRows - 1)
+
+    val cardSurface = MaterialTheme.colorScheme.surface
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        colors = CardDefaults.cardColors(containerColor = cardSurface),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(stringResource(R.string.dashboard_asset_distribution), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold,
-                modifier = Modifier.clickable(onClick = onNavigateToAsset))
-            Spacer(modifier = Modifier.height(12.dp))
-            val context = androidx.compose.ui.platform.LocalContext.current
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.Top
-            ) {
-                AssetDistributionChart(state.assetDistribution, Modifier.size(100.dp), distPresetOverrides, categoryConfigs)
-                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    // 长短分类分行是纯计算，包 remember 避免随整页任何字段变化全量重跑
-                    //（含逐项 getCategoryDisplayName 的 getString）
-                    val rows = remember(state.assetDistribution, distPresetOverrides) {
-                        val longItems = mutableListOf<Pair<CategoryCount, Int>>()
-                        val shortItems = mutableListOf<Pair<CategoryCount, Int>>()
-                        state.assetDistribution.forEachIndexed { index, item ->
-                            val name = getCategoryDisplayName(item.category, context, distPresetOverrides)
-                            if (name.length > 5) {
-                                longItems.add(item to index)
-                            } else {
-                                shortItems.add(item to index)
-                            }
-                        }
-                        val rows = mutableListOf<Pair<List<Pair<CategoryCount, Int>>, Boolean>>()
-                        val paired = shortItems.chunked(2)
-                        val hasOdd = paired.lastOrNull()?.size == 1
-                        paired.dropLast(if (hasOdd) 1 else 0).forEach { rows.add(it to false) }
-                        longItems.forEach { rows.add(listOf(it) to true) }
-                        if (hasOdd) rows.add(paired.last() to false)
-                        rows
-                    }
-                    rows.forEach { (rowItems, fullWidth) ->
-                        Row(
-                            Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.Top
-                        ) {
-                            rowItems.forEach { (item, _) ->
-                                if (fullWidth) {
-                                    LegendItem(
-                                        item = item,
-                                        modifier = Modifier.fillMaxWidth(),
-                                        maxLines = 2,
-                                        presetCategoryOverrides = distPresetOverrides,
-                                        categoryConfigs = categoryConfigs
-                                    )
-                                } else {
-                                    LegendItem(
-                                        item = item,
-                                        modifier = Modifier.weight(1f),
-                                        maxLines = 1,
-                                        presetCategoryOverrides = distPresetOverrides,
-                                        categoryConfigs = categoryConfigs
-                                    )
-                                }
-                            }
-                            if (rowItems.size < 2) Spacer(Modifier.weight(1f))
+        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
+            Text(
+                stringResource(R.string.dashboard_asset_distribution),
+                fontSize = TypeScale.headlineS,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.clickable(onClick = onNavigateToAsset)
+            )
+            Spacer(modifier = Modifier.height(10.dp))
+            Row(verticalAlignment = Alignment.Top) {
+                AssetDonutWithTotal(items, presetCategoryOverrides, categoryConfigs)
+                Spacer(modifier = Modifier.width(DistributionDonutGap))
+                DistributionPager(
+                    rows = rows,
+                    rowsPerPage = rowsPerPage,
+                    pagerState = pagerState,
+                    presetCategoryOverrides = presetCategoryOverrides,
+                    categoryConfigs = categoryConfigs,
+                    modifier = Modifier.weight(1f).height(pagerHeight)
+                )
+            }
+            // 不放页点指示器（2026-11-02 定案）：卡面越干净越好，多页只靠右缘渐隐在滑动时提示。
+            // 代价是静止状态没有「还有一页」的线索——要补就别再放常驻点，先考虑滑动时淡入。
+        }
+    }
+}
+
+/**
+ * 把分类按名称长度折成行：名称 ≤4 字（半宽 chip 的可读上限）的两个配成一行，更长的独占整行。
+ *
+ * V4 稿的等宽两列只对两字名称成立——名称可用宽度 = 胶囊宽 − 内边距 18 − 小圆点 5
+ * − 两处 5dp 间隔 −「N 件」计数：360dp 屏上两列各 88dp，扣完约 2 个字（412dp 屏约 3 个），
+ * 所以自建的 3–4 字名即使配成一行也会省略。配对按数量降序贪心进行，
+ * [nameOf] 由调用方注入以隔离「拿显示名」的本地化细节。
+ */
+private fun buildDistributionRows(
+    items: List<CategoryCount>,
+    nameOf: (CategoryCount) -> String
+): List<List<CategoryCount>> {
+    val rows = mutableListOf<List<CategoryCount>>()
+    var i = 0
+    while (i < items.size) {
+        val a = items[i]
+        val b = items.getOrNull(i + 1)
+        if (b != null && nameOf(a).length <= 4 && nameOf(b).length <= 4) {
+            rows.add(listOf(a, b)); i += 2
+        } else {
+            rows.add(listOf(a)); i += 1
+        }
+    }
+    return rows
+}
+
+/** 边缘渐隐带宽度；≤ [DistributionEdgePad] 时静止内容不被遮罩咬到。 */
+private val DistributionEdgeFade = 16.dp
+
+/**
+ * 页两侧留白，同时是 pager 外扩量——必须与物品分布卡片的横向内边距（16dp）相等：
+ * pager 外扩后铺到卡片内缘，渐隐带落在卡片留白区上，页宽恢复为槽位原宽，
+ * chip 长度与未分页的旧版完全一致。
+ */
+private val DistributionEdgePad = 16.dp
+
+/**
+ * 把布局向左右各外扩 [extra]：按加宽后的约束测量子级，绘制整体回移 extra，
+ * 对外仍报告原宽度。物品分布卡用它让 pager 铺到卡片内缘、渐隐带不挤占内容。
+ */
+private fun Modifier.expandWidthBy(extra: Dp): Modifier = layout { measurable, constraints ->
+    val e = extra.roundToPx()
+    val w = constraints.maxWidth
+    if (w == Constraints.Infinity) {
+        val p = measurable.measure(constraints)
+        layout(p.width, p.height) { p.placeRelative(0, 0) }
+    } else {
+        val p = measurable.measure(constraints.copy(minWidth = w + 2 * e, maxWidth = w + 2 * e))
+        layout(w, p.height) { p.placeRelative(-e, 0) }
+    }
+}
+
+/**
+ * 标签分页器：HorizontalPager + 固定边缘渐隐遮罩。
+ *
+ * 渐隐绑在「位置」而非「页」上：标签全程不透明、正常滑动，只有进入容器左右
+ * [DistributionEdgeFade] 渐隐带的内容逐渐溶解——观感是标签层从卡片边缘下方滑过。
+ * 几何：容器经 [expandWidthBy] 外扩 [DistributionEdgePad] 铺到卡片内缘，
+ * 渐隐带正好覆盖卡片留白区，页宽不变；contentPadding 与页间距同为
+ * [DistributionEdgePad]，静止时内容起于渐隐带末端、完全落在不透明区。
+ * 两个配套约束（缺一不可）：
+ * 1. Pager 不裁切内容（1.8.3 源码无 clip），容器必须显式 clipToBounds，否则
+ *    滑出的 chip 会画到渐隐带之外、被卡片右缘硬切；
+ * 2. 遮罩用 Offscreen 图层 + DstIn，只对本层（pager 内容）做 alpha 渐变——
+ *    直接画会连下层卡片底色一起按 DstIn 擦出透明洞。
+ */
+@Composable
+private fun DistributionPager(
+    rows: List<List<CategoryCount>>,
+    rowsPerPage: Int,
+    pagerState: PagerState,
+    presetCategoryOverrides: Map<String, String>,
+    categoryConfigs: List<com.palmnote.data.db.entity.CategoryConfig>,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .expandWidthBy(DistributionEdgePad)
+            .clipToBounds()
+            .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+            .drawWithContent {
+                drawContent()
+                val ramp = DistributionEdgeFade.toPx()
+                drawRect(
+                    brush = Brush.horizontalGradient(
+                        0f to Color.Transparent,
+                        (ramp / size.width) to Color.Black,
+                        ((size.width - ramp) / size.width) to Color.Black,
+                        1f to Color.Transparent
+                    ),
+                    blendMode = BlendMode.DstIn
+                )
+            }
+    ) {
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(horizontal = DistributionEdgePad),
+            pageSpacing = DistributionEdgePad,
+            //Pager 默认把页内容垂直居中，末页不满 4 行会悬在中间，必须显式靠上
+            verticalAlignment = Alignment.Top
+        ) { page ->
+            Column(verticalArrangement = Arrangement.spacedBy(DistributionChipGap)) {
+                rows.drop(page * rowsPerPage).take(rowsPerPage).forEach { rowItems ->
+                    // 行距与列距同为 8dp（原左右 10 / 上下 6）。左右让出的 2dp 不清零，
+                    // 由 weight(1f) 均分给两枚胶囊各 +1dp（87→88），环图维持 Ø102 不参与，
+                    // 所以外层没有需要额外安置的余量。
+                    Row(horizontalArrangement = Arrangement.spacedBy(DistributionChipGap)) {
+                        rowItems.forEach { item ->
+                            DistributionChip(item, Modifier.weight(1f), presetCategoryOverrides, categoryConfigs)
                         }
                     }
                 }
@@ -499,38 +789,82 @@ internal fun AssetDistributionCard(
     }
 }
 
+/** 环形图 + 中心总数：现状的 Chart 只画环、中心是空的，总数与「物品总数」说明是本次新增。 */
 @Composable
-private fun LegendItem(
+private fun AssetDonutWithTotal(
+    items: List<CategoryCount>,
+    presetCategoryOverrides: Map<String, String>,
+    categoryConfigs: List<com.palmnote.data.db.entity.CategoryConfig>
+) {
+    val total = items.sumOf { it.count }
+    // Ø102：与右侧间隙一起决定每页胶囊能多宽——加大环径就是压窄胶囊
+    Box(modifier = Modifier.size(DistributionDonutSize)) {
+        AssetDistributionChart(items, Modifier.fillMaxSize(), presetCategoryOverrides, categoryConfigs)
+        Column(
+            // 中心块整体下移 2dp：数字无下延部，几何居中会显得偏高（光学修正）
+            modifier = Modifier.align(Alignment.Center).offset(y = 2.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(total.toString(), fontSize = TypeScale.displayS, fontWeight = FontWeight.Bold)
+            Text(
+                stringResource(R.string.dashboard_asset_total),
+                fontSize = TypeScale.labelS,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+/** 单页图例：等宽两列、名称单行省略；超长分类不再独占一行（旧「长短分行」算法随分页作废）。 */
+@Composable
+private fun DistributionChip(
     item: CategoryCount,
     modifier: Modifier = Modifier,
-    maxLines: Int = 1,
     presetCategoryOverrides: Map<String, String>,
     categoryConfigs: List<com.palmnote.data.db.entity.CategoryConfig>
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
-    val dashPresetVer = presetCategoryOverrides
-    val dashCustomCfg = categoryConfigs
-    val dashCustomItems = remember(dashCustomCfg, dashPresetVer) {
-        dashCustomCfg.filter { it.type == "ASSET" && it.isEnabled }
+    val color = remember(presetCategoryOverrides, categoryConfigs, item.category) {
+        val customItems = categoryConfigs.filter { it.type == "ASSET" && it.isEnabled }
             .map { com.palmnote.ui.components.CategoryItem(it.name, it.icon.imageVector, it.color.toComposeColor()) }
-    }
-    val color = remember(dashCustomItems, dashPresetVer, item.category) {
-        getCategoryIcon(item.category, dashCustomItems).color
+        getCategoryIcon(item.category, customItems).color
     }
     Row(
         modifier = modifier
-            .background(color.copy(alpha = 0.35f), MaterialTheme.shapes.small)
-            .padding(horizontal = 8.dp, vertical = 6.dp),
+            .height(DistributionChipHeight)
+            .background(color.copy(alpha = 0.35f), RoundedCornerShape(percent = 50))
+            .padding(horizontal = 9.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp)
+        horizontalArrangement = Arrangement.spacedBy(5.dp)
     ) {
-        Box(Modifier.size(8.dp).clip(CircleShape).background(color))
-        Text(getCategoryDisplayName(item.category, context, dashPresetVer), style = MaterialTheme.typography.bodySmall, maxLines = maxLines, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-        Text(pluralStringResource(
-            R.plurals.dashboard_items_count, item.count, item.count
-        ), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Medium)
+        Box(Modifier.size(5.dp).clip(CircleShape).background(color))
+        Text(
+            getCategoryDisplayName(item.category, context, presetCategoryOverrides),
+            fontSize = TypeScale.bodyS,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f)
+        )
+        Text(
+            pluralStringResource(R.plurals.dashboard_items_count, item.count, item.count),
+            fontSize = TypeScale.labelM,
+            fontWeight = FontWeight.Medium
+        )
     }
 }
+
+/** 环图直径与其到分页列的间隙：间隙同时是页宽口径，动它会连带改变胶囊宽度。 */
+private val DistributionDonutSize = 102.dp
+private val DistributionDonutGap = 10.dp
+
+/**
+ * 胶囊网格：行高 25dp，上下左右间距同值 8dp（2026-11-02 定案，原左右 10 / 上下 6）。
+ *
+ * 间距改成同值后左右让出的 2dp 由 `weight(1f)` 均分给两枚胶囊（87→88），环图不参与；
+ * 纵向从 6 提到 8 使四行内容区 118→124dp。三个数一起动才是同一套口径，别只改间距。
+ */
+private val DistributionChipHeight = 25.dp
+private val DistributionChipGap = 8.dp
 
 @Composable
 private fun JumpCapsule(label: String, color: Color, onClick: () -> Unit, modifier: Modifier = Modifier) {
@@ -837,13 +1171,18 @@ fun AssetDistributionChart(
             getCategoryIcon(item.category, chartCustomItems).color
         }
     }
+    // 入场扫入：进首页（重新组合）时 0→1 跑一次约 800ms；数据变化不重播
+    val sweepProgress = remember { Animatable(0f) }
+    LaunchedEffect(Unit) {
+        sweepProgress.animateTo(1f, tween(durationMillis = 800, easing = FastOutSlowInEasing))
+    }
     Canvas(modifier = modifier) {
         val strokeWidth = 12.dp.toPx()
         val radius = (size.minDimension - strokeWidth) / 2
         val center = Offset(size.width / 2, size.height / 2)
         var startAngle = -90f
         distribution.forEachIndexed { index, item ->
-            val sweepAngle = (item.count / total) * 360f
+            val sweepAngle = (item.count / total) * 360f * sweepProgress.value
             val catColor = chartColors.getOrElse(index) { com.palmnote.ui.theme.Gray400 }
             drawArc(
                 color = catColor,

@@ -337,13 +337,18 @@
     <string name="dashboard_monthly_expense">本月支出</string>
     <string name="dashboard_monthly_income">本月收入</string>
     <string name="dashboard_monthly_balance">本月结余 %s</string>
+    <string name="dashboard_monthly_balance_label">本月结余</string>
+    <string name="money_symbol">¥</string>
     <string name="dashboard_monthly_over_budget">本月超支 %s</string>
+    <string name="dashboard_amount_hide">隐藏金额</string>
+    <string name="dashboard_amount_show">显示金额</string>
     <string name="dashboard_quick_bill">记账</string>
     <string name="dashboard_quick_asset">物品</string>
     <string name="dashboard_quick_goal">目标</string>
     <string name="dashboard_quick_anniversary">纪念日</string>
     <string name="dashboard_budget_alert">预算预警</string>
     <string name="dashboard_budget_alert_message">本月支出 ¥%.2f 已超过预算的80%%</string>
+    <string name="dashboard_budget_alert_message_hidden">本月支出已超过预算的 80%</string>
     <string name="dashboard_today">今天</string>
     <!-- 计数文案：数量为 1 时英文要用单数（%d items → 1 item），故用 plurals。 -->
     <plurals name="dashboard_days_until">
@@ -354,6 +359,7 @@
         <item quantity="other">已过%d天</item>
     </plurals>
     <string name="dashboard_no_anniversaries">暂无纪念日，点击添加</string>
+    <string name="dashboard_asset_total">物品总数</string>
     <string name="dashboard_asset_distribution">物品分布</string>
     <plurals name="dashboard_items_count">
         <item quantity="other">%d 件</item>

@@ -85,7 +85,21 @@ class AssetRepositoryImpl @Inject constructor(
         )
     }
 
-    override suspend fun updateAsset(asset: Asset) = assetDao.updateAsset(asset)
+    /**
+     * 编辑口径与插入一致（全 App 口径唯一）：演示模式下编辑示例行必须**原地保持示例身份**。
+     * 表单重建的实体不带 isDemo/demoOrigin（默认真实行）——原样写库会让该行静默「毕业」：
+     * 演示列表瞬间丢行、真实数据凭空多行（2026-11-02 用户实测「演示模式加的物品时隐时现」）。
+     * 演示关闭时库里不存在示例行（关闭即整批清理），原样写即可。
+     */
+    override suspend fun updateAsset(asset: Asset) {
+        val aligned = if (preferencesManager.lifeDemoMode.first()) {
+            val existing = assetDao.getAssetById(asset.id)
+            if (existing?.isDemo == true) {
+                asset.copy(isDemo = true, demoOrigin = existing.demoOrigin)
+            } else asset
+        } else asset
+        assetDao.updateAsset(aligned)
+    }
 
     override suspend fun deleteAsset(id: Long) = appDatabase.withTransaction {
         val asset = assetDao.getAssetById(id) ?: return@withTransaction

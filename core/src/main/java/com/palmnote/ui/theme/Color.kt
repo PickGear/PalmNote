@@ -28,6 +28,15 @@ val StatusActive = StatusHeld
 val Success = StatusHeld
 val StatusRetired = StatusRemoved
 val StatusLost = Color(0xFFEA4335)
+
+/**
+ * 收入绿的「彩底版」：给青卡（净资产）这类饱和底色用——收入数字与上涨箭头。
+ *
+ * [IncomeGreen] 压在 #0891B2 上只有 1.02:1，等于看不见；这支是 2.54:1
+ * （渐变右端最差 2.06:1）。超支那侧配过一支同亮度的浅粉，用户明确否决（2026-11-02），
+ * 深红 [StatusLost] 保持原样，别再顺着「成对」的思路加回来。
+ */
+val IncomeGreenLight = Color(0xFF8FE8C0)
 val StatusSold = Color(0xFFFBBC04)
 
 // ----- Warning -----

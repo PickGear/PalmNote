@@ -340,13 +340,18 @@
     <string name="dashboard_monthly_expense">Monthly Expense</string>
     <string name="dashboard_monthly_income">Monthly Income</string>
     <string name="dashboard_monthly_balance">Monthly Balance %s</string>
+    <string name="dashboard_monthly_balance_label">Monthly Balance</string>
+    <string name="money_symbol">¥</string>
     <string name="dashboard_monthly_over_budget">Monthly Over Budget %s</string>
+    <string name="dashboard_amount_hide">Hide amounts</string>
+    <string name="dashboard_amount_show">Show amounts</string>
     <string name="dashboard_quick_bill">Bill</string>
     <string name="dashboard_quick_asset">Asset</string>
     <string name="dashboard_quick_goal">Goal</string>
     <string name="dashboard_quick_anniversary">Anniversary</string>
     <string name="dashboard_budget_alert">Budget Alert</string>
     <string name="dashboard_budget_alert_message">Monthly expense ¥%.2f exceeds 80%% of budget</string>
+    <string name="dashboard_budget_alert_message_hidden">Monthly expense exceeds 80% of budget</string>
     <string name="dashboard_today">Today</string>
     <!-- 计数文案：数量为 1 时英文要用单数（%d items → 1 item），故用 plurals。 -->
     <plurals name="dashboard_days_until">
@@ -359,6 +364,7 @@
         <item quantity="other">%d days passed</item>
     </plurals>
     <string name="dashboard_no_anniversaries">No anniversaries, tap to add</string>
+    <string name="dashboard_asset_total">Total items</string>
     <string name="dashboard_asset_distribution">Asset Distribution</string>
     <plurals name="dashboard_items_count">
         <item quantity="one">%d item</item>

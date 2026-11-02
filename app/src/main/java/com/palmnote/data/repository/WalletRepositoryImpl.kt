@@ -63,7 +63,20 @@ class WalletRepositoryImpl @Inject constructor(
         )
     }
 
-    override suspend fun update(wallet: Wallet) = walletDao.update(wallet)
+    /**
+     * 编辑口径与插入一致：演示模式下编辑示例钱包必须**原地保持示例身份**——
+     * 表单重建的实体默认真实行，原样写库会让它静默「毕业」（演示列表丢行、
+     * 真实数据漏行），与物品 / 账单侧同一缺陷（2026-11-02）。
+     */
+    override suspend fun update(wallet: Wallet) {
+        val aligned = if (preferencesManager.lifeDemoMode.first()) {
+            val existing = walletDao.getWalletById(wallet.id)
+            if (existing?.isDemo == true) {
+                wallet.copy(isDemo = true, demoOrigin = existing.demoOrigin)
+            } else wallet
+        } else wallet
+        walletDao.update(aligned)
+    }
 
     override suspend fun updateBalance(id: Long, balance: Long) {
         walletDao.updateBalance(id, balance)

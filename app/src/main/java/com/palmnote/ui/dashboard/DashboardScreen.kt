@@ -72,6 +72,7 @@ fun DashboardScreen(
     val presetCategoryOverrides by viewModel.presetCategoryOverrides.collectAsStateWithLifecycle()
     val categoryConfigs by viewModel.categoryConfigs.collectAsStateWithLifecycle()
     val demoModeOn by viewModel.demoModeOn.collectAsStateWithLifecycle()
+    val amountsHidden by viewModel.amountsHidden.collectAsStateWithLifecycle()
     val profileNickname by viewModel.profileNickname.collectAsStateWithLifecycle()
     val profileAvatarPath by viewModel.profileAvatarPath.collectAsStateWithLifecycle()
 
@@ -506,7 +507,9 @@ fun DashboardScreen(
                                     presetCategoryOverrides = presetCategoryOverrides,
                                     categoryConfigs = categoryConfigs,
                                     cardConfigs = allConfigs,
-                                    demoModeOn = demoModeOn
+                                    demoModeOn = demoModeOn,
+                                    amountsHidden = amountsHidden,
+                                    onToggleAmounts = viewModel::toggleAmountsHidden
                                 )
                             }
                         }
@@ -543,7 +546,9 @@ fun DashboardScreen(
                             presetCategoryOverrides = presetCategoryOverrides,
                             categoryConfigs = categoryConfigs,
                             cardConfigs = allConfigs,
-                            demoModeOn = demoModeOn
+                            demoModeOn = demoModeOn,
+                            amountsHidden = amountsHidden,
+                            onToggleAmounts = viewModel::toggleAmountsHidden
                         )
                     }
                 }

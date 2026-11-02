@@ -136,6 +136,19 @@ class DashboardViewModel @Inject constructor(
     private val _dashboardMessageMode = MutableStateFlow(preferencesManager.getDashboardMessageModeSync())
     val dashboardMessageMode: StateFlow<Boolean> = _dashboardMessageMode.asStateFlow()
 
+    /**
+     * 净资产卡的金额隐私开关。
+     *
+     * 只放内存不写盘：防的是「地铁上旁边有人」，切标签页回来仍保持，重启自动恢复显示——
+     * 不做持久化，避免用户哪天打开 App 发现钱全变成灰块、又找不到是谁关的。
+     */
+    private val _amountsHidden = MutableStateFlow(false)
+    val amountsHidden: StateFlow<Boolean> = _amountsHidden.asStateFlow()
+
+    fun toggleAmountsHidden() {
+        _amountsHidden.value = !_amountsHidden.value
+    }
+
     val profileNickname: StateFlow<String> = preferencesManager.profileNickname
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
 

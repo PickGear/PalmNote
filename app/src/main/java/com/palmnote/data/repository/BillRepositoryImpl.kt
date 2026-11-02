@@ -101,7 +101,20 @@ class BillRepositoryImpl @Inject constructor(
         )
     }
 
-    override suspend fun updateBill(bill: Bill) = billDao.updateBill(bill)
+    /**
+     * 编辑口径与 [insertBill] 一致：演示模式下编辑示例行（SEED/USER）必须**原地保持示例身份**。
+     * 编辑表单重建的实体不带 isDemo/demoOrigin（默认真实行）——原样写库会让该行静默
+     * 「毕业」：演示账单列表瞬间丢行、真实数据凭空多行，与物品侧同一缺陷（2026-11-02）。
+     */
+    override suspend fun updateBill(bill: Bill) {
+        val aligned = if (preferencesManager.lifeDemoMode.first()) {
+            val existing = billDao.getBillById(bill.id)
+            if (existing?.isDemo == true) {
+                bill.copy(isDemo = true, demoOrigin = existing.demoOrigin)
+            } else bill
+        } else bill
+        billDao.updateBill(aligned)
+    }
 
     override suspend fun createBillWithWalletAdjustment(bill: Bill): Long = appDatabase.withTransaction {
         val id = billDao.insertBill(bill)
