@@ -65,7 +65,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.DisposableEffect
@@ -95,22 +94,20 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.palmnote.app.R
 import com.palmnote.ui.components.AppBottomSheet
 import com.palmnote.ui.components.COMPACT_DRAG_HANDLE_PADDING
+import com.palmnote.ui.components.CompactTopAppBar
 import com.palmnote.ui.components.ModuleSearchBar
-import com.palmnote.ui.components.SecondaryTopAppBar
 import androidx.compose.ui.window.Dialog
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -1024,7 +1021,10 @@ private fun WidgetPinSheet(
  * 顶栏：返回 + 「小组件」标题 + 右上搜索。2026-10-25 用户定：
  * - 加搜索图标，展开后搜索栏铺满顶栏（与物品/账单页同款 `ModuleSearchBar`）；
  * - 「N 个组件」计数去掉。
- * 标题 17sp 黑体；底色透出页面底（[widgetPageBackground]），不单独配色。
+ *
+ * 标题 2026-11-02 并入设置类二级页的那一套（`CompactTopAppBar` 的 displaySmall 24sp +
+ * 主题色）：它挂在「设置 → 小组件」下，同级兄弟页全是这套，17sp 黑体是当时的例外。
+ * 底色仍透出页面底（[widgetPageBackground]），所以 background 传 Transparent。
  */
 @Composable
 private fun WidgetPinTopBar(
@@ -1034,8 +1034,7 @@ private fun WidgetPinTopBar(
     searchOpen: Boolean,
     onSearchOpenChange: (Boolean) -> Unit
 ) {
-    val context = LocalContext.current
-    SecondaryTopAppBar(
+    CompactTopAppBar(
         title = {
             if (searchOpen) {
                 ModuleSearchBar(
@@ -1048,8 +1047,9 @@ private fun WidgetPinTopBar(
             } else {
                 Text(
                     stringResource(R.string.widget_page_title),
-                    style = TextStyle(fontSize = 17.sp, fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onSurface
+                    style = MaterialTheme.typography.displaySmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
         },
@@ -1079,7 +1079,8 @@ private fun WidgetPinTopBar(
                 }
             }
         },
-        colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+        // 底色留给页面自己（widgetPageBackground）：顶栏容器恒透明，不单独配色
+        backgroundColor = Color.Transparent
     )
 }
 
