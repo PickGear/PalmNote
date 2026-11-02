@@ -98,6 +98,29 @@ private val bottomNavItems = listOf(
 )
 
 /**
+ * 切到一个 tab：**栈里已经有这个 tab 就先弹回去**，没有才按标准 tab 切换压栈。
+ *
+ * 原实现只靠 `popUpTo(起始页)` 收栈，前提是「当前页一定压在起始页之上」。一旦栈形状与这个
+ * 前提不同（例如从首页卡片直接 `navigate(TabBill)` 裸压进来的账单页），点底栏就会出现
+ * 「按了没反应、要手动返回一次」——因为收栈动作和实际栈对不上。
+ *
+ * `popBackStack(target)` 是幂等的：目标在栈里就一定回到它（顺带把压在上面的页弹掉），
+ * 不在栈里返回 false 才新建。所有 tab 入口（底栏、首页卡片、深链）都走这里，
+ * 三条路径的栈语义从此一致。
+ */
+private fun NavHostController.switchTab(target: Any) {
+    // saveState = true：把被弹掉那一 tab 的保存态留下来（滚动位置、日期/账本选择、VM 状态），
+    // 下次点回它时 navigate 的 restoreState 才能接上——默认值 false 会把这些一起销毁。
+    if (!popBackStack(target, inclusive = false, saveState = true)) {
+        navigate(target) {
+            popUpTo(graph.findStartDestination().id) { saveState = true }
+            launchSingleTop = true
+            restoreState = true
+        }
+    }
+}
+
+/**
  * 「示例模式」横幅槽位：读共享 VM 的开关 / 关闭态 / 当前 tab，可见时渲染 [AppBanner]。
  *
  * 从 [PalmNoteNavHost] 抽成独立函数：三个可见性条件（开关 && 未关闭 && 未隐藏构建）
@@ -645,11 +668,7 @@ private fun MainTabs(
             "asset" -> TabAsset
             else -> TabDashboard
         }
-        tabNavController.navigate(route) {
-            popUpTo(tabNavController.graph.findStartDestination().id) { saveState = true }
-            launchSingleTop = true
-            restoreState = true
-        }
+        tabNavController.switchTab(route)
         lifeChildAtHome = true
     }
     val showBottomBar = lifeChildAtHome && (
@@ -692,11 +711,7 @@ private fun MainTabs(
             2 -> TabBill
             else -> TabLife
         }
-        tabNavController.navigate(target) {
-            popUpTo(tabNavController.graph.findStartDestination().id) { saveState = true }
-            launchSingleTop = true
-            restoreState = true
-        }
+        tabNavController.switchTab(target)
         lifeChildAtHome = true
     }
 
@@ -790,14 +805,16 @@ private fun MainTabs(
                             DashboardScreen(
                                 // Simple navigation — keeps Dashboard in back stack
                                 // (matches original behavior)
+                                // 卡片上的跳转与底栏 tab 走同一条 switchTab：入口不同、
+                                // 入栈方式相同，才不会出现「从卡片进账单后点首页没反应」
                                 onNavigateToAsset = {
-                                    tabNavController.navigate(TabAsset)
+                                    tabNavController.switchTab(TabAsset)
                                 },
                                 onNavigateToBill = {
-                                    tabNavController.navigate(TabBill)
+                                    tabNavController.switchTab(TabBill)
                                 },
                                 onNavigateToLife = {
-                                    tabNavController.navigate(TabLife)
+                                    tabNavController.switchTab(TabLife)
                                 },
                                 onNavigateToSettings = onNavigateToSettings,
                                 onNavigateToSearch = onNavigateToSearch,
