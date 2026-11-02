@@ -8,6 +8,8 @@ import com.palmnote.data.db.dao.BillDao
 import com.palmnote.data.db.dao.BudgetDao
 import com.palmnote.data.db.dao.WalletDao
 import com.palmnote.domain.model.DemoOrigin
+import com.palmnote.domain.model.ShelfLifeUnit
+import com.palmnote.domain.util.shelfLifeExpiryOrNull
 import com.palmnote.data.db.entity.AccountBook
 import com.palmnote.data.db.entity.Asset
 import com.palmnote.data.db.entity.Bill
@@ -17,7 +19,6 @@ import com.palmnote.domain.model.AssetStatus
 import com.palmnote.domain.model.BillType
 import com.palmnote.domain.model.PaymentMethod
 import com.palmnote.ui.components.toImageJson
-import com.palmnote.ui.components.toImageList
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
@@ -69,115 +70,20 @@ class WealthDemoSeeder @Inject constructor(
          * 而 14 张 jpg 已在 `assets/demo/` 里白占 1.6MB）；播种内容变了，必须整批重播。
          * v14：接示例预算（本月 ¥3,000，demoOrigin = SEED）——预算 v20 起有 `demoOrigin`
          * 维度，演示模式预算页不再永远「未设预算」；播种内容变了，必须整批重播。
+         * v16：种子从「导出 CSV + 列位解析」改为**类型化对象图**（[demoBillSeeds] /
+         * [demoAssetSeeds]，见 WealthDemoSeed.kt）——列位错格整批静默跳过（v12）的
+         * 脆弱性连根拔掉；日期改**相对锚点**，每次播种自动滚动到「最近」；
+         * 内容换中性样例，图片转 WebP（1.53MB → 0.75MB）。必须整批重播。
          */
-        const val SEED_VERSION = 15
+        const val SEED_VERSION = 16
+
+        private const val DAY_MS = 86_400_000L
 
         /** 示例账本名（走 [DemoTexts] 本地化）。 */
         private const val DEMO_BOOK_NAME = "示例账本"
 
         /** 毕业兜底账本名（真实账本缺失时才会用到）。 */
         private const val FALLBACK_BOOK_NAME = "默认账本"
-
-        // 账单 CSV 的列位（0 起，第 0 列 = 实体类型）。
-        private const val BILL_COL_DATE = 15
-        private const val BILL_COL_AMOUNT = 10
-        private const val BILL_COL_TYPE = 11
-        private const val BILL_COL_CATEGORY = 12
-        private const val BILL_COL_SUB_CATEGORY = 13
-        private const val BILL_COL_NOTE = 14
-        private const val BILL_COL_WALLET = 18
-        private const val BILL_COL_TO_WALLET = 19
-        private const val BILL_COL_MERCHANT = 21
-        private const val BILL_COL_LOCATION = 23
-        private const val BILL_COL_REIMBURSABLE = 31
-
-        // 物品 CSV 的列位（导出列序 = 声明序**旋转到 description**：description 起的那一段
-        // 排在实体类型之后，id 之前的第 27 列才是 id、第 28 列才是 name）。
-        // ⚠️ 取字段前先确认下标：整组常量少 1 会让「acquisitionDate」读到 acquisitionType
-        // （"PURCHASE"）→ 全部行被判为无购买日期而跳过（演示物品为空，v11 实翻过车）。
-        private const val ASSET_COL_DESCRIPTION = 1
-        private const val ASSET_COL_CONDITION = 2
-        private const val ASSET_COL_SERIAL = 3
-        private const val ASSET_COL_CREATED = 25
-        private const val ASSET_COL_UPDATED = 26
-        private const val ASSET_COL_NAME = 28
-        private const val ASSET_COL_CATEGORY = 29
-        private const val ASSET_COL_SUB_CATEGORY = 30
-        private const val ASSET_COL_BRAND = 31
-        private const val ASSET_COL_MODEL = 32
-        private const val ASSET_COL_PRICE = 33
-        private const val ASSET_COL_ACQ_TYPE = 34
-        private const val ASSET_COL_ACQUIRED = 35
-        private const val ASSET_COL_STATUS = 36
-        private const val ASSET_COL_COST_MODE = 37
-        private const val ASSET_COL_QUANTITY = 38
-        private const val ASSET_COL_USE_COUNT = 39
-        private const val ASSET_COL_USAGE_HOURS = 40
-        private const val ASSET_COL_LOCATION = 41
-        private const val ASSET_COL_ROOM = 42
-        private const val ASSET_COL_CHANNEL = 43
-        private const val ASSET_COL_WARRANTY = 44
-        private const val ASSET_COL_SHELF_LIFE = 45
-        private const val ASSET_COL_PRODUCED = 46
-        private const val ASSET_COL_DURATION = 47
-        private const val ASSET_COL_DURATION_UNIT = 48
-        private const val ASSET_COL_INSURANCE = 49
-        private const val ASSET_COL_INSURER = 50
-        private const val ASSET_COL_POLICY_NO = 51
-
-        /** 图片列（行尾）：JSON 数组，元素是**导出设备上**的绝对路径，换机即失效。 */
-        private const val ASSET_COL_IMAGES = 52
-
-        /**
-         * 把导出 CSV 的一行（物品）映射成 [Asset]；没有购买日期的行返回 null
-         * （日均成本与「已使用天数」都以它为锚点）。
-         *
-         * 独立成纯函数是为了能被单测直接钉住列位——见 `WealthDemoSeederCsvTest`。
-         * [images] 由 [seedAssets] 换成随包图落地后的本机绝对路径 JSON；
-         * 纯函数本身不碰文件系统，默认空串（详情页落回分类色占位）。
-         */
-        internal fun assetFromDemoRow(c: List<String>, images: String = ""): Asset? {
-            val price = c[ASSET_COL_PRICE].toLongOrNull() ?: 0
-            val purchasedAt = c[ASSET_COL_ACQUIRED].toLongOrNull() ?: return null
-            return Asset(
-                name = c[ASSET_COL_NAME],
-                category = c[ASSET_COL_CATEGORY],
-                subCategory = c[ASSET_COL_SUB_CATEGORY],
-                brand = c[ASSET_COL_BRAND],
-                model = c[ASSET_COL_MODEL],
-                purchasePrice = price,
-                acquisitionType = c[ASSET_COL_ACQ_TYPE],
-                acquisitionDate = purchasedAt,
-                status = AssetStatus.from(c[ASSET_COL_STATUS]),
-                costMode = c[ASSET_COL_COST_MODE],
-                quantity = c[ASSET_COL_QUANTITY].toIntOrNull() ?: 1,
-                useCount = c[ASSET_COL_USE_COUNT].toIntOrNull() ?: 0,
-                totalUsageHours = c[ASSET_COL_USAGE_HOURS].toDoubleOrNull() ?: 0.0,
-                location = c[ASSET_COL_LOCATION],
-                room = c[ASSET_COL_ROOM],
-                purchaseChannel = c[ASSET_COL_CHANNEL],
-                warrantyExpireDate = c[ASSET_COL_WARRANTY].toLongOrNull(),
-                shelfLifeExpireDate = c[ASSET_COL_SHELF_LIFE].toLongOrNull(),
-                shelfLifeProducedDate = c[ASSET_COL_PRODUCED].toLongOrNull(),
-                shelfLifeDurationValue = c[ASSET_COL_DURATION].toIntOrNull(),
-                shelfLifeDurationUnit = c[ASSET_COL_DURATION_UNIT],
-                insuranceExpireDate = c[ASSET_COL_INSURANCE].toLongOrNull(),
-                insuranceCompany = c[ASSET_COL_INSURER],
-                insurancePolicyNo = c[ASSET_COL_POLICY_NO],
-                // 图片：导出列是导出设备的私有路径（换机即指空），这里换成随包图落到本机后的绝对路径；
-                // 没有随包文件时为空串（详情页落回分类色占位）。
-                images = images,
-                description = c[ASSET_COL_DESCRIPTION],
-                serialNumber = c[ASSET_COL_SERIAL],
-                condition = c[ASSET_COL_CONDITION],
-                // 现值按八成新回填（与旧演示同一口径）；导出里的现值恒为 0
-                currentValue = (price * 0.8).toLong(),
-                isDemo = true,
-                demoOrigin = DemoOrigin.SEED,
-                createdAt = c[ASSET_COL_CREATED].toLongOrNull() ?: purchasedAt,
-                updatedAt = c[ASSET_COL_UPDATED].toLongOrNull() ?: purchasedAt
-            )
-        }
     }
 
     /** [clearAll] 的结果：removed = 实际删除的行数，kept = 毕业保留的演示期自建行数。 */
@@ -203,7 +109,7 @@ class WealthDemoSeeder @Inject constructor(
         // 改查示例钱包：既保留「清库后标记残留 → 自动补播」的原意
         // （clearBills/clearAll 清表不清 DataStore 标记），又让演示期的删除在
         // 重启后依然成立、进回收站的示例账单可以安心恢复。
-        // 示例账本也要在：用户若把示例账本删了（钱包还在），只看钱包会误判"已是最新"，
+        // 示例账本也要在：用户若把示例账本删了（钱包还在），只看钱包会误判「已是最新」，
         // 于是账单页一直是空的。三个条件全满足才算真·就绪。
         val demoBookReady = accountBookDao.demoBookId() != null
         if (upToDate && demoBookReady && walletDao.countDemoWallets() > 0) return 0
@@ -237,7 +143,7 @@ class WealthDemoSeeder @Inject constructor(
         AccountBook(
             name = DemoTexts.localize(context, DEMO_BOOK_NAME),
             bookType = "DAILY",
-            // 账本不需要 demoOrigin：它只有"是/不是示例账本"两种状态
+            // 账本不需要 demoOrigin：它只有「是/不是示例账本」两种状态
             isDemo = true
         )
     )
@@ -284,14 +190,9 @@ class WealthDemoSeeder @Inject constructor(
     }
 
     /**
-     * 示例账单：**真实导出**（掌记_数据.zip 的账单表，41 笔，2026-10-01~08）。
-     *
-     * 数据以 CSV 资产随包内置（assets/demo/user_bills.csv），播种时按**导出列序**取字段
-     * （0 起的下标注在取值处；该格式由导出 / 导入互为契约，列序稳定）。
-     * 日期整体平移：最新一笔落在今天，其余保持原始间隔与时刻——任何一天开演示都像「最近在记」。
-     * 钱包按导出时的引用回到示例钱包（1=现金 2=微信零钱 3=支付宝，与真实截图一致）；
-     * 图片列指向导出设备上的私有路径，演示环境不存在——整体清空。
-     * 转账行的目标钱包同样按映射落到示例钱包（支付宝 → 微信零钱，与真实截图一致）。
+     * 示例账单：类型化种子（[demoBillSeeds]），日期按相对锚点换算并**钳进本月**
+     * （[DemoBillSeed.resolveDate]——预算预警按自然月取数，账单划进上个月预警就没戏了）。
+     * 结构覆盖：转账、可报销、三类收入、四个钱包各有戏份。
      */
     private suspend fun seedBills(
         bookId: Long,
@@ -299,37 +200,33 @@ class WealthDemoSeeder @Inject constructor(
         today: LocalDate,
         zone: ZoneId
     ): Int {
-        val rows = parseDemoCsv(readAsset("demo/user_bills.csv")).filter { it.firstOrNull() == "账单" }
-        if (rows.isEmpty()) return 0
-        val latest = rows.maxOf { it[BILL_COL_DATE].toLong() }
-        val shift = today.atStartOfDay(zone).toInstant().toEpochMilli() - startOfDayMillis(latest, zone)
         var inserted = 0
-        rows.forEach { c ->
-            val at = c[BILL_COL_DATE].toLong() + shift
-            val walletIndex = walletIndexById(c[BILL_COL_WALLET].toLongOrNull() ?: 0L)
+        demoBillSeeds.forEach { seed ->
+            val date = seed.resolveDate(today)
+            val at = date.atTime(seed.hour, seed.minute).atZone(zone).toInstant().toEpochMilli()
             billDao.insertBill(
                 Bill(
-                    amount = c[BILL_COL_AMOUNT].toLong(),
-                    type = BillType.valueOf(c[BILL_COL_TYPE]),
-                    // 导出里的分类值就是内部键（中文常量，与 BillCategoryData 的 name 一致），直接透传
-                    category = c[BILL_COL_CATEGORY],
-                    subCategory = c[BILL_COL_SUB_CATEGORY],
-                    note = c[BILL_COL_NOTE],
+                    amount = seed.amount,
+                    type = BillType.valueOf(seed.type),
+                    // 种子里存的是分类内部键（与 BillCategoryData 的 name 一致），直接透传
+                    category = seed.category,
+                    subCategory = "",
                     date = at,
                     yearMonth = java.time.Instant.ofEpochMilli(at).atZone(zone).toLocalDate()
                         .let { "%04d-%02d".format(it.year, it.monthValue) },
                     accountBookId = bookId,
-                    walletId = walletIds[walletIndex],
-                    toWalletId = c[BILL_COL_TO_WALLET].toLongOrNull()?.let { walletIds[walletIndexById(it)] },
-                    paymentMethod = paymentMethodOf(walletIndex),
-                    merchant = c[BILL_COL_MERCHANT],
-                    location = c[BILL_COL_LOCATION],
-                    // 可报销标记随数据走（旅游那笔是=是）：演示模式的待报销卡才有内容
-                    isReimbursable = c[BILL_COL_REIMBURSABLE] == "是",
+                    walletId = walletIds[seed.walletIndex],
+                    toWalletId = seed.toWalletIndex?.let { walletIds[it] },
+                    paymentMethod = paymentMethodOf(seed.walletIndex),
+                    // 商户 / 地点 / 备注是展示文案，过本地化层；分类存内部键不走这里
+                    merchant = DemoTexts.localize(context, seed.merchant),
+                    location = DemoTexts.localize(context, seed.location),
+                    note = DemoTexts.localize(context, seed.note),
+                    isReimbursable = seed.isReimbursable,
                     createdAt = at,
                     updatedAt = at,
                     isDemo = true,
-                demoOrigin = DemoOrigin.SEED
+                    demoOrigin = DemoOrigin.SEED
                 )
             )
             inserted++
@@ -337,13 +234,66 @@ class WealthDemoSeeder @Inject constructor(
         return inserted
     }
 
-    /** 示例物品：**真实导出**（13 件，含保质期 / 保修 / 使用统计），现值按八成新回填。 */
+    /**
+     * 示例物品：类型化种子（[demoAssetSeeds]），13 件中性样例。
+     * 覆盖保修、两种保质期录法、双图、转赠 / 抽签获取；现值按八成新回填。
+     */
     private suspend fun seedAssets(): Int {
-        val rows = parseDemoCsv(readAsset("demo/user_assets.csv")).filter { it.firstOrNull() == "物品" }
+        val now = System.currentTimeMillis()
+        val zone = ZoneId.systemDefault()
+        val startOfToday = java.time.LocalDate.now().atStartOfDay(zone).toInstant().toEpochMilli()
         var inserted = 0
-        rows.forEach { c ->
-            val asset = assetFromDemoRow(c, demoImagesOf(c)) ?: return@forEach
-            assetDao.insertAsset(asset)
+        demoAssetSeeds.forEach { seed ->
+            val acquiredAt = startOfToday - seed.acquiredDaysAgo * DAY_MS
+            val producedDate = seed.shelfLifeProducedDaysAgo?.let { startOfToday - it * DAY_MS }
+            // 到期日是唯一被展示与存的值（ShelfLifeCard 直读它，null 整卡不渲染）：
+            // 「直接到期日」录法用相对锚点换算；「生产日期+时长」录法用录入侧同一套
+            // 纯函数（shelfLifeExpiryFrom）算出，保证两条录法在演示数据里行为一致。
+            val shelfLifeExpire = seed.shelfLifeExpireInDays?.let { startOfToday + it * DAY_MS }
+                ?: shelfLifeExpiryOrNull(
+                    producedDate,
+                    seed.shelfLifeDurationValue,
+                    seed.shelfLifeDurationUnit?.let { ShelfLifeUnit.fromOrNull(it) }
+                )
+            assetDao.insertAsset(
+                Asset(
+                    // 名称 / 品牌 / 地点等是展示文案，过本地化层；分类存内部键不走这里
+                    name = DemoTexts.localize(context, seed.name),
+                    category = seed.category,
+                    subCategory = "",
+                    brand = DemoTexts.localize(context, seed.brand),
+                    model = DemoTexts.localize(context, seed.model),
+                    purchasePrice = seed.price,
+                    acquisitionType = seed.acquisitionType,
+                    acquisitionDate = acquiredAt,
+                    status = AssetStatus.from("HELD"),
+                    costMode = "DAILY",
+                    quantity = 1,
+                    useCount = 0,
+                    totalUsageHours = 0.0,
+                    location = DemoTexts.localize(context, seed.location),
+                    room = DemoTexts.localize(context, seed.room),
+                    purchaseChannel = DemoTexts.localize(context, seed.channel),
+                    warrantyExpireDate = seed.warrantyExpireInDays?.let { startOfToday + it * DAY_MS },
+                    shelfLifeExpireDate = shelfLifeExpire,
+                    shelfLifeProducedDate = producedDate,
+                    shelfLifeDurationValue = seed.shelfLifeDurationValue,
+                    shelfLifeDurationUnit = seed.shelfLifeDurationUnit,
+                    insuranceExpireDate = null,
+                    insuranceCompany = "",
+                    insurancePolicyNo = "",
+                    images = demoImagesOf(seed.images),
+                    description = DemoTexts.localize(context, seed.description),
+                    serialNumber = "",
+                    condition = seed.condition,
+                    // 现值按八成新回填（与旧演示同一口径）
+                    currentValue = (seed.price * 0.8).toLong(),
+                    isDemo = true,
+                    demoOrigin = DemoOrigin.SEED,
+                    createdAt = now,
+                    updatedAt = now
+                )
+            )
             inserted++
         }
         return inserted
@@ -367,23 +317,16 @@ class WealthDemoSeeder @Inject constructor(
     }
 
     /**
-     * 把该行的图片引用落成**本机可渲染的绝对路径 JSON**。
+     * 把种子的示例图名落成**本机可渲染的绝对路径 JSON**。
      *
-     * 导出 CSV 的图片列是导出设备上的绝对路径（`/data/user/0/com.palmnote/files/images/x.jpg`），
-     * 换机即指空；但随包的 `assets/demo/` 里放着同名文件（提交时按 basename 一一对应），
-     * 所以只取 basename、由 [DemoImageStore] 拷进 `filesDir/images/`（带 `demo_` 前缀）。
-     *
+     * [DemoImageStore.materialize] 从 `assets/demo/` 拷进 `filesDir/images/`（带 `demo_` 前缀）。
      * 走 `filesDir` 而不是直读 `file:///android_asset/`：后者 coil3 在真机上不渲染（见 DemoImageStore 注释）。
      * 前缀隔离保证关闭演示时 [DemoImageStore.clear] 只删示例图、用户自己的照片分毫不碰。
      *
-     * 复制放 IO：引导页收尾那一次播种是跑在**主线程 scope** 上的（MainActivity 的 rememberCoroutineScope），
-     * 14 张约 1.6MB 不该占主线程。
+     * 复制放 IO：引导页收尾那一次播种跑在主线程 scope 上（MainActivity 的 rememberCoroutineScope）。
      */
     @Suppress("InjectDispatcher")
-    private suspend fun demoImagesOf(c: List<String>): String = withContext(Dispatchers.IO) {
-        val names = c.getOrNull(ASSET_COL_IMAGES).orEmpty().toImageList()
-            .map { it.substringAfterLast('/') }
-            .filter { it.isNotBlank() }
+    private suspend fun demoImagesOf(names: List<String>): String = withContext(Dispatchers.IO) {
         if (names.isEmpty()) return@withContext ""
         // 缺某张图不该让整件物品丢掉：逐张容错，失败的只是少一张照片
         val paths = names.mapNotNull { name ->
@@ -393,64 +336,6 @@ class WealthDemoSeeder @Inject constructor(
         // 分类色占位，"[]" 不为空会让占位底色消失、hero 变透明。
         if (paths.isEmpty()) "" else paths.toImageJson()
     }
-
-    /** quote 感知的 CSV 行解析（导出物内的引号成对转义）。 */
-    private fun parseDemoCsvLine(line: String): List<String> {
-        val result = mutableListOf<String>()
-        val current = StringBuilder()
-        var inQuotes = false
-        var i = 0
-        while (i < line.length) {
-            val ch = line[i]
-            when {
-                ch == '"' && !inQuotes -> inQuotes = true
-                ch == '"' && inQuotes -> {
-                    if (i + 1 < line.length && line[i + 1] == '"') {
-                        current.append('"')
-                        i++
-                    } else {
-                        inQuotes = false
-                    }
-                }
-                ch == ',' && !inQuotes -> {
-                    result.add(current.toString())
-                    current.clear()
-                }
-                else -> current.append(ch)
-            }
-            i++
-        }
-        result.add(current.toString())
-        return result
-    }
-
-    /**
-     * 引号内含换行的字段会把一条记录拆成多行：按引号奇偶把物理行重新拼回
-     * （与导出器 `reflowQuotedLines` 同一规则）。同时剥 BOM 与行尾 \r，丢弃空行。
-     */
-    private fun parseDemoCsv(text: String): List<List<String>> {
-        val logical = mutableListOf<String>()
-        val buf = StringBuilder()
-        text.lines().forEach { line ->
-            buf.append(line.trim().trimStart('\uFEFF').trimEnd('\r'))
-            if (buf.count { it == '"' } % 2 == 0) {
-                logical.add(buf.toString())
-                buf.clear()
-            }
-        }
-        buf.takeIf { it.isNotEmpty() }?.let { logical.add(it.toString()) }
-        return logical
-            .map(::parseDemoCsvLine)
-            .filter { it.firstOrNull()?.isNotBlank() == true }
-    }
-
-    private fun readAsset(name: String): String =
-        context.assets.open(name).bufferedReader().readText()
-
-    /** 毫秒时间戳所在自然日的 0 点（用于把最新一笔账单平移到今天）。 */
-    private fun startOfDayMillis(millis: Long, zone: ZoneId): Long =
-        java.time.Instant.ofEpochMilli(millis).atZone(zone).toLocalDate()
-            .atStartOfDay(zone).toInstant().toEpochMilli()
 
     /** 钱包类型 → 支付方式（示例账单的支付渠道与钱包一一对应）。 */
     private fun paymentMethodOf(walletIndex: Int): PaymentMethod = when (demoWallets[walletIndex].type) {
