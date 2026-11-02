@@ -1,9 +1,11 @@
 package com.palmnote.data
 
+import android.content.Context
 import androidx.room.withTransaction
 import com.palmnote.data.db.AppDatabase
 import com.palmnote.data.db.entity.LifeTemplate
 import com.palmnote.domain.model.ReminderSpec
+import dagger.hilt.android.qualifiers.ApplicationContext
 import com.palmnote.domain.repository.LifeTemplateRepository
 import com.palmnote.domain.util.BuiltinGoalTemplate
 import com.palmnote.domain.util.kindFromIcon
@@ -23,6 +25,7 @@ import kotlinx.serialization.json.JsonPrimitive
  * 投递红线：用户改过的模板（customizedTemplateIds 显式声明 或 current != lastSynced 隐式判定）绝不被覆盖。
  */
 class LifeDataSeeder(
+    @ApplicationContext private val context: Context,
     private val templateRepo: LifeTemplateRepository,
     private val appDatabase: AppDatabase,
     private val syncPrefs: android.content.SharedPreferences? = null
@@ -46,6 +49,20 @@ class LifeDataSeeder(
         ?.toSet()
         ?: emptySet()
 
+    /**
+     * 种子的**本地化副本**：名称 / 描述**不动**（它们由显示层经 `getDisplayName` /
+     * `getDisplayDescription` 按语义身份翻译，名字列存中文快照是既定设计），
+     * 只本地化 fieldsConfig 与 statusFlowConfig 里的**展示文案**——字段标签、
+     * 表格列契约、选项、单位、占位提示、状态标签——经 DemoTexts 按当前应用语言映射。
+     *
+     * fields_config 的同步标记记录的就是这份本地化串：语言切换后 localized != 标记，
+     * 未定制的内置模板自动重写为新语言；用户改过的（stored != 标记）由既有判定跳过。
+     */
+    private fun localizedSeed(seed: LifeTemplate): LifeTemplate = seed.copy(
+        fieldsConfig = DemoTexts.localizeJson(context, seed.fieldsConfig),
+        statusFlowConfig = DemoTexts.localizeJson(context, seed.statusFlowConfig)
+    )
+
     fun markCustomized(templateId: Long) {
         val prefs = syncPrefs ?: return
         val ids = prefs.getStringSet(KEY_CUSTOMIZED, emptySet())?.toMutableSet() ?: mutableSetOf()
@@ -59,7 +76,7 @@ class LifeDataSeeder(
     suspend fun restoreToSeed(templateId: Long) {
         val stored = templateRepo.getTemplateById(templateId) ?: return
         if (!stored.isBuiltin) return
-        val seed = lifeTemplateSeeds.firstOrNull { it.icon == stored.icon } ?: return
+        val seed = lifeTemplateSeeds.firstOrNull { it.icon == stored.icon }?.let(::localizedSeed) ?: return
         templateRepo.updateTemplate(
             stored.copy(
                 name = seed.name, category = seed.category, description = seed.description,
@@ -85,7 +102,8 @@ class LifeDataSeeder(
             appDatabase.withTransaction {
                 seedTemplates()
             }
-            lifeTemplateSeeds.forEach { recordSynced(it.icon, it.fieldsConfig) }
+            // 标记记录的是**实际写入**的本地化串：语言切换后 localized != 标记，才能触发重同步
+            lifeTemplateSeeds.forEach { recordSynced(it.icon, localizedSeed(it).fieldsConfig) }
             recordSeedVersion()
         } else {
             // 版本升级新增的内置模板：存量安装按 icon 补插（如「专注」/「身体记录」/「物品维护」）
@@ -139,13 +157,13 @@ class LifeDataSeeder(
         prefs.edit().putStringSet(KEY_CUSTOMIZED, customized).apply()
     }
 
-    /** 存量安装补插缺失的内置模板（按 icon 识别身份）。 */
+    /** 存量安装补插缺失的内置模板（按 icon 识别身份），写入本地化副本。 */
     private suspend fun ensureBuiltinTemplatesExist() {
         val existingIcons = templateRepo.getAllTemplates().first().map { it.icon }.toSet()
         val missing = lifeTemplateSeeds.filter { it.icon !in existingIcons }
         if (missing.isEmpty()) return
         appDatabase.withTransaction {
-            missing.forEach { templateRepo.insertTemplate(it) }
+            missing.forEach { templateRepo.insertTemplate(localizedSeed(it)) }
         }
     }
 
@@ -183,7 +201,7 @@ class LifeDataSeeder(
         val customized = customizedTemplateIds()
         existing.filter { it.isBuiltin }.forEach { stored ->
             if (stored.id in customized) return@forEach // 显式声明：用户改过，绝不覆盖
-            val seed = seedByIdentity[stored.icon] ?: return@forEach
+            val seed = seedByIdentity[stored.icon]?.let(::localizedSeed) ?: return@forEach
             applySeedToBuiltin(stored, seed, applySeedWithoutBaseline)
         }
     }
@@ -474,7 +492,7 @@ class LifeDataSeeder(
     )
 
     private suspend fun seedTemplates() {
-        lifeTemplateSeeds.forEach { templateRepo.insertTemplate(it) }
+        lifeTemplateSeeds.forEach { templateRepo.insertTemplate(localizedSeed(it)) }
     }
 
     @Suppress("LongParameterList")

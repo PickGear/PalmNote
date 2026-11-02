@@ -1,6 +1,7 @@
 package com.palmnote.ui.settings
 
 import java.io.File
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
@@ -93,11 +94,62 @@ class ChangelogAssetTest {
         )
     }
 
+    @Test
+    fun `changelogEnAssetCoversCurrentVersion`() {
+        val version = currentVersion()
+        val asset = readRepoFile(CHANGELOG_EN_ASSET_PATH)
+        assertTrue(
+            "当前版本 $version 未出现在 $CHANGELOG_EN_ASSET_PATH（英文版本历史忘记更新？）",
+            asset.contains(version)
+        )
+    }
+
+    @Test
+    fun `changelogAssetsShareTheSameVersionSet`() {
+        // 中英两份历史资产的版本集合必须一致：多一个、少一个版本都是漂移
+        val header = Regex("(?m)^\\d+\\.\\d+\\.\\d+(?:-beta\\d+)? \\(\\d{4}-\\d{2}-\\d{2}\\)$")
+        val zh = header.findAll(readRepoFile(CHANGELOG_ASSET_PATH)).map { it.value }.toSet()
+        val en = header.findAll(readRepoFile(CHANGELOG_EN_ASSET_PATH)).map { it.value }.toSet()
+        assertTrue(
+            "中文版多出的版本（英文版缺）：${zh - en}",
+            (zh - en).isEmpty()
+        )
+        assertTrue(
+            "英文版多出的版本（中文版缺）：${en - zh}",
+            (en - zh).isEmpty()
+        )
+    }
+
+    @Test
+    fun `changelog assets parse into matching timelines`() {
+        // 两份资产都要能被时间轴解析器完整吃下：版本数一致、日期一致、
+        // 每个版本至少一个非空分区；最新版本的首分区中英各自就位
+        val zh = parseChangelog(readRepoFile(CHANGELOG_ASSET_PATH))
+        val en = parseChangelog(readRepoFile(CHANGELOG_EN_ASSET_PATH))
+        assertTrue("中文历史解析出 ${zh.size} 个版本", zh.size >= 11)
+        assertEquals("中英版本序列不一致", zh.map { it.version }, en.map { it.version })
+        assertEquals("中英日期不一致", zh.map { it.date }, en.map { it.date })
+        (zh + en).forEach { entry ->
+            assertTrue("版本 ${entry.version} 没有任何分区", entry.sections.isNotEmpty())
+            entry.sections.forEach { section ->
+                assertTrue(
+                    "版本 ${entry.version} 的「${section.title}」分区为空",
+                    section.items.isNotEmpty()
+                )
+            }
+        }
+        assertEquals("说明", zh.first().sections.first().title)
+        assertEquals("About", en.first().sections.first().title)
+    }
+
     private companion object {
         /** 向上查找仓库根的最大层数。 */
         const val MAX_UP_LEVELS = 6
 
         /** 随安装包分发的版本历史资产（.txt 后缀必需：aapt 不打包无扩展名 assets）。 */
         const val CHANGELOG_ASSET_PATH = "app/src/main/assets/changelog.txt"
+
+        /** 英文版本历史资产：非中文环境由 VersionHistoryScreen 读取。 */
+        const val CHANGELOG_EN_ASSET_PATH = "app/src/main/assets/changelog_en.txt"
     }
 }

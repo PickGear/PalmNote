@@ -18,6 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 - 物品网格卡片新增大图 / 小图两种样式，设置中切换、即时生效
 - 物品分布卡分页改版：滑动带渐隐与入场动画
 - 数据交换包格式版本化：包内 manifest 自描述，导入按版本协商
+- 版本历史提供英文版（语言跟随应用切换）
 
 ### Fixed
 - 修复从首页卡片进入账单后，点底栏无法返回首页的问题

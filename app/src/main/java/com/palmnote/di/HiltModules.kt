@@ -92,6 +92,7 @@ object AppModule {
         appDatabase: AppDatabase
     ): LifeDataSeeder =
         LifeDataSeeder(
+            context,
             lifeTemplateRepository,
             appDatabase,
             context.getSharedPreferences("builtin_template_sync", Context.MODE_PRIVATE)

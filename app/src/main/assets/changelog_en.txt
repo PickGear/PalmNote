@@ -1,0 +1,430 @@
+PalmNote Version History
+========================
+
+Release history of PalmNote (newest version first; entries marked beta are pre-release).
+
+1.4.3-beta2 (2026-11-03)
+------------------------
+
+About
+- This is 1.4.3 beta2 (development build, not yet released): adds demo mode and portable backup keys, lets the vault turn off password protection and favorite entries, and removes clipboard auto-clear
+
+Added
+- Demo mode (sandbox): try the app with sample data and jot down your own entries; closing it clears the samples, and anything you recorded can move back to your real books
+- Self-contained portable backup keys: backup packages now carry the database key, so restoring on a new phone, after a reinstall, or on any device just works; an optional backup password encrypts the whole package
+- Vault: turn off password protection (verify once, then switch to password-free entry with every entry kept); favorite entries, pinned to the top in lists and category filters
+- Vault detail page: the password auto-hides after 30 seconds; leaving the editor now asks about unsaved changes
+- Vault settings: a new read-only "lock timing" row (follows the global app lock)
+- Dashboard net-worth card: an amount privacy toggle — hide amounts, income/expense and trend direction at once
+- Asset grid cards: two styles (large / small image), switched in Settings with instant effect
+- Asset distribution card pagination rework: fade bands while sliding and an entrance animation
+- Versioned exchange-package format: a self-describing manifest inside the package; imports negotiate by version
+- The in-app version history is now available in English (follows the app language)
+
+Fixed
+- Fixed the bottom bar not returning Home after entering Bills from a dashboard card
+- Fixed editing a sample row in demo mode moving it out of the sample set
+- Fixed misaligned two-column inputs in the asset form on the English UI
+- Fixed vault search missing note content
+- Fixed leftover avatar image files after resetting the vault
+- Fixed the eye icon in vault details not following the plaintext state
+- Fixed rejected legacy backup restores not explaining the real reason
+- Fixed a wrong backup password being swallowed and reported as file corruption
+
+Changed
+- Backup and import/export pages redesigned: summary card + sectioned row layout
+- Settings card row heights unified to 56 / 72 dp
+- Removed vault "clipboard auto-clear": the system blocks clipboard reads in the background and IME clipboard history cannot be cleared, so the promise could not be kept; copying still marks content as sensitive and the system clipboard overlay hides previews
+- Vault copy now says "password" everywhere (no more "master password")
+- The widget picker top bar is unified with the rest of the app
+- Demo sample data replaced with neutral samples; sample images converted to WebP, package about 1.5 MB smaller
+
+1.4.3-beta1 (2026-10-28)
+------------------------
+
+About
+- This is 1.4.3 beta1 (development build, not yet released): adds the daily bill receipt and polishes motion across bills, assets, dashboard and page transitions
+
+Added
+- Daily bill receipt: tap a date row in the bill details to preview that day's thermal-style receipt with a printing animation; save to gallery or share. Previews print 5 entries by default — tap to see the rest; save/share always exports the full day
+- Receipt styles switchable in Settings → Bills → Receipt style: "Itemized" and "Category summary" papers; tap a paper to switch, the choice is remembered; the popup and save/share always use the selected style
+- Category summary style: a category/count/amount table plus today's entry count, expense/income totals and balance; serial number and barcode share one source
+
+Fixed
+- Missing divider between the last two rows in bill details
+- The bills page not defaulting to today (including the week view sticking to the last week of the previous month)
+- Asset usage records: the "N times" count not falling back after a deletion and single-use cost distortion
+- A grayish sheet background on the add-asset dialog
+- The asset details "usage records" empty state taking most of the screen
+- Secondary-page top bar backgrounds inconsistent with other pages
+- Habit details: the milestone celebration card squeezed off screen and the focus timer ring lagging behind the readout
+- Jank in category details when checking off or collapsing sections
+- The pending-reimbursement card showing only the current book: no more unrelated entries from other books (reimbursement management still shows all)
+
+Improved
+- The asset summary card collapses with your finger: drag the card or scroll the list to collapse/expand; it snaps into place on release and remembers the state
+- Dashboard cards: long-press and drag to reorder, with auto-scroll at the screen edges; returning from other tabs fades the page in as a whole
+- Secondary pages now push in from the right and slide out to the right on back
+- Cold start drops the skeleton screen; the top bar shows while loading
+- Larger touch targets in several places; check-off animations added
+- Daily receipt paper: warm white stock, a scalloped tear edge and thermal texture; the itemized style became a table (time / category / amount columns, the note under the category and the wallet under the amount); the barcode is now a scannable EAN-13 (the number is the print time)
+- The receipt printer got a visual redesign: a light silver-gray body with paper-slot notches on both shoulders; the indicator breathes while printing and stays lit when done
+
+1.4.2-beta3 (2026-10-26)
+------------------------
+
+About
+- This is 1.4.2 beta3 (development build, not yet released): widget and startup fixes on top of beta2
+
+Fixed
+- Widget "accent color" not applying to Overview / Up Next (previously only the bill widget actually read the instance colors)
+- "Up Next" 2×2 landing as a 4×2 and duplicating it (info, preview and registry now aligned)
+- Blank / "0" placeholder previews on the confirm page when adding widgets on some devices (switched to a static card image)
+- Widget image backgrounds occasionally lost after a process restart; the persistent grant not released after a widget was removed
+- Home-screen widgets taking up to 30 minutes to refresh after saving a bill or asset (now instant)
+- The habit widget still showing yesterday's state past midnight (self-heals within a minute after deep sleep or background freezing)
+- With in-app dark mode selected, the splash and window background still following the system light theme
+- The asset 4×4 widget showing a blank design layout on the first frame, and the net-worth widget appearing twice in the system picker
+
+Changed
+- The widget panel's size page order unified to 4×2 → 2×2 → 4×1 → 4×4 per the design spec
+- Removed retired widget layouts, previews and unused strings; license notices completed with core-splashscreen / profileinstaller
+
+1.4.2-beta2 (2026-10-25)
+------------------------
+
+About
+- This is 1.4.2 beta2 (development build, not yet released): the following changes on top of beta1
+
+Added
+- Bills page adds "Export bills": export a CSV statement for the selected range — all / this month / last month / last 3 months / this year / a custom range; the page shows the entry count, coverage and books/wallets before exporting. 13 columns (time / type / amount / book / wallet / target wallet / category / subcategory / merchant / note / payment method / transaction number / reimbursement), ascending by time, UTF-8 with BOM, opens cleanly in Excel / WPS; excludes demo data as well as locations, tags, images and coordinates
+
+Fixed
+- Bills "Import / Export" back navigation went straight to the bills home instead of the hub card page (both import and export now return to the hub)
+
+Changed
+- Removed screenshot recognition (OCR): the photo and gallery import chain is retired; the second card on the import page became "Export bills" with a dedicated export page (see the count and coverage first, then pick a save location), and the bills entry icon changed to the bidirectional "Import / Export" arrows. The PaddleOCR models and the ONNX Runtime / OpenCV native libraries were removed along with it
+- APK size dropped from about 71 MB to about 15 MB (mostly the OCR native libraries and models — about 84% of the old package)
+
+1.4.2-beta1 (2026-10-23)
+------------------------
+
+About
+- This is 1.4.2 beta1 (development build, not yet released): the changes below
+
+Changed
+- Privacy and agreement docs slimmed: the standalone Terms of Service was removed (disclaimers folded into the README, pointing to the GPL-3.0 LICENSE) and the privacy policy condensed to one page
+- Removed the first-launch "agree to the privacy policy" gate: no consent is required any more and there is no "decline to exit"; the policy is still available under Settings → About → Privacy policy
+- Removed the "Vault" home-screen widget: passwords are high-risk private data and no longer live on the desktop. Existing widgets are prompted for removal by the system after the upgrade — the in-app vault and its data are unaffected
+- The quick access widget's 5th slot changed from "Vault" to "Net worth" (the vault stays in the app only)
+- Home-screen widgets fully redesigned: unified white cards, modular accent colors and sectioned compositions, with dark mode refreshed in step
+- The widget picker is now gallery-style: card previews are the final look; tap into a panel to pick a style and add it with one tap
+- The net-worth widget adds a privacy eye: hide amounts and ratios at once, with the ratio bars neutralized too
+- Asset and wallet balance changes now refresh the related widgets instantly (previously up to 30 minutes)
+- Widgets support custom backgrounds: per widget, no longer following the app wallpaper; five presets (white / black / teal / yellow / orange), a custom color picker (with HEX) or a gallery photo — each instance independent
+- The add-widget panel previews live: pick a background color, drag the opacity and the large preview follows instantly; previews were re-rendered at 3× resolution with enhanced shadow outlines
+- Widget opacity is now a continuous slider (20–100%, the accessibility floor) that applies to the whole card — background and content fade together
+- Bills / Overview / Up Next widgets gained an "Edit more" row in the add panel: book and accent choices are written on pin, and pinning no longer forces the config page (long-press still opens it)
+- Widget backgrounds apply to all 11 widgets and every size variant (mini, tall, wide, etc.)
+
+Fixed
+- On some devices (e.g. realme), with the system language set to English the in-app Chinese selection did not take effect even after a restart
+- A background color flash when switching language recreated the UI (the window background now follows the theme, from the same source as the splash)
+
+1.4.1 (2026-10-10)
+------------------
+
+Added
+
+Reimbursements
+- Mark an expense as reimbursable while recording it, then manage them all under "Reimbursements"
+- Reimbursement management: "Pending / Reimbursed" tabs with the pending amount, entry count and total reimbursed
+- Partial reimbursement is supported, optionally recording a "Reimbursement" income; marking can be undone
+- When recording reimbursement income you can pick the expenses to offset; multiple entries are apportioned by date automatically
+- A "Pending" card at the top of the bill list opens reimbursement management
+- Statistics adds "Net expense" (excluding the reimbursed part), with the reimbursed portion labeled
+
+Changed
+- The bills import entry icon was swapped with export: import is now a down arrow, no longer confused with export
+- Default dashboard card order is now: Net worth → Quick actions → Budget alert → Asset distribution → Anniversaries → Today → Vault → Habit → Subscriptions (custom orders unaffected)
+- Wallet management titles show the account name directly; the card tail number moved next to the account type ("Bank card ****6214") instead of being appended to the name
+- The WeChat bill export tutorial was updated for the new flow: bills arrive as an xlsx via WeChat Pay messages instead of email
+- The bills top bar now holds the three high-frequency actions (search / import / stats); budget and reimbursement moved into the overflow menu
+- The bill calendar supports horizontal swipe paging (tracking + fling): month view pages by month, week view by week; the year-month is centered, tapping "Calendar" returns to today, "Week / Month" on the right switches views — the old ‹ › buttons are gone
+- The calendar's Week / Month capsule selection color changed from theme blue to brand orange, matching the bills page
+- The asset page filter dropdown background and buttons are unified, with no more cream tint
+- Preset books "All books" and "Daily" got brighter default colors (the old blue-gray and near-black looked dull on light backgrounds; upgraded libraries are refreshed automatically unless you changed the colors yourself)
+- The settings sections "Preferences" and "Appearance" swapped, so language and start page come first
+- In "Data & backup", the "Sample data (demo mode)" section moved to the bottom, after "Storage & cleanup"
+
+Fixed
+- Startup crash after upgrading from older versions to 1.4.0 (the database migration referenced a wrong recycle-bin table name; fresh installs were unaffected)
+- CSV bills exported by the Alipay app (headers "交易时间…收/支…") failing to import with a format error and 0 records
+- Table (Excel / xlsx) imports recording transactions after 16:00 as the next day
+- Asset grid cards: status labels squashed and barely visible
+- The home-screen asset widget: categories beyond the 6th disappeared and ratio bars distorted (they now fold into "Other" with counts and ratios kept accurate)
+- The home-screen asset widget showing your own categories as "Other"
+- The asset "category" and bills "book" dropdowns being too long to tap the last items (now capped and scrollable)
+- Marking / undoing reimbursement giving no feedback and occasionally crashing
+- The bill calendar's date numbers looking too small (12 sp → 13 sp, unified with the life page)
+- Calendar dates with records sitting higher than empty ones (the dot row now has a fixed height)
+- The calendar selection ring not concentric with the number (the number is centered and the ring always follows it)
+- Selecting a calendar date painting all dots white, losing the red/green distinction (dots keep their semantic colors; the selection stays brand orange with a bold number)
+- Overlong wallet names in bill details wrapping to two lines (the right column was a fixed 100 dp and now adapts)
+- The book management dialog icon looking different from the list card (shape, tint and icon color)
+- Undoing a reimbursement leaving the recorded "Reimbursement" income on the books (both now move to the recycle bin together)
+- Deleting a wallet / book / category silently destroyed the linked assets with no way back (they now go to the recycle bin; the wallet / book itself is still unrecoverable)
+- In demo mode (sample data), deleted wallets / bills could not actually be deleted (the rebuild guard failed, so every launch rebuilt the samples and wiped their recycle-bin records — deleted sample wallets "came back" and freshly binned bills vanished; deletion and restore now behave)
+- Account / book selector tiles in the record and import pages: long names touched the tile edges instead of centering (now centered with an ellipsis when needed)
+
+1.4.0 (2026-10-04)
+------------------
+
+Added
+
+Life module redesigned
+- Today board: week / month calendar, today's schedule, overdue pinned to the top with one-tap postpone-all
+- Quick add: jot an entry in one sentence with automatic date and time parsing
+- A rebuilt "New" panel: recently used templates first, a persistent search and more templates visible at once
+- Category details redesigned: colored per category with total / due-today / overdue stats in the header; rows show overdue days, today's time and checklist progress; long-press to complete, postpone or delete
+- Custom templates and the field library upgraded: checklist, table, range, date-time, slider, color, audio/video and file fields; grouped form layout with inline validation; templates can be saved as new ones
+- Detail pages tap-to-edit values; progress adjusts in place (custom amounts and long-press acceleration); shopping checklists can be ticked off
+- Savings goals complete and remind automatically when reached
+- Birthdays / anniversaries / countdowns support yearly repeats and lunar birthdays, shown as "in / since / today"
+- Reviews and sharing: monthly and yearly review pages, shareable long images, "that day in past years"
+- Habits upgraded: a 7-day consistency metric, goal celebrations and a mood emoji heatmap
+- Travel route board: a route canvas and track import
+- Template reminders: rules per template; notifications open the record and countdown reminders can be completed on the spot
+- A life page skeleton on first frame to remove the empty-state flash
+
+Sample data mode
+- One-tap import of a full sample set covering life / bills / assets / habits (with real images), removable at any time; closing it only clears the samples and never touches your records
+
+Home-screen widgets (visual refresh only this round)
+- Every widget redesigned with a unified rounded-card look, plus two new widgets: "Today's habits" and "Quick access"
+- Dark mode supported and accent colors can follow the app theme
+- Widget features are not complete yet and are not guaranteed in this release: this round only unified the visuals — data and interactions remain unfinished
+
+Themes & personalization
+- A new theme system: multiple theme color packs + custom colors
+- Six new gradient wallpapers and custom image wallpapers (blur / opacity adjustable)
+- A new teal-and-white app icon option
+- The dashboard header shows your avatar, nickname and a time-of-day greeting
+- The net-worth card supports a custom color
+
+Bookkeeping & import
+- WeChat / Alipay imports default to the matching wallet automatically
+- The import page became a "sorting table" — entries needing review are obvious at a glance
+- Import preview supports "needs review / all / skipped" filters with per-row reasons
+- OCR results are color-coded by confidence for focused review
+- The result page shows success / skipped / failed counts; failed rows export to CSV
+- Imports support one-tap undo
+- Encrypted Alipay ZIP bills import directly without manual unzipping
+
+Backup & data safety
+- Backup "remember password" pre-fills next time
+- A "backup location" setting: the first backup can go to the app's private directory or any folder (e.g. a cloud-sync directory); later manual and automatic backups follow it and it can be changed anytime
+- Full restore after switching devices or reinstalling (including vault images)
+- The import/export page recognizes file types: full data packages merge in, while backups and bill files are routed to the right entry
+
+Onboarding & settings
+- A first-launch onboarding (feature intro + data safety notes + sample data choice); appearance is not part of onboarding — it lives in Settings › Appearance
+- Settings › About adds "Open-source licenses", "Version history" and "Feedback"
+- Dashboard quick cards "Record" and "Assets" go straight to the create forms
+- Dashboard cards gained empty states and guidance entries
+
+Changed
+
+UI & copy polish (pre-release)
+- Life statistics: pastel gradients flattened, metric cards unified with the analysis cards, top bar merged into the global secondary-page style; "today's focus" got its unit
+- Monthly review: gradients flattened, top bar unified with the life module, the month/year switch enlarged to page level
+- About page: reorganized into a first-level menu (no nested panels or duplicated QQ entries), the app icon replaced with the real one and shrunk, and the one-line intro rewritten around the product
+- Feedback channels became two direct rows: "GitHub Issues" and "QQ group"; the QQ sheet offers "Open in QQ" and "Copy group number"
+- Onboarding no longer carries appearance settings: theme color, dark mode and custom HEX live in Settings › Appearance
+- Copy corrections: the master password only protects the vault (encrypted backups use a separate backup password), the sample-data close path, statistics units and wording
+- All "add" buttons now follow the theme color (the life page used to be fixed pink)
+- Life page titles, links and progress bars converged on the theme color
+- Startup performance: the baseline profile took effect and a runtime profile writer was added
+- Colors across the app follow the theme, with a more coherent dark mode
+- File imports and OCR can choose a target book
+- Shopping screenshots merge into one entry by "amount actually paid"
+- Exported backups must have a password (at least 6 characters)
+- Clearer backup and export channel descriptions with the coverage at a glance
+- A simpler backup page: merge hints, a collapsible list and friendly size / time display
+- Widgets compact large amounts automatically (e.g. ¥123k)
+- To-do / habit widget rows are tappable end to end
+- Unlocking is faster for upgrading users
+- Exports list exactly what is and isn't included
+- Restore confirmation copy is more accurate: a snapshot is kept automatically and can be restored
+- Per-entry editing moved to a bottom sheet with large amounts
+- Privacy policy and terms updated
+- Settings rebuilt: shared components and unified row styles, standard icon pickers for general / reminders / app lock, wallet editing converged on one save entry, and feedback for setting a default wallet
+- The About and version history pages redesigned (history became a timeline)
+- "About PalmNote" renamed to "About"
+- Backup snapshots use an exclusive transaction; the backup list caches checksums for faster refreshes
+- Automatic backup defaults to off and is user-enabled
+
+Fixed
+- Dark mode: low text/icon contrast on the onboarding primary button, the About app icon and module card icons (switched to the theme's onPrimary)
+- Fixed the new Alipay bill file failing to import
+- Fixed WeChat XLSX bills not being recognized
+- Bill categories misfiled as "Other" far less often
+- Fixed amounts with full-width commas being silently dropped
+- Table imports no longer treat split columns like "income amount / expense amount" as the main amount column — that recorded income as expense and dropped expense rows; when no main column can be determined it now errors clearly instead of mis-recording
+- Decimal commas in table imports (e.g. 45,00) are no longer read as thousands separators; 1,234.56-style grouping still is
+- "No income/expense" rows are no longer recorded as expenses
+- Same merchant + amount + time entries are no longer flagged as duplicates
+- Imported bills now update wallet balances correctly and deletions roll back properly
+- Shopping screenshot recognition is more accurate (amount actually paid, dates without a year)
+- OCR no longer mistakes page decoration for a merchant name
+- Fixed several widgets opening the same page on tap
+- Fixed widget content clipped at minimum sizes
+- Fixed the backup size always showing 0 MB
+- Export failures now error clearly instead of pretending to succeed
+- A failed restore no longer touches the existing database
+- Fixed vault images not coming back with a backup restore
+- Fixed startup crashes after upgrading from some older versions
+- Fixed recording into the wrong book when a non-default one was selected
+- Crash logs can now be viewed, exported and cleared
+- Wording in the privacy policy that didn't match reality was corrected
+- The plaintext-DB encrypted migration became an atomic replace, ending mid-upgrade data loss
+- Deleting a book / wallet / category sends bills to the recycle bin and rolls wallet balances back correctly (balances used to be silently wrong and unrecoverable)
+- Habit double-taps no longer double-count; streaks accumulate correctly
+- Widgets are no longer overwritten by other widgets' update broadcasts
+- Fixed drift in long-running focus timers and the app lock freezing after one wrong PIN
+- Full-data imports losing notes, duplicating rows and miscomputing wallet balances
+- Category management losing preset expansion state while scrolling
+- Lockout penalties now increase in duration for stronger brute-force protection
+
+Security
+- Exported backups are always encrypted — no plaintext backups can leave the app
+- Unencrypted backups no longer carry the database key
+- Backups moved into the app's internal storage where other apps cannot read them
+- On-device automatic backups gained a restore entry
+- Password hashing raised to OWASP recommendations (no re-setup needed)
+- Widgets no longer display vault entry contents
+
+About
+- This version is still in active development: widgets, the life page and other module features and settings are not fully formed — some flows are incomplete or still being polished; v1.5 is expected to close the core loop. This list describes what the build already does, not the final shape.
+
+1.3.0 (2026-08-11)
+------------------
+
+Added
+- Vault module (feature/vault): a fully offline password manager with field-level AES-256-GCM encryption and its own master password (key-wrapping — changing the PIN never re-encrypts entries)
+- Vault: list / search / category filters, masked detail viewing (👁 toggle), CRUD, a password generator (length + character sets + entropy) and one-tap copy with 30-second clipboard auto-clear (hash-tracked, never clears your own copies)
+- Vault entries gained a phone field (plaintext, same rules as email, searchable); the vault database went v3 → v4 (MigrationV3ToV4)
+- Vault security: biometric unlock (a non-exportable Keystore key wrapping the data key + BiometricPrompt / CryptoObject), a no-lock mode (skip the password; the data key is wrapped by a non-authenticated Keystore key and can be upgraded to PIN / biometrics anytime), configurable auto-lock (immediately / follow system lock / 5-minute timeout, default follows the system), 5 failed attempts lock for 30 seconds (brute-force protection via LockoutTracker), configurable require-auth and a full reset
+- Vault entry points: a dashboard card (shows only entry counts, titles hidden for privacy, old card configs merged automatically) and settings entries (clipboard clear / require auth / entry count / change master password / reset)
+- Database v4 → v5: the vault_entries table (Migration4To5)
+- Database encryption with SQLCipher: full-database encryption (net.zetetic:sqlcipher-android) wired through Room via EncryptedOpenHelperFactory with automatic plaintext migration; the database key is wrapped by Android Keystore (AES-256-GCM, computed inside the TEE, non-exportable) and stored in SharedPreferences (backups can carry a portable key for cross-device restore)
+- OCR engine swap: ML Kit's closed model → an in-house OcrEngine interface + PaddleOCR PP-OCRv6 (the ppocr-sdk module, offline inference on ONNX Runtime, models bundled in assets); ML Kit and coroutines-play-services dependencies removed
+- APK size optimization: release ships only arm64-v8a + onnxruntime-mobile, ~86 MB down to ~42.6 MB (later reverted to full onnxruntime-android 1.21.1 because the mobile operator set could not run the PP-OCRv6 model)
+- Tests: VaultCryptoTest (encryption round-trips / tamper detection / key derivation), VaultPasswordGeneratorTest and Migration4To5Test; unit tests 75 → 150 (including 6 Room migration tests)
+- Migration3To4
+- BillRepository.getBillsByDateRange
+
+Changed
+- Amounts migrated from Double (yuan) to Long (fen): exact integer math across bills / wallets / budgets / assets / recurring templates / plan lists, ending floating-point drift
+- A Money value type (domain/model/Money.kt) and per-currency CurrencyUtils formatting
+- Database v3 → v4: migration rebuilt the amount tables with a ×100 conversion (including existing data)
+- Full v1 → v5 migration regression (MIGRATION_1_2 / 2_3 / 3_4 / 4_5 registered)
+- Database v5 → v6: vault data moved out of the main database into palmnote_vault.db (Migration5To6, best-effort copy then drop); v6 → v7 removed the unused timeOfDay column from bills / bills_recycle_bin (Migration6To7); the main database is now v7
+- CI: lintDebug (abortOnError), testDebugUnitTest (including Room migration tests) and Room schema checks
+- CI: migration tests moved to Robolectric on the JVM (the free runner has no KVM and the emulator hangs); parallelized into quality / build jobs with one Gradle call each, reusing the build cache across jobs
+- lint.abortOnError false → true
+- detekt baseline regenerated: existing UI debt frozen (LifeScreen / BillDao / ReportScreen)
+- Two-module architecture: core split out (namespace com.palmnote — data / domain / shared UI / resources / AppDatabase schema) alongside app (namespace com.palmnote.app — business UI / backup / workers / vault); the empty feature module removed; the AppDatabase schema moved to core/schemas (v1–v7) and VaultDatabase stays in app/schemas (v1–v4)
+- CurrencyUtils dropped the global-context anti-pattern: the context-free overload and AppContextHolder are gone and every call site passes a context explicitly (Composables use LocalContext.current, ViewModels inject @ApplicationContext)
+- 55 string keys referenced by both core and app are declared per module (AGP R classes are per-module), with core's missing keys migrated too
+
+Fixed
+- Critical: the v2→v3 migration's index names didn't match the entity-generated names, crashing every upgrade (idx_bills_* → index_bills_*)
+- WeChat CSV imports not stripping minus signs, which could pollute the books with negative amounts
+- The daily "not recorded yet" reminder misfiring: exact timestamp matching became a same-day range match
+- Positive-day / countdown / birthday / anniversary off-by-one: epoch/86400000 (UTC) replaced with system-timezone date conversion
+- Feb-29 birthdays / anniversaries: a duplicated call in the withYear catch caused a second crash
+- Subscription reminders: the 31st falls back to the month's last day in short months; lastBilledDate is written back to prevent repeats
+- Date format internationalization: mismatched parameter types between locales in date_format_weekday_full etc. (lint StringFormatMatches)
+- Backups didn't include the app lock's SharedPreferences: after a restore the old SHA-256 PIN couldn't verify because the salt reset, locking users out of their data
+- No WAL checkpoint before backup: -wal/-shm could disagree with the main file and corrupt a restore; it now checkpoints first and copies a consistent snapshot
+- getExternalFilesDir can return null and NPE'd the backup; an internal-storage fallback was added
+- The settings page showed v1.0.0 instead of v1.2.0 (now consistent with app_version)
+- detekt config: outdated ComplexMethod / TooManyFunctions rule names broke the task
+- Dead code cleanup (unused DAO methods / classes)
+- The today's-to-do entry point was broken
+- Bill list queries gained indexes (index_bills_*)
+- The report page lacked a loading state (flashed blank on first load)
+
+Security
+- System backup disabled (allowBackup=false): prevents the plaintext database (including the PIN hash) from being backed up to Google's cloud
+- FLAG_SECURE while the app lock is on: no screenshots or recent-apps thumbnails of financial data
+- Lockout state persisted: failure counts and lockout duration live in SharedPreferences — killing the process cannot bypass brute-force protection
+- PBKDF2 iterations unified at 25k for the app lock and the vault, balancing unlock latency against brute-force cost (old SHA-256 PINs migrated automatically)
+- PIN verification / setup moved to the IO thread so PBKDF2 no longer blocks the main thread
+
+1.2.0 (2026-07-28)
+------------------
+
+Added
+- App lock: PIN setup / change / forgot-password, biometric (fingerprint / face) unlock
+- Wallet management: an edit page with multi-wallet support
+- Category management: icon editing, deletion and a hide-system option
+- GitHub Actions CI (build + upload APK)
+- Open-source infrastructure: CONTRIBUTING.md / SECURITY.md / CODE_OF_CONDUCT.md / Issue & PR templates
+
+Changed
+- APK size: ndk abiFilters narrowed to arm64-v8a / armeabi-v7a
+- OCR: EXIF orientation auto-rotation (the rotated original is recycled to prevent memory doubling)
+- Exported ZIPs now include preferences.json and asset images
+- Settings: only the avatar / nickname area triggers editing; the bottom version info was removed
+- DatePickerField outline style unified
+- LICENSE: Apache 2.0 → GPL-3.0
+
+Fixed
+- The app lock toggle not responding (state became a reactive var)
+- The app lock biometric switch doing nothing (biometricEnabledFlow added)
+- The app lock hasPin state out of sync
+- Date picker defaulting to UTC midnight to avoid showing the previous day in UTC+8
+- The data management page pointing at the wrong import path; now ZIP backup restore
+- strings.xml app_version v1.0.0 → v1.2.0
+
+1.1.0 (2026-07-22)
+------------------
+
+Added
+- Category icon editing / deletion / hiding
+- Two-way sync between the calendar's selected date and the record page
+- An entrance animation for bill list date rows
+- Baseline Profile expansion and startup optimization
+- DataCache read/write caching + preloading
+- Performance: Compose @Immutable, batched DataStore reads, animations unified at 300 ms
+
+Changed
+- Dropped Hilt for manual DI (AppContainer)
+- All Dagger / Hilt dependencies removed
+- UI polish: unified DatePickerField outlines, right-aligned cost-mode dialogs, consistent hints
+- Backup reworked; import/export optimized; edit pages rebuilt
+- Bill list transfer display optimized; the compact-amount threshold moved to 1 million
+
+Fixed
+- Book filter logic polished; switching books / months clears filters automatically
+- Book and date two-way sync; the calendar jumps after saving a bill
+- The cancel button truncated in English on the search page
+- A fixed FAB elevation to remove press jitter
+- Navigation bar windowInsetsPadding restored
+- Asset card ripples follow the rounded corners
+- Search page status bar insets
+- DatePicker timezone offset fixed
+
+1.0.0 (2026-06-30)
+------------------
+
+Added
+- Initial release
+- Dashboard: net worth, monthly overview, budget alerts, goal progress, anniversary countdowns
+- Assets: entry, categories, status tracking, daily-cost calculation, warranty / insurance reminders
+- Bookkeeping: multi-book, multi-wallet, categories, budgets, calendar view, CSV/XLSX import, OCR, home-screen widgets
+- Life module: plan, time and record categories with custom templates
+- Full English localization
+- Encrypted backups (AES-GCM + PBKDF2)

@@ -319,6 +319,7 @@ class LifeTemplateEditViewModelTest {
             repo,
             itemDao,
             LifeDataSeeder(
+                mockk<android.content.Context>(relaxed = true),
                 mockk<LifeTemplateRepository>(relaxed = true),
                 mockk<AppDatabase>(relaxed = true)
             )
@@ -429,6 +430,7 @@ class LifeTemplateEditViewModelTest {
             repo,
             itemDao,
             LifeDataSeeder(
+                mockk<android.content.Context>(relaxed = true),
                 mockk<LifeTemplateRepository>(relaxed = true),
                 mockk<AppDatabase>(relaxed = true)
             )

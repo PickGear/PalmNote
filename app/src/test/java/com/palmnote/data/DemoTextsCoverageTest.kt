@@ -20,14 +20,17 @@ class DemoTextsCoverageTest {
     private val sources = listOf(
         "app/src/main/java/com/palmnote/data/DemoWallet.kt",
         "app/src/main/java/com/palmnote/data/WealthDemoSeed.kt",
-        "app/src/main/java/com/palmnote/data/WealthDemoSeeder.kt"
+        "app/src/main/java/com/palmnote/data/WealthDemoSeeder.kt",
+        "app/src/main/java/com/palmnote/data/LifeDataSeeder.kt"
     )
 
     /** 分类内部键：存进数据行、按内置分类表本地化，不走 DemoTexts 映射。 */
     private val categoryKeys: Set<String> by lazy {
         com.palmnote.ui.bills.expenseCategoryItems.map { it.name }.toSet() +
             com.palmnote.ui.bills.incomeCategoryItems.map { it.name }.toSet() +
-            com.palmnote.ui.asset.assetCategoryItems.map { it.name }.toSet()
+            com.palmnote.ui.asset.assetCategoryItems.map { it.name }.toSet() +
+            // 生活三分类键（LifeDataSeeder 的 buildTemplate category 参数）
+            setOf("计划", "时间", "记录")
     }
 
     /** 从测试工作目录向上查找含 settings.gradle.kts 的仓库根（同 ChangelogAssetTest 的定位法）。 */

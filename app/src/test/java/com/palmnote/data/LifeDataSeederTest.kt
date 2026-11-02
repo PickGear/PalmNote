@@ -1,5 +1,6 @@
 package com.palmnote.data
 
+import android.content.Context
 import android.content.SharedPreferences
 import androidx.room.withTransaction
 import com.palmnote.data.db.AppDatabase
@@ -10,7 +11,9 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkObject
 import io.mockk.mockkStatic
+import io.mockk.unmockkObject
 import io.mockk.unmockkStatic
 import io.mockk.verify
 import kotlinx.coroutines.flow.flowOf
@@ -46,14 +49,19 @@ class LifeDataSeederTest {
         } coAnswers {
             secondArg<suspend () -> Any?>().invoke()
         }
+        // 本地化层直通（纯 JVM 测试没有可用的 resources）：种子串原样透传
+        mockkObject(DemoTexts)
+        every { DemoTexts.localizeJson(any(), any()) } answers { secondArg<String>() }
     }
 
     @After
     fun unstubRoomTransaction() {
         unmockkStatic("androidx.room.RoomDatabaseKt")
+        unmockkObject(DemoTexts)
     }
 
     private fun seeder() = LifeDataSeeder(
+        mockk<Context>(relaxed = true),
         mockk<LifeTemplateRepository>(relaxed = true),
         mockk<AppDatabase>(relaxed = true)
     )
@@ -107,7 +115,7 @@ class LifeDataSeederTest {
     @Test
     fun `legacy focus template receives note on first seed delivery`() = runBlocking {
         val repo = mockk<LifeTemplateRepository>(relaxed = true)
-        val seeder = LifeDataSeeder(repo, mockk<AppDatabase>(relaxed = true), relaxedPrefs())
+        val seeder = LifeDataSeeder(mockk<Context>(relaxed = true), repo, mockk<AppDatabase>(relaxed = true), relaxedPrefs())
         val focusSeed = seeder.lifeTemplateSeeds.first { it.icon == "timer" }
         val stored = focusSeed.copy(id = 1, fieldsConfig = "[]")
         every { repo.getAllTemplates() } returns flowOf(listOf(stored))
@@ -122,7 +130,7 @@ class LifeDataSeederTest {
     @Test
     fun `first seed delivery preserves existing fields and append order`() = runBlocking {
         val repo = mockk<LifeTemplateRepository>(relaxed = true)
-        val seeder = LifeDataSeeder(repo, mockk<AppDatabase>(relaxed = true), relaxedPrefs())
+        val seeder = LifeDataSeeder(mockk<Context>(relaxed = true), repo, mockk<AppDatabase>(relaxed = true), relaxedPrefs())
         val focusSeed = seeder.lifeTemplateSeeds.first { it.icon == "timer" }
         val stored = focusSeed.copy(
             id = 1,
@@ -146,7 +154,7 @@ class LifeDataSeederTest {
     @Test
     fun `first seed delivery leaves malformed stored fields untouched`() = runBlocking {
         val repo = mockk<LifeTemplateRepository>(relaxed = true)
-        val seeder = LifeDataSeeder(repo, mockk<AppDatabase>(relaxed = true), relaxedPrefs())
+        val seeder = LifeDataSeeder(mockk<Context>(relaxed = true), repo, mockk<AppDatabase>(relaxed = true), relaxedPrefs())
         val stored = seeder.lifeTemplateSeeds.first { it.icon == "timer" }
             .copy(id = 1, fieldsConfig = """["not-an-object"]""")
         every { repo.getAllTemplates() } returns flowOf(listOf(stored))
@@ -159,7 +167,7 @@ class LifeDataSeederTest {
     @Test
     fun `customized focus template is not overwritten`() = runBlocking {
         val repo = mockk<LifeTemplateRepository>(relaxed = true)
-        val seeder = LifeDataSeeder(repo, mockk<AppDatabase>(relaxed = true), relaxedPrefs())
+        val seeder = LifeDataSeeder(mockk<Context>(relaxed = true), repo, mockk<AppDatabase>(relaxed = true), relaxedPrefs())
         val stored = seeder.lifeTemplateSeeds.first { it.icon == "timer" }
             .copy(id = 1, fieldsConfig = """[{"key":"myField"}]""")
         every { repo.getAllTemplates() } returns flowOf(listOf(stored))
@@ -168,7 +176,7 @@ class LifeDataSeederTest {
         every { prefs.getStringSet("customized_template_ids", any()) } returns setOf("1")
         every { prefs.getString(any(), any()) } returns null
 
-        LifeDataSeeder(repo, mockk<AppDatabase>(relaxed = true), prefs).seedIfEmpty()
+        LifeDataSeeder(mockk<Context>(relaxed = true), repo, mockk<AppDatabase>(relaxed = true), prefs).seedIfEmpty()
 
         coVerify(exactly = 0) { repo.updateTemplate(match { it.id == 1L }) }
     }
@@ -176,7 +184,7 @@ class LifeDataSeederTest {
     @Test
     fun `first customized-set migration includes modified focus template`() = runBlocking {
         val repo = mockk<LifeTemplateRepository>(relaxed = true)
-        val seeder = LifeDataSeeder(repo, mockk<AppDatabase>(relaxed = true), relaxedPrefs())
+        val seeder = LifeDataSeeder(mockk<Context>(relaxed = true), repo, mockk<AppDatabase>(relaxed = true), relaxedPrefs())
         val stored = seeder.lifeTemplateSeeds.first { it.icon == "timer" }
             .copy(id = 1, fieldsConfig = """[{"key":"myField"}]""")
         every { repo.getAllTemplates() } returns flowOf(listOf(stored))
@@ -185,7 +193,7 @@ class LifeDataSeederTest {
         every { prefs.getString("fields_config:timer", null) } returns "[]"
         every { prefs.getStringSet("customized_template_ids", any()) } returns setOf("1")
 
-        LifeDataSeeder(repo, mockk<AppDatabase>(relaxed = true), prefs).seedIfEmpty()
+        LifeDataSeeder(mockk<Context>(relaxed = true), repo, mockk<AppDatabase>(relaxed = true), prefs).seedIfEmpty()
 
         verify { prefs.edit().putStringSet("customized_template_ids", setOf("1")) }
         coVerify(exactly = 0) { repo.updateTemplate(match { it.id == 1L }) }
@@ -199,7 +207,7 @@ class LifeDataSeederTest {
         coEvery { repo.updateTemplate(any()) } coAnswers {
             updates += firstArg<LifeTemplate>()
         }
-        val seed = LifeDataSeeder(repo, mockk<AppDatabase>(relaxed = true)).lifeTemplateSeeds
+        val seed = LifeDataSeeder(mockk<Context>(relaxed = true), repo, mockk<AppDatabase>(relaxed = true)).lifeTemplateSeeds
             .first { it.icon == "timer" }
         var stored = seed.copy(
             id = 1,
@@ -207,7 +215,7 @@ class LifeDataSeederTest {
         )
         every { repo.getAllTemplates() } answers { flowOf(listOf(stored)) }
 
-        LifeDataSeeder(repo, mockk<AppDatabase>(relaxed = true), prefs).seedIfEmpty()
+        LifeDataSeeder(mockk<Context>(relaxed = true), repo, mockk<AppDatabase>(relaxed = true), prefs).seedIfEmpty()
         val mergedConfig = updates.single { it.id == 1L }.fieldsConfig
         assertTrue(mergedConfig.contains("\"myField\""))
         assertTrue(mergedConfig.contains("\"note\""))
@@ -215,7 +223,7 @@ class LifeDataSeederTest {
 
         stored = stored.copy(fieldsConfig = mergedConfig)
         val updateCountAfterFirstDelivery = updates.count { it.id == 1L }
-        LifeDataSeeder(repo, mockk<AppDatabase>(relaxed = true), prefs).seedIfEmpty()
+        LifeDataSeeder(mockk<Context>(relaxed = true), repo, mockk<AppDatabase>(relaxed = true), prefs).seedIfEmpty()
 
         assertEquals(updateCountAfterFirstDelivery, updates.count { it.id == 1L })
     }
@@ -224,14 +232,14 @@ class LifeDataSeederTest {
     fun `v2 fresh install without field baselines receives upgraded fields`() = runBlocking {
         val repo = mockk<LifeTemplateRepository>(relaxed = true)
         // v2 全新安装：只写了 seedVersion，没有写任何 fields_config:* 基线
-        val focusSeed = LifeDataSeeder(repo, mockk<AppDatabase>(relaxed = true)).lifeTemplateSeeds
+        val focusSeed = LifeDataSeeder(mockk<Context>(relaxed = true), repo, mockk<AppDatabase>(relaxed = true)).lifeTemplateSeeds
             .first { it.icon == "timer" }
         val stored = focusSeed.copy(id = 1, fieldsConfig = "[]")
         every { repo.getAllTemplates() } returns flowOf(listOf(stored))
         val prefs = InMemorySharedPreferences()
         prefs.edit().putInt("life_seed_version", 2).apply()
 
-        LifeDataSeeder(repo, mockk<AppDatabase>(relaxed = true), prefs).seedIfEmpty()
+        LifeDataSeeder(mockk<Context>(relaxed = true), repo, mockk<AppDatabase>(relaxed = true), prefs).seedIfEmpty()
 
         coVerify(exactly = 1) {
             repo.updateTemplate(match { it.id == 1L && it.fieldsConfig == focusSeed.fieldsConfig })
@@ -243,7 +251,7 @@ class LifeDataSeederTest {
     @Test
     fun `v2 fresh install without baselines still protects customized template`() = runBlocking {
         val repo = mockk<LifeTemplateRepository>(relaxed = true)
-        val stored = LifeDataSeeder(repo, mockk<AppDatabase>(relaxed = true)).lifeTemplateSeeds
+        val stored = LifeDataSeeder(mockk<Context>(relaxed = true), repo, mockk<AppDatabase>(relaxed = true)).lifeTemplateSeeds
             .first { it.icon == "timer" }
             .copy(id = 1, fieldsConfig = """[{"key":"myField","type":"TEXT"}]""")
         every { repo.getAllTemplates() } returns flowOf(listOf(stored))
@@ -252,7 +260,7 @@ class LifeDataSeederTest {
             .putStringSet("customized_template_ids", setOf("1"))
             .apply()
 
-        LifeDataSeeder(repo, mockk<AppDatabase>(relaxed = true), prefs).seedIfEmpty()
+        LifeDataSeeder(mockk<Context>(relaxed = true), repo, mockk<AppDatabase>(relaxed = true), prefs).seedIfEmpty()
 
         coVerify(exactly = 0) { repo.updateTemplate(match { it.id == 1L }) }
     }
@@ -317,7 +325,7 @@ class LifeDataSeederTest {
             sortOrder = 8
         )
         every { repo.getAllTemplates() } returns flowOf(listOf(legacy))
-        val seeder = LifeDataSeeder(repo, mockk<AppDatabase>(relaxed = true))
+        val seeder = LifeDataSeeder(mockk<Context>(relaxed = true), repo, mockk<AppDatabase>(relaxed = true))
         seeder.seedIfEmpty()
         coVerify(exactly = 1) {
             repo.updateTemplate(match { it.id == 1L && it.color == "#FFB300" && !it.isSpecial })
@@ -341,9 +349,9 @@ class LifeDataSeederTest {
         every { repo.getAllTemplates() } returns flowOf(emptyList())
         val prefs = relaxedPrefs()
 
-        LifeDataSeeder(repo, mockk<AppDatabase>(relaxed = true), prefs).seedIfEmpty()
+        LifeDataSeeder(mockk<Context>(relaxed = true), repo, mockk<AppDatabase>(relaxed = true), prefs).seedIfEmpty()
 
-        LifeDataSeeder(repo, mockk<AppDatabase>(relaxed = true)).lifeTemplateSeeds.forEach { seed ->
+        LifeDataSeeder(mockk<Context>(relaxed = true), repo, mockk<AppDatabase>(relaxed = true)).lifeTemplateSeeds.forEach { seed ->
             verify {
                 prefs.edit().putString("fields_config:${seed.icon}", seed.fieldsConfig)
             }
@@ -378,7 +386,7 @@ class LifeDataSeederTest {
         // 上次同步写入的值与当前存储一致（= 旧种子 "[]"）→ 用户没改过，应修复为新种子
         val prefs = mockk<SharedPreferences>(relaxed = true)
         every { prefs.getString(any(), any()) } returns "[]"
-        val seeder = LifeDataSeeder(repo, mockk<AppDatabase>(relaxed = true), prefs)
+        val seeder = LifeDataSeeder(mockk<Context>(relaxed = true), repo, mockk<AppDatabase>(relaxed = true), prefs)
         seeder.seedIfEmpty()
         coVerify(exactly = 1) {
             repo.updateTemplate(match { it.id == 1L && it.fieldsConfig != "[]" && it.icon == "subscriptions" })
@@ -395,13 +403,13 @@ class LifeDataSeederTest {
             statusFlowConfig = "{}", linkConfig = "{}", isBuiltin = true, isHidden = false, isSpecial = false,
             sortOrder = 8
         )
-        val seed = LifeDataSeeder(repo, mockk<AppDatabase>(relaxed = true)).lifeTemplateSeeds
+        val seed = LifeDataSeeder(mockk<Context>(relaxed = true), repo, mockk<AppDatabase>(relaxed = true)).lifeTemplateSeeds
             .first { it.icon == "subscriptions" }
         every { repo.getAllTemplates() } returns flowOf(listOf(stored))
         val prefs = mockk<SharedPreferences>(relaxed = true)
         every { prefs.getString("fields_config:subscriptions", any()) } returns stored.fieldsConfig
 
-        LifeDataSeeder(repo, mockk<AppDatabase>(relaxed = true), prefs).seedIfEmpty()
+        LifeDataSeeder(mockk<Context>(relaxed = true), repo, mockk<AppDatabase>(relaxed = true), prefs).seedIfEmpty()
 
         coVerify(exactly = 1) {
             repo.updateTemplate(match { it.id == 1L && it.fieldsConfig == seed.fieldsConfig })
@@ -421,7 +429,7 @@ class LifeDataSeederTest {
         every { repo.getAllTemplates() } returns flowOf(listOf(legacy))
         val prefs = mockk<SharedPreferences>(relaxed = true)
         every { prefs.getString(any(), any<String>()) } returns null // 机制上线后首次启动：无基线
-        val seeder = LifeDataSeeder(repo, mockk<AppDatabase>(relaxed = true), prefs)
+        val seeder = LifeDataSeeder(mockk<Context>(relaxed = true), repo, mockk<AppDatabase>(relaxed = true), prefs)
         seeder.seedIfEmpty()
         // 首次投递没有历史基线：直接应用新种子，并记录新种子快照与 seedVersion。
         coVerify(exactly = 1) {
@@ -446,7 +454,7 @@ class LifeDataSeederTest {
         every { prefs.contains("customized_template_ids") } returns false
         every { prefs.getString(any(), any()) } returns "[]"
 
-        LifeDataSeeder(repo, mockk<AppDatabase>(relaxed = true), prefs).seedIfEmpty()
+        LifeDataSeeder(mockk<Context>(relaxed = true), repo, mockk<AppDatabase>(relaxed = true), prefs).seedIfEmpty()
 
         verify { prefs.edit().putStringSet("customized_template_ids", setOf("1")) }
         coVerify(exactly = 0) { repo.updateTemplate(match { it.id == 1L }) }
@@ -468,7 +476,7 @@ class LifeDataSeederTest {
         every { prefs.contains("customized_template_ids") } returns false
         every { prefs.getString("fields_config:subscriptions", any()) } returns "[]"
 
-        LifeDataSeeder(repo, mockk<AppDatabase>(relaxed = true), prefs).seedIfEmpty()
+        LifeDataSeeder(mockk<Context>(relaxed = true), repo, mockk<AppDatabase>(relaxed = true), prefs).seedIfEmpty()
 
         coVerify(exactly = 0) { repo.updateTemplate(match { it.id == 1L }) }
         verify { prefs.edit().putStringSet("customized_template_ids", setOf("1")) }
@@ -487,7 +495,7 @@ class LifeDataSeederTest {
         // 上次同步写入的是旧种子（≠ 当前存储值）→ 当前值是用户改的，必须跳过
         val prefs = mockk<SharedPreferences>(relaxed = true)
         every { prefs.getString(any(), any()) } returns "[]"
-        val seeder = LifeDataSeeder(repo, mockk<AppDatabase>(relaxed = true), prefs)
+        val seeder = LifeDataSeeder(mockk<Context>(relaxed = true), repo, mockk<AppDatabase>(relaxed = true), prefs)
         seeder.seedIfEmpty()
         coVerify(exactly = 0) { repo.updateTemplate(any()) }
     }
@@ -502,7 +510,7 @@ class LifeDataSeederTest {
             sortOrder = 1
         )
         every { repo.getAllTemplates() } returns flowOf(listOf(custom))
-        val seeder = LifeDataSeeder(repo, mockk<AppDatabase>(relaxed = true))
+        val seeder = LifeDataSeeder(mockk<Context>(relaxed = true), repo, mockk<AppDatabase>(relaxed = true))
         seeder.seedIfEmpty()
         coVerify(exactly = 0) { repo.updateTemplate(any()) }
     }

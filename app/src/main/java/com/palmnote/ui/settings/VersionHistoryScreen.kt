@@ -63,10 +63,10 @@ import com.palmnote.ui.theme.DopamineSky
 import com.palmnote.ui.theme.DopamineViolet
 
 /** 一个更新分区：如「新增 / 变更 / 修复 / 安全」及其条目列表。 */
-private data class ChangelogSection(val title: String, val items: List<String>)
+internal data class ChangelogSection(val title: String, val items: List<String>)
 
 /** 一个版本的完整记录：版本号 + 日期 + 全部分区。 */
-private data class VersionEntry(val version: String, val date: String, val sections: List<ChangelogSection>) {
+internal data class VersionEntry(val version: String, val date: String, val sections: List<ChangelogSection>) {
     val itemCount: Int get() = sections.sumOf { it.items.size }
 }
 
@@ -112,7 +112,7 @@ internal fun sectionTint(title: String, index: Int): Color {
  * 下划分隔线、分区标题行（新增/变更/…）、「- 」条目行；其余行（双语头部等）忽略。
  * 返回空列表表示解析失败，调用方回退到原文展示。
  */
-private fun parseChangelog(text: String): List<VersionEntry> {
+internal fun parseChangelog(text: String): List<VersionEntry> {
     val entries = mutableListOf<VersionEntry>()
     var version: String? = null
     var date = ""
@@ -158,9 +158,18 @@ private fun parseChangelog(text: String): List<VersionEntry> {
     return entries
 }
 
-/** 从 assets/changelog.txt 读取版本历史原文；读取失败返回 null。.txt 后缀是必需的：aapt 不打包无扩展名 assets。 */
-internal fun loadChangelogText(context: Context): String? =
-    runCatching { context.assets.open("changelog.txt").bufferedReader().use { it.readText() } }.getOrNull()
+/**
+ * 按应用语言读取版本历史原文：中文读 changelog.txt，其他语言读 changelog_en.txt
+ * （EN 文件缺失时回退中文版，由 ChangelogAssetTest 守住两份文件的版本集合一致）。
+ * 读取失败返回 null。.txt 后缀是必需的：aapt 不打包无扩展名 assets。
+ */
+internal fun loadChangelogText(context: Context): String? {
+    fun read(name: String): String? =
+        runCatching { context.assets.open(name).bufferedReader().use { it.readText() } }.getOrNull()
+    val zh = read("changelog.txt") ?: return null
+    if (com.palmnote.data.DemoTexts.isChinese(context)) return zh
+    return read("changelog_en.txt") ?: zh
+}
 
 /**
  * 应用内「版本历史」页：解析随包 changelog.txt，以**时间轴**呈现。
