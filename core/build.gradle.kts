@@ -14,9 +14,8 @@ android {
 
     defaultConfig {
         minSdk = 26
-        // 版本号单一事实来源：resValue 生成 app_version 字符串资源，
-        // 供 AppLockScreen 的 stringResource(R.string.app_version) 使用（non-transitive R）。
-        resValue("string", "app_version", "v${libs.versions.palmnote.get()}")
+        // 版本号单一事实来源：core 拿不到 BuildConfig.VERSION_NAME，
+        // AppLockScreen 经 PackageManager 读 versionName（b01ed54 起不再生成 app_version 字符串资源）。
     }
 
     compileOptions {
