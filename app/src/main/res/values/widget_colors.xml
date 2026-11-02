@@ -72,7 +72,7 @@
     <color name="widget_hue_6">#FFEAB308</color>
 
     <!-- ═══════════════════════════════════════════════════════════════
-         v22 色板（docs/mockups/widgets/v22/index.html 的 CSS 提取）：
+         v22 色板（v22 设计稿的 CSS 提取，历史稿存本机归档）：
          一族三档 —— d 主色（图形/色点/填充）、dt 淡底（胶囊底）、di 深墨（数值）。
          夜间只覆盖 dt/di（dt 换深底、di 提亮），d 不变（图形仍饱和），见 values-night。
          上方 widget_tint_N/widget_hue_N 为 v4 遗留，逐族迁到 v22 后删。

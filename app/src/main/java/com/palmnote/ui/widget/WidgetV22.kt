@@ -6,7 +6,7 @@ import android.widget.RemoteViews
 import com.palmnote.app.R
 
 /**
- * v22 构件绑定工具（稿 docs/mockups/widgets/v22）：色板取色 + 五种可视化原语的下发。
+ * v22 构件绑定工具（v22 设计稿，历史稿存本机归档）：色板取色 + 五种可视化原语的下发。
  *
  * 原语只覆盖「可数图形」与胶囊，刻意不含假比例条：
  * - [bindChip] 胶囊行（淡底 dt + 色点 d + 族色数值 ink）

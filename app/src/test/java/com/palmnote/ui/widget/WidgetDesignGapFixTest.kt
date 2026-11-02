@@ -17,7 +17,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 /**
- * v22 设计稿落地回归（对照 `docs/mockups/widgets/v22/index.html`）：
+ * v22 设计稿落地回归（对照 v22 设计稿，历史稿存本机归档）：
  *  1) 小档（2×1 / 4×1）内容不被卡片裁切（待办 hero+点 / 打卡 hero+点）；
  *  2) 金额统一带货币符号（订阅胶囊 / 接下来 / 金额工具）；
  *  3) 概览 hero 是「今日支出」，副信息给笔数与收入（v22 口径，无逾期 tile）。
