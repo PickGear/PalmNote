@@ -54,7 +54,7 @@ internal fun DailySummaryPaper(dayKey: String, entries: List<DailyReceiptEntry>)
                 .fillMaxWidth()
                 .background(PaperColor)
                 .thermalPaperTexture(seed = dayKey.hashCode())
-                .padding(horizontal = 20.dp, vertical = 16.dp)
+                .padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 32.dp)
         ) {
             SummaryPaperHead(printCode = printCode)
             Spacer(Modifier.height(6.dp))

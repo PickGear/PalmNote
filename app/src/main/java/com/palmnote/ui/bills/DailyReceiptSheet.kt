@@ -239,8 +239,10 @@ private fun ReceiptDialogContent(
     Column(
         modifier = Modifier
             .fillMaxHeight()
-            // 40dp：纸的锯齿不顶状态栏，顶部留一口气
-            .padding(top = 40.dp)
+            // 24dp：纸的锯齿不顶状态栏即可。这里给的是**滚动视口**的顶部留白——
+            // 纸比视口高时从顶部对齐、底部被裁，留白越大落款越容易被裁
+            // （曾用 40dp，5 笔明细的落款会被打印机机身压住半行）
+            .padding(top = 24.dp)
             // 吞掉点击，避免点内容区误关
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
@@ -290,7 +292,7 @@ private fun ReceiptDialogContent(
         ) {
             if (printed) ReceiptActions(layer, args.dayKey)
         }
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(12.dp))
     }
 }
 
@@ -584,7 +586,7 @@ internal fun DailyReceiptPaper(
                 .fillMaxWidth()
                 .background(PaperColor)
                 .thermalPaperTexture(seed = dayKey.hashCode())
-                .padding(horizontal = 20.dp, vertical = 14.dp)
+                .padding(start = 20.dp, end = 20.dp, top = 14.dp, bottom = 30.dp)
         ) {
             ReceiptHeader(dayKey, entries, bookName)
             DoubleRule()
