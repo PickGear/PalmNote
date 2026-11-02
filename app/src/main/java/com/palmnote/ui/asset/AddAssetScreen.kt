@@ -281,15 +281,21 @@ fun AddAssetScreen(
                     Spacer(modifier = Modifier.height(12.dp))
 
                     // 价格 + 日期（同行排列）
+                    TwoColumnLabels(
+                        left = if (formState.acquisitionType == "PURCHASE") {
+                            stringResource(R.string.asset_price)
+                        } else {
+                            stringResource(R.string.asset_valuation_optional)
+                        },
+                        right = if (formState.acquisitionType == "PURCHASE") {
+                            stringResource(R.string.asset_purchase_date)
+                        } else {
+                            stringResource(R.string.asset_acquisition_date)
+                        }
+                    )
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         // 价格
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                if (formState.acquisitionType == "PURCHASE") stringResource(R.string.asset_price) else stringResource(R.string.asset_valuation_optional),
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Medium
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
                             OutlinedTextField(
                                 value = formState.purchasePrice,
                                 onValueChange = { if (it.isEmpty() || it.matches(Regex("^\\d{0,10}(\\.\\d{0,2})?$"))) viewModel.updateFormField { copy(purchasePrice = it) } },
@@ -303,12 +309,6 @@ fun AddAssetScreen(
                         }
                         // 日期
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                if (formState.acquisitionType == "PURCHASE") stringResource(R.string.asset_purchase_date) else stringResource(R.string.asset_acquisition_date),
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Medium
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
                             DatePickerField(
                                 selectedDate = formState.acquisitionDate,
                                 onDateSelected = { viewModel.updateFormField { copy(acquisitionDate = it, dateError = null) } }
@@ -374,12 +374,12 @@ fun AddAssetScreen(
                     Spacer(modifier = Modifier.height(12.dp))
 
                     // 保修 + 折旧模式（同行）
+                    TwoColumnLabels(
+                        left = stringResource(R.string.asset_warranty_date),
+                        right = stringResource(R.string.asset_cost_mode)
+                    )
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                Text(stringResource(R.string.asset_warranty_date), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
-                            }
-                            Spacer(modifier = Modifier.height(4.dp))
                             DatePickerField(
                                 selectedDate = formState.warrantyExpireDate,
                                 onDateSelected = { viewModel.updateFormField { copy(warrantyExpireDate = it) } },
@@ -387,8 +387,6 @@ fun AddAssetScreen(
                             )
                         }
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(stringResource(R.string.asset_cost_mode), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
-                            Spacer(modifier = Modifier.height(4.dp))
                             var costModeExpanded by remember { mutableStateOf(false) }
                             var costModeBoxHeight by remember { mutableIntStateOf(0) }
                             var costModeBoxWidth by remember { mutableIntStateOf(0) }
@@ -526,10 +524,12 @@ fun AddAssetScreen(
                             Spacer(modifier = Modifier.height(12.dp))
 
                             // 品牌 + 型号（同行）
+                            TwoColumnLabels(
+                                left = stringResource(R.string.asset_brand),
+                                right = stringResource(R.string.asset_model_name)
+                            )
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                 Column(modifier = Modifier.weight(1f)) {
-                                    Text(stringResource(R.string.asset_brand), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
-                                    Spacer(modifier = Modifier.height(4.dp))
                                     OutlinedTextField(
                                         value = formState.brand,
                                         onValueChange = { viewModel.updateFormField { copy(brand = it) } },
@@ -540,8 +540,6 @@ fun AddAssetScreen(
                                     )
                                 }
                                 Column(modifier = Modifier.weight(1f)) {
-                                    Text(stringResource(R.string.asset_model_name), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
-                                    Spacer(modifier = Modifier.height(4.dp))
                                     OutlinedTextField(
                                         value = formState.model,
                                         onValueChange = { viewModel.updateFormField { copy(model = it) } },
@@ -581,15 +579,15 @@ fun AddAssetScreen(
                             Spacer(modifier = Modifier.height(12.dp))
 
                             // 保险
+                            TwoColumnLabels(
+                                left = stringResource(R.string.asset_insurance_company),
+                                right = stringResource(R.string.asset_insurance_policy)
+                            )
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                 Column(modifier = Modifier.weight(1f)) {
-                                    Text(stringResource(R.string.asset_insurance_company), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
-                                    Spacer(modifier = Modifier.height(4.dp))
                                     OutlinedTextField(value = formState.insuranceCompany, onValueChange = { viewModel.updateFormField { copy(insuranceCompany = it) } }, modifier = Modifier.fillMaxWidth(), placeholder = { Text(stringResource(R.string.asset_insurance_company_hint), maxLines = 1, overflow = TextOverflow.Ellipsis) }, shape = MaterialTheme.shapes.medium, singleLine = true)
                                 }
                                 Column(modifier = Modifier.weight(1f)) {
-                                    Text(stringResource(R.string.asset_insurance_policy), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
-                                    Spacer(modifier = Modifier.height(4.dp))
                                     OutlinedTextField(value = formState.insurancePolicyNo, onValueChange = { viewModel.updateFormField { copy(insurancePolicyNo = it) } }, modifier = Modifier.fillMaxWidth(), placeholder = { Text(stringResource(R.string.asset_insurance_policy_no_hint), maxLines = 1, overflow = TextOverflow.Ellipsis) }, shape = MaterialTheme.shapes.medium, singleLine = true)
                                 }
                             }
@@ -597,15 +595,15 @@ fun AddAssetScreen(
                             Spacer(modifier = Modifier.height(12.dp))
 
                             // 保险到期 + 维护间隔（同行）
+                            TwoColumnLabels(
+                                left = stringResource(R.string.asset_insurance_expire_date),
+                                right = stringResource(R.string.asset_maintenance_interval)
+                            )
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                 Column(modifier = Modifier.weight(1f)) {
-                                    Text(stringResource(R.string.asset_insurance_expire_date), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
-                                    Spacer(modifier = Modifier.height(4.dp))
                                     DatePickerField(selectedDate = formState.insuranceExpireDate, onDateSelected = { viewModel.updateFormField { copy(insuranceExpireDate = it) } }, placeholder = stringResource(R.string.asset_select_insurance_date))
                                 }
                                 Column(modifier = Modifier.weight(1f)) {
-                                    Text(stringResource(R.string.asset_maintenance_interval), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
-                                    Spacer(modifier = Modifier.height(4.dp))
                                     OutlinedTextField(value = formState.maintenanceIntervalDays, onValueChange = { if (it.isEmpty() || it.all { c -> c.isDigit() }) viewModel.updateFormField { copy(maintenanceIntervalDays = it) } }, modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 56.dp), placeholder = { Text(stringResource(R.string.asset_maintenance_interval_hint), maxLines = 1, overflow = TextOverflow.Ellipsis) }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), shape = MaterialTheme.shapes.medium, singleLine = true)
                                 }
                             }
@@ -613,15 +611,15 @@ fun AddAssetScreen(
                             Spacer(modifier = Modifier.height(12.dp))
 
                             // 折旧费+ 当前估值（同行排列）
+                            TwoColumnLabels(
+                                left = stringResource(R.string.asset_depreciation_rate),
+                                right = stringResource(R.string.asset_current_value)
+                            )
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                 Column(modifier = Modifier.weight(1f)) {
-                                    Text(stringResource(R.string.asset_depreciation_rate), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
-                                    Spacer(modifier = Modifier.height(4.dp))
                                     OutlinedTextField(value = formState.depreciationRate, onValueChange = { if (it.isEmpty() || it.matches(Regex("^\\d{0,3}(\\.\\d{0,2})?$"))) viewModel.updateFormField { copy(depreciationRate = it) } }, modifier = Modifier.fillMaxWidth(), placeholder = { Text(stringResource(R.string.asset_depreciation_rate_hint), maxLines = 1, overflow = TextOverflow.Ellipsis) }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), shape = MaterialTheme.shapes.medium, singleLine = true, suffix = { Text("%") })
                                 }
                                 Column(modifier = Modifier.weight(1f)) {
-                                    Text(stringResource(R.string.asset_current_value), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
-                                    Spacer(modifier = Modifier.height(4.dp))
                                     OutlinedTextField(value = formState.currentValue, onValueChange = { if (it.isEmpty() || it.matches(Regex("^\\d{0,10}(\\.\\d{0,2})?$"))) viewModel.updateFormField { copy(currentValue = it) } }, modifier = Modifier.fillMaxWidth(), placeholder = { Text(stringResource(R.string.asset_current_value_hint), maxLines = 1, overflow = TextOverflow.Ellipsis) }, prefix = { Text(stringResource(R.string.currency_symbol)) }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), shape = MaterialTheme.shapes.medium, singleLine = true)
                                 }
                             }
@@ -693,6 +691,42 @@ private fun ImageSection(formState: AddAssetFormState, viewModel: AssetViewModel
 
 // ── 通用组件 ──────────────────────────────────────
 
+/**
+ * 两列字段的**共用标签行**：两个标签同处一行，行高自动取较高者。
+ *
+ * 原先把标签各自留在自己的 Column 里，英文长标签（"Cost Calculation Method"、
+ * "Maintenance Interval"）换行时会把那一列的输入框整体顶下去，两列输入框就不在一条线上
+ * （2026-11-02 反馈）。标签独立成行后输入框永远从同一 y 开始；两列标签等高的语言（中文）
+ * 布局与原来完全一致，不会多出空白。
+ *
+ * 列宽用 weight(1f) + 12dp 间隔，与下方输入框那一行同口径，保证标签压在各自输入框正上方。
+ */
+@Composable
+private fun TwoColumnLabels(left: String, right: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Text(
+            text = left,
+            modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
+        )
+        Text(
+            text = right,
+            modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+    Spacer(modifier = Modifier.height(4.dp))
+}
+
 @Composable
 private fun SectionHeader(icon: ImageVector, title: String) {
     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -758,26 +792,18 @@ private fun ShelfLifePeriodFields(
     form: AddAssetFormState,
     onChange: (AddAssetFormState.() -> AddAssetFormState) -> Unit
 ) {
+    TwoColumnLabels(
+        left = stringResource(R.string.asset_shelf_life_produced_date),
+        right = stringResource(R.string.asset_shelf_life_info)
+    )
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Column(modifier = Modifier.weight(1f)) {
-            Text(
-                stringResource(R.string.asset_shelf_life_produced_date),
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium
-            )
-            Spacer(modifier = Modifier.height(4.dp))
             DatePickerField(
                 selectedDate = form.shelfLifeProducedDate,
                 onDateSelected = { onChange { withShelfLifePeriod(it, shelfLifeDurationValue, shelfLifeDurationUnit) } }
             )
         }
         Column(modifier = Modifier.weight(1f)) {
-            Text(
-                stringResource(R.string.asset_shelf_life_info),
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium
-            )
-            Spacer(modifier = Modifier.height(4.dp))
             ShelfLifeDurationField(
                 value = form.shelfLifeDurationValue,
                 unit = form.shelfLifeDurationUnit,
