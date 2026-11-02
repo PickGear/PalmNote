@@ -26,7 +26,6 @@ import javax.inject.Singleton
 class VaultLockManager @Inject constructor(
     @ApplicationContext private val context: Context,
     private val keyManager: VaultKeyManager,
-    private val clipboardManager: VaultClipboardManager,
     private val preferencesManager: PreferencesManager
 ) {
     enum class LockState { NEED_SETUP, LOCKED, UNLOCKED }
@@ -160,6 +159,24 @@ class VaultLockManager @Inject constructor(
         ok
     }
 
+    /**
+     * 关闭主密码：原地降级为无锁模式，**条目全部保留**。
+     *
+     * 与 [reset] 不同：不删数据、不换 DK，只把「解包 DK 的方式」从 PIN 换成 Keystore 密钥。
+     * 调用前必须已解锁（DK 在内存里），PIN 校验由调用方负责。
+     */
+    suspend fun disablePin(): Boolean = withContext(Dispatchers.IO) {
+        if (!isUnlocked) return@withContext false
+        val ok = keyManager.convertToNoLock()
+        if (ok) {
+            hasKey = true
+            _state.value = LockState.UNLOCKED
+            // 无锁模式不需要验证：关掉回锁，否则切后台再回来会卡在 PIN 门（此时已无 PIN 可输）
+            preferencesManager.setVaultRequireAuth(false)
+        }
+        ok
+    }
+
     /** 验证 PIN 解锁。失败递增计数并在超过上限后锁定一段时间。*/
     suspend fun unlock(pin: String): Boolean = withContext(Dispatchers.IO) {
         unlockMutex.withLock {
@@ -188,14 +205,12 @@ class VaultLockManager @Inject constructor(
 
     fun lock() {
         keyManager.lock()
-        clipboardManager.clearIfOwned()
         _state.value = if (hasKey) LockState.LOCKED else LockState.NEED_SETUP
     }
 
     suspend fun requireAuth(): Boolean = preferencesManager.vaultRequireAuth.first()
 
     suspend fun reset() = withContext(Dispatchers.IO) {
-        clipboardManager.clearIfOwned()
         keyManager.reset()
         lockoutTracker.reset()
         hasKey = false

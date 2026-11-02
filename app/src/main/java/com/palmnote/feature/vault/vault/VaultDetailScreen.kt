@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -29,9 +30,10 @@ import androidx.compose.material.icons.outlined.Key
 import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.Mail
 import androidx.compose.material.icons.outlined.MoreVert
+import androidx.compose.material.icons.outlined.Star
+import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.PhoneAndroid
-import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.CircularProgressIndicator
@@ -69,13 +71,13 @@ import coil3.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
 import java.io.File
 import com.palmnote.app.R
-import com.palmnote.feature.vault.VaultEntry
 import com.palmnote.feature.vault.VaultLockManager.LockState
 import com.palmnote.ui.components.AppDialog
 import com.palmnote.ui.components.ModuleCard
 import com.palmnote.ui.components.SecondaryTopAppBar
 import com.palmnote.ui.components.SectionHeader
 import com.palmnote.ui.theme.vaultTint
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
@@ -96,6 +98,13 @@ fun VaultDetailScreen(
     // 锁定/自动锁定后隐藏明文，避免重新解锁后残留显示
     LaunchedEffect(state.lockState) {
         if (state.lockState != LockState.UNLOCKED) {
+            showPassword = false
+        }
+    }
+    // 明文展示 30 秒后自动收起：借看一眼就够，不该一直亮着
+    LaunchedEffect(showPassword) {
+        if (showPassword) {
+            delay(30_000)
             showPassword = false
         }
     }
@@ -157,13 +166,9 @@ fun VaultDetailScreen(
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-    val clipboardClearSeconds by viewModel.clipboardClearSeconds.collectAsStateWithLifecycle()
     val showCopied: () -> Unit = {
         scope.launch {
-            snackbarHostState.showSnackbar(
-                if (clipboardClearSeconds > 0) context.getString(R.string.vault_copied_autoclear, clipboardClearSeconds)
-                else context.getString(R.string.vault_copied)
-            )
+            snackbarHostState.showSnackbar(context.getString(R.string.vault_copied))
         }
     }
 
@@ -197,6 +202,27 @@ fun VaultDetailScreen(
                         onDismissRequest = { menuExpanded = false },
                         containerColor = MaterialTheme.colorScheme.surface
                     ) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(if (entry.isFavorite) R.string.vault_unfavorite else R.string.vault_favorite)) },
+                            leadingIcon = {
+                                Icon(
+                                    if (entry.isFavorite) Icons.Outlined.Star else Icons.Outlined.StarBorder,
+                                    contentDescription = null
+                                )
+                            },
+                            onClick = {
+                                menuExpanded = false
+                                scope.launch {
+                                    viewModel.toggleFavorite(entry)
+                                    snackbarHostState.showSnackbar(
+                                        context.getString(
+                                            if (entry.isFavorite) R.string.vault_unfavorite_done
+                                            else R.string.vault_favorite_done
+                                        )
+                                    )
+                                }
+                            }
+                        )
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.vault_edit)) },
                             leadingIcon = { Icon(Icons.Outlined.Edit, contentDescription = null) },
@@ -330,8 +356,8 @@ fun VaultDetailScreen(
                 DetailRow(
                     icon = Icons.Outlined.Key,
                     label = stringResource(R.string.vault_field_password),
-                    value = if (showPassword) displayPassword else maskedPassword(displayPassword),
-                    isMasked = true,
+                    value = if (showPassword) displayPassword else MASKED_PASSWORD,
+                    isVisible = showPassword,
                     onToggleVisibility = { showPassword = !showPassword },
                     onCopy = {
                         if (viewModel.copyPassword(entry)) showCopied()
@@ -422,21 +448,19 @@ private fun DetailRow(
     modifier: Modifier = Modifier,
     onCopy: (() -> Unit)? = null,
     onToggleVisibility: (() -> Unit)? = null,
-    isMasked: Boolean = false,
+    isVisible: Boolean = false,
     multiline: Boolean = false
 ) {
     Column(modifier.padding(vertical = 10.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        // 图标与标签同行居中：图标 16dp 与 labelMedium(12sp) 同尺度，不会再「一头大一头小」
+        Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
                 tint = vaultTint(),
-                modifier = Modifier.size(18.dp)
+                modifier = Modifier.size(16.dp)
             )
-            Spacer(Modifier.width(8.dp))
+            Spacer(Modifier.width(DETAIL_ROW_INDENT - 16.dp))
             Text(
                 text = label,
                 style = MaterialTheme.typography.labelMedium,
@@ -444,29 +468,32 @@ private fun DetailRow(
             )
         }
         Spacer(Modifier.height(4.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            // 数值左缘 = 标签文字左缘（图标 16 + 间距 8 = 缩进 24dp），两行共用同一常数
+            Spacer(Modifier.width(DETAIL_ROW_INDENT))
             Text(
                 text = value,
                 style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(start = 26.dp),
+                modifier = Modifier.weight(1f),
                 maxLines = if (multiline) Int.MAX_VALUE else 1,
                 overflow = TextOverflow.Ellipsis
             )
             if (onToggleVisibility != null) {
-                IconButton(onClick = onToggleVisibility) {
+                IconButton(
+                    onClick = onToggleVisibility,
+                    modifier = Modifier.offset(x = DETAIL_ROW_TRAILING_OFFSET)
+                ) {
                     Icon(
-                        imageVector = if (isMasked) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
+                        imageVector = if (isVisible) Icons.Outlined.Visibility else Icons.Outlined.VisibilityOff,
                         contentDescription = stringResource(R.string.vault_toggle_visibility)
                     )
                 }
             }
             if (onCopy != null) {
-                IconButton(onClick = onCopy) {
+                IconButton(
+                    onClick = onCopy,
+                    modifier = Modifier.offset(x = DETAIL_ROW_TRAILING_OFFSET)
+                ) {
                     Icon(
                         imageVector = Icons.Outlined.ContentCopy,
                         contentDescription = stringResource(R.string.vault_copy),
@@ -528,8 +555,21 @@ private fun VaultDetailDeleted(onNavigateBack: () -> Unit) {
     }
 }
 
-private const val MASKED_PASSWORD = "••••••••"
+/**
+ * 密码遮罩：**固定 8 个点**。
+ *
+ * 之前按真实长度画点，两个毛病：一是长密码会画到把行宽撑满、末尾出现省略号，
+ * 看上去像一段坏掉的文字；二是点数本身就把「密码几位」露给了旁人。
+ */
+/** 行内缩进：标签文字与数值文字共用同一条左基线（图标 16dp + 间距 8dp）。 */
+private val DETAIL_ROW_INDENT = 24.dp
 
-/** 按真实密码长度生成遮罩，避免固定长度与内容不符。 */
-private fun maskedPassword(plain: String): String =
-    "•".repeat(plain.length.coerceAtLeast(MASKED_PASSWORD.length))
+/**
+ * 行尾按钮右移量 = IconButton 自带的 12dp 内边距。
+ *
+ * 不移的话：左侧图标距卡边 12dp，右侧复制图标距卡边 24dp（按钮内边距 + 卡片内边距），
+ * 左右视觉边距差一倍；右移后触摸目标仍是 48dp，只是延伸进卡片内边距区，不与任何内容重叠。
+ */
+private val DETAIL_ROW_TRAILING_OFFSET = 12.dp
+
+private const val MASKED_PASSWORD = "••••••••"

@@ -600,7 +600,7 @@ fun BackupScreen(
                         trailingIcon = {
                             IconButton(onClick = { passwordVisible = !passwordVisible }) {
                                 Icon(
-                                    if (passwordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                                    if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
                                     contentDescription = stringResource(
                                         if (passwordVisible) R.string.backup_hide_password else R.string.backup_show_password
                                     )
@@ -664,7 +664,7 @@ fun BackupScreen(
                             trailingIcon = {
                                 IconButton(onClick = { restorePasswordVisible = !restorePasswordVisible }) {
                                     Icon(
-                                        if (restorePasswordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                                        if (restorePasswordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
                                         contentDescription = stringResource(
                                             if (restorePasswordVisible) R.string.backup_hide_password else R.string.backup_show_password
                                         )

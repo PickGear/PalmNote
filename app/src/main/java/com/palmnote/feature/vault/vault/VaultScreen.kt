@@ -51,6 +51,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -99,9 +100,10 @@ fun VaultScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val autoLockMode by viewModel.autoLockMode.collectAsStateWithLifecycle()
     val autoLockTimeoutMinutes by viewModel.autoLockTimeoutMinutes.collectAsStateWithLifecycle()
-    val clipboardClearSeconds by viewModel.clipboardClearSeconds.collectAsStateWithLifecycle()
     val cardIdentity by viewModel.cardIdentity.collectAsStateWithLifecycle()
     var showForgotPinConfirm by remember { mutableStateOf(false) }
+    // 从设置页返回时重算安全态：关闭/开启密码后 combine 不会自己重发，无锁提示会停在旧状态
+    LaunchedEffect(Unit) { viewModel.refreshSecurityState() }
     VaultLockOnBackground(
         lock = viewModel::lock,
         requireAuth = { state.requireAuth },
@@ -143,7 +145,6 @@ fun VaultScreen(
         onBack = onNavigateBack,
         onSettings = onNavigateToSettings,
         noLockBannerDismissed = state.noLockBannerDismissed,
-        clipboardClearSeconds = clipboardClearSeconds,
         cardConfig = VaultCardConfig(identity = cardIdentity)
     )
 }
@@ -197,7 +198,6 @@ private fun VaultListContent(
     onAdd: () -> Unit,
     onBack: () -> Unit,
     onSettings: () -> Unit,
-    clipboardClearSeconds: Int,
     cardConfig: VaultCardConfig,
     noLockBannerDismissed: Boolean
 ) {
@@ -245,7 +245,6 @@ private fun VaultListContent(
             onEntryClick = onEntryClick,
             onSettings = onSettings,
             noLockBannerDismissed = noLockBannerDismissed,
-            clipboardClearSeconds = clipboardClearSeconds,
             cardConfig = cardConfig,
             snackbarHostState = snackbarHostState,
             modifier = Modifier.padding(padding)
@@ -260,7 +259,6 @@ private fun VaultListBody(
     onEntryClick: (Long) -> Unit,
     onSettings: () -> Unit,
     noLockBannerDismissed: Boolean,
-    clipboardClearSeconds: Int,
     cardConfig: VaultCardConfig,
     snackbarHostState: SnackbarHostState,
     modifier: Modifier = Modifier
@@ -289,7 +287,6 @@ private fun VaultListBody(
                 cardConfig = cardConfig,
                 onEntryClick = onEntryClick,
                 onCopy = viewModel::copyPassword,
-                clipboardClearSeconds = clipboardClearSeconds,
                 snackbarHostState = snackbarHostState
             )
         }
@@ -363,18 +360,12 @@ private fun VaultEntryList(
     cardConfig: VaultCardConfig,
     onEntryClick: (Long) -> Unit,
     onCopy: (VaultEntry) -> Boolean,
-    clipboardClearSeconds: Int,
     snackbarHostState: SnackbarHostState
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val showCopied: () -> Unit = {
-        scope.launch {
-            val msg = if (clipboardClearSeconds > 0)
-                context.getString(R.string.vault_copied_autoclear, clipboardClearSeconds)
-            else context.getString(R.string.vault_copied)
-            snackbarHostState.showSnackbar(msg)
-        }
+        scope.launch { snackbarHostState.showSnackbar(context.getString(R.string.vault_copied)) }
     }
     LazyColumn(
         modifier = Modifier.fillMaxSize(),

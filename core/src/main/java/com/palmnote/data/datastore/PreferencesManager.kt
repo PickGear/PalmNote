@@ -123,7 +123,6 @@ class PreferencesManager @Inject constructor(
         val VAULT_KEY_WRAP = stringPreferencesKey("vault_key_wrap")
         val VAULT_KDF_ITERATIONS = intPreferencesKey("vault_kdf_iterations")
         val VAULT_REQUIRE_AUTH = booleanPreferencesKey("vault_require_auth")
-        val VAULT_CLIPBOARD_CLEAR_SECONDS = intPreferencesKey("vault_clipboard_clear_seconds")
         val VAULT_BIO_ENABLED = booleanPreferencesKey("vault_bio_enabled")
         val VAULT_BIO_KEY_WRAP = stringPreferencesKey("vault_bio_key_wrap")
         val VAULT_NO_LOCK = booleanPreferencesKey("vault_no_lock")
@@ -904,12 +903,6 @@ class PreferencesManager @Inject constructor(
 
     suspend fun setAutoLockTimeoutMinutes(minutes: Int) {
         context.dataStore.edit { it[AUTO_LOCK_TIMEOUT_MINUTES] = minutes }
-    }
-
-    val vaultClipboardClearSeconds: Flow<Int> = prefsFlow.map { it[VAULT_CLIPBOARD_CLEAR_SECONDS] ?: 30 }
-
-    suspend fun setVaultClipboardClearSeconds(seconds: Int) {
-        context.dataStore.edit { it[VAULT_CLIPBOARD_CLEAR_SECONDS] = seconds }
     }
 
     val vaultCardIdentity: Flow<String> = prefsFlow.map { it[VAULT_CARD_IDENTITY] ?: "email_first" }

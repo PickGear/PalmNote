@@ -35,6 +35,7 @@ interface VaultRepository {
         category: String,
         avatarPath: String
     ): Boolean
+    suspend fun setFavorite(id: Long, favorite: Boolean)
     suspend fun delete(entry: VaultEntry)
     suspend fun deleteById(id: Long)
     suspend fun clearAll()

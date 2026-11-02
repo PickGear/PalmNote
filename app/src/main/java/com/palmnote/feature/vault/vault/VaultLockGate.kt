@@ -97,8 +97,9 @@ fun VaultLockGate(
     }
 
     val displayError = localError ?: error
-    // 错误出现时抖动一次；locked_out / bio_failed 不算"输入错误"，不抖
-    val shakeTrigger = if (displayError != null && displayError != "locked_out" && displayError != "bio_failed") 1 else null
+    // 错误出现时抖动一次；锁定倒计时 / 指纹失效 / 设置失败不算「输错了」，不抖
+    val nonShakeErrors = setOf("locked_out", "bio_failed", "setup_failed")
+    val shakeTrigger = if (displayError != null && displayError !in nonShakeErrors) 1 else null
 
     Column(
         modifier = Modifier
@@ -150,6 +151,7 @@ fun VaultLockGate(
                         R.plurals.vault_locked_out, lockoutSeconds.toInt(), lockoutSeconds
                     )
                     "bio_failed" -> stringResource(R.string.vault_bio_failed)
+                    "setup_failed" -> stringResource(R.string.vault_setup_failed)
                     else -> stringResource(R.string.vault_pin_wrong)
                 },
                     color = MaterialTheme.colorScheme.error,

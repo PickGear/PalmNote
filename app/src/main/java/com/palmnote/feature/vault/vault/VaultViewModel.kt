@@ -57,11 +57,6 @@ class VaultViewModel @Inject constructor(
     private val lockoutState = MutableStateFlow(0L)
     /** 锁状态是否已从 DataStore 确认（冷启动快照就绪后置 true）。 */
     private val lockSettledState = MutableStateFlow(false)
-    /** 剪贴板自动清除秒数（复制成功 snackbar 提示用）。 */
-    val clipboardClearSeconds: StateFlow<Int> = preferencesManager.vaultClipboardClearSeconds.stateIn(
-        viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
-        DEFAULT_CLIPBOARD_CLEAR_SECONDS
-    )
     val autoLockMode: StateFlow<String> = preferencesManager.autoLockMode.stateIn(
         viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
         PreferencesManager.AUTO_LOCK_MODE_SYSTEM
@@ -97,12 +92,16 @@ class VaultViewModel @Inject constructor(
         lockSettledState
     ) { pinError, lockout, settled -> Triple(pinError, lockout, settled) }
 
+    /** 安全态刷新信号：无锁模式/回锁开关改变后，combine 不会自己重算，回列表页时手动触发一次。 */
+    private val securityRefresh = MutableStateFlow(0)
+
     val uiState: StateFlow<VaultUiState> = combine(
         lockManager.state,
         bundleSecurityPrefs,
         filters,
-        bundleIndicators
-    ) { lock, (requireAuth, bannerDismissed), (query, category), (pinError, lockout, settled) ->
+        bundleIndicators,
+        securityRefresh
+    ) { lock, (requireAuth, bannerDismissed), (query, category), (pinError, lockout, settled), _ ->
         VaultUiState(
             lockState = lock,
             lockSettled = settled,
@@ -138,6 +137,11 @@ class VaultViewModel @Inject constructor(
         VaultUiState(lockState = lockManager.initialize())
     )
 
+    /** 重新读取安全态（无锁模式、是否需验证）：从设置页返回时调用，否则 combine 会一直用旧值。 */
+    fun refreshSecurityState() {
+        securityRefresh.value += 1
+    }
+
     init {
         lockManager.initialize()
         // 冷启动若已处于锁定期：立即展示倒计时（L-5），而非等首次输入后才出现
@@ -161,10 +165,10 @@ class VaultViewModel @Inject constructor(
         }
     }
 
-    /** 无锁模式：跳过设置，直接进入。 */
+    /** 无锁模式：跳过设置，直接进入。失败（罕见竞态）给出提示，避免卡在设置页反复输入。 */
     fun setupNoLock() {
         viewModelScope.launch {
-            lockManager.setupNoLock()
+            if (!lockManager.setupNoLock()) pinErrorState.value = ERROR_SETUP_FAILED
         }
     }
 
@@ -186,7 +190,7 @@ class VaultViewModel @Inject constructor(
 
     fun setupPin(pin: String) {
         viewModelScope.launch {
-            lockManager.setup(pin)
+            if (!lockManager.setup(pin)) pinErrorState.value = ERROR_SETUP_FAILED
         }
     }
 
@@ -277,7 +281,7 @@ class VaultViewModel @Inject constructor(
     private companion object {
         const val STOP_TIMEOUT_MS = 5000L
         const val COUNTDOWN_INTERVAL_MS = 1000L
-        const val DEFAULT_CLIPBOARD_CLEAR_SECONDS = 30
         const val SEARCH_DEBOUNCE_MS = 250L
+        const val ERROR_SETUP_FAILED = "setup_failed"
     }
 }

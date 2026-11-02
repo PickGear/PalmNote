@@ -89,6 +89,8 @@ class VaultRepositoryImpl @Inject constructor(
         return true
     }
 
+    override suspend fun setFavorite(id: Long, favorite: Boolean) = dao.setFavorite(id, favorite)
+
     override suspend fun delete(entry: VaultEntry) {
         dao.deleteEntry(entry)
         // 头像文件清理放在仓库层：列表页/详情页两个删除入口此前只有详情页会删文件
@@ -101,7 +103,18 @@ class VaultRepositoryImpl @Inject constructor(
         dao.getEntryById(id)?.let { delete(it) }
     }
 
-    override suspend fun clearAll() = dao.clearAll()
+    /**
+     * 清空全部条目。
+     *
+     * 先把头像文件的路径取出来删掉——表一清，这些图就再没有引用，会永远留在
+     * filesDir/vault_avatars 里（还会被备份导出带走），等于重置了却删不干净。
+     */
+    override suspend fun clearAll() {
+        dao.getAllAvatarPaths().filter { it.isNotBlank() }.forEach { path ->
+            runCatching { java.io.File(path).delete() }
+        }
+        dao.clearAll()
+    }
 
     override fun decryptPassword(entry: VaultEntry): String? = keyManager.decryptPassword(entry.passwordEncrypted)
 

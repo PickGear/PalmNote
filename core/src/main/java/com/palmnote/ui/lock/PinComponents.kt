@@ -25,7 +25,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -365,6 +364,9 @@ fun PinShake(
 /**
  * 通用 PIN 验证对话框：输入 6 位 PIN 后异步校验，成功回调 [onSuccess]。
  * 供关闭应用锁、启用生物识别、重置密码本等需要先验证的场景复用。
+ *
+ * [wrongText] / [lockedOutText] 允许调用方替换提示文案：密码本用的是「主密码」，
+ * 与应用锁的「PIN 码」不是同一套说法，直接沿用会读起来串味。
  */
 @Composable
 fun PinVerifyDialog(
@@ -372,70 +374,21 @@ fun PinVerifyDialog(
     onVerify: suspend (String) -> Boolean,
     onLockedOut: () -> Long = { 0L },
     onSuccess: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    wrongText: String = stringResource(R.string.app_lock_pin_wrong),
+    lockedOutText: String = stringResource(R.string.app_lock_locked_out)
 ) {
-    var pin by remember { mutableStateOf("") }
-    var error by remember { mutableStateOf("") }
-    var verifying by remember { mutableStateOf(false) }
-    var shakeTrigger by remember { mutableIntStateOf(0) }
-    val scope = rememberCoroutineScope()
-
-    val pinWrongText = stringResource(R.string.app_lock_pin_wrong)
-    val lockedOutText = stringResource(R.string.app_lock_locked_out)
-
     AppDialog(
         onDismissRequest = onDismiss,
-        title = {
-            Text(
-                text = title,
-                fontWeight = FontWeight.Bold
-            )
-        },
+        title = { Text(text = title, fontWeight = FontWeight.Bold) },
         text = {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                if (error.isNotEmpty()) {
-                    Text(text = error, color = MaterialTheme.colorScheme.error, fontSize = 14.sp)
-                }
-                PinShake(if (shakeTrigger > 0) shakeTrigger else null) {
-                    PinDotsDisplay(pin.length)
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                PinKeyboard(
-                    onDigitClick = { digit ->
-                        if (!verifying && pin.length < DEFAULT_PIN_LENGTH) {
-                            pin += digit
-                            error = ""
-                            if (pin.length == DEFAULT_PIN_LENGTH) {
-                                verifying = true
-                                val input = pin
-                                scope.launch {
-                                    delay(150)
-                                    pin = ""
-                                    if (onVerify(input)) {
-                                        onSuccess()
-                                    } else {
-                                        verifying = false
-                                        error = if (onLockedOut() > 0) lockedOutText else pinWrongText
-                                        shakeTrigger++
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    onDeleteClick = {
-                        if (!verifying && pin.isNotEmpty()) {
-                            pin = pin.dropLast(1)
-                            error = ""
-                        }
-                    },
-                    onBiometricClick = {},
-                    showBiometric = false
-                )
-            }
+            PinVerifyBody(
+                onVerify = onVerify,
+                onSuccess = onSuccess,
+                onLockedOut = onLockedOut,
+                wrongText = wrongText,
+                lockedOutText = lockedOutText
+            )
         },
         confirmButton = {},
         dismissButton = {
@@ -444,6 +397,67 @@ fun PinVerifyDialog(
             }
         }
     )
+}
+
+/** 弹窗正文：点阵 + 键盘 + 校验。拆出来只为让 [PinVerifyDialog] 保持短小。 */
+@Composable
+private fun PinVerifyBody(
+    onVerify: suspend (String) -> Boolean,
+    onSuccess: () -> Unit,
+    onLockedOut: () -> Long,
+    wrongText: String,
+    lockedOutText: String
+) {
+    var pin by remember { mutableStateOf("") }
+    var error by remember { mutableStateOf("") }
+    var verifying by remember { mutableStateOf(false) }
+    var shakeTrigger by remember { mutableIntStateOf(0) }
+    val scope = rememberCoroutineScope()
+
+    Column(
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        if (error.isNotEmpty()) {
+            Text(text = error, color = MaterialTheme.colorScheme.error, fontSize = 14.sp)
+        }
+        PinShake(if (shakeTrigger > 0) shakeTrigger else null) {
+            PinDotsDisplay(pin.length)
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        PinKeyboard(
+            onDigitClick = { digit ->
+                if (!verifying && pin.length < DEFAULT_PIN_LENGTH) {
+                    pin += digit
+                    error = ""
+                    if (pin.length == DEFAULT_PIN_LENGTH) {
+                        verifying = true
+                        val input = pin
+                        scope.launch {
+                            delay(150)
+                            pin = ""
+                            if (onVerify(input)) {
+                                onSuccess()
+                            } else {
+                                verifying = false
+                                error = if (onLockedOut() > 0) lockedOutText else wrongText
+                                shakeTrigger++
+                            }
+                        }
+                    }
+                }
+            },
+            onDeleteClick = {
+                if (!verifying && pin.isNotEmpty()) {
+                    pin = pin.dropLast(1)
+                    error = ""
+                }
+            },
+            onBiometricClick = {},
+            showBiometric = false
+        )
+    }
 }
 
 fun isBiometricAvailable(context: Context): Boolean {

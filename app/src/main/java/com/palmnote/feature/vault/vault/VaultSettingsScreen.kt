@@ -14,17 +14,19 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.outlined.Fingerprint
 import androidx.compose.material.icons.outlined.GridView
-import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -32,7 +34,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -56,10 +57,8 @@ import com.palmnote.ui.theme.vaultTint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-private val clipboardOptions = listOf(0, 10, 30, 60)
-
 /**
- * 密码本设置页：剪贴板清除、进入需验证、条目统计、修改主密码、重置。
+ * 密码本设置页：密码/指纹/回锁、重置，以及卡片显示。
  */
 @Composable
 fun VaultSettingsScreen(
@@ -68,10 +67,10 @@ fun VaultSettingsScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
-    var showClipboardDialog by remember { mutableStateOf(false) }
     var showCardIdentityDialog by remember { mutableStateOf(false) }
     var showSetupPin by remember { mutableStateOf(false) }
     var showChangePin by remember { mutableStateOf(false) }
+    var showDisablePin by remember { mutableStateOf(false) }
     var showResetPinVerify by remember { mutableStateOf(false) }
     var showResetConfirm by remember { mutableStateOf(false) }
     var showResetDone by remember { mutableStateOf(false) }
@@ -79,14 +78,35 @@ fun VaultSettingsScreen(
     var showBioUpgradePin by remember { mutableStateOf(false) }
     var feedback by remember { mutableStateOf<String?>(null) }
     val context = androidx.compose.ui.platform.LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
     val bioScope = rememberCoroutineScope()
 
+    // 操作反馈走 Snackbar：之前是列表里的一条纯文本，既不消失又挤在卡片之间，很容易被当成正文
+    LaunchedEffect(feedback) {
+        val message = feedback ?: return@LaunchedEffect
+        snackbarHostState.showSnackbar(message)
+        feedback = null
+    }
     val pinChangedText = stringResource(R.string.vault_pin_changed)
     val pinSetupSuccessText = stringResource(R.string.vault_pin_setup_success)
+    val pinDisabledText = stringResource(R.string.vault_pin_disabled)
+    val disablePinFailedText = stringResource(R.string.vault_disable_pin_failed)
     val lockInterruptedText = stringResource(R.string.vault_lock_interrupted)
     val lockedOutText = stringResource(R.string.vault_locked_out_short)
     val wrongPinText = stringResource(R.string.vault_old_pin_wrong)
+    val vaultPinWrongText = stringResource(R.string.vault_pin_wrong)
     val bioEnableFailed = stringResource(R.string.vault_bio_enable_failed)
+
+    val autoLockMode by viewModel.autoLockMode.collectAsStateWithLifecycle()
+    val autoLockTimeoutMinutes by viewModel.autoLockTimeoutMinutes.collectAsStateWithLifecycle()
+    // 回锁时机跟随全局「应用锁」，这里只展示，免得用户以为密码本里能单独配
+    val lockTimingText = when (autoLockMode) {
+        com.palmnote.data.datastore.PreferencesManager.AUTO_LOCK_MODE_IMMEDIATE ->
+            stringResource(R.string.app_lock_auto_lock_immediate)
+        com.palmnote.data.datastore.PreferencesManager.AUTO_LOCK_MODE_TIMEOUT ->
+            stringResource(R.string.app_lock_auto_lock_timeout_value, autoLockTimeoutMinutes)
+        else -> stringResource(R.string.app_lock_auto_lock_system)
+    }
 
     /** 开启生物识别：纯在场认证（不传 CryptoObject）。认证成功后 30s 窗口内包裹 DK 落盘。 */
     fun enableBiometric() {
@@ -116,9 +136,9 @@ fun VaultSettingsScreen(
                         )
                     }
                 }
-    )
-}
-
+            )
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
         LazyColumn(
             modifier = Modifier
@@ -127,10 +147,22 @@ fun VaultSettingsScreen(
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            item { SectionHeader(stringResource(R.string.vault_settings_section_security), Icons.Outlined.Fingerprint, vaultTint()) }
+            item { SectionHeader(stringResource(R.string.vault_settings_section_security), Icons.Outlined.Lock, vaultTint()) }
             item {
                 SettingsCard(modifier = Modifier.fillMaxWidth()) {
                     if (state.initialized) {
+                        // 关闭密码保护在前，修改密码在后（用户 2026-11-02 定）
+                        // 只在 PIN 模式下出现——无锁模式没有可关闭的密码
+                        if (!state.isNoLockMode) {
+                            SettingRow(clickable = { showDisablePin = true }) {
+                                SettingRowContent(
+                                    title = stringResource(R.string.vault_settings_disable_pin),
+                                    subtitle = stringResource(R.string.vault_settings_disable_pin_hint),
+                                    showChevron = true
+                                )
+                            }
+                            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                        }
                         SettingRow(clickable = { showChangePin = true }) {
                             SettingRowContent(
                                 title = stringResource(if (state.isNoLockMode) R.string.vault_settings_set_pin else R.string.vault_settings_change_pin),
@@ -187,6 +219,14 @@ fun VaultSettingsScreen(
                                 checkedTrackColor = MaterialTheme.colorScheme.primary
                             )
                         }
+                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                        // 只读：改这里等于改全局，指个路就够了
+                        SettingRow {
+                            SettingRowContent(
+                                title = stringResource(R.string.vault_settings_lock_timing),
+                                subtitle = stringResource(R.string.vault_settings_lock_timing_hint, lockTimingText)
+                            )
+                        }
                     }
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                     SettingRow(clickable = {
@@ -218,23 +258,6 @@ fun VaultSettingsScreen(
                 }
             }
 
-            item { SectionHeader(stringResource(R.string.vault_settings_section_general), Icons.Outlined.Settings, vaultTint()) }
-            item {
-                SettingsCard(modifier = Modifier.fillMaxWidth()) {
-                    SettingRow(clickable = { showClipboardDialog = true }) {
-                        SettingRowContent(
-                            title = stringResource(R.string.vault_settings_clipboard),
-                            subtitle = if (state.clipboardSeconds <= 0) {
-                                stringResource(R.string.vault_settings_clipboard_never)
-                            } else {
-                                stringResource(R.string.vault_settings_clipboard_value, state.clipboardSeconds)
-                            },
-                            showChevron = true
-                        )
-                    }
-                }
-            }
-
             item { SectionHeader(stringResource(R.string.vault_settings_section_card_display), Icons.Outlined.GridView, vaultTint()) }
             item {
                 SettingsCard(modifier = Modifier.fillMaxWidth()) {
@@ -254,20 +277,12 @@ fun VaultSettingsScreen(
                 }
             }
 
-            if (feedback != null) {
-                item {
-                    Text(
-                        text = feedback ?: "",
-                        color = MaterialTheme.colorScheme.primary,
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
-                    )
-                }
-            }
-
             item {
                 Text(
-                    text = stringResource(R.string.vault_settings_hint),
+                    text = stringResource(
+                        if (state.isNoLockMode) R.string.vault_settings_hint_no_lock
+                        else R.string.vault_settings_hint
+                    ),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
@@ -276,17 +291,6 @@ fun VaultSettingsScreen(
 
             item { Spacer(Modifier.height(32.dp)) }
         }
-    }
-
-    if (showClipboardDialog) {
-        ClipboardSecondsDialog(
-            current = state.clipboardSeconds,
-            onSelect = { seconds ->
-                viewModel.setClipboardSeconds(seconds)
-                showClipboardDialog = false
-            },
-            onDismiss = { showClipboardDialog = false }
-        )
     }
 
     if (showSetupPin) {
@@ -331,9 +335,37 @@ fun VaultSettingsScreen(
         )
     }
 
+    if (showDisablePin) {
+        DisablePinDialog(
+            onVerify = viewModel::verifyPin,
+            onConfirmed = { pin ->
+                viewModel.disablePin(pin) { ok ->
+                    showDisablePin = false
+                    if (ok) {
+                        feedback = pinDisabledText
+                    } else {
+                        // PIN 已在弹窗里验过，此刻失败只可能是密钥或写盘异常——
+                        // 报「密码错误」会让人以为记错而反复重输；并回锁，
+                        // 避免失败后反而把密码本留在解锁态
+                        feedback = disablePinFailedText
+                        viewModel.lock()
+                    }
+                }
+            },
+            onDismiss = {
+                showDisablePin = false
+                // 与改密一致：验证过 PIN 就重新上锁，不把密码本留在解锁态
+                viewModel.lock()
+            },
+            onLockedOut = viewModel::getLockoutRemainingMs
+        )
+    }
+
     if (showResetPinVerify) {
         PinVerifyDialog(
-            title = stringResource(R.string.vault_old_pin),
+            // 「输入旧密码」在重置场景下读不通：这里没有"旧"密码，是重置前确认身份
+            title = stringResource(R.string.vault_reset_verify_title),
+            wrongText = vaultPinWrongText,
             onVerify = viewModel::verifyPin,
             onLockedOut = viewModel::getLockoutRemainingMs,
             onSuccess = {
@@ -348,6 +380,7 @@ fun VaultSettingsScreen(
     if (showBioVerifyPin) {
         PinVerifyDialog(
             title = stringResource(R.string.vault_bio_verify_title),
+            wrongText = vaultPinWrongText,
             onVerify = viewModel::verifyPin,
             onLockedOut = viewModel::getLockoutRemainingMs,
             onSuccess = {
@@ -449,7 +482,7 @@ fun VaultSettingsScreen(
                         ) {
                             Text(label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
                             if (state.cardIdentity == key) {
-                                Text(stringResource(R.string.vault_settings_clipboard_selected), color = vaultTint())
+                                Text(stringResource(R.string.vault_settings_current), color = vaultTint())
                             }
                         }
                     }
@@ -463,53 +496,6 @@ fun VaultSettingsScreen(
             }
         )
     }
-}
-
-@Composable
-private fun ClipboardSecondsDialog(
-    current: Int,
-    onSelect: (Int) -> Unit,
-    onDismiss: () -> Unit
-) {
-    AppDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.vault_settings_clipboard), fontWeight = FontWeight.Bold) },
-        text = {
-            Column {
-                clipboardOptions.forEach { seconds ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onSelect(seconds) }
-                            .padding(vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = if (seconds <= 0) {
-                                stringResource(R.string.vault_settings_clipboard_never)
-                            } else {
-                                pluralStringResource(R.plurals.vault_settings_clipboard_option, seconds, seconds)
-                            },
-                            style = MaterialTheme.typography.bodyLarge,
-                            modifier = Modifier.weight(1f)
-                        )
-                        if (seconds == current) {
-                            Text(
-                                text = stringResource(R.string.vault_settings_clipboard_selected),
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = {},
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.settings_cancel))
-            }
-        }
-    )
 }
 
 @Composable
@@ -633,4 +619,96 @@ private fun ChangeVaultPinDialog(
             }
         }
     )
+}
+
+/**
+ * 关闭密码保护的确认弹窗：先说明后果（不再需要验证、条目保留），再输当前密码。
+ *
+ * 没有复用 [ChangeVaultPinDialog]：那个是「旧密码 → 新密码 → 确认新密码」三步，
+ * 关闭密码没有「新密码」这一步，套过去会让人以为还得再设一个。
+ */
+@Composable
+private fun DisablePinDialog(
+    onVerify: suspend (String) -> Boolean,
+    onConfirmed: (String) -> Unit,
+    onDismiss: () -> Unit,
+    onLockedOut: () -> Long = { 0L }
+) {
+    AppDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.vault_settings_disable_pin), fontWeight = FontWeight.Bold) },
+        text = { DisablePinConfirmBody(onVerify, onConfirmed, onLockedOut) },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.settings_cancel))
+            }
+        }
+    )
+}
+
+/** 弹窗正文：后果说明 + 当前密码输入。独立成函数只为让 [DisablePinDialog] 保持短小。 */
+@Composable
+private fun DisablePinConfirmBody(
+    onVerify: suspend (String) -> Boolean,
+    onConfirmed: (String) -> Unit,
+    onLockedOut: () -> Long
+) {
+    var pin by remember { mutableStateOf("") }
+    var error by remember { mutableStateOf("") }
+    var verifying by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    val pinWrong = stringResource(R.string.vault_pin_wrong)
+    val lockedOutText = stringResource(R.string.vault_locked_out_short)
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Text(
+            text = stringResource(R.string.vault_settings_disable_pin_warning),
+            fontSize = 13.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(Modifier.height(12.dp))
+        if (error.isNotEmpty()) {
+            Text(text = error, color = MaterialTheme.colorScheme.error, fontSize = 14.sp)
+        }
+        PinDotsDisplay(pin.length)
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = stringResource(R.string.vault_old_pin_hint),
+            fontSize = 13.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(Modifier.height(8.dp))
+        PinKeyboard(
+            onDigitClick = { digit ->
+                if (!verifying && pin.length < DEFAULT_PIN_LENGTH) {
+                    pin += digit
+                    error = ""
+                    if (pin.length == DEFAULT_PIN_LENGTH) {
+                        verifying = true
+                        val input = pin
+                        scope.launch {
+                            delay(150) // 短暂延迟，让用户看到第 6 位圆圈
+                            if (onVerify(input)) {
+                                onConfirmed(input)
+                            } else {
+                                pin = ""
+                                verifying = false
+                                error = if (onLockedOut() > 0) lockedOutText else pinWrong
+                            }
+                        }
+                    }
+                }
+            },
+            onDeleteClick = {
+                if (pin.isNotEmpty()) pin = pin.dropLast(1)
+                error = ""
+            },
+            onBiometricClick = {},
+            showBiometric = false
+        )
+    }
 }

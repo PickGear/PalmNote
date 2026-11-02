@@ -484,6 +484,40 @@ class VaultKeyManager @Inject constructor(
         }
     }
 
+    /**
+     * 关闭主密码：把**当前 DK** 改用「无认证 Keystore 密钥」重新包裹，原地降级为无锁模式。
+     *
+     * 与 [reset] 有本质区别——DK 不变、条目一条不重加密，所以**数据全部保留**；变的只是
+     * 「解包 DK 需要什么」：从「PIN 派生的密钥」换成「Keystore 里的不可导出密钥（无需验证）」。
+     * 旧 PIN 包裹被覆盖即失效，此后任何 PIN 都解不开（也没有必要）。
+     *
+     * 须在已解锁状态调用（[dataKey] 非空）。
+     */
+    suspend fun convertToNoLock(): Boolean = withContext(Dispatchers.IO) {
+        val dk = dataKey ?: return@withContext false
+        try {
+            val key = getOrCreateNoLockKey()
+            val cipher = Cipher.getInstance(BIO_TRANSFORMATION)
+            cipher.init(Cipher.ENCRYPT_MODE, key)
+            cipher.updateAAD(NOLOCK_AAD.toByteArray(Charsets.UTF_8))
+            val encrypted = cipher.doFinal(dk.encoded)
+            val wrap = Base64.encodeToString(cipher.iv + encrypted, Base64.NO_WRAP)
+            preferencesManager.setVaultCredentials(NO_LOCK_SALT, wrap, 0)
+            preferencesManager.setVaultNoLock(true)
+            // 生物识别包裹指向同一个 DK，但无锁模式不提供指纹入口，连同 Keystore 密钥一起清掉，
+            // 避免设置页残留在「已开启指纹」的状态
+            disableBiometric()
+            cachedSalt = NO_LOCK_SALT
+            cachedKeyWrap = wrap
+            cachedInitialized = true
+            dataKey = dk
+            true
+        } catch (e: Exception) {
+            AppLogger.w(TAG, "convertToNoLock failed", e)
+            false
+        }
+    }
+
     private companion object {
         const val TAG = "VaultKeyManager"
         const val ANDROID_KEYSTORE = "AndroidKeyStore"

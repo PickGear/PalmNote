@@ -1,5 +1,6 @@
 package com.palmnote.feature.vault.vault
 
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -69,6 +70,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.palmnote.app.R
+import com.palmnote.ui.components.AppDialog
 import com.palmnote.feature.vault.PasswordStrength
 import com.palmnote.feature.vault.VaultLockManager.LockState
 import com.palmnote.feature.vault.VaultPasswordGenerator
@@ -114,6 +116,10 @@ fun VaultEditScreen(
     var saving by remember { mutableStateOf(false) }
     var showForgotPinConfirm by remember { mutableStateOf(false) }
 
+    // 未保存提示：进入时记一份快照，字段有变化就在返回时确认
+    var showDiscard by remember { mutableStateOf(false) }
+    var baseline by remember { mutableStateOf<String?>(null) }
+
     // 锁定/自动锁定后隐藏明文，避免重新解锁后残留显示
     LaunchedEffect(state.lockState) {
         if (state.lockState != com.palmnote.feature.vault.VaultLockManager.LockState.UNLOCKED) {
@@ -153,18 +159,23 @@ fun VaultEditScreen(
     }
 
     // 编辑模式：加载现有条目填充表单
-    LaunchedEffect(state.entry?.id) {
-        val entry = state.entry ?: return@LaunchedEffect
-        title = entry.title
-        username = entry.username
-        email = entry.email
-        phone = entry.phone
-        password = viewModel.passwordForDisplay(entry) ?: ""
-        url = entry.url
-        notes = entry.notes
-        category = entry.category
-        avatarPath = entry.avatarPath
-        originalAvatar = entry.avatarPath
+    LaunchedEffect(state.entry?.id, state.loading) {
+        if (state.loading || baseline != null) return@LaunchedEffect
+        state.entry?.let { entry ->
+            title = entry.title
+            username = entry.username
+            email = entry.email
+            phone = entry.phone
+            password = viewModel.passwordForDisplay(entry) ?: ""
+            url = entry.url
+            notes = entry.notes
+            category = entry.category
+            avatarPath = entry.avatarPath
+            originalAvatar = entry.avatarPath
+        }
+        // 新增/编辑共用：以「填充完成」的那一刻为无改动基线
+        baseline = listOf(title, username, email, phone, password, url, notes, category, avatarPath)
+            .joinToString("\u0000")
     }
 
     if (state.loading) {
@@ -174,6 +185,14 @@ fun VaultEditScreen(
         return
     }
 
+    val formKey = listOf(title, username, email, phone, password, url, notes, category, avatarPath)
+        .joinToString("\u0000")
+    val dirty = baseline != null && formKey != baseline
+    val onBack: () -> Unit = {
+        if (dirty) showDiscard = true else onNavigateBack()
+    }
+    // 系统返回与顶栏返回走同一条确认路径
+    BackHandler { onBack() }
     val titleRequired = stringResource(R.string.vault_error_title_required)
     val passwordRequired = stringResource(R.string.vault_error_password_required)
     val saveFailed = stringResource(R.string.vault_error_save_failed)
@@ -215,7 +234,7 @@ fun VaultEditScreen(
                     containerColor = MaterialTheme.colorScheme.background
                 ),
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    IconButton(onClick = onBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
                             contentDescription = stringResource(R.string.settings_navigate_back)
@@ -392,7 +411,7 @@ fun VaultEditScreen(
                         Row {
                             IconButton(onClick = { passwordVisible = !passwordVisible }) {
                                 Icon(
-                                    imageVector = if (passwordVisible) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
+                                    imageVector = if (passwordVisible) Icons.Outlined.Visibility else Icons.Outlined.VisibilityOff,
                                     contentDescription = stringResource(R.string.vault_toggle_visibility)
                                 )
                             }
@@ -498,6 +517,27 @@ fun VaultEditScreen(
                 passwordError = null
             },
             onDismiss = { showGenerator = false }
+        )
+    }
+
+    if (showDiscard) {
+        AppDialog(
+            onDismissRequest = { showDiscard = false },
+            title = { Text(stringResource(R.string.vault_discard_title), fontWeight = FontWeight.Bold) },
+            text = { Text(stringResource(R.string.vault_discard_body)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDiscard = false
+                    onNavigateBack()
+                }) {
+                    Text(stringResource(R.string.vault_discard_confirm), color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDiscard = false }) {
+                    Text(stringResource(R.string.vault_discard_keep))
+                }
+            }
         )
     }
 }

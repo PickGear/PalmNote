@@ -53,12 +53,6 @@ class VaultDetailViewModel @Inject constructor(
     private val gateErrorState = MutableStateFlow(GateError())
     private var countdownJob: Job? = null
 
-    /** 剪贴板自动清除秒数（复制成功 snackbar 提示用）。 */
-    val clipboardClearSeconds: StateFlow<Int> = preferencesManager.vaultClipboardClearSeconds.stateIn(
-        viewModelScope, SharingStarted.WhileSubscribed(5000L),
-        DEFAULT_CLIPBOARD_CLEAR_SECONDS
-    )
-
     val autoLockMode: StateFlow<String> = preferencesManager.autoLockMode.stateIn(
         viewModelScope, SharingStarted.WhileSubscribed(5000L),
         PreferencesManager.AUTO_LOCK_MODE_SYSTEM
@@ -157,6 +151,17 @@ class VaultDetailViewModel @Inject constructor(
         gateErrorState.value = GateError()
     }
 
+    /** 收藏 / 取消收藏：本地 entryState 同步更新，列表由 Room 流自行刷新。 */
+    fun toggleFavorite(entry: VaultEntry) {
+        viewModelScope.launch {
+            val next = !entry.isFavorite
+            repository.setFavorite(entry.id, next)
+            if (entryState.value?.id == entry.id) {
+                entryState.value = entry.copy(isFavorite = next)
+            }
+        }
+    }
+
     fun lock() {
         countdownJob?.cancel()
         gateErrorState.value = GateError()
@@ -235,6 +240,5 @@ class VaultDetailViewModel @Inject constructor(
     private companion object {
         const val INVALID_ID = -1L
         const val COUNTDOWN_INTERVAL_MS = 1000L
-        const val DEFAULT_CLIPBOARD_CLEAR_SECONDS = 30
     }
 }

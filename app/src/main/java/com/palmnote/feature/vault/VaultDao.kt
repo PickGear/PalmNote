@@ -11,7 +11,8 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface VaultDao {
 
-    @Query("SELECT * FROM vault_entries ORDER BY updatedAt DESC")
+    // 收藏置顶，其余按更新时间；表里目前没有收藏时行为与旧版一致
+    @Query("SELECT * FROM vault_entries ORDER BY isFavorite DESC, updatedAt DESC")
     fun getAllEntries(): Flow<List<VaultEntry>>
 
     @Query("SELECT * FROM vault_entries WHERE id = :id")
@@ -24,11 +25,12 @@ interface VaultDao {
               OR email LIKE '%' || :query || '%'
               OR phone LIKE '%' || :query || '%'
               OR url LIKE '%' || :query || '%'
+              OR notes LIKE '%' || :query || '%'
            ORDER BY updatedAt DESC"""
     )
     fun searchEntries(query: String): Flow<List<VaultEntry>>
 
-    @Query("SELECT * FROM vault_entries WHERE category = :category ORDER BY updatedAt DESC")
+    @Query("SELECT * FROM vault_entries WHERE category = :category ORDER BY isFavorite DESC, updatedAt DESC")
     fun getEntriesByCategory(category: String): Flow<List<VaultEntry>>
 
     @Query(
@@ -38,7 +40,8 @@ interface VaultDao {
                   OR username LIKE '%' || :query || '%'
                   OR email LIKE '%' || :query || '%'
                   OR phone LIKE '%' || :query || '%'
-                  OR url LIKE '%' || :query || '%')
+                  OR url LIKE '%' || :query || '%'
+                  OR notes LIKE '%' || :query || '%')
            ORDER BY updatedAt DESC"""
     )
     fun searchEntriesInCategory(query: String, category: String): Flow<List<VaultEntry>>
@@ -60,6 +63,12 @@ interface VaultDao {
 
     @Delete
     suspend fun deleteEntry(entry: VaultEntry)
+
+    @Query("UPDATE vault_entries SET isFavorite = :favorite WHERE id = :id")
+    suspend fun setFavorite(id: Long, favorite: Boolean)
+
+    @Query("SELECT avatarPath FROM vault_entries")
+    suspend fun getAllAvatarPaths(): List<String>
 
     @Query("DELETE FROM vault_entries")
     suspend fun clearAll()
