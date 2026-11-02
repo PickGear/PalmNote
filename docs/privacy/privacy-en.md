@@ -28,7 +28,7 @@ the Android sandbox and unreadable by other apps:
 
 - **Database**: fully encrypted with SQLCipher (AES-256); keys are kept only on the device
 - **Backup files**: optional AES-GCM encryption with a user-set key
-- **Password vault**: field-level encryption with a separate master password
+- **Password vault**: field-level encryption with a separate password
 
 ## 4. Your Data Is Yours
 

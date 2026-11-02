@@ -411,7 +411,7 @@ PalmNote 是一款纯本地应用。这份说明只想讲清楚一件事：你�
 
 - 数据库：SQLCipher 全库加密（AES-256），密钥仅存于本机
 - 备份文件：可选 AES-GCM 加密，密钥由你设定
-- 密码本：字段级加密，独立主密码
+- 密码本：字段级加密，独立密码
 
 四、你的数据你做主
 
@@ -448,7 +448,7 @@ Everything is stored in the app's private directory, protected by the Android sa
 
 - Database: fully encrypted with SQLCipher (AES-256); keys are kept only on the device
 - Backup files: optional AES-GCM encryption with a user-set key
-- Password vault: field-level encryption with a separate master password
+- Password vault: field-level encryption with a separate password
 
 4. Your Data Is Yours
 

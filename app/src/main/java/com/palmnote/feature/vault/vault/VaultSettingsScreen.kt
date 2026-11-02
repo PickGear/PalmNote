@@ -376,7 +376,7 @@ fun VaultSettingsScreen(
         )
     }
 
-    // 密码本锁定态下开启生物识别：先验证主密码解锁，再开启
+    // 密码本锁定态下开启生物识别：先验证密码解锁，再开启
     if (showBioVerifyPin) {
         PinVerifyDialog(
             title = stringResource(R.string.vault_bio_verify_title),
@@ -391,7 +391,7 @@ fun VaultSettingsScreen(
         )
     }
 
-    // 无锁模式下开启生物识别：先设置主密码（升级为锁定模式），再开启
+    // 无锁模式下开启生物识别：先设置密码（升级为锁定模式），再开启
     if (showBioUpgradePin) {
         ChangeVaultPinDialog(
             onVerifyOld = viewModel::verifyPin,

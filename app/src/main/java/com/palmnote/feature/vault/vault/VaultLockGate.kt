@@ -50,7 +50,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
- * 密码本锁定门：首次设置主密码（两步确认）或输入 PIN 解锁。
+ * 密码本锁定门：首次设置密码（两步确认）或输入密码解锁。
  * 三种 PIN 输入态由 [LockState] 驱动。
  */
 @Composable
@@ -245,7 +245,7 @@ fun VaultLockGate(
     }
 }
 
-/** 忘记主密码 → 重置密码本的确认对话框（明示数据清空）。 */
+/** 忘记密码 → 重置密码本的确认对话框（明示数据清空）。 */
 @Composable
 fun VaultForgotPinDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
     AppDialog(

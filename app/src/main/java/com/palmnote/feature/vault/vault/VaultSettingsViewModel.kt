@@ -128,7 +128,7 @@ class VaultSettingsViewModel @Inject constructor(
         viewModelScope.launch { onResult(lockManager.setupBiometric()) }
     }
 
-    /** 验证主密码（重置/改密前使用）。失败会递增防暴力计数，超出后锁定。 */
+    /** 验证密码（重置/改密前使用）。失败会递增防暴力计数，超出后锁定。 */
     suspend fun verifyPin(pin: String): Boolean = lockManager.unlock(pin)
 
     fun getLockoutRemainingMs(): Long = lockManager.getLockoutRemainingMs()
@@ -137,12 +137,12 @@ class VaultSettingsViewModel @Inject constructor(
         lockManager.lock()
     }
 
-    /** 首次设置主密码（未初始化状态，可在设置页直接设置）。 */
+    /** 首次设置密码（未初始化状态，可在设置页直接设置）。 */
     fun setupPin(pin: String, onResult: (Boolean) -> Unit) {
         viewModelScope.launch { onResult(lockManager.setup(pin)) }
     }
 
-    /** 已解锁状态下修改主密码（旧 PIN 已在对话框第 1 步验证过）。 */
+    /** 已解锁状态下修改密码（旧密码已在对话框第 1 步验证过）。 */
     fun changePin(newPin: String, onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
             if (lockManager.isNoLockMode()) {
@@ -165,7 +165,7 @@ class VaultSettingsViewModel @Inject constructor(
     }
 
     /**
-     * 关闭主密码（改为无锁进入）。PIN 已由对话框校验过，这里只做密钥重包裹。
+     * 关闭密码（改为无锁进入）。密码已由对话框校验过，这里只做密钥重包裹。
      *
      * 条目全部保留——与 [reset] 完全不同，后者是清空数据回到首次设置。
      */

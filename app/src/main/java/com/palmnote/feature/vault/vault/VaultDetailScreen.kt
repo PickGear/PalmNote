@@ -555,12 +555,6 @@ private fun VaultDetailDeleted(onNavigateBack: () -> Unit) {
     }
 }
 
-/**
- * 密码遮罩：**固定 8 个点**。
- *
- * 之前按真实长度画点，两个毛病：一是长密码会画到把行宽撑满、末尾出现省略号，
- * 看上去像一段坏掉的文字；二是点数本身就把「密码几位」露给了旁人。
- */
 /** 行内缩进：标签文字与数值文字共用同一条左基线（图标 16dp + 间距 8dp）。 */
 private val DETAIL_ROW_INDENT = 24.dp
 
@@ -572,4 +566,10 @@ private val DETAIL_ROW_INDENT = 24.dp
  */
 private val DETAIL_ROW_TRAILING_OFFSET = 12.dp
 
+/**
+ * 密码遮罩：**固定 8 个点**。
+ *
+ * 之前按真实长度画点，两个毛病：一是长密码会画到把行宽撑满、末尾出现省略号，
+ * 看上去像一段坏掉的文字；二是点数本身就把「密码几位」露给了旁人。
+ */
 private const val MASKED_PASSWORD = "••••••••"

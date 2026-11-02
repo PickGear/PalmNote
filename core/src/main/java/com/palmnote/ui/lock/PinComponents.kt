@@ -365,7 +365,7 @@ fun PinShake(
  * 通用 PIN 验证对话框：输入 6 位 PIN 后异步校验，成功回调 [onSuccess]。
  * 供关闭应用锁、启用生物识别、重置密码本等需要先验证的场景复用。
  *
- * [wrongText] / [lockedOutText] 允许调用方替换提示文案：密码本用的是「主密码」，
+ * [wrongText] / [lockedOutText] 允许调用方替换提示文案：密码本用的是「密码」，
  * 与应用锁的「PIN 码」不是同一套说法，直接沿用会读起来串味。
  */
 @Composable

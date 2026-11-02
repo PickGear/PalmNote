@@ -485,7 +485,7 @@ class VaultKeyManager @Inject constructor(
     }
 
     /**
-     * 关闭主密码：把**当前 DK** 改用「无认证 Keystore 密钥」重新包裹，原地降级为无锁模式。
+     * 关闭密码：把**当前 DK** 改用「无认证 Keystore 密钥」重新包裹，原地降级为无锁模式。
      *
      * 与 [reset] 有本质区别——DK 不变、条目一条不重加密，所以**数据全部保留**；变的只是
      * 「解包 DK 需要什么」：从「PIN 派生的密钥」换成「Keystore 里的不可导出密钥（无需验证）」。

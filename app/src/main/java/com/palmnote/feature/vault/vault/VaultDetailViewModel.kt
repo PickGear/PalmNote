@@ -228,7 +228,7 @@ class VaultDetailViewModel @Inject constructor(
         }
     }
 
-    /** 忘记主密码自救：清空全部条目与密钥，回到首次设置状态。 */
+    /** 忘记密码自救：清空全部条目与密钥，回到首次设置状态。 */
     fun resetForVaultLockout() {
         viewModelScope.launch {
             repository.clearAll()

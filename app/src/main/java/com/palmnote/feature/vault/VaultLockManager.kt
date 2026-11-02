@@ -96,7 +96,7 @@ class VaultLockManager @Inject constructor(
 
     fun getLockoutRemainingMs(): Long = lockoutTracker.getLockoutRemainingMs()
 
-    /** 首次设置主密码。守卫用实时初始化状态，防止冷启动竞态下误判未初始化而覆盖真实凭据。 */
+    /** 首次设置密码。守卫用实时初始化状态，防止冷启动竞态下误判未初始化而覆盖真实凭据。 */
     suspend fun setup(pin: String): Boolean = withContext(Dispatchers.IO) {
         // 先等 DataStore 就绪：冷启动初期 prefsState 为空快照，isInitialized() 会误报未初始化，
         // 若此时放行会用新盐/DK 覆盖磁盘真实凭据（S-2）。等首次发射后再校验。
@@ -160,7 +160,7 @@ class VaultLockManager @Inject constructor(
     }
 
     /**
-     * 关闭主密码：原地降级为无锁模式，**条目全部保留**。
+     * 关闭密码：原地降级为无锁模式，**条目全部保留**。
      *
      * 与 [reset] 不同：不删数据、不换 DK，只把「解包 DK 的方式」从 PIN 换成 Keystore 密钥。
      * 调用前必须已解锁（DK 在内存里），PIN 校验由调用方负责。
@@ -194,7 +194,7 @@ class VaultLockManager @Inject constructor(
         }
     }
 
-    /** 已解锁状态下修改主密码。*/
+    /** 已解锁状态下修改密码。*/
     suspend fun changePin(newPin: String): Boolean {
         val ok = keyManager.changePin(newPin)
         if (!ok) {
