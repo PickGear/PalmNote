@@ -31,6 +31,10 @@ interface LifeRecycleBinDao {
     @Query("SELECT * FROM life_recycle_bin WHERE id = :id")
     suspend fun getById(id: Long): LifeRecycleBin?
 
+    /** 站内最大的批次标识：新批次必须严格大于它，避免同毫秒内两次删除撞成同一组。 */
+    @Query("SELECT MAX(deletedAt) FROM life_recycle_bin")
+    suspend fun maxDeletedAt(): Long?
+
     /** 同一次删除里父条目的子任务行（批次由调用方取父行的 deletedAt 传入）。 */
     @Query("SELECT * FROM life_recycle_bin WHERE parentId = :parentOriginalId AND deletedAt = :batchDeletedAt")
     suspend fun getChildrenOf(parentOriginalId: Long, batchDeletedAt: Long): List<LifeRecycleBin>

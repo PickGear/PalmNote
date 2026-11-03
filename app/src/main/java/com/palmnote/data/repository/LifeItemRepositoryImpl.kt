@@ -318,7 +318,9 @@ class LifeItemRepositoryImpl @Inject constructor(
             val templateName = templateRepo.getTemplateById(item.templateId)?.name ?: ""
             // 同一次删除共享同一 deletedAt（组桶标识）：组内恢复/彻底删除按它圈定范围，
             // 此前单独删掉的子任务快照（更早的批次）不会被并进这一次的组。
-            val batch = System.currentTimeMillis()
+            // **必须严格单调**：同一毫秒内连续删两条时，纯时间戳会让两组撞成同一批次，
+            // 后删的父会把先删的子吞进自己的组（回收站顶层列表少一行、恢复范围错乱）。
+            val batch = maxOf(System.currentTimeMillis(), (recycleBinDao.maxDeletedAt() ?: 0L) + 1)
             recycleBinDao.insertAll(rows.map { it.toRecycleBin(templateName, batch) })
             // 统计副本与主行同事务清掉；副本反查依赖条目行，必须先于条目删除（同 deleteTemplateCascade）
             rows.forEach { fieldValueDao.deleteByItem(it.id) }
