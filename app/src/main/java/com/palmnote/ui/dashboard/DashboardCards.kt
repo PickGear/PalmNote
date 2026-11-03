@@ -34,6 +34,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -1124,10 +1125,16 @@ internal fun TodayCard(state: DashboardState, onNavigateToLife: () -> Unit) {
 
 @Composable
 internal fun AlertCard(icon: ImageVector, title: String, message: String, color: Color, onClick: (() -> Unit)? = null) {
+    // 卡面必须是不透明实底：首页背景是带纹理图案的底，给 surface 上 alpha 会得到一块
+    // 「看不出是卡」的淡色区域，内容像浮在页面上。改成把强调色按比例混进 surface —— 混色结果
+    // alpha 恒为 1，既是实打实的卡面，又保留告警色的识别度。
+    // 描边与首页其他卡一致用 outlineVariant（曾用告警色 25%，太抢眼）；1dp 只负责收边。
+    val container = lerp(MaterialTheme.colorScheme.surface, color, 0.12f)
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
-        colors = CardDefaults.cardColors(containerColor = color.copy(alpha = 0.1f))
+        colors = CardDefaults.cardColors(containerColor = container),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Row(
             modifier = Modifier.padding(12.dp),
