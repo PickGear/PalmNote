@@ -454,6 +454,9 @@ class CsvDataExporter(
                 val imagesDir = File(context.filesDir, "images")
                 if (!imagesDir.exists()) imagesDir.mkdirs()
                 val pathMapping = mutableMapOf<String, String>()
+                // 本次真正新落盘的图片：图片先于数据库事务写盘，事务失败时要把这些一并清掉，
+                // 否则一次失败的导入会留下一批没人引用的孤儿文件
+                val createdImages = mutableListOf<File>()
 
                 // 版本协商：清单声明了更新的格式版本 → 当前代码解析不了，明确请用户升级，
                 // 而不是按旧代码硬解析出垃圾。无清单（版本化之前的包）按当前格式尽力解析。
@@ -475,7 +478,10 @@ class CsvDataExporter(
                         val destFile = File(imagesDir, filename)
                         // 图片名是导出侧的原始文件名（含 uuid）：同机重复导入时直接复用，
                         // 否则每次导入都会把整套图片再落一遍盘、留下成堆无引用的孤儿文件
-                        if (!destFile.exists()) destFile.writeBytes(bytes)
+                        if (!destFile.exists()) {
+                            destFile.writeBytes(bytes)
+                            createdImages.add(destFile)
+                        }
                         pathMapping[filename] = destFile.absolutePath
                     }
                 }
@@ -483,7 +489,14 @@ class CsvDataExporter(
                 // 全部 DB 写入包在一个事务里：要么全成，要么全撤，不留半截导入。
                 // 用 withTransaction（suspend 事务）包裹 suspend DAO 调用；
                 // 旧写法 runInTransaction { runBlocking { ... } } 会与 Room 事务执行器争用单线程而可能死锁。
-                val report = db.withTransaction { importIntoDb(zipEntries, pathMapping) }
+                val report = try {
+                    db.withTransaction { importIntoDb(zipEntries, pathMapping) }
+                } catch (e: Throwable) {
+                    // 事务已回滚，本次新落盘的图片同样是半截导入的产物，一并清掉；
+                    // 导入前就存在的图片不在 createdImages 里，不会被误删
+                    createdImages.forEach { runCatching { it.delete() } }
+                    throw e
+                }
 
                 if (report.inserted > 0) zipEntries[PREFERENCES_ENTRY]?.let { bytes ->
                     try {

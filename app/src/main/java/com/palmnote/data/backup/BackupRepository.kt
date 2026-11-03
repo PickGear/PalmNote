@@ -59,7 +59,8 @@ class BackupRepository(
                 ?: throw IllegalStateException(context.getString(R.string.backup_error_export_failed))
             val newFile = docDir.createFile("application/octet-stream", file.name)
                 ?: throw IllegalStateException(context.getString(R.string.backup_error_export_failed))
-            try {
+            // 写入字节数必须回读校验：输出流被对端提前关闭时 copyTo 可能「正常」结束却一个字节没落盘
+            val written = try {
                 context.contentResolver.openOutputStream(newFile.uri)?.use { output ->
                     file.inputStream().use { input -> input.copyTo(output) }
                 } ?: throw IllegalStateException(context.getString(R.string.backup_error_export_failed))
@@ -67,6 +68,10 @@ class BackupRepository(
                 // 半途失败会留下不完整的包，删掉避免下次被当成有效备份
                 runCatching { newFile.delete() }
                 throw e
+            }
+            if (written <= 0L) {
+                runCatching { newFile.delete() }
+                throw java.io.IOException(context.getString(R.string.backup_error_export_failed))
             }
             if (kind == BackupKind.AUTO && keep != null) rotateFolderAutoBackups(docDir, keep, newFile.uri)
             BackupState.Success(newFile.uri.toString())

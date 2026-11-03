@@ -1565,7 +1565,8 @@
     <string name="backup_password_desc">设置后所有备份加密，可换机恢复</string>
     <string name="backup_password_set">已设置</string>
     <string name="backup_password_unset">未设置</string>
-    <string name="backup_password_wrong">密码不正确，请重试</string>
+    <string name="backup_password_wrong_or_corrupted">密码不正确，或备份文件已损坏</string>
+    <string name="backup_error_key_import_failed">恢复未能完成：本机无法保存备份携带的数据库密钥，当前数据无法解密。请从备份列表选择「恢复前快照」恢复数据。</string>
     <string name="backup_password_unset_hint">未设置密码的备份等同明文；设置后所有备份加密，可换机恢复</string>
     <string name="backup_password_used_before_hint">曾设置过备份密码，当前未设置——自动备份已退回明文</string>
     <string name="backup_error_export_failed">无法写入所选文件夹，请确认该文件夹可写或换一个目录</string>

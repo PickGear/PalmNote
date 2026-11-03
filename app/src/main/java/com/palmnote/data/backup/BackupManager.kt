@@ -324,20 +324,31 @@ class BackupManager(
 
     /**
      * 解密整包到临时 ZIP：先用当前迭代，失败再用旧版本（100k）迭代重试以兼容旧备份。
-     * 两次都失败时把底层异常翻译成用户能行动的话：GCM 校验不过 = 密码不对；
-     * 其余（截断/IO）按损坏处理。不翻译的话用户会看到 AEADBadTagException 这类原始异常。
+     * 两次都失败时把底层异常翻译成用户能行动的话：GCM 校验不过 = 密码不对**或文件损坏**
+     * （AEAD 下二者不可区分）；其余（截断/IO）按损坏处理。不翻译的话用户会看到
+     * AEADBadTagException 这类原始异常。
+     *
+     * 只有「标签校验失败」才值得用旧迭代重试——读取阶段就失败（读 IV 不足、流截断）
+     * 换个迭代数也救不回来，直接报损坏，别让用户对着一个坏文件反复试密码。
      */
     private fun decryptEncryptedToTemp(context: Context, backupFile: File, password: String, tempZip: File) {
-        val currentOk = runCatching { decryptToTemp(backupFile, password, tempZip, CryptoUtils.CURRENT_PBKDF2_ITERATIONS) }
-        if (currentOk.isSuccess) return
+        val current = runCatching { decryptToTemp(backupFile, password, tempZip, CryptoUtils.CURRENT_PBKDF2_ITERATIONS) }
+        if (current.isSuccess) return
         if (tempZip.exists()) tempZip.delete()
-        try {
-            decryptToTemp(backupFile, password, tempZip, CryptoUtils.LEGACY_PBKDF2_ITERATIONS)
-        } catch (e: javax.crypto.AEADBadTagException) {
-            throw IllegalArgumentException(context.getString(R.string.backup_password_wrong), e)
-        } catch (e: Exception) {
-            throw IllegalArgumentException(context.getString(R.string.backup_error_corrupted), e)
+        val firstFailure = current.exceptionOrNull()
+        if (firstFailure !is javax.crypto.AEADBadTagException) {
+            throw IllegalArgumentException(context.getString(R.string.backup_error_corrupted), firstFailure)
         }
+        val legacyFailure = runCatching {
+            decryptToTemp(backupFile, password, tempZip, CryptoUtils.LEGACY_PBKDF2_ITERATIONS)
+        }.exceptionOrNull() ?: return
+        // 两种迭代数都校验失败：密码错与文件损坏在 GCM 下无法区分，如实说，别替用户下结论
+        val messageRes = if (legacyFailure is javax.crypto.AEADBadTagException) {
+            R.string.backup_password_wrong_or_corrupted
+        } else {
+            R.string.backup_error_corrupted
+        }
+        throw IllegalArgumentException(context.getString(messageRes), legacyFailure)
     }
 
     /** 旧明文备份路径（纯 ZIP，无魔数无校验和）：先验 ZIP 头再走恢复。 */
@@ -356,10 +367,18 @@ class BackupManager(
             )
             is DbKeyPlan.SameDevice -> restoreFromZip(context, zipFile, skipDbKeyPrefs = false)
             is DbKeyPlan.Portable -> {
-                // 跳过备份中的 wrapped key 条目（本机解不开），恢复完成后用本机 Keystore 重新包裹导入；
-                // 导入放在恢复成功之后：若导入失败，原密钥未被覆盖，原数据仍可读（另有恢复前自动备份兜底）
+                // 跳过备份中的 wrapped key 条目（本机解不开），恢复后用本机 Keystore 重新包裹导入。
+                //
+                // 顺序的代价要说清：库文件此时**已被备份内容覆盖**，若 importRawKey 再失败，本机
+                // 旧密钥解不开新库，应用内数据在重开库时不可读——唯一退路是恢复前自动快照
+                // （SNAPSHOT 备份，独立轮转池，不会被日常备份挤掉）。所以这里必须把「用快照恢复」
+                // 明确交给用户，不能只丢一句「恢复失败」。
                 restoreFromZip(context, zipFile, skipDbKeyPrefs = true)
-                dbKeyStore?.importRawKey(plan.rawKey)
+                try {
+                    dbKeyStore?.importRawKey(plan.rawKey)
+                } catch (e: Exception) {
+                    throw IllegalStateException(context.getString(R.string.backup_error_key_import_failed), e)
+                }
             }
         }
     }

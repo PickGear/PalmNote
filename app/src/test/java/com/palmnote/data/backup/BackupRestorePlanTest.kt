@@ -174,7 +174,7 @@ class BackupRestorePlanTest {
     }
 
     @Test
-    fun `加密备份密码错误时报密码不正确`() {
+    fun `加密备份密码错误时报密码错误或文件损坏`() {
         val salt = ByteArray(16) { 7 }
         val zipBytes = ByteArrayOutputStream().also { bos ->
             ZipOutputStream(bos).use { zos ->
@@ -196,8 +196,26 @@ class BackupRestorePlanTest {
             BackupManager().restoreBackup(context, encrypted, password = "错误密码")
         }.exceptionOrNull()
 
+        // GCM 下「密码错」与「密文损坏」都表现为标签校验失败，文案必须如实覆盖两种可能，
+        // 否则坏文件会被冒充成密码错，用户对着它反复试密码
         assertEquals(
-            context.getString(R.string.backup_password_wrong),
+            context.getString(R.string.backup_password_wrong_or_corrupted),
+            error?.message
+        )
+    }
+
+    @Test
+    fun `加密备份短到读不出IV时按损坏处理而非密码错误`() {
+        val truncated = tempFolder.newFile("truncated.palmnote")
+        // 只有 magic + salt，密文段一个字节都没有：读取阶段就失败，换迭代数也救不回来
+        truncated.writeBytes("PNB2".toByteArray() + ByteArray(16) { 7 })
+
+        val error = runCatching {
+            BackupManager().restoreBackup(context, truncated, password = "随便什么密码")
+        }.exceptionOrNull()
+
+        assertEquals(
+            context.getString(R.string.backup_error_corrupted),
             error?.message
         )
     }

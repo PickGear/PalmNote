@@ -12,6 +12,7 @@ import com.palmnote.data.backup.BackupInfo
 import com.palmnote.data.backup.BackupKind
 import com.palmnote.data.backup.BackupManager
 import com.palmnote.data.backup.BackupPasswordStore
+import com.palmnote.data.backup.BackupRepository
 import com.palmnote.data.backup.BackupState
 import com.palmnote.data.datastore.PreferencesManager
 import com.palmnote.data.db.AppDatabase
@@ -48,7 +49,8 @@ class BackupViewModel @Inject constructor(
     private val vaultDb: VaultDatabase,
     private val passwordStore: BackupPasswordStore,
     private val preferencesManager: PreferencesManager,
-    private val autoBackupScheduler: AutoBackupScheduler
+    private val autoBackupScheduler: AutoBackupScheduler,
+    private val backupRepository: BackupRepository
 ) : ViewModel() {
 
     private val backupManager = BackupManager(dbKeyStore)
@@ -175,64 +177,17 @@ class BackupViewModel @Inject constructor(
      * 密码与「立即备份」/自动备份共用同一份备份密码设置：设了就加密（含便携密钥，
      * 新手机可恢复），没设就明文（仅本机可恢复）。不再强制密码——加不加密由用户在
      * 「备份密码」一行里统一决定。
+     *
+     * 打包 + 写 SAF 的实现只在 [BackupRepository] 一份：自动备份 Worker 与界面走同一条路径，
+     * 免得两处各自维护（历史上「写入 0 字节也要报错」这项校验只长在界面那一份里）。
      */
     fun createBackupToFolder(folderUri: Uri, kind: BackupKind = BackupKind.PORTABLE) {
         val password = passwordStore.load()
         viewModelScope.launch {
-            flow {
-                emit(BackupState.Progress(0))
-                var tempFile: File? = null
-                try {
-                    // 打包前先对密码本库做 WAL checkpoint，保证快照一致
-                    checkpointVaultWal()
-                    // 1. Create backup in app cache
-                    val created = backupManager.createBackup(context, db, password, kind)
-                    tempFile = created
-                    emit(BackupState.Progress(80))
-
-                    // 2. Copy to user-chosen folder via SAF
-                    val targetUri = writeBackupToFolder(folderUri, created)
-                    emit(BackupState.Progress(100))
-                    emit(BackupState.Success(targetUri.toString()))
-                } catch (e: Exception) {
-                    emit(BackupState.Error(e.message ?: context.getString(R.string.backup_error_export_failed)))
-                } finally {
-                    tempFile?.delete()
-                }
-            }.flowOn(Dispatchers.IO).collect { state ->
-                _backupState.value = state
-            }
+            _backupState.value = BackupState.Progress(0)
+            _backupState.value = backupRepository.createBackupToFolder(folderUri, password, kind)
         }
     }
-
-    /**
-     * 把缓存中的备份写入用户所选文件夹，返回落盘后的 SAF URI。
-     *
-     * 目录不可用、建文件失败、输出流打不开、写入 0 字节都必须抛错：静默返回成功会让用户
-     * 以为备份已经躺在文件夹里，等真正需要它时才发现是空文件或根本没有文件。
-     */
-    private fun writeBackupToFolder(folderUri: Uri, source: File): Uri {
-        val docDir = DocumentFile.fromTreeUri(context, folderUri) ?: exportFailed()
-        val newFile = docDir.createFile("application/octet-stream", source.name) ?: exportFailed()
-        val written = try {
-            context.contentResolver.openOutputStream(newFile.uri)?.use { output ->
-                source.inputStream().use { input -> input.copyTo(output) }
-            } ?: exportFailed()
-        } catch (e: Exception) {
-            // 半途失败会在目标文件夹留下不完整的包，删掉避免下次被当成有效备份选中
-            runCatching { newFile.delete() }
-            throw e
-        }
-        if (written <= 0L) {
-            runCatching { newFile.delete() }
-            exportFailed()
-        }
-        return newFile.uri
-    }
-
-    /** 导出失败的统一出口；返回 [Nothing]，可直接用在 `?:` 右侧或作为分支的最后一句话。 */
-    private fun exportFailed(): Nothing =
-        throw IOException(context.getString(R.string.backup_error_export_failed))
 
     /**
      * 手动创建一份**本机**备份。
