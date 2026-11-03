@@ -229,4 +229,13 @@
     <string name="asset_warranty_active">质保中</string>
     <string name="wallpaper_preset">预设</string>
     <string name="wallpaper_custom_color">自定义颜色</string>
+    <string name="crop_title">调整图片</string>
+    <string name="crop_reset">重置</string>
+    <string name="crop_use">使用这张</string>
+    <string name="crop_hint">拖动图片移动，双指或双击缩放；拖四角调整选区，只有框选区域会被保存</string>
+    <string name="crop_failed">图片处理失败，换一张试试</string>
+    <string name="crop_rotate">旋转图片</string>
+    <string name="crop_use_original">用原图</string>
+    <string name="crop_ratio_free">自由比例</string>
+    <string name="crop_camera">拍照</string>
 </resources>

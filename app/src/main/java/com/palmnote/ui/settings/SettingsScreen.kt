@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -22,10 +23,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.palmnote.ui.components.AppDialog
+import com.palmnote.ui.components.CropPurpose
+import com.palmnote.ui.components.ImageCropDialog
 import com.palmnote.ui.components.SettingsMenuItem
 import com.palmnote.ui.components.CompactTopAppBar
 import kotlinx.coroutines.Dispatchers
@@ -232,108 +236,18 @@ fun SettingsScreen(
     }
 
     if (showProfileEdit) {
-        var editName by remember { mutableStateOf(state.profileNickname) }
-        var editSig by remember { mutableStateOf(state.profileSignature) }
-        var editAvatar by remember { mutableStateOf(state.profileAvatar) }
-        var editAvatarPath by remember { mutableStateOf(state.profileAvatarPath) }
-        val context = androidx.compose.ui.platform.LocalContext.current
-        val scope = rememberCoroutineScope()
-        val imagePickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-            uri?.let {
-                scope.launch {
-                    try {
-                        val inputStream = context.contentResolver.openInputStream(it)
-                        val avatarDir = File(context.filesDir, "avatars")
-                        avatarDir.mkdirs()
-                        val destFile = File(avatarDir, "profile_avatar_${System.currentTimeMillis()}.jpg")
-                        withContext(Dispatchers.IO) {
-                            inputStream?.use { input ->
-                                destFile.outputStream().use { output ->
-                                    input.copyTo(output)
-                                }
-                            }
-                        }
-                        editAvatarPath = destFile.absolutePath
-                        editAvatar = ""
-                    } catch (e: Exception) { e.printStackTrace() }
-                }
-            }
-        }
-
-        AppDialog(
-            onDismissRequest = { showProfileEdit = false },
-            title = { Text(stringResource(R.string.settings_profile_edit), fontWeight = FontWeight.Bold) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                        Box(
-                            modifier = Modifier.size(64.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            if (editAvatarPath.isNotBlank()) {
-                                AsyncImage(
-                                    model = File(editAvatarPath),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(52.dp).clip(CircleShape),
-                                    contentScale = ContentScale.Crop
-                                )
-                            } else {
-                                Box(
-                                    modifier = Modifier
-                                        .size(64.dp)
-                                        .clip(CircleShape)
-                                        .background(ModuleHome),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = "P",
-                                        style = MaterialTheme.typography.titleLarge,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color.White
-                                    )
-                                }
-                            }
-                        }
-                        Spacer(Modifier.width(16.dp))
-                        Button(onClick = { imagePickerLauncher.launch("image/*") }) {
-                            Text(stringResource(R.string.settings_profile_change_avatar))
-                        }
-                        if (editAvatarPath.isNotBlank()) {
-                            Spacer(Modifier.width(8.dp))
-                            TextButton(onClick = { editAvatarPath = "" }) {
-                                Text(stringResource(R.string.settings_profile_reset_avatar))
-                            }
-                        }
-                    }
-                    OutlinedTextField(
-                        value = editName,
-                        onValueChange = { editName = it },
-                        label = { Text(stringResource(R.string.settings_profile_nickname)) },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = MaterialTheme.shapes.medium
-                    )
-                    OutlinedTextField(
-                        value = editSig,
-                        onValueChange = { editSig = it },
-                        label = { Text(stringResource(R.string.settings_profile_signature)) },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = MaterialTheme.shapes.medium
-                    )
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    viewModel.setProfileNickname(editName)
-                    viewModel.setProfileSignature(editSig)
-                    viewModel.setProfileAvatar(editAvatar)
-                    viewModel.setProfileAvatarPath(editAvatarPath)
-                    showProfileEdit = false
-                }) { Text(stringResource(R.string.save), fontWeight = FontWeight.Bold) }
-            },
-            dismissButton = {
-                TextButton(onClick = { showProfileEdit = false }) { Text(stringResource(R.string.cancel), fontWeight = FontWeight.Bold) }
+        ProfileEditDialog(
+            initialNickname = state.profileNickname,
+            initialSignature = state.profileSignature,
+            initialAvatar = state.profileAvatar,
+            initialAvatarPath = state.profileAvatarPath,
+            savedAvatarPath = state.profileAvatarPath,
+            onDismiss = { showProfileEdit = false },
+            onSave = { nickname, signature, avatar, avatarPath ->
+                viewModel.setProfileNickname(nickname)
+                viewModel.setProfileSignature(signature)
+                viewModel.setProfileAvatar(avatar)
+                viewModel.setProfileAvatarPath(avatarPath)
             }
         )
     }
@@ -346,5 +260,185 @@ private fun StatItemSmall(icon: ImageVector, value: String, label: String, color
         Spacer(Modifier.height(4.dp))
         Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         Text(label, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+/**
+ * 资料编辑弹窗：昵称 / 签名 / 头像。
+ *
+ * 头像走统一裁剪（1:1 / 512）；本次新选但未保存的文件在取消时删除，
+ * 换头像保存后删除上一张已保存的文件——避免 avatars/ 目录堆积孤儿。
+ */
+@Composable
+private fun ProfileEditDialog(
+    initialNickname: String,
+    initialSignature: String,
+    initialAvatar: String,
+    initialAvatarPath: String,
+    savedAvatarPath: String,
+    onDismiss: () -> Unit,
+    onSave: (nickname: String, signature: String, avatar: String, avatarPath: String) -> Unit
+) {
+    var editName by remember { mutableStateOf(initialNickname) }
+    var editSig by remember { mutableStateOf(initialSignature) }
+    var editAvatar by remember { mutableStateOf(initialAvatar) }
+    var editAvatarPath by remember { mutableStateOf(initialAvatarPath) }
+    var replacedPath by remember { mutableStateOf<String?>(null) }
+
+    fun discardUnsavedAvatar(keep: String?) {
+        val picked = replacedPath
+        if (picked != null && picked != keep) runCatching { File(picked).delete() }
+        replacedPath = null
+    }
+
+    fun closeWithoutSave() {
+        discardUnsavedAvatar(keep = null)
+        onDismiss()
+    }
+
+    // 头像选图 + 统一裁剪；本次新选但未保存的文件记入 replacedPath，保存/关闭时结算
+    val launchAvatarPicker = ProfileAvatarCropLauncher { path ->
+        discardUnsavedAvatar(keep = null)
+        replacedPath = path
+        editAvatarPath = path
+        editAvatar = ""
+    }
+
+    // 旋转/进程重建销毁弹窗时：本次新裁、尚未入库的头像文件就地清理（与密码本编辑页同口径；
+    // 显式取消/保存路径各自结算后 replacedPath 已为 null，此处幂等不误删）
+    DisposableEffect(Unit) {
+        onDispose { discardUnsavedAvatar(keep = null) }
+    }
+
+    AppDialog(
+        onDismissRequest = ::closeWithoutSave,
+        title = { Text(stringResource(R.string.settings_profile_edit), fontWeight = FontWeight.Bold) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                ProfileAvatarRow(
+                    avatarPath = editAvatarPath,
+                    onPick = { launchAvatarPicker() },
+                    onReset = { editAvatarPath = "" }
+                )
+                ProfileNameFields(
+                    name = editName,
+                    signature = editSig,
+                    onNameChange = { editName = it },
+                    onSignatureChange = { editSig = it }
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                if (savedAvatarPath.isNotBlank() && savedAvatarPath != editAvatarPath) {
+                    runCatching { File(savedAvatarPath).delete() }
+                }
+                discardUnsavedAvatar(keep = editAvatarPath)
+                onSave(editName, editSig, editAvatar, editAvatarPath)
+                onDismiss()
+            }) { Text(stringResource(R.string.save), fontWeight = FontWeight.Bold) }
+        },
+        dismissButton = {
+            TextButton(onClick = ::closeWithoutSave) {
+                Text(stringResource(R.string.cancel), fontWeight = FontWeight.Bold)
+            }
+        }
+    )
+}
+
+/**
+ * 「我的」页头像的选图 + 裁剪宿主：注册系统照片选择器（13+ 原生网格，旧系统自动
+ * 回退文档选择器），选完图进统一裁剪页，返回触发选图的回调；裁剪产物经 [onCropped]
+ * 回传，取消不回调。
+ */
+@Composable
+private fun ProfileAvatarCropLauncher(onCropped: (String) -> Unit): () -> Unit {
+    // 注意不能用 rememberSaveable：本弹窗由 showProfileEdit（普通 remember）条件组合，
+    // 旋转后弹窗不恢复，saveable 的旧 URI 会留在 savedInstanceState 里，下次打开弹窗时
+    // 按位置 key 恢复 → 裁剪页凭空自弹。泄漏由上方 DisposableEffect 兜底，行为与密码本一致。
+    var pendingCropUri by remember { mutableStateOf<android.net.Uri?>(null) }
+    val imagePickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null) pendingCropUri = uri
+    }
+    pendingCropUri?.let { uri ->
+        ImageCropDialog(
+            sourceUri = uri,
+            purpose = CropPurpose.PROFILE_AVATAR,
+            onCancel = { pendingCropUri = null },
+            onDone = { path ->
+                pendingCropUri = null
+                onCropped(path)
+            }
+        )
+    }
+    return {
+        imagePickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+    }
+}
+
+/** 资料弹窗的头像行：圆形预览 + 更换/重置。 */
+@Composable
+private fun ProfileAvatarRow(avatarPath: String, onPick: () -> Unit, onReset: () -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+        Box(modifier = Modifier.size(64.dp).clip(CircleShape), contentAlignment = Alignment.Center) {
+            if (avatarPath.isNotBlank()) {
+                AsyncImage(
+                    model = File(avatarPath),
+                    contentDescription = null,
+                    modifier = Modifier.size(64.dp).clip(CircleShape),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                Box(
+                    modifier = Modifier.size(64.dp).clip(CircleShape).background(ModuleHome),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "P",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
+            }
+        }
+        Spacer(Modifier.width(16.dp))
+        Button(onClick = onPick) {
+            Text(stringResource(R.string.settings_profile_change_avatar))
+        }
+        if (avatarPath.isNotBlank()) {
+            Spacer(Modifier.width(8.dp))
+            TextButton(onClick = onReset) {
+                Text(stringResource(R.string.settings_profile_reset_avatar))
+            }
+        }
+    }
+}
+
+/** 资料弹窗的两个输入框：昵称、签名。 */
+@Composable
+private fun ProfileNameFields(
+    name: String,
+    signature: String,
+    onNameChange: (String) -> Unit,
+    onSignatureChange: (String) -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        OutlinedTextField(
+            value = name,
+            onValueChange = onNameChange,
+            label = { Text(stringResource(R.string.settings_profile_nickname)) },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+            shape = MaterialTheme.shapes.medium
+        )
+        OutlinedTextField(
+            value = signature,
+            onValueChange = onSignatureChange,
+            label = { Text(stringResource(R.string.settings_profile_signature)) },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+            shape = MaterialTheme.shapes.medium
+        )
     }
 }

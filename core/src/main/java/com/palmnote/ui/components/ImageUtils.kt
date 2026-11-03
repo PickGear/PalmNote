@@ -2,7 +2,6 @@ package com.palmnote.ui.components
 
 import android.content.ContentValues
 import android.content.Context
-import android.net.Uri
 import android.os.Environment
 import android.provider.MediaStore
 import com.palmnote.domain.util.AppLogger
@@ -11,8 +10,6 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.File
-import java.io.FileOutputStream
-import java.util.UUID
 
 private val imageJson = Json { ignoreUnknownKeys = true }
 
@@ -26,57 +23,6 @@ fun String.toImageList(): List<String> {
         listOf(this)
     }
 }
-
-/**
- * 将 URI 图片复制到内部存储 images 目录，返回文件路径。
- * [prefix] 用于区分模块（如 bill_/asset_），文件名含随机后缀避免同毫秒冲突。
- */
-@Suppress("InjectDispatcher")
-suspend fun saveImageToInternalStorage(context: Context, uri: Uri, prefix: String): String? =
-    withContext(Dispatchers.IO) {
-        try {
-            val dir = File(context.filesDir, "images")
-            if (!dir.exists()) dir.mkdirs()
-            val file = File(dir, "${prefix}${System.currentTimeMillis()}_${UUID.randomUUID().toString().take(8)}.jpg")
-            val input = context.contentResolver.openInputStream(uri) ?: return@withContext null
-            input.use { inp ->
-                FileOutputStream(file).use { output ->
-                    inp.copyTo(output)
-                }
-            }
-            if (file.exists()) file.absolutePath else null
-        } catch (e: Exception) {
-            AppLogger.e("ImageUtils", "Failed to save image", e)
-            null
-        }
-    }
-
-/**
- * 保存密码本头像到独立目录 `vault_avatars/`（不写入共享 images/ 目录，
- * 避免「清理数据」删除 images/ 时误删尚未删除的密码本条目头像）。
- */
-@Suppress("InjectDispatcher")
-suspend fun saveImageToVaultStorage(context: Context, uri: Uri): String? =
-    withContext(Dispatchers.IO) {
-        try {
-            val dir = File(context.filesDir, "vault_avatars")
-            if (!dir.exists()) dir.mkdirs()
-            val file = File(
-                dir,
-                "avatar_${System.currentTimeMillis()}_${UUID.randomUUID().toString().take(8)}.jpg"
-            )
-            val input = context.contentResolver.openInputStream(uri) ?: return@withContext null
-            input.use { ins ->
-                FileOutputStream(file).use { output ->
-                    ins.copyTo(output)
-                }
-            }
-            if (file.exists()) file.absolutePath else null
-        } catch (e: Exception) {
-            AppLogger.e("ImageUtils", "Failed to save vault avatar", e)
-            null
-        }
-    }
 
 /**
  * 将内部存储的图片复制到系统相册（Pictures 目录）。成功返回 true。

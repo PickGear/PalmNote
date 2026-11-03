@@ -8,6 +8,7 @@ import android.net.Uri
 import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -25,6 +26,7 @@ import androidx.compose.material.icons.outlined.*
 import androidx.compose.material.icons.outlined.ReceiptLong
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -43,6 +45,8 @@ import com.palmnote.data.datastore.PreferencesManager
 import com.palmnote.data.wallpaper.WallpaperPresets
 import com.palmnote.domain.model.BillType
 import com.palmnote.ui.components.AppDialog
+import com.palmnote.ui.components.CropPurpose
+import com.palmnote.ui.components.ImageCropDialog
 import com.palmnote.ui.components.CapsuleSwitch
 import com.palmnote.ui.components.ChoiceDialog
 import com.palmnote.ui.components.CompactTopAppBar
@@ -91,7 +95,7 @@ fun GeneralSettingsScreen(
     var showThemePicker by remember { mutableStateOf(false) }
     var showLanguagePicker by remember { mutableStateOf(false) }
     var showThemeColorPicker by remember { mutableStateOf(false) }
-    var showWallpaperPicker by remember { mutableStateOf(false) }
+    var showWallpaperPicker by rememberSaveable { mutableStateOf(false) }
     var showStartPagePicker by remember { mutableStateOf(false) }
     var showBillTypePicker by remember { mutableStateOf(false) }
     var showAssetGridStylePicker by remember { mutableStateOf(false) }
@@ -370,20 +374,22 @@ fun GeneralSettingsScreen(
 
     if (showWallpaperPicker) {
         val context = LocalContext.current
-        val imagePickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-            uri?.let {
-                try {
-                    val file = java.io.File(context.filesDir, "wallpaper_custom.jpg")
-                    context.contentResolver.openInputStream(it)?.use { input ->
-                        file.outputStream().use { output -> input.copyTo(output) }
-                    }
-                    viewModel.applyCustomWallpaper(file.absolutePath)
-                } catch (_: Exception) {
-                    Toast.makeText(context, R.string.wallpaper_load_failed, Toast.LENGTH_SHORT).show()
+        // 选完图进裁剪页（9:16 / 1080x1920），确认后直接覆盖 wallpaper_custom.jpg 并应用；
+        // 选图走系统照片选择器（13+ 原生网格，旧系统自动回退文档选择器），与其他上传位一致
+        var pendingWallpaperUri by rememberSaveable { mutableStateOf<android.net.Uri?>(null) }
+        val imagePickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+            uri?.let { pendingWallpaperUri = it }
+        }
+        pendingWallpaperUri?.let { uri ->
+            ImageCropDialog(
+                sourceUri = uri,
+                purpose = CropPurpose.WALLPAPER,
+                onCancel = { pendingWallpaperUri = null },
+                onDone = { path ->
+                    pendingWallpaperUri = null
+                    viewModel.applyCustomWallpaper(path)
                 }
-                // 不关弹窗：选完图还要调透明度/模糊度（与选预设不自动关闭同一逻辑），
-                // 用右下角「完成」退出。
-            }
+            )
         }
         var customWallpaperColor by remember(showWallpaperPicker) {
             mutableStateOf(if (state.wallpaperCustomColor.startsWith("#")) state.wallpaperCustomColor.removePrefix("#") else "")
@@ -531,7 +537,11 @@ fun GeneralSettingsScreen(
                     HorizontalDivider()
                     Spacer(Modifier.height(12.dp))
                     OutlinedButton(
-                        onClick = { imagePickerLauncher.launch("image/*") },
+                        onClick = {
+                            imagePickerLauncher.launch(
+                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                            )
+                        },
                         modifier = Modifier.fillMaxWidth(),
                         shape = MaterialTheme.shapes.small
                     ) {

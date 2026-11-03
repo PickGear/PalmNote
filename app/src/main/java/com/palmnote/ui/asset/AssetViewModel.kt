@@ -2,6 +2,7 @@ package com.palmnote.ui.asset
 import kotlin.jvm.JvmSuppressWildcards
 import com.palmnote.domain.model.AssetStatus
 import android.content.Context
+import java.io.File
 import javax.inject.Inject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -514,6 +515,7 @@ class AssetViewModel @Inject constructor(
     // Form management
     fun initFormForEdit(assetId: Long) {
         viewModelScope.launch {
+            pendingNewFiles.clear()
             val asset = assetRepository.getAssetById(assetId) ?: return@launch
             _formState.value = AddAssetFormState(
                 id = asset.id,
@@ -569,6 +571,7 @@ class AssetViewModel @Inject constructor(
     }
 
     fun resetForm() {
+        pendingNewFiles.clear()
         _formState.value = AddAssetFormState()
     }
 
@@ -656,6 +659,7 @@ class AssetViewModel @Inject constructor(
             }
 
             _formState.value = form.copy(isSaving = false, isSaved = true)
+            cleanupImagesAfterSave(form.images)
             // 桌面组件即时刷新：物品新增/编辑会改分布与净资产合计，别等 30 分钟周期
             com.palmnote.ui.widget.WidgetUpdateHelper.refreshAssetWidgets()
             com.palmnote.ui.widget.WidgetUpdateHelper.refreshNetWorthWidgets()
@@ -668,10 +672,33 @@ class AssetViewModel @Inject constructor(
         }
     }
 
-    fun addImage(uri: Uri) {
+    /** 本次会话新加、尚未保存的图片；保存后删掉没被留下的那些，避免 images/ 堆积孤儿。 */
+    private val pendingNewFiles = mutableSetOf<String>()
+
+    /** 裁剪后的图片已由裁剪页落到 images/ 目录，这里只登记路径并加入待清理名单。 */
+    fun addImage(path: String) {
+        if (path.isBlank()) return
+        pendingNewFiles.add(path)
+        updateImages { add(path) }
+    }
+
+    /**
+     * 保存成功后清理本次新建但最终未保留的图片（加了又删、删了又加都会走到这里）。
+     * 历史图片的删除由物品删除统一处理，不在这里碰。
+     *
+     * 与 [BillViewModel.cleanupImagesAfterSave] 同一口径：账单侧一直有这道清理，
+     * 物品侧此前缺失 —— 用户删掉一张再保存，文件会永久留在 images/ 里。
+     */
+    private fun cleanupImagesAfterSave(savedImagesJson: String) {
+        val savedPaths = savedImagesJson.toImageList().toSet()
+        val stale = pendingNewFiles - savedPaths
+        pendingNewFiles.clear()
+        if (stale.isEmpty()) return
+        @Suppress("InjectDispatcher")
         viewModelScope.launch {
-            val path = com.palmnote.ui.components.saveImageToInternalStorage(application, uri, "asset_") ?: return@launch
-            updateImages { add(path) }
+            withContext(Dispatchers.IO) {
+                stale.forEach { path -> runCatching { File(path).delete() } }
+            }
         }
     }
 

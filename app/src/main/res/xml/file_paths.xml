@@ -7,4 +7,9 @@
       FileProvider.getUriForFile 必然抛异常，分享一直失败（且失败原因被 runCatching 吞掉）。
     -->
     <cache-path name="share" path="share/" />
+    <!--
+      「拍照 → 裁剪」的一次性落点：TakePicture 让系统相机把 JPEG 写进这里，
+      裁剪页经 FileProvider 读它，确认或取消后立即删除。
+    -->
+    <cache-path name="camera" path="camera/" />
 </paths>

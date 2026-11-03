@@ -25,7 +25,6 @@ import com.palmnote.domain.repository.BudgetRepository
 import com.palmnote.domain.repository.ReimbursementAllocation
 import com.palmnote.domain.util.DateUtils
 import com.palmnote.ui.components.CategoryItem
-import com.palmnote.ui.components.saveImageToInternalStorage
 import com.palmnote.ui.components.toComposeColor
 import com.palmnote.ui.components.toImageJson
 import com.palmnote.ui.components.toImageList
@@ -667,12 +666,11 @@ class BillViewModel @Inject constructor(
         _formState.value = _formState.value.copy(images = list.toImageJson())
     }
 
-    fun addImage(uri: Uri) {
-        viewModelScope.launch {
-            val path = saveImageToInternalStorage(context, uri, "bill_") ?: return@launch
-            pendingNewFiles.add(path)
-            updateImages { add(path) }
-        }
+    /** 裁剪后的图片已由裁剪页落到 images/ 目录，这里只登记路径并加入待清理名单。 */
+    fun addImage(path: String) {
+        if (path.isBlank()) return
+        pendingNewFiles.add(path)
+        updateImages { add(path) }
     }
 
     fun removeImage(index: Int) {

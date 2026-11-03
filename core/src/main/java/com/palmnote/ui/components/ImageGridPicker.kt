@@ -1,6 +1,7 @@
 package com.palmnote.ui.components
 
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -20,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.outlined.AddPhotoAlternate
+import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -28,7 +30,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -39,34 +43,79 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import coil3.compose.AsyncImage
 import com.palmnote.R
+import java.io.File
 import kotlin.math.abs
 
 /**
  * 图片网格选择器：最多 [maxCount] 张，长按拖拽排序、右上角删除、空槽点击上传。
  * 账单与资产表单共用，消除重复的拖拽网格逻辑。
+ *
+ * 选完图先进入裁剪页（[ImageCropDialog]），确认后回调的是**已裁好并落盘**的文件路径；
+ * 取消则什么也不发生。各上传位通过 [cropPurpose] 声明比例与输出尺寸。
  */
 @Composable
-@Suppress("LongMethod")
+@Suppress("LongMethod", "LongParameterList", "CyclomaticComplexMethod")
 fun ImageGridPicker(
     title: String,
     images: List<String>,
     accentColor: Color,
     hint: String,
-    onAddImage: (android.net.Uri) -> Unit,
+    cropPurpose: CropPurpose,
+    onAddImage: (String) -> Unit,
+    additionalCropPurpose: CropPurpose = cropPurpose,
     onRemoveImage: (Int) -> Unit,
     onReorderImages: (Int, Int) -> Unit,
     modifier: Modifier = Modifier,
     maxCount: Int = 4
 ) {
+    // saveable：旋转/进程重建后带着已选图片回到裁剪页（裁剪调整本身重新来，但不用重新选图）
+    var pendingCropUri by rememberSaveable { mutableStateOf<android.net.Uri?>(null) }
+    // 拍摄件的路径，从点「拍照」存到裁剪页关闭：成功后作为裁剪源，关闭时删除。
+    // saveable：相机画面期间旋转/进程重建，回来仍能接住 TakePicture 的结果
+    var pendingCameraPath by rememberSaveable { mutableStateOf<String?>(null) }
+    val context = LocalContext.current
+    // 系统照片选择器：13+ 原生网格，旧系统自动回退文档选择器；与生活模块一致
     val imagePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri -> uri?.let(onAddImage) }
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri -> uri?.let { pendingCropUri = it } }
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success ->
+        val path = pendingCameraPath
+        pendingCameraPath = null
+        if (success && path != null) {
+            pendingCropUri = cameraCaptureUri(context, File(path))
+        } else {
+            path?.let { runCatching { File(it).delete() } }
+        }
+    }
+
+    /** 关掉裁剪页并结算拍摄件：确认与取消共用，删过了就是无害的幂等操作。 */
+    fun closeCrop() {
+        pendingCropUri = null
+        pendingCameraPath?.let { path -> runCatching { File(path).delete() } }
+        pendingCameraPath = null
+    }
+
+    pendingCropUri?.let { uri ->
+        ImageCropDialog(
+            sourceUri = uri,
+            // 首图按卡片缩略图规格裁切；后续图允许自由比例、也允许直接用原图
+            purpose = if (images.isEmpty()) cropPurpose else additionalCropPurpose,
+            onCancel = { closeCrop() },
+            onDone = { path ->
+                closeCrop()
+                onAddImage(path)
+            }
+        )
+    }
 
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -78,11 +127,31 @@ fun ImageGridPicker(
             style = MaterialTheme.typography.titleSmall,
             fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
         )
-        Text(
-            text = "${images.size}/$maxCount",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            // 拍照直进裁剪页：小票/物品常常就在眼前，不必先经相册中转
+            // （默认 IconButton：40dp 视觉 + 48dp 最小触控，遵守全仓点击区口径）
+            if (images.size < maxCount) {
+                IconButton(
+                    onClick = {
+                        val file = cameraCaptureFile(context)
+                        pendingCameraPath = file.absolutePath
+                        cameraLauncher.launch(cameraCaptureUri(context, file))
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.PhotoCamera,
+                        contentDescription = stringResource(R.string.crop_camera),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+            Text(
+                text = "${images.size}/$maxCount",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
     }
     Spacer(modifier = Modifier.height(8.dp))
 
@@ -189,7 +258,9 @@ fun ImageGridPicker(
                             .background(accentColor.copy(alpha = 0.1f))
                             .clickable {
                                 if (images.size < maxCount) {
-                                    imagePickerLauncher.launch("image/*")
+                                    imagePickerLauncher.launch(
+                                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                    )
                                 }
                             },
                         contentAlignment = Alignment.Center

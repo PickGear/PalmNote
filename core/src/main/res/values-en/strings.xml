@@ -231,4 +231,13 @@
     <string name="asset_warranty_active">Under warranty</string>
     <string name="wallpaper_preset">Preset</string>
     <string name="wallpaper_custom_color">Custom Color</string>
+    <string name="crop_title">Adjust photo</string>
+    <string name="crop_reset">Reset</string>
+    <string name="crop_use">Use this</string>
+    <string name="crop_hint">Drag to move, pinch or double-tap to zoom, drag a corner to resize; only the framed area is saved</string>
+    <string name="crop_failed">Could not process this image, try another one</string>
+    <string name="crop_rotate">Rotate photo</string>
+    <string name="crop_use_original">Use original</string>
+    <string name="crop_ratio_free">Free ratio</string>
+    <string name="crop_camera">Take photo</string>
 </resources>

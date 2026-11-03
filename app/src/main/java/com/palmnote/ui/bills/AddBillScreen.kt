@@ -628,6 +628,7 @@ fun AddBillScreen(
                         images = formState.images.toImageList(),
                         accentColor = accentColor,
                         hint = stringResource(R.string.bill_image_hint),
+                        cropPurpose = CropPurpose.BILL,
                         onAddImage = { viewModel.addImage(it) },
                         onRemoveImage = { viewModel.removeImage(it) },
                         onReorderImages = { from, to -> viewModel.reorderImages(from, to) }

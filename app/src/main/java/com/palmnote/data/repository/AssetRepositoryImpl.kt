@@ -1,4 +1,6 @@
 package com.palmnote.data.repository
+import com.palmnote.ui.components.toImageList
+import java.io.File
 import javax.inject.Inject
 import com.palmnote.domain.model.AssetStatus
 
@@ -113,7 +115,15 @@ class AssetRepositoryImpl @Inject constructor(
         assetRecycleBinDao.deleteById(id)
     }
 
-    override suspend fun hardDeleteAsset(id: Long) = assetRecycleBinDao.deleteById(id)
+    override suspend fun hardDeleteAsset(id: Long) = appDatabase.withTransaction {
+        val item = assetRecycleBinDao.getById(id) ?: return@withTransaction
+        // 与 BillRepositoryImpl.hardDeleteBill 同一口径：彻底删掉条目时，它独占的图片
+        // 也没人再引用了（图片文件名带 uuid，条目之间不共享），不清就是永久孤儿。
+        item.images.toImageList().forEach { path ->
+            runCatching { File(path).delete() }
+        }
+        assetRecycleBinDao.deleteById(id)
+    }
 
 
     override suspend fun setUseCount(assetId: Long, count: Int) = assetDao.setUseCount(assetId, count)

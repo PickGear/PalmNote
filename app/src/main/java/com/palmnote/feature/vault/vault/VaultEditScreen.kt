@@ -2,6 +2,7 @@ package com.palmnote.feature.vault.vault
 
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -52,14 +53,13 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -76,7 +76,8 @@ import com.palmnote.feature.vault.VaultLockManager.LockState
 import com.palmnote.feature.vault.VaultPasswordGenerator
 import com.palmnote.ui.components.ModuleCard
 import com.palmnote.ui.components.SecondaryTopAppBar
-import com.palmnote.ui.components.saveImageToVaultStorage
+import com.palmnote.ui.components.CropPurpose
+import com.palmnote.ui.components.ImageCropDialog
 import com.palmnote.ui.components.SectionHeader
 import com.palmnote.ui.theme.vaultTint
 import java.io.File
@@ -197,16 +198,23 @@ fun VaultEditScreen(
     val passwordRequired = stringResource(R.string.vault_error_password_required)
     val saveFailed = stringResource(R.string.vault_error_save_failed)
 
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    val avatarPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        if (uri != null) {
-            scope.launch {
-                saveImageToVaultStorage(context, uri)?.let { path ->
-                    avatarPath = path
-                }
+    // 选完图先进裁剪页（1:1 / 512），确认后拿到已落盘的 vault_avatars 路径；
+    // 选图走系统照片选择器（13+ 原生网格，旧系统自动回退文档选择器），与其他上传位一致；
+    // saveable：旋转/进程重建后带着已选图片回到裁剪页
+    var pendingAvatarUri by rememberSaveable { mutableStateOf<android.net.Uri?>(null) }
+    val avatarPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null) pendingAvatarUri = uri
+    }
+    pendingAvatarUri?.let { uri ->
+        ImageCropDialog(
+            sourceUri = uri,
+            purpose = CropPurpose.VAULT_AVATAR,
+            onCancel = { pendingAvatarUri = null },
+            onDone = { path ->
+                pendingAvatarUri = null
+                avatarPath = path
             }
-        }
+        )
     }
     fun removeAvatar() {
         avatarPath = ""
@@ -314,7 +322,11 @@ fun VaultEditScreen(
                             .size(64.dp)
                             .clip(CircleShape)
                             .background(vaultTint().copy(alpha = 0.15f))
-                            .clickable { avatarPicker.launch("image/*") },
+                            .clickable {
+                                avatarPicker.launch(
+                                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                )
+                            },
                         contentAlignment = Alignment.Center
                     ) {
                         if (avatarPath.isNotBlank()) {

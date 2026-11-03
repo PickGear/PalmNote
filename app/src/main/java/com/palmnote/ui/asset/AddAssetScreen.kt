@@ -682,6 +682,8 @@ private fun ImageSection(formState: AddAssetFormState, viewModel: AssetViewModel
             images = formState.images.toImageList(),
             accentColor = accentColor,
             hint = stringResource(R.string.asset_image_hint),
+            cropPurpose = CropPurpose.ASSET,
+            additionalCropPurpose = CropPurpose.ASSET_DETAIL,
             onAddImage = { viewModel.addImage(it) },
             onRemoveImage = { viewModel.removeImage(it) },
             onReorderImages = { from, to -> viewModel.reorderImages(from, to) }
