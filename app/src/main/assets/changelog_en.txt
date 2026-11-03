@@ -30,6 +30,8 @@ Fixed
 - Fixed the eye icon in vault details not following the plaintext state
 - Fixed rejected legacy backup restores not explaining the real reason
 - Fixed a wrong backup password being swallowed and reported as file corruption
+- Fixed the receipt footer being covered by the printer body
+- Fixed rapid successive deletions sharing one recycle-bin batch, dropping a top-level row
 
 Changed
 - Backup and import/export pages redesigned: summary card + sectioned row layout
