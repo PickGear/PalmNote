@@ -324,7 +324,8 @@ fun BillScreen(
                                 onDismissRequest = { showOverflowMenu = false }
                             ) {
                                 DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.bill_budget_tab)) },
+                                    // 与预算页标题同串（预算管理），菜单项和落地页永远同名
+                                    text = { Text(stringResource(R.string.budget_title)) },
                                     leadingIcon = {
                                         Icon(
                                             Icons.Outlined.AccountBalance,

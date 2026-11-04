@@ -84,7 +84,6 @@
     <string name="bill_default">Default</string>
     <string name="bill_all_books">All Books</string>
     <string name="bill_report">Statistics</string>
-    <string name="bill_budget_tab">Budget</string>
     <string name="bill_balance">Balance</string>
     <string name="bill_receipt_title">Daily Receipt</string>
     <string name="bill_receipt_save">Save to Gallery</string>

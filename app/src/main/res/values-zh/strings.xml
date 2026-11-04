@@ -81,7 +81,6 @@
     <string name="bill_default">默认</string>
     <string name="bill_all_books">全账本</string>
     <string name="bill_report">统计</string>
-    <string name="bill_budget_tab">预算</string>
     <string name="bill_balance">结余</string>
     <string name="bill_receipt_title">记账小票</string>
     <string name="bill_receipt_save">保存到相册</string>
