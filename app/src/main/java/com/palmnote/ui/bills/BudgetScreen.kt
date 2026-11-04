@@ -155,12 +155,13 @@ fun BudgetScreen(
         ) {
             // 周期条吸顶：分类/账本一多，切周期要先把列表滚回顶部，很别扭。
             // 吸顶后必须自己铺一层不透明底色，否则下面的卡片会从它后面透出来。
+            // 条与下方卡片的间距只由 spacedBy(8dp) 提供——这里再加 bottom padding
+            // 会叠成 16dp（2026-11-05 真机反馈）；滚动时卡片从条底滑入，48dp 外框自带缓冲。
             stickyHeader {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(MaterialTheme.colorScheme.background)
-                        .padding(bottom = 8.dp)
                 ) {
                     PeriodSelector(
                         selected = selectedPeriod,
@@ -277,7 +278,10 @@ fun BudgetScreen(
 
     // ── 选账本 ──
     if (pickingScope == BudgetScope.BOOK && realBooks.isNotEmpty()) {
-        val bookTint = billTint()
+        // 账本紫 + 深色提亮，与账本组卡头同一套；不能用 billTint()——
+        // 那是近白奶油，白底弹窗上 12% 圆底和图标会一起隐形（2026-11-05 真机反馈，
+        // 与 PeriodSelector 选中态同类：模块 tint 只能当卡底，不能当前景色）
+        val bookTint = adaptiveTint(Purple)
         ChoiceDialog(
             title = stringResource(R.string.budget_pick_book),
             options = realBooks,
