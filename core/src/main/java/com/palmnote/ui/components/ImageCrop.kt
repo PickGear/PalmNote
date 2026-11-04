@@ -6,6 +6,7 @@ import android.graphics.BitmapFactory
 import android.graphics.Matrix
 import android.media.ExifInterface
 import android.net.Uri
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.core.content.FileProvider
@@ -24,6 +25,8 @@ import kotlin.math.roundToInt
  *
  * ## 交互口径（各场景一致，只有比例与输出尺寸不同）
  * - 图片按「适应屏幕」显示，选区是图片上的一块矩形：拖动选区内部平移，拖四角缩放。
+ * - 拖角松手后图片放大到所选区域、选框回最大居中（[settleToMaxFrame]）——框选是临时
+ *   取景，收口后框恒为最大居中，拖图时框不动、图片在框下滑动。
  * - 选区永不越出图片；最小边长 = 显示短边的 20%，且不小于 64dp。
  * - 锁定比例的场景（物品 / 头像 1:1、壁纸 9:16）四角缩放保持比例，对角固定。
  * - 取消：直接返回上一页，不落任何文件。
@@ -321,6 +324,52 @@ fun clampFrameSizeInside(size: Size, maxSize: Size): Size {
     if (maxSize.width <= 0f || maxSize.height <= 0f) return Size.Zero
     val shrink = min(1f, min(maxSize.width / size.width, maxSize.height / size.height))
     return if (shrink >= 1f) size else Size(size.width * shrink, size.height * shrink)
+}
+
+/** [settleToMaxFrame] 的收口结果：放大后的缩放/偏移，与回归最大值的选框尺寸。 */
+data class CropSettleResult(
+    val scale: Float,
+    val offset: Offset,
+    val frameSize: Size
+)
+
+/**
+ * 拖角松手后的收口几何：把图片放大到「所选区域填满最大选框」，选框回最大居中。
+ *
+ * 框选是临时取景动作——拖角圈住要的那块，松手即放大重取景。做法是以框中心为锚
+ * （[zoomAround]，所选内容原地铺开不窜位）放大 `scale × k`，`k` 取「最大框 / 当前框」
+ * 两轴中较大者（自由比例下当前框与最大框不必同形，取大者保证两轴都填满）；
+ * 随后选框尺寸回 [maxFrameSize]。最大框 ⊆ fit ⊆ 任意 scale ≥ 1 的图片矩形，
+ * 「框在图片内」由构造保证，偏移最后再走一遍 [clampImageOffset] 兜底。
+ *
+ * 框已处于最大（`k ≈ 1`）或缩放被 [maxZoom] 顶住时不放大，只回归框尺寸并夹偏移。
+ */
+fun settleToMaxFrame(
+    frameSize: Size,
+    maxFrameSize: Size,
+    frame: Rect,
+    scale: Float,
+    offset: Offset,
+    fit: Rect,
+    container: Size,
+    maxZoom: Float
+): CropSettleResult {
+    if (maxFrameSize == Size.Zero || frame == Rect.Zero || frameSize == Size.Zero) {
+        return CropSettleResult(scale, offset, frameSize)
+    }
+    val k = max(maxFrameSize.width / frame.width, maxFrameSize.height / frame.height)
+    var nextScale = scale
+    var nextOffset = offset
+    if (k > 1.0001f) {
+        val target = (scale * k).coerceIn(1f, maxZoom)
+        if (target > scale + 0.0001f) {
+            nextOffset = zoomAround(frame.center, scale, offset, target, fit, frame, container)
+            nextScale = target
+        }
+    }
+    val maxFrame = centeredRectOf(maxFrameSize, frame.center)
+    nextOffset = clampImageOffset(nextOffset, fit.size, nextScale, maxFrame, container)
+    return CropSettleResult(nextScale, nextOffset, maxFrameSize)
 }
 
 /**

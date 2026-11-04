@@ -139,31 +139,53 @@ class ImageCropGestureTest {
     }
 
     @Test
-    fun `一指拖角撑大选框同时另一指拖图片，图片仍盖住选框`() {
+    fun `拖角松手后选框回最大并放大所选区域`() {
         launchFreeRatioCrop()
-        // 先把框缩小，留出「撑大」的空间；拖角必须真的生效，否则本用例没有区分度
-        val before = frameRect.width
+        val maxFrame = frameRect
+        val imageBefore = imageRect
+        // 向内拖角收小选框（收小是临时的取景动作）
         cornerDrag(Offset(-70f, -40f))
-        assertTrue("拖角应缩小选框 frame=$frameRect", frameRect.width < before - 10f)
-        val shrunk = frameRect
+        // 松手收口：选框回最大居中
+        assertTrue(
+            "松手后选框应回最大 frame=$frameRect max=$maxFrame",
+            kotlin.math.abs(frameRect.width - maxFrame.width) < 1f &&
+                kotlin.math.abs(frameRect.height - maxFrame.height) < 1f
+        )
+        // 图片按所选区域放大（不是停在 1x 的小框）
+        assertTrue(
+            "松手后图片应放大 image=$imageRect before=$imageBefore",
+            imageRect.width > imageBefore.width + 1f
+        )
+        assertImageCoversFrame()
+    }
 
-        // 双指并发：p0 压在右下角手柄向外拖（框变大），p1 同时按在图片上平移。
+    @Test
+    fun `一指拖角收小选框同时另一指拖图片，松手收口后图片仍盖住选框`() {
+        launchFreeRatioCrop()
+        val maxFrame = frameRect
+        // 双指并发：p0 压在右下角手柄向内拖（框临时变小），p1 同时按在图片上平移。
         // 注入的整条流在一次 setContent 的同步块里跑完，期间不发生重组——
         // 与真机上「同一帧内两路事件交错」的最坏情况等价。
         compose.onRoot().performTouchInput {
-            val corner = Offset(shrunk.right, shrunk.bottom)
-            val panStart = Offset(shrunk.center.x, shrunk.center.y)
+            val corner = Offset(maxFrame.right, maxFrame.bottom)
+            val panStart = Offset(maxFrame.center.x, maxFrame.center.y)
             down(0, corner)
             down(1, panStart)
             repeat(4) {
-                moveBy(0, Offset(15f, 10f))
+                moveBy(0, Offset(-15f, -10f))
                 moveBy(1, Offset(-15f, 10f))
             }
+            // p0 先松手：收口在 p1 仍按住时触发，随后 p1 的平移要按新几何夹取
             up(0)
             up(1)
         }
         compose.waitForIdle()
         assertImageCoversFrame()
+        // 收口后框回最大居中
+        assertTrue(
+            "收口后选框应回最大 frame=$frameRect max=$maxFrame",
+            kotlin.math.abs(frameRect.width - maxFrame.width) < 1f
+        )
     }
 
     @Test

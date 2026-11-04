@@ -295,4 +295,84 @@ class ImageCropGeometryTest {
         assertEquals(Size.Zero, clampFrameSizeInside(Size.Zero, Size(100f, 100f)))
         assertEquals(Size.Zero, clampFrameSizeInside(Size(100f, 100f), Size.Zero))
     }
+
+    // ── 拖角松手收口（settleToMaxFrame，2026-11-05 真机反馈）──
+
+    /** 公共夹具：容器 1000×800、fit 800×500 居中、最大框 = fit。 */
+    private val container = Size(1000f, 800f)
+    private val fit = Rect(100f, 150f, 900f, 650f)
+    private val maxFrame = Size(800f, 500f)
+
+    @Test
+    fun `收口把选框回最大并按两轴较大比放大`() {
+        // 当前框 400×250（各为最大框的一半）→ k = 2
+        val frame = centeredRectOf(Size(400f, 250f), fit.center)
+        val result = settleToMaxFrame(
+            frameSize = Size(400f, 250f), maxFrameSize = maxFrame, frame = frame,
+            scale = 1f, offset = Offset.Zero, fit = fit, container = container, maxZoom = 6f
+        )
+        assertEquals(2f, result.scale, 0.01f)
+        assertEquals(maxFrame, result.frameSize)
+        // 以框中心为锚：所选区域中心的内容留在屏幕中心
+        val image = imageRectFor(fit, result.scale, result.offset, container)
+        assertEquals(fit.center.x, image.center.x, 0.01f)
+        assertEquals(fit.center.y, image.center.y, 0.01f)
+    }
+
+    @Test
+    fun `收口后图片盖住最大选框`() {
+        val frameSize = Size(200f, 500f) // 自由比例窄框
+        val frame = centeredRectOf(frameSize, fit.center)
+        val result = settleToMaxFrame(
+            frameSize = frameSize, maxFrameSize = maxFrame, frame = frame,
+            scale = 1f, offset = Offset.Zero, fit = fit, container = container, maxZoom = 6f
+        )
+        val image = imageRectFor(fit, result.scale, result.offset, container)
+        val settled = centeredRectOf(maxFrame, fit.center)
+        assertTrue("image=$image settled=$settled", image.left <= settled.left + 0.01f)
+        assertTrue("image=$image settled=$settled", image.top <= settled.top + 0.01f)
+        assertTrue("image=$image settled=$settled", image.right >= settled.right - 0.01f)
+        assertTrue("image=$image settled=$settled", image.bottom >= settled.bottom - 0.01f)
+    }
+
+    @Test
+    fun `框已是最大时收口为无操作`() {
+        val frame = centeredRectOf(maxFrame, fit.center)
+        val result = settleToMaxFrame(
+            frameSize = maxFrame, maxFrameSize = maxFrame, frame = frame,
+            scale = 1.5f, offset = Offset(10f, -10f), fit = fit, container = container, maxZoom = 6f
+        )
+        assertEquals(1.5f, result.scale, 0.001f)
+        assertEquals(maxFrame, result.frameSize)
+    }
+
+    @Test
+    fun `放大顶到 maxZoom 时仍回最大框且图片盖住选框`() {
+        val frameSize = Size(50f, 31.25f) // k = 16，远超 maxZoom=6
+        val frame = centeredRectOf(frameSize, fit.center)
+        val result = settleToMaxFrame(
+            frameSize = frameSize, maxFrameSize = maxFrame, frame = frame,
+            scale = 1f, offset = Offset.Zero, fit = fit, container = container, maxZoom = 6f
+        )
+        assertEquals(6f, result.scale, 0.01f)
+        assertEquals(maxFrame, result.frameSize)
+        val image = imageRectFor(fit, result.scale, result.offset, container)
+        val settled = centeredRectOf(maxFrame, fit.center)
+        assertTrue(image.left <= settled.left && image.top <= settled.top)
+        assertTrue(image.right >= settled.right && image.bottom >= settled.bottom)
+    }
+
+    @Test
+    fun `零框或零上限时收口原样返回`() {
+        val r1 = settleToMaxFrame(
+            frameSize = Size.Zero, maxFrameSize = maxFrame, frame = Rect.Zero,
+            scale = 1f, offset = Offset.Zero, fit = fit, container = container, maxZoom = 6f
+        )
+        assertEquals(1f, r1.scale, 0.001f)
+        val r2 = settleToMaxFrame(
+            frameSize = Size(100f, 100f), maxFrameSize = Size.Zero, frame = centeredRectOf(Size(100f, 100f), fit.center),
+            scale = 1f, offset = Offset.Zero, fit = fit, container = container, maxZoom = 6f
+        )
+        assertEquals(Size(100f, 100f), r2.frameSize)
+    }
 }

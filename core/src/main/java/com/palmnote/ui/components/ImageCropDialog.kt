@@ -191,6 +191,7 @@ fun ImageCropDialogContent(
     var activeAspect by remember(sourceUri, spec.aspect) { mutableStateOf(spec.aspect) }
     // 选框只有「尺寸」一个状态：中心恒为可用区域中心（与小米相册、iOS 同形态）。
     // 位置不进状态，也就不存在「框跑偏 / 框被拖出图片」这类问题的空间。
+    // 尺寸也是临时的：拖角松手即收口回最大（settleAfterResize），静止时框恒为最大。
     // ⚠️ 不能带 remember key：key 变化会重建 State 对象，而手势检测器闭包
     // （pointerInput 只创建一次）还握着旧对象——UI 读新、手势读旧，两边分裂
     // （离屏手势测试实测：点比例胶囊后手势层看到的是永远为 0 的旧状态）。
@@ -207,7 +208,8 @@ fun ImageCropDialogContent(
 
     val imageRect = imageRectFor(fit, scale, offset, viewport)
 
-    // 该比例在「屏幕可用区域 ∩ 图片」内能取到的最大尺寸：既是初始值也是拖角上限。
+    // 该比例在「屏幕可用区域 ∩ 图片」内能取到的最大尺寸：初始值、拖角上限，
+    // 也是拖角松手收口后的回归尺寸（settleToMaxFrame）。
     // 再大就会超出图片，所以用户只能往小调。
     val maxFrameSize = remember(fit, frameBounds, activeAspect) {
         if (fit == Rect.Zero) {
@@ -269,6 +271,30 @@ fun ImageCropDialogContent(
         // 框撑大后平移的合法范围变窄，先前贴边停放的图片要重新夹回「盖住选框」，
         // 否则框会伸到图外（2026-11-04 截图反馈）
         offset = clampImageOffset(offset, fitState.value.size, scale, currentFrame(), viewport)
+    }
+
+    /**
+     * 拖角松手后的收口：图片放大到「所选区域填满最大选框」，选框回最大居中
+     * （2026-11-05 真机反馈的三条诉求都在这一步落地——松手按所选区域放大重取景、
+     * 之后拖图时框恒为最大居中、最大框 ⊆ fit ⊆ 图片保证框永不越出图片）。
+     * 几何全在纯函数 [settleToMaxFrame] 里，便于离屏单测。
+     */
+    fun settleAfterResize() {
+        val currentFit = fitState.value
+        if (saving || currentFit == Rect.Zero || maxFrameSize == Size.Zero) return
+        val result = settleToMaxFrame(
+            frameSize = frameSize,
+            maxFrameSize = maxFrameSize,
+            frame = currentFrame(),
+            scale = scale,
+            offset = offset,
+            fit = currentFit,
+            container = viewport,
+            maxZoom = MAX_ZOOM
+        )
+        scale = result.scale
+        offset = result.offset
+        frameSize = result.frameSize
     }
 
     // 旋转替换下来的位图：隔一代再回收（当前帧的绘制队列可能还握着它）
@@ -443,6 +469,7 @@ fun ImageCropDialogContent(
                         sizeBounds = CropSizeBounds(frameSize, maxFrameSize, activeAspect, minFrameSide),
                         onTransform = ::applyTransform,
                         onFrameSizeChange = ::applyFrameSize,
+                        onFrameSizeSettle = ::settleAfterResize,
                         onDoubleTap = ::toggleZoom
                     )
                 }
@@ -600,11 +627,13 @@ private fun CropCanvas(
     sizeBounds: CropSizeBounds,
     onTransform: (centroid: Offset, pan: Offset, zoom: Float) -> Unit,
     onFrameSizeChange: (Size) -> Unit,
+    onFrameSizeSettle: () -> Unit,
     onDoubleTap: (Offset) -> Unit
 ) {
     val imageBitmap = remember(bitmap) { bitmap.asImageBitmap() }
     val currentOnTransform by rememberUpdatedState(onTransform)
     val currentOnFrameSizeChange by rememberUpdatedState(onFrameSizeChange)
+    val currentOnFrameSizeSettle by rememberUpdatedState(onFrameSizeSettle)
     val currentOnDoubleTap by rememberUpdatedState(onDoubleTap)
     val currentBounds by rememberUpdatedState(sizeBounds)
 
@@ -642,7 +671,8 @@ private fun CropCanvas(
             handle = handle,
             frame = frame,
             sizeBounds = currentBounds,
-            onSizeChange = currentOnFrameSizeChange
+            onSizeChange = currentOnFrameSizeChange,
+            onResizeEnd = currentOnFrameSizeSettle
         )
     }
 }
@@ -652,11 +682,13 @@ private fun CropCornerHandle(
     handle: CropHandle,
     frame: Rect,
     sizeBounds: CropSizeBounds,
-    onSizeChange: (Size) -> Unit
+    onSizeChange: (Size) -> Unit,
+    onResizeEnd: () -> Unit
 ) {
     // 约束必须是「当前值」：写成首帧快照的话，换比例或缩放后手柄会按旧约束算
     val currentBounds by rememberUpdatedState(sizeBounds)
     val currentOnSizeChange by rememberUpdatedState(onSizeChange)
+    val currentOnResizeEnd by rememberUpdatedState(onResizeEnd)
     val handleSize = 56.dp
     val sizePx = with(LocalDensity.current) { handleSize.toPx() }
     val center = when (handle) {
@@ -694,6 +726,9 @@ private fun CropCornerHandle(
                             )
                         }
                     }
+                    // 手势流结束（松手/被系统抢走）即收口：放大所选区域、选框回最大居中。
+                    // 放在循环外保证取消路径也会收口，框不会停在中间尺寸。
+                    currentOnResizeEnd()
                 }
             }
     )
