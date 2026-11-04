@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -37,6 +38,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -128,23 +130,33 @@ fun ImageGridPicker(
             fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
         )
         Row(verticalAlignment = Alignment.CenterVertically) {
-            // 拍照直进裁剪页：小票/物品常常就在眼前，不必先经相册中转
-            // （默认 IconButton：40dp 视觉 + 48dp 最小触控，遵守全仓点击区口径）
-            if (images.size < maxCount) {
-                IconButton(
-                    onClick = {
-                        val file = cameraCaptureFile(context)
-                        pendingCameraPath = file.absolutePath
-                        cameraLauncher.launch(cameraCaptureUri(context, file))
-                    }
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.PhotoCamera,
-                        contentDescription = stringResource(R.string.crop_camera),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
+            // 拍照直进裁剪页：小票/物品常常就在眼前，不必先经相册中转。
+            // 用 40dp 圆形可点区替代 IconButton：IconButton 的 48dp 最小触控**布局**
+            // 会把标题行撑高，标题文字再居中，与缩略图之间叠出 ~26dp 空白
+            // （2026-11-05 真机反馈「附件图片下面空白太大」）。40dp 触控与
+            // 「修改预算」胶囊同口径；常驻不隐藏——4/4 时置灰，行高恒定，
+            // 传满后头部不再跳动。涟漪按 clip 后的圆形裁切（clickable 在 clip 之后）。
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .alpha(if (images.size < maxCount) 1f else 0.38f)
+                    .clip(CircleShape)
+                    .clickable(
+                        enabled = images.size < maxCount,
+                        onClick = {
+                            val file = cameraCaptureFile(context)
+                            pendingCameraPath = file.absolutePath
+                            cameraLauncher.launch(cameraCaptureUri(context, file))
+                        }
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.PhotoCamera,
+                    contentDescription = stringResource(R.string.crop_camera),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp)
+                )
             }
             Text(
                 text = "${images.size}/$maxCount",
@@ -153,7 +165,6 @@ fun ImageGridPicker(
             )
         }
     }
-    Spacer(modifier = Modifier.height(8.dp))
 
     var draggedIndex by remember { mutableIntStateOf(-1) }
     var dragTotal by remember { mutableFloatStateOf(0f) }
