@@ -15,6 +15,7 @@ import com.palmnote.data.backup.BackupManager
 import com.palmnote.data.db.entity.AccountBook
 import com.palmnote.data.db.entity.CategoryConfig
 import com.palmnote.data.db.entity.Wallet
+import com.palmnote.data.worker.BudgetAlertWorker
 import com.palmnote.data.worker.LifeDailyCheckWorker
 import com.palmnote.data.backup.AutoBackupScheduler
 import com.palmnote.domain.repository.AccountBookRepository
@@ -127,6 +128,7 @@ class PalmNoteApp : Application(), Configuration.Provider {
             walletRepository.initDefaultWallets()
             accountBookRepository.initDefaultBooks()
             scheduleDailyCheck()
+            scheduleBudgetAlertCheck()
             // 自动备份按用户偏好重建（开关/频率/约束都存在 DataStore，改设置后由设置侧再调一次 sync）
             autoBackupScheduler.sync()
             // 旧版本把备份写在应用专属外部存储（可被文件管理器读取），迁移到内部存储后旧文件不再外露
@@ -209,6 +211,26 @@ class PalmNoteApp : Application(), Configuration.Provider {
                 .build()
             WorkManager.getInstance(this@PalmNoteApp).enqueueUniquePeriodicWork(
                 LifeDailyCheckWorker.UNIQUE_WORK_NAME, ExistingPeriodicWorkPolicy.REPLACE, request
+            )
+        }
+    }
+
+    /**
+     * 预算通知的每日检查：独立周期任务，不受「记账提醒时间」影响。
+     *
+     * 固定每天跑一次即可——预算跨越阈值的那一刻往往发生在保存账单之后，
+     * 那条路径由 [com.palmnote.data.notify.BudgetAlertNotifier] 即时检查，
+     * 这里兜住「不记账、只是时间推进到了新的一期」的情况。
+     */
+    private fun scheduleBudgetAlertCheck() {
+        applicationScope.launch {
+            // 不带 initialDelay 时首次执行约在入队 24h 后：当天新建的预算、或新装首日
+            // 从没记过账，都会一整天没人检查。先给一小时的兜底，之后仍按 24h 周期。
+            val request = PeriodicWorkRequestBuilder<BudgetAlertWorker>(24, TimeUnit.HOURS)
+                .setInitialDelay(1, TimeUnit.HOURS)
+                .build()
+            WorkManager.getInstance(this@PalmNoteApp).enqueueUniquePeriodicWork(
+                BudgetAlertWorker.UNIQUE_WORK_NAME, ExistingPeriodicWorkPolicy.KEEP, request
             )
         }
     }

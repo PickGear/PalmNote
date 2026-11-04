@@ -17,6 +17,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.palmnote.app.R
 import com.palmnote.data.db.dao.HeldCategoryCount
 import com.palmnote.data.db.entity.Budget
+import com.palmnote.domain.model.BudgetPeriod
 import com.palmnote.data.db.entity.LifeItem
 import java.io.File
 import java.io.FileOutputStream
@@ -180,7 +181,7 @@ class WidgetPreviewPngGenerator {
     private fun billSnapshot() = BillWidgetProvider.BillSnapshot(
         monthlyExpense = 820_000,
         monthlyIncome = 1_200_000,
-        budget = Budget(yearMonth = "2026-10", totalBudget = 1_000_000),
+        budget = Budget.total(BudgetPeriod.MONTH, 1_000_000),
         topCategory = "餐饮",
         dailyExpense = listOf(19_300, 12_600, 32_800, 9_200, 23_500, 42_000, 12_800),
         monthlySeries = listOf(

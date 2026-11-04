@@ -84,7 +84,7 @@ class ImportKeysTest {
             ImportKeys.recurringTemplate("x", "EXPENSE", "MONTHLY"),
             ImportKeys.categoryConfig("x", "y"),
             ImportKeys.customTag("x"),
-            ImportKeys.budget("x"),
+            ImportKeys.budget("MONTH", "TOTAL", null, null),
             ImportKeys.categoryMapping("x", "y"),
             ImportKeys.usageRecord(0L, "x")
         )

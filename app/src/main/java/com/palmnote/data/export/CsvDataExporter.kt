@@ -4,6 +4,9 @@ import android.content.Context
 import android.net.Uri
 import com.palmnote.domain.model.AssetStatus
 import com.palmnote.domain.model.BillType
+import com.palmnote.domain.model.BudgetPeriod
+import com.palmnote.domain.model.BudgetScope
+import com.palmnote.domain.model.DemoOrigin
 import com.palmnote.domain.model.PaymentMethod
 import com.palmnote.domain.model.RecurringFrequency
 import com.palmnote.domain.model.ShelfLifeUnit
@@ -220,7 +223,9 @@ class CsvDataExporter(
             "dayOfMonth" to "每月几号", "dayOfWeek" to "每周几",
             "isActive" to "激活", "autoGenerate" to "自动生成",
             "totalBudget" to "预算总额", "reminderThreshold" to "提醒阈值",
-            "reminderAtThreshold" to "阈值提醒", "reminderOverBudget" to "超支提醒",
+            "period" to "周期", "scope" to "范围", "bookId" to "预算账本",
+            // category / reminderEnabled 沿用上面的「分类」「提醒」：这份 CSV 是六实体混排的
+            // **共用列**，重复登记会覆盖旧表头反查，旧包导入将丢账单/物品分类与提醒列。
             "parentId" to "父分类", "usageCount" to "使用次数",
             "applicableTypes" to "适用类型",
             "assetCategory" to "物品分类", "billCategory" to "账单分类",
@@ -252,7 +257,10 @@ class CsvDataExporter(
                 // 示例行不进导出（与生活模块同政策：备份忠实、导出纯净）。
                 val bills = db.billDao().getAllBills().first().filter { !it.isDemo }
                 val templates = db.recurringTemplateDao().getAllTemplates().first()
+                // 演示预算不进交换包（与 bills/assets 同政策）：v21 迁移后真实与演示各有一条
+                // MONTH/TOTAL，混进包会同维度撞判重键、恢复后顶掉真实预算。
                 val budgets = db.budgetDao().getAllBudgets().first()
+                    .filter { it.demoOrigin == DemoOrigin.NONE }
                 val assets = db.assetDao().getAllAssets().first().filter { !it.isDemo }
                 val usageRecords = db.usageRecordDao().getAllUsageRecords().first()
                 val anniversaries = db.anniversaryDao().getAllAnniversaries().first()
@@ -308,10 +316,12 @@ class CsvDataExporter(
                 val themeMode = preferencesManager.themeMode.first()
                 val defaultBillType = preferencesManager.defaultBillType.first()
                 val budgetReminderEnabled = preferencesManager.budgetReminderEnabled.first()
+                val budgetNotifyEnabled = preferencesManager.budgetNotifyEnabled.first()
                 val prefsJson = JsonObject(buildMap {
                     put("themeMode", JsonPrimitive(themeMode))
                     put("defaultBillType", JsonPrimitive(defaultBillType))
                     put("budgetReminderEnabled", JsonPrimitive(budgetReminderEnabled))
+                    put("budgetNotifyEnabled", JsonPrimitive(budgetNotifyEnabled))
                 }).toString()
 
                 val outputStream = context.contentResolver.openOutputStream(uri)
@@ -514,8 +524,16 @@ class CsvDataExporter(
                             val enabled = str == "true" || str == "是"
                             preferencesManager.setBudgetReminderEnabled(enabled)
                         }
+                        prefsObj["budgetNotifyEnabled"]?.let { v ->
+                            val str = (v as? JsonPrimitive)?.contentOrNull ?: v.toString()
+                            preferencesManager.setBudgetNotifyEnabled(str == "true" || str == "是")
+                        }
                     } catch (e: Exception) { AppLogger.e("CsvDataExporter", "Import preferences failed", e) }
                 }
+
+                // 账本预算的落位已在 importIntoDb 的事务内按「本次导入行」处理。
+                // 这里绝不能扫全表删预算：本机既有预算（尤其隐藏账本的）会被误删，
+                // 跨设备导入还会把包里的预算静默挂到 id 恰好相同的无关账本上。
 
                 Result.success(report)
             } catch (e: AppException) {
@@ -570,8 +588,8 @@ class CsvDataExporter(
             "name", "amount", "type", "category", "frequency", "note"
         ),
         Budget::class.java to listOf(
-            "totalBudget", "reminderThreshold",
-            "reminderAtThreshold", "reminderOverBudget"
+            "period", "scope", "bookId", "category",
+            "totalBudget", "reminderThreshold", "reminderEnabled"
         ),
         CategoryConfig::class.java to listOf(
             "type", "name", "icon", "color", "sortOrder", "isEnabled"
@@ -1010,8 +1028,9 @@ class CsvDataExporter(
         }
 
         // 账本落位：包里的「账本」列是导出设备的账本 id，本机不一定存在——
-        // 存在就用（同机往返原样），不存在（跨设备）回落到默认账本，绝不挂悬空引用
-        val localBookIds = db.accountBookDao().getAllBooks().first().map { it.id }.toSet()
+        // 存在就用（同机往返原样），不存在（跨设备）回落到默认账本，绝不挂悬空引用。
+        // 含隐藏账本：它也是本机账本，排除掉会把指向它的账单/预算错改派或误删。
+        val localBookIds = db.accountBookDao().getAllBooksIncludingHidden().first().map { it.id }.toSet()
         val fallbackBookId = db.accountBookDao().firstRealBookId() ?: 1L
 
         for ((filename, bytes) in zipEntries) {
@@ -1035,6 +1054,20 @@ class CsvDataExporter(
                     val wanted = translated["accountBookId"]?.toLongOrNull()
                     val target = if (wanted != null && wanted in localBookIds) wanted else fallbackBookId
                     if (target != bill.accountBookId) resolved = bill.copy(accountBookId = target)
+                }
+                // 账本预算同样要落位：包里的 bookId 是导出设备的 id，跨设备时要么指向
+                // 不存在的账本、要么撞上无关账本。改派到默认账本比静默丢弃这条预算好，
+                // 且与账单的落位口径一致；落位后再算判重键，避免同维度重复。
+                if (clazz == Budget::class.java) {
+                    val budget = resolved as Budget
+                    if (budget.scopeEnum == BudgetScope.BOOK) {
+                        val target = if (budget.bookId != null && budget.bookId in localBookIds) {
+                            budget.bookId
+                        } else {
+                            fallbackBookId
+                        }
+                        if (target != budget.bookId) resolved = budget.copy(bookId = target)
+                    }
                 }
                 val key = businessKeyOf(clazz, resolved)
 
@@ -1138,7 +1171,9 @@ class CsvDataExporter(
         RecurringTemplate::class.java -> (entity as? RecurringTemplate)?.let {
             ImportKeys.recurringTemplate(it.name, it.type.value, it.frequency.value)
         }
-        Budget::class.java -> (entity as? Budget)?.let { ImportKeys.budget(it.yearMonth) }
+        Budget::class.java -> (entity as? Budget)?.let {
+            ImportKeys.budget(it.period, it.scope, it.bookId, it.category)
+        }
         CategoryConfig::class.java -> (entity as? CategoryConfig)?.let { ImportKeys.categoryConfig(it.type, it.name) }
         CustomTag::class.java -> (entity as? CustomTag)?.let { ImportKeys.customTag(it.name) }
         CategoryMapping::class.java -> (entity as? CategoryMapping)?.let { ImportKeys.categoryMapping(it.assetCategory, it.billCategory) }
@@ -1474,15 +1509,38 @@ class CsvDataExporter(
         } catch (_: Exception) { null }
     }
 
+    /**
+     * 预算行解析。
+     *
+     * 兼容 v21 之前导出的旧包：旧包只有 `yearMonth`、没有 `period`/`scope`，
+     * 语义等价于「那个月的全账本总额」——按 MONTH/TOTAL 导入，金额与阈值原样保留。
+     * 不兼容就等于让用户在升级后丢预算。
+     */
     private fun rowToBudget(row: Map<String, String>): Budget? {
         return try {
+            val legacyYearMonth = row["yearMonth"]?.takeIf { it.isNotBlank() }
+            // 交换包是外部输入：非法维度/额度/阈值会让预算静默失效（0 额度永不提醒、
+            // 阈值 0 会每笔都提醒、非法 period 被 from() 悄悄改义）。统一在这里收口到
+            // 预算页滑杆与实体约定的合法域，坏行直接跳过而不是落一条「死预算」。
+            val period = BudgetPeriod.from(row["period"]?.takeIf { it.isNotBlank() } ?: "MONTH")
+            val scope = BudgetScope.from(row["scope"]?.takeIf { it.isNotBlank() } ?: "TOTAL")
             Budget(
                 id = row["id"]?.toLongOrNull() ?: 0,
-                yearMonth = row["yearMonth"] ?: return null,
-                totalBudget = row["totalBudget"]?.let { Money.parse(it)?.cents } ?: return null,
-                reminderThreshold = row["reminderThreshold"]?.toDoubleOrNull() ?: 0.8,
-                reminderAtThreshold = row["reminderAtThreshold"].toBoolean(),
-                reminderOverBudget = row["reminderOverBudget"].toBoolean(),
+                period = period.name,
+                scope = scope.name,
+                // 只保留与作用范围匹配的维度：脏包里残留的 bookId/category 会让判重键
+                // 和实际口径不一致，出现「改一条、留一条」。
+                bookId = row["bookId"]?.toLongOrNull().takeIf { scope == BudgetScope.BOOK },
+                category = row["category"]?.takeIf { it.isNotBlank() }
+                    .takeIf { scope == BudgetScope.CATEGORY },
+                totalBudget = row["totalBudget"]?.let { Money.parse(it)?.cents }
+                    ?.takeIf { it > 0 } ?: return null,
+                reminderThreshold = row["reminderThreshold"]?.toDoubleOrNull()
+                    ?.takeIf { it.isFinite() }?.coerceIn(0.01, 1.0) ?: 0.8,
+                // 旧包用两个布尔列表达「要提醒」；新包只有一个开关，任一为真即开
+                reminderEnabled = row["reminderEnabled"]?.toBoolean()
+                    ?: (row["reminderAtThreshold"].toBoolean() || row["reminderOverBudget"].toBoolean()
+                        || legacyYearMonth != null),
                 createdAt = parseDateOrNull(row["createdAt"]) ?: System.currentTimeMillis(),
                 updatedAt = parseDateOrNull(row["updatedAt"]) ?: System.currentTimeMillis()
             )

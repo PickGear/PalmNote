@@ -158,7 +158,8 @@ object DatabaseModule {
                 com.palmnote.data.db.migration.MIGRATION_16_17,
                 com.palmnote.data.db.migration.MIGRATION_17_18,
                 com.palmnote.data.db.migration.MIGRATION_18_19,
-                com.palmnote.data.db.migration.MIGRATION_19_20
+                com.palmnote.data.db.migration.MIGRATION_19_20,
+                com.palmnote.data.db.migration.MIGRATION_20_21
             )
             .addCallback(object : androidx.room.RoomDatabase.Callback() {
                 override fun onCreate(db: SupportSQLiteDatabase) {
@@ -277,9 +278,11 @@ object RepositoryModule {
     @Provides @Singleton
     fun provideBudgetRepository(
         dao: BudgetDao,
+        billDao: BillDao,
+        accountBookDao: AccountBookDao,
         preferencesManager: com.palmnote.data.datastore.PreferencesManager
     ): BudgetRepository =
-        BudgetRepositoryImpl(dao, preferencesManager)
+        BudgetRepositoryImpl(dao, billDao, accountBookDao, preferencesManager)
 
     @Provides @Singleton
     fun provideAnniversaryRepository(dao: AnniversaryDao): AnniversaryRepository =

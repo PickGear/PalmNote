@@ -409,6 +409,25 @@ interface BillDao {
     )
     suspend fun clearReimbursementBySource(billId: Long, now: Long = System.currentTimeMillis())
 
+    /**
+     * 预算进度用：区间支出按「账本 × 分类」聚合，一次查询覆盖全部三种预算口径
+     * （总额 = 全部行求和、账本 = 按 accountBookId 过滤、分类 = 按 category 过滤），
+     * 不必为每种预算各发一条 SQL。
+     *
+     * [demoBookId] 非空时只算该账本（演示模式）；真实模式传 null = 全账本。
+     */
+    @Query(
+        "SELECT accountBookId, category, SUM(amount) AS total FROM bills " +
+            "WHERE type = 'EXPENSE' AND date >= :startDate AND date <= :endDate " +
+            "AND (:demoBookId IS NULL OR accountBookId = :demoBookId) " +
+            "GROUP BY accountBookId, category"
+    )
+    fun getBudgetSpendRows(
+        startDate: Long,
+        endDate: Long,
+        demoBookId: Long?
+    ): Flow<List<BudgetSpendRow>>
+
     @Query("SELECT SUM(amount) FROM bills WHERE type = 'EXPENSE' AND date >= :startDate AND date <= :endDate")
     fun getWeeklyExpense(startDate: Long, endDate: Long): Flow<Long?>
 
@@ -603,6 +622,16 @@ interface BillDao {
 }
 
 data class CategoryTotal(
+    val category: String,
+    val total: Long
+)
+
+/**
+ * 预算进度用的支出聚合行：某个账本某个分类在一段时间内的支出合计（分）。
+ * 三种预算口径都从这一份数据里派出来，避免每种预算各写一条 SQL。
+ */
+data class BudgetSpendRow(
+    val accountBookId: Long,
     val category: String,
     val total: Long
 )

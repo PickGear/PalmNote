@@ -39,6 +39,9 @@ object NotificationHelper {
         /** 记账提醒。 */
         BILL("life_bill", R.string.notification_channel_bill, R.string.notification_channel_bill_desc, true),
 
+        /** 预算达到阈值 / 超支。 */
+        BUDGET("bill_budget", R.string.notification_channel_budget, R.string.notification_channel_budget_desc, true),
+
         /** 倒计时到期。 */
         COUNTDOWN("life_countdown", R.string.notification_channel_countdown, R.string.notification_channel_countdown_desc, true),
 

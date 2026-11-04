@@ -49,6 +49,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.palmnote.app.R
 import com.palmnote.data.db.dao.CategoryCount
+import com.palmnote.domain.model.BudgetPeriod
 import com.palmnote.domain.model.toMoney
 import com.palmnote.domain.util.CurrencyUtils
 import com.palmnote.domain.util.DateUtils
@@ -56,6 +57,7 @@ import com.palmnote.ui.components.*
 import com.palmnote.ui.theme.*
 import com.palmnote.ui.asset.getCategoryDisplayName
 import com.palmnote.ui.asset.getCategoryIcon
+import com.palmnote.ui.bills.budgetLabel
 
 // 10 种卡片的统一分发入口：参数为纯数据 + 导航回调，按卡片类型各自取用，
 // 收敛成状态对象只会把参数换个地方堆——Compose 惯例下保持显式签名并抑制告警
@@ -70,6 +72,8 @@ internal fun DashboardCardContent(
     onNavigateToVault: () -> Unit = {},
     onNavigateToAddBill: () -> Unit = {},
     onNavigateToAddAsset: () -> Unit = {},
+    /** 预算预警卡的去向：带上是哪一期被预警。 */
+    onNavigateToBudget: (BudgetPeriod) -> Unit = {},
     onHabitCheckIn: (Long) -> Unit = {},
     presetCategoryOverrides: Map<String, String>,
     categoryConfigs: List<com.palmnote.data.db.entity.CategoryConfig>,
@@ -91,7 +95,7 @@ internal fun DashboardCardContent(
             onToggleAmounts = onToggleAmounts
         )
         CardType.QUICK_ACTIONS -> QuickActionsCard(onNavigateToAddBill, onNavigateToAddAsset, onNavigateToLife)
-        CardType.BUDGET_ALERT -> BudgetAlertCard(state, onNavigateToBill, amountsHidden)
+        CardType.BUDGET_ALERT -> BudgetAlertCard(state, onNavigateToBudget, amountsHidden)
         CardType.ANNIVERSARIES -> AnniversariesCard(state, onNavigateToLife)
         CardType.ASSET_DISTRIBUTION -> AssetDistributionCard(state, onNavigateToAsset, presetCategoryOverrides, categoryConfigs)
         CardType.TODAY -> TodayCard(state, onNavigateToLife)
@@ -502,24 +506,38 @@ private fun QuickActionButton(icon: ImageVector, label: String, color: Color, on
 @Composable
 internal fun BudgetAlertCard(
     state: DashboardState,
-    onNavigateToBill: () -> Unit,
+    /**
+     * 点卡片的去向：进预算页，并带上这条预警自己的周期。
+     *
+     * 早前这里接的是「去账单页」，既不显示预算规则、也看不到阈值与剩余；
+     * 周/年预算的预警点进去还会落在月页签上，等于找不到那条预警。
+     */
+    onNavigateToBudget: (BudgetPeriod) -> Unit = {},
     amountsHidden: Boolean = false
 ) {
-    val budget = state.budget
-    if (state.budgetReminderEnabled && budget != null && budget.totalBudget > 0 &&
-        state.monthlyExpense > 0 && state.monthlyExpense > budget.totalBudget * 0.8
-    ) {
+    val alert = state.budgetAlert
+    if (state.budgetReminderEnabled && alert != null) {
+        val label = budgetLabel(
+            androidx.compose.ui.platform.LocalContext.current, alert, state.bookNames
+        )
+        val percent = alert.usedPercent
         AlertCard(
             icon = Icons.Outlined.Warning,
             title = stringResource(R.string.dashboard_budget_alert),
-            // 这张卡把本月支出原样印在首页上——不跟着一起遮，净资产卡藏了也等于没藏
-            message = if (amountsHidden) {
-                stringResource(R.string.dashboard_budget_alert_message_hidden)
-            } else {
-                stringResource(R.string.dashboard_budget_alert_message, state.monthlyExpense / 100.0)
+            // 这张卡把已用金额原样印在首页上——不跟着一起遮，净资产卡藏了也等于没藏
+            message = when {
+                amountsHidden -> stringResource(R.string.budget_alert_message_hidden, label, percent)
+                alert.isOver -> stringResource(
+                    R.string.budget_alert_over_message, label,
+                    alert.spent / 100.0, alert.limit / 100.0
+                )
+                else -> stringResource(
+                    R.string.budget_alert_message, label, percent,
+                    alert.spent / 100.0, alert.limit / 100.0
+                )
             },
-            color = if (state.monthlyExpense > budget.totalBudget) ErrorLight else AccentOrange,
-            onClick = onNavigateToBill
+            color = if (alert.isOver) ErrorLight else AccentOrange,
+            onClick = { onNavigateToBudget(alert.budget.periodEnum) }
         )
     }
 }

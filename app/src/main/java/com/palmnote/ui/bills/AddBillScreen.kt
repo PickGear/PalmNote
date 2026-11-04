@@ -66,27 +66,12 @@ fun AddBillScreen(
     val presetOverrides by viewModel.presetCategoryOverrides
         .collectAsStateWithLifecycle()
     val categories = remember(formState.type, customExpenseCategories, customIncomeCategories, categoryUsageCounts, presetOverrides) {
-        val isExpense = formState.type == BillType.EXPENSE
-        val rawPresets = if (isExpense) expenseCategoryItems else incomeCategoryItems
-        val prefix = if (isExpense) "EXPENSE_" else "INCOME_"
-        val filteredPresets = rawPresets.filter { item ->
-            val key = "preset_$prefix${item.name}"
-            val json = presetOverrides[key]
-            if (json != null) {
-                try {
-                    org.json.JSONObject(json).optBoolean("enabled", true)
-                } catch (_: Exception) {
-                    true
-                }
-            } else {
-                true
-            }
-        }.map { item ->
-            val resolved = com.palmnote.ui.theme.ColorResolver.resolve(item.name, item.color)
-            if (resolved != item.color) item.copy(color = resolved) else item
+        // 与预算页共用同一个函数：两边如果各写一份，迟早出现「记账页有、预算页没有」。
+        if (formState.type == BillType.EXPENSE) {
+            resolveExpenseCategoryItems(customExpenseCategories, presetOverrides, categoryUsageCounts)
+        } else {
+            resolveIncomeCategoryItems(customIncomeCategories, presetOverrides, categoryUsageCounts)
         }
-        val base = filteredPresets + if (isExpense) customExpenseCategories else customIncomeCategories
-        base.sortedByDescending { categoryUsageCounts[it.name] ?: 0 }
     }
 
     var showExpensePicker by remember { mutableStateOf(false) }
@@ -708,6 +693,19 @@ fun AddBillScreen(
                             }
                         }
                     }
+                }
+            }
+
+            // 整条保存失败：必须显式告知。以前这里什么都不显示、按钮又变回可点，
+            // 用户会以为「已经记上了」，于是重复记一次或干脆漏记。
+            if (formState.saveError != null) {
+                item {
+                    Text(
+                        text = formState.saveError.orEmpty(),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = ErrorLight,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
             }
 

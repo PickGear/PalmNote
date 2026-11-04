@@ -547,6 +547,7 @@
     <string name="widget_budget_used">Budget used</string>
     <!-- Dashboard 4x3 (v4): header / tile secondary info -->
     <string name="widget_budget_remain_fmt">%1$s left</string>
+    <string name="widget_budget_over_fmt">%1$s over</string>
     <string name="widget_todo_done_more">View all ›</string>
     <!-- v4 agenda sections (design: today/overdue/tomorrow/later + week-done footer) -->
     <string name="widget_todo_sect_count">%1$d items</string>
@@ -875,6 +876,7 @@
     <!-- Bill Form Errors -->
     <string name="bill_error_amount_required">Please enter a valid amount</string>
     <string name="bill_error_category_required">Please select a category</string>
+    <string name="bill_error_save_failed">Could not save. The bill was not recorded, please try again</string>
     <!-- Backup Error Messages -->
     <string name="backup_error_corrupted">Backup file is corrupted or empty</string>
     <string name="backup_error_cross_device">This backup was created by an older version and does not carry the database key (new versions embed it in the file), and this device does not hold the original key either, so the database cannot be decrypted here. On the device that created this backup, open PalmNote and back up again; new backups restore directly on any device</string>
@@ -1196,16 +1198,10 @@
     <string name="bill_import_import_total">Import %1$d</string>
     <!-- Budget -->
     <string name="budget_title">Budget Management</string>
-    <string name="budget_month_format">%s Budget</string>
-    <string name="budget_total">Total Budget</string>
-    <string name="budget_used">Used</string>
-    <string name="budget_remaining">Remaining</string>
-    <string name="budget_over">Over Budget</string>
-    <string name="budget_not_set">No budget set for this month</string>
     <string name="budget_modify">Modify Budget</string>
     <string name="budget_set">Set Budget</string>
     <string name="budget_tips">Budget Tips</string>
-    <string name="budget_tips_content">① Suggest using 50%% of income as living expenses budget\n② Reserve 10%% as emergency fund\n③ You\'ll be reminded when 80%% is used</string>
+    <string name="budget_tips_content">① Plan a living-expense budget based on income\n② Set aside part of it for emergencies\n③ You will be reminded when the chosen threshold is reached</string>
     <!-- Report -->
     <string name="report_title">Statistics</string>
     <string name="report_previous">Previous</string>
@@ -1748,6 +1744,55 @@
     <string name="transfer_from_required">Please select the source account</string>
     <string name="transfer_to_required">Please select the destination account</string>
     <string name="budget_invalid_amount">Enter a valid amount</string>
+    <!-- Budget v21: period / scope / notifications -->
+    <string name="budget_period_week">This Week</string>
+    <string name="budget_period_month">This Month</string>
+    <string name="budget_period_year">This Year</string>
+    <string name="budget_label_total">%1$s Total Budget</string>
+    <string name="budget_label_category">%1$s \"%2$s\" Budget</string>
+    <string name="budget_label_book">%1$s \"%2$s\" Budget</string>
+    <string name="budget_label_book_missing">a book</string>
+    <string name="budget_alert_message">%1$s: %2$d%% used (¥%3$.2f / ¥%4$.2f)</string>
+    <string name="budget_alert_over_message">%1$s is over budget (¥%2$.2f / ¥%3$.2f)</string>
+    <string name="budget_alert_message_hidden">%1$s: %2$d%% used</string>
+    <string name="budget_section_category">Category Budgets</string>
+    <string name="budget_section_book">Book Budgets</string>
+    <string name="budget_add">Add</string>
+    <string name="budget_empty_category">No category budgets yet</string>
+    <string name="budget_empty_book">No book budgets yet</string>
+    <string name="budget_pick_category">Choose a category</string>
+    <string name="budget_pick_book">Choose a book</string>
+    <string name="budget_no_category_available">No expense category yet — add one in Settings → Categories</string>
+    <string name="budget_no_book_available">No book yet — create one on the bills page</string>
+    <string name="budget_reach_fmt">Remind at %1$d%%</string>
+    <string name="budget_notify_label">Remind me</string>
+    <string name="budget_amount_label">Budget amount</string>
+    <string name="budget_used_short">Used %1$s · %2$d%%</string>
+    <string name="budget_value_dash">—</string>
+    <string name="budget_dialog_sub_category">Category budget · %1$s</string>
+    <string name="budget_dialog_sub_book">Book budget · %1$s</string>
+    <string name="budget_delete">Delete this budget</string>
+    <string name="budget_delete_confirm_title">Delete this budget?</string>
+    <string name="budget_delete_confirm_message">This cannot be undone. Related budget notifications will be dismissed.</string>
+    <string name="budget_used_of">Used %1$s / %2$s</string>
+    <string name="budget_used_percent">Used %1$d%%</string>
+    <string name="budget_total_of">Total %1$s</string>
+    <!-- 计数文案：数量为 1 时英文要用单数（%d items → 1 item），故用 plurals。 -->
+    <plurals name="budget_group_items">
+        <item quantity="one">%1$d item</item>
+        <item quantity="other">%1$d items</item>
+    </plurals>
+    <string name="budget_category_over_total">Category budgets total %1$s, %2$s over the total budget</string>
+    <string name="budget_elapsed_percent">%1$d%% elapsed</string>
+    <string name="budget_remaining_amount">Left %1$s</string>
+    <string name="budget_over_amount">Over %1$s</string>
+    <string name="budget_threshold_off_hint">Reminders are off, so this threshold is inactive</string>
+    <string name="budget_not_set_period">No %1$s budget yet</string>
+    <string name="settings_budget_notify">Budget Notifications</string>
+    <string name="settings_budget_notify_desc">Notify when a budget reaches its threshold or is exceeded</string>
+    <string name="notification_budget_title">Budget Alert</string>
+    <string name="notification_budget_threshold">%1$s: %2$d%% used (¥%3$.2f / ¥%4$.2f)</string>
+    <string name="notification_budget_over">%1$s is over budget by ¥%2$.2f</string>
     <string name="app_lock_biometric_enable_verify_title">Verify PIN to enable biometrics</string>
     <string name="app_lock_biometric_enabled_toast">Biometric unlock enabled</string>
     <string name="app_lock_disabled_toast">App lock disabled</string>

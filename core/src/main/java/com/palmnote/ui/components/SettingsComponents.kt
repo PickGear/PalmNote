@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
@@ -191,12 +193,15 @@ fun SettingRow(
  *
  * 选项一律渲染成「36dp 圆形色底图标 + 标签 + `RadioButton`」，分隔线缩进 52dp。
  * 图标与色是必填参数而非可选：不允许再出现"纯文字版"的选择器。
+ *
+ * [selected] 传 null 表示**没有当前值**（例如预算页「挑一个分类去新建或编辑」）：
+ * 此时不画单选圈、改画右箭头，避免点亮一个用户其实没有选中的项。
  */
 @Composable
 fun <T> ChoiceDialog(
     title: String,
     options: List<T>,
-    selected: T,
+    selected: T? = null,
     optionLabel: @Composable (T) -> String,
     optionIcon: (T) -> ImageVector,
     optionTint: (T) -> Color,
@@ -207,43 +212,22 @@ fun <T> ChoiceDialog(
         onDismissRequest = onDismiss,
         title = { Text(title, fontWeight = FontWeight.Bold) },
         text = {
-            Column {
-                options.forEachIndexed { index, option ->
-                    val tint = optionTint(option)
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(MaterialTheme.shapes.medium)
-                            .clickable { onSelect(option); onDismiss() }
-                            .padding(vertical = 8.dp, horizontal = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(36.dp)
-                                .clip(CircleShape)
-                                .background(tint.copy(alpha = 0.12f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                optionIcon(option),
-                                contentDescription = null,
-                                tint = tint,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                        Spacer(Modifier.width(12.dp))
-                        Text(
-                            text = optionLabel(option),
-                            style = MaterialTheme.typography.bodyLarge,
-                            modifier = Modifier.weight(1f)
-                        )
-                        RadioButton(
-                            selected = option == selected,
-                            onClick = { onSelect(option); onDismiss() },
-                            colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary)
-                        )
-                    }
+            // 分类可以有很多条（内置 + 自定义），普通 Column 会顶穿弹窗、把底部选项和
+            // 按钮一起挤到屏幕外，所以这里必须可滚。
+            LazyColumn(modifier = Modifier.heightIn(max = 420.dp)) {
+                itemsIndexed(options) { index, option ->
+                    ChoiceOptionRow(
+                        label = optionLabel(option),
+                        icon = optionIcon(option),
+                        tint = optionTint(option),
+                        // null 选中集 → 每一项都画右箭头，表示「点了才进下一步」
+                        state = when {
+                            selected == null -> ChoiceRowState.FORWARD
+                            option == selected -> ChoiceRowState.SELECTED
+                            else -> ChoiceRowState.UNSELECTED
+                        },
+                        onClick = { onSelect(option); onDismiss() }
+                    )
                     if (index != options.lastIndex) {
                         HorizontalDivider(modifier = Modifier.padding(horizontal = 52.dp))
                     }
@@ -256,4 +240,58 @@ fun <T> ChoiceDialog(
             }
         }
     )
+}
+
+/** [ChoiceOptionRow] 右侧指示器：单选圈三态 + 无当前值时的右箭头。 */
+private enum class ChoiceRowState { SELECTED, UNSELECTED, FORWARD }
+
+/** 选择弹窗里的一行：色底图标 + 标签 + 右侧指示器。 */
+@Composable
+private fun ChoiceOptionRow(
+    label: String,
+    icon: ImageVector,
+    tint: Color,
+    state: ChoiceRowState,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.medium)
+            .clickable(onClick = onClick)
+            .padding(vertical = 8.dp, horizontal = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .clip(CircleShape)
+                .background(tint.copy(alpha = 0.12f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(20.dp))
+        }
+        Spacer(Modifier.width(12.dp))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyLarge,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f)
+        )
+        if (state == ChoiceRowState.FORWARD) {
+            Icon(
+                Icons.Filled.ChevronRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp)
+            )
+        } else {
+            RadioButton(
+                selected = state == ChoiceRowState.SELECTED,
+                onClick = onClick,
+                colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary)
+            )
+        }
+    }
 }

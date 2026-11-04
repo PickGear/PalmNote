@@ -37,6 +37,8 @@ data class SettingsState(
     val themeMode: String = "SYSTEM",
     val defaultBillType: BillType = BillType.EXPENSE,
     val budgetReminderEnabled: Boolean = true,
+    /** 预算系统通知（与页内预警卡分开）。 */
+    val budgetNotifyEnabled: Boolean = true,
     val calendarSyncEnabled: Boolean = false,
     /** 演示模式（生活页按设计稿铺示例数据）；**默认开启**。 */
     val demoModeEnabled: Boolean = true,
@@ -149,7 +151,8 @@ class SettingsViewModel @Inject constructor(
                 preferencesManager.autoLockTimeoutMinutes,
                 preferencesManager.lifeDemoMode,
                 preferencesManager.receiptStyle,
-                preferencesManager.assetGridCardStyle
+                preferencesManager.assetGridCardStyle,
+                preferencesManager.budgetNotifyEnabled
             ) { args ->
                 val i = { idx: Int -> args.getOrNull(idx) }
                 _state.update { current ->
@@ -188,7 +191,8 @@ class SettingsViewModel @Inject constructor(
                         autoLockTimeoutMinutes = (i(31) as? Int) ?: 5,
                         demoModeEnabled = (i(32) as? Boolean) ?: true,
                         receiptStyle = (i(33) as? String) ?: PreferencesManager.RECEIPT_STYLE_DETAIL,
-                        assetGridCardStyle = (i(34) as? String) ?: PreferencesManager.ASSET_GRID_STYLE_SMALL
+                        assetGridCardStyle = (i(34) as? String) ?: PreferencesManager.ASSET_GRID_STYLE_SMALL,
+                        budgetNotifyEnabled = (i(35) as? Boolean) ?: true
                     )
                 }
             }.catch { AppLogger.w("SettingsVM", "Settings flow failed", it) }.collect()
@@ -214,6 +218,10 @@ class SettingsViewModel @Inject constructor(
 
     fun setBudgetReminderEnabled(enabled: Boolean) {
         viewModelScope.launch { preferencesManager.setBudgetReminderEnabled(enabled) }
+    }
+
+    fun setBudgetNotifyEnabled(enabled: Boolean) {
+        viewModelScope.launch { preferencesManager.setBudgetNotifyEnabled(enabled) }
     }
 
     /**

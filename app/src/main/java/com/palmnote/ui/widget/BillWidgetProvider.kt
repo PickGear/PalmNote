@@ -12,6 +12,7 @@ import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import kotlin.math.roundToInt
 import kotlinx.coroutines.flow.first
 
 /**
@@ -336,7 +337,9 @@ open class BillWidgetProvider : ScopedWidgetProvider() {
         internal fun usedPercent(snapshot: BillSnapshot, budget: Budget?): Int? {
             val total = budget?.totalBudget ?: return null
             if (total <= 0) return null
-            return (snapshot.monthlyExpense * 100 / total).toInt().coerceIn(0, 100)
+            // 四舍五入，与 BudgetProgress.usedPercent 同口径：同一预算在卡片和小组件上
+            // 必须显示同一个数字，一个截断一个进位会差 1%
+            return ((snapshot.monthlyExpense.toDouble() * 100 / total).roundToInt()).coerceIn(0, 100)
         }
 
         /** 净收入可正可负，标签不表方向，所以负值要带符号（格式函数返回绝对值）。 */
@@ -386,14 +389,13 @@ open class BillWidgetProvider : ScopedWidgetProvider() {
         ): BillSnapshot {
             val yearMonth = DateTimeFormatter.ofPattern("yyyy-MM").format(LocalDate.now())
             val includeDemo = entryPoint.preferencesManager().lifeDemoMode.first()
-            // 预算表没有账本维度：选中某个账本时不能再拿全局预算去算「已用百分比」，
-            // 那是把 A 账本的支出除以全账本的预算。此时 budget 置空。
-            // 演示口径同理（v20 起 SEED/USER 行与真实行并存，直连 DAO 必须自带口径）。
+            // 预算按月设置：全部账本视图用「月度总预算」，选中具体账本时优先用该账本的
+            // 月度预算（v21 起支持账本维度）；该账本没设则置空，绝不拿全账本预算去
+            // 除 A 账本的支出。演示口径同理（直连 DAO 必须自带口径）。
             val budget = if (bookId == null) {
-                entryPoint.budgetDao().getBudgetByMonthScoped(yearMonth, includeDemo)
-                    ?: entryPoint.budgetDao().getLatestBudgetScoped(includeDemo)
+                entryPoint.budgetDao().getMonthlyTotalScoped(includeDemo)
             } else {
-                null
+                entryPoint.budgetDao().getMonthlyBookScoped(bookId, includeDemo)
             }
             // 有消费记录时带上最高消费分类（对应设计稿「餐饮预算已使用 82%」）
             val topCategory = if (budget != null && budget.totalBudget > 0) {

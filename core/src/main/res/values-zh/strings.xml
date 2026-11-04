@@ -217,6 +217,8 @@
     <string name="notification_channel_checkin_desc">今天还没有生活记录时提醒</string>
     <string name="notification_channel_bill">记账提醒</string>
     <string name="notification_channel_bill_desc">今天还没记账时提醒</string>
+    <string name="notification_channel_budget">预算提醒</string>
+    <string name="notification_channel_budget_desc">预算达到设定阈值或超支时提醒</string>
     <string name="notification_channel_countdown">倒计时提醒</string>
     <string name="notification_channel_countdown_desc">倒计时到期前与当天</string>
     <string name="notification_channel_asset">物品到期提醒</string>

@@ -61,7 +61,11 @@ class AccountBookRepositoryImpl @Inject constructor(
 
     override suspend fun setHidden(id: Long, hidden: Boolean) = accountBookDao.setHidden(id, hidden)
 
-    override suspend fun deleteBook(id: Long) = accountBookDao.deleteBook(id)
+    override suspend fun deleteBook(id: Long) = appDatabase.withTransaction {
+        accountBookDao.deleteBook(id)
+        // BOOK 预算是按账本 id 建的，账本没了要一并清掉
+        appDatabase.budgetDao().deleteByBook(id)
+    }
 
     /**
      * 删除账本及其全部账单。账单部分**必须**走 [BillRepository.deleteByBook]：
@@ -79,7 +83,10 @@ class AccountBookRepositoryImpl @Inject constructor(
         // 示例账本禁删：删掉会被播种守卫重播，表现成"数据自己复活"
         if (accountBookDao.getBookById(bookId)?.isDemo == true) return
         billRepository.deleteByBook(bookId)
-        appDatabase.withTransaction { accountBookDao.deleteBook(bookId) }
+        appDatabase.withTransaction {
+            accountBookDao.deleteBook(bookId)
+            appDatabase.budgetDao().deleteByBook(bookId)
+        }
     }
 
     override suspend fun initDefaultBooks() = appDatabase.withTransaction {

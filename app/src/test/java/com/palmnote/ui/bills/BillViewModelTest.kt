@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.palmnote.PalmNoteApp
 import com.palmnote.data.datastore.PreferencesManager
+import com.palmnote.data.notify.BudgetAlertNotifier
 import com.palmnote.data.db.entity.AccountBook
 import com.palmnote.data.db.entity.Bill
 import com.palmnote.data.db.entity.CategoryConfig
@@ -42,6 +43,7 @@ class BillViewModelTest {
     private lateinit var billRepository: BillRepository
     private lateinit var budgetRepository: BudgetRepository
     private lateinit var accountBookRepository: AccountBookRepository
+    private lateinit var budgetAlertNotifier: BudgetAlertNotifier
     private lateinit var preferencesManager: PreferencesManager
     private lateinit var cachedWallets: MutableStateFlow<List<Wallet>>
     private lateinit var cachedCategoryConfigs: MutableStateFlow<List<CategoryConfig>>
@@ -55,6 +57,7 @@ class BillViewModelTest {
         billRepository = mockk(relaxUnitFun = true)
         budgetRepository = mockk(relaxUnitFun = true)
         accountBookRepository = mockk(relaxUnitFun = true)
+        budgetAlertNotifier = mockk(relaxUnitFun = true)
         preferencesManager = mockk(relaxUnitFun = true)
         context = mockk(relaxUnitFun = true)
         cachedWallets = MutableStateFlow(emptyList())
@@ -72,7 +75,7 @@ class BillViewModelTest {
         every { billRepository.getExpenseByCategory(any()) } returns flowOf(emptyList())
         every { billRepository.getExpenseByCategoryByBook(any(), any()) } returns flowOf(emptyList())
         every { billRepository.getCategoryUsageCounts(any()) } returns flowOf(emptyList())
-        every { budgetRepository.getBudgetByMonthFlow(any()) } returns flowOf(null)
+        every { budgetRepository.getProgresses() } returns flowOf(emptyList())
         every { accountBookRepository.getAllBooksIncludingHidden() } returns flowOf(emptyList())
         every { preferencesManager.defaultBillType } returns flowOf("EXPENSE")
         every { preferencesManager.presetCategoryOverrides } returns flowOf(emptyMap())
@@ -83,7 +86,7 @@ class BillViewModelTest {
 
         viewModel = BillViewModel(
             context, SavedStateHandle(), cachedWallets, cachedCategoryConfigs, cachedAccountBooks,
-            billRepository, budgetRepository, accountBookRepository, preferencesManager
+            billRepository, budgetRepository, accountBookRepository, budgetAlertNotifier, preferencesManager
         )
     }
 

@@ -77,13 +77,14 @@ object ImportKeys {
         join("tmpl", name, type, frequency)
 
     /**
-     * 预算键：**只用年月**。
+     * 预算键：**维度组合**（周期 + 范围 + 账本 + 分类）。
      *
-     * 本应用的语义是「一个月一条预算」，`budgets` 表没有唯一索引。
-     * 若把金额也拼进键里，包内金额与本地不一致时会插出**第二条同月预算**，
-     * 反而制造出「一个月两条预算」这种脏数据。
+     * v21 起预算是长期模板，同维度最多一条；导入时按维度判重——
+     * 把金额拼进键里会在「包内金额与本地不一致」时插出第二条同维度预算，
+     * 反而制造脏数据。可空维度用固定占位符，避免拼接歧义。
      */
-    fun budget(yearMonth: String): String = join("budget", yearMonth)
+    fun budget(period: String, scope: String, bookId: Long?, category: String?): String =
+        join("budget", period, scope, bookId?.toString() ?: "-", category ?: "-")
 
     /** 分类键：类型 + 名称。「用户心里的同一个分类」是名字，不是 id。 */
     fun categoryConfig(type: String, name: String): String = join("cat", type, name)

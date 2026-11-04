@@ -370,6 +370,14 @@ fun AppDialog(
     text: @Composable (() -> Unit)? = null,
     confirmButton: @Composable () -> Unit = {},
     dismissButton: @Composable () -> Unit = {},
+    /**
+     * 按钮行最左侧的独立动作（目前只有「删除」这类危险操作在用）。
+     *
+     * 危险操作不能和「保存」挨着，但 Material 的按钮行只有左（取消）/ 右（确定）两个位置，
+     * 硬塞第三个会挤成一排。给了这一槽后，删除被推到最左、与右侧两个按钮之间留出整段空白。
+     * 传 null（默认）时布局与原来完全一致：不给 weight，两个按钮照旧靠右。
+     */
+    leadingButton: (@Composable () -> Unit)? = null,
     shape: Shape = DialogShape,
     containerColor: Color = MaterialTheme.colorScheme.surface
 ) {
@@ -412,6 +420,11 @@ fun AppDialog(
                         horizontalArrangement = Arrangement.End,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        if (leadingButton != null) {
+                            // weight(1f) 而不是 SpaceBetween：不给左侧元素时 Row 只有一个子项，
+                            // SpaceBetween 会把它推到最左，所有既有弹窗都会错位。
+                            Box(modifier = Modifier.weight(1f)) { leadingButton() }
+                        }
                         dismissButton()
                         confirmButton()
                     }

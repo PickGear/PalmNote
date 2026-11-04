@@ -49,6 +49,7 @@ class AssetExpiryCsvRoundTripTest {
         every { themeMode } returns flowOf("SYSTEM")
         every { defaultBillType } returns flowOf("EXPENSE")
         every { budgetReminderEnabled } returns flowOf(true)
+        every { budgetNotifyEnabled } returns flowOf(true)
     }
 
     private fun exporterFor(database: AppDatabase) =

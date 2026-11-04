@@ -219,6 +219,8 @@
     <string name="notification_channel_checkin_desc">Reminds you when today has no life record yet</string>
     <string name="notification_channel_bill">Bookkeeping Reminder</string>
     <string name="notification_channel_bill_desc">Reminds you when today has no bills logged</string>
+    <string name="notification_channel_budget">Budget Alerts</string>
+    <string name="notification_channel_budget_desc">Alerts when a budget reaches its threshold or is exceeded</string>
     <string name="notification_channel_countdown">Countdown Reminders</string>
     <string name="notification_channel_countdown_desc">Before a countdown is due and on the day</string>
     <string name="notification_channel_asset">Item Expiry Reminders</string>

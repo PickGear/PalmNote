@@ -403,7 +403,11 @@ class BillRepositoryImpl @Inject constructor(
         billDao.getCategoryUsageCounts(BillType.from(type))
 
     override suspend fun updateCategoryNameInBills(oldName: String, newName: String) =
-        billDao.updateCategoryName(oldName, newName)
+        appDatabase.withTransaction {
+            billDao.updateCategoryName(oldName, newName)
+            // 预算的分类维度存的是名字：不同步会让改名后的分类预算进度恒为 0
+            appDatabase.budgetDao().renameCategory(oldName, newName)
+        }
 
     override suspend fun countByCategory(category: String): Int =
         billDao.countByCategory(category)

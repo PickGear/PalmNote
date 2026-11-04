@@ -32,6 +32,7 @@ class NotificationChannelTableTest {
             setOf(
                 "life_checkin",
                 "life_bill",
+                "bill_budget",
                 "life_countdown",
                 "life_asset",
                 "life_events",

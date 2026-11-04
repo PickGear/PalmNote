@@ -266,6 +266,26 @@ object DateUtils {
             .atTime(23, 59, 59, 999_000_000)
             .atZone(zone).toInstant().toEpochMilli()
 
+    // ── 预算周期窗口：周 / 月 / 年（周口径与上面 getWeekStart() 一致，周一为起始） ──
+
+    fun getMonthStartForDate(date: Long): Long =
+        millisToLocalDate(date).withDayOfMonth(1)
+            .atStartOfDay(zone).toInstant().toEpochMilli()
+
+    fun getMonthEndForDate(date: Long): Long =
+        millisToLocalDate(date).withDayOfMonth(millisToLocalDate(date).lengthOfMonth())
+            .atTime(23, 59, 59, 999_000_000)
+            .atZone(zone).toInstant().toEpochMilli()
+
+    fun getYearStartForDate(date: Long): Long =
+        millisToLocalDate(date).withDayOfYear(1)
+            .atStartOfDay(zone).toInstant().toEpochMilli()
+
+    fun getYearEndForDate(date: Long): Long =
+        millisToLocalDate(date).withDayOfYear(millisToLocalDate(date).lengthOfYear())
+            .atTime(23, 59, 59, 999_000_000)
+            .atZone(zone).toInstant().toEpochMilli()
+
     @Deprecated("Use formatWeekRange(context, startDate, endDate) for proper i18n", ReplaceWith("formatWeekRange(context, startDate, endDate)"))
     fun formatWeekRange(startDate: Long, endDate: Long): String {
         val start = millisToLocalDate(startDate)

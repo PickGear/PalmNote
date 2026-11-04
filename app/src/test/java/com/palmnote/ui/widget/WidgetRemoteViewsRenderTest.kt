@@ -13,6 +13,7 @@ import com.palmnote.ui.widget.WidgetPrivacy
 import com.palmnote.data.db.dao.HeldCategoryCount
 import com.palmnote.data.db.entity.Budget
 import com.palmnote.data.db.entity.LifeItem
+import com.palmnote.domain.model.BudgetPeriod
 import java.time.LocalDate
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -483,7 +484,7 @@ class WidgetRemoteViewsRenderTest {
     private fun billSnapshot() = BillWidgetProvider.BillSnapshot(
         monthlyExpense = 820_000,
         monthlyIncome = 5_000_000,
-        budget = Budget(yearMonth = "2026-10", totalBudget = 1_000_000),
+        budget = Budget.total(BudgetPeriod.MONTH, 1_000_000),
         topCategory = "餐饮",
         dailyExpense = listOf(12_000, 4_500, 38_000, 0, 21_500, 62_000, 15_800)
     )

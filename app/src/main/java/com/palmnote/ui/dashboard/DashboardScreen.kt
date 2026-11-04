@@ -47,12 +47,16 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.palmnote.app.R
+import com.palmnote.domain.model.BudgetPeriod
 import com.palmnote.ui.components.*
 import com.palmnote.ui.theme.*
 import kotlinx.coroutines.delay
 import java.io.File
 import kotlin.math.roundToInt
 
+// 卡片跳转一律用显式 lambda 传：与 DashboardCardContent 同一口径，
+// 收敛成「导航对象」只是把参数换个地方堆，反而看不出每张卡能去哪
+@Suppress("LongParameterList")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
@@ -64,6 +68,8 @@ fun DashboardScreen(
     onNavigateToVault: () -> Unit = {},
     onNavigateToAddBill: () -> Unit = {},
     onNavigateToAddAsset: () -> Unit = {},
+    /** 预算预警卡 → 预算页，参数是被预警那条的周期。 */
+    onNavigateToBudget: (BudgetPeriod) -> Unit = { _ -> },
     viewModel: DashboardViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -156,12 +162,8 @@ fun DashboardScreen(
     val filterVisible: (DashboardCardConfig) -> Boolean = { config ->
         when (config.type) {
             CardType.BUDGET_ALERT -> {
-                val budget = state.budget
-                state.budgetReminderEnabled &&
-                    budget != null &&
-                    budget.totalBudget > 0 &&
-                    state.monthlyExpense > 0 &&
-                    state.monthlyExpense > budget.totalBudget * 0.8
+                // 与卡片自身同一判据：有「达阈值/超支」的预算才显示，全正常自动隐藏
+                state.budgetReminderEnabled && state.budgetAlert != null
             }
             CardType.ASSET_DISTRIBUTION -> state.assetDistribution.isNotEmpty()
             CardType.ANNIVERSARIES -> state.anniversaryCount > 0
@@ -503,6 +505,7 @@ fun DashboardScreen(
                                     onNavigateToVault = onNavigateToVault,
                                     onNavigateToAddBill = onNavigateToAddBill,
                                     onNavigateToAddAsset = onNavigateToAddAsset,
+                                    onNavigateToBudget = onNavigateToBudget,
                                     onHabitCheckIn = { viewModel.checkInHabit(it) },
                                     presetCategoryOverrides = presetCategoryOverrides,
                                     categoryConfigs = categoryConfigs,
@@ -542,6 +545,7 @@ fun DashboardScreen(
                             onNavigateToBill = onNavigateToBill,
                             onNavigateToLife = onNavigateToLife,
                             onNavigateToVault = onNavigateToVault,
+                            onNavigateToBudget = onNavigateToBudget,
                             onHabitCheckIn = { viewModel.checkInHabit(it) },
                             presetCategoryOverrides = presetCategoryOverrides,
                             categoryConfigs = categoryConfigs,

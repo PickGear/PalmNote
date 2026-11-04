@@ -67,8 +67,8 @@ class WealthDemoSeedEndToEndTest {
     @Test
     fun `seeding writes localized english rows end to end`() = runBlocking {
         val inserted = seeder.reseed(prefs)
-        // 账单 22 + 物品 13 + 预算 1（钱包 / 账本不计入返回值）
-        assertEquals(demoBillSeeds.size + demoAssetSeeds.size + 1, inserted)
+        // 账单 22 + 物品 13 + 预算 2（本月总预算 + 餐饮分类预算；钱包 / 账本不计入返回值）
+        assertEquals(demoBillSeeds.size + demoAssetSeeds.size + 2, inserted)
 
         val thisMonth = "%04d-%02d".format(LocalDate.now().year, LocalDate.now().monthValue)
 

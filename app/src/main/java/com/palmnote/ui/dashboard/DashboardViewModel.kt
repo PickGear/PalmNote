@@ -11,10 +11,10 @@ import com.palmnote.data.db.dao.LIFE_DEMO_META
 import com.palmnote.data.db.dao.LifeItemDao
 import com.palmnote.data.db.dao.LifeTemplateDao
 import com.palmnote.data.db.entity.Anniversary
-import com.palmnote.data.db.entity.Budget
 import com.palmnote.data.db.entity.getDisplayName
 import com.palmnote.data.datastore.PreferencesManager
 import com.palmnote.data.db.entity.CategoryConfig
+import com.palmnote.domain.model.BudgetProgress
 import com.palmnote.domain.model.SubscriptionDueItem
 import com.palmnote.domain.repository.*
 import com.palmnote.domain.util.DateUtils
@@ -57,7 +57,10 @@ data class DashboardState(
     val activeAssetCount: Int = 0,
     val monthlyExpense: Long = 0,
     val monthlyIncome: Long = 0,
-    val budget: Budget? = null,
+    /** 当前最该提醒的一条预算（跨周期取最严重）；无预算或都正常时为 null。 */
+    val budgetAlert: BudgetProgress? = null,
+    /** 账本 id → 名称：预算预警要写清是哪本账本的预算。 */
+    val bookNames: Map<Long, String> = emptyMap(),
     val budgetReminderEnabled: Boolean = true,
     val anniversaryCount: Int = 0,
     val upcomingAnniversaries: List<Anniversary> = emptyList(),
@@ -96,6 +99,7 @@ class DashboardViewModel @Inject constructor(
     private val assetRepository: AssetRepository,
     private val billRepository: BillRepository,
     private val budgetRepository: BudgetRepository,
+    private val accountBookRepository: AccountBookRepository,
     private val anniversaryRepository: AnniversaryRepository,
     private val preferencesManager: PreferencesManager,
     private val vaultRepository: VaultRepository,
@@ -367,7 +371,10 @@ class DashboardViewModel @Inject constructor(
                         activeAssetCount = c.assetData.second,
                         monthlyExpense = c.billData.first,
                         monthlyIncome = c.billData.second,
-                        budget = c.budget,
+                        bookNames = c.billData.third,
+                        // 只把「已达阈值或超支」的那条送上首页：最严重的一条，
+                        // 全部正常时预警卡自动隐藏
+                        budgetAlert = c.budgetProgress.orEmpty().firstOrNull { it.severity > 0 },
                         anniversaryCount = c.gaData.anniversaryCount,
                         upcomingAnniversaries = c.gaData.anniversaries.sortedBy { it.daysUntil }.take(3),
                         assetDistribution = c.assetData.third,
@@ -413,9 +420,10 @@ class DashboardViewModel @Inject constructor(
         }
         val billFlow = combine(
             billRepository.getMonthlyExpense(currentYearMonth),
-            billRepository.getMonthlyIncome(currentYearMonth)
-        ) { expense, income ->
-            Pair(expense ?: 0L, income ?: 0L)
+            billRepository.getMonthlyIncome(currentYearMonth),
+            accountBookRepository.getAllBooks()
+        ) { expense, income, books ->
+            Triple(expense ?: 0L, income ?: 0L, books.associate { it.id to it.name })
         }
         // 纪念日数据源 = 生日/纪念日 LifeItem（生活页创建）∪ 旧版 anniversary 表（CSV 导入兼容）
         // 演示感知（**互斥**）：演示开启 = **只看示例**（用户自己的条目与旧版导入的纪念日都不参与）；
@@ -454,10 +462,10 @@ class DashboardViewModel @Inject constructor(
             }
             .map { all -> GoalAnnivData(all.size, all) }
         val habitFlow = buildHabitFlow()
-        val budgetFlow = budgetRepository.getBudgetByMonthFlow(currentYearMonth)
+        val budgetFlow = budgetRepository.getProgresses()
         val subFlow = lifeItemRepository.getSubscriptionsDueWithin(7)
-        val core = combine(assetFlow, billFlow, gaFlow, budgetFlow, habitFlow) { assetData, billData, gaData, budget, habitData ->
-            CoreData(assetData, billData, gaData, budget, habitData)
+        val core = combine(assetFlow, billFlow, gaFlow, budgetFlow, habitFlow) { assetData, billData, gaData, budgetProgress, habitData ->
+            CoreData(assetData, billData, gaData, budgetProgress, habitData)
         }
         combine(core, subFlow) { c, subs -> c to subs }
     }
@@ -487,8 +495,8 @@ private data class HabitData(
 
 private data class CoreData(
     val assetData: Triple<Long, Int, List<CategoryCount>>,
-    val billData: Pair<Long, Long>,
+    val billData: Triple<Long, Long, Map<Long, String>>,
     val gaData: GoalAnnivData,
-    val budget: Budget?,
+    val budgetProgress: List<BudgetProgress>,
     val habitData: HabitData
 )

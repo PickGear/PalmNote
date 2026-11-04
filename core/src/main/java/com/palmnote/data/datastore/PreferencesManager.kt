@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -40,6 +41,13 @@ class PreferencesManager @Inject constructor(
         private const val KEY_THEME_MODE_MIRROR = "theme_mode"
         val DEFAULT_BILL_TYPE = stringPreferencesKey("default_bill_type")
         val BUDGET_REMINDER_ENABLED = booleanPreferencesKey("budget_reminder_enabled")
+        /** v21：预算通知（系统通知栏），与首页预警卡分开——预警卡是页内提示，这个开关只管通知。 */
+        val BUDGET_NOTIFY_ENABLED = booleanPreferencesKey("budget_notify_enabled")
+        /**
+         * 预算通知去重账本：JSON `{ "预算id:本期开始": 严重度 }`。
+         * 同一期同一严重度只提醒一次，跨期或升级（达阈值→超支）才再提醒。
+         */
+        val BUDGET_ALERT_NOTIFIED = stringPreferencesKey("budget_alert_notified")
         val ASSET_VIEW_MODE = booleanPreferencesKey("asset_view_mode")
         val DASHBOARD_CARD_CONFIGS = stringPreferencesKey("dashboard_card_configs")
         val LIFE_DEMO_MODE = booleanPreferencesKey("life_demo_mode")
@@ -194,6 +202,8 @@ class PreferencesManager @Inject constructor(
     val themeMode: Flow<String> = prefsFlow.map { it[THEME_MODE] ?: "SYSTEM" }
     val defaultBillType: Flow<String> = prefsFlow.map { it[DEFAULT_BILL_TYPE] ?: "EXPENSE" }
     val budgetReminderEnabled: Flow<Boolean> = prefsFlow.map { it[BUDGET_REMINDER_ENABLED] ?: true }
+    /** 预算系统通知开关（默认开）。 */
+    val budgetNotifyEnabled: Flow<Boolean> = prefsFlow.map { it[BUDGET_NOTIFY_ENABLED] ?: true }
     val assetViewMode: Flow<Boolean> = prefsFlow.map { it[ASSET_VIEW_MODE] ?: false }
 
     suspend fun setThemeMode(mode: String) {
@@ -207,6 +217,23 @@ class PreferencesManager @Inject constructor(
     }
     suspend fun setBudgetReminderEnabled(enabled: Boolean) {
         context.dataStore.edit { it[BUDGET_REMINDER_ENABLED] = enabled }
+    }
+    suspend fun setBudgetNotifyEnabled(enabled: Boolean) {
+        context.dataStore.edit { it[BUDGET_NOTIFY_ENABLED] = enabled }
+    }
+    /** 预算通知去重账本（读）。损坏或为空时按「没提醒过」处理。 */
+    suspend fun budgetAlertNotified(): Map<String, Int> {
+        val raw = context.dataStore.data.first()[BUDGET_ALERT_NOTIFIED] ?: return emptyMap()
+        return try {
+            kotlinx.serialization.json.Json { ignoreUnknownKeys = true }
+                .decodeFromString<Map<String, Int>>(raw)
+        } catch (_: Exception) {
+            emptyMap()
+        }
+    }
+    suspend fun setBudgetAlertNotified(map: Map<String, Int>) {
+        val raw = kotlinx.serialization.json.Json.encodeToString(map)
+        context.dataStore.edit { it[BUDGET_ALERT_NOTIFIED] = raw }
     }
     suspend fun setAssetViewMode(isGrid: Boolean) {
         context.dataStore.edit { it[ASSET_VIEW_MODE] = isGrid }

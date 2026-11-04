@@ -18,6 +18,9 @@ import com.palmnote.data.db.entity.LifeTemplate
 import com.palmnote.data.db.entity.Moment
 import com.palmnote.data.db.entity.Wallet
 import com.palmnote.domain.model.BillType
+import com.palmnote.domain.model.BudgetPeriod
+import com.palmnote.domain.model.BudgetScope
+import com.palmnote.domain.model.DemoOrigin
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.first
@@ -25,6 +28,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -37,7 +41,9 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.time.LocalDate
 import java.time.ZoneId
+import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
+import java.util.zip.ZipOutputStream
 
 /**
  * 交换包**全链路往返演练**：造一套覆盖全部组的合成数据 → 导出 → 空库导入 → 逐字段比对。
@@ -59,6 +65,7 @@ class ExchangeRoundTripTest {
         every { themeMode } returns flowOf("SYSTEM")
         every { defaultBillType } returns flowOf("EXPENSE")
         every { budgetReminderEnabled } returns flowOf(true)
+        every { budgetNotifyEnabled } returns flowOf(true)
     }
 
     private fun exporterFor(database: AppDatabase) =
@@ -111,7 +118,8 @@ class ExchangeRoundTripTest {
                     createdAt = ts(2026, 10, 30), updatedAt = ts(2026, 10, 30)
                 )
             )
-            db.budgetDao().insertBudget(Budget(yearMonth = "2026-10", totalBudget = 300_000))
+            db.budgetDao().insertBudget(Budget.total(BudgetPeriod.MONTH, 300_000))
+            seedCategoryBudget()
             db.categoryConfigDao().insert(CategoryConfig(type = "BILL_EXPENSE", name = "餐饮"))
             db.categoryMappingDao().insertMapping(CategoryMapping(assetCategory = "数码", billCategory = "电子"))
 
@@ -210,11 +218,33 @@ class ExchangeRoundTripTest {
         assertEquals(wechatId, transfer.toWalletId)
     }
 
+    /** 分类预算：维度列（period/scope/category/阈值/通知）都要能原样往返。 */
+    private fun seedCategoryBudget() = runBlocking {
+        db.budgetDao().insertBudget(
+            Budget(
+                period = BudgetPeriod.WEEK.name,
+                scope = BudgetScope.CATEGORY.name,
+                category = "餐饮",
+                totalBudget = 80_000,
+                reminderThreshold = 0.9,
+                reminderEnabled = false
+            )
+        )
+    }
+
     private suspend fun assertBudgetAndCategories(fresh: AppDatabase) {
         val budgets = fresh.budgetDao().getAllBudgets().first()
-        assertEquals(1, budgets.size)
-        assertEquals("2026-10", budgets[0].yearMonth)
-        assertEquals(300_000, budgets[0].totalBudget)
+        assertEquals(2, budgets.size)
+        val total = budgets.first { it.scope == BudgetScope.TOTAL.name }
+        assertEquals(BudgetPeriod.MONTH.name, total.period)
+        assertEquals(300_000, total.totalBudget)
+        // 分类预算：分类名、阈值、通知开关逐字段一致（周周期一并验证）
+        val category = budgets.first { it.scope == BudgetScope.CATEGORY.name }
+        assertEquals(BudgetPeriod.WEEK.name, category.period)
+        assertEquals("餐饮", category.category)
+        assertEquals(80_000, category.totalBudget)
+        assertEquals(0.9, category.reminderThreshold, 0.0001)
+        assertEquals(false, category.reminderEnabled)
         assertEquals(1, fresh.categoryConfigDao().getAllCategories().first().size)
         assertEquals(1, fresh.categoryMappingDao().getAllMappings().first().size)
     }
@@ -263,6 +293,115 @@ class ExchangeRoundTripTest {
             // 判重演练：同一包再导入一次应全部跳过、零重复
             val second = importAll(fresh, exported)
             assertEquals("重复导入应全部跳过", 0, second.inserted)
+        } finally {
+            fresh.close()
+        }
+    }
+
+    private fun firstCsvText(bytes: ByteArray): String {
+        ZipInputStream(bytes.inputStream()).use { zis ->
+            var current = zis.nextEntry
+            while (current != null) {
+                val entry = current
+                if (entry.name.endsWith(".csv")) return String(zis.readBytes(), Charsets.UTF_8)
+                current = zis.nextEntry
+            }
+        }
+        return ""
+    }
+
+    /** 单个条目换回旧表头；非 CSV 原样返回。 */
+    private fun legacyCsvEntry(name: String, data: ByteArray): ByteArray =
+        if (!name.endsWith(".csv")) {
+            data
+        } else {
+            String(data, Charsets.UTF_8)
+                .replace("预算分类", "分类")
+                .replace("预算通知", "提醒")
+                .toByteArray(Charsets.UTF_8)
+        }
+
+    /** 把表头改回 v20 及以前的叫法，模拟旧包（新版本来就已是这套列名，替换是空操作）。 */
+    private fun withLegacyHeaders(bytes: ByteArray): ByteArray {
+        val out = ByteArrayOutputStream()
+        ZipInputStream(bytes.inputStream()).use { zis ->
+            ZipOutputStream(out).use { zos ->
+                var current = zis.nextEntry
+                while (current != null) {
+                    // 不可变局部 val：current 被内层 lambda 捕获并重新赋值，不能智能转换
+                    val entry = current
+                    zos.putNextEntry(ZipEntry(entry.name))
+                    zos.write(legacyCsvEntry(entry.name, zis.readBytes()))
+                    zos.closeEntry()
+                    current = zis.nextEntry
+                }
+            }
+        }
+        return out.toByteArray()
+    }
+
+    /** v21 迁移后真实与演示各留一条 MONTH/TOTAL，演示行混进包会撞判重键顶掉真实预算。 */
+    @Test
+    fun `演示预算不进交换包`() = runBlocking {
+        db.budgetDao().insertBudget(Budget.total(BudgetPeriod.MONTH, 300_000))
+        db.budgetDao().insertBudget(
+            Budget.total(BudgetPeriod.MONTH, 500_000, demoOrigin = DemoOrigin.SEED)
+        )
+        val fresh = freshDb()
+        try {
+            importAll(fresh, exportAll())
+            val budgets = fresh.budgetDao().getAllBudgets().first()
+            assertEquals(1, budgets.size)
+            assertEquals(300_000, budgets.single().totalBudget)
+            assertEquals(DemoOrigin.NONE, budgets.single().demoOrigin)
+        } finally {
+            fresh.close()
+        }
+    }
+
+    /** 表头是六实体共用列，预算不能把「分类」「提醒」挤掉，否则旧包导入丢字段。 */
+    @Test
+    fun `交换包表头保持分类与提醒且旧包导入不丢分类`() = runBlocking {
+        seed()
+        val exported = exportAll()
+        val headers = firstCsvText(exported).lineSequence().first()
+        assertTrue("分类列应沿用旧名", headers.contains("分类"))
+        assertFalse("预算不得占用共用列名", headers.contains("预算分类"))
+
+        val fresh = freshDb()
+        try {
+            importAll(fresh, withLegacyHeaders(exported))
+            val bills = fresh.billDao().getAllBills().first()
+            assertTrue("旧包「分类」表头应能反查到 category", bills.any { it.category == "餐饮" })
+        } finally {
+            fresh.close()
+        }
+    }
+
+    /** 导入只能改派本次写入的预算，不能扫全表删本机既有（尤其隐藏账本的）预算。 */
+    @Test
+    fun `导入不删除本机既有的账本预算`() = runBlocking {
+        seed()
+        val exported = exportAll()
+        val fresh = freshDb()
+        try {
+            fresh.accountBookDao().insertBook(
+                AccountBook(id = 7, name = "隐藏账本", isHidden = true)
+            )
+            fresh.budgetDao().insertBudget(
+                Budget(
+                    period = BudgetPeriod.MONTH.name,
+                    scope = BudgetScope.BOOK.name,
+                    bookId = 7,
+                    totalBudget = 42_000
+                )
+            )
+            importAll(fresh, exported)
+            val kept = fresh.budgetDao().getAllBudgets().first()
+                .filter { it.scope == BudgetScope.BOOK.name }
+            assertEquals(1, kept.size)
+            assertEquals(7L, kept.single().bookId)
+            assertEquals(42_000, kept.single().totalBudget)
         } finally {
             fresh.close()
         }

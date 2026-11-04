@@ -45,11 +45,29 @@ class CategoryConfigRepositoryImpl @Inject constructor(
     override suspend fun updateCategory(category: CategoryConfig) =
         categoryConfigDao.update(category)
 
-    override suspend fun deleteCategory(category: CategoryConfig) =
+    override suspend fun deleteCategory(category: CategoryConfig) = appDatabase.withTransaction {
         categoryConfigDao.delete(category)
+        clearBudgetOfDeletedCategory(category)
+    }
 
-    override suspend fun deleteCategoryById(id: Long) =
+    override suspend fun deleteCategoryById(id: Long) = appDatabase.withTransaction {
+        // 预算存的是分类名而不是 id，删除前先把名字取出来才能找到对应预算
+        val category = categoryConfigDao.getCategoryById(id)
         categoryConfigDao.deleteById(id)
+        if (category != null) clearBudgetOfDeletedCategory(category)
+    }
+
+    /**
+     * 分类被删掉后，指向它的分类预算也要清。
+     *
+     * 只有**支出分类**会挂预算（预算页的下拉只列支出分类），所以资产 / 收入分类里
+     * 同名的条目不能牵连——名字在分类表里不是唯一的。
+     */
+    private suspend fun clearBudgetOfDeletedCategory(category: CategoryConfig) {
+        if (category.type == BILL_EXPENSE_TYPE) {
+            appDatabase.budgetDao().deleteByCategory(category.name)
+        }
+    }
 
     override suspend fun setCategoryEnabled(id: Long, enabled: Boolean) =
         categoryConfigDao.setEnabled(id, enabled)
@@ -208,5 +226,10 @@ class CategoryConfigRepositoryImpl @Inject constructor(
             ))
         }
         }
+    }
+
+    private companion object {
+        /** 分类表里的类型标记：预算只挂在支出分类上（预算页的下拉只列这一类）。 */
+        const val BILL_EXPENSE_TYPE = "BILL_EXPENSE"
     }
 }

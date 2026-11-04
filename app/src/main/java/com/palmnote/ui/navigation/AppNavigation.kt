@@ -36,6 +36,7 @@ import androidx.navigation.toRoute
 import com.palmnote.PalmNoteApp
 import com.palmnote.app.BuildConfig
 import com.palmnote.app.R
+import com.palmnote.domain.model.BudgetPeriod
 import com.palmnote.feature.vault.vault.VaultDetailScreen
 import com.palmnote.feature.vault.vault.VaultEditScreen
 import com.palmnote.feature.vault.vault.VaultScreen
@@ -182,7 +183,7 @@ fun PalmNoteNavHost() {
     if (pendingNav == "budget") {
         PalmNoteApp.pendingNavigation = null
         LaunchedEffect(Unit) {
-            navController.navigate(Budget)
+            navController.navigate(Budget())
         }
     }
 
@@ -243,7 +244,7 @@ fun PalmNoteNavHost() {
                         navController.navigate(BillDetail(billId))
                     },
                     onNavigateToBudget = {
-                        navController.navigate(Budget)
+                        navController.navigate(Budget())
                     },
                     onNavigateToReport = { selectedBookId, bookName ->
                         navController.navigate(Report(selectedBookId, bookName))
@@ -337,9 +338,12 @@ fun PalmNoteNavHost() {
                 )
             }
 
-            composable<Budget> {
+            composable<Budget> { entry ->
+                val route = entry.toRoute<Budget>()
                 BudgetScreen(
-                    onNavigateBack = { navController.popBackStack() }
+                    onNavigateBack = { navController.popBackStack() },
+                    // 空串 = 没指定周期（底栏/深链进来），按月展示
+                    initialPeriod = BudgetPeriod.from(route.period)
                 )
             }
 
@@ -820,7 +824,12 @@ private fun MainTabs(
                                 onNavigateToSearch = onNavigateToSearch,
                                 onNavigateToVault = onNavigateToVault,
                                 onNavigateToAddBill = { onNavigateToAddBill(System.currentTimeMillis()) },
-                                onNavigateToAddAsset = onNavigateToAddAsset
+                                onNavigateToAddAsset = onNavigateToAddAsset,
+                                // 预警卡进预算页要带周期：预算页按周期分页签，
+                                // 周预算的预警落在月页签上等于「进去找不到那条」
+                                onNavigateToBudget = { period ->
+                                    appNavController.navigate(Budget(period.name))
+                                }
                             )
                         }
 

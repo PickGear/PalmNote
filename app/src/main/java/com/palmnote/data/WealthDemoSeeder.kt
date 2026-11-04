@@ -17,6 +17,8 @@ import com.palmnote.data.db.entity.Budget
 import com.palmnote.data.db.entity.Wallet
 import com.palmnote.domain.model.AssetStatus
 import com.palmnote.domain.model.BillType
+import com.palmnote.domain.model.BudgetPeriod
+import com.palmnote.domain.model.BudgetScope
 import com.palmnote.domain.model.PaymentMethod
 import com.palmnote.ui.components.toImageJson
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -132,7 +134,7 @@ class WealthDemoSeeder @Inject constructor(
         // 不用在 40 个聚合查询上逐个加 isDemo 条件。演示模式下账本列表也只暴露示例账本
         // （见 AccountBookRepositoryImpl），用户要回自己的数据就关演示。
         val targetBookId = seedBook()
-        val inserted = seedBills(targetBookId, walletIds, today, zone) + seedAssets() + seedBudgets(today)
+        val inserted = seedBills(targetBookId, walletIds, today, zone) + seedAssets() + seedBudgets()
         preferences.setWealthDemoSeeded(true)
         preferences.setWealthDemoSeedVersion(SEED_VERSION)
         return inserted
@@ -300,20 +302,27 @@ class WealthDemoSeeder @Inject constructor(
     }
 
     /**
-     * 示例预算：本月 ¥3,000（预算页在演示模式下才有内容）。
+     * 示例预算：本月总额 ¥3,000 + 本月「餐饮」分类 ¥800（v21 起预算是长期模板）。
      *
-     * 示例账单整批落在今天所在月份（最新一笔平移到今天），预算也对齐同一月份，
-     * 超支提醒立刻有戏可演。取数与隔离在 BudgetRepositoryImpl（按 `demoOrigin` 分流）。
+     * 示例账单整批落在今天所在月份（最新一笔平移到今天），预算也对齐同一周期，
+     * 超支/阈值提醒立刻有戏可演；分类预算让「分类预算」区块在演示模式里不是空的。
+     * 取数与隔离在 BudgetRepositoryImpl（按 `demoOrigin` 分流）。
      */
-    private suspend fun seedBudgets(today: LocalDate): Int {
+    private suspend fun seedBudgets(): Int {
+        budgetDao.insertBudget(
+            Budget.total(BudgetPeriod.MONTH, 300_000, DemoOrigin.SEED)
+        )
         budgetDao.insertBudget(
             Budget(
-                yearMonth = "%04d-%02d".format(today.year, today.monthValue),
-                totalBudget = 300_000,
+                period = BudgetPeriod.MONTH.name,
+                scope = BudgetScope.CATEGORY.name,
+                category = "餐饮",
+                totalBudget = 80_000,
+                reminderThreshold = 0.9,
                 demoOrigin = DemoOrigin.SEED
             )
         )
-        return 1
+        return 2
     }
 
     /**

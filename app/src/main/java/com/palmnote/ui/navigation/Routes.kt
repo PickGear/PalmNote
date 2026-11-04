@@ -30,8 +30,14 @@ data class AddBill(val billId: Long? = null, val selectedDate: Long? = null)
 @Serializable
 data class BillDetail(val billId: Long)
 
+/**
+ * 预算页。[period] 是要停在哪个周期页签（`BudgetPeriod.name`），空串 = 月。
+ *
+ * 首页预警卡会带上预警那一条自己的周期：周预算的预警点进去却停在月页签，
+ * 等于「看到超支提示、进去找不到那条预算」。
+ */
 @Serializable
-data object Budget
+data class Budget(val period: String = "")
 
 @Serializable
 data class Report(val selectedBookId: Long = -1L, val bookName: String = "")

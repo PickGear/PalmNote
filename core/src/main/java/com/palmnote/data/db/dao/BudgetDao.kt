@@ -1,4 +1,4 @@
-﻿package com.palmnote.data.db.dao
+package com.palmnote.data.db.dao
 
 import androidx.room.*
 import com.palmnote.data.db.entity.Budget
@@ -6,17 +6,36 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface BudgetDao {
-    @Query("SELECT * FROM budgets ORDER BY yearMonth DESC")
+    @Query("SELECT * FROM budgets ORDER BY period ASC, scope ASC, id ASC")
     fun getAllBudgets(): Flow<List<Budget>>
 
-    @Query("SELECT * FROM budgets WHERE yearMonth = :yearMonth")
-    suspend fun getBudgetByMonth(yearMonth: String): Budget?
+    @Query("SELECT * FROM budgets")
+    suspend fun getAllBudgetsOnce(): List<Budget>
 
-    @Query("SELECT * FROM budgets WHERE yearMonth = :yearMonth")
-    fun getBudgetByMonthFlow(yearMonth: String): Flow<Budget?>
+    @Query("SELECT * FROM budgets WHERE id = :id")
+    suspend fun getBudgetById(id: Long): Budget?
 
-    @Query("SELECT * FROM budgets ORDER BY yearMonth DESC LIMIT 1")
-    fun getLatestBudget(): Flow<Budget?>
+    /**
+     * 找同维度的预算模板（演示口径由 [includeDemo] 带上）。
+     *
+     * 「同维度」= 周期 + 范围 + 账本 + 分类。可空维度用 `IS NULL` 成对比较，
+     * 不能写成 `bookId = :bookId`（两边都是 NULL 时结果是 NULL，永远不匹配）。
+     */
+    @Query(
+        "SELECT * FROM budgets " +
+            "WHERE period = :period AND scope = :scope " +
+            "AND ((:bookId IS NULL AND bookId IS NULL) OR bookId = :bookId) " +
+            "AND ((:category IS NULL AND category IS NULL) OR category = :category) " +
+            "AND (demoOrigin != 'NONE') = :includeDemo " +
+            "LIMIT 1"
+    )
+    suspend fun findBudget(
+        period: String,
+        scope: String,
+        bookId: Long?,
+        category: String?,
+        includeDemo: Boolean
+    ): Budget?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertBudget(budget: Budget): Long
@@ -30,6 +49,26 @@ interface BudgetDao {
     @Query("DELETE FROM budgets WHERE id = :id")
     suspend fun deleteBudgetById(id: Long)
 
+    /**
+     * 分类改名时同步预算：CATEGORY 预算存的是**分类名**而不是 id，
+     * 不跟着改会让 `spentOf` 按旧名过滤、进度恒为 0，且列表仍显示旧名。
+     */
+    @Query("UPDATE budgets SET category = :newName WHERE scope = 'CATEGORY' AND category = :oldName")
+    suspend fun renameCategory(oldName: String, newName: String)
+
+    /** 账本删除后清掉指向它的 BOOK 预算，别留一条永远算不出数的规则。 */
+    @Query("DELETE FROM budgets WHERE scope = 'BOOK' AND bookId = :bookId")
+    suspend fun deleteByBook(bookId: Long)
+
+    /**
+     * 分类删除后清掉指向它的 CATEGORY 预算（与 [deleteByBook] 对称）。
+     *
+     * 不清理的后果不是「多一条记录」这么轻：`spentOf` 按分类名过滤，分类没了就恒为 0，
+     * 这条预算会永远停在 0%、永远不提醒，却一直占着预算页。
+     */
+    @Query("DELETE FROM budgets WHERE scope = 'CATEGORY' AND category = :category")
+    suspend fun deleteByCategory(category: String)
+
     @Query("DELETE FROM budgets")
     suspend fun deleteAll()
 
@@ -41,10 +80,17 @@ interface BudgetDao {
     @Query("DELETE FROM budgets WHERE demoOrigin != 'NONE'")
     suspend fun clearDemoBudgets()
 
-    /** 小组件直连 DAO 用：按演示口径取月预算（演示看 SEED/USER，真实看 NONE）。 */
-    @Query("SELECT * FROM budgets WHERE yearMonth = :yearMonth AND (demoOrigin != 'NONE') = :includeDemo")
-    suspend fun getBudgetByMonthScoped(yearMonth: String, includeDemo: Boolean): Budget?
+    /** 小组件直连 DAO 用：按演示口径取「全账本月度总预算」。 */
+    @Query(
+        "SELECT * FROM budgets WHERE period = 'MONTH' AND scope = 'TOTAL' " +
+            "AND (demoOrigin != 'NONE') = :includeDemo LIMIT 1"
+    )
+    suspend fun getMonthlyTotalScoped(includeDemo: Boolean): Budget?
 
-    @Query("SELECT * FROM budgets WHERE (demoOrigin != 'NONE') = :includeDemo ORDER BY yearMonth DESC LIMIT 1")
-    suspend fun getLatestBudgetScoped(includeDemo: Boolean): Budget?
+    /** 小组件直连 DAO 用：按演示口径取「某账本的月度预算」。 */
+    @Query(
+        "SELECT * FROM budgets WHERE period = 'MONTH' AND scope = 'BOOK' AND bookId = :bookId " +
+            "AND (demoOrigin != 'NONE') = :includeDemo LIMIT 1"
+    )
+    suspend fun getMonthlyBookScoped(bookId: Long, includeDemo: Boolean): Budget?
 }

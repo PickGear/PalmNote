@@ -21,6 +21,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
+import kotlin.math.roundToInt
 import kotlinx.coroutines.flow.first
 
 /**
@@ -47,6 +48,7 @@ open class DashboardWidgetProvider : ScopedWidgetProvider() {
     interface WidgetEntryPoint {
         fun billDao(): BillDao
         fun budgetDao(): com.palmnote.data.db.dao.BudgetDao
+        fun accountBookDao(): com.palmnote.data.db.dao.AccountBookDao
         fun lifeItemDao(): LifeItemDao
         fun lifeTemplateDao(): LifeTemplateDao
         fun preferencesManager(): PreferencesManager
@@ -139,10 +141,7 @@ open class DashboardWidgetProvider : ScopedWidgetProvider() {
         val weekBills = entryPoint.billDao().getBillsByDate(weekStart).first()
             .filter { it.type == BillType.EXPENSE }
         val dailyExpense = sumByDay(weekBills, today, 7)
-        val budget = entryPoint.budgetDao().getBudgetByMonthScoped(
-            java.time.format.DateTimeFormatter.ofPattern("yyyy-MM").format(today),
-            includeDemo
-        ) ?: entryPoint.budgetDao().getLatestBudgetScoped(includeDemo)
+        val (budget, monthlyExpenseForBudget) = fetchMonthlyBudget(entryPoint, includeDemo)
 
         return DashboardSnapshot(
             todayExpense = expense.sumOf { it.amount },
@@ -158,16 +157,65 @@ open class DashboardWidgetProvider : ScopedWidgetProvider() {
             },
             subDaysLeft = nextRenewal?.daysLeft,
             dailyExpense = dailyExpense,
-            budgetUsedPercent = budget?.takeIf { b -> b.totalBudget > 0 && expense.isNotEmpty() }?.let { b ->
-                ((expense.sumOf { it.amount }.toDouble() / b.totalBudget) * 100).toInt().coerceIn(0, 100)
-            },
-            budgetRemainText = budget?.takeIf { b -> b.totalBudget > 0 }?.let { b ->
-                context.getString(
-                    R.string.widget_budget_remain_fmt,
-                    WidgetData.formatMoneyCompact(context, (b.totalBudget - expense.sumOf { it.amount }).coerceAtLeast(0))
-                )
-            }
+            // 超支时原来也走「剩 ¥0」，看起来像刚好花完；这里改成「超 ¥x」，
+            // 与预算页的「超支」口径对齐（百分比仍封顶 100，KPI 格宽度有限）。
+            budgetUsedPercent = budgetUsedPercent(budget, monthlyExpenseForBudget),
+            budgetRemainText = budgetRemainText(context, budget, monthlyExpenseForBudget)
         )
+    }
+
+    /** 本月预算已用百分比：无预算 / 额度为 0 时不显示，超支封顶 100（KPI 格宽度有限）。 */
+    private fun budgetUsedPercent(
+        budget: com.palmnote.data.db.entity.Budget?,
+        spent: Long
+    ): Int? {
+        if (budget == null || budget.totalBudget <= 0) return null
+        // round 而不是 toInt：与 BudgetProgress.usedPercent 同口径，同一预算各处显示同一个数
+        return ((spent.toDouble() / budget.totalBudget) * 100).roundToInt().coerceIn(0, 100)
+    }
+
+    /** 本月预算结余文案：超支写「超 ¥x」而不是「剩 ¥0」。 */
+    private fun budgetRemainText(
+        context: Context,
+        budget: com.palmnote.data.db.entity.Budget?,
+        spent: Long
+    ): String? {
+        if (budget == null || budget.totalBudget <= 0) return null
+        val diff = budget.totalBudget - spent
+        return if (diff >= 0) {
+            context.getString(
+                R.string.widget_budget_remain_fmt,
+                WidgetData.formatMoneyCompact(context, diff)
+            )
+        } else {
+            context.getString(
+                R.string.widget_budget_over_fmt,
+                WidgetData.formatMoneyCompact(context, -diff)
+            )
+        }
+    }
+
+    /**
+     * 4×4 的月预算 KPI：额度 + 本月已用（分）。
+     *
+     * 百分比 = 本月支出 ÷ 月预算（早前误用「今日支出」做分子，今日花 50、月预算 3000
+     * 也显示 2%）。分子必须走与 `BudgetRepositoryImpl` 同源的聚合：演示模式只算
+     * 示例账本，否则会把用户真实支出算进示例额度，百分比虚高。
+     */
+    private suspend fun fetchMonthlyBudget(
+        entryPoint: WidgetEntryPoint,
+        includeDemo: Boolean
+    ): Pair<com.palmnote.data.db.entity.Budget?, Long> {
+        val budget = entryPoint.budgetDao().getMonthlyTotalScoped(includeDemo)
+        val window = com.palmnote.domain.util.BudgetCalculator.windowOf(
+            com.palmnote.domain.model.BudgetPeriod.MONTH,
+            System.currentTimeMillis()
+        )
+        val demoBook = if (includeDemo) entryPoint.accountBookDao().demoBookId() else null
+        val spent = entryPoint.billDao()
+            .getBudgetSpendRows(window.first, window.second, demoBook)
+            .first().sumOf { it.total }
+        return budget to spent
     }
 
     /** 按自然日聚合账单金额（分），旧→新共 [days] 天。 */

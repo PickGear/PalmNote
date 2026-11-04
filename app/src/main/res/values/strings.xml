@@ -722,6 +722,7 @@
     <string name="widget_budget_used">预算已用</string>
     <!-- 概览 4×3（v4）：右上角/二级信息 -->
     <string name="widget_budget_remain_fmt">剩 %1$s</string>
+    <string name="widget_budget_over_fmt">超 %1$s</string>
     <string name="widget_todo_done_more">查看全部 ›</string>
     <!-- v4 分段议程（设计稿：今天/逾期/明天/之后 + 底部本周已完成） -->
     <string name="widget_todo_sect_count">%1$d 项</string>
@@ -1049,6 +1050,7 @@
     <!-- Bill Form Errors -->
     <string name="bill_error_amount_required">请输入有效金额</string>
     <string name="bill_error_category_required">请选择分类</string>
+    <string name="bill_error_save_failed">保存失败，账单没有记上，请重试</string>
     <!-- Backup Error Messages -->
     <string name="backup_error_corrupted">备份文件损坏或为空</string>
     <string name="backup_error_cross_device">此备份由旧版本创建，文件内未携带数据库密钥（新版本起随备份内置），本机也没有当初加密数据的密钥，数据库无法在这里解密。请在创建此备份的设备上打开掌记重新备份一次——新备份自带密钥，换机、重装都能直接恢复</string>
@@ -1368,16 +1370,10 @@
     <string name="bill_import_import_total">导入 %1$d 笔</string>
     <!-- Budget -->
     <string name="budget_title">预算管理</string>
-    <string name="budget_month_format">%s 预算</string>
-    <string name="budget_total">预算总额</string>
-    <string name="budget_used">已使用</string>
-    <string name="budget_remaining">剩余</string>
-    <string name="budget_over">超支</string>
-    <string name="budget_not_set">尚未设置本月预算</string>
     <string name="budget_modify">修改预算</string>
     <string name="budget_set">设置预算</string>
     <string name="budget_tips">预算小贴士</string>
-    <string name="budget_tips_content">① 建议将收入的50%%作为生活支出预算\n② 预留10%%作为应急资金\n③ 80%%使用时会收到提醒</string>
+    <string name="budget_tips_content">① 按收入规划生活支出预算\n② 预留一部分作为应急资金\n③ 用掉设定的提醒比例时会收到提醒</string>
     <!-- Report -->
     <string name="report_title">统计</string>
     <string name="report_previous">上一期</string>
@@ -1818,6 +1814,54 @@
     <string name="transfer_from_required">请选择转出账户</string>
     <string name="transfer_to_required">请选择转入账户</string>
     <string name="budget_invalid_amount">请输入有效金额</string>
+    <!-- 预算 v21：周期 / 范围 / 通知 -->
+    <string name="budget_period_week">本周</string>
+    <string name="budget_period_month">本月</string>
+    <string name="budget_period_year">本年</string>
+    <string name="budget_label_total">%1$s总预算</string>
+    <string name="budget_label_category">%1$s「%2$s」预算</string>
+    <string name="budget_label_book">%1$s「%2$s」预算</string>
+    <string name="budget_label_book_missing">某账本</string>
+    <string name="budget_alert_message">%1$s已用 %2$d%%（¥%3$.2f / ¥%4$.2f）</string>
+    <string name="budget_alert_over_message">%1$s已超支（¥%2$.2f / ¥%3$.2f）</string>
+    <string name="budget_alert_message_hidden">%1$s已用 %2$d%%</string>
+    <string name="budget_section_category">分类预算</string>
+    <string name="budget_section_book">账本预算</string>
+    <string name="budget_add">添加</string>
+    <string name="budget_empty_category">还没有分类预算</string>
+    <string name="budget_empty_book">还没有账本预算</string>
+    <string name="budget_pick_category">选择分类</string>
+    <string name="budget_pick_book">选择账本</string>
+    <string name="budget_no_category_available">还没有可用的支出分类，请先到「设置 → 分类」里添加</string>
+    <string name="budget_no_book_available">还没有可用的账本，请先到记账页新建一个账本</string>
+    <string name="budget_reach_fmt">支出达到 %1$d%% 时</string>
+    <string name="budget_notify_label">开启提醒</string>
+    <string name="budget_amount_label">预算额度</string>
+    <string name="budget_used_short">已用 %1$s · %2$d%%</string>
+    <string name="budget_value_dash">—</string>
+    <string name="budget_dialog_sub_category">分类预算 · %1$s</string>
+    <string name="budget_dialog_sub_book">账本预算 · %1$s</string>
+    <string name="budget_delete">删除此预算</string>
+    <string name="budget_delete_confirm_title">删除这条预算？</string>
+    <string name="budget_delete_confirm_message">删除后无法恢复，已发出的预算通知会一并撤销。</string>
+    <string name="budget_used_of">已用 %1$s / %2$s</string>
+    <string name="budget_used_percent">已用 %1$d%%</string>
+    <string name="budget_total_of">总额 %1$s</string>
+    <!-- 计数文案：数量为 1 时英文要用单数（%d items → 1 item），故用 plurals。 -->
+    <plurals name="budget_group_items">
+        <item quantity="other">共 %1$d 条</item>
+    </plurals>
+    <string name="budget_category_over_total">分类预算合计 %1$s，比总预算多 %2$s</string>
+    <string name="budget_elapsed_percent">已过 %1$d%%</string>
+    <string name="budget_remaining_amount">剩余 %1$s</string>
+    <string name="budget_over_amount">超支 %1$s</string>
+    <string name="budget_threshold_off_hint">提醒已关闭，阈值暂不生效</string>
+    <string name="budget_not_set_period">尚未设置%1$s预算</string>
+    <string name="settings_budget_notify">预算通知</string>
+    <string name="settings_budget_notify_desc">达到设定阈值或超支时发一条通知</string>
+    <string name="notification_budget_title">预算提醒</string>
+    <string name="notification_budget_threshold">%1$s已用 %2$d%%（¥%3$.2f / ¥%4$.2f）</string>
+    <string name="notification_budget_over">%1$s已超支 ¥%2$.2f</string>
     <string name="app_lock_biometric_enable_verify_title">验证 PIN 后开启生物识别</string>
     <string name="app_lock_biometric_enabled_toast">已开启生物识别解锁</string>
     <string name="app_lock_disabled_toast">应用锁已关闭</string>

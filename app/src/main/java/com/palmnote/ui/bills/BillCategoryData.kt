@@ -12,8 +12,7 @@ import com.palmnote.ui.theme.*
 
 // NOTE: CategoryItem.name is an internal key/identifier used for DB storage and UI selection.
 // It is NOT display text. Use getLocalizedCategoryName() to get the localized display string.
-val expenseCategoryItems = listOf(
-    // 餐饮食品
+val expenseCategoryItems = listOf(    // 餐饮食品
     CategoryItem("餐饮", Icons.Outlined.Restaurant, DeepOrange),
     CategoryItem("零食", Icons.Outlined.Cookie, AccentOrange),
     CategoryItem("饮品", Icons.Outlined.LocalCafe, CatBrightTeal),
@@ -186,4 +185,58 @@ fun getLocalizedPaymentMethod(method: String): Int = when (method) {
     "BANK_TRANSFER" -> R.string.payment_bank_transfer
     "OTHER" -> R.string.payment_other
     else -> R.string.payment_other
+}
+
+/**
+ * 支出分类的**唯一口径**：内置预设（应用启停 / 配色覆盖）+ 自定义分类，按使用频次降序。
+ *
+ * 记账页和预算页都必须走这里。预算存的是一串分类名，两边取到的名字不一致就会出现
+ * 「预算页选不到分类」或者「选了却统计不到」。
+ *
+ * 早前预算页只列了数据库里的自定义分类——绝大多数用户从没建过自定义分类，
+ * 于是「分类预算 → 添加」弹出的是一张空列表。
+ */
+fun resolveExpenseCategoryItems(
+    custom: List<CategoryItem>,
+    presetOverrides: Map<String, String>,
+    usageCounts: Map<String, Int>
+): List<CategoryItem> {
+    val presets = expenseCategoryItems
+        .filter { item -> isPresetEnabled(presetOverrides["preset_EXPENSE_${item.name}"]) }
+        .map { item ->
+            val resolved = ColorResolver.resolve(item.name, item.color)
+            if (resolved != item.color) item.copy(color = resolved) else item
+        }
+    // 自定义分类可能与预设同名（用户自己又建了一个「餐饮」）：预算按名字存，
+    // 同名多一条只会让选择器出现两个看不出差别的选项，按名字去重。
+    return (presets + custom)
+        .distinctBy { it.name }
+        .sortedByDescending { usageCounts[it.name] ?: 0 }
+}
+
+/** 预设项是否启用：没有覆盖记录默认启用；坏 JSON 也按启用处理，不能因为脏数据让分类消失。 */
+private fun isPresetEnabled(overrideJson: String?): Boolean {
+    if (overrideJson == null) return true
+    return try {
+        org.json.JSONObject(overrideJson).optBoolean("enabled", true)
+    } catch (_: Exception) {
+        true
+    }
+}
+
+/** 收入分类的同口径版本（预算暂不支持收入分类，供记账页与后续复用）。 */
+fun resolveIncomeCategoryItems(
+    custom: List<CategoryItem>,
+    presetOverrides: Map<String, String>,
+    usageCounts: Map<String, Int>
+): List<CategoryItem> {
+    val presets = incomeCategoryItems
+        .filter { item -> isPresetEnabled(presetOverrides["preset_INCOME_${item.name}"]) }
+        .map { item ->
+            val resolved = ColorResolver.resolve(item.name, item.color)
+            if (resolved != item.color) item.copy(color = resolved) else item
+        }
+    return (presets + custom)
+        .distinctBy { it.name }
+        .sortedByDescending { usageCounts[it.name] ?: 0 }
 }

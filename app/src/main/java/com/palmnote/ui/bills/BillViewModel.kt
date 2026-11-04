@@ -8,10 +8,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.palmnote.app.R
+import com.palmnote.data.notify.BudgetAlertNotifier
 import com.palmnote.data.db.dao.CategoryTotal
 import com.palmnote.data.db.entity.AccountBook
 import com.palmnote.data.db.entity.Bill
 import com.palmnote.data.db.entity.Budget
+import com.palmnote.domain.model.BudgetProgress
 import com.palmnote.data.db.entity.CategoryConfig
 import com.palmnote.data.db.entity.Wallet
 import com.palmnote.data.datastore.PreferencesManager
@@ -52,8 +54,6 @@ data class BillState(
     val monthlyExpense: Long = 0,
     val monthlyIncome: Long = 0,
     val expenseByCategory: List<CategoryTotal> = emptyList(),
-    val budget: Budget? = null,
-    val budgetUsagePercent: Float = 0f,
     val dailySummary: Map<Int, Pair<Long, Long>> = emptyMap(),
     val selectedBookId: Long = AccountBook.ALL_BOOKS_ID,
     val accountBooks: List<AccountBook> = emptyList(),
@@ -69,8 +69,7 @@ private data class BillDataGroup(
     val bills: List<Bill>,
     val expense: Long,
     val income: Long,
-    val categories: List<CategoryTotal>,
-    val budget: Budget?
+    val categories: List<CategoryTotal>
 )
 
 @Stable
@@ -104,11 +103,19 @@ data class AddBillFormState(
     val isSaving: Boolean = false,
     val isSaved: Boolean = false,
     val amountError: String? = null,
-    val categoryError: String? = null
+    val categoryError: String? = null,
+    /**
+     * 保存整条失败（数据库/事务出错）时的可见提示。
+     *
+     * 以前这里只把 [isSaving] 置回 false，用户看到按钮恢复可点、页面没跳走，
+     * 会以为「已经记上了」，于是重复记一次或干脆漏记——静默失败比报错更糟。
+     */
+    val saveError: String? = null
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
+@Suppress("LongParameterList")
 class BillViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val savedStateHandle: androidx.lifecycle.SavedStateHandle,
@@ -118,6 +125,7 @@ class BillViewModel @Inject constructor(
     private val billRepository: BillRepository,
     private val budgetRepository: BudgetRepository,
     private val accountBookRepository: AccountBookRepository,
+    private val budgetAlertNotifier: BudgetAlertNotifier,
     private val preferencesManager: PreferencesManager
 ) : ViewModel() {
 
@@ -198,6 +206,23 @@ class BillViewModel @Inject constructor(
         (expense + income).groupBy({ it.category }, { it.count }).mapValues { it.value.sum() }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
+    /**
+     * 预算页「选择分类」的选项：与记账页同一口径（内置预设 + 自定义，按使用频次排序）。
+     *
+     * **不能只列 `allCustomExpenseCategories`**：那只有用户自己建过的分类，
+     * 没建过的人点「添加」会看到一张空列表（2026-11-05 的真机反馈）。
+     * 预算存的是分类名，必须和记账页选出来的完全一致，否则设了也统计不到。
+     *
+     * 声明在 `categoryUsageCounts` 之后：Kotlin 属性按声明顺序初始化，提前引用会拿到未初始化值。
+     */
+    val budgetExpenseCategories: StateFlow<List<CategoryItem>> = combine(
+        customExpenseCategories,
+        presetCategoryOverrides,
+        categoryUsageCounts
+    ) { custom, overrides, usage ->
+        resolveExpenseCategoryItems(custom, overrides, usage)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     private val walletNames: StateFlow<Map<Long, String>> = wallets
         .map { it.associate { w -> w.id to com.palmnote.ui.components.getLocalizedWalletDisplayName(w, context) } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
@@ -213,12 +238,23 @@ class BillViewModel @Inject constructor(
                 if (isAll) billRepository.getBillsByMonth(ym) else billRepository.getBillsByBookAndMonth(bookId, ym),
                 if (isAll) billRepository.getMonthlyExpense(ym) else billRepository.getMonthlyExpenseByBook(bookId, ym),
                 if (isAll) billRepository.getMonthlyIncome(ym) else billRepository.getMonthlyIncomeByBook(bookId, ym),
-                if (isAll) billRepository.getExpenseByCategory(ym) else billRepository.getExpenseByCategoryByBook(bookId, ym),
-                budgetRepository.getBudgetByMonthFlow(ym)
-            ) { bills, expense, income, categories, budget ->
-                BillDataGroup(bills, expense ?: 0, income ?: 0, categories, budget)
+                if (isAll) billRepository.getExpenseByCategory(ym) else billRepository.getExpenseByCategoryByBook(bookId, ym)
+            ) { bills, expense, income, categories ->
+                BillDataGroup(bills, expense ?: 0, income ?: 0, categories)
             }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    /**
+     * 预算进度（全部周期 / 全部口径）。预算页与首页预警共用同一份计算，
+     * 不再用「本账本支出 ÷ 全账本预算」这种错配口径。
+     *
+     * 初值刻意是 **null 而不是 emptyList**：预算要跑三次窗口查询才有结果，
+     * 给 emptyList 会让订阅方第一帧就拿到「没有预算」，进页面先闪一下空态。
+     * null = 还没算出来，`BudgetScreen` 据此显示骨架。
+     */
+    val budgetProgresses: StateFlow<List<BudgetProgress>?> = budgetRepository.getProgresses()
+        .map<List<BudgetProgress>, List<BudgetProgress>?> { it }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     private val dailySummary: StateFlow<Map<Int, Pair<Long, Long>>> = billData
         .map { data ->
@@ -246,9 +282,6 @@ class BillViewModel @Inject constructor(
         val (filter, sheet) = filterPair
         val (wNames, books, allBooks) = walletPart
         val (data, daily, searchRes) = dataTriple
-
-        val budgetPercent = if (data?.budget != null && data.budget.totalBudget > 0)
-            (data.expense.toFloat() / data.budget.totalBudget).toFloat() else 0f
 
         val filterActive = filter.type != null || filter.category != null || filter.paymentMethod != null || filter.amountMin != null || filter.amountMax != null
         // 全局搜索 DAO 不带账本条件：列表按账本展示，搜索结果也需按当前账本收敛（ALL_BOOKS 除外）
@@ -278,8 +311,6 @@ class BillViewModel @Inject constructor(
             monthlyExpense = data?.expense ?: 0,
             monthlyIncome = data?.income ?: 0,
             expenseByCategory = data?.categories.orEmpty(),
-            budget = data?.budget,
-            budgetUsagePercent = budgetPercent,
             dailySummary = daily,
             selectedBookId = bookId,
             accountBooks = books,
@@ -526,7 +557,9 @@ class BillViewModel @Inject constructor(
     }
 
     fun updateForm(update: AddBillFormState.() -> AddBillFormState) {
-        _formState.update { update(it) }
+        // 用户一改表单就撤掉上一次的保存失败提示：那是上一次尝试的结果，
+        // 留着会让人以为「改了也还是存不上」
+        _formState.update { update(it).copy(saveError = null) }
     }
 
     fun saveBill() {
@@ -548,7 +581,7 @@ class BillViewModel @Inject constructor(
             return
         }
 
-        _formState.value = form.copy(isSaving = true)
+        _formState.value = form.copy(isSaving = true, saveError = null)
 
         viewModelScope.launch {
             try {
@@ -598,12 +631,20 @@ class BillViewModel @Inject constructor(
                 }
 
                 cleanupImagesAfterSave(form.images)
+                // 预算通知即时检查：跨越阈值/超支的那一刻就在这笔账单上，不必等每日任务
+                runCatching { budgetAlertNotifier.checkAndNotify() }
+                    .onFailure { com.palmnote.domain.util.AppLogger.e("BillViewModel", "budget alert check failed", it) }
                 // 桌面组件即时刷新：新建/编辑账单会改钱包余额与本日/本月支出，别等 30 分钟周期
                 com.palmnote.ui.widget.WidgetUpdateHelper.refreshBillWidgets()
                 com.palmnote.ui.widget.WidgetUpdateHelper.refreshNetWorthWidgets()
                 _formState.value = form.copy(isSaving = false, isSaved = true)
             } catch (e: Exception) {
-                _formState.value = _formState.value.copy(isSaving = false)
+                // 别静默吞掉：整条保存失败必须让用户看见，否则会以为自己已经记上了
+                com.palmnote.domain.util.AppLogger.e("BillViewModel", "save bill failed", e)
+                _formState.value = _formState.value.copy(
+                    isSaving = false,
+                    saveError = context.getString(R.string.bill_error_save_failed)
+                )
             }
         }
     }
@@ -637,8 +678,18 @@ class BillViewModel @Inject constructor(
 
     fun saveBudget(budget: Budget) {
         viewModelScope.launch {
-            if (budget.id > 0) budgetRepository.updateBudget(budget)
-            else budgetRepository.insertBudget(budget)
+            budgetRepository.saveBudget(budget)
+            // 新建预算或调低额度可能当场就越过阈值，不能只等每日 Worker
+            runCatching { budgetAlertNotifier.checkAndNotify() }
+                .onFailure { com.palmnote.domain.util.AppLogger.e("BillViewModel", "budget alert check failed", it) }
+        }
+    }
+
+    fun deleteBudget(id: Long) {
+        viewModelScope.launch {
+            budgetRepository.deleteBudget(id)
+            // 预算没了，通知栏里那条预警也该一起撤掉
+            budgetAlertNotifier.cancelForBudget(id)
         }
     }
 

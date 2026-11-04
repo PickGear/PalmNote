@@ -250,6 +250,19 @@ fun GeneralSettingsScreen(
                         )
                     }
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                    // 预算通知：达到每条预算自己的阈值时发系统通知（页内预警卡不受它控制）
+                    SettingRow {
+                        SettingRowContent(
+                            title = stringResource(R.string.settings_budget_notify),
+                            subtitle = stringResource(R.string.settings_budget_notify_desc)
+                        )
+                        CapsuleSwitch(
+                            checked = state.budgetNotifyEnabled,
+                            onCheckedChange = { viewModel.setBudgetNotifyEnabled(it) },
+                            checkedTrackColor = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                     SettingRow {
                         SettingRowContent(title = stringResource(R.string.settings_calendar_sync), subtitle = stringResource(R.string.settings_calendar_sync_subtitle))
                         CapsuleSwitch(checked = state.calendarSyncEnabled, onCheckedChange = { enabled ->
