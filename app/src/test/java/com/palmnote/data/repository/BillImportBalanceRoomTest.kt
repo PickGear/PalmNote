@@ -169,4 +169,82 @@ class BillImportBalanceRoomTest {
         assertEquals(700L, loaded!!.amount)
         assertEquals("TX-1", loaded.transactionId)
     }
+
+    // ── T4：信用卡钱包存「欠款」（正数 = 欠钱），记账联动方向与普通钱包相反（issue #51）──
+
+    @Test
+    fun `T4 credit card expense increases the recorded debt`() = runBlocking {
+        val wid = db.walletDao().insert(
+            Wallet(name = "信用卡", type = Wallet.TYPE_CREDIT_CARD, currentBalance = 320000)
+        )
+
+        repo.createBillWithWalletAdjustment(bill(10000, BillType.EXPENSE, wid))
+
+        // 刷卡消费：欠款 3200 → 3300（普通钱包是减）
+        assertEquals(330000L, balance(wid))
+    }
+
+    @Test
+    fun `T4 credit card income refund reduces the recorded debt`() = runBlocking {
+        val wid = db.walletDao().insert(
+            Wallet(name = "信用卡", type = Wallet.TYPE_CREDIT_CARD, currentBalance = 320000)
+        )
+
+        repo.createBillWithWalletAdjustment(bill(5000, BillType.INCOME, wid))
+
+        // 退款进信用卡：欠款 3200 → 3150
+        assertEquals(315000L, balance(wid))
+    }
+
+    @Test
+    fun `T4 credit card expense then undo restores the original debt`() = runBlocking {
+        val wid = db.walletDao().insert(
+            Wallet(name = "信用卡", type = Wallet.TYPE_CREDIT_CARD, currentBalance = 320000)
+        )
+        val id = repo.createBillWithWalletAdjustment(bill(10000, BillType.EXPENSE, wid))
+        assertEquals(330000L, balance(wid))
+
+        repo.deleteBill(id)
+
+        assertEquals(320000L, balance(wid))
+    }
+
+    @Test
+    fun `T4 transfer into credit card repays debt and transfer out raises it`() = runBlocking {
+        val credit = db.walletDao().insert(
+            Wallet(name = "信用卡", type = Wallet.TYPE_CREDIT_CARD, currentBalance = 320000)
+        )
+        val cash = db.walletDao().insert(Wallet(name = "现金", currentBalance = 100000))
+
+        // 现金 → 信用卡：还款，欠款下降
+        repo.createBillWithWalletAdjustment(
+            bill(50000, BillType.TRANSFER, cash).copy(toWalletId = credit)
+        )
+        assertEquals(270000L, balance(credit))
+        assertEquals(50000L, balance(cash))
+
+        // 信用卡 → 现金：取现，欠款上升
+        repo.createBillWithWalletAdjustment(
+            bill(20000, BillType.TRANSFER, credit).copy(toWalletId = cash)
+        )
+        assertEquals(290000L, balance(credit))
+        assertEquals(70000L, balance(cash))
+    }
+
+    @Test
+    fun `T4 editing a credit card bill reapplies the debt in the flipped direction`() = runBlocking {
+        val credit = db.walletDao().insert(
+            Wallet(name = "信用卡", type = Wallet.TYPE_CREDIT_CARD, currentBalance = 320000)
+        )
+        val cash = db.walletDao().insert(Wallet(name = "现金", currentBalance = 100000))
+
+        // 原记在现金上的支出，改成信用卡支付：现金回补、信用卡欠款上升
+        val id = repo.createBillWithWalletAdjustment(bill(8000, BillType.EXPENSE, cash))
+        assertEquals(92000L, balance(cash))
+
+        repo.updateBillWithWalletAdjustment(bill(8000, BillType.EXPENSE, credit).copy(id = id))
+
+        assertEquals(100000L, balance(cash))
+        assertEquals(328000L, balance(credit))
+    }
 }

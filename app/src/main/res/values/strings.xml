@@ -333,6 +333,9 @@
     <!-- Dashboard Module -->
     <string name="dashboard_card_manage">卡片管理</string>
     <string name="dashboard_net_worth">净资产</string>
+    <!-- 净资产卡构成行（issue #51）：仅在存在信用卡钱包时显示 -->
+    <string name="dashboard_asset_label">资产</string>
+    <string name="dashboard_liability_label">负债</string>
     <string name="dashboard_demo_included">含示例数据</string>
     <string name="dashboard_monthly_expense">本月支出</string>
     <string name="dashboard_monthly_income">本月收入</string>
@@ -1506,6 +1509,11 @@
     <string name="wallet_appearance">外观</string>
     <string name="wallet_current_balance">当前余额</string>
     <string name="wallet_initial_balance">初始余额</string>
+    <!-- 信用卡钱包（issue #51）：余额字段存「欠款」，正数 = 欠钱 -->
+    <string name="wallet_credit_debt_label">信用卡欠款</string>
+    <string name="wallet_debt_label">欠款</string>
+    <string name="wallet_initial_debt">欠款金额</string>
+    <string name="wallet_current_debt">当前欠款</string>
     <string name="wallet_card_number">卡号</string>
     <string name="wallet_balance_invalid">请输入有效数字</string>
     <string name="wallet_balance_negative">金额不能为负数</string>

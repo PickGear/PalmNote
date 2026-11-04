@@ -123,6 +123,20 @@ class CsvDataExporterDedupTest {
     }
 
     @Test
+    fun `credit card wallet balance is recomputed with flipped direction`() = runBlocking {
+        registerInputStream(uri, creditCardWalletBillZip("cc"))
+        val report = exporter.importFromUri(uri).getOrThrow()
+
+        assertEquals(2, report.inserted) // 1 个钱包 + 1 笔账单
+        assertEquals(1, report.walletsRecalculated)
+
+        val wallet = db.walletDao().getAllWallets().first().single()
+        // 信用卡余额存「欠款」（正数 = 欠钱，issue #51）：刷卡 10.00 → 欠款 0.00 → 10.00
+        // （普通钱包同夹具会重算成 −10.00，方向必须反过来）
+        assertEquals(1000L, wallet.currentBalance)
+    }
+
+    @Test
     fun `reimporting an older package does not roll back newer local data`() = runBlocking {
         registerInputStream(uri, walletBillZip("e"))
         exporter.importFromUri(uri).getOrThrow()
@@ -163,6 +177,17 @@ class CsvDataExporterDedupTest {
      * 这样「账单引用了同一个文件里稍后才出现的钱包」这条路径也在测试覆盖内。
      */
     private fun walletBillZip(fileName: String): File = zipOf(fileName, walletBillCsv())
+
+    /** 信用卡版夹具：钱包类型 CREDIT_CARD、初始/当前余额 0.00 + 一笔 10.00 支出。 */
+    private fun creditCardWalletBillZip(fileName: String): File =
+        zipOf(fileName, creditCardWalletBillCsv())
+
+    private fun creditCardWalletBillCsv(): String {
+        val header = "实体类型,编号,名称,类型,金额,日期,钱包,初始余额,当前余额,交易单号"
+        val billRow = "账单,1,,EXPENSE,10.00,2026-01-01 08:00:00,1,,,TX-CC1"
+        val walletRow = "钱包,1,信用卡,CREDIT_CARD,,,,0.00,0.00,"
+        return listOf(header, billRow, walletRow).joinToString("\n")
+    }
 
     /**
      * 带 `编号`（id）列——真实导出一定会带它。

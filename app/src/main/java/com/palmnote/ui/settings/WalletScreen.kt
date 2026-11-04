@@ -45,6 +45,8 @@ fun WalletScreen(
     val context = androidx.compose.ui.platform.LocalContext.current
     val wallets by viewModel.wallets.collectAsStateWithLifecycle()
     val totalBalance by viewModel.totalBalance.collectAsStateWithLifecycle()
+    // 信用卡钱包「欠款」合计；null = 没有启用的信用卡钱包，顶部汇总不显示该行
+    val creditCardDebt by viewModel.creditCardDebt.collectAsStateWithLifecycle()
     var showDeleteDialog by remember { mutableStateOf(false) }
     var walletToDelete by remember { mutableStateOf<Wallet?>(null) }
     var detailWallet by remember { mutableStateOf<Wallet?>(null) }
@@ -104,6 +106,26 @@ fun WalletScreen(
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onPrimary
                             )
+                            // 信用卡欠款行（issue #51）：有信用卡钱包才出现；
+                            // 顶部「总资产」不含欠款（与首页资产口径一致），欠款在这里单独交代
+                            val debt = creditCardDebt
+                            if (debt != null) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        stringResource(R.string.wallet_credit_debt_label),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        CurrencyUtils.formatCurrency(context, debt.toMoney()),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Medium,
+                                        color = MaterialTheme.colorScheme.onPrimary
+                                    )
+                                }
+                            }
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
                                 text = pluralStringResource(
@@ -254,12 +276,31 @@ private fun WalletItem(
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
 
-            Text(
-                CurrencyUtils.formatCurrency(context, wallet.currentBalance.toMoney()),
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                color = if (wallet.currentBalance >= 0) MaterialTheme.colorScheme.onSurface else ErrorLight
-            )
+            // 信用卡钱包（issue #51）：余额字段存「欠款」，行尾带「欠款」前缀，
+            // 避免和普通账户的存款读混；颜色用既有 ErrorLight（欠款=红，与负余额同语义）
+            if (wallet.type == Wallet.TYPE_CREDIT_CARD) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        stringResource(R.string.wallet_debt_label),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        CurrencyUtils.formatCurrency(context, wallet.currentBalance.toMoney()),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = if (wallet.isEnabled) ErrorLight else ErrorLight.copy(alpha = 0.4f)
+                    )
+                }
+            } else {
+                Text(
+                    CurrencyUtils.formatCurrency(context, wallet.currentBalance.toMoney()),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = if (wallet.currentBalance >= 0) MaterialTheme.colorScheme.onSurface else ErrorLight
+                )
+            }
 
             Spacer(Modifier.width(8.dp))
 
@@ -303,12 +344,17 @@ private fun WalletDetailDialog(
                     }
                 }
                 HorizontalDivider()
-                DetailRow(stringResource(R.string.wallet_balance), CurrencyUtils.formatCurrency(context, wallet.currentBalance.toMoney()))
+                // 信用卡钱包（issue #51）：余额字段存「欠款」，标签按类型切换
+                val isCreditCard = wallet.type == Wallet.TYPE_CREDIT_CARD
+                DetailRow(
+                    stringResource(if (isCreditCard) R.string.wallet_current_debt else R.string.wallet_balance),
+                    CurrencyUtils.formatCurrency(context, wallet.currentBalance.toMoney())
+                )
                 DetailRow(stringResource(R.string.wallet_type), stringResource(walletTypeResIds[wallet.type] ?: R.string.wallet_type_other))
                 if (wallet.bankName.isNotEmpty()) DetailRow(stringResource(R.string.wallet_bank), wallet.bankName)
                 if (wallet.cardNumber.isNotEmpty()) DetailRow(stringResource(R.string.wallet_card_number), "****${wallet.cardNumber}")
                 DetailRow(
-                    stringResource(R.string.wallet_initial_balance),
+                    stringResource(if (isCreditCard) R.string.wallet_initial_debt else R.string.wallet_initial_balance),
                     CurrencyUtils.formatCurrency(context, wallet.initialBalance.toMoney())
                 )
             }

@@ -298,6 +298,42 @@ class ExchangeRoundTripTest {
         }
     }
 
+    @Test
+    fun `信用卡钱包类型与欠款余额导出再导入后保真`() = runBlocking {
+        db.accountBookDao().insertBook(AccountBook(id = 1, name = "默认账本", isDefault = true))
+        // 信用卡钱包：余额字段存「欠款」（正数 = 欠钱，issue #51）。
+        // currentBalance 必须守恒（initial − Σ普通方向 = 300000 − (−30000) = 330000），
+        // 否则导入重算会按不变量把它改回去
+        val credit = db.walletDao().insert(
+            Wallet(
+                name = "信用卡", type = Wallet.TYPE_CREDIT_CARD,
+                initialBalance = 300_000, currentBalance = 330_000
+            )
+        )
+        db.billDao().insertBill(
+            Bill(
+                amount = 30_000, type = BillType.EXPENSE, category = "餐饮", note = "刷卡",
+                date = ts(2026, 10, 28), yearMonth = "2026-10", accountBookId = 1, walletId = credit,
+                createdAt = ts(2026, 10, 28), updatedAt = ts(2026, 10, 28)
+            )
+        )
+
+        val exported = exportAll()
+        val fresh = freshDb()
+        try {
+            val report = importAll(fresh, exported)
+            assertEquals(2, report.inserted)
+
+            val wallet = fresh.walletDao().getAllWallets().first().single()
+            assertEquals(Wallet.TYPE_CREDIT_CARD, wallet.type)
+            // 欠款余额往返后由重算复现同一数字（方向翻转口径下）
+            assertEquals(300_000, wallet.initialBalance)
+            assertEquals(330_000, wallet.currentBalance)
+        } finally {
+            fresh.close()
+        }
+    }
+
     private fun firstCsvText(bytes: ByteArray): String {
         ZipInputStream(bytes.inputStream()).use { zis ->
             var current = zis.nextEntry

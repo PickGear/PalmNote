@@ -222,7 +222,12 @@ internal fun NetWorthCard(
                         AmountMaskBlock(width = 136.dp, height = 28.dp, corner = 8.dp)
                     } else {
                         Text(
-                            text = CurrencyUtils.formatCompact(context, state.totalAssetValue.toMoney()),
+                            // 主数字 = 资产 − 信用卡欠款（issue #51）：名字叫净资产，
+                            // 就要真的减掉欠款；分项见下方构成行
+                            text = CurrencyUtils.formatCompact(
+                                context,
+                                (state.totalAssetValue - state.totalLiability).toMoney()
+                            ),
                             style = MaterialTheme.typography.displaySmall,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onPrimary
@@ -241,6 +246,38 @@ internal fun NetWorthCard(
                                     androidx.compose.foundation.shape.RoundedCornerShape(50)
                                 )
                                 .padding(horizontal = 8.dp, vertical = 2.dp)
+                        )
+                    }
+                }
+                // 构成行：主数字是「资产 − 欠款」的差值，这里交代两个分项从哪来；
+                // 没有信用卡钱包时整行不渲染，老用户卡面与旧版一致
+                if (state.hasCreditCardWallet) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = stringResource(R.string.dashboard_asset_label),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        MoneyValue(
+                            text = CurrencyUtils.formatCurrency(context, state.totalAssetValue.toMoney()),
+                            hidden = amountsHidden,
+                            maskWidth = 56.dp,
+                            valueColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f)
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text(
+                            text = stringResource(R.string.dashboard_liability_label),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        MoneyValue(
+                            text = CurrencyUtils.formatCurrency(context, state.totalLiability.toMoney()),
+                            hidden = amountsHidden,
+                            maskWidth = 44.dp,
+                            valueColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f)
                         )
                     }
                 }

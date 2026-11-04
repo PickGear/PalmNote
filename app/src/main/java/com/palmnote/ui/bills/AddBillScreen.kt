@@ -27,6 +27,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.palmnote.app.R
 import com.palmnote.data.db.entity.Bill
+import com.palmnote.data.db.entity.Wallet
 import com.palmnote.domain.model.BillType
 import com.palmnote.domain.model.toMoney
 import com.palmnote.domain.util.CurrencyUtils
@@ -332,13 +333,17 @@ fun AddBillScreen(
                         val selectedWallet = wallets.find { it.id == walletId }
                         if (selectedWallet != null) {
                             Spacer(modifier = Modifier.height(8.dp))
+                            // 信用卡钱包存「欠款」（issue #51）：标签与配色跟着切
+                            val isCredit = selectedWallet.type == Wallet.TYPE_CREDIT_CARD
+                            val balanceLabel =
+                                stringResource(if (isCredit) R.string.wallet_debt_label else R.string.balance)
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = "${getLocalizedWalletDisplayName(selectedWallet, context)} ${stringResource(R.string.balance)}",
+                                    text = "${getLocalizedWalletDisplayName(selectedWallet, context)} $balanceLabel",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -346,7 +351,7 @@ fun AddBillScreen(
                                     text = CurrencyUtils.formatCurrency(context, selectedWallet.currentBalance.toMoney()),
                                     style = MaterialTheme.typography.bodySmall,
                                     fontWeight = FontWeight.Medium,
-                                    color = if (selectedWallet.currentBalance >= 0) StatusActive else ErrorLight
+                                    color = if (isCredit || selectedWallet.currentBalance < 0) ErrorLight else StatusActive
                                 )
                             }
                         }
@@ -413,13 +418,17 @@ fun AddBillScreen(
                             val selectedWallet = wallets.find { it.id == walletId }
                             if (selectedWallet != null) {
                                 Spacer(modifier = Modifier.height(8.dp))
+                                // 转入方同样按类型切「欠款」（信用卡收转账 = 还款，欠款应下降）
+                                val isCredit = selectedWallet.type == Wallet.TYPE_CREDIT_CARD
+                                val balanceLabel =
+                                    stringResource(if (isCredit) R.string.wallet_debt_label else R.string.balance)
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
-                                        text = "${getLocalizedWalletDisplayName(selectedWallet, context)} ${stringResource(R.string.balance)}",
+                                        text = "${getLocalizedWalletDisplayName(selectedWallet, context)} $balanceLabel",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -427,7 +436,7 @@ fun AddBillScreen(
                                         text = CurrencyUtils.formatCurrency(context, selectedWallet.currentBalance.toMoney()),
                                         style = MaterialTheme.typography.bodySmall,
                                         fontWeight = FontWeight.Medium,
-                                        color = if (selectedWallet.currentBalance >= 0) StatusActive else ErrorLight
+                                        color = if (isCredit || selectedWallet.currentBalance < 0) ErrorLight else StatusActive
                                     )
                                 }
                             }

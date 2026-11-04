@@ -336,6 +336,9 @@
     <!-- Dashboard Module -->
     <string name="dashboard_card_manage">Card Management</string>
     <string name="dashboard_net_worth">Net Worth</string>
+    <!-- Net worth card breakdown row (issue #51): shown only when a credit-card wallet exists -->
+    <string name="dashboard_asset_label">Assets</string>
+    <string name="dashboard_liability_label">Debt</string>
     <string name="dashboard_demo_included">includes samples</string>
     <string name="dashboard_monthly_expense">Monthly Expense</string>
     <string name="dashboard_monthly_income">Monthly Income</string>
@@ -1337,6 +1340,11 @@
     <string name="wallet_appearance">Appearance</string>
     <string name="wallet_current_balance">Current Balance</string>
     <string name="wallet_initial_balance">Initial Balance</string>
+    <!-- Credit-card wallet (issue #51): balance field stores debt, positive = owed -->
+    <string name="wallet_credit_debt_label">Credit Card Debt</string>
+    <string name="wallet_debt_label">Debt</string>
+    <string name="wallet_initial_debt">Debt Amount</string>
+    <string name="wallet_current_debt">Current Debt</string>
     <string name="wallet_card_number">Card Number</string>
     <string name="wallet_balance_invalid">Enter a valid number</string>
     <string name="wallet_balance_negative">Amount cannot be negative</string>

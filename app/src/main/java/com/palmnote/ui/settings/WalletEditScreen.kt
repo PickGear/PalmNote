@@ -197,15 +197,16 @@ fun WalletEditScreen(
             }
 
             // ══════════════════════════════════════
-            // 余额
+            // 余额（信用卡钱包存「欠款」，标签按类型切换，正数 = 欠钱；issue #51）
             // ══════════════════════════════════════
             ModuleCard(tint = MaterialTheme.colorScheme.surface) {
                 SectionHeader(stringResource(R.string.wallet_balance), Icons.Outlined.AccountBalance)
                 Spacer(modifier = Modifier.height(8.dp))
+                val isCreditCard = type == Wallet.TYPE_CREDIT_CARD
                 OutlinedTextField(
                     value = initialBalance,
                     onValueChange = { initialBalance = it; balanceError = null },
-                    label = { Text(stringResource(R.string.wallet_initial_balance)) },
+                    label = { Text(stringResource(if (isCreditCard) R.string.wallet_initial_debt else R.string.wallet_initial_balance)) },
                     modifier = Modifier.fillMaxWidth(),
                     prefix = { Text(stringResource(R.string.currency_symbol)) },
                     shape = MaterialTheme.shapes.medium,
@@ -216,8 +217,11 @@ fun WalletEditScreen(
                 )
                 if (isEditing && existingWallet != null) {
                     Spacer(modifier = Modifier.height(4.dp))
+                    val balanceLabel = stringResource(
+                        if (isCreditCard) R.string.wallet_current_debt else R.string.wallet_current_balance
+                    )
                     Text(
-                        stringResource(R.string.wallet_current_balance) + ": " + CurrencyUtils.formatCurrency(
+                        balanceLabel + ": " + CurrencyUtils.formatCurrency(
                             context,
                             existingWallet!!.currentBalance.toMoney()
                         ),

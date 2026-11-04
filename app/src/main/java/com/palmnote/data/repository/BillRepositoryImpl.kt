@@ -13,6 +13,7 @@ import com.palmnote.data.db.dao.ReimbursementSummary
 import com.palmnote.data.db.dao.WalletDao
 import com.palmnote.data.db.entity.Bill
 import com.palmnote.data.db.entity.BillRecycleBin
+import com.palmnote.data.db.entity.Wallet
 import com.palmnote.data.db.entity.toBill
 import com.palmnote.data.db.entity.toRecycleBin
 import com.palmnote.domain.model.BillType
@@ -145,24 +146,37 @@ class BillRepositoryImpl @Inject constructor(
         }
     }
 
+    /**
+     * 记账联动钱包余额。
+     * [signedDelta] 是「普通钱包」该加的数（支出为负、收入为正）；信用卡钱包（[Wallet.TYPE_CREDIT_CARD]）
+     * 的余额字段存「欠款」（正数 = 欠钱，见 [Wallet] KDoc），方向相反，此处统一翻转。
+     * apply/revert 必须经由同一入口保持镜像，信用卡方向才不会漏配。
+     */
+    private suspend fun adjustWalletBalance(walletId: Long?, signedDelta: Long) {
+        walletId ?: return
+        val wallet = walletDao.getWalletById(walletId) ?: return
+        val delta = if (wallet.type == Wallet.TYPE_CREDIT_CARD) -signedDelta else signedDelta
+        walletDao.adjustBalance(walletId, delta)
+    }
+
     private suspend fun revertOldBalance(bill: Bill) {
         when (bill.type) {
-            BillType.EXPENSE -> bill.walletId?.let { walletDao.adjustBalance(it, bill.amount) }
-            BillType.INCOME -> bill.walletId?.let { walletDao.adjustBalance(it, -bill.amount) }
+            BillType.EXPENSE -> adjustWalletBalance(bill.walletId, bill.amount)
+            BillType.INCOME -> adjustWalletBalance(bill.walletId, -bill.amount)
             BillType.TRANSFER -> {
-                bill.walletId?.let { walletDao.adjustBalance(it, bill.amount) }
-                bill.toWalletId?.let { walletDao.adjustBalance(it, -bill.amount) }
+                adjustWalletBalance(bill.walletId, bill.amount)
+                adjustWalletBalance(bill.toWalletId, -bill.amount)
             }
         }
     }
 
     private suspend fun applyNewBalance(bill: Bill) {
         when (bill.type) {
-            BillType.EXPENSE -> bill.walletId?.let { walletDao.adjustBalance(it, -bill.amount) }
-            BillType.INCOME -> bill.walletId?.let { walletDao.adjustBalance(it, bill.amount) }
+            BillType.EXPENSE -> adjustWalletBalance(bill.walletId, -bill.amount)
+            BillType.INCOME -> adjustWalletBalance(bill.walletId, bill.amount)
             BillType.TRANSFER -> {
-                bill.walletId?.let { walletDao.adjustBalance(it, -bill.amount) }
-                bill.toWalletId?.let { walletDao.adjustBalance(it, bill.amount) }
+                adjustWalletBalance(bill.walletId, -bill.amount)
+                adjustWalletBalance(bill.toWalletId, bill.amount)
             }
         }
     }

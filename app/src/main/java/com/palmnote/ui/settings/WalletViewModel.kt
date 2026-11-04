@@ -22,6 +22,10 @@ class WalletViewModel @Inject constructor(
     val totalBalance: StateFlow<Long?> = walletRepository.getTotalBalance()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
+    /** 信用卡钱包「欠款」合计（正数=欠钱）；null = 没有启用的信用卡钱包，顶部汇总不显示该行。 */
+    val creditCardDebt: StateFlow<Long?> = walletRepository.getTotalCreditCardBalance()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
     fun getWalletByIdFlow(walletId: Long): Flow<Wallet?> =
         walletRepository.getWalletByIdFlow(walletId)
 

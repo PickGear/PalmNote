@@ -8,13 +8,18 @@ import com.palmnote.ui.theme.AppIcon
 /**
  * 钱包/账户
  * 支持自定义账户类型、图标、颜色、余额统计
+ *
+ * 余额口径（2026-11-05，issue #51）：[TYPE_CREDIT_CARD] 钱包的
+ * `initialBalance`/`currentBalance` 存「欠款」，**正数 = 欠钱**；
+ * 其余类型存「存款」。app 模块的记账联动（BillRepositoryImpl）
+ * 与导入重算（CsvDataExporter）按该语义反向调整信用卡钱包。
  */
 @Entity(tableName = "wallets")
 data class Wallet(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     val name: String, // 账户名称：现金、微信、支付宝、银行卡等
-    val type: String = "CASH", // CASH, E_WALLET, BANK_CARD, CREDIT_CARD, INVESTMENT, OTHER
+    val type: String = TYPE_CASH, // CASH, E_WALLET, BANK_CARD, CREDIT_CARD, INVESTMENT, OTHER
     @ColumnInfo(defaultValue = "Payments")
     val icon: AppIcon = AppIcon.Payments, // 图标
     val color: String = "#4CAF50", // 颜色
@@ -42,4 +47,13 @@ data class Wallet(
     val createdAt: Long = System.currentTimeMillis(),
 
     val updatedAt: Long = System.currentTimeMillis()
-)
+) {
+    companion object {
+        const val TYPE_CASH = "CASH"
+        const val TYPE_E_WALLET = "E_WALLET"
+        const val TYPE_BANK_CARD = "BANK_CARD"
+        const val TYPE_CREDIT_CARD = "CREDIT_CARD"
+        const val TYPE_INVESTMENT = "INVESTMENT"
+        const val TYPE_OTHER = "OTHER"
+    }
+}

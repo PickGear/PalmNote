@@ -53,7 +53,15 @@ private const val MAX_DAY_TICK_MS = 60_000L
 
 @Stable
 data class DashboardState(
+    /** 信用卡以外钱包的余额合计（issue #51 前后口径不变，即「资产」）。 */
     val totalAssetValue: Long = 0,
+    /**
+     * 信用卡钱包「欠款」合计（正数 = 欠钱）。净资产卡主数字 = 资产 − 欠款；
+     * [hasCreditCardWallet] 为 false 时恒为 0，卡面与旧版一致。
+     */
+    val totalLiability: Long = 0,
+    /** 是否存在启用的信用卡钱包：决定净资产卡是否显示「资产 · 负债」构成行。 */
+    val hasCreditCardWallet: Boolean = false,
     val activeAssetCount: Int = 0,
     val monthlyExpense: Long = 0,
     val monthlyIncome: Long = 0,
@@ -367,8 +375,10 @@ class DashboardViewModel @Inject constructor(
                     }
                     _state.update { s -> s.copy(
                         loaded = true,
-                        totalAssetValue = c.assetData.first,
-                        activeAssetCount = c.assetData.second,
+                        totalAssetValue = c.assetData.balance,
+                        totalLiability = c.assetData.creditDebt ?: 0L,
+                        hasCreditCardWallet = c.assetData.creditDebt != null,
+                        activeAssetCount = c.assetData.assetCount,
                         monthlyExpense = c.billData.first,
                         monthlyIncome = c.billData.second,
                         bookNames = c.billData.third,
@@ -377,7 +387,7 @@ class DashboardViewModel @Inject constructor(
                         budgetAlert = c.budgetProgress.orEmpty().firstOrNull { it.severity > 0 },
                         anniversaryCount = c.gaData.anniversaryCount,
                         upcomingAnniversaries = c.gaData.anniversaries.sortedBy { it.daysUntil }.take(3),
-                        assetDistribution = c.assetData.third,
+                        assetDistribution = c.assetData.distribution,
                         habitTotal = c.habitData.total,
                         habitChecked = c.habitData.checked,
                         habitRows = c.habitData.rows,
@@ -410,13 +420,16 @@ class DashboardViewModel @Inject constructor(
     private fun buildDashboardFlow(): Flow<Pair<CoreData, List<SubscriptionDueItem>>> = dayTickFlow().flatMapLatest {
         // 月/今日的边界此前在 VM 创建时算死，跨天后预算/今日打卡一直是旧值
         val currentYearMonth = DateUtils.getCurrentYearMonth()
-        // NET_WORTH 主数值 = Wallet 账户余额(启用非信用卡钱包),不再用物品购买总价
+        // 净资产卡数据源（issue #51）：资产 = 启用中的非信用卡钱包余额合计；
+        // 信用卡钱包存「欠款」（正数=欠钱），单独求和后由卡面做 净值 = 资产 − 欠款。
+        // creditDebt 为 null = 没有启用的信用卡钱包（SUM 空集），卡面不显示构成行。
         val assetFlow = combine(
             walletRepository.getTotalBalance(),
+            walletRepository.getTotalCreditCardBalance(),
             assetRepository.getTotalAssetCount(),
             assetRepository.getCategoryDistribution()
-        ) { balance, count, distribution ->
-            Triple(balance ?: 0L, count, distribution)
+        ) { balance, creditDebt, count, distribution ->
+            AssetData(balance ?: 0L, creditDebt, count, distribution)
         }
         val billFlow = combine(
             billRepository.getMonthlyExpense(currentYearMonth),
@@ -494,9 +507,17 @@ private data class HabitData(
 )
 
 private data class CoreData(
-    val assetData: Triple<Long, Int, List<CategoryCount>>,
+    val assetData: AssetData,
     val billData: Triple<Long, Long, Map<Long, String>>,
     val gaData: GoalAnnivData,
     val budgetProgress: List<BudgetProgress>,
     val habitData: HabitData
+)
+
+/** 净资产卡资产侧数据源。[creditDebt] 为 null 表示没有启用的信用卡钱包（与 0 欠款区分）。 */
+private data class AssetData(
+    val balance: Long,
+    val creditDebt: Long?,
+    val assetCount: Int,
+    val distribution: List<CategoryCount>
 )

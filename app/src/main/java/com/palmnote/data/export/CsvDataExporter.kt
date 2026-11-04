@@ -1270,6 +1270,9 @@ class CsvDataExporter(
      * 平移同一个差额。也就是说 `currentBalance` 本来就只是 `initialBalance` 的派生值，
      * 不存在「用户手填的当前余额」会被这次重算抹掉。
      *
+     * 信用卡钱包的余额存「欠款」（正数 = 欠钱，见 [com.palmnote.data.db.entity.Wallet]），
+     * 账单净额方向相反，取负累加。
+     *
      * @return 余额确实被修正过的钱包数（本来就对的不计）。
      */
     private suspend fun recalculateWalletBalances(walletIds: Set<Long>): Int {
@@ -1292,7 +1295,7 @@ class CsvDataExporter(
         var changed = 0
         for (id in walletIds) {
             val wallet = wallets[id] ?: continue
-            val expected = wallet.initialBalance + (deltas[id] ?: 0L)
+            val expected = expectedBalance(wallet, deltas[id] ?: 0L)
             if (wallet.currentBalance != expected) {
                 db.walletDao().updateBalance(id, expected)
                 changed++
@@ -1300,6 +1303,14 @@ class CsvDataExporter(
         }
         return changed
     }
+
+    /** 普通钱包 = 初始 + Σ账单净额；信用卡钱包存「欠款」，方向取反（issue #51）。 */
+    private fun expectedBalance(wallet: Wallet, billNet: Long): Long =
+        if (wallet.type == Wallet.TYPE_CREDIT_CARD) {
+            wallet.initialBalance - billNet
+        } else {
+            wallet.initialBalance + billNet
+        }
 
     // ── Row-to-entity converters ──
 
