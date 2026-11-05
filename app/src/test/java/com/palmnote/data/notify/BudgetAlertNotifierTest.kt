@@ -53,6 +53,8 @@ class BudgetAlertNotifierTest {
     @Before
     fun setUp() {
         every { accountBookRepository.getAllBooks() } returns flowOf(emptyList())
+        // 通知里的账本名要能落到隐藏账本，实现已改走 IncludingHidden，这里同步铺桩
+        every { accountBookRepository.getAllBooksIncludingHidden() } returns flowOf(emptyList())
         every { preferences.lifeDemoMode } answers { flowOf(demoMode) }
         every { preferences.budgetNotifyEnabled } answers { flowOf(notifyEnabled) }
         coEvery { preferences.budgetAlertNotified() } answers { notifiedStore.toMap() }

@@ -52,7 +52,9 @@ class BudgetAlertNotifier @Inject constructor(
         var changed = false
 
         if (targets.isNotEmpty()) {
-            val bookNames = accountBookRepository.getAllBooks().first()
+            // 含隐藏账本：通知里的预算名要能落到真实账本名，隐藏账本的预算
+            // 退化为「某账本」就失去指路意义（getAllBooks 会被演示口径/隐藏态过滤）
+            val bookNames = accountBookRepository.getAllBooksIncludingHidden().first()
                 .associate { it.id to it.name }
             targets.forEach { progress ->
                 val key = keyOf(progress)
@@ -117,7 +119,10 @@ class BudgetAlertNotifier @Inject constructor(
     }
 
     private companion object {
-        /** 与生活模块的通知 id 空间错开（那边从 1000 起自增）。 */
-        const val NOTIFICATION_ID_BASE = 2000
+        /**
+         * 与生活模块的通知 id 空间错开：那边从 1000 起进程内自增，理论上极重度使用
+         * （单进程一次性发十万条量级）才会摸到这里；BASE 抬到 10^6 后两段互不可达。
+         */
+        const val NOTIFICATION_ID_BASE = 1_000_000
     }
 }
