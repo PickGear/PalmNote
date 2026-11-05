@@ -623,7 +623,8 @@ fun AddBillScreen(
                         accentColor = accentColor,
                         hint = stringResource(R.string.bill_image_hint),
                         cropPurpose = CropPurpose.BILL,
-                        onAddImage = { viewModel.addImage(it) },
+                        // 账单附件没有封面槽，槽位号不参与落库
+                        onAddImage = { path, _ -> viewModel.addImage(path) },
                         onRemoveImage = { viewModel.removeImage(it) },
                         onReorderImages = { from, to -> viewModel.reorderImages(from, to) }
                     )

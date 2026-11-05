@@ -998,7 +998,7 @@ fun EnhancedAssetCard(
                         .background(catInfo.color.copy(alpha = 0.12f)),
                     contentAlignment = Alignment.Center
                 ) {
-                    val firstImage = asset.images.toImageList().firstOrNull()
+                    val firstImage = asset.images.toImageList().coverImagePath()
                     if (firstImage != null) {
                         AsyncImage(
                             model = firstImage,
@@ -1051,6 +1051,9 @@ fun EnhancedAssetCard(
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
+                    // 状态徽标固定排第一（与网格卡、详情页同一口径）：它是「这件东西现在
+                    // 还在不在手上」的一级信息，不能让有无质保把它挤到后面去
+                    StatusChip(text = statusText, color = statusColor)
                     if (asset.warrantyExpireDate != null) {
                         StatusChip(
                             text = asset.getWarrantyStatusText(context),
@@ -1063,7 +1066,6 @@ fun EnhancedAssetCard(
                             color = expiryAccentColor(asset.shelfLifeExpireDate!!)
                         )
                     }
-                    StatusChip(text = statusText, color = statusColor)
                 }
 
                 Spacer(modifier = Modifier.height(4.dp))
@@ -1200,7 +1202,7 @@ fun GridAssetCard(
                         .background(catInfo.color.copy(alpha = 0.12f)),
                     contentAlignment = Alignment.Center
                 ) {
-                    val firstImage = asset.images.toImageList().firstOrNull()
+                    val firstImage = asset.images.toImageList().coverImagePath()
                     if (firstImage != null) {
                         AsyncImage(
                             model = firstImage,
@@ -1264,6 +1266,11 @@ fun GridAssetCard(
             // 徽标行升到**卡片全宽**：原先挤在图片右侧内容列（约 66dp）里，英文
             // "Under warranty" / "%d days to expiry" 都被 Clip 成 "Under" / "2 days to"。
             // 全宽后单行放得下；仍保留省略号兜底。
+            //
+            // 与上方标题行之间留 4dp：Header 的 Row 只有 top/start/end 内边距、没有 bottom，
+            // 图片或文字一贴底，徽标胶囊就直接压在缩略图下沿上（真机截图 19-45-17）。
+            // 取 4dp 而不是大图卡的 6dp：小图卡本就紧凑，6dp 在小屏上显得空（用户 19:53 反馈）。
+            Spacer(modifier = Modifier.height(4.dp))
             AssetCardBadgeRow(
                 asset = asset,
                 statusColor = statusColor,
@@ -1341,7 +1348,11 @@ fun GridAssetCard(
 }
 
 /**
- * 网格卡共用的徽标行：到期徽标（按紧迫度配色）+ 状态徽标，横向换行。
+ * 网格卡共用的徽标行：**状态徽标（持有中 / 暂离中 / 已清出）固定排在第一位**，到期徽标其后。
+ *
+ * 状态是这件物品「是什么」的一级信息，到期是二级提醒——若到期排在前面，同一件物品
+ * 在不同卡片上的首枚徽标会随着有没有质保而变，扫读时抓不住「这堆里哪些已经清出了」。
+ * 详情页本来就是状态在前，这里对齐后三处顺序一致。
  *
  * 抽出来是因为小图卡与大图卡要**同一套配色与文案**：两处各写一遍时改一处忘另一处，
  * 同一件物品在两种样式下会显示成两种颜色。左右边距由调用方给（小图卡贴卡片边、
@@ -1360,6 +1371,18 @@ internal fun AssetCardBadgeRow(
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
+        // 第一位永远是状态：顺序写死在这里，不随「有没有到期日」漂移
+        Surface(shape = MaterialTheme.shapes.medium, color = statusColor.copy(alpha = 0.12f)) {
+            Text(
+                text = statusText,
+                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Medium,
+                color = statusColor,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
         val deadline = asset.nearestExpiryDate
         if (deadline != null) {
             val deadlineColor = expiryAccentColor(deadline)
@@ -1374,17 +1397,6 @@ internal fun AssetCardBadgeRow(
                     overflow = TextOverflow.Ellipsis
                 )
             }
-        }
-        Surface(shape = MaterialTheme.shapes.medium, color = statusColor.copy(alpha = 0.12f)) {
-            Text(
-                text = statusText,
-                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.Medium,
-                color = statusColor,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
         }
     }
 }
@@ -1454,7 +1466,7 @@ private fun LargeCardImageBlock(asset: Asset, catInfo: CategoryItem) {
             .background(catInfo.color.copy(alpha = 0.12f)),
         contentAlignment = Alignment.Center
     ) {
-        val firstImage = asset.images.toImageList().firstOrNull()
+        val firstImage = asset.images.toImageList().coverImagePath()
         if (firstImage != null) {
             AsyncImage(
                 model = firstImage,

@@ -1021,7 +1021,9 @@
     <string name="asset_add_title">添加物品</string>
     <string name="asset_edit_title">编辑物品</string>
     <string name="asset_image_section">物品图片</string>
-    <string name="asset_image_hint">首图默认为物品封面，最多上传4张</string>
+    <string name="asset_image_hint">首图按 1:1 裁切，附件图可用原比例</string>
+    <string name="asset_first_image">首图</string>
+    <string name="asset_extra_image">附件</string>
     <string name="asset_input_name_hint">输入物品名称</string>
     <string name="asset_custom_acquisition">自定义获取方式</string>
     <string name="asset_valuation_optional">估值（可选）</string>

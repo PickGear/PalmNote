@@ -694,7 +694,11 @@ class CsvDataExporter(
             }
         } ?: return escapeCsv(imagesJson) // fallback: keep original text
 
-        val names = paths.map { path ->
+        // 首图位的空占位（用户删了封面但后面还有图）**有意**不导出：交换包是内容搬家，
+        // 图片一张不丢，只是「哪张当封面」这层呈现属性在这里退化成「第一张附件图当封面」。
+        // 要保真走备份/恢复（整库复制，空位原样保留）。改这里就得动格式版本与老包兼容矩阵，
+        // 为一个小概率组合不值得（2026-11-05 定案）。
+        val names = paths.filter { it.isNotBlank() }.map { path ->
             val file = File(path)
             if (file.exists()) {
                 val name = "${IMAGE_PREFIX}${UUID.randomUUID()}.jpg"

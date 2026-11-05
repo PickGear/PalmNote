@@ -684,7 +684,12 @@ private fun ImageSection(formState: AddAssetFormState, viewModel: AssetViewModel
             hint = stringResource(R.string.asset_image_hint),
             cropPurpose = CropPurpose.ASSET,
             additionalCropPurpose = CropPurpose.ASSET_DETAIL,
-            onAddImage = { viewModel.addImage(it) },
+            // 第一格是封面位：标「首图」，与后三格（自由比例、只标「上传」）区分开
+            firstSlotLabel = stringResource(R.string.asset_first_image),
+            otherSlotLabel = stringResource(R.string.asset_extra_image),
+            // 首图独立成槽：删掉封面后第一格空着，后面的图不顶上封面位
+            independentCoverSlot = true,
+            onAddImage = { path, slot -> viewModel.addImage(path, slot) },
             onRemoveImage = { viewModel.removeImage(it) },
             onReorderImages = { from, to -> viewModel.reorderImages(from, to) }
         )

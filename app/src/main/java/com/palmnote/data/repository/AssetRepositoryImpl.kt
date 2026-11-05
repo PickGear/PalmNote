@@ -1,4 +1,5 @@
 package com.palmnote.data.repository
+import com.palmnote.ui.components.imagePaths
 import com.palmnote.ui.components.toImageList
 import java.io.File
 import javax.inject.Inject
@@ -119,7 +120,7 @@ class AssetRepositoryImpl @Inject constructor(
         val item = assetRecycleBinDao.getById(id) ?: return@withTransaction
         // 与 BillRepositoryImpl.hardDeleteBill 同一口径：彻底删掉条目时，它独占的图片
         // 也没人再引用了（图片文件名带 uuid，条目之间不共享），不清就是永久孤儿。
-        item.images.toImageList().forEach { path ->
+        item.images.toImageList().imagePaths().forEach { path ->
             runCatching { File(path).delete() }
         }
         assetRecycleBinDao.deleteById(id)

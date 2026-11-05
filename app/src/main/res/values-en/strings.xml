@@ -855,7 +855,9 @@
     <string name="asset_add_title">Add Item</string>
     <string name="asset_edit_title">Edit Item</string>
     <string name="asset_image_section">Item Images</string>
-    <string name="asset_image_hint">First image is the cover, up to 4 images</string>
+    <string name="asset_image_hint">The cover is cropped 1:1; attachments keep their own ratio.</string>
+    <string name="asset_first_image">Cover</string>
+    <string name="asset_extra_image">Attach</string>
     <string name="asset_input_name_hint">Enter item name</string>
     <string name="asset_custom_acquisition">Custom acquisition</string>
     <string name="asset_valuation_optional">Estimated value (optional)</string>

@@ -112,9 +112,12 @@ fun AssetDetailScreen(
     val catInfo = remember(asset.category, customItems) { getCategoryIcon(asset.category, customItems) }
 
     val imageList = remember(asset.images) { asset.images.toImageList() }
+    // 首图可能是空的（用户删了封面但后面还留着图）：封面单独取，画廊去掉那个空占位
+    val coverImage = remember(imageList) { imageList.coverImagePath() }
+    val galleryImages = remember(imageList) { imageList.imagePaths() }
     val tags = remember(asset.tags) { parseTags(asset.tags) }
     var previewIndex by remember { mutableIntStateOf(-1) }
-    val showPreview = previewIndex in imageList.indices
+    val showPreview = previewIndex in galleryImages.indices
     var showAllRecords by remember { mutableStateOf(false) }
 
     DarkSystemBarsForPreview(showPreview)
@@ -153,10 +156,19 @@ fun AssetDetailScreen(
                     ModuleCard(tint = assetTint(), modifier = Modifier.fillMaxWidth()) {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                             Box(
-                                Modifier.size(72.dp).background(if (asset.images.isEmpty()) catInfo.color.copy(alpha = 0.12f) else Color.Transparent, MaterialTheme.shapes.large),
+                                Modifier
+                                    .size(72.dp)
+                                    .background(
+                                        if (coverImage == null) {
+                                            catInfo.color.copy(alpha = 0.12f)
+                                        } else {
+                                            Color.Transparent
+                                        },
+                                        MaterialTheme.shapes.large
+                                    ),
                                 contentAlignment = Alignment.Center
                             ) {
-                                val firstImage = imageList.firstOrNull()
+                                val firstImage = coverImage
                                 if (firstImage != null) {
                                     AsyncImage(
                                         model = File(firstImage),
@@ -220,13 +232,18 @@ fun AssetDetailScreen(
                     }
                 }
                 // Image Gallery
-                if (imageList.isNotEmpty()) {
+                if (galleryImages.isNotEmpty()) {
                     item {
                         ModuleCard(tint = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
-                            Text(text = stringResource(R.string.asset_images_count, imageList.size), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                            Text(
+                                text = stringResource(R.string.asset_images_count, galleryImages.size),
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
                             Spacer(modifier = Modifier.height(8.dp))
                             Row(modifier = Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                imageList.forEachIndexed { index, imagePath ->
+                                galleryImages.forEachIndexed { index, imagePath ->
                                     Box(Modifier.size(120.dp).clip(MaterialTheme.shapes.medium).clickable { previewIndex = index }) {
                                         AsyncImage(model = File(imagePath), contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                                     }
@@ -656,10 +673,10 @@ fun AssetDetailScreen(
 
         AppImagePreview(
             showPreview = showPreview,
-            imageList = imageList,
+            imageList = galleryImages,
             previewIndex = previewIndex,
             onClose = { previewIndex = -1 },
-            onSaveImage = { com.palmnote.ui.components.saveImageToGallery(context, imageList[it]) }
+            onSaveImage = { com.palmnote.ui.components.saveImageToGallery(context, galleryImages[it]) }
         )
 
         if (showAwayDialog) {

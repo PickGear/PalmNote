@@ -27,6 +27,9 @@ import com.palmnote.domain.repository.AssetRepository
 import com.palmnote.domain.repository.BillRepository
 import com.palmnote.domain.repository.UsageRecordRepository
 import com.palmnote.domain.util.DateUtils
+import com.palmnote.ui.components.EMPTY_IMAGE_SLOT
+import com.palmnote.ui.components.coverImagePath
+import com.palmnote.ui.components.imagePaths
 import com.palmnote.ui.components.toComposeColor
 import com.palmnote.ui.components.toImageJson
 import com.palmnote.ui.components.toImageList
@@ -675,11 +678,42 @@ class AssetViewModel @Inject constructor(
     /** 本次会话新加、尚未保存的图片；保存后删掉没被留下的那些，避免 images/ 堆积孤儿。 */
     private val pendingNewFiles = mutableSetOf<String>()
 
-    /** 裁剪后的图片已由裁剪页落到 images/ 目录，这里只登记路径并加入待清理名单。 */
-    fun addImage(path: String) {
+    /**
+     * 裁剪后的图片已由裁剪页落到 images/ 目录，这里只登记路径并加入待清理名单。
+     *
+     * [slot] 是用户点的那一格：0 = 首图位，1.. = 后面的图。首图是**独立槽位**，
+     * 空着时不会被后面的图顶替，所以必须按格号回填，不能一律追加到末尾。
+     */
+    fun addImage(path: String, slot: Int) {
         if (path.isBlank()) return
         pendingNewFiles.add(path)
-        updateImages { add(path) }
+        val (cover, extras) = splitImages(_formState.value.images)
+        if (slot <= 0) {
+            storeImages(path, extras)
+        } else {
+            extras.add((slot - 1).coerceIn(0, extras.size), path)
+            storeImages(cover, extras)
+        }
+    }
+
+    /** 列表 →（首图, 其余图）：首图位空着时首位是空串，其余位置不会有空。 */
+    private fun splitImages(json: String): Pair<String?, MutableList<String>> {
+        val list = json.toImageList()
+        return list.coverImagePath() to list.drop(1).filter { it.isNotBlank() }.toMutableList()
+    }
+
+    /**
+     * （首图, 其余图）→ JSON。一张图都没有时存空串而不是 "[]"：详情页与三张卡片都靠
+     * `isEmpty()` 判断空态。首图空着但还有别的图时，首位保留 [EMPTY_IMAGE_SLOT]，
+     * 重新进编辑页首图位才还是空的。
+     */
+    private fun storeImages(cover: String?, extras: List<String>) {
+        val value = if (cover == null && extras.isEmpty()) {
+            ""
+        } else {
+            (listOf(cover ?: EMPTY_IMAGE_SLOT) + extras).toImageJson()
+        }
+        _formState.value = _formState.value.copy(images = value)
     }
 
     /**
@@ -690,7 +724,8 @@ class AssetViewModel @Inject constructor(
      * 物品侧此前缺失 —— 用户删掉一张再保存，文件会永久留在 images/ 里。
      */
     private fun cleanupImagesAfterSave(savedImagesJson: String) {
-        val savedPaths = savedImagesJson.toImageList().toSet()
+        // imagePaths 过滤掉首图位的空占位，否则空串会被当成一个「路径」参与差集
+        val savedPaths = savedImagesJson.toImageList().imagePaths().toSet()
         val stale = pendingNewFiles - savedPaths
         pendingNewFiles.clear()
         if (stale.isEmpty()) return
@@ -702,21 +737,29 @@ class AssetViewModel @Inject constructor(
         }
     }
 
-    private fun updateImages(transform: MutableList<String>.() -> Unit) {
-        val list = _formState.value.images.toImageList().toMutableList()
-        list.transform()
-        _formState.value = _formState.value.copy(images = list.toImageJson())
+    fun removeImage(slot: Int) {
+        val (cover, extras) = splitImages(_formState.value.images)
+        if (slot <= 0) {
+            // 删首图只清空首图位：后面的图留在各自的格子里，不往上补位
+            storeImages(null, extras)
+        } else if (slot - 1 in extras.indices) {
+            extras.removeAt(slot - 1)
+            storeImages(cover, extras)
+        }
     }
 
-    fun removeImage(index: Int) {
-        updateImages { if (index in indices) removeAt(index) }
-    }
-
+    /**
+     * 换位只发生在第 1 格起的这一段：首图不能被拖走、也不能被后面的图顶替——
+     * 要换封面就删了在第一格重挑，这样它一定是按 1:1 裁出来的。
+     */
     fun reorderImages(from: Int, to: Int) {
-        updateImages {
-            if (from in indices && to in indices) {
-                add(to, removeAt(from))
-            }
+        if (from < 1 || to < 1) return
+        val (cover, extras) = splitImages(_formState.value.images)
+        val source = from - 1
+        val target = to - 1
+        if (source in extras.indices && target in extras.indices) {
+            extras.add(target, extras.removeAt(source))
+            storeImages(cover, extras)
         }
     }
 }

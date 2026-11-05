@@ -61,6 +61,9 @@ import kotlin.math.abs
  *
  * 选完图先进入裁剪页（[ImageCropDialog]），确认后回调的是**已裁好并落盘**的文件路径；
  * 取消则什么也不发生。各上传位通过 [cropPurpose] 声明比例与输出尺寸。
+ *
+ * [independentCoverSlot] 打开时首图是**独立槽位**：第 0 格只放封面（1:1），删掉封面后
+ * 第 0 格回到空态、后面的图不顶上来的；第 1..3 格自成一组，删其中一张时后面的自行补位。
  */
 @Composable
 @Suppress("LongMethod", "LongParameterList", "CyclomaticComplexMethod")
@@ -70,15 +73,50 @@ fun ImageGridPicker(
     accentColor: Color,
     hint: String,
     cropPurpose: CropPurpose,
-    onAddImage: (String) -> Unit,
+    /** 回调带**槽位号**：首图位与后面几格的落地规则不同（1:1 / 自由比例）。 */
+    onAddImage: (String, Int) -> Unit,
     additionalCropPurpose: CropPurpose = cropPurpose,
     onRemoveImage: (Int) -> Unit,
     onReorderImages: (Int, Int) -> Unit,
     modifier: Modifier = Modifier,
-    maxCount: Int = 4
+    maxCount: Int = 4,
+    /**
+     * 第一格占位文案（物品的封面位写「首图」）。为 null 时四格一律「上传」——
+     * 账单附件是并列的凭证、没有封面概念，文案不能跟着物品一起改。
+     */
+    firstSlotLabel: String? = null,
+    /** 其余格的占位文案（物品写「附件」）；null = 沿用通用的「上传」。 */
+    otherSlotLabel: String? = null,
+    /**
+     * 首图是否独立成槽：真 = 删掉首图后第 0 格空着、后续图不补位，且首图不能被拖走/被顶替
+     * （要换封面就删了在第一格重挑，顺带保证它始终按 [cropPurpose] 的 1:1 裁剪）。
+     * 账单附件是并列凭证，保持紧密排列。
+     */
+    independentCoverSlot: Boolean = false
 ) {
+    // 槽位视图：索引 0 = 首图位（可能空着），1.. 为其余图；账单模式下就是原列表顺序。
+    // 用它渲染而不是直接用 images，是为了让「首图位空着但后面有图」这种状态能画出来。
+    val coverPath = images.coverImagePath()
+    val extraPaths = if (independentCoverSlot) images.drop(1).filter { it.isNotBlank() } else emptyList()
+    val slotImages: List<String?> = List(maxCount) { i ->
+        when {
+            !independentCoverSlot -> images.getOrNull(i)
+            i == 0 -> coverPath
+            else -> extraPaths.getOrNull(i - 1)
+        }
+    }
+    // 可拖动区间：首图独立时只有第 1 格起的一段能拖（首图不能拖走、也不能被顶替）
+    val dragMin = if (independentCoverSlot) 1 else 0
+    val dragMax = if (independentCoverSlot) extraPaths.size else images.size - 1
+    val canDrag = dragMax - dragMin >= 1
+    val occupiedCount = slotImages.count { it != null }
+    /** 拍照没有「点哪格」这一步，落第一个空槽：首图空着就先补封面。 */
+    val firstEmptySlot = slotImages.indexOfFirst { it == null }
+
     // saveable：旋转/进程重建后带着已选图片回到裁剪页（裁剪调整本身重新来，但不用重新选图）
     var pendingCropUri by rememberSaveable { mutableStateOf<android.net.Uri?>(null) }
+    // 正在给哪一格配图：决定裁剪规格（首图 1:1 / 其余自由），也决定回填到哪一格
+    var pendingCropSlot by rememberSaveable { mutableIntStateOf(0) }
     // 拍摄件的路径，从点「拍照」存到裁剪页关闭：成功后作为裁剪源，关闭时删除。
     // saveable：相机画面期间旋转/进程重建，回来仍能接住 TakePicture 的结果
     var pendingCameraPath by rememberSaveable { mutableStateOf<String?>(null) }
@@ -109,12 +147,12 @@ fun ImageGridPicker(
     pendingCropUri?.let { uri ->
         ImageCropDialog(
             sourceUri = uri,
-            // 首图按卡片缩略图规格裁切；后续图允许自由比例、也允许直接用原图
-            purpose = if (images.isEmpty()) cropPurpose else additionalCropPurpose,
+            // 首图格按卡片缩略图规格（1:1）裁切；其余格允许自由比例、也允许直接用原图
+            purpose = if (pendingCropSlot == 0) cropPurpose else additionalCropPurpose,
             onCancel = { closeCrop() },
             onDone = { path ->
                 closeCrop()
-                onAddImage(path)
+                onAddImage(path, pendingCropSlot)
             }
         )
     }
@@ -139,11 +177,12 @@ fun ImageGridPicker(
             Box(
                 modifier = Modifier
                     .size(40.dp)
-                    .alpha(if (images.size < maxCount) 1f else 0.38f)
+                    .alpha(if (occupiedCount < maxCount) 1f else 0.38f)
                     .clip(CircleShape)
                     .clickable(
-                        enabled = images.size < maxCount,
+                        enabled = occupiedCount < maxCount && firstEmptySlot >= 0,
                         onClick = {
+                            pendingCropSlot = firstEmptySlot.coerceAtLeast(0)
                             val file = cameraCaptureFile(context)
                             pendingCameraPath = file.absolutePath
                             cameraLauncher.launch(cameraCaptureUri(context, file))
@@ -159,7 +198,7 @@ fun ImageGridPicker(
                 )
             }
             Text(
-                text = "${images.size}/$maxCount",
+                text = "$occupiedCount/$maxCount",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -177,12 +216,15 @@ fun ImageGridPicker(
         modifier = Modifier
             .fillMaxWidth()
             .onSizeChanged { slotWidthPx = (it.width - spacingPx * 3) / 4f }
-            .pointerInput(images.size) {
+            // key 只能用稳定值：slotImages 每次重组都是新 List，拿它当 key 会在拖拽途中
+            // 反复重启手势（拖动时 dragTotal 变化就会重组），拖到一半就断
+            .pointerInput(images.size, canDrag, dragMin, dragMax) {
                 detectDragGesturesAfterLongPress(
                     onDragStart = { offset ->
-                        if (images.isEmpty()) return@detectDragGesturesAfterLongPress
+                        // 首图独立时第 0 格不参与拖拽：封面不能被拖走、也不能被后面的图顶替
+                        if (!canDrag) return@detectDragGesturesAfterLongPress
                         val idx = (offset.x / (currentSlotWidth + spacingPx)).toInt()
-                            .coerceIn(0, images.size - 1)
+                            .coerceIn(dragMin, dragMax)
                         draggedIndex = idx
                         dragTotal = 0f
                     },
@@ -192,7 +234,7 @@ fun ImageGridPicker(
                         val step = currentSlotWidth + spacingPx
                         if (abs(dragTotal) > step * 0.5f) {
                             val target = (currentDragIndex + if (dragTotal > 0) 1 else -1)
-                                .coerceIn(0, images.size - 1)
+                                .coerceIn(dragMin, dragMax)
                             if (target != currentDragIndex) {
                                 onReorderImages(currentDragIndex, target)
                                 draggedIndex = target
@@ -208,7 +250,8 @@ fun ImageGridPicker(
     ) {
         for (i in 0 until maxCount) {
             Box(modifier = Modifier.weight(1f).aspectRatio(1f)) {
-                if (i < images.size) {
+                val path = slotImages[i]
+                if (path != null) {
                     val isDragging = i == draggedIndex
                     Box(
                         modifier = Modifier
@@ -225,7 +268,7 @@ fun ImageGridPicker(
                         contentAlignment = Alignment.Center
                     ) {
                         AsyncImage(
-                            model = images[i],
+                            model = path,
                             contentDescription = null,
                             modifier = Modifier
                                 .fillMaxSize()
@@ -249,7 +292,7 @@ fun ImageGridPicker(
                                 modifier = Modifier.size(14.dp)
                             )
                         }
-                        if (images.size > 1) {
+                        if (canDrag && i >= dragMin) {
                             Icon(
                                 Icons.Filled.DragHandle,
                                 contentDescription = stringResource(R.string.asset_drag_to_reorder),
@@ -268,11 +311,11 @@ fun ImageGridPicker(
                             .clip(MaterialTheme.shapes.medium)
                             .background(accentColor.copy(alpha = 0.1f))
                             .clickable {
-                                if (images.size < maxCount) {
-                                    imagePickerLauncher.launch(
-                                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                                    )
-                                }
+                                // 记下用户点的是哪一格：首图格按 1:1 裁、其余格自由比例
+                                pendingCropSlot = i
+                                imagePickerLauncher.launch(
+                                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                )
                             },
                         contentAlignment = Alignment.Center
                     ) {
@@ -283,8 +326,15 @@ fun ImageGridPicker(
                                 tint = accentColor.copy(alpha = 0.5f),
                                 modifier = Modifier.size(28.dp)
                             )
+                            // 第一格是封面位，标「首图」；它按 1:1 裁切、后三格可用原比例，
+                            // 四格同写「上传」的话这个差别在界面上完全看不出来
+                            val uploadLabel = stringResource(R.string.asset_upload)
                             Text(
-                                stringResource(R.string.asset_upload),
+                                text = if (i == 0) {
+                                    firstSlotLabel ?: uploadLabel
+                                } else {
+                                    otherSlotLabel ?: uploadLabel
+                                },
                                 style = MaterialTheme.typography.labelSmall,
                                 color = accentColor.copy(alpha = 0.5f)
                             )
@@ -294,7 +344,7 @@ fun ImageGridPicker(
             }
         }
     }
-    if (images.isEmpty()) {
+    if (occupiedCount == 0) {
         Spacer(modifier = Modifier.height(4.dp))
         Text(
             hint,
