@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -559,8 +560,13 @@ class PreferencesManager @Inject constructor(
         context.dataStore.edit { it[DASHBOARD_CARD_CONFIGS] = DashboardCardConfig.toJson(configs) }
     }
 
-    /** 演示模式：开启时生活页使用按设计稿铺好的模拟数据（供截图/演示）；**默认开启**。 */
-    val lifeDemoMode: Flow<Boolean> = prefsFlow.map { it[LIFE_DEMO_MODE] ?: true }
+    /**
+     * 演示模式：开启时生活页使用按设计稿铺好的模拟数据（供截图/演示）；**默认开启**。
+     * `distinctUntilChanged`：DataStore 任意键写入都会重发 prefsFlow，不去重的话
+     * 每存一条无关偏好，下游按演示态展开的 4 条查询就会全部重跑。
+     */
+    val lifeDemoMode: Flow<Boolean> =
+        prefsFlow.map { it[LIFE_DEMO_MODE] ?: true }.distinctUntilChanged()
 
     suspend fun setLifeDemoMode(enabled: Boolean) {
         context.dataStore.edit { it[LIFE_DEMO_MODE] = enabled }
