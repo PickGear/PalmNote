@@ -352,8 +352,6 @@
     <string name="dashboard_quick_goal">Goal</string>
     <string name="dashboard_quick_anniversary">Anniversary</string>
     <string name="dashboard_budget_alert">Budget Alert</string>
-    <string name="dashboard_budget_alert_message">Monthly expense ¥%.2f exceeds 80%% of budget</string>
-    <string name="dashboard_budget_alert_message_hidden">Monthly expense exceeds 80% of budget</string>
     <string name="dashboard_today">Today</string>
     <!-- 计数文案：数量为 1 时英文要用单数（%d items → 1 item），故用 plurals。 -->
     <plurals name="dashboard_days_until">
@@ -1850,6 +1848,8 @@
     <string name="category_match_title_create">Create match rules for %1$s</string>
     <string name="category_match_title_edit">Edit match rules for %1$s</string>
     <string name="category_match_title_preset">Set preset match rules for %1$s</string>
+    <string name="category_rename_conflict">A category with this name already exists. No changes made.</string>
+    <string name="category_name_exists">A category with this name already exists</string>
     <!-- Password Vault -->
     <string name="settings_vault">Password Vault</string>
     <string name="settings_more">More</string>

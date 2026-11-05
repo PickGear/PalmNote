@@ -349,8 +349,6 @@
     <string name="dashboard_quick_goal">目标</string>
     <string name="dashboard_quick_anniversary">纪念日</string>
     <string name="dashboard_budget_alert">预算预警</string>
-    <string name="dashboard_budget_alert_message">本月支出 ¥%.2f 已超过预算的80%%</string>
-    <string name="dashboard_budget_alert_message_hidden">本月支出已超过预算的 80%</string>
     <string name="dashboard_today">今天</string>
     <!-- 计数文案：数量为 1 时英文要用单数（%d items → 1 item），故用 plurals。 -->
     <plurals name="dashboard_days_until">
@@ -1919,6 +1917,8 @@
     <string name="category_match_title_create">为「%1$s」新建匹配规则</string>
     <string name="category_match_title_edit">为「%1$s」编辑匹配规则</string>
     <string name="category_match_title_preset">为「%1$s」设置预设匹配规则</string>
+    <string name="category_rename_conflict">同名分类已存在，未作修改</string>
+    <string name="category_name_exists">同名分类已存在</string>
     <!-- 密码本 -->
     <string name="settings_vault">密码本</string>
     <string name="settings_more">更多</string>

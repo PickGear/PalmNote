@@ -72,6 +72,14 @@ class CategoryViewModel @Inject constructor(
 
     private val _selectedTypeIndex = MutableStateFlow(0)
 
+    /** 一次性操作反馈（string res id），UI 收集后须调 [consumeFeedback] 置空。 */
+    private val _feedbackRes = MutableStateFlow<Int?>(null)
+    val feedbackRes: StateFlow<Int?> = _feedbackRes
+
+    fun consumeFeedback() {
+        _feedbackRes.value = null
+    }
+
     val state: StateFlow<CategoryState> = combine(
         _selectedTypeIndex,
         cachedCategoryConfigs,
@@ -203,8 +211,23 @@ class CategoryViewModel @Inject constructor(
         }
     }
 
+    /**
+     * 新建 / 改名共用的同名预检：自定义分类名 + 预置 key + 预置覆盖后的显示名。
+     *
+     * 新建与改名必须是同一套判据——只挡改名的话，改名的洞能从「新建」绕进去：
+     * 预算按分类名做维度，同名会让同一个维度出现两行，列表也会出现两个看不出差别的项。
+     * [excludeId] 传自身 id（改名时排除自己），新建传 -1。
+     */
+    suspend fun isCategoryNameTaken(type: String, name: String, excludeId: Long = -1L): Boolean =
+        isNameTakenByOther(type, name, excludeId)
+
     fun addCategory(category: CategoryConfig) {
         viewModelScope.launch {
+            // 弹窗已做内联预检，这里兜底：防止将来别的入口绕过 UI 直接建出同名分类
+            if (isNameTakenByOther(category.type, category.name, excludeId = -1L)) {
+                _feedbackRes.value = R.string.category_rename_conflict
+                return@launch
+            }
             repository.insertCategory(category)
         }
     }
@@ -213,10 +236,45 @@ class CategoryViewModel @Inject constructor(
         viewModelScope.launch {
             val old = repository.getCategoryById(category.id)
             if (old != null && old.name != category.name) {
+                if (isNameTakenByOther(category.type, category.name, category.id)) {
+                    _feedbackRes.value = R.string.category_rename_conflict
+                    return@launch
+                }
                 billRepository.updateCategoryNameInBills(old.name, category.name)
                 assetRepository.updateCategoryNameInAssets(old.name, category.name)
             }
             repository.updateCategory(category.copy(updatedAt = System.currentTimeMillis()))
+        }
+    }
+
+    /**
+     * 改名目标名是否已被同类型的其他分类占用。
+     *
+     * 占用源有三类，缺一不可：
+     * 1. 自定义分类（CategoryConfig 表，按 type + name 查）；
+     * 2. 预置分类的内置 key（[expenseCategoryItems] 等）——预置不在分类表里，但
+     *    账单 / 预算的 category 字段存的就是这个 key，放行改名会让 budgets 出现
+     *    两行同维度（renameCategory 只 UPDATE 不去重），`findBudget` 取舍不定；
+     * 3. 预置分类**改名后的显示名**——存储仍是内置 key，但选择器显示的是覆盖名，
+     *    自定义分类改到同名会让列表出现两个看不出差别的项。
+     */
+    private suspend fun isNameTakenByOther(type: String, name: String, excludeId: Long): Boolean {
+        val existing = repository.getCategoryByName(type, name)
+        if (existing != null && existing.id != excludeId) return true
+        // key → 内置名：key 用来查覆盖记录，内置名就是账单里实际存的分类
+        val presetEntries = when (type) {
+            "BILL_EXPENSE" -> expenseCategoryItems.map { "preset_EXPENSE_${it.name}" to it.name }
+            "BILL_INCOME" -> incomeCategoryItems.map { "preset_INCOME_${it.name}" to it.name }
+            "ASSET" -> assetCategoryItems.map { "preset_${it.name}" to it.name }
+            else -> return false
+        }
+        if (presetEntries.any { (_, builtIn) -> builtIn == name }) return true
+        val overrides = preferencesManager.presetCategoryOverrides.first()
+        return presetEntries.any { (key, _) ->
+            val displayName = overrides[key]?.let { json ->
+                runCatching { org.json.JSONObject(json).optString("name") }.getOrNull()
+            }
+            displayName == name
         }
     }
 

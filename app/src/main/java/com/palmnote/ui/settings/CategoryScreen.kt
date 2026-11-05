@@ -105,8 +105,21 @@ fun CategoryScreen(
     var pendingSaveCategory by remember { mutableStateOf<CategoryConfig?>(null) }
     var pendingPresetData by remember { mutableStateOf<PendingPresetData?>(null) }
     val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
+
+    // VM 的一次性操作反馈（如改名撞名拦截）走 Snackbar 呈现
+    LaunchedEffect(Unit) {
+        viewModel.feedbackRes.collect { res ->
+            if (res != null) {
+                snackbarHostState.showSnackbar(context.getString(res))
+                viewModel.consumeFeedback()
+            }
+        }
+    }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             CompactTopAppBar(
                 title = stringResource(R.string.category_manage_title),
@@ -309,6 +322,15 @@ fun CategoryScreen(
         CategoryEditBottomSheet(
             category = editingCustom,
             type = state.currentType,
+            checkNameConflict = { name ->
+                // 只改图标/颜色时不该被「历史同名」拦住：名字没变就跳过预检
+                val original = editingCustom?.name
+                if (original != null && original == name) {
+                    false
+                } else {
+                    viewModel.isCategoryNameTaken(state.currentType, name, editingCustom?.id ?: -1L)
+                }
+            },
             onSave = { category ->
                 if (editingCustom != null) {
                     val nameChanged = editingCustom?.name != category.name
@@ -641,6 +663,7 @@ private fun PresetCategoryEditSheet(
 private fun CategoryEditBottomSheet(
     category: CategoryConfig?,
     type: String,
+    checkNameConflict: (suspend (String) -> Boolean)? = null,
     onSave: (CategoryConfig) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -649,6 +672,8 @@ private fun CategoryEditBottomSheet(
     var color by remember { mutableStateOf(category?.color ?: "#4285F4") }
     var nameError by remember { mutableStateOf<String?>(null) }
     val nameRequiredError = stringResource(R.string.cat_name_required)
+    val nameConflictError = stringResource(R.string.category_name_exists)
+    val scope = rememberCoroutineScope()
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
@@ -675,11 +700,24 @@ private fun CategoryEditBottomSheet(
         AppSaveButton(
             onClick = {
                 if (name.isBlank()) { nameError = nameRequiredError; return@AppSaveButton }
-                onSave(CategoryConfig(
+                val payload = CategoryConfig(
                     id = category?.id ?: 0L, type = type, name = name.trim(), icon = icon,
                     color = color, sortOrder = category?.sortOrder ?: 0, isDefault = category?.isDefault ?: false,
                     isEnabled = category?.isEnabled ?: true
-                ))
+                )
+                if (checkNameConflict == null) {
+                    onSave(payload)
+                } else {
+                    // 同名预检是挂起操作（查库 + 读预置覆盖）：冲突时弹窗不关、就地报错，
+                    // 否则弹窗先关再弹 Snackbar，用户刚输的名字就丢了
+                    scope.launch {
+                        if (checkNameConflict(name.trim())) {
+                            nameError = nameConflictError
+                        } else {
+                            onSave(payload)
+                        }
+                    }
+                }
             },
             enabled = name.isNotBlank()
         )
