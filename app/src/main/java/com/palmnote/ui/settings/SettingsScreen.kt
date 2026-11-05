@@ -157,7 +157,8 @@ fun SettingsScreen(
                         }
                     }
                 }
-                Spacer(Modifier.height(16.dp))
+                // 卡片之间的间距只由 LazyColumn 的 spacedBy(8.dp) 提供；
+                // 这里再加一个 Spacer 会叠成 24dp（2026-11-05 真机反馈间距太大）
             }
 
             item {
