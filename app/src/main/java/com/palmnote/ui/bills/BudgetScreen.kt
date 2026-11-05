@@ -157,8 +157,9 @@ fun BudgetScreen(
         ) {
             // 周期条吸顶：分类/账本一多，切周期要先把列表滚回顶部，很别扭。
             // 吸顶后必须自己铺一层不透明底色，否则下面的卡片会从它后面透出来。
-            // 条与下方卡片的间距只由 spacedBy(8dp) 提供——这里再加 bottom padding
-            // 会叠成 16dp（2026-11-05 真机反馈）；滚动时卡片从条底滑入，48dp 外框自带缓冲。
+            // 条与下方卡片的间距只由 spacedBy(8dp) 提供：不能再加 bottom padding、
+            // 也不能插一个 Spacer item——spacedBy 会把它前后各算一次，实测叠成 20dp
+            // （2026-11-05 真机反馈）。滚动时卡片从条底滑入，48dp 外框自带缓冲。
             stickyHeader {
                 Box(
                     modifier = Modifier
@@ -173,12 +174,10 @@ fun BudgetScreen(
             }
 
             if (loading) {
-                item { Spacer(modifier = Modifier.height(4.dp)) }
                 item { BudgetSkeleton(height = 148.dp) }
                 item { BudgetSkeleton(height = 76.dp) }
                 item { BudgetSkeleton(height = 76.dp) }
             } else {
-                item { Spacer(modifier = Modifier.height(4.dp)) }
                 item {
                     TotalBudgetCard(
                         progress = totalProgress,
