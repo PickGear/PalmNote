@@ -6,6 +6,7 @@ import androidx.room.PrimaryKey
 import com.palmnote.domain.model.BudgetPeriod
 import com.palmnote.domain.model.BudgetScope
 import com.palmnote.domain.model.DemoOrigin
+import java.io.Serializable
 
 /**
  * 预算模板（v21 起是「长期有效」的一条规则，不再是「一个月一行」）。
@@ -43,11 +44,13 @@ data class Budget(
     val updatedAt: Long = System.currentTimeMillis(),
     /** 演示隔离：NONE 真实 / SEED 播种示例 / USER 演示期自建（与 bills/assets/wallets 同口径）。 */
     val demoOrigin: DemoOrigin = DemoOrigin.NONE
-) {
+) : Serializable {
     val periodEnum: BudgetPeriod get() = BudgetPeriod.from(period)
     val scopeEnum: BudgetScope get() = BudgetScope.from(scope)
 
     companion object {
+        private const val serialVersionUID: Long = 1L
+
         /** 全账本某周期的总预算（最常用的一种，可读性比直接传枚举更清楚）。 */
         fun total(period: BudgetPeriod, totalBudget: Long, demoOrigin: DemoOrigin = DemoOrigin.NONE) =
             Budget(

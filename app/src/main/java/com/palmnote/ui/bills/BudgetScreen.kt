@@ -57,6 +57,7 @@ import com.palmnote.domain.model.toMoney
 import com.palmnote.domain.util.CurrencyUtils
 import com.palmnote.ui.components.*
 import com.palmnote.ui.theme.*
+import java.io.Serializable
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -101,9 +102,9 @@ fun BudgetScreen(
     val selectedPeriod = remember(selectedPeriodName) { BudgetPeriod.from(selectedPeriodName) }
 
     // 正在编辑的预算（null = 不在编辑）
-    var editing by remember { mutableStateOf<BudgetDraft?>(null) }
+    var editing by rememberSaveable { mutableStateOf<BudgetDraft?>(null) }
     // 选分类 / 选账本的中间弹窗
-    var pickingScope by remember { mutableStateOf<BudgetScope?>(null) }
+    var pickingScope by rememberSaveable { mutableStateOf<BudgetScope?>(null) }
 
     val periodProgresses = remember(progresses, selectedPeriod) {
         progresses.filter { it.budget.periodEnum == selectedPeriod }
@@ -340,6 +341,7 @@ fun BudgetScreen(
  * 编辑中的预算草稿：维度 + 已有行（编辑时非空）+ 本期已用（弹窗里显示「已用多少」）。
  *
  * 独立成 `internal`（而非 private）：弹窗本体在 `BudgetEditDialog.kt`，同包跨文件共用。
+ * 实现 [Serializable]：页面状态用它做 `rememberSaveable`，旋转不再丢弹窗。
  */
 internal data class BudgetDraft(
     val period: BudgetPeriod,
@@ -357,7 +359,11 @@ internal data class BudgetDraft(
      * 三个调用点手上都有 [BudgetProgress]，取 `.spent` 即可。
      */
     val spent: Long = 0L
-)
+) : Serializable {
+    private companion object {
+        private const val serialVersionUID: Long = 1L
+    }
+}
 
 /**
  * 预算状态色：超支红 / 达阈值橙 / 正常绿。
@@ -587,8 +593,9 @@ private fun BudgetBar(progress: BudgetProgress, color: Color, height: Dp) {
         modifier = Modifier
             .fillMaxWidth()
             .height(height)
-            // 自绘的条没有语义节点，读屏只会念旁边那行「已用 82%」，进度本身读不出来
-            .progressSemantics(progress.ratio)
+            // 自绘的条没有语义节点，读屏只会念旁边那行「已用 82%」，进度本身读不出来。
+            // progressSemantics 契约是 0..1，超支时裸 ratio（如 1.05）会让读屏异常，封顶同动画口径
+            .progressSemantics(progress.ratio.coerceIn(0f, 1f))
             .clip(RoundedCornerShape(height / 2))
             .background(color.copy(alpha = 0.16f))
     ) {
