@@ -15,6 +15,7 @@ import com.palmnote.data.db.entity.getDisplayName
 import com.palmnote.data.datastore.PreferencesManager
 import com.palmnote.data.db.entity.CategoryConfig
 import com.palmnote.domain.model.BudgetProgress
+import com.palmnote.domain.model.BudgetScope
 import com.palmnote.domain.model.SubscriptionDueItem
 import com.palmnote.domain.repository.*
 import com.palmnote.domain.util.DateUtils
@@ -65,8 +66,13 @@ data class DashboardState(
     val activeAssetCount: Int = 0,
     val monthlyExpense: Long = 0,
     val monthlyIncome: Long = 0,
-    /** 当前最该提醒的一条预算（跨周期取最严重）；无预算或都正常时为 null。 */
-    val budgetAlert: BudgetProgress? = null,
+    /**
+     * 首屏预算卡要展示的那条预算：优先「最该提醒」的（超支 > 达阈值）；
+     * 全部正常时退回使用率最高的那条——预算充足时卡片是绿色状态卡，而不是直接消失。
+     */
+    val budgetStatus: BudgetProgress? = null,
+    /** 卡片管理里「选择预算」的候选：当前所有预算的进度快照。 */
+    val budgetChoices: List<BudgetProgress> = emptyList(),
     /** 账本 id → 名称：预算预警要写清是哪本账本的预算。 */
     val bookNames: Map<Long, String> = emptyMap(),
     val budgetReminderEnabled: Boolean = true,
@@ -216,6 +222,48 @@ class DashboardViewModel @Inject constructor(
         }
     }
 
+    /**
+     * 预算卡展示哪条：卡片管理里显式选中的那条优先；只选了周期时就在该周期内自动挑；
+     * 都没选、或选中的预算已被删除时，回到全局自动口径。
+     */
+    private fun pickBudgetStatus(
+        budgets: List<BudgetProgress>,
+        configs: List<DashboardCardConfig>
+    ): BudgetProgress? {
+        val cfg = configs.firstOrNull { it.type == CardType.BUDGET_ALERT }
+        val period = cfg?.budgetPeriod ?: return autoPickBudget(budgets)
+        val inPeriod = budgets.filter { it.budget.period == period }
+        val scope = cfg.budgetScope ?: return autoPickBudget(inPeriod)
+        return inPeriod.firstOrNull {
+            it.budget.scope == scope &&
+                (scope != BudgetScope.CATEGORY.name || it.budget.category == cfg.budgetCategory) &&
+                (scope != BudgetScope.BOOK.name || it.budget.bookId == cfg.budgetBookId)
+        } ?: autoPickBudget(inPeriod)
+    }
+
+    /** 自动口径：先挑最该提醒的（超支 > 达阈值），都正常时挑使用率最高的一条。 */
+    private fun autoPickBudget(budgets: List<BudgetProgress>): BudgetProgress? =
+        budgets.firstOrNull { it.severity > 0 } ?: budgets.maxByOrNull { it.ratio }
+
+    /** 卡片管理里选「预算卡展示哪条预算」；[period] 传 null 表示回到自动口径。 */
+    fun setBudgetTarget(period: String?, scope: String?, category: String?, bookId: Long?) {
+        _cardConfigs.update { configs ->
+            configs.map {
+                if (it.type == CardType.BUDGET_ALERT) {
+                    it.copy(
+                        budgetPeriod = period,
+                        budgetScope = scope,
+                        budgetCategory = category,
+                        budgetBookId = bookId
+                    )
+                } else {
+                    it
+                }
+            }
+        }
+        saveConfigs()
+    }
+
     fun moveCardDown(type: CardType) {
         _cardConfigs.update { configs ->
             val list = configs.toMutableList()
@@ -360,7 +408,7 @@ class DashboardViewModel @Inject constructor(
                     _state.update { it.copy(loaded = true) }
                     AppStartupState.onDashboardReady()
                 }
-                .collect { (c, subs) ->
+                .collect { (c, subs, configs) ->
                     // 冷启动首帧耗时（debug 构建可见）：首页「有的卡早、有数据的卡晚」时，
                     // 用它区分「数据本身慢」与「UI 二次排队」——前者看这个数，后者看动画。
                     if (!firstFrameLogged) {
@@ -382,9 +430,10 @@ class DashboardViewModel @Inject constructor(
                         monthlyExpense = c.billData.first,
                         monthlyIncome = c.billData.second,
                         bookNames = c.billData.third,
-                        // 只把「已达阈值或超支」的那条送上首页：最严重的一条，
-                        // 全部正常时预警卡自动隐藏
-                        budgetAlert = c.budgetProgress.orEmpty().firstOrNull { it.severity > 0 },
+                        // 卡片三态：超支（红）/ 达阈值（橙）/ 充足（绿）。
+                        // 展示哪条由卡片管理里的选择决定；没选或选中的预算已不存在时自动挑
+                        budgetChoices = c.budgetProgress.orEmpty(),
+                        budgetStatus = pickBudgetStatus(c.budgetProgress.orEmpty(), configs),
                         anniversaryCount = c.gaData.anniversaryCount,
                         upcomingAnniversaries = c.gaData.anniversaries.sortedBy { it.daysUntil }.take(3),
                         assetDistribution = c.assetData.distribution,
@@ -417,7 +466,9 @@ class DashboardViewModel @Inject constructor(
     }
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
-    private fun buildDashboardFlow(): Flow<Pair<CoreData, List<SubscriptionDueItem>>> = dayTickFlow().flatMapLatest {
+    // 第三个分量是卡片配置：预算卡展示哪条预算由它决定，配置变更要能触发重算
+    private fun buildDashboardFlow():
+        Flow<Triple<CoreData, List<SubscriptionDueItem>, List<DashboardCardConfig>>> = dayTickFlow().flatMapLatest {
         // 月/今日的边界此前在 VM 创建时算死，跨天后预算/今日打卡一直是旧值
         val currentYearMonth = DateUtils.getCurrentYearMonth()
         // 净资产卡数据源（issue #51）：资产 = 启用中的非信用卡钱包余额合计；
@@ -480,7 +531,7 @@ class DashboardViewModel @Inject constructor(
         val core = combine(assetFlow, billFlow, gaFlow, budgetFlow, habitFlow) { assetData, billData, gaData, budgetProgress, habitData ->
             CoreData(assetData, billData, gaData, budgetProgress, habitData)
         }
-        combine(core, subFlow) { c, subs -> c to subs }
+        combine(core, subFlow, _cardConfigs) { c, subs, configs -> Triple(c, subs, configs) }
     }
 
     private fun loadVaultData() {

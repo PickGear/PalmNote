@@ -162,8 +162,8 @@ fun DashboardScreen(
     val filterVisible: (DashboardCardConfig) -> Boolean = { config ->
         when (config.type) {
             CardType.BUDGET_ALERT -> {
-                // 与卡片自身同一判据：有「达阈值/超支」的预算才显示，全正常自动隐藏
-                state.budgetReminderEnabled && state.budgetAlert != null
+                // 有预算就显示（充足 = 绿色状态卡，达阈值 = 橙，超支 = 红）；没设预算才隐藏
+                state.budgetReminderEnabled && state.budgetStatus != null
             }
             CardType.ASSET_DISTRIBUTION -> state.assetDistribution.isNotEmpty()
             CardType.ANNIVERSARIES -> state.anniversaryCount > 0
@@ -562,8 +562,14 @@ fun DashboardScreen(
         if (showCardDialog) {
             CardManagementDialog(
                 allConfigs = allConfigs,
+                budgetChoices = state.budgetChoices,
+                bookNames = state.bookNames,
+                currentBudget = state.budgetStatus,
                 onToggle = { type -> viewModel.toggleCard(type) },
                 onColorChange = { type, color -> viewModel.setCardCustomColor(type, color) },
+                onBudgetTargetChange = { period, scope, category, bookId ->
+                    viewModel.setBudgetTarget(period, scope, category, bookId)
+                },
                 onDismiss = { showCardDialog = false }
             )
         }

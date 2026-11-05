@@ -348,7 +348,6 @@
     <string name="dashboard_quick_asset">物品</string>
     <string name="dashboard_quick_goal">目标</string>
     <string name="dashboard_quick_anniversary">纪念日</string>
-    <string name="dashboard_budget_alert">预算预警</string>
     <string name="dashboard_today">今天</string>
     <!-- 计数文案：数量为 1 时英文要用单数（%d items → 1 item），故用 plurals。 -->
     <plurals name="dashboard_days_until">
@@ -385,6 +384,14 @@
     <string name="dashboard_card_net_worth">净资产</string>
     <string name="dashboard_card_quick_actions">快捷操作</string>
     <string name="dashboard_card_budget_alert">预算预警</string>
+    <string name="dashboard_budget_pick">显示的预算</string>
+    <string name="dashboard_budget_none">该周期还没有预算</string>
+    <string name="budget_scope_total">总预算</string>
+    <string name="budget_scope_category">「%1$s」预算</string>
+    <string name="budget_scope_book">「%1$s」预算</string>
+    <string name="budget_target_auto">自动 · 最紧迫的一条</string>
+    <string name="budget_target_over">超支</string>
+    <string name="budget_alert_masked_hint">金额与比例已隐藏</string>
     <string name="dashboard_card_anniversaries">纪念日</string>
     <string name="dashboard_card_asset_distribution">物品分布</string>
     <string name="dashboard_card_today">今日概览</string>
@@ -1819,9 +1826,10 @@
     <string name="budget_label_category">%1$s「%2$s」预算</string>
     <string name="budget_label_book">%1$s「%2$s」预算</string>
     <string name="budget_label_book_missing">某账本</string>
-    <string name="budget_alert_message">%1$s已用 %2$d%%（¥%3$.2f / ¥%4$.2f）</string>
-    <string name="budget_alert_over_message">%1$s已超支（¥%2$.2f / ¥%3$.2f）</string>
-    <string name="budget_alert_message_hidden">%1$s已用 %2$d%%</string>
+    <string name="budget_alert_label_used">%1$s · 已用</string>
+    <string name="budget_alert_label_over">%1$s · 已超支</string>
+    <string name="budget_alert_amounts">¥%1$.2f / ¥%2$.2f</string>
+    <string name="budget_card_action">预算管理</string>
     <string name="budget_section_category">分类预算</string>
     <string name="budget_section_book">账本预算</string>
     <string name="budget_add">添加</string>

@@ -34,11 +34,12 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
@@ -50,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import com.palmnote.app.R
 import com.palmnote.data.db.dao.CategoryCount
 import com.palmnote.domain.model.BudgetPeriod
+import com.palmnote.domain.model.BudgetProgress
 import com.palmnote.domain.model.toMoney
 import com.palmnote.domain.util.CurrencyUtils
 import com.palmnote.domain.util.DateUtils
@@ -552,29 +554,130 @@ internal fun BudgetAlertCard(
     onNavigateToBudget: (BudgetPeriod) -> Unit = {},
     amountsHidden: Boolean = false
 ) {
-    val alert = state.budgetAlert
-    if (state.budgetReminderEnabled && alert != null) {
-        val label = budgetLabel(
-            androidx.compose.ui.platform.LocalContext.current, alert, state.bookNames
-        )
-        val percent = alert.usedPercent
-        AlertCard(
-            icon = Icons.Outlined.Warning,
-            title = stringResource(R.string.dashboard_budget_alert),
-            // 这张卡把已用金额原样印在首页上——不跟着一起遮，净资产卡藏了也等于没藏
-            message = when {
-                amountsHidden -> stringResource(R.string.budget_alert_message_hidden, label, percent)
-                alert.isOver -> stringResource(
-                    R.string.budget_alert_over_message, label,
-                    alert.spent / 100.0, alert.limit / 100.0
-                )
-                else -> stringResource(
-                    R.string.budget_alert_message, label, percent,
-                    alert.spent / 100.0, alert.limit / 100.0
-                )
+    val status = state.budgetStatus
+    if (!state.budgetReminderEnabled || status == null) return
+
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val label = budgetLabel(context, status, state.bookNames)
+    // 三态：充足绿 / 达阈值橙 / 超支红。
+    // 隐私态用固定的信息蓝：不跟主题色走（换主题可能变橙撞预警），也不用灰（首页一堆白卡里显脏）
+    val accent = when {
+        amountsHidden -> InfoBlue
+        status.isOver -> ErrorLight
+        status.reachedThreshold -> AccentOrange
+        else -> StatusActive
+    }
+    AlertCard(
+        // 充足态配警示三角会自相矛盾：正常与隐私态用小猪（存钱罐），达阈值/超支才用警示
+        icon = if (!amountsHidden && (status.isOver || status.reachedThreshold)) {
+            Icons.Outlined.Warning
+        } else {
+            Icons.Outlined.Savings
+        },
+        accent = accent,
+        onClick = { onNavigateToBudget(status.budget.periodEnum) }
+    ) {
+        BudgetAlertBody(status, label, accent, amountsHidden)
+    }
+}
+
+@Composable
+private fun BudgetAlertBody(
+    status: BudgetProgress,
+    label: String,
+    accent: Color,
+    amountsHidden: Boolean
+) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    Row(verticalAlignment = Alignment.Bottom) {
+        // 遮罩下只留预算名（超支时保留「已超支」这句定性状态：不带任何数字，
+        // 但预警卡在隐私模式下仍需保留告警作用）
+        Text(
+            text = when {
+                status.isOver -> stringResource(R.string.budget_alert_label_over, label)
+                amountsHidden -> label
+                else -> stringResource(R.string.budget_alert_label_used, label)
             },
-            color = if (alert.isOver) ErrorLight else AccentOrange,
-            onClick = { onNavigateToBudget(alert.budget.periodEnum) }
+            style = MaterialTheme.typography.bodySmall,
+            color = if (amountsHidden) {
+                MaterialTheme.colorScheme.onSurface
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            },
+            // 分类/账本预算的名字比「本月总预算」长一截（本月「餐饮」预算 · 已用），
+            // 和 20sp 数字同排时放不下——允许折两行，数字仍贴右下，别把预算名截成「本月「餐饮」预…」
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f, fill = false)
+        )
+        if (!amountsHidden) {
+            Spacer(Modifier.width(6.dp))
+            if (status.isOver) {
+                // 超支时主数字换成「超了多少」：比「已用 105%」可行动，也和满格红条一致
+                Text(
+                    text = CurrencyUtils.formatCompact(context, (status.spent - status.limit).toMoney()),
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontSize = TypeScale.headlineS,
+                        fontFeatureSettings = "tnum"
+                    ),
+                    color = accent,
+                    maxLines = 1
+                )
+            } else {
+                Text(
+                    text = status.usedPercent.toString(),
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontSize = TypeScale.headlineM,
+                        fontFeatureSettings = "tnum"
+                    ),
+                    color = accent,
+                    maxLines = 1
+                )
+                Text(text = "%", style = MaterialTheme.typography.titleSmall, color = accent)
+            }
+        }
+    }
+    if (amountsHidden) {
+        // 只剩预算名会像「数据没加载出来」，补一行说明为什么没有数字
+        Text(
+            text = stringResource(R.string.budget_alert_masked_hint),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    } else {
+        BudgetAmountsBlock(status, accent)
+    }
+}
+
+@Composable
+private fun BudgetAmountsBlock(status: BudgetProgress, accent: Color) {
+    Text(
+        text = stringResource(
+            R.string.budget_alert_amounts,
+            status.spent / 100.0, status.limit / 100.0
+        ),
+        style = MaterialTheme.typography.bodySmall.copy(
+            fontSize = TypeScale.chip,
+            fontFeatureSettings = "tnum"
+        ),
+        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f),
+        maxLines = 1
+    )
+    Spacer(Modifier.height(6.dp))
+    // 自绘 3dp 细条：百分比是抽象数字，一条填满的横线让「快满了」一秒可读；
+    // 比例在超支时已封顶满格
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(3.dp)
+            .clip(RoundedCornerShape(2.dp))
+            .background(accent.copy(alpha = 0.16f))
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth((status.usedPercent / 100f).coerceIn(0f, 1f))
+                .fillMaxHeight()
+                .background(accent)
         )
     }
 }
@@ -1179,32 +1282,54 @@ internal fun TodayCard(state: DashboardState, onNavigateToLife: () -> Unit) {
 }
 
 @Composable
-internal fun AlertCard(icon: ImageVector, title: String, message: String, color: Color, onClick: (() -> Unit)? = null) {
-    // 卡面必须是不透明实底：首页背景是带纹理图案的底，给 surface 上 alpha 会得到一块
-    // 「看不出是卡」的淡色区域，内容像浮在页面上。改成把强调色按比例混进 surface —— 混色结果
-    // alpha 恒为 1，既是实打实的卡面，又保留告警色的识别度。
-    // 描边与首页其他卡一致用 outlineVariant（曾用告警色 25%，太抢眼）；1dp 只负责收边。
-    val container = lerp(MaterialTheme.colorScheme.surface, color, 0.12f)
+internal fun AlertCard(
+    icon: ImageVector,
+    accent: Color,
+    onClick: () -> Unit,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    // 卡面统一纯白实底：首页所有卡同一套白面，告警色只放在图标、数字、进度条与胶囊上。
+    // 必须是**不透明实底**——首页背景带纹理，surface 上叠 alpha 会得到一块「看不出是卡」的
+    // 淡色区域，内容像浮在页面上；描边与首页其他卡一致用 outlineVariant，1dp 只负责收边。
+    val container = MaterialTheme.colorScheme.surface
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        onClick = onClick,
+        // 整卡可点（原来只有 32dp 高的胶囊可点）：合并子节点语义，读屏一次读完，
+        // 右侧胶囊只作视觉提示
+        modifier = Modifier.fillMaxWidth().semantics(mergeDescendants = true) {},
         shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(containerColor = container),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Row(
-            modifier = Modifier.padding(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(11.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(icon, null, tint = color, modifier = Modifier.size(24.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = color)
-                Text(message, style = MaterialTheme.typography.bodySmall, color = color.copy(alpha = 0.8f))
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(accent.copy(alpha = 0.18f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(icon, null, tint = accent, modifier = Modifier.size(20.dp))
             }
-            if (onClick != null) {
-                // 胶囊标签要跟真实落点一致：这张卡进的是预算页，写「账单」会误导
-                JumpCapsule(label = stringResource(R.string.budget_title), color = color, onClick = onClick)
-            }
+            // 分隔线跟图标同高：卡高由内容决定，不写死整卡高度
+            Box(Modifier.width(1.dp).height(40.dp).background(accent.copy(alpha = 0.22f)))
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+                content = content
+            )
+            JumpCapsule(
+                // 卡片上的入口用短文案：英文页标题是「Budget Management」，
+                // 放在胶囊里会挤掉正文宽度（文本区从 172dp 掉到 121dp）
+                label = stringResource(R.string.budget_card_action),
+                color = accent,
+                onClick = onClick,
+                modifier = Modifier.clearAndSetSemantics {}
+            )
         }
     }
 }
@@ -1265,11 +1390,16 @@ fun AssetDistributionChart(
 @Suppress("LongMethod", "CyclomaticComplexMethod", "LongParameterList")
 internal fun CardManagementDialog(
     allConfigs: List<DashboardCardConfig>,
+    budgetChoices: List<BudgetProgress>,
+    bookNames: Map<Long, String>,
+    currentBudget: BudgetProgress?,
     onToggle: (CardType) -> Unit,
     onColorChange: (CardType, String?) -> Unit,
+    onBudgetTargetChange: (String?, String?, String?, Long?) -> Unit,
     onDismiss: () -> Unit
 ) {
     var showColorPicker by remember { mutableStateOf(false) }
+    var showBudgetPicker by remember { mutableStateOf(false) }
     val presetColors = listOf(
         "#0891B2" to ModuleHome,
         "#2A6BAB" to ModuleItem,
@@ -1329,12 +1459,46 @@ internal fun CardManagementDialog(
                                         .clickable { showColorPicker = !showColorPicker }
                                 )
                             }
+                            // 预算卡的「选题材」入口：设置图标（不是色块圆——那是配色样本的形态），
+                            // 点开在下一行展开选择面板
+                            if (config.type == CardType.BUDGET_ALERT && config.visible) {
+                                // 用裸图标而不是 IconButton：M3 IconButton 会强制 48dp 最小触达，
+                                // 把这一行撑得比其它行高；32dp 与右侧胶囊入口同口径
+                                Box(
+                                    modifier = Modifier
+                                        .size(32.dp)
+                                        .clip(CircleShape)
+                                        .clickable { showBudgetPicker = !showBudgetPicker },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        Icons.Outlined.Settings,
+                                        contentDescription = stringResource(R.string.dashboard_budget_pick),
+                                        tint = if (showBudgetPicker) {
+                                            MaterialTheme.colorScheme.primary
+                                        } else {
+                                            MaterialTheme.colorScheme.onSurfaceVariant
+                                        },
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            }
                             CapsuleSwitch(
                                 checked = config.visible,
                                 onCheckedChange = { onToggle(config.type) },
                                 checkedTrackColor = MaterialTheme.colorScheme.primary,
                             )
                         }
+                    }
+
+                    if (showBudgetPicker && config.type == CardType.BUDGET_ALERT && config.visible) {
+                        BudgetTargetPicker(
+                            config = config,
+                            choices = budgetChoices,
+                            bookNames = bookNames,
+                            currentBudget = currentBudget,
+                            onSelect = onBudgetTargetChange
+                        )
                     }
 
                     if (showColorPicker && config.type == CardType.NET_WORTH) {
