@@ -63,11 +63,18 @@ interface BudgetDao {
     /**
      * 分类删除后清掉指向它的 CATEGORY 预算（与 [deleteByBook] 对称）。
      *
+     * 演示口径由 [includeDemo] 带上（与 [findBudget] 同款）：真实模式只清 `NONE`，
+     * 演示模式只清 `SEED` / `USER`。不隔离的后果是演示期删分类会把用户的真实预算
+     * 一起物理删掉，关演示后凭空消失且不可恢复。
+     *
      * 不清理的后果不是「多一条记录」这么轻：`spentOf` 按分类名过滤，分类没了就恒为 0，
      * 这条预算会永远停在 0%、永远不提醒，却一直占着预算页。
      */
-    @Query("DELETE FROM budgets WHERE scope = 'CATEGORY' AND category = :category")
-    suspend fun deleteByCategory(category: String)
+    @Query(
+        "DELETE FROM budgets WHERE scope = 'CATEGORY' AND category = :category " +
+            "AND (demoOrigin != 'NONE') = :includeDemo"
+    )
+    suspend fun deleteByCategory(category: String, includeDemo: Boolean)
 
     @Query("DELETE FROM budgets")
     suspend fun deleteAll()

@@ -54,19 +54,8 @@ class ReportViewModel @Inject constructor(
     private val billRepository: BillRepository,
     private val cachedCategoryConfigs: @JvmSuppressWildcards StateFlow<List<CategoryConfig>>,
     private val accountBookRepository: com.palmnote.domain.repository.AccountBookRepository,
-    preferencesManager: com.palmnote.data.datastore.PreferencesManager
+    private val preferencesManager: com.palmnote.data.datastore.PreferencesManager
 ) : ViewModel() {
-
-    init {
-        // 演示模式：默认「全部账本」会把真实账单一起算进来，先把口径钉到示例账本
-        viewModelScope.launch {
-            if (preferencesManager.lifeDemoMode.first()) {
-                accountBookRepository.demoBookId()?.let { book ->
-                    _state.value = _state.value.copy(selectedBookId = book)
-                }
-            }
-        }
-    }
 
     private val _state = MutableStateFlow(ReportState())
     val state: StateFlow<ReportState> = _state.asStateFlow()
@@ -84,6 +73,22 @@ class ReportViewModel @Inject constructor(
         if (_state.value.selectedBookId == bookId) return  // 同值重复设置会触发一次多余的整页重载
         _state.value = _state.value.copy(selectedBookId = bookId)
         loadData()
+    }
+
+    /**
+     * 查询口径：演示模式下强制钉到示例账本。
+     *
+     * 全账本 DAO 查询没有 `isDemo` 维度（月度收入是唯一例外），演示模式选「全部账本」时
+     * 会把真实账单混进来，出现「收入只算演示、支出/笔数算全部」的撕裂口径。
+     * 走 ByBook 分支后，周/月/年三套报表天然只剩示例账本的数据。
+     *
+     * 演示开启但没有示例账本时返回 0（不存在的 id），让各查询得到空集——
+     * 展示真实数据比展示空报表更容易误导。
+     */
+    private suspend fun effectiveBookId(): Long {
+        val selected = _state.value.selectedBookId
+        if (!preferencesManager.lifeDemoMode.first()) return selected
+        return accountBookRepository.demoBookId() ?: 0L
     }
 
     fun previousMonth() {
@@ -166,7 +171,7 @@ class ReportViewModel @Inject constructor(
 
     private suspend fun loadWeeklyData(isExpense: Boolean) {
         val s = _state.value.weekStart; val e = _state.value.weekEnd
-        val bookId = _state.value.selectedBookId
+        val bookId = effectiveBookId()
         val isAllBooks = bookId == -1L
         try {
             combine(
@@ -203,7 +208,7 @@ class ReportViewModel @Inject constructor(
 
     private suspend fun loadMonthlyData(isExpense: Boolean) {
         val ym = _state.value.currentYearMonth
-        val bookId = _state.value.selectedBookId
+        val bookId = effectiveBookId()
         val isAllBooks = bookId == -1L
         try {
             combine(
@@ -246,7 +251,7 @@ class ReportViewModel @Inject constructor(
 
     private suspend fun loadYearlyData(isExpense: Boolean) {
         val year = _state.value.currentYear
-        val bookId = _state.value.selectedBookId
+        val bookId = effectiveBookId()
         val isAllBooks = bookId == -1L
         try {
             combine(

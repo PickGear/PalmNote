@@ -302,7 +302,17 @@ fun BillScreen(
                             )
                         }
                         val allBooksLabel = stringResource(R.string.bill_all_books)
-                        IconButton(onClick = { onNavigateToReport(state.selectedBookId, currentBook?.getDisplayName(context) ?: allBooksLabel) }) {
+                        // 正常路径：BillViewModel 初始化在演示模式下已把 selectedBookId 钉到示例账本
+                        // （与 demoBookId 同口径），这里直接取当前账本名即可。第二分支只兜
+                        // 「演示开但没有示例账本」的退化情形，别出现「标的全部账本、数据只有一个账本」。
+                        val reportBookLabel = when {
+                            state.selectedBookId != com.palmnote.data.db.entity.AccountBook.ALL_BOOKS_ID ->
+                                currentBook?.getDisplayName(context) ?: allBooksLabel
+                            state.isDemoMode ->
+                                state.allAccountBooks.minByOrNull { it.id }?.getDisplayName(context) ?: allBooksLabel
+                            else -> allBooksLabel
+                        }
+                        IconButton(onClick = { onNavigateToReport(state.selectedBookId, reportBookLabel) }) {
                             Icon(
                                 Icons.Outlined.Assessment,
                                 contentDescription = stringResource(R.string.bill_report),

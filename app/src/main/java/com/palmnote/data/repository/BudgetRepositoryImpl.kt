@@ -1,6 +1,8 @@
 package com.palmnote.data.repository
 
+import androidx.room.withTransaction
 import com.palmnote.data.datastore.PreferencesManager
+import com.palmnote.data.db.AppDatabase
 import com.palmnote.data.db.dao.AccountBookDao
 import com.palmnote.data.db.dao.BillDao
 import com.palmnote.data.db.dao.BudgetDao
@@ -42,6 +44,7 @@ class BudgetRepositoryImpl @Inject constructor(
     private val budgetDao: BudgetDao,
     private val billDao: BillDao,
     private val accountBookDao: AccountBookDao,
+    private val appDatabase: AppDatabase,
     private val preferencesManager: PreferencesManager
 ) : BudgetRepository {
 
@@ -100,6 +103,8 @@ class BudgetRepositoryImpl @Inject constructor(
     }
 
     override suspend fun saveBudget(budget: Budget): Long {
+        // 演示态在事务外取：事务块只包「查 → 更新/插入」这一段，缩短持锁时间，
+        // 也避免在 Room 事务里再挂起等待 DataStore。
         val demo = preferencesManager.lifeDemoMode.first()
         val origin = when {
             !demo -> DemoOrigin.NONE
@@ -107,24 +112,28 @@ class BudgetRepositoryImpl @Inject constructor(
             else -> DemoOrigin.USER
         }
         val now = System.currentTimeMillis()
-        val existing = budgetDao.findBudget(
-            budget.period, budget.scope, budget.bookId, budget.category, demo
-        )
-        return if (existing != null) {
-            // 原地更新：id / 来源 / 创建时间都保留，只覆盖额度与提醒设置
-            budgetDao.updateBudget(
-                budget.copy(
-                    id = existing.id,
-                    demoOrigin = existing.demoOrigin,
-                    createdAt = existing.createdAt,
-                    updatedAt = now
+        // 先查后插必须整体在事务里：并发保存同一维度时，两个「查空 → 各自插入」
+        // 会留下两行同维度预算，且表上没有唯一索引兜底，重复行永久存在。
+        return appDatabase.withTransaction {
+            val existing = budgetDao.findBudget(
+                budget.period, budget.scope, budget.bookId, budget.category, demo
+            )
+            if (existing != null) {
+                // 原地更新：id / 来源 / 创建时间都保留，只覆盖额度与提醒设置
+                budgetDao.updateBudget(
+                    budget.copy(
+                        id = existing.id,
+                        demoOrigin = existing.demoOrigin,
+                        createdAt = existing.createdAt,
+                        updatedAt = now
+                    )
                 )
-            )
-            existing.id
-        } else {
-            budgetDao.insertBudget(
-                budget.copy(id = 0, demoOrigin = origin, createdAt = now, updatedAt = now)
-            )
+                existing.id
+            } else {
+                budgetDao.insertBudget(
+                    budget.copy(id = 0, demoOrigin = origin, createdAt = now, updatedAt = now)
+                )
+            }
         }
     }
 

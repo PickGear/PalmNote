@@ -38,7 +38,14 @@ class CategoryBudgetCascadeTest {
         db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java)
             .allowMainThreadQueries()
             .build()
-        repository = CategoryConfigRepositoryImpl(context, db.categoryConfigDao(), db.customTagDao(), db)
+        repository = CategoryConfigRepositoryImpl(
+            context,
+            db.categoryConfigDao(),
+            db.customTagDao(),
+            db,
+            // 关演示：级联清理按「真实模式只清 NONE 来源」的口径走，测试种的是真实预算
+            demoOffPrefs()
+        )
     }
 
     @After

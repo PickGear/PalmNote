@@ -55,21 +55,30 @@ interface BillDao {
     @Query("SELECT COUNT(*) FROM bills WHERE accountBookId = :bookId AND yearMonth = :yearMonth")
     fun getMonthlyBillCountByBook(bookId: Long, yearMonth: String): Flow<Int>
 
-    @Query("SELECT SUM(amount) FROM bills WHERE yearMonth = :yearMonth AND type = 'EXPENSE'")
-    fun getMonthlyExpense(yearMonth: String): Flow<Long?>
+    /**
+     * 全账本当月支出合计（首页月收支卡 / 账单与净资产小组件用）。
+     * [isDemo] 演示口径与 [getMonthlyFlowsSince] 同款：演示模式只算演示账单，
+     * 真实模式只算真实账单，混算会让涨跌/收支卡在演示下失真。
+     */
+    @Query("SELECT SUM(amount) FROM bills WHERE yearMonth = :yearMonth AND type = 'EXPENSE' AND isDemo = :isDemo")
+    fun getMonthlyExpense(yearMonth: String, isDemo: Boolean): Flow<Long?>
 
     /**
      * 近 N 个月的收入/支出合计（净资产组件 4×4 的近 12 个月净值序列用）。
      * [fromYearMonth] 含当月（"yyyy-MM" 字符串可直接比较）；无记录的月份不出行，
      * 调用方按 0 收敛。收入列同理（无收入记录月份为 0）。
+     *
+     * [isDemo] 与其他组件同一演示口径：演示模式只统计演示账单，真实模式只统计
+     * 真实账单——否则演示模式下趋势线会变成「演示净值起点 + 用户真实收支增量」，
+     * 曲线失真。
      */
     @Query(
         "SELECT yearMonth, " +
             "SUM(CASE WHEN type = 'INCOME' THEN amount ELSE 0 END) AS income, " +
             "SUM(CASE WHEN type = 'EXPENSE' THEN amount ELSE 0 END) AS expense " +
-            "FROM bills WHERE yearMonth >= :fromYearMonth GROUP BY yearMonth"
+            "FROM bills WHERE yearMonth >= :fromYearMonth AND isDemo = :isDemo GROUP BY yearMonth"
     )
-    fun getMonthlyFlowsSince(fromYearMonth: String): Flow<List<MonthlyFlow>>
+    fun getMonthlyFlowsSince(fromYearMonth: String, isDemo: Boolean): Flow<List<MonthlyFlow>>
 
     /**
      * 月度支出 + 其中已报销部分。一次查询拿两个数，报表不必为「净支出」再挂一条流
@@ -90,12 +99,13 @@ interface BillDao {
     /**
      * 近一段时间的每日支出合计（组件里的「近 7 天柱状图」用；`date` 是毫秒时间戳）。
      * 复用既有的 [DailySummary] 投影，收入那列恒 0（这里只关心支出）。
+     * [isDemo] 演示口径同月收支：不隔离会让演示柱图混进用户的真实账单。
      */
     @Query(
         "SELECT date, SUM(amount) AS expense, 0 AS income FROM bills " +
-            "WHERE type = 'EXPENSE' AND date >= :fromMillis GROUP BY date ORDER BY date"
+            "WHERE type = 'EXPENSE' AND date >= :fromMillis AND isDemo = :isDemo GROUP BY date ORDER BY date"
     )
-    fun getDailyExpenseSince(fromMillis: Long): Flow<List<DailySummary>>
+    fun getDailyExpenseSince(fromMillis: Long, isDemo: Boolean): Flow<List<DailySummary>>
 
     /**
      * 同上，但限某个账本。**不能拿 [getDailyExpenseSince] 的结果自己过滤**：
@@ -109,19 +119,21 @@ interface BillDao {
     )
     fun getDailyExpenseSinceByBook(bookId: Long, fromMillis: Long): Flow<List<DailySummary>>
 
+    /** [isDemo] 演示口径同月收支：组件顶部分类的金额不能把演示与真实账单混在一起。 */
     @Query(
         "SELECT category AS category, SUM(amount) AS total FROM bills " +
-            "WHERE yearMonth = :yearMonth AND type = 'EXPENSE' " +
+            "WHERE yearMonth = :yearMonth AND type = 'EXPENSE' AND isDemo = :isDemo " +
             "GROUP BY category ORDER BY total DESC LIMIT 1"
     )
-    suspend fun getTopExpenseCategory(yearMonth: String): CategoryTotal?
+    suspend fun getTopExpenseCategory(yearMonth: String, isDemo: Boolean): CategoryTotal?
 
+    /** 与 [getTopExpenseCategory] 同口径。 */
     @Query(
         "SELECT category AS category, SUM(amount) AS total FROM bills " +
-            "WHERE yearMonth = :yearMonth AND type = 'EXPENSE' " +
+            "WHERE yearMonth = :yearMonth AND type = 'EXPENSE' AND isDemo = :isDemo " +
             "GROUP BY category ORDER BY total DESC LIMIT :limit"
     )
-    suspend fun getTopExpenseCategories(yearMonth: String, limit: Int): List<CategoryTotal>
+    suspend fun getTopExpenseCategories(yearMonth: String, isDemo: Boolean, limit: Int): List<CategoryTotal>
 
     @Query(
         "SELECT category AS category, SUM(amount) AS total FROM bills " +
@@ -133,8 +145,8 @@ interface BillDao {
     @Query("SELECT SUM(amount) FROM bills WHERE accountBookId = :bookId AND yearMonth = :yearMonth AND type = 'EXPENSE'")
     fun getMonthlyExpenseByBook(bookId: Long, yearMonth: String): Flow<Long?>
 
-    @Query("SELECT SUM(amount) FROM bills WHERE yearMonth = :yearMonth AND type = 'INCOME'")
-    fun getMonthlyIncome(yearMonth: String): Flow<Long?>
+    @Query("SELECT SUM(amount) FROM bills WHERE yearMonth = :yearMonth AND type = 'INCOME' AND isDemo = :isDemo")
+    fun getMonthlyIncome(yearMonth: String, isDemo: Boolean): Flow<Long?>
 
     @Query("SELECT SUM(amount) FROM bills WHERE accountBookId = :bookId AND yearMonth = :yearMonth AND type = 'INCOME'")
     fun getMonthlyIncomeByBook(bookId: Long, yearMonth: String): Flow<Long?>
@@ -464,8 +476,13 @@ interface BillDao {
     @Query("DELETE FROM bills WHERE id = :id")
     suspend fun deleteById(id: Long)
 
-    @Query("SELECT * FROM bills WHERE category = :category")
-    suspend fun getBillsByCategoryOnce(category: String): List<Bill>
+    /**
+     * 删分类前的一次性快照查询（回收站级联用）。
+     * [isDemo] 演示口径：分类名在演示与真实之间共享，不隔离会把用户的真实账单
+     * 一起卷进回收站并回滚余额。
+     */
+    @Query("SELECT * FROM bills WHERE category = :category AND isDemo = :isDemo")
+    suspend fun getBillsByCategoryOnce(category: String, isDemo: Boolean): List<Bill>
 
     @Query("SELECT * FROM bills WHERE walletId = :walletId OR toWalletId = :walletId")
     suspend fun getBillsByWalletOnce(walletId: Long): List<Bill>
@@ -473,8 +490,9 @@ interface BillDao {
     @Query("SELECT * FROM bills WHERE accountBookId = :bookId")
     suspend fun getBillsByBookOnce(bookId: Long): List<Bill>
 
-    @Query("DELETE FROM bills WHERE category = :category")
-    suspend fun deleteByCategory(category: String)
+    /** 与 [getBillsByCategoryOnce] 同口径成对出现，两边的 [isDemo] 必须一致。 */
+    @Query("DELETE FROM bills WHERE category = :category AND isDemo = :isDemo")
+    suspend fun deleteByCategory(category: String, isDemo: Boolean)
 
     @Query("DELETE FROM bills WHERE walletId = :walletId OR toWalletId = :walletId")
     suspend fun deleteByWallet(walletId: Long)

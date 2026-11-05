@@ -280,9 +280,10 @@ object RepositoryModule {
         dao: BudgetDao,
         billDao: BillDao,
         accountBookDao: AccountBookDao,
+        appDatabase: AppDatabase,
         preferencesManager: com.palmnote.data.datastore.PreferencesManager
     ): BudgetRepository =
-        BudgetRepositoryImpl(dao, billDao, accountBookDao, preferencesManager)
+        BudgetRepositoryImpl(dao, billDao, accountBookDao, appDatabase, preferencesManager)
 
     @Provides @Singleton
     fun provideAnniversaryRepository(dao: AnniversaryDao): AnniversaryRepository =
@@ -297,9 +298,10 @@ object RepositoryModule {
         @ApplicationContext context: Context,
         dao: CategoryConfigDao,
         customTagDao: CustomTagDao,
-        appDatabase: AppDatabase
+        appDatabase: AppDatabase,
+        preferencesManager: com.palmnote.data.datastore.PreferencesManager
     ): CategoryConfigRepository =
-        CategoryConfigRepositoryImpl(context, dao, customTagDao, appDatabase)
+        CategoryConfigRepositoryImpl(context, dao, customTagDao, appDatabase, preferencesManager)
 
     @Provides @Singleton
     fun provideCategoryMappingRepository(dao: CategoryMappingDao): CategoryMappingRepository =

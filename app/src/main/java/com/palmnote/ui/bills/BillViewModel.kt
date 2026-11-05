@@ -62,7 +62,16 @@ data class BillState(
     val searchQuery: String = "",
     val isSearching: Boolean = false,
     val currentFilter: BillFilter = BillFilter(),
-    val showFilterSheet: Boolean = false
+    val showFilterSheet: Boolean = false,
+    /** 演示模式：报表入口的账本标签要跟数据口径一致（数据会钉到示例账本）。 */
+    val isDemoMode: Boolean = false
+)
+
+private data class BillBookPart(
+    val walletNames: Map<Long, String>,
+    val books: List<AccountBook>,
+    val allBooks: List<AccountBook>,
+    val isDemo: Boolean
 )
 
 private data class BillDataGroup(
@@ -274,13 +283,15 @@ class BillViewModel @Inject constructor(
         combine(_selectedBookId, _currentYearMonth, _selectedDay) { a, b, c -> Triple(a, b, c) },
         combine(_searchQuery, _isSearching) { a, b -> Pair(a, b) },
         combine(_currentFilter, _showFilterSheet) { a, b -> Pair(a, b) },
-        combine(walletNames, cachedAccountBooks, allAccountBooks) { a, b, c -> Triple(a, b, c) },
+        combine(walletNames, cachedAccountBooks, allAccountBooks, preferencesManager.lifeDemoMode) { w, books, allBooks, demo ->
+            BillBookPart(w, books, allBooks, demo)
+        },
         combine(billData, dailySummary, _searchResults) { a, b, c -> Triple(a, b, c) },
-    ) { nav, searchPair, filterPair, walletPart, dataTriple ->
+    ) { nav, searchPair, filterPair, bookPart, dataTriple ->
         val (bookId, ym, day) = nav
         val (query, searching) = searchPair
         val (filter, sheet) = filterPair
-        val (wNames, books, allBooks) = walletPart
+        val (wNames, books, allBooks) = bookPart
         val (data, daily, searchRes) = dataTriple
 
         val filterActive = filter.type != null || filter.category != null || filter.paymentMethod != null || filter.amountMin != null || filter.amountMax != null
@@ -320,6 +331,7 @@ class BillViewModel @Inject constructor(
             isSearching = searching,
             currentFilter = filter,
             showFilterSheet = sheet,
+            isDemoMode = bookPart.isDemo
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), BillState())
 

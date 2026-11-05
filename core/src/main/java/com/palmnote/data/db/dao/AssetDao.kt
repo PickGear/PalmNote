@@ -187,11 +187,17 @@ interface AssetDao {
     suspend fun linkBill(id: Long, billId: Long, now: Long = System.currentTimeMillis())
 
 
-    @Query("SELECT * FROM assets WHERE category = :category")
-    suspend fun getByCategoryOnce(category: String): List<Asset>
+    /**
+     * 删物品分类前的一次性快照查询（回收站级联用）。
+     * [includeDemo] 演示口径：分类名在演示与真实之间共享，不隔离会把用户的真实物品
+     * 一起卷进回收站。
+     */
+    @Query("SELECT * FROM assets WHERE category = :category AND isDemo = :includeDemo")
+    suspend fun getByCategoryOnce(category: String, includeDemo: Boolean): List<Asset>
 
-    @Query("DELETE FROM assets WHERE category = :category")
-    suspend fun deleteByCategory(category: String)
+    /** 与 [getByCategoryOnce] 同口径成对出现，两边的 [includeDemo] 必须一致。 */
+    @Query("DELETE FROM assets WHERE category = :category AND isDemo = :includeDemo")
+    suspend fun deleteByCategory(category: String, includeDemo: Boolean)
 
     @Query("DELETE FROM assets")
     suspend fun deleteAll()

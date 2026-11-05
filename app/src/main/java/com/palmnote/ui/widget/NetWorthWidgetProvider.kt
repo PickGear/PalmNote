@@ -57,10 +57,10 @@ open class NetWorthWidgetProvider : ScopedWidgetProvider() {
         val includeDemo = entryPoint.preferencesManager().lifeDemoMode.first()
         val assets = entryPoint.walletDao().getTotalBalance(includeDemo).first() ?: 0L
         val liabs = kotlin.math.abs(entryPoint.walletDao().getTotalCreditCardBalance(includeDemo).first() ?: 0L)
-        val delta = fetchMonthDelta(entryPoint)
+        val delta = fetchMonthDelta(entryPoint, includeDemo)
         // 近 12 个月净值序列：月度收支差额倒推（见类 KDoc）
         val fromMonth = DateTimeFormatter.ofPattern("yyyy-MM").format(LocalDate.now().minusMonths(11))
-        val flows = entryPoint.billDao().getMonthlyFlowsSince(fromMonth).first()
+        val flows = entryPoint.billDao().getMonthlyFlowsSince(fromMonth, includeDemo).first()
         val monthlyNet = monthlyNetSeries(assets - liabs, flows, LocalDate.now())
 
         publish(appContext, appWidgetManager, appWidgetIds) { context, appWidgetId, _ ->
@@ -84,11 +84,11 @@ open class NetWorthWidgetProvider : ScopedWidgetProvider() {
         }
     }
 
-    /** 本月净收入（收入 − 支出）；账单表没有账本维度，这里就是全账本口径。 */
-    private suspend fun fetchMonthDelta(entryPoint: WidgetEntryPoint): Long {
+    /** 本月净收入（收入 − 支出）；账单表没有账本维度，这里就是全账本口径。[isDemo] 演示口径同趋势流。 */
+    private suspend fun fetchMonthDelta(entryPoint: WidgetEntryPoint, isDemo: Boolean): Long {
         val yearMonth = DateTimeFormatter.ofPattern("yyyy-MM").format(LocalDate.now())
-        val income = entryPoint.billDao().getMonthlyIncome(yearMonth).first() ?: 0L
-        val expense = entryPoint.billDao().getMonthlyExpense(yearMonth).first() ?: 0L
+        val income = entryPoint.billDao().getMonthlyIncome(yearMonth, isDemo).first() ?: 0L
+        val expense = entryPoint.billDao().getMonthlyExpense(yearMonth, isDemo).first() ?: 0L
         return income - expense
     }
 

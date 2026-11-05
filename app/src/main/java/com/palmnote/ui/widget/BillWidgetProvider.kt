@@ -399,25 +399,25 @@ open class BillWidgetProvider : ScopedWidgetProvider() {
             }
             // 有消费记录时带上最高消费分类（对应设计稿「餐饮预算已使用 82%」）
             val topCategory = if (budget != null && budget.totalBudget > 0) {
-                entryPoint.billDao().getTopExpenseCategory(yearMonth)
+                entryPoint.billDao().getTopExpenseCategory(yearMonth, includeDemo)
                     ?.takeIf { it.total > 0 }
                     ?.category
             } else {
                 null
             }
             val expense = if (bookId == null) {
-                entryPoint.billDao().getMonthlyExpense(yearMonth).first() ?: 0L
+                entryPoint.billDao().getMonthlyExpense(yearMonth, includeDemo).first() ?: 0L
             } else {
                 entryPoint.billDao().getMonthlyExpenseByBook(bookId, yearMonth).first() ?: 0L
             }
             val income = if (bookId == null) {
-                entryPoint.billDao().getMonthlyIncome(yearMonth).first() ?: 0L
+                entryPoint.billDao().getMonthlyIncome(yearMonth, includeDemo).first() ?: 0L
             } else {
                 entryPoint.billDao().getMonthlyIncomeByBook(bookId, yearMonth).first() ?: 0L
             }
             val lastMonth = LocalDate.now().minusMonths(1).format(DateTimeFormatter.ofPattern("yyyy-MM"))
             val lastMonthExpense = if (bookId == null) {
-                entryPoint.billDao().getMonthlyExpense(lastMonth).first() ?: 0L
+                entryPoint.billDao().getMonthlyExpense(lastMonth, includeDemo).first() ?: 0L
             } else {
                 entryPoint.billDao().getMonthlyExpenseByBook(bookId, lastMonth).first() ?: 0L
             }
@@ -426,24 +426,25 @@ open class BillWidgetProvider : ScopedWidgetProvider() {
                 monthlyIncome = income,
                 budget = budget,
                 topCategory = topCategory,
-                dailyExpense = fetchDailyExpense(entryPoint, bookId),
+                dailyExpense = fetchDailyExpense(entryPoint, bookId, includeDemo),
                 lastMonthExpense = lastMonthExpense,
-                monthlySeries = fetchMonthlySeries(entryPoint, bookId),
+                monthlySeries = fetchMonthlySeries(entryPoint, bookId, includeDemo),
                 topCategories = entryPoint.billDao()
-                    .getTopExpenseCategories(yearMonth, 4)
+                    .getTopExpenseCategories(yearMonth, includeDemo, 4)
                     .filter { it.total > 0 }
             )
         }
 
-        /** 近 12 个月支出（旧→新，含本月）；4×4 柱图序列。 */
+        /** 近 12 个月支出（旧→新，含本月）；4×4 柱图序列。[includeDemo] 演示口径同月收支。 */
         private suspend fun fetchMonthlySeries(
             entryPoint: WidgetEntryPoint,
-            bookId: Long?
+            bookId: Long?,
+            includeDemo: Boolean
         ): List<Long> = (11 downTo 0).map { offset ->
             val month = LocalDate.now().minusMonths(offset.toLong())
                 .format(DateTimeFormatter.ofPattern("yyyy-MM"))
             if (bookId == null) {
-                entryPoint.billDao().getMonthlyExpense(month).first() ?: 0L
+                entryPoint.billDao().getMonthlyExpense(month, includeDemo).first() ?: 0L
             } else {
                 entryPoint.billDao().getMonthlyExpenseByBook(bookId, month).first() ?: 0L
             }
@@ -453,11 +454,15 @@ open class BillWidgetProvider : ScopedWidgetProvider() {
          * 近 7 天每日支出，按「6 天前 → 今天」对齐（那天没有账单就是 0）。
          * 用当天 00:00 作为起点，走本地时区，避免跨时区把日期算错一天。
          */
-        internal suspend fun fetchDailyExpense(entryPoint: WidgetEntryPoint, bookId: Long?): List<Long> {
+        internal suspend fun fetchDailyExpense(
+            entryPoint: WidgetEntryPoint,
+            bookId: Long?,
+            includeDemo: Boolean
+        ): List<Long> {
             val today = LocalDate.now()
             val from = today.minusDays((BAR_DAYS - 1).toLong()).atStartOfDay(java.time.ZoneId.systemDefault())
                 .toInstant().toEpochMilli()
-            val totals = entryPoint.billDao().getDailyExpenseSince(from).first()
+            val totals = entryPoint.billDao().getDailyExpenseSince(from, includeDemo).first()
                 .groupBy { dayKey(it.date) }
                 .mapValues { (_, rows) -> rows.sumOf { it.expense } }
             // 选了某个账本时按账本口径过滤：查询本身没有账本维度，这里用账本账单集合求交

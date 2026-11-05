@@ -66,9 +66,12 @@ class BillRepositoryImpl @Inject constructor(
 
     override fun getMonthlyBillCount(yearMonth: String): Flow<Int> = billDao.getMonthlyBillCount(yearMonth)
 
-    override fun getMonthlyExpense(yearMonth: String): Flow<Long?> = billDao.getMonthlyExpense(yearMonth)
+    // 月收支合计的演示口径与钱包 getTotalBalance 同款：演示模式只算演示账单
+    override fun getMonthlyExpense(yearMonth: String): Flow<Long?> =
+        preferencesManager.lifeDemoMode.flatMapLatest { billDao.getMonthlyExpense(yearMonth, it) }
 
-    override fun getMonthlyIncome(yearMonth: String): Flow<Long?> = billDao.getMonthlyIncome(yearMonth)
+    override fun getMonthlyIncome(yearMonth: String): Flow<Long?> =
+        preferencesManager.lifeDemoMode.flatMapLatest { billDao.getMonthlyIncome(yearMonth, it) }
 
     override fun getTotalExpense(): Flow<Long?> = billDao.getTotalExpense()
 
@@ -450,10 +453,14 @@ class BillRepositoryImpl @Inject constructor(
         bills.forEach { deleteImageFiles(it.images) }
     }
 
-    override suspend fun deleteByCategory(category: String) =
-        deleteBillsToRecycleBin({ billDao.getBillsByCategoryOnce(category) }) {
-            billDao.deleteByCategory(category)
+    // 分类名在演示与真实之间共享，删分类连带删账单必须按演示态隔离，
+    // 否则演示期删分类会把用户的真实账单卷进回收站并回滚余额
+    override suspend fun deleteByCategory(category: String) {
+        val demo = preferencesManager.lifeDemoMode.first()
+        deleteBillsToRecycleBin({ billDao.getBillsByCategoryOnce(category, demo) }) {
+            billDao.deleteByCategory(category, demo)
         }
+    }
 
     override suspend fun countByWallet(walletId: Long): Int =
         billDao.countByWallet(walletId)

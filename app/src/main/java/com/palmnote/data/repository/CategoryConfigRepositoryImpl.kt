@@ -5,6 +5,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import android.content.Context
 import androidx.room.withTransaction
 import com.palmnote.app.R
+import com.palmnote.data.datastore.PreferencesManager
 import com.palmnote.data.db.AppDatabase
 import com.palmnote.data.db.dao.CategoryConfigDao
 import com.palmnote.data.db.dao.CustomTagDao
@@ -12,13 +13,15 @@ import com.palmnote.data.db.entity.CategoryConfig
 import com.palmnote.data.db.entity.CustomTag
 import com.palmnote.ui.theme.AppIcon
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import com.palmnote.domain.repository.CategoryConfigRepository
 
 class CategoryConfigRepositoryImpl @Inject constructor(
     @ApplicationContext private val context: Context,
     private val categoryConfigDao: CategoryConfigDao,
     private val customTagDao: CustomTagDao,
-    private val appDatabase: AppDatabase
+    private val appDatabase: AppDatabase,
+    private val preferencesManager: PreferencesManager
 ) : CategoryConfigRepository {
     // ========== 分类管理 ==========
     override fun getCategoriesByType(type: String): Flow<List<CategoryConfig>> =
@@ -45,16 +48,23 @@ class CategoryConfigRepositoryImpl @Inject constructor(
     override suspend fun updateCategory(category: CategoryConfig) =
         categoryConfigDao.update(category)
 
-    override suspend fun deleteCategory(category: CategoryConfig) = appDatabase.withTransaction {
-        categoryConfigDao.delete(category)
-        clearBudgetOfDeletedCategory(category)
+    override suspend fun deleteCategory(category: CategoryConfig) {
+        // 演示态在事务外取：事务块只包 DB 操作，避免持锁等 DataStore
+        val demo = preferencesManager.lifeDemoMode.first()
+        appDatabase.withTransaction {
+            categoryConfigDao.delete(category)
+            clearBudgetOfDeletedCategory(category, demo)
+        }
     }
 
-    override suspend fun deleteCategoryById(id: Long) = appDatabase.withTransaction {
-        // 预算存的是分类名而不是 id，删除前先把名字取出来才能找到对应预算
-        val category = categoryConfigDao.getCategoryById(id)
-        categoryConfigDao.deleteById(id)
-        if (category != null) clearBudgetOfDeletedCategory(category)
+    override suspend fun deleteCategoryById(id: Long) {
+        val demo = preferencesManager.lifeDemoMode.first()
+        appDatabase.withTransaction {
+            // 预算存的是分类名而不是 id，删除前先把名字取出来才能找到对应预算
+            val category = categoryConfigDao.getCategoryById(id)
+            categoryConfigDao.deleteById(id)
+            if (category != null) clearBudgetOfDeletedCategory(category, demo)
+        }
     }
 
     /**
@@ -62,10 +72,13 @@ class CategoryConfigRepositoryImpl @Inject constructor(
      *
      * 只有**支出分类**会挂预算（预算页的下拉只列支出分类），所以资产 / 收入分类里
      * 同名的条目不能牵连——名字在分类表里不是唯一的。
+     *
+     * 演示口径与 [deleteByCategory]（DAO）对齐：按当前演示态只清对应来源的预算行，
+     * 演示期删分类不得波及用户的真实预算。
      */
-    private suspend fun clearBudgetOfDeletedCategory(category: CategoryConfig) {
+    private suspend fun clearBudgetOfDeletedCategory(category: CategoryConfig, demo: Boolean) {
         if (category.type == BILL_EXPENSE_TYPE) {
-            appDatabase.budgetDao().deleteByCategory(category.name)
+            appDatabase.budgetDao().deleteByCategory(category.name, demo)
         }
     }
 
