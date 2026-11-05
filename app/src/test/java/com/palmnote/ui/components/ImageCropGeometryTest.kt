@@ -320,19 +320,65 @@ class ImageCropGeometryTest {
     }
 
     @Test
-    fun `收口后图片盖住最大选框`() {
-        val frameSize = Size(200f, 500f) // 自由比例窄框
+    fun `自由比例收口保持拖出的比例且图片盖住框`() {
+        val frameSize = Size(200f, 500f) // 自由比例窄框，比例 0.4
         val frame = centeredRectOf(frameSize, fit.center)
         val result = settleToMaxFrame(
             frameSize = frameSize, maxFrameSize = maxFrame, frame = frame,
             scale = 1f, offset = Offset.Zero, fit = fit, container = container, maxZoom = 6f
         )
+        // 不能回归成 800×500 的整图比例：那会把用户框的形状抹平
+        assertEquals(0.4f, result.frameSize.width / result.frameSize.height, 0.001f)
         val image = imageRectFor(fit, result.scale, result.offset, container)
-        val settled = centeredRectOf(maxFrame, fit.center)
+        val settled = centeredRectOf(result.frameSize, fit.center)
         assertTrue("image=$image settled=$settled", image.left <= settled.left + 0.01f)
         assertTrue("image=$image settled=$settled", image.top <= settled.top + 0.01f)
         assertTrue("image=$image settled=$settled", image.right >= settled.right - 0.01f)
         assertTrue("image=$image settled=$settled", image.bottom >= settled.bottom - 0.01f)
+    }
+
+    @Test
+    fun `锁比例收口仍是该比例的最大框`() {
+        // 1:1 选框在 800×500 可用区里最大就是 500×500；图片按 k=2 放大
+        val frameSize = Size(250f, 250f)
+        val frame = centeredRectOf(frameSize, fit.center)
+        val result = settleToMaxFrame(
+            frameSize = frameSize, maxFrameSize = Size(500f, 500f), frame = frame,
+            scale = 1f, offset = Offset.Zero, fit = fit, container = container,
+            maxZoom = 6f, availableSize = maxFrame
+        )
+        assertEquals(500f, result.frameSize.width, 0.01f)
+        assertEquals(500f, result.frameSize.height, 0.01f)
+        assertEquals(2f, result.scale, 0.01f)
+    }
+
+    @Test
+    fun `锁比例收口以锁定比例为准而不是旧框实测比例`() {
+        // 模拟 frameSize 被某条路径带偏成 1.2:1，而产品锁定的是 1:1：
+        // 照实测收口会把偏差固化，用 lockedAspect 才能纠正回所选比例
+        val frameSize = Size(240f, 200f)
+        val frame = centeredRectOf(frameSize, fit.center)
+        val result = settleToMaxFrame(
+            frameSize = frameSize, maxFrameSize = Size(500f, 500f), frame = frame,
+            scale = 1f, offset = Offset.Zero, fit = fit, container = container,
+            maxZoom = 6f, availableSize = maxFrame, lockedAspect = 1f
+        )
+        assertEquals(1f, result.frameSize.width / result.frameSize.height, 0.001f)
+        assertEquals(500f, result.frameSize.width, 0.01f)
+        assertEquals(500f, result.frameSize.height, 0.01f)
+    }
+
+    @Test
+    fun `largestFrameOfRatio 取可用区内同比例的最大尺寸`() {
+        // Size 是打包浮点，用容差断言而不是 assertEquals(Size(…))，避免 449.99997 这类尾差
+        fun assertSize(expectedW: Float, expectedH: Float, actual: Size) {
+            assertEquals(expectedW, actual.width, 0.01f)
+            assertEquals(expectedH, actual.height, 0.01f)
+        }
+        assertSize(500f, 500f, largestFrameOfRatio(1f, maxFrame))
+        assertSize(800f, 450f, largestFrameOfRatio(16f / 9f, maxFrame))
+        assertSize(375f, 500f, largestFrameOfRatio(3f / 4f, maxFrame))
+        assertEquals(Size.Zero, largestFrameOfRatio(0f, maxFrame))
     }
 
     @Test

@@ -222,6 +222,31 @@ class ImageCropGestureTest {
         assertImageCoversFrame()
     }
 
+    /** 真机反馈（2026-11-05）：自由比例拖角改变不了框比例；选 1:1 后一缩放又变回整图比例。 */
+    @Test
+    fun `拖角能改自由比例且缩放不破坏固定比例`() {
+        launchFreeRatioCrop()
+        val initialRatio = frameRect.width / frameRect.height
+        cornerDrag(Offset(-60f, -10f))
+        val draggedRatio = frameRect.width / frameRect.height
+        assertTrue(
+            "自由比例拖角收口后比例没变：initial=$initialRatio dragged=$draggedRatio",
+            Math.abs(draggedRatio - initialRatio) > 0.02f
+        )
+        assertImageCoversFrame()
+
+        compose.onNodeWithText("1:1").performClick()
+        compose.waitForIdle()
+        compose.waitForIdle()
+        assertTrue("1:1 未生效：frame=$frameRect", Math.abs(frameRect.width - frameRect.height) < 2f)
+
+        compose.onRoot().performTouchInput { doubleClick(center) }
+        compose.waitForIdle()
+        compose.waitForIdle()
+        assertTrue("缩放后 1:1 丢失：frame=$frameRect", Math.abs(frameRect.width - frameRect.height) < 2f)
+        assertImageCoversFrame()
+    }
+
     @Test
     fun `换比例与旋转全程图片盖住选框`() {
         launchFreeRatioCrop()

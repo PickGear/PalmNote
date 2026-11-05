@@ -191,7 +191,8 @@ fun ImageCropDialogContent(
     var activeAspect by remember(sourceUri, spec.aspect) { mutableStateOf(spec.aspect) }
     // 选框只有「尺寸」一个状态：中心恒为可用区域中心（与小米相册、iOS 同形态）。
     // 位置不进状态，也就不存在「框跑偏 / 框被拖出图片」这类问题的空间。
-    // 尺寸也是临时的：拖角松手即收口回最大（settleAfterResize），静止时框恒为最大。
+    // 尺寸是临时的：拖角松手即收口（settleAfterResize）到「同比例的最大框」，
+    // 比例本身保留下来；静止时框恒为该比例下的最大尺寸。
     // ⚠️ 不能带 remember key：key 变化会重建 State 对象，而手势检测器闭包
     // （pointerInput 只创建一次）还握着旧对象——UI 读新、手势读旧，两边分裂
     // （离屏手势测试实测：点比例胶囊后手势层看到的是永远为 0 的旧状态）。
@@ -211,12 +212,13 @@ fun ImageCropDialogContent(
     // 该比例在「屏幕可用区域 ∩ 图片」内能取到的最大尺寸：初始值、拖角上限，
     // 也是拖角松手收口后的回归尺寸（settleToMaxFrame）。
     // 再大就会超出图片，所以用户只能往小调。
-    val maxFrameSize = remember(fit, frameBounds, activeAspect) {
-        if (fit == Rect.Zero) {
-            Size.Zero
-        } else {
-            initialCropFrame(fit, intersectRects(frameBounds, fit), activeAspect).size
-        }
+    // 直接派生、不 remember：这几个值都是纯几何计算，缓存反而可能在切比例后
+    // 留住旧比例的最大框，被收口写回 frameSize 时把固定比例抹成整图比例
+    val frameArea = intersectRects(frameBounds, fit)
+    val maxFrameSize = if (fit == Rect.Zero || frameArea == Rect.Zero) {
+        Size.Zero
+    } else {
+        initialCropFrame(fit, frameArea, activeAspect).size
     }
 
     // 几何入参变化（图片加载/旋转、容器尺寸、换比例）后补齐选区与平移：
@@ -274,10 +276,10 @@ fun ImageCropDialogContent(
     }
 
     /**
-     * 拖角松手后的收口：图片放大到「所选区域填满最大选框」，选框回最大居中
-     * （2026-11-05 真机反馈的三条诉求都在这一步落地——松手按所选区域放大重取景、
-     * 之后拖图时框恒为最大居中、最大框 ⊆ fit ⊆ 图片保证框永不越出图片）。
-     * 几何全在纯函数 [settleToMaxFrame] 里，便于离屏单测。
+     * 拖角松手后的收口：图片放大到所选区域、选框按**当前比例**回到同比例的最大居中框
+     * （松手放大重取景、拖图时框不动、框 ⊆ fit ⊆ 图片保证永不越出图片）。
+     * 收口尺寸由 [settleToMaxFrame] 在可用区域内按当前框比例现算，不再照抄
+     * maxFrameSize——否则自由比例拖出的形状会被整图比例抹平。
      */
     fun settleAfterResize() {
         val currentFit = fitState.value
@@ -290,7 +292,11 @@ fun ImageCropDialogContent(
             offset = offset,
             fit = currentFit,
             container = viewport,
-            maxZoom = MAX_ZOOM
+            maxZoom = MAX_ZOOM,
+            // 自由比例下 maxFrameSize 就是整图比例，必须给原始可用区域，
+            // 收口才能按「用户刚拖出的比例」求最大框；锁比例时以所选比例为准
+            availableSize = frameArea.size,
+            lockedAspect = activeAspect
         )
         scale = result.scale
         offset = result.offset
@@ -350,8 +356,13 @@ fun ImageCropDialogContent(
         activeAspect = next
         scale = 1f
         offset = Offset.Zero
-        // 尺寸清零后由几何 effect（LaunchedEffect(fit, …)）按新比例填回最大值 —— 不必手算
-        frameSize = Size.Zero
+        // 直接按新比例算出最大内接框：切比例当帧生效，也不给「旧比例的框尺寸」
+        // 留存活窗口（先前清零再靠 effect 回填，缩放/重组后容易看到旧框比例）。
+        frameSize = if (fit == Rect.Zero || frameArea == Rect.Zero) {
+            Size.Zero
+        } else {
+            initialCropFrame(fit, frameArea, next).size
+        }
     }
 
     fun toggleZoom(target: Offset) {

@@ -25,8 +25,8 @@ import kotlin.math.roundToInt
  *
  * ## 交互口径（各场景一致，只有比例与输出尺寸不同）
  * - 图片按「适应屏幕」显示，选区是图片上的一块矩形：拖动选区内部平移，拖四角缩放。
- * - 拖角松手后图片放大到所选区域、选框回最大居中（[settleToMaxFrame]）——框选是临时
- *   取景，收口后框恒为最大居中，拖图时框不动、图片在框下滑动。
+ * - 拖角松手后图片放大到所选区域、选框按**用户拖出的比例**回到该比例的最大居中框
+ *   （[settleToMaxFrame]）——框选是临时取景，收口后框比例不变、拖图时框不动。
  * - 选区永不越出图片；最小边长 = 显示短边的 20%，且不小于 64dp。
  * - 锁定比例的场景（物品 / 头像 1:1、壁纸 9:16）四角缩放保持比例，对角固定。
  * - 取消：直接返回上一页，不落任何文件。
@@ -326,7 +326,7 @@ fun clampFrameSizeInside(size: Size, maxSize: Size): Size {
     return if (shrink >= 1f) size else Size(size.width * shrink, size.height * shrink)
 }
 
-/** [settleToMaxFrame] 的收口结果：放大后的缩放/偏移，与回归最大值的选框尺寸。 */
+/** [settleToMaxFrame] 的收口结果：放大后的缩放/偏移，与收口后的选框尺寸。 */
 data class CropSettleResult(
     val scale: Float,
     val offset: Offset,
@@ -334,16 +334,33 @@ data class CropSettleResult(
 )
 
 /**
- * 拖角松手后的收口几何：把图片放大到「所选区域填满最大选框」，选框回最大居中。
+ * 「可用区域」内能放下的、指定长宽比（宽/高）的最大选框尺寸。
  *
- * 框选是临时取景动作——拖角圈住要的那块，松手即放大重取景。做法是以框中心为锚
- * （[zoomAround]，所选内容原地铺开不窜位）放大 `scale × k`，`k` 取「最大框 / 当前框」
- * 两轴中较大者（自由比例下当前框与最大框不必同形，取大者保证两轴都填满）；
- * 随后选框尺寸回 [maxFrameSize]。最大框 ⊆ fit ⊆ 任意 scale ≥ 1 的图片矩形，
- * 「框在图片内」由构造保证，偏移最后再走一遍 [clampImageOffset] 兜底。
+ * 锁比例场景这就是 [initialCropRect] 的结果；自由比例场景用它给**用户刚拖出来的
+ * 任意比例**求一个最大框，比例不会被抹平成图片本身的比例。
+ */
+fun largestFrameOfRatio(ratio: Float, available: Size): Size {
+    if (ratio <= 0f || available.width <= 0f || available.height <= 0f) return Size.Zero
+    val width = min(available.width, available.height * ratio)
+    return Size(width, width / ratio)
+}
+
+/**
+ * 拖角松手后的收口几何：把图片放大到「所选区域填满最大选框」，选框回最大居中，
+ * **但保持用户刚拖出来的长宽比**。
  *
+ * 框选是临时取景动作——拖角圈住要的那块，松手即放大重取景。收口后的尺寸不是
+ * 无条件写回 [maxFrameSize]（它在自由比例下就是整图比例，会把用户框的形状抹平，
+ * 2026-11-05 真机反馈「自由比例方框永远改不了比例」），而是用 [largestFrameOfRatio]
+ * 在 [availableSize] 里取「同比例的最大框」。锁比例场景该比例恒等于 activeAspect，
+ * 结果与 [maxFrameSize] 完全一致；缩放/平移也不会再改变框的比例。
+ *
+ * 以框中心为锚（[zoomAround]，所选内容原地铺开不窜位）放大 `scale × k`；
  * 框已处于最大（`k ≈ 1`）或缩放被 [maxZoom] 顶住时不放大，只回归框尺寸并夹偏移。
  */
+// 纯几何函数：10 个入参都是互相独立的坐标量，打包成配置对象只会让离屏几何单测
+// 多一层构造；与 ImageGridPicker 同口径显式豁免，不靠 baseline 压告警。
+@Suppress("LongParameterList")
 fun settleToMaxFrame(
     frameSize: Size,
     maxFrameSize: Size,
@@ -352,12 +369,25 @@ fun settleToMaxFrame(
     offset: Offset,
     fit: Rect,
     container: Size,
-    maxZoom: Float
+    maxZoom: Float,
+    /** 选框活动区 ∩ 图片的原始可用尺寸；锁比例场景与 [maxFrameSize] 等价。 */
+    availableSize: Size = maxFrameSize,
+    /**
+     * 产品锁定的比例（对应 UI 的 activeAspect）。非 null 时**以它为准**：
+     * frame 的实测宽高比可能因旧状态 / 旋转夹取 / 浮点尾差偏离一点，照实测收口会把
+     * 偏差固化下来；锁比例场景的权威口径始终是用户选的那个比例。
+     * null = 自由比例，比例就取当前框实测值（用户拖出来的形状）。
+     */
+    lockedAspect: Float? = null
 ): CropSettleResult {
     if (maxFrameSize == Size.Zero || frame == Rect.Zero || frameSize == Size.Zero) {
         return CropSettleResult(scale, offset, frameSize)
     }
-    val k = max(maxFrameSize.width / frame.width, maxFrameSize.height / frame.height)
+    val measured = if (frame.height > 0f) frame.width / frame.height else 0f
+    val ratio = if (lockedAspect != null && lockedAspect > 0f) lockedAspect else measured
+    val settledSize = largestFrameOfRatio(ratio, availableSize)
+        .takeIf { it != Size.Zero } ?: maxFrameSize
+    val k = max(settledSize.width / frame.width, settledSize.height / frame.height)
     var nextScale = scale
     var nextOffset = offset
     if (k > 1.0001f) {
@@ -367,9 +397,9 @@ fun settleToMaxFrame(
             nextScale = target
         }
     }
-    val maxFrame = centeredRectOf(maxFrameSize, frame.center)
-    nextOffset = clampImageOffset(nextOffset, fit.size, nextScale, maxFrame, container)
-    return CropSettleResult(nextScale, nextOffset, maxFrameSize)
+    val settledFrame = centeredRectOf(settledSize, frame.center)
+    nextOffset = clampImageOffset(nextOffset, fit.size, nextScale, settledFrame, container)
+    return CropSettleResult(nextScale, nextOffset, settledSize)
 }
 
 /**
