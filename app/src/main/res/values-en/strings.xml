@@ -1767,7 +1767,8 @@
     <string name="budget_label_book">%1$s \"%2$s\"</string>
     <string name="budget_label_book_missing">a book</string>
     <string name="budget_alert_label_used">%1$s · used</string>
-    <string name="budget_alert_label_over">%1$s · over</string>
+    <string name="budget_alert_label_over">%1$s · over by</string>
+    <string name="budget_alert_label_over_masked">%1$s · over budget</string>
     <string name="budget_alert_amounts">¥%1$.2f / ¥%2$.2f</string>
     <string name="budget_card_action">Budget</string>
     <string name="budget_section_category">Category Budgets</string>

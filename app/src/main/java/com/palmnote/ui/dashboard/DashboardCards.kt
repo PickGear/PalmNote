@@ -55,6 +55,7 @@ import com.palmnote.domain.util.CurrencyUtils
 import com.palmnote.domain.util.DateUtils
 import com.palmnote.ui.components.*
 import com.palmnote.ui.theme.*
+import com.palmnote.ui.widget.WidgetData
 import com.palmnote.ui.asset.getCategoryDisplayName
 import com.palmnote.ui.asset.getCategoryIcon
 import com.palmnote.ui.bills.budgetLabel
@@ -587,11 +588,16 @@ private fun BudgetAlertBody(
     amountsHidden: Boolean
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
-    Row(verticalAlignment = Alignment.Bottom) {
-        // 遮罩下只留预算名（超支时保留「已超支」这句定性状态：不带任何数字，
-        // 但预警卡在隐私模式下仍需保留告警作用）
+    // 方案 B（2026-11-05 定案）：标签与主数字同排，整卡只三行
+    // 「预算名 · 状态 + 缩写数字」/「金额对比」/「进度条」。
+    // 主数字从 18/20sp 降到 14sp，并按 ≥1万 折成万/k（中文一位小数）：长金额
+    // 不再把状态词挤成两行，代价是超额金额损失个位精度——完整金额仍在下一行。
+    Row(verticalAlignment = Alignment.CenterVertically) {
         Text(
             text = when {
+                // 隐私态超支仍要提示「已超支」，但用不带 by 的定性措辞（下一行没有金额）
+                status.isOver && amountsHidden ->
+                    stringResource(R.string.budget_alert_label_over_masked, label)
                 status.isOver -> stringResource(R.string.budget_alert_label_over, label)
                 amountsHidden -> label
                 else -> stringResource(R.string.budget_alert_label_used, label)
@@ -602,37 +608,28 @@ private fun BudgetAlertBody(
             } else {
                 MaterialTheme.colorScheme.onSurfaceVariant
             },
-            // 分类/账本预算的名字比「本月总预算」长一截（本月「餐饮」预算 · 已用），
-            // 和 20sp 数字同排时放不下——允许折两行，数字仍贴右下，别把预算名截成「本月「餐饮」预…」
-            maxLines = 2,
+            maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f, fill = false)
         )
         if (!amountsHidden) {
             Spacer(Modifier.width(6.dp))
-            if (status.isOver) {
-                // 超支时主数字换成「超了多少」：比「已用 105%」可行动，也和满格红条一致
-                Text(
-                    text = CurrencyUtils.formatCompact(context, (status.spent - status.limit).toMoney()),
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontSize = TypeScale.headlineS,
-                        fontFeatureSettings = "tnum"
-                    ),
-                    color = accent,
-                    maxLines = 1
-                )
-            } else {
-                Text(
-                    text = status.usedPercent.toString(),
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontSize = TypeScale.headlineM,
-                        fontFeatureSettings = "tnum"
-                    ),
-                    color = accent,
-                    maxLines = 1
-                )
-                Text(text = "%", style = MaterialTheme.typography.titleSmall, color = accent)
-            }
+            Text(
+                text = if (status.isOver) {
+                    WidgetData.formatMoneyCompact(context, status.spent - status.limit)
+                } else {
+                    "${status.usedPercent}%"
+                },
+                style = MaterialTheme.typography.titleSmall.copy(
+                    fontSize = TypeScale.titleS,
+                    fontFeatureSettings = "tnum"
+                ),
+                color = accent,
+                maxLines = 1,
+                // 极端字体放大时宁可显式省略号，也不静默裁掉数字尾部显示假金额
+                softWrap = false,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
     if (amountsHidden) {

@@ -279,17 +279,20 @@ fun BudgetScreen(
 
     // ── 选账本 ──
     if (pickingScope == BudgetScope.BOOK && realBooks.isNotEmpty()) {
-        // 账本紫 + 深色提亮，与账本组卡头同一套；不能用 billTint()——
-        // 那是近白奶油，白底弹窗上 12% 圆底和图标会一起隐形（2026-11-05 真机反馈，
-        // 与 PeriodSelector 选中态同类：模块 tint 只能当卡底，不能当前景色）
-        val bookTint = adaptiveTint(Purple)
+        // 图标与颜色取每个账本自己的 AppIcon / color，徽标用实心色底 + 白图标，
+        // 与账本管理页的 AccountBookBadge 完全一致：早前写死 MenuBook + 账本紫，
+        // 两个账本在弹窗里长得一模一样。
+        // 注意浅色账本（投资黄、亮粉）的白图标对比度仍偏低，是两处共用色板的
+        // 存量口径；这里优先保证「弹窗 = 管理页」的形态一致，没有单独改色。
         ChoiceDialog(
             title = stringResource(R.string.budget_pick_book),
             options = realBooks,
             selected = null,
             optionLabel = { it.name },
-            optionIcon = { Icons.Outlined.MenuBook },
-            optionTint = { bookTint },
+            optionIcon = { it.icon.imageVector },
+            // 兜底色与 AccountBookBadge 一致（Color.Gray），不用 toComposeColor 的默认橙
+            optionTint = { it.color.toComposeColor(Color.Gray) },
+            solidBadge = true,
             onSelect = { book ->
                 val existing = bookProgresses.firstOrNull { it.budget.bookId == book.id }?.budget
                 editing = BudgetDraft(

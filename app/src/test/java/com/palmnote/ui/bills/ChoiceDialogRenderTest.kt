@@ -2,6 +2,7 @@ package com.palmnote.ui.bills
 
 import android.app.Application
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Flight
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -49,6 +50,29 @@ class ChoiceDialogRenderTest {
         compose.onNodeWithText("餐饮").assertIsDisplayed()
         compose.onNodeWithText("交通").assertIsDisplayed()
         compose.onNodeWithText("娱乐").assertIsDisplayed()
+    }
+
+    @Test
+    fun `实心徽标模式下每一项仍正常渲染`() {
+        compose.setContent {
+            PalmNoteTheme {
+                ChoiceDialog(
+                    title = "选择账本",
+                    options = listOf("日常", "旅行"),
+                    selected = null,
+                    optionLabel = { it },
+                    // 预算页账本弹窗的真实口径：逐项取自账本自己的图标与颜色
+                    optionIcon = { if (it == "日常") Icons.Filled.Restaurant else Icons.Filled.Flight },
+                    optionTint = { if (it == "日常") Color(0xFF34A853) else Color(0xFF29B6F6) },
+                    solidBadge = true,
+                    onSelect = {},
+                    onDismiss = {}
+                )
+            }
+        }
+        compose.onNodeWithText("选择账本").assertExists()
+        compose.onNodeWithText("日常").assertIsDisplayed()
+        compose.onNodeWithText("旅行").assertIsDisplayed()
     }
 
     @Test

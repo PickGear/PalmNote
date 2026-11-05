@@ -196,6 +196,11 @@ fun SettingRow(
  *
  * [selected] 传 null 表示**没有当前值**（例如预算页「挑一个分类去新建或编辑」）：
  * 此时不画单选圈、改画右箭头，避免点亮一个用户其实没有选中的项。
+ *
+ * [solidBadge] 默认 false：12% 淡色圆底 + 同色图标（设置页各选择器的既有口径）。
+ * 传 true 改为**实心色底 + 白图标**，给携带自身颜色的实体（如账本）用，与该实体
+ * 管理页的徽标保持同一形态。注意这不解决浅色实体的可读性：白图标在亮黄 / 亮粉
+ * 实心底上对比度仍低于 3:1，是两处共用的色板存量口径，要改得连色板一起改。
  */
 @Composable
 fun <T> ChoiceDialog(
@@ -206,6 +211,9 @@ fun <T> ChoiceDialog(
     optionIcon: (T) -> ImageVector,
     optionTint: (T) -> Color,
     onSelect: (T) -> Unit,
+    // 带默认值的配置参数放在函数类型参数之前：onDismiss 保持最后一个形参，
+    // 调用方仍可用尾随 lambda；放它后面会把尾随 lambda 的位置挤掉
+    solidBadge: Boolean = false,
     onDismiss: () -> Unit
 ) {
     AppDialog(
@@ -220,6 +228,7 @@ fun <T> ChoiceDialog(
                         label = optionLabel(option),
                         icon = optionIcon(option),
                         tint = optionTint(option),
+                        solidBadge = solidBadge,
                         // null 选中集 → 每一项都画右箭头，表示「点了才进下一步」
                         state = when {
                             selected == null -> ChoiceRowState.FORWARD
@@ -252,6 +261,7 @@ private fun ChoiceOptionRow(
     icon: ImageVector,
     tint: Color,
     state: ChoiceRowState,
+    solidBadge: Boolean,
     onClick: () -> Unit
 ) {
     Row(
@@ -266,10 +276,15 @@ private fun ChoiceOptionRow(
             modifier = Modifier
                 .size(36.dp)
                 .clip(CircleShape)
-                .background(tint.copy(alpha = 0.12f)),
+                .background(if (solidBadge) tint else tint.copy(alpha = 0.12f)),
             contentAlignment = Alignment.Center
         ) {
-            Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(20.dp))
+            Icon(
+                icon,
+                contentDescription = null,
+                tint = if (solidBadge) Color.White else tint,
+                modifier = Modifier.size(20.dp)
+            )
         }
         Spacer(Modifier.width(12.dp))
         Text(

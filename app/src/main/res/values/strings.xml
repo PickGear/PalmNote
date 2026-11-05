@@ -1838,6 +1838,7 @@
     <string name="budget_label_book_missing">某账本</string>
     <string name="budget_alert_label_used">%1$s · 已用</string>
     <string name="budget_alert_label_over">%1$s · 已超支</string>
+    <string name="budget_alert_label_over_masked">%1$s · 已超支</string>
     <string name="budget_alert_amounts">¥%1$.2f / ¥%2$.2f</string>
     <string name="budget_card_action">预算管理</string>
     <string name="budget_section_category">分类预算</string>
