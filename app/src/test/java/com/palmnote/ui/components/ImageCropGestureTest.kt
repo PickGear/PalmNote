@@ -85,7 +85,9 @@ class ImageCropGestureTest {
                 )
             }
         }
-        compose.waitUntil("几何未就绪") { frameRect != Rect.Zero }
+        // 宽度 > 1 而非 != Rect.Zero：收口前的中间态可能给出「中心点零尺寸矩形」，
+        // 它不等于 Rect.Zero 却没有几何意义，拿它当 maxFrame 手势全失真（负载下实测 flake 过）
+        compose.waitUntil("几何未就绪") { frameRect.width > 1f }
         // waitUntil 可能因 SideEffect 读到「已写入但尚未重组渲染」的状态而提前返回，
         // 先等树落定，否则首个手势会打在旧一帧的手柄位置上
         compose.waitForIdle()
