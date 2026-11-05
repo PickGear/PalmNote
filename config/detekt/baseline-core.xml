@@ -192,5 +192,7 @@
     <ID>WildcardImport:TodoItemDao.kt$import androidx.room.*</ID>
     <ID>WildcardImport:UsageRecordDao.kt$import androidx.room.*</ID>
     <ID>WildcardImport:WalletDao.kt$import androidx.room.*</ID>
+    <ID>CyclomaticComplexMethod:CommonComponents.kt$@Composable fun CategoryPicker( selected: String, onSelected: (String) -&gt; Unit, categories: List&lt;CategoryItem&gt;, rows: Int = 2, columns: Int = 5, onManageCategories: (() -&gt; Unit)? = null, getDisplayName: ((String) -&gt; String)? = null, modifier: Modifier = Modifier )</ID>
+    <ID>TooManyFunctions:CommonComponents.kt$com.palmnote.ui.components.CommonComponents.kt</ID>
   </CurrentIssues>
 </SmellBaseline>

@@ -943,7 +943,8 @@ private fun ReceiptTotals(dayExpense: Long, dayIncome: Long, dayBalance: Long) {
 @Composable
 internal fun TotalRow(label: String, amount: Long, color: Color, bold: Boolean = false) {
     val context = LocalContext.current
-    // 负号在货币符前（-¥1.00），与明细行的 prefix 口径一致；formatCurrency 会输出 ¥-1.00
+    // 负号在货币符前（-¥1.00），由 formatCurrency 自己带出；这里先取绝对值再补负号，
+    // 与明细行的 prefix 口径一致
     val prefix = if (amount < 0) "-" else ""
     Row(modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
         Text(label, style = MaterialTheme.typography.bodyMedium, color = Ink, modifier = Modifier.weight(1f))

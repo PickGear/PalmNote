@@ -85,7 +85,7 @@ class NetWorthCardRenderTest {
                 )
             }
         }
-        compose.onNodeWithText("¥-280.00").assertIsDisplayed()
+        compose.onNodeWithText("-¥280.00").assertIsDisplayed()
     }
 
     @Test

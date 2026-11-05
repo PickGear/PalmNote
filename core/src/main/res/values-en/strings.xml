@@ -150,6 +150,7 @@
     <string name="common_more">More</string>
     <string name="common_select_category">Select Category</string>
     <string name="common_manage_categories">Manage Categories</string>
+    <string name="category_picker_empty">No categories available. Enable or add some in Category Management.</string>
     <string name="common_custom_tag">Custom Tag</string>
     <string name="common_select_tag">Select Tag</string>
     <string name="common_previous_month">Previous Month</string>
@@ -236,7 +237,7 @@
     <string name="crop_title">Adjust photo</string>
     <string name="crop_reset">Reset</string>
     <string name="crop_use">Use this</string>
-    <string name="crop_hint">Drag to move, pinch or double-tap to zoom, drag a corner to resize; only the framed area is saved</string>
+    <string name="crop_hint">Drag to move, pinch or double-tap to zoom; drag a corner to select and release to magnify; only the framed area is saved</string>
     <string name="crop_failed">Could not process this image, try another one</string>
     <string name="crop_rotate">Rotate photo</string>
     <string name="crop_use_original">Use original</string>

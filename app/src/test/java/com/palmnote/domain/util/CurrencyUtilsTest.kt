@@ -37,7 +37,15 @@ class CurrencyUtilsTest {
     @Test
     fun `formatCurrency handles negative`() {
         val context = mockContext()
-        assertEquals("¥-1,234.56", CurrencyUtils.formatCurrency(context, Money(-123456)))
+        assertEquals("-¥1,234.56", CurrencyUtils.formatCurrency(context, Money(-123456)))
+    }
+
+    @Test
+    fun `formatCompact negative puts sign before currency symbol`() {
+        val context = mockContext()
+        // 信用卡欠款超过资产时净资产为负：负号在币符前，不出现「¥-123」
+        assertEquals("-¥123.00", CurrencyUtils.formatCompact(context, Money(-12300)))
+        assertEquals("-¥123.45万", CurrencyUtils.formatCompact(context, Money(-12345_0000L)))
     }
 
     @Test

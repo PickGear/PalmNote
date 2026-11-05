@@ -25,28 +25,23 @@ object WidgetHelper {
         return views
     }
 
-
-    fun formatMoney(amount: Long): String {
-        val yuan = amount / 100.0
-        return String.format("¥%.2f", yuan)
-    }
-
-    fun formatMoneyDouble(amount: Double): String {
-        return String.format("¥%.2f", amount)
-    }
-
     /**
      * 条目价格原文 → 带货币符号的展示文案：原文已带 ¥/$ 等符号就原样，否则补 ¥。
      * 设计稿金额一律带符号（订阅行「¥25」），而条目 price 字段是裸数字串。
+     * 负号提到币符前（-¥25），与 CurrencyUtils / WidgetData 的约定一致。
      */
     fun moneyText(raw: String?): String {
         val text = raw?.trim().orEmpty()
         if (text.isEmpty()) return ""
-        return if (text.startsWith("¥") || text.startsWith("$") || text.startsWith("€")) {
-            text
+        val negative = text.startsWith("-")
+        val body = if (negative) text.substring(1).trimStart() else text
+        if (body.isEmpty()) return ""
+        val signed = if (body.startsWith("¥") || body.startsWith("$") || body.startsWith("€")) {
+            body
         } else {
-            "¥$text"
+            "¥$body"
         }
+        return if (negative) "-$signed" else signed
     }
 
     fun daysUntil(dateMillis: Long): Long {

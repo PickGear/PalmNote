@@ -472,6 +472,10 @@ fun CategoryPicker(
     val hasMore = categories.size > visibleCount
 
     Column(modifier = modifier) {
+        if (categories.isEmpty()) {
+            EmptyCategoryHint(onManageCategories)
+            return@Column
+        }
         val chunked = visibleCategories.chunked(columns)
         val displayChunked = if (hasMore && chunked.isNotEmpty()) chunked.dropLast(1) else chunked
         displayChunked.forEach { rowItems ->
@@ -581,6 +585,28 @@ fun CategoryPicker(
                 }
             }
         )
+    }
+}
+
+@Composable
+private fun EmptyCategoryHint(onManageCategories: (() -> Unit)?) {
+    // 空态：分类全部停用且无自定义时网格零节点。至少说明「为什么是空的」，
+    // 有入口回调时当场给指路（否则只能去设置页碰运气，与预算页的 Snackbar 指路同意图）。
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = stringResource(R.string.category_picker_empty),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        if (onManageCategories != null) {
+            TextButton(onClick = onManageCategories) {
+                Text(stringResource(R.string.common_manage_categories), color = AccentOrange)
+            }
+        }
     }
 }
 

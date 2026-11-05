@@ -1202,7 +1202,8 @@ internal fun AlertCard(icon: ImageVector, title: String, message: String, color:
                 Text(message, style = MaterialTheme.typography.bodySmall, color = color.copy(alpha = 0.8f))
             }
             if (onClick != null) {
-                JumpCapsule(label = stringResource(R.string.nav_bill), color = color, onClick = onClick)
+                // 胶囊标签要跟真实落点一致：这张卡进的是预算页，写「账单」会误导
+                JumpCapsule(label = stringResource(R.string.budget_title), color = color, onClick = onClick)
             }
         }
     }

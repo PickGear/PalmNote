@@ -148,6 +148,7 @@
     <string name="common_more">更多</string>
     <string name="common_select_category">选择分类</string>
     <string name="common_manage_categories">管理分类</string>
+    <string name="category_picker_empty">暂无可用分类，可在分类管理中启用或新增</string>
     <string name="common_custom_tag">自定义标签</string>
     <string name="common_select_tag">选择标签</string>
     <string name="common_previous_month">上月</string>
@@ -234,7 +235,7 @@
     <string name="crop_title">调整图片</string>
     <string name="crop_reset">重置</string>
     <string name="crop_use">使用这张</string>
-    <string name="crop_hint">拖动图片移动，双指或双击缩放；拖四角调整选区，只有框选区域会被保存</string>
+    <string name="crop_hint">拖动图片移动，双指或双击缩放；拖四角圈选，松手放大所选区域，只有框选内容会被保存</string>
     <string name="crop_failed">图片处理失败，换一张试试</string>
     <string name="crop_rotate">旋转图片</string>
     <string name="crop_use_original">用原图</string>
