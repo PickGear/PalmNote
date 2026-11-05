@@ -1267,6 +1267,7 @@
     <string name="bill_export_range_empty">所选时间内没有账单</string>
     <string name="bill_export_file_name_ranged">palmnote_bills_%1$s_%2$s.csv</string>
     <string name="bill_export_format_summary">%1$d 列 · 时间升序 · UTF-8 带 BOM · Excel / WPS 直接打开</string>
+    <string name="bill_export_spec_title">导出内容</string>
     <string name="bill_export_empty_hint">先在「账单」页记一笔，或换个时间范围再导</string>
     <string name="bill_export_summary_loading">正在统计…</string>
     <string name="bill_export_summary_count">共 %1$d 条账单</string>

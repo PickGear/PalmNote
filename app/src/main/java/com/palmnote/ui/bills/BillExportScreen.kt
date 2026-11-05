@@ -2,20 +2,26 @@ package com.palmnote.ui.bills
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.outlined.Description
+import androidx.compose.material.icons.outlined.Inbox
 import androidx.compose.material3.Button
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DateRangePicker
@@ -35,7 +41,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -101,7 +110,7 @@ fun BillExportScreen(
                 .padding(horizontal = 24.dp, vertical = 20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            ExportSummaryHeader(state)
+            ExportSummaryCard(state)
             ExportRangeCard(
                 state = state,
                 onSelectPreset = viewModel::selectPreset,
@@ -265,98 +274,176 @@ private fun localDayBounds(startUtc: Long, endUtc: Long): Pair<Long, Long> {
 }
 
 /**
- * 页面主信息：不套卡片，直接用字号分层——
- * 条数是用户最关心的，放大；覆盖范围与账本/钱包数作为次要信息。
- * 无数据时给「为什么空 + 下一步做什么」，而不是一行灰字占一张卡。
+ * 页面主信息卡（2026-11-06 重设计）：条数是用户最关心的，配图标位放大加主色；
+ * 覆盖范围与账本/钱包数作为次要信息。无数据时给居中空态（图标锚定视觉、
+ * 「为什么空 + 下一步做什么」），不再是一行裸标题。
+ *
+ * 切范围的重新统计**不换内容**——旧摘要淡显（[BillExportState.initialized] 之后
+ * 的 loading），避免「正在统计…」一闪与布局跳动（2026-11-06 真机反馈「点时间
+ * 范围会闪」）；导出按钮由 loading 禁用兜底，防「看到 5 条、导出 0 条」的错位提示。
  */
 @Composable
-private fun ExportSummaryHeader(state: BillExportState) {
-    Column(
+private fun ExportSummaryCard(state: BillExportState) {
+    ImportCardSurface(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(6.dp)
+        contentPadding = PaddingValues(16.dp)
     ) {
-        when {
-            state.loading -> Text(
-                stringResource(R.string.bill_export_summary_loading),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            state.count == 0 -> {
-                Text(
-                    stringResource(
-                        if (state.preset == ExportRangePreset.ALL) {
-                            R.string.bill_export_empty
-                        } else {
-                            R.string.bill_export_range_empty
-                        }
-                    ),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+        // 首次进入（没有任何内容可显示）才整卡换「正在统计…」；之后的重新统计
+        // 保留旧摘要淡显——内容不换就不闪
+        val stale = state.loading && state.initialized
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .alpha(if (stale) 0.45f else 1f)
+        ) {
+            when {
+                state.loading && !state.initialized -> Text(
+                    stringResource(R.string.bill_export_summary_loading),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(vertical = 20.dp)
                 )
-                Text(
-                    stringResource(R.string.bill_export_empty_hint),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            else -> {
-                Text(
-                    stringResource(R.string.bill_export_summary_count, state.count),
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                rangeTextOf(state)?.let {
-                    Text(
-                        it,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                Text(
-                    stringResource(
-                        R.string.bill_export_summary_scope,
-                        state.bookCount,
-                        state.walletCount
-                    ),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                state.count == 0 -> ExportEmptyState(state)
+                else -> ExportSummaryData(state)
             }
         }
     }
 }
 
+/** 数据态摘要：图标位 + 条数主数字 + 范围与账本/钱包覆盖。 */
+@Composable
+private fun ExportSummaryData(state: BillExportState) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(MaterialTheme.shapes.medium)
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Outlined.Description,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            Text(
+                stringResource(R.string.bill_export_summary_count, state.count),
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
+        rangeTextOf(state)?.let {
+            Text(
+                it,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Text(
+            stringResource(
+                R.string.bill_export_summary_scope,
+                state.bookCount,
+                state.walletCount
+            ),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+/** 空态：图标锚定的居中说明——为什么是空的、下一步做什么。 */
+@Composable
+private fun ExportEmptyState(state: BillExportState) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(48.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                Icons.Outlined.Inbox,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(24.dp)
+            )
+        }
+        Text(
+            stringResource(
+                if (state.preset == ExportRangePreset.ALL) {
+                    R.string.bill_export_empty
+                } else {
+                    R.string.bill_export_range_empty
+                }
+            ),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
+        )
+        Text(
+            stringResource(R.string.bill_export_empty_hint),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center
+        )
+    }
+}
+
 /**
- * 导出规格区：不套卡片，用「分隔线 + 一行摘要 + 两行列名」压成页脚式信息块。
- *
- * 这样页面只剩「时间范围」一张真控件卡，其它都是排版层级——避免整页一排描边卡片、
- * 又不会像纯文字那样显得信息不足。列名取自 [R.string.bill_flow_header]（导出器真正写的那行）。
+ * 导出规格卡（2026-11-06 重设计）：格式摘要一行 + 13 个列名做成小标签流式排布，
+ * 替换原先「分隔线 + 两行点号长文本」的页脚式排版。列名取自
+ * [R.string.bill_flow_header]（导出器真正写的那行）。
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ExportFormatSpec() {
     val columns = stringResource(R.string.bill_flow_header).split(",")
-    val half = (columns.size + 1) / 2
-    Column(
+    ImportCardSurface(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(6.dp)
+        contentPadding = PaddingValues(16.dp)
     ) {
-        HorizontalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.outlineVariant)
-        Text(
-            stringResource(R.string.bill_export_format_summary, columns.size),
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Text(
-            columns.take(half).joinToString(" · "),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f)
-        )
-        Text(
-            columns.drop(half).joinToString(" · "),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f)
-        )
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(
+                stringResource(R.string.bill_export_spec_title),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                stringResource(R.string.bill_export_format_summary, columns.size),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                columns.forEach { name ->
+                    Text(
+                        name.trim(),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier
+                            .clip(MaterialTheme.shapes.small)
+                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f))
+                            .padding(horizontal = 8.dp, vertical = 3.dp)
+                    )
+                }
+            }
+        }
     }
 }
 

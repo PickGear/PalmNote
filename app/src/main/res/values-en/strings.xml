@@ -1095,6 +1095,7 @@
     <string name="bill_export_range_empty">No bills in the selected range</string>
     <string name="bill_export_file_name_ranged">palmnote_bills_%1$s_%2$s.csv</string>
     <string name="bill_export_format_summary">%1$d columns · sorted by time · UTF-8 with BOM · opens directly in Excel / WPS</string>
+    <string name="bill_export_spec_title">Export Contents</string>
     <string name="bill_export_empty_hint">Add a bill on the Bills tab first, or pick another range</string>
     <string name="bill_export_summary_loading">Counting…</string>
     <string name="bill_export_summary_count">%1$d bills in total</string>

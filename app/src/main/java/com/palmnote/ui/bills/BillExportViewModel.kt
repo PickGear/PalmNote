@@ -59,6 +59,8 @@ data class BillExportState(
     val bookCount: Int = 0,
     val walletCount: Int = 0,
     val exporting: Boolean = false,
+    /** 至少完成过一次统计：之后的重新统计 UI 保留旧内容淡显，不再整卡换「正在统计…」（防闪）。 */
+    val initialized: Boolean = false,
     /** 导出结果提示（成功条数 / 失败原因）；null = 还没导过 */
     val message: String? = null,
     val failed: Boolean = false
@@ -191,6 +193,7 @@ class BillExportViewModel @Inject constructor(
             }
             _state.value = _state.value.copy(
                 loading = false,
+                initialized = true,
                 count = bills.size,
                 firstDate = bills.minOfOrNull { it.date },
                 lastDate = bills.maxOfOrNull { it.date },
