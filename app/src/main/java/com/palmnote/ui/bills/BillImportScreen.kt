@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -202,9 +203,16 @@ private fun ImportBackButton(onBack: () -> Unit) {
 @Composable
 fun BillImportHubScreen(
     onNavigateBack: () -> Unit = {},
-    onSelectImport: () -> Unit = {},
+    /** 选中文件后回调（携带 content:// Uri 串）；用户在系统选择器里取消则不回调、留在枢纽页。 */
+    onSelectImport: (String) -> Unit = {},
     onSelectExport: () -> Unit = {}
 ) {
+    // 「文件导入」卡直选文件（2026-11-06 定案）：点卡即拉起系统文件选择器，
+    // 选中才带 Uri 进导入页解析——不再经过导入页的「选择账单文件」首屏；
+    // 取消则什么都不发生。与导入页自用的选择器同 mime 口径。
+    val hubFilePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) onSelectImport(uri.toString())
+    }
     Scaffold(
         topBar = {
             BillImportTopBar(
@@ -217,7 +225,7 @@ fun BillImportHubScreen(
         }
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-            ModeSelection(onSelectFile = onSelectImport, onSelectExport = onSelectExport)
+            ModeSelection(onSelectFile = { hubFilePicker.launch(arrayOf("text/*", "*/*")) }, onSelectExport = onSelectExport)
         }
     }
 }
@@ -225,6 +233,8 @@ fun BillImportHubScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BillImportScreen(
+    /** 非空 = 枢纽页直选文件进来：进页即解析（见 LaunchedEffect 的一次性守卫）。 */
+    initialFileUri: String? = null,
     onNavigateBack: () -> Unit = {},
     viewModel: BillImportViewModel = hiltViewModel()
 ) {
@@ -274,6 +284,18 @@ fun BillImportScreen(
     val failedCsvName = stringResource(R.string.bill_import_failed_csv_name)
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri ->
         if (uri != null) viewModel.exportFailures(uri)
+    }
+
+    // 枢纽页直选文件进来（Routes.BillImport.fileUri）：进页即解析，不再停留「选择账单文件」首屏。
+    // 一次性守卫：旋转/进程重建后不重解析（stage 已推进的更不会重复触发）。
+    var initialUriHandled by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(initialFileUri) {
+        if (!initialUriHandled && initialFileUri != null && state.stage == ImportStage.IDLE) {
+            initialUriHandled = true
+            val uri = android.net.Uri.parse(initialFileUri)
+            val fileName = uri.lastPathSegment?.substringAfterLast('/') ?: unknownFileLabel
+            viewModel.parseFile(context, uri, fileName)
+        }
     }
 
     Scaffold(

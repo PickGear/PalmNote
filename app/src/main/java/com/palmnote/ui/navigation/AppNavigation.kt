@@ -368,13 +368,16 @@ fun PalmNoteNavHost() {
             composable<BillImportHub> {
                 BillImportHubScreen(
                     onNavigateBack = { navController.popBackStack() },
-                    onSelectImport = { navController.navigate(BillImport) },
+                    // 「文件导入」卡直选文件：选中才导航进导入页并带文件 Uri（取消则留在枢纽页）
+                    onSelectImport = { fileUri -> navController.navigate(BillImport(fileUri = fileUri)) },
                     onSelectExport = { navController.navigate(BillExport) }
                 )
             }
 
-            composable<BillImport> {
+            composable<BillImport> { backStackEntry ->
+                val importRoute = backStackEntry.toRoute<BillImport>()
                 BillImportScreen(
+                    initialFileUri = importRoute.fileUri,
                     onNavigateBack = { navController.popBackStack() }
                 )
             }

@@ -46,9 +46,15 @@ data class Report(val selectedBookId: Long = -1L, val bookName: String = "")
 @Serializable
 data object BillImportHub
 
-/** 导入流程页（选文件 → 解析 → 预览 → 结果）。 */
+/**
+ * 导入流程页（解析 → 预览 → 结果）。
+ *
+ * [fileUri] 非空 = 从枢纽页「文件导入」卡直选文件进来：进页即解析，跳过 IDLE 首屏
+ * （2026-11-06 定案：点卡直接导入文件，不用再进入导入页）。空 = 常规进入，先给
+ * 「选择账单文件」首屏（重试/继续导入等路径仍从这里走自己的文件选择器）。
+ */
 @Serializable
-data object BillImport
+data class BillImport(val fileUri: String? = null)
 
 /** 导出账单流水：独立页（导入/导出枢纽页的第二张卡进入）。 */
 @Serializable
