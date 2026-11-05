@@ -43,9 +43,16 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
+import androidx.compose.ui.unit.sp
 import com.palmnote.app.R
 import com.palmnote.data.db.dao.CategoryCount
 import com.palmnote.domain.model.BudgetPeriod
@@ -55,9 +62,9 @@ import com.palmnote.domain.util.CurrencyUtils
 import com.palmnote.domain.util.DateUtils
 import com.palmnote.ui.components.*
 import com.palmnote.ui.theme.*
-import com.palmnote.ui.widget.WidgetData
 import com.palmnote.ui.asset.getCategoryDisplayName
 import com.palmnote.ui.asset.getCategoryIcon
+import com.palmnote.ui.widget.WidgetData
 import com.palmnote.ui.bills.budgetLabel
 
 // 10 种卡片的统一分发入口：参数为纯数据 + 导航回调，按卡片类型各自取用，
@@ -587,94 +594,67 @@ private fun BudgetAlertBody(
     accent: Color,
     amountsHidden: Boolean
 ) {
+    // 方案 B（2026-11-05 定案）+ 定高打磨（2026-11-06）：整卡恒两行——
+    // 「预算名 · 状态 + 缩写数字」/「金额进度胶囊」，四态（超支 / 达阈值 /
+    // 隐私超支 / 隐私充足）行数与行框完全一致，卡高不随状态跳变。定高支点：
+    // 行一行框钉 20sp + dp 下限；进度胶囊隐私态只画轨道不画填充（填充比例
+    // 本身也是信息，遮罩下不能漏），min 高度两态一致。
+    //
+    // 行一是**单段文字**（标签 + 数字同串、基线天然对齐）并开 TextAutoSize：
+    // 英文长标签（"This Month Total · over by"）加数字一行放不下时整行自动缩
+    // 字号（12sp → 最低 9sp），标签永远完整不截断（2026-11-06 真机反馈）；
+    // 行框钉 20sp，缩字号不改变卡高。数字 span 用 em 定字号（≈14sp），随整行
+    // 等比缩放；隐私态没有数字，只有标签一个 span。
     val context = androidx.compose.ui.platform.LocalContext.current
-    // 方案 B（2026-11-05 定案）：标签与主数字同排，整卡只三行
-    // 「预算名 · 状态 + 缩写数字」/「金额对比」/「进度条」。
-    // 主数字从 18/20sp 降到 14sp，并按 ≥1万 折成万/k（中文一位小数）：长金额
-    // 不再把状态词挤成两行，代价是超额金额损失个位精度——完整金额仍在下一行。
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(
-            text = when {
-                // 隐私态超支仍要提示「已超支」，但用不带 by 的定性措辞（下一行没有金额）
-                status.isOver && amountsHidden ->
-                    stringResource(R.string.budget_alert_label_over_masked, label)
-                status.isOver -> stringResource(R.string.budget_alert_label_over, label)
-                amountsHidden -> label
-                else -> stringResource(R.string.budget_alert_label_used, label)
-            },
-            style = MaterialTheme.typography.bodySmall,
-            color = if (amountsHidden) {
+    val labelText = when {
+        // 隐私态超支仍要提示「已超支」，但用不带 by 的定性措辞（下一行没有金额）
+        status.isOver && amountsHidden ->
+            stringResource(R.string.budget_alert_label_over_masked, label)
+        status.isOver -> stringResource(R.string.budget_alert_label_over, label)
+        amountsHidden -> label
+        else -> stringResource(R.string.budget_alert_label_used, label)
+    }
+    BasicText(
+        text = buildAnnotatedString {
+            // 隐私态标签用更实的字色（详见下方 when 分支的历史注释）
+            val labelColor = if (amountsHidden) {
                 MaterialTheme.colorScheme.onSurface
             } else {
                 MaterialTheme.colorScheme.onSurfaceVariant
-            },
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f, fill = false)
-        )
-        if (!amountsHidden) {
-            Spacer(Modifier.width(6.dp))
-            Text(
-                text = if (status.isOver) {
-                    WidgetData.formatMoneyCompact(context, status.spent - status.limit)
-                } else {
-                    "${status.usedPercent}%"
-                },
-                style = MaterialTheme.typography.titleSmall.copy(
-                    fontSize = TypeScale.titleS,
-                    fontFeatureSettings = "tnum"
-                ),
-                color = accent,
-                maxLines = 1,
-                // 极端字体放大时宁可显式省略号，也不静默裁掉数字尾部显示假金额
-                softWrap = false,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-    }
-    if (amountsHidden) {
-        // 只剩预算名会像「数据没加载出来」，补一行说明为什么没有数字
-        Text(
-            text = stringResource(R.string.budget_alert_masked_hint),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    } else {
-        BudgetAmountsBlock(status, accent)
-    }
-}
-
-@Composable
-private fun BudgetAmountsBlock(status: BudgetProgress, accent: Color) {
-    Text(
-        text = stringResource(
-            R.string.budget_alert_amounts,
-            status.spent / 100.0, status.limit / 100.0
-        ),
+            }
+            withStyle(SpanStyle(color = labelColor)) {
+                append(labelText)
+            }
+            if (!amountsHidden) {
+                withStyle(
+                    SpanStyle(
+                        color = accent,
+                        fontSize = (TypeScale.titleS.value / 12f).em
+                    )
+                ) {
+                    append("  ")
+                    append(
+                        if (status.isOver) {
+                            WidgetData.formatMoneyCompact(context, status.spent - status.limit)
+                        } else {
+                            "${status.usedPercent}%"
+                        }
+                    )
+                }
+            }
+        },
         style = MaterialTheme.typography.bodySmall.copy(
-            fontSize = TypeScale.chip,
+            lineHeight = 20.sp,
+            lineHeightStyle = BudgetCardLineHeightStyle,
             fontFeatureSettings = "tnum"
         ),
-        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f),
-        maxLines = 1
+        // 自适应下限 9sp：再小的场景（超长账本名 + 长金额）由省略号诚实兜底
+        autoSize = TextAutoSize.StepBased(minFontSize = 9.sp, maxFontSize = 12.sp),
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        modifier = Modifier.heightIn(min = 20.dp)
     )
-    Spacer(Modifier.height(6.dp))
-    // 自绘 3dp 细条：百分比是抽象数字，一条填满的横线让「快满了」一秒可读；
-    // 比例在超支时已封顶满格
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(3.dp)
-            .clip(RoundedCornerShape(2.dp))
-            .background(accent.copy(alpha = 0.16f))
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth((status.usedPercent / 100f).coerceIn(0f, 1f))
-                .fillMaxHeight()
-                .background(accent)
-        )
-    }
+    BudgetProgressChip(status, accent, amountsHidden)
 }
 
 @Composable
