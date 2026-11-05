@@ -139,16 +139,34 @@ class ImageCropGestureTest {
     }
 
     @Test
-    fun `拖角松手后选框回最大并放大所选区域`() {
+    fun `拖角松手收口保持拖出比例并放大所选区域`() {
         launchFreeRatioCrop()
         val maxFrame = frameRect
         val imageBefore = imageRect
-        // 向内拖角收小选框（收小是临时的取景动作）
-        cornerDrag(Offset(-70f, -40f))
-        // 松手收口：选框回最大居中
+        // 向内拖角收小选框（收小是临时的取景动作）。松手收口按【拖出的比例】取
+        // 可用区内的最大框，比例不回整图比例——无条件写回 maxFrame 会把用户拖出的
+        // 形状抹平（旧契约，2026-11-05 真机反馈「自由比例方框永远改不了比例」后废弃）。
+        // 拖出状态必须在松手【前】读：收口后数字已被 settle 重算，且注入增量到框
+        // 尺寸的映射受 minSide/对称映射影响，无法从注入值反推（见 resizeCenteredCropSize）。
+        compose.onRoot().performTouchInput {
+            down(Offset(frameRect.right, frameRect.bottom))
+            repeat(8) { moveBy(Offset(-10f, -5f)) }
+        }
+        compose.waitForIdle()
+        val dragged = frameRect
+        // 松手触发收口（拖角手柄在手势流结束时收口，与真机同一触发点）
+        compose.onRoot().performTouchInput { up() }
+        compose.waitForIdle()
+        // 比例保留：收口比例 = 拖出比例（0.05 容差吸收取整尾差；对照旧契约的
+        // 抹平行为——那会回整图比例 1.6，与本断言必撞）
         assertTrue(
-            "松手后选框应回最大 frame=$frameRect max=$maxFrame",
-            kotlin.math.abs(frameRect.width - maxFrame.width) < 1f &&
+            "收口应保持拖出比例 dragged=$dragged settled=$frameRect",
+            kotlin.math.abs(frameRect.width / frameRect.height - dragged.width / dragged.height) < 0.05f
+        )
+        // 同比例最大框：收口框至少一轴顶到可用区上限（largestFrameOfRatio 的绑定轴）
+        assertTrue(
+            "收口框应顶到可用区上限 frame=$frameRect max=$maxFrame",
+            kotlin.math.abs(frameRect.width - maxFrame.width) < 1f ||
                 kotlin.math.abs(frameRect.height - maxFrame.height) < 1f
         )
         // 图片按所选区域放大（不是停在 1x 的小框）

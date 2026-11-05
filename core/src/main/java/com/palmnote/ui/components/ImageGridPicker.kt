@@ -205,6 +205,11 @@ fun ImageGridPicker(
         }
     }
 
+    // 标题行与槽位行之间刻意零间距：标题文字在 40dp 行内居中，下方自带约 10dp 视觉
+    // 留白（扣字形下降部 ≈ 8dp，即提交信息所说的「8dp 口径」）。旧版是 48dp IconButton
+    // 行 + 8dp Spacer 叠成 ~26dp 才被真机反馈「空白太大」；行高回到 40dp 后再补
+    // spacer/padding 会得 ~18dp，比已定稿的观感松——本组件挂在 ModuleCard 的
+    // ColumnScope 里，那层 Column 没有 spacedBy，间距只能显式给，所以这里什么都不加。
     var draggedIndex by remember { mutableIntStateOf(-1) }
     var dragTotal by remember { mutableFloatStateOf(0f) }
     var slotWidthPx by remember { mutableFloatStateOf(80f) }
@@ -224,12 +229,22 @@ fun ImageGridPicker(
                         // 首图独立时第 0 格不参与拖拽：封面不能被拖走、也不能被后面的图顶替
                         if (!canDrag) return@detectDragGesturesAfterLongPress
                         val idx = (offset.x / (currentSlotWidth + spacingPx)).toInt()
-                            .coerceIn(dragMin, dragMax)
+                        // 按压点不在可拖区间（封面格 / 之后的空槽）就不启动拖拽：
+                        // coerce 会把这次按压「挪」到相邻可拖格——手指按在封面上，
+                        // 抬起来的却是附件 1，松手前一直是错位视觉（2026-11-06 修）。
+                        // 附带效果：账单模式长按最后一张之后的空白也不再拖最后一张。
+                        if (idx < dragMin || idx > dragMax) return@detectDragGesturesAfterLongPress
                         draggedIndex = idx
                         dragTotal = 0f
                     },
                     onDrag = { change, amount ->
                         change.consume()
+                        // onDragStart 可能因按压点越界而未启动（draggedIndex 停在 -1）：
+                        // 此时本次长按不应产生任何重排事件，位移直接吞掉——否则
+                        // target=(-1+1) 会被 coerce 进可拖区间，发出 (-1, x) 事件
+                        if (currentDragIndex < dragMin || currentDragIndex > dragMax) {
+                            return@detectDragGesturesAfterLongPress
+                        }
                         dragTotal += amount.x
                         val step = currentSlotWidth + spacingPx
                         if (abs(dragTotal) > step * 0.5f) {
