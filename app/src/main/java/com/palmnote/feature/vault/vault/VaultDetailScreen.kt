@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -30,6 +31,7 @@ import androidx.compose.material.icons.outlined.Key
 import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.Mail
 import androidx.compose.material.icons.outlined.MoreVert
+import androidx.compose.material.icons.outlined.OpenInNew
 import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material.icons.outlined.Person
@@ -59,10 +61,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -261,16 +263,17 @@ fun VaultDetailScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             // ═══════════════════════════════════════
-            // 登录头部（图标 + 标题 + 分类徽章）
+            // 登录头部（2026-11-06 重设计：横排——头像 + 标题/分类，把空间让给字段）
             // ═══════════════════════════════════════
             ModuleCard(tint = MaterialTheme.colorScheme.surface) {
-                Column(
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(64.dp)
+                            .size(48.dp)
                             .background(vaultTint().copy(alpha = 0.15f), CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
@@ -278,7 +281,7 @@ fun VaultDetailScreen(
                             AsyncImage(
                                 model = File(entry.avatarPath),
                                 contentDescription = null,
-                                modifier = Modifier.size(64.dp).clip(CircleShape),
+                                modifier = Modifier.size(48.dp).clip(CircleShape),
                                 contentScale = ContentScale.Crop
                             )
                         } else {
@@ -286,32 +289,34 @@ fun VaultDetailScreen(
                                 imageVector = entryIcon(entry.url),
                                 contentDescription = null,
                                 tint = vaultTint(),
-                                modifier = Modifier.size(30.dp)
+                                modifier = Modifier.size(24.dp)
                             )
                         }
                     }
-                    Spacer(Modifier.height(12.dp))
-                    Text(
-                        text = entry.title,
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    if (entry.category.isNotEmpty()) {
-                        Spacer(Modifier.height(10.dp))
-                        Surface(
-                            color = vaultTint().copy(alpha = 0.15f),
-                            contentColor = vaultTint(),
-                            shape = RoundedCornerShape(16.dp)
-                        ) {
-                            Text(
-                                text = entry.category,
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Medium,
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
-                            )
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = entry.title,
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        if (entry.category.isNotEmpty()) {
+                            Surface(
+                                color = vaultTint().copy(alpha = 0.15f),
+                                contentColor = vaultTint(),
+                                shape = RoundedCornerShape(16.dp)
+                            ) {
+                                Text(
+                                    text = entry.category,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Medium,
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp)
+                                )
+                            }
                         }
                     }
                 }
@@ -321,7 +326,7 @@ fun VaultDetailScreen(
             // 登录信息
             // ═══════════════════════════════════════
             ModuleCard(tint = MaterialTheme.colorScheme.surface) {
-                SectionHeader(null, stringResource(R.string.vault_section_login))
+                SectionHeader(stringResource(R.string.vault_section_login))
                 Spacer(Modifier.height(4.dp))
                 if (entry.username.isNotEmpty()) {
                     DetailRow(
@@ -370,13 +375,15 @@ fun VaultDetailScreen(
             // ═══════════════════════════════════════
             if (entry.url.isNotEmpty()) {
                 ModuleCard(tint = MaterialTheme.colorScheme.surface) {
-                    SectionHeader(null, stringResource(R.string.vault_section_site))
+                    SectionHeader(stringResource(R.string.vault_section_site))
                     Spacer(Modifier.height(4.dp))
                     DetailRow(
                         icon = Icons.Outlined.Link,
                         label = stringResource(R.string.vault_field_url),
                         value = entry.url,
-                        modifier = Modifier.clickable {
+                        // 打开动作收进显式按钮：原先整行可点但没有任何可见 affordance，
+                        // 用户想复制时误触会把浏览器拉起来
+                        onOpen = {
                             try {
                                 val url = entry.url.let {
                                     if (!it.startsWith("http://") && !it.startsWith("https://")) "https://$it" else it
@@ -396,7 +403,7 @@ fun VaultDetailScreen(
             // ═══════════════════════════════════════
             if (entry.notes.isNotEmpty()) {
                 ModuleCard(tint = MaterialTheme.colorScheme.surface) {
-                    SectionHeader(null, stringResource(R.string.vault_section_notes))
+                    SectionHeader(stringResource(R.string.vault_section_notes))
                     Spacer(Modifier.height(4.dp))
                     DetailRow(
                         icon = Icons.AutoMirrored.Outlined.Notes,
@@ -442,88 +449,107 @@ fun VaultDetailScreen(
 
 @Composable
 private fun DetailRow(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     label: String,
     value: String,
     modifier: Modifier = Modifier,
+    onOpen: (() -> Unit)? = null,
     onCopy: (() -> Unit)? = null,
     onToggleVisibility: (() -> Unit)? = null,
     isVisible: Boolean = false,
     multiline: Boolean = false
 ) {
-    Column(modifier.padding(vertical = 10.dp)) {
-        // 图标与标签同行居中：图标 16dp 与 labelMedium(12sp) 同尺度，不会再「一头大一头小」
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = vaultTint(),
-                modifier = Modifier.size(16.dp)
-            )
-            Spacer(Modifier.width(DETAIL_ROW_INDENT - 16.dp))
+    // 2026-11-06 重设计：单行结构——图标 + 「标签/值」纵向块 + 动作按钮垂直居中。
+    // 旧版是「标签行 / 值行」两层各带基线对齐（需要缩进常量维护两行共左缘），
+    // 动作按钮挂在值行上；新结构天然同左缘，动作与整行等高，行距更紧。
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = vaultTint(),
+            modifier = Modifier.size(18.dp)
+        )
+        Spacer(Modifier.width(10.dp))
+        Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = label,
-                style = MaterialTheme.typography.labelMedium,
+                style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-        }
-        Spacer(Modifier.height(4.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            // 数值左缘 = 标签文字左缘（图标 16 + 间距 8 = 缩进 24dp），两行共用同一常数
-            Spacer(Modifier.width(DETAIL_ROW_INDENT))
             Text(
                 text = value,
                 style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.weight(1f),
                 maxLines = if (multiline) Int.MAX_VALUE else 1,
                 overflow = TextOverflow.Ellipsis
             )
-            if (onToggleVisibility != null) {
-                IconButton(
-                    onClick = onToggleVisibility,
-                    modifier = Modifier.offset(x = DETAIL_ROW_TRAILING_OFFSET)
-                ) {
-                    Icon(
-                        imageVector = if (isVisible) Icons.Outlined.Visibility else Icons.Outlined.VisibilityOff,
-                        contentDescription = stringResource(R.string.vault_toggle_visibility)
-                    )
-                }
-            }
-            if (onCopy != null) {
-                IconButton(
-                    onClick = onCopy,
-                    modifier = Modifier.offset(x = DETAIL_ROW_TRAILING_OFFSET)
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.ContentCopy,
-                        contentDescription = stringResource(R.string.vault_copy),
-                        tint = vaultTint()
-                    )
-                }
-            }
+        }
+        DetailRowActions(
+            onToggleVisibility = onToggleVisibility,
+            isVisible = isVisible,
+            onOpen = onOpen,
+            onCopy = onCopy
+        )
+    }
+}
+
+/** 行尾动作按钮组（密码显隐 / 打开网站 / 复制），右移平衡卡边距（见 [DETAIL_ROW_TRAILING_OFFSET]）。 */
+@Composable
+private fun RowScope.DetailRowActions(
+    onToggleVisibility: (() -> Unit)?,
+    isVisible: Boolean,
+    onOpen: (() -> Unit)?,
+    onCopy: (() -> Unit)?
+) {
+    if (onToggleVisibility != null) {
+        IconButton(
+            onClick = onToggleVisibility,
+            modifier = Modifier.offset(x = DETAIL_ROW_TRAILING_OFFSET)
+        ) {
+            Icon(
+                imageVector = if (isVisible) Icons.Outlined.Visibility else Icons.Outlined.VisibilityOff,
+                contentDescription = stringResource(R.string.vault_toggle_visibility)
+            )
+        }
+    }
+    if (onOpen != null) {
+        IconButton(
+            onClick = onOpen,
+            modifier = Modifier.offset(x = DETAIL_ROW_TRAILING_OFFSET)
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.OpenInNew,
+                contentDescription = stringResource(R.string.vault_open_url),
+                tint = vaultTint()
+            )
+        }
+    }
+    if (onCopy != null) {
+        IconButton(
+            onClick = onCopy,
+            modifier = Modifier.offset(x = DETAIL_ROW_TRAILING_OFFSET)
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.ContentCopy,
+                contentDescription = stringResource(R.string.vault_copy),
+                tint = vaultTint()
+            )
         }
     }
 }
 
-/** 分组标题：图标 + 标题。 */
+/** 分组标题（详情卡内的小节头）。 */
 @Composable
-private fun SectionHeader(icon: androidx.compose.ui.graphics.vector.ImageVector?, title: String) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        if (icon != null) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                modifier = Modifier.size(18.dp),
-                tint = vaultTint()
-            )
-            Spacer(Modifier.width(8.dp))
-        }
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.Bold
-        )
-    }
+private fun SectionHeader(title: String) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.titleSmall,
+        fontWeight = FontWeight.Bold
+    )
 }
 
 @Composable
@@ -554,9 +580,6 @@ private fun VaultDetailDeleted(onNavigateBack: () -> Unit) {
         )
     }
 }
-
-/** 行内缩进：标签文字与数值文字共用同一条左基线（图标 16dp + 间距 8dp）。 */
-private val DETAIL_ROW_INDENT = 24.dp
 
 /**
  * 行尾按钮右移量 = IconButton 自带的 12dp 内边距。

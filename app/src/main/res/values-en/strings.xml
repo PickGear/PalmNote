@@ -1911,6 +1911,7 @@
     <string name="vault_add">Add</string>
     <string name="vault_copy">Copy</string>
     <string name="vault_copied">Copied</string>
+    <string name="vault_open_url">Open website</string>
     <string name="vault_copy_password">Copy password</string>
     <string name="vault_updated_at">Updated %1$s</string>
     <string name="vault_empty">No entries yet</string>
