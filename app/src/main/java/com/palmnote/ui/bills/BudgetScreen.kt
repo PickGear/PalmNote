@@ -13,6 +13,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.progressSemantics
 import androidx.compose.foundation.selection.selectable
@@ -453,14 +454,21 @@ private fun PeriodSelector(selected: BudgetPeriod, onSelect: (BudgetPeriod) -> U
     ) {
         BudgetPeriod.entries.forEach { period ->
             val active = period == selected
+            // 交互源保留（读屏/键盘的按下语义还在），但关掉水波纹：
+            // 选中态本身就用橙块表达，波纹会在相邻段上残留一块浅色印子
+            val interaction = remember(period) { MutableInteractionSource() }
             Box(
                 modifier = Modifier
                     .weight(1f)
                     .height(40.dp)
                     .clip(CircleShape)
                     .background(if (active) AccentOrange else Color.Transparent)
-                    // selectable 排在 background 之后：涟漪才画在色块上方、并被胶囊形状裁掉
-                    .selectable(selected = active, role = Role.Tab) { onSelect(period) },
+                    .selectable(
+                        selected = active,
+                        interactionSource = interaction,
+                        indication = null,
+                        role = Role.Tab
+                    ) { onSelect(period) },
                 contentAlignment = Alignment.Center
             ) {
                 Text(

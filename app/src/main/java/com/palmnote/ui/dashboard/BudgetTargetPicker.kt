@@ -2,6 +2,7 @@ package com.palmnote.ui.dashboard
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,6 +16,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -168,7 +170,11 @@ private fun BudgetPeriodSegments(selected: String, onSelect: (String) -> Unit) {
                     .weight(1f)
                     .clip(RoundedCornerShape(7.dp))
                     .background(if (active) MaterialTheme.colorScheme.surface else Color.Transparent)
-                    .clickable { onSelect(period.name) }
+                    // 与预算页分段控件同口径：选中态用底色表达，关掉水波纹
+                    .clickable(
+                        interactionSource = remember(period) { MutableInteractionSource() },
+                        indication = null
+                    ) { onSelect(period.name) }
                     .padding(vertical = 4.dp)
             )
         }

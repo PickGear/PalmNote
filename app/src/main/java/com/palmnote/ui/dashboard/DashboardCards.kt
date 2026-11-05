@@ -38,8 +38,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.semantics.clearAndSetSemantics
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
@@ -1292,11 +1290,10 @@ internal fun AlertCard(
     // 必须是**不透明实底**——首页背景带纹理，surface 上叠 alpha 会得到一块「看不出是卡」的
     // 淡色区域，内容像浮在页面上；描边与首页其他卡一致用 outlineVariant，1dp 只负责收边。
     val container = MaterialTheme.colorScheme.surface
+    // 卡面本身不可点（与首页其它卡一致：没有点击波纹，入口在右侧胶囊）：
+    // 此前做成整卡可点会带 press 波纹，和别的卡不是一套手感
     Card(
-        onClick = onClick,
-        // 整卡可点（原来只有 32dp 高的胶囊可点）：合并子节点语义，读屏一次读完，
-        // 右侧胶囊只作视觉提示
-        modifier = Modifier.fillMaxWidth().semantics(mergeDescendants = true) {},
+        modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(containerColor = container),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
@@ -1327,8 +1324,7 @@ internal fun AlertCard(
                 // 放在胶囊里会挤掉正文宽度（文本区从 172dp 掉到 121dp）
                 label = stringResource(R.string.budget_card_action),
                 color = accent,
-                onClick = onClick,
-                modifier = Modifier.clearAndSetSemantics {}
+                onClick = onClick
             )
         }
     }
