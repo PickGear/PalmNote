@@ -38,10 +38,11 @@ android {
         // targetSdk 34：自用侧载，禁用 Android 15+ 强制 predictive back，恢复传统返回动画；
         // compileSdk 保持 36 不损失编译能力。上 Play 时需升回 35+。
         targetSdk = 34
-        // versionCode 单调递增：1.4.3-beta2 取 13。1.4.0 正式发布为 6；1.4.1 曾以 7 出过一版
+        // versionCode 单调递增：1.4.3-beta3 取 14。1.4.0 正式发布为 6；1.4.1 曾以 7 出过一版
         // （10-10 17:02 构建的 PalmNote-1.4.1.apk，只含首批修复），其后又并入报销功能
-        // 与日历重构，重新出包取 8（1.4.1 正式发布）。1.4.2 为 beta 线（9/10/11），1.4.3-beta1 为 12。
-        versionCode = 13
+        // 与日历重构，重新出包取 8（1.4.1 正式发布）。1.4.2 为 beta 线（9/10/11），
+        // 1.4.3-beta1 为 12、beta2 为 13。
+        versionCode = 14
         versionName = libs.versions.palmnote.get()
         // 版本号的单一事实来源就是 `libs.versions.toml` 的 palmnote 键：
         // 界面取 `BuildConfig.VERSION_NAME`（AboutScreen 就是这么读的）。
@@ -163,6 +164,15 @@ android {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
+    }
+}
+
+// CI 诊断开关：测试 JVM 被原生库打死（exit 134）时，Gradle 只留一个空的 results 目录，
+// 看不到崩在哪个用例。加 `-PtestLoggingStarted` 后逐用例打印 STARTED，
+// 崩溃前最后一行 STARTED 就是罪魁。默认关闭，避免日常输出被刷屏。
+if (hasProperty("testLoggingStarted")) {
+    tasks.withType<Test>().configureEach {
+        testLogging { events("started") }
     }
 }
 

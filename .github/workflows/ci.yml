@@ -45,7 +45,12 @@ jobs:
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: 17
+          # 21 而非 17：Robolectric 4.16 只有在 Java 21 上才肯跑它支持的最新 SDK
+          # （17 下会打印「Android SDK 36 requires Java 21」并跳过），且开发机 JBR 就是 21，
+          # CI 与之一致最不容易出现环境差异。注意：单测 JVM 曾以 exit 134 崩溃，根因不是
+          # JDK（改成 21 后仍崩，只是失败的 Nio 类换了），而是 native SQLite 装载竞态，
+          # 见 app/src/test/resources/robolectric.properties。
+          java-version: 21
 
       - uses: gradle/actions/setup-gradle@v6
         # 默认缓存 Gradle 依赖 + build cache + configuration cache（org.gradle.caching/configuration-cache 已在 gradle.properties 开启）。
@@ -55,6 +60,8 @@ jobs:
 
       # 一次 Gradle 调用同时跑 lint + detekt + 单测（含 Robolectric 迁移测试）。
       # --continue 让某项失败时不中断其余任务，一次跑完所有结果。
+      # 排查「测试 JVM 被原生库打死（exit 134，拿不到任何用例结果）」时加
+      # `-PtestLoggingStarted` 逐用例打印 STARTED，崩溃前最后一行就是罪魁。
       - name: Lint, detekt & unit tests
         run: ./gradlew lintDebug detekt testDebugUnitTest --continue
 

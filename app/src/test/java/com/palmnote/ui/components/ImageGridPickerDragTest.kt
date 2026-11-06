@@ -26,7 +26,6 @@ import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-import org.robolectric.annotation.GraphicsMode
 
 /**
  * 「拖拽只在可拖区间启动」的真实手势钉（2026-11-06）。
@@ -39,9 +38,13 @@ import org.robolectric.annotation.GraphicsMode
  * 坐标自定位：以第 1 格的拖拽把手节点为锚（把手只出现在可拖格上），
  * 封面格 = 把手中心左移一个步长，不对手算布局做任何假设。
  * 夹具是合成的纯色块图，不含任何用户照片。
+ *
+ * 不开 `@GraphicsMode(NATIVE)`：本用例只断言重排事件（语义层），不看像素。带 NATIVE
+ * 时长按手势会走原生图形路径，在 CI（Linux）上把 Robolectric 的 nativeruntime 打死：
+ * 测试 JVM 直接 exit 134，日志只有 `Class not found: java/nio/CharBuffer` /
+ * `JniConstants F`（2026-11-06 实测，崩点就落在本类第二个用例开始后约 100ms）。
  */
 @RunWith(RobolectricTestRunner::class)
-@GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(sdk = [30], application = Application::class, qualifiers = "zh")
 class ImageGridPickerDragTest {
 

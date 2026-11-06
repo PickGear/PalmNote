@@ -3,6 +3,43 @@ PalmNote Version History
 
 Release history of PalmNote (newest version first; entries marked beta are pre-release).
 
+1.4.3-beta3 (2026-11-06)
+------------------------
+
+About
+- This is 1.4.3 beta3 (development build, not yet released): budgets become period × scope long-term templates with a redesigned budget page and dashboard card, every upload goes through the crop screen, and the import / export / vault-detail / life-picker pages are redesigned
+
+Added
+- Budgets become long-term templates: period (week / month / year) × scope (all / category / book) freely combined, with the budget page and edit dialog redesigned
+- Dashboard budget card rebuilt with four states: sufficient / threshold / over / privacy, with the amounts capsule doubling as the progress bar; the card manager lets you pick which budget to show, and privacy masks amounts and ratio
+- All uploads go through the crop screen: picked or camera-shot images are cropped before saving, with gesture alignment, rotation and state restore
+- Crop "drag a corner, release to zoom": magnifies the selected area and keeps the dragged ratio
+- Asset upload slots rebuilt: the first image is an independent cover slot (cropped 1:1), the other three form the attachment group; status badges move to the front
+- The import hub's "File import" card opens the file picker directly (no second page)
+- Vault detail page redesigned: horizontal header, compact field rows, one-tap website open
+- Export bills page redesigned: summary / range / contents cards, with next-step guidance in the empty state
+- Life "new record" panel redesigned: upgraded title and category picker, circular template icons
+- Category management: rename and create now share a duplicate-name guard, keeping budget dimensions clean
+- Version history and built-in life template texts are seeded per app language
+
+Fixed
+- Fixed credit-card debt not counting into net worth and the ledger adjustment direction
+- Fixed demo mode leaking real data into statistics, reports and delete cascades (monthly totals / last 7 days / top categories / trends / widgets all isolated)
+- Fixed deleting a category during demo mode also clearing real budgets
+- Fixed backup exports occasionally producing 0-byte files (writes go through the repository layer with a size check)
+- Fixed orphan images left behind when an exchange-package import failed
+- Fixed budget notification ids colliding with life notifications and hidden books degrading to "a book"
+- Fixed the budget edit dialog losing state on rotation and over-budget progress announcing wrong values
+- Fixed the dashboard budget label being truncated on the English UI (the whole line auto-shrinks)
+- Fixed the minus sign placement for negative amounts (-¥280.00, no more "¥-280")
+- Fixed the category picker showing a blank area when everything is disabled (empty state with an entry point)
+
+Changed
+- The dashboard budget card uses a compact three-row layout with the number right after the status word
+- The bills menu "Budget" is renamed "Budget management"
+- Asset image hint copy tightened; the upload header keeps a permanent camera entry
+- Removed redundant ripples on cards and segmented controls
+
 1.4.3-beta2 (2026-11-03)
 ------------------------
 
